@@ -76,6 +76,8 @@ spec:
               value: "false"
             - name: APP_UPGRADE_TEST
               value: "true"
+            - name: APP_UPGRADE_TIMEOUT
+              value: {{ .Values.e2e.upgrade.timeout }}
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e upgrade test on AWS. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Upgrade; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 
@@ -150,6 +152,10 @@ spec:
               value: {{ .Values.gardener.kubeconfigPath }}
             - name: APP_TEST_AZURE_EVENT_HUBS_ENABLED
               value: "false"
+            - name: APP_UPGRADE_TEST
+              value: "true"
+            - name: APP_UPGRADE_TIMEOUT
+              value: {{ .Values.e2e.upgrade.timeout }}
           command: ["/bin/sh"]
           args: ["-c", "echo 'Starting e2e-upgrade cleanup test on AWS. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Upgrade; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 {{- end -}}
