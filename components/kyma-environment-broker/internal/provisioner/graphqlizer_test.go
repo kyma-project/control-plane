@@ -446,6 +446,10 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
       kubernetesVersion: "1.18.0",
       machineImage: "gardenlinux",
       machineImageVersion: "184.0.0",
+      autoScalerMin: 2,
+      autoScalerMax: 4,
+      maxSurge: 4,
+      maxUnavailable: 1,
       enableKubernetesVersionAutoUpdate: true,
       enableMachineImageVersionAutoUpdate: false,
       oidcConfig: {
@@ -468,6 +472,10 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 			MachineImageVersion:                 strPrt("184.0.0"),
 			EnableKubernetesVersionAutoUpdate:   boolPtr(true),
 			EnableMachineImageVersionAutoUpdate: boolPtr(false),
+			AutoScalerMin:                       ptr.Integer(2),
+			AutoScalerMax:                       ptr.Integer(4),
+			MaxSurge:                            ptr.Integer(4),
+			MaxUnavailable:                      ptr.Integer(1),
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "cid",
 				GroupsClaim:    "groups",
