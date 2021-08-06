@@ -623,6 +623,126 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 	})
 }
 
+func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
+	t.Run("should apply default admin from user_id field", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"fake-user-id"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = expectedAdmins[0]
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+	})
+
+	t.Run("should apply new admin list", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"newAdmin1@test.com", "newAdmin2@test.com"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.Parameters.RuntimeAdministrators = expectedAdmins
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+	})
+}
+
+func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
+	t.Run("should not overwrite default admin (from user_id)", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"fake-user-id"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = expectedAdmins[0]
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		require.NoError(t, err)
+
+		// when
+		creator.SetProvisioningParameters(provisioningParams)
+		input, err := creator.CreateUpgradeShootInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.Administrators)
+	})
+
+	t.Run("should overwrite default admin with new admins list", func(t *testing.T) {
+		// given
+		userId := "fake-user-id"
+		expectedAdmins := []string{"newAdmin1@test.com", "newAdmin2@test.com"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = userId
+		provisioningParams.Parameters.RuntimeAdministrators = expectedAdmins
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		require.NoError(t, err)
+
+		// when
+		creator.SetProvisioningParameters(provisioningParams)
+		input, err := creator.CreateUpgradeShootInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.Administrators)
+	})
+}
+
 func assertOverrides(t *testing.T, componentName string, components internal.ComponentConfigurationInputList, overrides []*gqlschema.ConfigEntryInput) {
 	overriddenComponent, found := find(components, componentName)
 	require.True(t, found)

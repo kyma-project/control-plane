@@ -270,6 +270,9 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		newAdministrators := make([]string, 0, len(r.provisioningParameters.Parameters.RuntimeAdministrators))
 		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
 		r.upgradeShootInput.Administrators = newAdministrators
+	} else {
+		// get default admin (user_id from provisioning operation)
+		r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
 	}
 
 	return nil
