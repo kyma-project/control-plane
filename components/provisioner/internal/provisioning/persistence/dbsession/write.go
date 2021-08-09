@@ -46,12 +46,17 @@ func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
 }
 
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
+	var kymaConfigId *string
+	if cluster.KymaConfig != nil {
+		kymaConfigId = &cluster.KymaConfig.ID
+	}
+
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
-		Pair("active_kyma_config_id", cluster.KymaConfig.ID). // Possible due to deferred constrain
+		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
 		Exec()
 
 	if err != nil {

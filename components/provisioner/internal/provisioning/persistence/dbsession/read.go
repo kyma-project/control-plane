@@ -131,11 +131,13 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig.OIDCConfig = &oidcConfig
 
-	kymaConfig, dberr := r.getKymaConfig(runtimeID, cluster.ActiveKymaConfigId)
-	if dberr != nil {
-		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
+	if cluster.ActiveKymaConfigId != nil {
+		kymaConfig, dberr := r.getKymaConfig(runtimeID, *cluster.ActiveKymaConfigId)
+		if dberr != nil {
+			return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", runtimeID)
+		}
+		cluster.KymaConfig = &kymaConfig
 	}
-	cluster.KymaConfig = kymaConfig
 
 	clusterAdministrators, dberr := r.getClusterAdministrator(runtimeID)
 	if dberr != nil {
@@ -184,11 +186,13 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 	}
 	cluster.ClusterConfig = clusterWithProvider.gardenerConfigRead.GardenerConfig
 
-	kymaConfig, dberr := r.getKymaConfig(clusterWithProvider.Cluster.ID, cluster.ActiveKymaConfigId)
-	if dberr != nil {
-		return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
+	if cluster.ActiveKymaConfigId != nil {
+		kymaConfig, dberr := r.getKymaConfig(clusterWithProvider.Cluster.ID, *cluster.ActiveKymaConfigId)
+		if dberr != nil {
+			return model.Cluster{}, dberr.Append("Cannot get Kyma config for runtimeID: %s", clusterWithProvider.Cluster.ID)
+		}
+		cluster.KymaConfig = &kymaConfig
 	}
-	cluster.KymaConfig = kymaConfig
 
 	return cluster, nil
 }

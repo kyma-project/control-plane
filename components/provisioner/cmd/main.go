@@ -218,6 +218,15 @@ func main() {
 		cfg.OperatorRoleBinding,
 		k8sClientProvider)
 
+	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
+		cfg.ProvisioningTimeout,
+		dbsFactory,
+		directorClient,
+		shootClient,
+		secretsInterface,
+		cfg.OperatorRoleBinding,
+		k8sClientProvider)
+
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
@@ -249,6 +258,7 @@ func main() {
 		releaseProvider,
 		directorClient,
 		provisioningQueue,
+		provisioningNoInstallQueue,
 		deprovisioningQueue,
 		upgradeQueue,
 		shootUpgradeQueue,

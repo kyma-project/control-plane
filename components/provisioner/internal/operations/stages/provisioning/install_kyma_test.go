@@ -49,7 +49,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 
 	cluster := model.Cluster{
 		Kubeconfig: util.StringPtr(kubeconfig),
-		KymaConfig: model.KymaConfig{
+		KymaConfig: &model.KymaConfig{
 			Profile:             &productionProfile,
 			Release:             release,
 			Components:          components,

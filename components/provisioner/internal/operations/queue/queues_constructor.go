@@ -87,6 +87,36 @@ func CreateProvisioningQueue(
 	return NewQueue(provisioningExecutor)
 }
 
+func CreateProvisioningNoInstallQueue(
+	timeouts ProvisioningTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface,
+	secretsClient v1core.SecretInterface,
+	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
+	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
+
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
+
+	provisionSteps := map[model.OperationStage]operations.Step{
+		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
+		model.WaitingForClusterDomain:      waitForClusterDomainStep,
+		model.WaitingForClusterCreation:    waitForClusterCreationStep,
+	}
+
+	provisioningExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.Provision,
+		provisionSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(provisioningExecutor)
+}
+
 func CreateUpgradeQueue(
 	provisioningTimeouts ProvisioningTimeouts,
 	factory dbsession.Factory,

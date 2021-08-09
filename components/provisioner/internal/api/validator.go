@@ -32,8 +32,10 @@ func NewValidator(readSession dbsession.ReadSession) Validator {
 }
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
-	if err := v.validateKymaConfig(input.KymaConfig); err != nil {
-		return err.Append("Kyma config validation error while starting Runtime provisioning")
+	if input.KymaConfig != nil {
+		if err := v.validateKymaConfig(input.KymaConfig); err != nil {
+			return err.Append("Kyma config validation error while starting Runtime provisioning")
+		}
 	}
 
 	if input.RuntimeInput == nil {
@@ -48,7 +50,7 @@ func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeIn
 }
 
 func (v *validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError {
-	err := v.validateKymaConfig(input.KymaConfig)
+	err := v.validateKymaConfigForUpgrade(input.KymaConfig)
 	if err != nil {
 		return err.Append("validation error while starting Runtime upgrade")
 	}
@@ -108,10 +110,6 @@ func (v *validator) ValidateTenantForOperation(operationID, tenant string) apper
 }
 
 func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) apperrors.AppError {
-	if kymaConfig == nil {
-		return apperrors.BadRequest("error: Kyma config not provided")
-	}
-
 	if appError, done := v.validateComponents(kymaConfig); done {
 		return appError
 	}
@@ -121,6 +119,13 @@ func (v *validator) validateKymaConfig(kymaConfig *gqlschema.KymaConfigInput) ap
 	}
 
 	return nil
+}
+
+func (v *validator) validateKymaConfigForUpgrade(kymaConfig *gqlschema.KymaConfigInput) apperrors.AppError {
+	if kymaConfig == nil {
+		return apperrors.BadRequest("error: Kyma config not provided")
+	}
+	return v.validateKymaConfig(kymaConfig)
 }
 
 func (v *validator) validateComponents(kymaConfig *gqlschema.KymaConfigInput) (apperrors.AppError, bool) {

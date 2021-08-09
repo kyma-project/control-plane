@@ -60,11 +60,11 @@ type Cluster struct {
 	Deleted            bool
 	Tenant             string
 	SubAccountId       *string
-	ActiveKymaConfigId string
+	ActiveKymaConfigId *string
 	Administrators     []string
 
 	ClusterConfig GardenerConfig `db:"-"`
-	KymaConfig    KymaConfig     `db:"-"`
+	KymaConfig    *KymaConfig    `db:"-"`
 }
 
 type Operation struct {

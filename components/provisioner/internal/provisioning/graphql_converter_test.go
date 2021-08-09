@@ -389,8 +389,8 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 	}
 }
 
-func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
-	return model.KymaConfig{
+func fixKymaConfig(profile *model.KymaProfile) *model.KymaConfig {
+	return &model.KymaConfig{
 		ID:                  "id",
 		Release:             fixKymaRelease(),
 		Profile:             profile,

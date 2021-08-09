@@ -56,11 +56,14 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 }
 
 func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
-	return &gqlschema.RuntimeConfig{
+	runtimeConfig := &gqlschema.RuntimeConfig{
 		ClusterConfig: c.gardenerConfigToGraphQLConfig(config.ClusterConfig),
-		KymaConfig:    c.kymaConfigToGraphQLConfig(config.KymaConfig),
 		Kubeconfig:    config.Kubeconfig,
 	}
+	if config.KymaConfig != nil {
+		runtimeConfig.KymaConfig = c.kymaConfigToGraphQLConfig(*config.KymaConfig)
+	}
+	return runtimeConfig
 }
 
 func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) *gqlschema.GardenerConfig {

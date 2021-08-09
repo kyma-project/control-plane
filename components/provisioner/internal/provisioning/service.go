@@ -54,11 +54,12 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue   queue.OperationQueue
-	deprovisioningQueue queue.OperationQueue
-	upgradeQueue        queue.OperationQueue
-	shootUpgradeQueue   queue.OperationQueue
-	hibernationQueue    queue.OperationQueue
+	provisioningQueue          queue.OperationQueue
+	provisioningNoInstallQueue queue.OperationQueue
+	deprovisioningQueue        queue.OperationQueue
+	upgradeQueue               queue.OperationQueue
+	shootUpgradeQueue          queue.OperationQueue
+	hibernationQueue           queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -69,6 +70,7 @@ func NewProvisioningService(
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
 	provisioningQueue queue.OperationQueue,
+	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
@@ -76,17 +78,18 @@ func NewProvisioningService(
 
 ) Service {
 	return &service{
-		inputConverter:      inputConverter,
-		graphQLConverter:    graphQLConverter,
-		directorService:     directorService,
-		dbSessionFactory:    factory,
-		provisioner:         provisioner,
-		uuidGenerator:       generator,
-		provisioningQueue:   provisioningQueue,
-		deprovisioningQueue: deprovisioningQueue,
-		upgradeQueue:        upgradeQueue,
-		shootUpgradeQueue:   shootUpgradeQueue,
-		hibernationQueue:    hibernationQueue,
+		inputConverter:             inputConverter,
+		graphQLConverter:           graphQLConverter,
+		directorService:            directorService,
+		dbSessionFactory:           factory,
+		provisioner:                provisioner,
+		uuidGenerator:              generator,
+		provisioningQueue:          provisioningQueue,
+		provisioningNoInstallQueue: provisioningNoInstallQueue,
+		deprovisioningQueue:        deprovisioningQueue,
+		upgradeQueue:               upgradeQueue,
+		shootUpgradeQueue:          shootUpgradeQueue,
+		hibernationQueue:           hibernationQueue,
 	}
 }
 
@@ -135,7 +138,13 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
 	}
 
-	r.provisioningQueue.Add(operation.ID)
+	if config.KymaConfig != nil {
+		log.Info("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
+		r.provisioningQueue.Add(operation.ID)
+	} else {
+		log.Info("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
+		r.provisioningNoInstallQueue.Add(operation.ID)
+	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
@@ -432,9 +441,11 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	err = dbSession.InsertKymaConfig(cluster.KymaConfig)
-	if err != nil {
-		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+	if cluster.KymaConfig != nil {
+		err = dbSession.InsertKymaConfig(*cluster.KymaConfig)
+		if err != nil {
+			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
+		}
 	}
 
 	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
