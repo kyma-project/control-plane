@@ -216,7 +216,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Equal(t, gqlschema.KymaProfileEvaluation, *result.upgradeRuntimeInput.KymaConfig.Profile)
 	})
 
-	t.Run("should build CreateUpgradeShootInput with proper plan", func(t *testing.T) {
+	t.Run("should build CreateUpgradeShootInput with proper autoscaler parameters", func(t *testing.T) {
 		// given
 		var provider HyperscalerInputProvider
 
@@ -248,36 +248,6 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
 		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
 		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
-
-		// given
-		pp = fixProvisioningParameters(broker.TrialPlanID, "")
-		switch *pp.Parameters.Provider {
-		case internal.GCP:
-			provider = &cloudProvider.GcpTrialInput{}
-		case internal.AWS:
-			provider = &cloudProvider.AWSTrialInput{}
-		default:
-			provider = &cloudProvider.AzureTrialInput{}
-		}
-
-		// when
-		input, err = ibf.CreateUpgradeShootInput(pp)
-
-		// Then
-		assert.NoError(t, err)
-		require.IsType(t, &RuntimeInput{}, input)
-
-		result = input.(*RuntimeInput)
-		autoscalerMax = *result.upgradeShootInput.GardenerConfig.AutoScalerMax
-		autoscalerMin = *result.upgradeShootInput.GardenerConfig.AutoScalerMin
-		maxSurge = *result.upgradeShootInput.GardenerConfig.MaxSurge
-		maxUnavailable = *result.upgradeShootInput.GardenerConfig.MaxUnavailable
-
-		assert.Equal(t, autoscalerMax, provider.Defaults().GardenerConfig.AutoScalerMax)
-		assert.Equal(t, autoscalerMin, provider.Defaults().GardenerConfig.AutoScalerMin)
-		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
-		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
-		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
 	})
 
 }
@@ -286,8 +256,10 @@ func fixProvisioningParameters(planID, kymaVersion string) internal.Provisioning
 	pp := fixture.FixProvisioningParameters("")
 	pp.PlanID = planID
 	pp.Parameters.KymaVersion = kymaVersion
-	pp.Parameters.AutoScalerMin = ptr.Integer(1)
-	pp.Parameters.AutoScalerMax = ptr.Integer(1)
+	pp.Parameters.AutoScalerMin = ptr.Integer(2)
+	pp.Parameters.AutoScalerMax = ptr.Integer(10)
+	pp.Parameters.MaxSurge = ptr.Integer(4)
+	pp.Parameters.MaxUnavailable = ptr.Integer(1)
 
 	return pp
 }

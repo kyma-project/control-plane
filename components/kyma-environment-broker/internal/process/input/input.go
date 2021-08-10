@@ -272,6 +272,12 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		r.upgradeShootInput.Administrators = newAdministrators
 	}
 
+	// use autoscaler value in provisioningParameters if it is not nil
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMin, r.provisioningParameters.Parameters.AutoScalerMin)
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
+
 	return nil
 }
 
