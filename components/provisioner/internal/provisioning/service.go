@@ -141,10 +141,10 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	}
 
 	if withKymaConfig {
-		log.Info("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
+		log.Infof("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
 		r.provisioningQueue.Add(operation.ID)
 	} else {
-		log.Info("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
+		log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
 		r.provisioningNoInstallQueue.Add(operation.ID)
 	}
 
