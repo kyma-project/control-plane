@@ -122,7 +122,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	withKymaConfig := config.KymaConfig != nil
 
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
-	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
+	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, apperrors.Internal(dberr.Error())
