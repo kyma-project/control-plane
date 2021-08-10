@@ -49,7 +49,6 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 }
 
 func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
-	log.Info("Waiting for cluster domain for runtime: %", cluster.ID)
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err

@@ -49,7 +49,6 @@ func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
 }
 
 func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
-	log.Info("Waiting for cluster creation of runtime: %", cluster.ID)
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		return operations.StageResult{}, err

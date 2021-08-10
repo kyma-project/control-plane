@@ -64,7 +64,6 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 }
 
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
-	log.Info("Creating Bindings for Operators for runtime: %", cluster.ID)
 	if cluster.Kubeconfig == nil {
 		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
 	}
