@@ -91,19 +91,12 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
 	}
 
-	// modify OIDC configuration
+	// modify configuration
 	result := gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: fullInput.GardenerConfig.OidcConfig,
 		},
-	}
-
-	// modify runtime admins list
-	if len(fullInput.Administrators) != 0 {
-		result.Administrators = append(
-			result.Administrators,
-			fullInput.Administrators...,
-		)
+		Administrators: fullInput.Administrators,
 	}
 
 	return result, nil

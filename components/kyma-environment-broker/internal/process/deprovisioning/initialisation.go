@@ -29,8 +29,8 @@ const (
 
 type SMClientFactory interface {
 	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+	ForCustomerCredentials(req servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(req servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
 type InitialisationStep struct {

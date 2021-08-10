@@ -120,6 +120,7 @@ serviceManager:
   url: "TBD"
   username: "TBD"
   password: "TBD"
+  subaccountWithRequestCredentials: "TBD"
 
 xsuaa:
   disabled: true

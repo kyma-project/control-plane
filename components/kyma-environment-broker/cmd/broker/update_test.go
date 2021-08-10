@@ -78,6 +78,7 @@ func TestUpdate(t *testing.T) {
 				UsernamePrefix: "",
 			},
 		},
+		Administrators: []string{"john.smith@email.com"},
 	})
 }
 
@@ -131,6 +132,7 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: defaultOIDCConfig(),
 		},
+		Administrators: []string{"john.smith@email.com"},
 	})
 }
 
@@ -197,6 +199,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 				UsernamePrefix: "",
 			},
 		},
+		Administrators: []string{"john.smith@email.com"},
 	})
 }
 
@@ -395,12 +398,77 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
-func TestUpdateAdminsNotChanged(t *testing.T) {
+func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
 	id := uuid.New().String()
-	expectedAdmins := []string{"admin@kyma.cx"}
+	expectedAdmins := []string{"john.smith@email.com"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+			"user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+}
+
+func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"john.smith@email.com"}
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
@@ -417,7 +485,11 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
 				   },
 					"parameters": {
 						"name": "testing-cluster",
-						"administrators": ["admin@kyma.cx"]
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
+						}
 			}
    }`)
 
@@ -431,12 +503,75 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
        "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
        "context": {
            "globalaccount_id": "g-account-id",
-           "user_id": "john.smith@email.com"
+			"user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:    "id-ooo",
+				IssuerURL:   "https://issuer.url.com",
+				SigningAlgs: []string{"RSA256"},
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+}
+
+func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"john.smith@email.com"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+			"user_id": "jack.anvil@email.com"
        },
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-                "issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["RSA256"],
+				"issuerURL": "https://issuer.url.com"
 			}
 		}
    }`)
@@ -453,8 +588,75 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:  "id-ooo",
-				IssuerURL: "https://issuer.url.com",
+				ClientID:    "id-ooo",
+				IssuerURL:   "https://issuer.url.com",
+				SigningAlgs: []string{"RSA256"},
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+}
+
+func TestUpdateDefaultAdminOverwritten(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"newAdmin1@kyma.cx", "newAdmin2@kyma.cx"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+			"user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+			"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -462,7 +664,7 @@ func TestUpdateAdminsNotChanged(t *testing.T) {
 	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
 }
 
-func TestUpdateAdminsChanged(t *testing.T) {
+func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
@@ -484,7 +686,210 @@ func TestUpdateAdminsChanged(t *testing.T) {
 				   },
 					"parameters": {
 						"name": "testing-cluster",
-						"administrators": ["admin@kyma.cx"]
+						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
+}
+
+func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"newAdmin1@kyma.cx", "newAdmin2@kyma.cx"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id"
+       },
+		"parameters": {
+			"oidc": {
+				"clientID": "id-ooo",
+				"signingAlgs": ["RSA256"],
+				"issuerURL": "https://issuer.url.com"
+			}
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:    "id-ooo",
+				IssuerURL:   "https://issuer.url.com",
+				SigningAlgs: []string{"RSA256"},
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
+}
+
+func TestUpdateCustomAdminsOverwritten(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"newAdmin3@kyma.cx", "newAdmin4@kyma.cx"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+			"administrators":["newAdmin3@kyma.cx", "newAdmin4@kyma.cx"]
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
+		Administrators: expectedAdmins,
+	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
+}
+
+func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins := []string{"newAdmin3@kyma.cx", "newAdmin4@kyma.cx"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
    }`)
 
@@ -503,9 +908,10 @@ func TestUpdateAdminsChanged(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-                "issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["RSA256"],
+				"issuerURL": "https://issuer.url.com"
 			},
-			"administrators": ["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"administrators":["newAdmin3@kyma.cx", "newAdmin4@kyma.cx"]
 		}
    }`)
 
@@ -521,11 +927,118 @@ func TestUpdateAdminsChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:  "id-ooo",
-				IssuerURL: "https://issuer.url.com",
+				ClientID:    "id-ooo",
+				IssuerURL:   "https://issuer.url.com",
+				SigningAlgs: []string{"RSA256"},
 			},
 		},
 		Administrators: expectedAdmins,
 	})
 	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins)
+}
+
+func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+	expectedAdmins1 := []string{"newAdmin3@kyma.cx", "newAdmin4@kyma.cx"}
+	expectedAdmins2 := []string{"newAdmin5@kyma.cx", "newAdmin6@kyma.cx"}
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			}
+   }`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "jack.anvil@email.com"
+       },
+		"parameters": {
+			"administrators":["newAdmin3@kyma.cx", "newAdmin4@kyma.cx"]
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
+		Administrators: expectedAdmins1,
+	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins1)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id"
+       },
+		"parameters": {
+			"oidc": {
+				"clientID": "id-ooo",
+				"signingAlgs": ["RSA256"],
+				"issuerURL": "https://issuer.url.com"
+			},
+			"administrators":["newAdmin5@kyma.cx", "newAdmin6@kyma.cx"]
+		}
+   }`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID = suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:    "id-ooo",
+				IssuerURL:   "https://issuer.url.com",
+				SigningAlgs: []string{"RSA256"},
+			},
+		},
+		Administrators: expectedAdmins2,
+	})
+	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins2)
 }

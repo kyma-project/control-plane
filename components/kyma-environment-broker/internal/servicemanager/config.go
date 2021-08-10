@@ -11,6 +11,10 @@ type Config struct {
 	URL          string
 	Password     string
 	Username     string
+
+	// SubaccountWithRequestCredentials defines a subaccount which does not follow the rule defined by OverrideMode
+	// - for this subaccount the service manager credentials are never overridden.
+	SubaccountWithRequestCredentials string
 }
 
 type ServiceManagerOverrideMode string

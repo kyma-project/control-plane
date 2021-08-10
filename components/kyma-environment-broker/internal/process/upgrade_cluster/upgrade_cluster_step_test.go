@@ -61,6 +61,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 				UsernamePrefix: expectedOIDC.UsernamePrefix,
 			},
 		},
+		Administrators: []string{provisioningOperation.ProvisioningParameters.ErsContext.UserID},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
 		Operation: "",
