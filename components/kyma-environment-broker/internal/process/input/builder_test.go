@@ -256,10 +256,8 @@ func fixProvisioningParameters(planID, kymaVersion string) internal.Provisioning
 	pp := fixture.FixProvisioningParameters("")
 	pp.PlanID = planID
 	pp.Parameters.KymaVersion = kymaVersion
-	pp.Parameters.AutoScalerMin = ptr.Integer(2)
-	pp.Parameters.AutoScalerMax = ptr.Integer(10)
-	pp.Parameters.MaxSurge = ptr.Integer(4)
-	pp.Parameters.MaxUnavailable = ptr.Integer(1)
+	pp.Parameters.AutoScalerMin = ptr.Integer(1)
+	pp.Parameters.AutoScalerMax = ptr.Integer(1)
 
 	return pp
 }
