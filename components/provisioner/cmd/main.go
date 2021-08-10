@@ -275,6 +275,8 @@ func main() {
 
 	provisioningQueue.Run(ctx.Done())
 
+	provisioningNoInstallQueue.Run(ctx.Done())
+
 	deprovisioningQueue.Run(ctx.Done())
 
 	upgradeQueue.Run(ctx.Done())
@@ -332,14 +334,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -361,8 +363,11 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision {
-			provisioningQueue.Add(op.ID)
-			continue
+			if *op.WithInstallation {
+				provisioningQueue.Add(op.ID)
+			} else {
+				provisioningNoInstallQueue.Add(op.ID)
+			}
 		}
 
 		if op.Type == model.Deprovision {

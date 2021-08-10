@@ -119,6 +119,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
+	withKymaConfig := config.KymaConfig != nil
+
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
 	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
 	if dberr != nil {
@@ -138,7 +140,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
 	}
 
-	if config.KymaConfig != nil {
+	if withKymaConfig {
 		log.Info("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
 		r.provisioningQueue.Add(operation.ID)
 	} else {
@@ -426,7 +428,7 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error
 	}, nil
 }
 
-func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster) (model.Operation, dberrors.Error) {
+func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster, withKymaConfig bool) (model.Operation, dberrors.Error) {
 	timestamp := time.Now()
 
 	cluster.CreationTimestamp = timestamp
@@ -441,14 +443,17 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
+	withInstallation := withKymaConfig
+
 	if cluster.KymaConfig != nil {
 		err = dbSession.InsertKymaConfig(*cluster.KymaConfig)
 		if err != nil {
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
+		withInstallation = true
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, model.WaitingForClusterDomain, timestamp, "Provisioning started")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, &withInstallation, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
 	}
@@ -469,7 +474,7 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
 	}
 
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, nil, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
@@ -485,7 +490,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 		return model.Operation{}, err.Append("Failed to insert Kyma Config")
 	}
 
-	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
+	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, nil, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set operation started")
 	}
@@ -514,7 +519,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 func (r *service) setHibernationStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
 	log.Infof("Starting hibernation operation")
 
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.WaitForHibernation, time.Now(), "Starting ")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, nil, model.WaitForHibernation, time.Now(), "Starting ")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start hibernation operation:  %s", dbError.Error())
@@ -527,20 +532,22 @@ func (r *service) setOperationStarted(
 	dbSession dbsession.WriteSession,
 	runtimeID string,
 	operationType model.OperationType,
+	withInstallation *bool,
 	operationStage model.OperationStage,
 	timestamp time.Time,
 	message string) (model.Operation, dberrors.Error) {
 	id := r.uuidGenerator.New()
 
 	operation := model.Operation{
-		ID:             id,
-		Type:           operationType,
-		StartTimestamp: timestamp,
-		State:          model.InProgress,
-		Message:        message,
-		ClusterID:      runtimeID,
-		Stage:          operationStage,
-		LastTransition: &timestamp,
+		ID:               id,
+		Type:             operationType,
+		WithInstallation: withInstallation,
+		StartTimestamp:   timestamp,
+		State:            model.InProgress,
+		Message:          message,
+		ClusterID:        runtimeID,
+		Stage:            operationStage,
+		LastTransition:   &timestamp,
 	}
 
 	err := dbSession.InsertOperation(operation)
