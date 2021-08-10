@@ -39,19 +39,20 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
+	// as autoscaler values are not nil in provisioningParameters, the provider values are not used
 	provider := fixGetHyperscalerProviderForPlanID(operation.ProvisioningParameters.PlanID)
 	assert.NotNil(t, provider)
-	//t.Logf("%v, %v, %v, %v", provider.Defaults().GardenerConfig.AutoScalerMin, provider.Defaults().GardenerConfig.AutoScalerMax, provider.Defaults().GardenerConfig.MaxSurge, provider.Defaults().GardenerConfig.MaxUnavailable)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
-			AutoScalerMin:       ptr.Integer(provider.Defaults().GardenerConfig.AutoScalerMin),
-			AutoScalerMax:       ptr.Integer(provider.Defaults().GardenerConfig.AutoScalerMax),
-			MaxSurge:            ptr.Integer(provider.Defaults().GardenerConfig.MaxSurge),
-			MaxUnavailable:      ptr.Integer(provider.Defaults().GardenerConfig.MaxUnavailable),
+			AutoScalerMin:       operation.ProvisioningParameters.Parameters.AutoScalerMin,
+			AutoScalerMax:       operation.ProvisioningParameters.Parameters.AutoScalerMax,
+			MaxSurge:            operation.ProvisioningParameters.Parameters.MaxSurge,
+			MaxUnavailable:      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,
