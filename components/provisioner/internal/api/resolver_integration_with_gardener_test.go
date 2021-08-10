@@ -170,6 +170,16 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		mockK8sClientProvider)
 	provisioningQueue.Run(queueCtx.Done())
 
+	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
+		testProvisioningTimeouts(),
+		dbsFactory,
+		directorServiceMock,
+		shootInterface,
+		secretsInterface,
+		testOperatorRoleBinding(),
+		mockK8sClientProvider)
+	provisioningNoInstallQueue.Run(queueCtx.Done())
+
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
 
@@ -234,7 +244,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator(dbsFactory.NewReadSession())
 
