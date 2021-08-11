@@ -147,10 +147,10 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		diskType: "Standard_LRS",
 		targetSecret: "scr",
 		workerCidr: "10.250.0.0/19",
-        autoScalerMin: 0,
-        autoScalerMax: 0,
-        maxSurge: 0,
-		maxUnavailable: 0,
+        autoScalerMin: 2,
+        autoScalerMax: 4,
+        maxSurge: 4,
+		maxUnavailable: 1,
 	}`
 
 	// when
@@ -165,6 +165,10 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		TargetSecret:      "scr",
 		MachineType:       "Standard_D4_v3",
 		KubernetesVersion: "1.18",
+		AutoScalerMin:     2,
+		AutoScalerMax:     4,
+		MaxSurge:          4,
+		MaxUnavailable:    1,
 	})
 
 	// then
@@ -442,6 +446,10 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
       kubernetesVersion: "1.18.0",
       machineImage: "gardenlinux",
       machineImageVersion: "184.0.0",
+      autoScalerMin: 2,
+      autoScalerMax: 4,
+      maxSurge: 4,
+      maxUnavailable: 1,
       enableKubernetesVersionAutoUpdate: true,
       enableMachineImageVersionAutoUpdate: false,
       oidcConfig: {
@@ -464,6 +472,10 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 			MachineImageVersion:                 strPrt("184.0.0"),
 			EnableKubernetesVersionAutoUpdate:   boolPtr(true),
 			EnableMachineImageVersionAutoUpdate: boolPtr(false),
+			AutoScalerMin:                       ptr.Integer(2),
+			AutoScalerMax:                       ptr.Integer(4),
+			MaxSurge:                            ptr.Integer(4),
+			MaxUnavailable:                      ptr.Integer(1),
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "cid",
 				GroupsClaim:    "groups",

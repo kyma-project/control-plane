@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
+	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -36,6 +37,10 @@ const (
 	fixSubAccountID            = "6424cc6d-5fce-49fc-b720-cf1fc1f36c7d"
 	fixProvisionerOperationID  = "e04de524-53b3-4890-b05a-296be393e4ba"
 )
+
+type fixHyperscalerInputProvider interface {
+	Defaults() *gqlschema.ClusterConfigInput
+}
 
 func createMonitors(t *testing.T, client *avs.Client, internalStatus string, externalStatus string) internal.AvsLifecycleData {
 	// monitors
@@ -737,4 +742,29 @@ func fixInstanceRuntimeStatus() internal.Instance {
 
 func StringPtr(s string) *string {
 	return &s
+}
+
+// no forFreemiumPlan and forTrialPlan supported for the mock testing. planID by default is broker.AzurePlanID.
+func fixGetHyperscalerProviderForPlanID(planID string) fixHyperscalerInputProvider {
+	var provider fixHyperscalerInputProvider
+	switch planID {
+	case broker.GCPPlanID:
+		provider = &cloudProvider.GcpInput{}
+	case broker.OpenStackPlanID:
+		provider = &cloudProvider.OpenStackInput{}
+	case broker.AzurePlanID:
+		provider = &cloudProvider.AzureInput{}
+	case broker.AzureLitePlanID:
+		provider = &cloudProvider.AzureLiteInput{}
+	case broker.AzureHAPlanID:
+		provider = &cloudProvider.AzureHAInput{}
+	case broker.AWSPlanID:
+		provider = &cloudProvider.AWSInput{}
+	case broker.AWSHAPlanID:
+		provider = &cloudProvider.AWSHAInput{}
+		// insert cases for other providers like AWS or GCP
+	default:
+		return nil
+	}
+	return provider
 }

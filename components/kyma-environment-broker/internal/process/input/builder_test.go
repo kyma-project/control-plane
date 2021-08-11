@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
+	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -213,6 +214,40 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.Nil(t, result.provisionRuntimeInput.ClusterConfig)
 		assert.NotNil(t, result.upgradeRuntimeInput.KymaConfig.Profile)
 		assert.Equal(t, gqlschema.KymaProfileEvaluation, *result.upgradeRuntimeInput.KymaConfig.Profile)
+	})
+
+	t.Run("should build CreateUpgradeShootInput with proper autoscaler parameters", func(t *testing.T) {
+		// given
+		var provider HyperscalerInputProvider
+
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", "1.10").Return([]v1alpha1.KymaComponent{}, nil).Once()
+		defer componentsProvider.AssertExpectations(t)
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+		provider = &cloudProvider.GcpInput{} // for broker.GCPPlanID
+
+		// when
+		input, err := ibf.CreateUpgradeShootInput(pp)
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result := input.(*RuntimeInput)
+		autoscalerMax := *result.upgradeShootInput.GardenerConfig.AutoScalerMax
+		autoscalerMin := *result.upgradeShootInput.GardenerConfig.AutoScalerMin
+		maxSurge := *result.upgradeShootInput.GardenerConfig.MaxSurge
+		maxUnavailable := *result.upgradeShootInput.GardenerConfig.MaxUnavailable
+
+		assert.Equal(t, autoscalerMax, provider.Defaults().GardenerConfig.AutoScalerMax)
+		assert.Equal(t, autoscalerMin, provider.Defaults().GardenerConfig.AutoScalerMin)
+		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
+		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
+		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
 	})
 
 }
