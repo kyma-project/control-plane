@@ -86,14 +86,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		MachineImage:                "253",
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, internal.OIDCConfigDTO{
-		ClientID:       "clinet-id-oidc",
-		GroupsClaim:    "gropups",
-		IssuerURL:      "https://issuer.url",
-		SigningAlgs:    []string{"RSA256"},
-		UsernameClaim:  "sub",
-		UsernamePrefix: "-",
-	})
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
 
@@ -152,6 +145,28 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
 	ts.httpServer = httptest.NewServer(ts.router)
 	return ts
+}
+
+func defaultOIDCValues() internal.OIDCConfigDTO {
+	return internal.OIDCConfigDTO{
+		ClientID:       "clinet-id-oidc",
+		GroupsClaim:    "gropups",
+		IssuerURL:      "https://issuer.url",
+		SigningAlgs:    []string{"RSA256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	}
+}
+
+func defaultOIDCConfig() *gqlschema.OIDCConfigInput {
+	return &gqlschema.OIDCConfigInput{
+		ClientID:       defaultOIDCValues().ClientID,
+		GroupsClaim:    defaultOIDCValues().GroupsClaim,
+		IssuerURL:      defaultOIDCValues().IssuerURL,
+		SigningAlgs:    defaultOIDCValues().SigningAlgs,
+		UsernameClaim:  defaultOIDCValues().UsernameClaim,
+		UsernamePrefix: defaultOIDCValues().UsernamePrefix,
+	}
 }
 
 func (s *BrokerSuiteTest) CallAPI(method string, path string, body string) *http.Response {
@@ -384,6 +399,19 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	assert.NoError(s.t, err)
 
 	assert.Equal(s.t, config, shootUpgrade)
+}
+
+func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expectedAdmins []string) {
+	var instance *internal.Instance
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		instance = s.GetInstance(instanceId)
+		if instance != nil {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, expectedAdmins, instance.Parameters.Parameters.RuntimeAdministrators)
 }
 
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {

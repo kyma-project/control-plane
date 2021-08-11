@@ -94,6 +94,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
+		ExposureClassName:                   config.ExposureClassName,
 	}
 }
 

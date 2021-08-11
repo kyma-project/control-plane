@@ -5,22 +5,22 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @jasiu001
+* @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue
+/resources/kcp/values.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue @voigt @wozniakjan
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
+/scripts @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @voigt @wozniakjan
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @rafalpotempa
+/resources/kcp/templates/registration-job.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @voigt @wozniakjan
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
-/components/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
-/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz  @ksputo @jasiu001 @crabtree
+/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
+/components/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
+/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
 
 # Runtime Provisioner
 /resources/kcp/charts/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @Maladie @koala7659 @rafalpotempa
@@ -31,7 +31,7 @@
 
 
 # e2e-provisioning
-/tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
+/tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
 
 # Kyma metrics collector
 /resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
@@ -42,7 +42,7 @@
 /resources/oidc-kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
 
 # KCP CLI
-/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @jasiu001 @crabtree
+/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl

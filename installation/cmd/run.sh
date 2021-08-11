@@ -23,10 +23,11 @@ fi
 kyma provision minikube
 kyma install -c $INSTALLER_CR_PATH -o $OVERRIDES_KYMA --source $KYMA_SOURCE
 
-bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
+#remove the compass-installer.sh
+#bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh
 
 bash "${ROOT_PATH}"/installation/scripts/run-kcp-installer.sh
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
 echo "Adding entries to /etc/hosts..."
-sudo sh -c 'echo "\n$(minikube ip) adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local" >> /etc/hosts'
+sudo sh -c 'echo "\n$(minikube ip) kyma-env-broker.kyma.local" >> /etc/hosts'

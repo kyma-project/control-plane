@@ -61,7 +61,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -126,10 +125,6 @@ type Config struct {
 	// Service Manager services
 	XSUAA struct {
 		Disabled bool `envconfig:"default=true"`
-	}
-	Ems struct {
-		Disabled                              bool `envconfig:"default=true"`
-		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
 	}
 	Connectivity struct {
 		Disabled bool `envconfig:"default=true"`
@@ -235,15 +230,13 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
@@ -559,12 +552,13 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
-				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
+			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
 				}, db.Operations()),
-			disabled: cfg.Ems.Disabled,
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -580,11 +574,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 				NamespaceAdminRole:  "nar",
 			}),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -626,11 +615,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -729,11 +713,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   1,
 			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
 		},
@@ -741,11 +720,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 2,
@@ -788,14 +762,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	}{
 		{
 			weight: 1,
-			step: upgrade_kyma.NewServiceManagerOfferingStep("EMS_Offering",
-				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
-				}, db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
 				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
@@ -817,18 +783,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewEmsUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   4,
 			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   7,
-			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight:   7,

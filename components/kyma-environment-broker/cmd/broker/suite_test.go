@@ -66,7 +66,6 @@ const (
 	globalAccountID        = "dummy-ga-id"
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
-	emsOfferingID          = "ems-fake-id"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
@@ -95,8 +94,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.Ems.Disabled = true
-	cfg.Ems.SkipDeprovisionAzureEventingAtUpgrade = true
 	cfg.Connectivity.Disabled = true
 	cfg.AuditLog.Disabled = false
 	cfg.AuditLog = auditlog.Config{
@@ -160,7 +157,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil, nil), nil, inMemoryFs, logs, cli)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -195,6 +192,8 @@ type RuntimeOptions struct {
 	KymaVersion      string
 	OverridesVersion string
 	OIDC             *internal.OIDCConfigDTO
+	UserID           string
+	RuntimeAdmins    []string
 }
 
 func (o *RuntimeOptions) ProvideGlobalAccountID() string {
@@ -245,6 +244,18 @@ func (o *RuntimeOptions) ProvideZonesCount() *int {
 func (o *RuntimeOptions) ProvideOIDC() *internal.OIDCConfigDTO {
 	if o.OIDC != nil {
 		return o.OIDC
+	} else {
+		return nil
+	}
+}
+
+func (o *RuntimeOptions) ProvideUserID() string {
+	return o.UserID
+}
+
+func (o *RuntimeOptions) ProvideRuntimeAdmins() []string {
+	if o.RuntimeAdmins != nil {
+		return o.RuntimeAdmins
 	} else {
 		return nil
 	}
@@ -530,6 +541,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
+			UserID:          options.ProvideUserID(),
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 				URL: "sm_url",
 				Credentials: internal.ServiceManagerCredentials{
@@ -542,11 +554,12 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
-			Region:           options.ProvideRegion(),
-			ZonesCount:       options.ProvideZonesCount(),
-			KymaVersion:      options.KymaVersion,
-			OverridesVersion: options.OverridesVersion,
-			OIDC:             options.ProvideOIDC(),
+			Region:                options.ProvideRegion(),
+			ZonesCount:            options.ProvideZonesCount(),
+			KymaVersion:           options.KymaVersion,
+			OverridesVersion:      options.OverridesVersion,
+			OIDC:                  options.ProvideOIDC(),
+			RuntimeAdministrators: options.ProvideRuntimeAdmins(),
 		},
 	}
 
@@ -789,6 +802,13 @@ func (s *ProvisioningSuite) AssertOIDC(oidcConfig gqlschema.OIDCConfigInput) {
 	assert.Equal(s.t, &oidcConfig, input.ClusterConfig.GardenerConfig.OidcConfig)
 }
 
+func (s *ProvisioningSuite) AssertRuntimeAdmins(admins []string) {
+	input := s.fetchProvisionInput()
+	currentAdmins := input.ClusterConfig.Administrators
+
+	assert.ElementsMatch(s.t, currentAdmins, admins)
+}
+
 func regularSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("regular-%s", ht)
 }
@@ -842,31 +862,11 @@ func fixConfig() *Config {
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 
-	accountProvider.On("GardenerCredentials", mock.Anything, mock.Anything).Return(func(ht hyperscaler.Type, tn string) hyperscaler.Credentials {
-		return hyperscaler.Credentials{
-			HyperscalerType: hyperscaler.Azure,
-			CredentialData: map[string][]byte{
-				"subscriptionID": []byte("subscriptionID"),
-				"clientID":       []byte("clientID"),
-				"clientSecret":   []byte("clientSecret"),
-				"tenantID":       []byte("tenantID"),
-			},
-			Name: regularSubscription(ht),
-		}
-	}, nil)
+	accountProvider.On("GardenerSecretName", mock.Anything, mock.Anything).Return(
+		func(ht hyperscaler.Type, tn string) string { return regularSubscription(ht) }, nil)
 
-	accountProvider.On("GardenerSharedCredentials", hyperscaler.Azure).Return(func(ht hyperscaler.Type) hyperscaler.Credentials {
-		return hyperscaler.Credentials{
-			HyperscalerType: hyperscaler.Azure,
-			CredentialData: map[string][]byte{
-				"subscriptionID": []byte("subscriptionID"),
-				"clientID":       []byte("clientID"),
-				"clientSecret":   []byte("clientSecret"),
-				"tenantID":       []byte("tenantID"),
-			},
-			Name: sharedSubscription(ht),
-		}
-	}, nil)
+	accountProvider.On("GardenerSharedSecretName", hyperscaler.Azure).Return(
+		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
@@ -880,12 +880,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		BrokerID:  brokerID,
 	},
 		{
-			ID:        emsOfferingID,
-			Name:      provisioning.EmsOfferingName,
-			CatalogID: servicemanager.FakeEmsServiceID,
-			BrokerID:  brokerID,
-		},
-		{
 			ID:        "connectivity-oferring-id",
 			Name:      provisioning.ConnectivityOfferingName,
 			CatalogID: "connectivity-service-id",
@@ -896,11 +890,6 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		Name:      "application",
 		CatalogID: "xsuaa",
 	},
-		{
-			ID:        "ems-plan-id",
-			Name:      provisioning.EmsPlanName,
-			CatalogID: provisioning.EmsPlanName,
-		},
 		{
 			ID:        "connectivity-plan-id",
 			Name:      provisioning.ConnectivityPlanName,

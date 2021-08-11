@@ -30,6 +30,7 @@ type GardenerConfig {
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
     oidcConfig: OIDCConfig
+    exposureClassName: String
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -199,6 +200,7 @@ input GardenerConfigInput {
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
+    exposureClassName: String                       # Name of the ExposureClass
 }
 
 input OIDCConfigInput {
@@ -264,7 +266,7 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
+    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -294,6 +296,7 @@ input GardenerUpgradeInput {
     enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
     oidcConfig: OIDCConfigInput
+    exposureClassName: String                     # ExposureClass name
 }
 
 type Mutation {

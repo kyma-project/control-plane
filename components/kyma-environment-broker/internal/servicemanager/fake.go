@@ -23,16 +23,16 @@ func NewPassthroughServiceManagerClientFactory(cli Client) *passthroughServiceMa
 	}
 }
 
-func (f *passthroughServiceManagerClientFactory) ForCredentials(credentials *Credentials) Client {
+func (f *passthroughServiceManagerClientFactory) ForCredentials(request RequestContext) Client {
 	return f.cli
 }
 
-func (f *passthroughServiceManagerClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
+func (f *passthroughServiceManagerClientFactory) ForCustomerCredentials(request RequestContext, log logrus.FieldLogger) (Client, error) {
 	return f.cli, nil
 }
 
-func (f *passthroughServiceManagerClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
-	return reqCredentials, nil
+func (f *passthroughServiceManagerClientFactory) ProvideCredentials(request RequestContext, log logrus.FieldLogger) (*Credentials, error) {
+	return request.Credentials, nil
 }
 
 type fakeServiceManagerClient struct {
@@ -71,12 +71,12 @@ func (f *fakeServiceManagerClientFactory) ForCredentials(credentials *Credential
 	return f.cli
 }
 
-func (f *fakeServiceManagerClientFactory) ForCustomerCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (Client, error) {
+func (f *fakeServiceManagerClientFactory) ForCustomerCredentials(req RequestContext, log logrus.FieldLogger) (Client, error) {
 	return f.cli, nil
 }
 
-func (f *fakeServiceManagerClientFactory) ProvideCredentials(reqCredentials *Credentials, log logrus.FieldLogger) (*Credentials, error) {
-	return reqCredentials, nil
+func (f *fakeServiceManagerClientFactory) ProvideCredentials(req RequestContext, log logrus.FieldLogger) (*Credentials, error) {
+	return req.Credentials, nil
 }
 
 func (f *fakeServiceManagerClient) ListOfferings() (*types.ServiceOfferings, error) {

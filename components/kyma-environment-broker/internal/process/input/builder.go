@@ -265,6 +265,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
 		trialNodesNumber:          f.config.TrialNodesNumber,
+		oidcDefaultValues:         f.oidcDefaultValues,
 	}, nil
 }
 
@@ -331,6 +332,7 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 		mutex:                    nsync.NewNamedMutex(),
 		hyperscalerInputProvider: provider,
 		trialNodesNumber:         f.config.TrialNodesNumber,
+		oidcDefaultValues:        f.oidcDefaultValues,
 	}, nil
 }
 
@@ -347,6 +349,12 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	if f.config.MachineImageVersion != "" {
 		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
+
+	// sync with the autoscaler settings
+	input.GardenerConfig.AutoScalerMin = &provider.Defaults().GardenerConfig.AutoScalerMin
+	input.GardenerConfig.AutoScalerMax = &provider.Defaults().GardenerConfig.AutoScalerMax
+	input.GardenerConfig.MaxSurge = &provider.Defaults().GardenerConfig.MaxSurge
+	input.GardenerConfig.MaxUnavailable = &provider.Defaults().GardenerConfig.MaxUnavailable
 
 	return input
 }

@@ -246,7 +246,18 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	if params.LicenceType != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.LicenceType = params.LicenceType
 	}
-	r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+
+	// admins parameter check
+	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) == 0 {
+		// default admin set from UserID in ERSContext
+		r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+	} else {
+		// set admins for new runtime
+		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
+			r.provisionRuntimeInput.ClusterConfig.Administrators,
+			r.provisioningParameters.Parameters.RuntimeAdministrators...,
+		)
+	}
 
 	r.hyperscalerInputProvider.ApplyParameters(r.provisionRuntimeInput.ClusterConfig, r.provisioningParameters)
 
@@ -254,7 +265,22 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 }
 
 func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
-	// As of now cluster upgrade doesn't support upgrading parameters which could also be specified as provisioning parameters
+	if len(r.provisioningParameters.Parameters.RuntimeAdministrators) != 0 {
+		// prepare new admins list for existing runtime
+		newAdministrators := make([]string, 0, len(r.provisioningParameters.Parameters.RuntimeAdministrators))
+		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
+		r.upgradeShootInput.Administrators = newAdministrators
+	} else {
+		// get default admin (user_id from provisioning operation)
+		r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+	}
+
+	// use autoscaler value in provisioningParameters if it is not nil
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMin, r.provisioningParameters.Parameters.AutoScalerMin)
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
+
 	return nil
 }
 
