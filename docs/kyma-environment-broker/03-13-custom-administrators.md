@@ -1,14 +1,14 @@
 ---
-title: Custom runtime administrators configuration
+title: Set a custom list of runtime administrators
 type: Details
 ---
 
-Kyma Environment Broker allows a SKR provisioning/update with a custom list of the runtime administrators.
-To do so, specify the additional `administrators` parameter in the provisioning/update request.
->NOTE: Make sure to provide at least one administrator in the list. Empty list causes a validation error.
+Kyma Environment Broker allows you to set a custom list of runtime administrators during SKR provisioning and update operations.
+To do so, specify the additional **administrators** parameter in the provisioning or update request.
+>**NOTE:** Make sure to provide at least one administrator in the list. Empty list causes a validation error.
 
-In case of the provisioning request, providing the `administrators` parameter overwrites the default administrator, which is taken from the `user_id` field.
-See the example below:
+In the provisioning request, the **administrators** parameter overwrites the default administrator list that is taken from the **user_id** field.
+See the example:
 
 ```bash
    export VERSION=1.15.0
@@ -31,8 +31,8 @@ See the example below:
    }"
 ```
 
-An update request with the valid `administrators` parameter overwrites the last list of administrators.
-See the example below:
+In the update request, the **administrators** parameter overwrites the last list of administrators.
+See the example:
 
 ```bash
    export VERSION=1.15.0
@@ -54,4 +54,4 @@ See the example below:
 ```
 
 Without the `administrators` parameter, the administrators list stays untouched.
->NOTE: `user_id` field has no effect in overwriting the administrators list.
+>**NOTE:** You can't use the **user_id** field to overwrite the administrators list. Use the **administrators** parameter instead.
