@@ -53,5 +53,4 @@ See the example:
    }"
 ```
 
-Without the `administrators` parameter, the administrators list stays untouched.
 >**NOTE:** You can't use the **user_id** field to overwrite the administrators list. Use the **administrators** parameter instead.
