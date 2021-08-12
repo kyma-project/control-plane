@@ -160,12 +160,17 @@ type MaintenancePolicyMatch struct {
 }
 
 type MaintenancePolicyEntry struct {
-	Match     MaintenancePolicyMatch `json:"match"`
-	Days      []string               `json:"days"`
-	TimeBegin time.Time              `json:"timeBegin"`
-	TimeEnd   time.Time              `json:"timeEnd"`
+	Days      []string  `json:"days"`
+	TimeBegin time.Time `json:"timeBegin"`
+	TimeEnd   time.Time `json:"timeEnd"`
+}
+
+type MaintenancePolicyRule struct {
+	Match                  MaintenancePolicyMatch `json:"match"`
+	MaintenancePolicyEntry `json:""`
 }
 
 type MaintenancePolicy struct {
-	Default []MaintenancePolicyEntry `json:"rules"`
+	Rules   []MaintenancePolicyRule `json:"rules"`
+	Default MaintenancePolicyEntry  `json:"default"`
 }

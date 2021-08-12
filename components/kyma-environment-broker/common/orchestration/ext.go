@@ -74,13 +74,30 @@ func ConvertSliceOfDaysToMap(days []string) map[time.Weekday]bool {
 	return m
 }
 
-func FirstAvailableDay(currentDay int, availableDays map[time.Weekday]bool) int {
-	for i := 0; i < 7; i++ {
-		nextDay := (currentDay + i + 1) % 7
-		_, isAvailable := availableDays[time.Weekday(nextDay)]
+func FirstAvailableDay(currentDay time.Weekday, availableDays map[time.Weekday]bool) time.Weekday {
+	for i := time.Weekday(0); i < 7; i++ {
+		nextDay := (currentDay + i) % 7
+		_, isAvailable := availableDays[nextDay]
 		if isAvailable {
 			return nextDay
 		}
 	}
 	return currentDay
+}
+
+func NextAvailableDay(currentDay time.Weekday, availableDays map[time.Weekday]bool) time.Weekday {
+	for i := time.Weekday(0); i < 7; i++ {
+		nextDay := (currentDay + i + 1) % 7
+		_, isAvailable := availableDays[nextDay]
+		if isAvailable {
+			return nextDay
+		}
+	}
+	return currentDay
+}
+
+func AvailableDate(currentDate time.Time, availableDay time.Weekday) time.Time {
+	currentDay := currentDate.Weekday()
+	diff := (7 - currentDay + availableDay) % 7
+	return currentDate.AddDate(0, 0, int(diff))
 }

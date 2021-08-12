@@ -50,22 +50,12 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		return m.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
-	config := &coreV1.ConfigMap{}
-	key := client.ObjectKey{Namespace: m.policyNamespace, Name: m.policyName}
-	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
-		m.log.Info("Orchestration Config is absent")
+	maintenancePolicy, err := m.getMaintenancePolicy()
+	if err != nil {
+		m.log.Warnf("while getting maintenance policy: %s", err)
 	}
 
-	var policies []orchestration.MaintenancePolicyEntry
-	if config.Data[maintenancePolicyKeyName] == "" {
-		m.log.Info("Maintenance policy is set to Gardener defaults")
-
-		err = json.Unmarshal([]byte(config.String()), &policies)
-		if err != nil {
-			m.log.Info("Unable to unmarshal the policies config")
-		}
-	}
-	operations, err := m.resolveOperations(o, policies)
+	operations, err := m.resolveOperations(o, maintenancePolicy)
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
 	}
@@ -103,7 +93,27 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	return 0, nil
 }
 
-func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policies []orchestration.MaintenancePolicyEntry) ([]orchestration.RuntimeOperation, error) {
+func (m *orchestrationManager) getMaintenancePolicy() (orchestration.MaintenancePolicy, error) {
+	policy := orchestration.MaintenancePolicy{}
+	config := &coreV1.ConfigMap{}
+	key := client.ObjectKey{Namespace: m.policyNamespace, Name: m.policyName}
+	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
+		return policy, errors.New("orchestration config is absent")
+	}
+
+	if config.Data[maintenancePolicyKeyName] == "" {
+		return policy, errors.New("maintenance policy is absent from orchestration config")
+	}
+
+	err := json.Unmarshal([]byte(config.Data[maintenancePolicyKeyName]), &policy)
+	if err != nil {
+		return policy, errors.New("failed to unmarshal the policy config")
+	}
+
+	return policy, nil
+}
+
+func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policy orchestration.MaintenancePolicy) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	if o.State == orchestration.Pending {
 		runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
@@ -115,35 +125,8 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
 
-			maintenanceDays := r.MaintenanceDays
-			maintenanceWindowBegin := r.MaintenanceWindowBegin
-			maintenanceWindowEnd := r.MaintenanceWindowEnd
-
-			for _, p := range policies {
-				if p.Match.Plan != "" && p.Match.Plan != r.Plan {
-					continue
-				}
-				if p.Match.GlobalAccountID != "" {
-					matched, err := regexp.MatchString(p.Match.GlobalAccountID, r.GlobalAccountID)
-					if err != nil || !matched {
-						continue
-					}
-				}
-
-				// We have a rule match here, either be one or all of the rule match options. Let's override maintenance attributes.
-				if len(p.Days) > 0 {
-					maintenanceDays = p.Days
-				}
-				if !p.TimeBegin.IsZero() {
-					maintenanceWindowBegin = p.TimeBegin
-				}
-				if !p.TimeEnd.IsZero() {
-					maintenanceWindowEnd = p.TimeEnd
-				}
-			}
-
 			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd = m.resolveWindowTime(maintenanceWindowBegin, maintenanceWindowEnd, maintenanceDays)
+				windowBegin, windowEnd = m.resolveMaintenanceWindowTime(r, policy)
 			}
 			r.MaintenanceWindowBegin = windowBegin
 			r.MaintenanceWindowEnd = windowEnd
@@ -257,24 +240,67 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 	return o, nil
 }
 
-// resolves when is the next occurrence of the time window
-func (m *orchestrationManager) resolveWindowTime(beginTime, endTime time.Time, availableDays []string) (time.Time, time.Time) {
+// resolves the next exact maintenance window time for the runtime
+func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time) {
+	ruleMatched := false
+
+	for _, p := range policy.Rules {
+		if p.Match.Plan != "" && p.Match.Plan != r.Plan {
+			continue
+		}
+		if p.Match.GlobalAccountID != "" {
+			matched, err := regexp.MatchString(p.Match.GlobalAccountID, r.GlobalAccountID)
+			if err != nil || !matched {
+				continue
+			}
+		}
+
+		// We have a rule match here, either by one or all of the rule match options. Let's override maintenance attributes.
+		ruleMatched = true
+		if len(p.Days) > 0 {
+			r.MaintenanceDays = p.Days
+		}
+		if !p.TimeBegin.IsZero() {
+			r.MaintenanceWindowBegin = p.TimeBegin
+		}
+		if !p.TimeEnd.IsZero() {
+			r.MaintenanceWindowEnd = p.TimeEnd
+		}
+		break
+	}
+
+	// If non of the rules matched, try to apply the default rule
+	if !ruleMatched {
+		if len(policy.Default.Days) > 0 {
+			r.MaintenanceDays = policy.Default.Days
+		}
+		if !policy.Default.TimeBegin.IsZero() {
+			r.MaintenanceWindowBegin = policy.Default.TimeBegin
+		}
+		if !policy.Default.TimeEnd.IsZero() {
+			r.MaintenanceWindowEnd = policy.Default.TimeEnd
+		}
+	}
+
 	n := time.Now()
-	start := time.Date(n.Year(), n.Month(), n.Day(), beginTime.Hour(), beginTime.Minute(), beginTime.Second(), beginTime.Nanosecond(), beginTime.Location())
-	end := time.Date(n.Year(), n.Month(), n.Day(), endTime.Hour(), endTime.Minute(), endTime.Second(), endTime.Nanosecond(), endTime.Location())
+	availableDays := orchestration.ConvertSliceOfDaysToMap(r.MaintenanceDays)
+	start := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowBegin.Hour(), r.MaintenanceWindowBegin.Minute(), r.MaintenanceWindowBegin.Second(), r.MaintenanceWindowBegin.Nanosecond(), r.MaintenanceWindowBegin.Location())
+	end := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowEnd.Hour(), r.MaintenanceWindowEnd.Minute(), r.MaintenanceWindowEnd.Second(), r.MaintenanceWindowEnd.Nanosecond(), r.MaintenanceWindowEnd.Location())
+	// Set start/end date to the first available day (including today)
+	firstAvailableDay := orchestration.FirstAvailableDay(n.Weekday(), availableDays)
+	start = orchestration.AvailableDate(start, firstAvailableDay)
+	end = orchestration.AvailableDate(end, firstAvailableDay)
 
 	// if the window end slips through the next day, adjust the date accordingly
-	if end.Before(start) {
+	if end.Before(start) || end.Equal(start) {
 		end = end.AddDate(0, 0, 1)
 	}
 
-	// if time window has already passed we wait until next day
+	// if time window has already passed we wait until next available day
 	if start.Before(n) && end.Before(n) {
-		currentDay := n.Day()
-		nextDay := orchestration.FirstAvailableDay(currentDay, orchestration.ConvertSliceOfDaysToMap(availableDays))
-		diff := (7 - currentDay + nextDay) % 7
-		start = start.AddDate(0, 0, diff)
-		end = end.AddDate(0, 0, diff)
+		nextAvailableDay := orchestration.NextAvailableDay(n.Weekday(), availableDays)
+		start = orchestration.AvailableDate(start, nextAvailableDay)
+		end = orchestration.AvailableDate(end, nextAvailableDay)
 	}
 
 	return start, end
