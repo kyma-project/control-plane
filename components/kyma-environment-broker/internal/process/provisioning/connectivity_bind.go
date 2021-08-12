@@ -111,7 +111,10 @@ func (s *ConnectivityBindStep) Run(operation internal.ProvisioningOperation, log
 			return s.handleError(operation, err, log, fmt.Sprintf("unable to decrypt configs"))
 		}
 	}
-	log.Errorf("OVERRIDES: %+v", connectivityOverrides)
+	log.Errorf("1OVERRIDES: %+v", connectivityOverrides)
+	log.Errorf("2OVERRIDES: %v", connectivityOverrides)
+	logrus.Errorf("3OVERRIDES: %+v", connectivityOverrides)
+	logrus.Errorf("4OVERRIDES: %v", connectivityOverrides)
 
 	// TODO: Decide how we want to pass this data to the SKR. Currently,
 	//       credentials are prepared as a ConnectivityConfig structure.
