@@ -18,6 +18,7 @@ type Runtime struct {
 	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
 	MaintenanceDays      []string  `json:"maintenanceDays"`
 	Plan                 string    `json:"plan"`
+	Region               string    `json:"region"`
 }
 
 // RuntimeOperation holds information about operation performed on a runtime

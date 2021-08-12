@@ -157,12 +157,13 @@ type UpgradeResponse struct {
 type MaintenancePolicyMatch struct {
 	GlobalAccountID string `json:"globalAccountID"`
 	Plan            string `json:"plan"`
+	Region          string `json:"region"`
 }
 
 type MaintenancePolicyEntry struct {
-	Days      []string  `json:"days"`
-	TimeBegin time.Time `json:"timeBegin"`
-	TimeEnd   time.Time `json:"timeEnd"`
+	Days      []string `json:"days"`
+	TimeBegin string   `json:"timeBegin"`
+	TimeEnd   string   `json:"timeEnd"`
 }
 
 type MaintenancePolicyRule struct {

@@ -41,6 +41,7 @@ type orchestrationManager struct {
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
+const maintenanceWindowFormat = "150405-0700"
 
 func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, error) {
 	logger := m.log.WithField("orchestrationID", orchestrationID)
@@ -245,11 +246,22 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 	ruleMatched := false
 
 	for _, p := range policy.Rules {
-		if p.Match.Plan != "" && p.Match.Plan != r.Plan {
-			continue
+		if p.Match.Plan != "" {
+			matched, err := regexp.MatchString(p.Match.Plan, r.Plan)
+			if err != nil || !matched {
+				continue
+			}
 		}
+
 		if p.Match.GlobalAccountID != "" {
 			matched, err := regexp.MatchString(p.Match.GlobalAccountID, r.GlobalAccountID)
+			if err != nil || !matched {
+				continue
+			}
+		}
+
+		if p.Match.Region != "" {
+			matched, err := regexp.MatchString(p.Match.Region, r.Region)
 			if err != nil || !matched {
 				continue
 			}
@@ -260,11 +272,15 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 		if len(p.Days) > 0 {
 			r.MaintenanceDays = p.Days
 		}
-		if !p.TimeBegin.IsZero() {
-			r.MaintenanceWindowBegin = p.TimeBegin
+		if p.TimeBegin != "" {
+			if maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, p.TimeBegin); err == nil {
+				r.MaintenanceWindowBegin = maintenanceWindowBegin
+			}
 		}
-		if !p.TimeEnd.IsZero() {
-			r.MaintenanceWindowEnd = p.TimeEnd
+		if p.TimeEnd != "" {
+			if maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, p.TimeEnd); err == nil {
+				r.MaintenanceWindowEnd = maintenanceWindowEnd
+			}
 		}
 		break
 	}
@@ -274,11 +290,15 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 		if len(policy.Default.Days) > 0 {
 			r.MaintenanceDays = policy.Default.Days
 		}
-		if !policy.Default.TimeBegin.IsZero() {
-			r.MaintenanceWindowBegin = policy.Default.TimeBegin
+		if policy.Default.TimeBegin != "" {
+			if maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, policy.Default.TimeBegin); err == nil {
+				r.MaintenanceWindowBegin = maintenanceWindowBegin
+			}
 		}
-		if !policy.Default.TimeEnd.IsZero() {
-			r.MaintenanceWindowEnd = policy.Default.TimeEnd
+		if policy.Default.TimeEnd != "" {
+			if maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, policy.Default.TimeEnd); err == nil {
+				r.MaintenanceWindowEnd = maintenanceWindowEnd
+			}
 		}
 	}
 

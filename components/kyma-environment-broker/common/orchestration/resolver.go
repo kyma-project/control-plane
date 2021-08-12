@@ -234,6 +234,7 @@ func (*GardenerRuntimeResolver) runtimeFromDTO(runtime runtime.RuntimeDTO, shoot
 		GlobalAccountID:        runtime.GlobalAccountID,
 		SubAccountID:           runtime.SubAccountID,
 		Plan:                   runtime.ServicePlanName,
+		Region:                 runtime.ProviderRegion,
 		ShootName:              shootName,
 		MaintenanceWindowBegin: windowBegin,
 		MaintenanceWindowEnd:   windowEnd,
