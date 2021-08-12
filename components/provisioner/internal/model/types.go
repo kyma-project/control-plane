@@ -18,12 +18,13 @@ const (
 type OperationType string
 
 const (
-	Provision        OperationType = "PROVISION"
-	Upgrade          OperationType = "UPGRADE"
-	UpgradeShoot     OperationType = "UPGRADE_SHOOT"
-	Deprovision      OperationType = "DEPROVISION"
-	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
-	Hibernate        OperationType = "HIBERNATE"
+	Provision          OperationType = "PROVISION"
+	ProvisionNoInstall OperationType = "PROVISION_NO_INSTALL"
+	Upgrade            OperationType = "UPGRADE"
+	UpgradeShoot       OperationType = "UPGRADE_SHOOT"
+	Deprovision        OperationType = "DEPROVISION"
+	ReconnectRuntime   OperationType = "RECONNECT_RUNTIME"
+	Hibernate          OperationType = "HIBERNATE"
 )
 
 type OperationStage string
@@ -70,7 +71,6 @@ type Cluster struct {
 type Operation struct {
 	ID               string
 	Type             OperationType
-	WithInstallation *bool
 	StartTimestamp   time.Time
 	EndTimestamp     *time.Time
 	State            OperationState

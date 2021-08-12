@@ -218,6 +218,7 @@ func main() {
 		cfg.OperatorRoleBinding,
 		k8sClientProvider)
 
+	// TODO: Prepare custom configuration for timeouts for no install mode
 	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
@@ -234,6 +235,9 @@ func main() {
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider)
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
+
+	// TODO: Prepare custom configuration for timeouts
+	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient, 5*time.Minute)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
@@ -263,6 +267,7 @@ func main() {
 		upgradeQueue,
 		shootUpgradeQueue,
 		hibernationQueue,
+		deprovisioningNoInstallQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
 		cfg.Gardener.ForceAllowPrivilegedContainers)
@@ -276,6 +281,8 @@ func main() {
 	provisioningQueue.Run(ctx.Done())
 
 	provisioningNoInstallQueue.Run(ctx.Done())
+
+	deprovisioningNoInstallQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
 
@@ -363,11 +370,11 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 	for _, op := range inProgressOps {
 		if op.Type == model.Provision {
-			if *op.WithInstallation {
-				provisioningQueue.Add(op.ID)
-			} else {
-				provisioningNoInstallQueue.Add(op.ID)
-			}
+			provisioningQueue.Add(op.ID)
+		}
+
+		if op.Type == model.ProvisionNoInstall {
+			provisioningNoInstallQueue.Add(op.ID)
 		}
 
 		if op.Type == model.Deprovision {

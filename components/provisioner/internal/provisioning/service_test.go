@@ -161,6 +161,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		//then
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+		assert.Equal(t, model.ProvisionNoInstall, operationStatus.Operation)
 		assert.NotEmpty(t, operationStatus.ID)
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)

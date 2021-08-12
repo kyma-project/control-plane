@@ -54,12 +54,13 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue          queue.OperationQueue
-	provisioningNoInstallQueue queue.OperationQueue
-	deprovisioningQueue        queue.OperationQueue
-	upgradeQueue               queue.OperationQueue
-	shootUpgradeQueue          queue.OperationQueue
-	hibernationQueue           queue.OperationQueue
+	provisioningQueue            queue.OperationQueue
+	provisioningNoInstallQueue   queue.OperationQueue
+	deprovisioningQueue          queue.OperationQueue
+	deprovisioningNoInstallQueue queue.OperationQueue
+	upgradeQueue                 queue.OperationQueue
+	shootUpgradeQueue            queue.OperationQueue
+	hibernationQueue             queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -72,24 +73,26 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
+	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:             inputConverter,
-		graphQLConverter:           graphQLConverter,
-		directorService:            directorService,
-		dbSessionFactory:           factory,
-		provisioner:                provisioner,
-		uuidGenerator:              generator,
-		provisioningQueue:          provisioningQueue,
-		provisioningNoInstallQueue: provisioningNoInstallQueue,
-		deprovisioningQueue:        deprovisioningQueue,
-		upgradeQueue:               upgradeQueue,
-		shootUpgradeQueue:          shootUpgradeQueue,
-		hibernationQueue:           hibernationQueue,
+		inputConverter:               inputConverter,
+		graphQLConverter:             graphQLConverter,
+		directorService:              directorService,
+		dbSessionFactory:             factory,
+		provisioner:                  provisioner,
+		uuidGenerator:                generator,
+		provisioningQueue:            provisioningQueue,
+		provisioningNoInstallQueue:   provisioningNoInstallQueue,
+		deprovisioningQueue:          deprovisioningQueue,
+		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
+		upgradeQueue:                 upgradeQueue,
+		shootUpgradeQueue:            shootUpgradeQueue,
+		hibernationQueue:             hibernationQueue,
 	}
 }
 
@@ -161,7 +164,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
 	}
 }
-
+// check tenant
 func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
@@ -443,22 +446,23 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	withInstallation := withKymaConfig
+	provisioningMode := model.ProvisionNoInstall
 
-	if cluster.KymaConfig != nil {
+	if withKymaConfig {
+		provisioningMode = model.Provision
 		err = dbSession.InsertKymaConfig(*cluster.KymaConfig)
 		if err != nil {
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
-		withInstallation = true
 	}
 
-	operation, err := r.setOperationStarted(dbSession, runtimeID, model.Provision, &withInstallation, model.WaitingForClusterDomain, timestamp, "Provisioning started")
+	operation, err := r.setOperationStarted(dbSession, runtimeID, provisioningMode, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set provisioning started: %s")
 	}
 
 	return operation, nil
+
 }
 
 func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig, administrators []string) (model.Operation, error) {
@@ -474,7 +478,7 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 		return model.Operation{}, dberrors.Internal("Failed to set Shoot Upgrade started: %s", dberr.Error())
 	}
 
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, nil, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.UpgradeShoot, model.WaitingForShootNewVersion, time.Now(), "Starting Gardener Shoot upgrade")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
@@ -490,7 +494,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 		return model.Operation{}, err.Append("Failed to insert Kyma Config")
 	}
 
-	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, nil, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
+	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
 	if err != nil {
 		return model.Operation{}, err.Append("Failed to set operation started")
 	}
@@ -519,7 +523,7 @@ func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster mo
 func (r *service) setHibernationStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
 	log.Infof("Starting hibernation operation")
 
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, nil, model.WaitForHibernation, time.Now(), "Starting ")
+	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.WaitForHibernation, time.Now(), "Starting ")
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start hibernation operation:  %s", dbError.Error())
@@ -532,7 +536,6 @@ func (r *service) setOperationStarted(
 	dbSession dbsession.WriteSession,
 	runtimeID string,
 	operationType model.OperationType,
-	withInstallation *bool,
 	operationStage model.OperationStage,
 	timestamp time.Time,
 	message string) (model.Operation, dberrors.Error) {
@@ -541,7 +544,6 @@ func (r *service) setOperationStarted(
 	operation := model.Operation{
 		ID:               id,
 		Type:             operationType,
-		WithInstallation: withInstallation,
 		StartTimestamp:   timestamp,
 		State:            model.InProgress,
 		Message:          message,

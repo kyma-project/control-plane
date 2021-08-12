@@ -44,6 +44,7 @@ func newProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
+	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,

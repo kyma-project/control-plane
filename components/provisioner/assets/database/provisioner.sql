@@ -60,14 +60,14 @@ CREATE TYPE operation_type AS ENUM (
     'DEPROVISION',
     'RECONNECT_RUNTIME',
     'UPGRADE_SHOOT',
-    'HIBERNATE'
+    'HIBERNATE',
+    'PROVISION_NO_INSTALL'
     );
 
 CREATE TABLE operation
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     type operation_type NOT NULL,
-    with_installation bool,
     state operation_state NOT NULL,
     message text,
     start_timestamp timestamp without time zone NOT NULL,
