@@ -54,13 +54,12 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue            queue.OperationQueue
-	provisioningNoInstallQueue   queue.OperationQueue
-	deprovisioningQueue          queue.OperationQueue
-	deprovisioningNoInstallQueue queue.OperationQueue
-	upgradeQueue                 queue.OperationQueue
-	shootUpgradeQueue            queue.OperationQueue
-	hibernationQueue             queue.OperationQueue
+	provisioningQueue          queue.OperationQueue
+	provisioningNoInstallQueue queue.OperationQueue
+	deprovisioningQueue        queue.OperationQueue
+	upgradeQueue               queue.OperationQueue
+	shootUpgradeQueue          queue.OperationQueue
+	hibernationQueue           queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -73,26 +72,24 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:               inputConverter,
-		graphQLConverter:             graphQLConverter,
-		directorService:              directorService,
-		dbSessionFactory:             factory,
-		provisioner:                  provisioner,
-		uuidGenerator:                generator,
-		provisioningQueue:            provisioningQueue,
-		provisioningNoInstallQueue:   provisioningNoInstallQueue,
-		deprovisioningQueue:          deprovisioningQueue,
-		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
-		upgradeQueue:                 upgradeQueue,
-		shootUpgradeQueue:            shootUpgradeQueue,
-		hibernationQueue:             hibernationQueue,
+		inputConverter:             inputConverter,
+		graphQLConverter:           graphQLConverter,
+		directorService:            directorService,
+		dbSessionFactory:           factory,
+		provisioner:                provisioner,
+		uuidGenerator:              generator,
+		provisioningQueue:          provisioningQueue,
+		provisioningNoInstallQueue: provisioningNoInstallQueue,
+		deprovisioningQueue:        deprovisioningQueue,
+		upgradeQueue:               upgradeQueue,
+		shootUpgradeQueue:          shootUpgradeQueue,
+		hibernationQueue:           hibernationQueue,
 	}
 }
 
