@@ -189,7 +189,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	// TODO: czy jest sens tworzyc osobna kolejke dla deprovisioningu chyba nie
 	message := fmt.Sprintf("Deprovisioning started")
 
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId ) {
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 	}
 

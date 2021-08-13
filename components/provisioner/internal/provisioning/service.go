@@ -164,6 +164,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 		log.Warnf("Failed to unregister failed Runtime '%s': %s", id, err.Error())
 	}
 }
+
 // check tenant
 func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
@@ -542,14 +543,14 @@ func (r *service) setOperationStarted(
 	id := r.uuidGenerator.New()
 
 	operation := model.Operation{
-		ID:               id,
-		Type:             operationType,
-		StartTimestamp:   timestamp,
-		State:            model.InProgress,
-		Message:          message,
-		ClusterID:        runtimeID,
-		Stage:            operationStage,
-		LastTransition:   &timestamp,
+		ID:             id,
+		Type:           operationType,
+		StartTimestamp: timestamp,
+		State:          model.InProgress,
+		Message:        message,
+		ClusterID:      runtimeID,
+		Stage:          operationStage,
+		LastTransition: &timestamp,
 	}
 
 	err := dbSession.InsertOperation(operation)

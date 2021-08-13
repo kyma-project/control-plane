@@ -69,15 +69,15 @@ type Cluster struct {
 }
 
 type Operation struct {
-	ID               string
-	Type             OperationType
-	StartTimestamp   time.Time
-	EndTimestamp     *time.Time
-	State            OperationState
-	Message          string
-	ClusterID        string
-	Stage            OperationStage
-	LastTransition   *time.Time
+	ID             string
+	Type           OperationType
+	StartTimestamp time.Time
+	EndTimestamp   *time.Time
+	State          OperationState
+	Message        string
+	ClusterID      string
+	Stage          OperationStage
+	LastTransition *time.Time
 }
 
 type RuntimeAgentConnectionStatus int
