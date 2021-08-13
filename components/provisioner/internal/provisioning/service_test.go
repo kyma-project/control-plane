@@ -142,11 +142,20 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningNoInstallQueue := &mocks.OperationQueue{}
 
+		expectedNoInstallOperation := model.Operation{
+			ClusterID: runtimeID,
+			State:     model.InProgress,
+			Type:      model.ProvisionNoInstall,
+			Stage:     model.WaitingForClusterDomain,
+		}
+
+		noInstallOperationMatcher := getOperationMatcher(expectedNoInstallOperation)
+
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
-		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(noInstallOperationMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("Commit").Return(nil)
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)

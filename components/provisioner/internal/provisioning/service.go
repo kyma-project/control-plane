@@ -317,6 +317,10 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
 	}
 
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
+	}
+
 	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())

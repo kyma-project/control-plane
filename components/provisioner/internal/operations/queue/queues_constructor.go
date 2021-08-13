@@ -108,39 +108,13 @@ func CreateProvisioningNoInstallQueue(
 
 	provisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.Provision,
+		model.ProvisionNoInstall,
 		provisionSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)
 
 	return NewQueue(provisioningExecutor)
-}
-
-func CreateDeprovisioningNoInstallQueue(
-	timeouts DeprovisioningTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface,
-	deleteDelay time.Duration) OperationQueue {
-
-	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
-	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
-
-	deprovisioningSteps := map[model.OperationStage]operations.Step{
-		model.DeleteCluster:          deleteCluster,
-		model.WaitForClusterDeletion: waitForClusterDeletion,
-	}
-
-	deprovisioningExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Deprovision,
-		deprovisioningSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(deprovisioningExecutor)
 }
 
 func CreateUpgradeQueue(

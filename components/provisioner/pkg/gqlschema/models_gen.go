@@ -407,16 +407,18 @@ func (e OperationState) MarshalGQL(w io.Writer) {
 type OperationType string
 
 const (
-	OperationTypeProvision        OperationType = "Provision"
-	OperationTypeUpgrade          OperationType = "Upgrade"
-	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
-	OperationTypeDeprovision      OperationType = "Deprovision"
-	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
-	OperationTypeHibernate        OperationType = "Hibernate"
+	OperationTypeProvision          OperationType = "Provision"
+	OperationTypeProvisionNoInstall OperationType = "ProvisionNoInstall"
+	OperationTypeUpgrade            OperationType = "Upgrade"
+	OperationTypeUpgradeShoot       OperationType = "UpgradeShoot"
+	OperationTypeDeprovision        OperationType = "Deprovision"
+	OperationTypeReconnectRuntime   OperationType = "ReconnectRuntime"
+	OperationTypeHibernate          OperationType = "Hibernate"
 )
 
 var AllOperationType = []OperationType{
 	OperationTypeProvision,
+	OperationTypeProvisionNoInstall,
 	OperationTypeUpgrade,
 	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
@@ -426,7 +428,7 @@ var AllOperationType = []OperationType{
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime, OperationTypeHibernate:
+	case OperationTypeProvision, OperationTypeProvisionNoInstall, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime, OperationTypeHibernate:
 		return true
 	}
 	return false

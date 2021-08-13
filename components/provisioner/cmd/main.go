@@ -236,9 +236,6 @@ func main() {
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 
-	// TODO: Prepare custom configuration for timeouts
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient, 5*time.Minute)
-
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -280,8 +277,6 @@ func main() {
 	provisioningQueue.Run(ctx.Done())
 
 	provisioningNoInstallQueue.Run(ctx.Done())
-
-	deprovisioningNoInstallQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
 
