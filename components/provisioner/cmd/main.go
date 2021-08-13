@@ -267,7 +267,6 @@ func main() {
 		upgradeQueue,
 		shootUpgradeQueue,
 		hibernationQueue,
-		deprovisioningNoInstallQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
 		cfg.Gardener.ForceAllowPrivilegedContainers)
