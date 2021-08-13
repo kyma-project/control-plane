@@ -85,7 +85,7 @@ spec:
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-upgrade-aws-cleanup
+  name: upg-tst-aws-prov-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
