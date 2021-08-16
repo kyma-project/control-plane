@@ -45,6 +45,7 @@ replace (
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/text => golang.org/x/text v0.3.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.20.7
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
 	k8s.io/client-go => k8s.io/client-go v0.20.5
 )
