@@ -35,9 +35,8 @@ type orchestrationManager struct {
 	log                  logrus.FieldLogger
 	pollingInterval      time.Duration
 	k8sClient            client.Client
-	ctx                  context.Context
-	policyNamespace      string
-	policyName           string
+	configNamespace      string
+	configName           string
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
@@ -97,8 +96,8 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 func (m *orchestrationManager) getMaintenancePolicy() (orchestration.MaintenancePolicy, error) {
 	policy := orchestration.MaintenancePolicy{}
 	config := &coreV1.ConfigMap{}
-	key := client.ObjectKey{Namespace: m.policyNamespace, Name: m.policyName}
-	if err := m.k8sClient.Get(m.ctx, key, config); err != nil {
+	key := client.ObjectKey{Namespace: m.configNamespace, Name: m.configName}
+	if err := m.k8sClient.Get(context.Background(), key, config); err != nil {
 		return policy, errors.New("orchestration config is absent")
 	}
 
@@ -307,9 +306,9 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 	start := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowBegin.Hour(), r.MaintenanceWindowBegin.Minute(), r.MaintenanceWindowBegin.Second(), r.MaintenanceWindowBegin.Nanosecond(), r.MaintenanceWindowBegin.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowEnd.Hour(), r.MaintenanceWindowEnd.Minute(), r.MaintenanceWindowEnd.Second(), r.MaintenanceWindowEnd.Nanosecond(), r.MaintenanceWindowEnd.Location())
 	// Set start/end date to the first available day (including today)
-	firstAvailableDay := orchestration.FirstAvailableDay(n.Weekday(), availableDays)
-	start = orchestration.AvailableDate(start, firstAvailableDay)
-	end = orchestration.AvailableDate(end, firstAvailableDay)
+	diff := orchestration.FirstAvailableDayDiff(n.Weekday(), availableDays)
+	start = start.AddDate(0, 0, diff)
+	end = end.AddDate(0, 0, diff)
 
 	// if the window end slips through the next day, adjust the date accordingly
 	if end.Before(start) || end.Equal(start) {
@@ -318,9 +317,9 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 
 	// if time window has already passed we wait until next available day
 	if start.Before(n) && end.Before(n) {
-		nextAvailableDay := orchestration.NextAvailableDay(n.Weekday(), availableDays)
-		start = orchestration.AvailableDate(start, nextAvailableDay)
-		end = orchestration.AvailableDate(end, nextAvailableDay)
+		diff := orchestration.NextAvailableDayDiff(n.Weekday(), availableDays)
+		start = start.AddDate(0, 0, diff)
+		end = end.AddDate(0, 0, diff)
 	}
 
 	return start, end

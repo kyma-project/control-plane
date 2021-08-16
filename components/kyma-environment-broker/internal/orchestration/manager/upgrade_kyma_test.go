@@ -1,12 +1,6 @@
 package manager_test
 
 import (
-	"context"
-
-	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/mock"
-	coreV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 
 	"testing"
@@ -32,24 +26,9 @@ type Client struct {
 }
 
 func TestUpgradeKymaManager_Execute(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "overrides",
-			Namespace: "default",
-			Labels: map[string]string{
-				"overrides-version-1.15.1": "true",
-				"overrides-plan-foo":       "true",
-			},
-		},
-		Data: map[string]string{"test1": "test1abc"},
-	}
-	sch := runtime.NewScheme()
-	require.NoError(t, coreV1.AddToScheme(sch))
-
-	//k8sClient := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(cm)
-	k8sClient := fake.NewFakeClientWithScheme(sch, cm)
-	k8sClientProvider := &mocks.K8sClientProvider{}
-	k8sClientProvider.On("InitClient", kubeconfigRaw).Return(k8sClient, nil)
+	k8sClient := fake.NewFakeClient()
+	configNamespace := "default"
+	configName := "policyConfig"
 
 	t.Run("Empty", func(t *testing.T) {
 		// given
@@ -67,12 +46,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -103,12 +78,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -138,12 +109,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			}})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -202,12 +169,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -245,12 +208,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			},
 		})
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)

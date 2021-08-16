@@ -1,17 +1,13 @@
 package manager_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/mock"
+	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
@@ -23,23 +19,12 @@ import (
 )
 
 func TestUpgradeClusterManager_Execute(t *testing.T) {
-	cm := &coreV1.ConfigMap{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "overrides",
-			Namespace: "default",
-			Labels: map[string]string{
-				"overrides-version-1.15.1": "true",
-				"overrides-plan-foo":       "true",
-			},
-		},
-		Data: map[string]string{"test1": "test1abc"},
-	}
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 
-	k8sClient := fake.NewFakeClientWithScheme(sch, cm)
-	k8sClientProvider := &mocks.K8sClientProvider{}
-	k8sClientProvider.On("InitClient", kubeconfigRaw).Return(k8sClient, nil)
+	k8sClient := fake.NewFakeClient()
+	configNamespace := "default"
+	configName := "policyConfig"
 
 	t.Run("Empty", func(t *testing.T) {
 		// given
@@ -57,12 +42,8 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, 20*time.Millisecond, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -93,12 +74,8 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -128,12 +105,8 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			}})
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -192,12 +165,8 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
-
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)
@@ -234,13 +203,10 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 				State:           orchestration.Pending,
 			},
 		})
-
-		var ctx context.Context
-		policyNamespace := "default"
-		policyName := "policyConfig"
+		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver,
-			poolingInterval, logrus.New(), k8sClient, ctx, policyNamespace, policyName)
+			poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
 
 		// when
 		_, err = svc.Execute(id)

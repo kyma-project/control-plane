@@ -804,7 +804,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
-		cli, ctx, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
+		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
@@ -839,7 +839,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"),
-		cli, ctx, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
+		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
 	queue.Run(ctx.Done(), 3)
