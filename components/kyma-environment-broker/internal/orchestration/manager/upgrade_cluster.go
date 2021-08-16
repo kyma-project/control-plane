@@ -3,6 +3,8 @@ package manager
 import (
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -19,7 +21,7 @@ type upgradeClusterFactory struct {
 
 func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaClusterExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver,
-	pollingInterval time.Duration, log logrus.FieldLogger) process.Executor {
+	pollingInterval time.Duration, log logrus.FieldLogger, cli client.Client, configNamespace string, configName string) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -31,6 +33,9 @@ func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, opera
 		executor:        kymaClusterExecutor,
 		pollingInterval: pollingInterval,
 		log:             log,
+		k8sClient:       cli,
+		configNamespace: configNamespace,
+		configName:      configName,
 	}
 }
 
