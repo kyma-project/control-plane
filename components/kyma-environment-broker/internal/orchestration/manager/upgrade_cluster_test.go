@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	coreV1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -19,9 +17,6 @@ import (
 )
 
 func TestUpgradeClusterManager_Execute(t *testing.T) {
-	sch := runtime.NewScheme()
-	require.NoError(t, coreV1.AddToScheme(sch))
-
 	k8sClient := fake.NewFakeClient()
 	configNamespace := "default"
 	configName := "policyConfig"
