@@ -1,8 +1,6 @@
 package manager_test
 
 import (
-	"k8s.io/client-go/kubernetes"
-
 	"testing"
 	"time"
 
@@ -19,11 +17,6 @@ import (
 )
 
 const poolingInterval = 20 * time.Millisecond
-const kubeconfigRaw = "kubeconfig"
-
-type Client struct {
-	Clientset kubernetes.Interface
-}
 
 func TestUpgradeKymaManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
