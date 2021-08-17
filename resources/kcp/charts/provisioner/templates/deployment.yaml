@@ -57,7 +57,7 @@ spec:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
             - name: APP_METRICS_ADDRESS
-              value: "0.0.0.0:{{ .Values.metrics.port }}
+              value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
             - name: APP_OAUTH_CREDENTIALS_NAMESPACE
