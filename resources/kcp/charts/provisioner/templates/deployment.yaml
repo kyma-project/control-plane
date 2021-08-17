@@ -108,6 +108,8 @@ spec:
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
               value: {{ .Values.upgrade.triggeringTimeout | quote }}
+            - name: APP_PROVISIONING_TIMEOUT_SHOOT_UPGRADE
+              value: {{ .Values.gardener.clusterUpgradeTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_DELETION
               value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
