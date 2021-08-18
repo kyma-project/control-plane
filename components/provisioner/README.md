@@ -41,6 +41,7 @@ This table lists the environment variables, their descriptions, and default valu
 | Parameter | Description | Default value |
 |-----------|-------------|---------------|
 | **APP_ADDRESS** | Runtime Provisioner's address with the port | `127.0.0.1:3000` |
+| **APP_METRICS_ADDRESS** | Runtime Provisioner Metrics' address with the port | `127.0.0.1:9000` |
 | **APP_API_ENDPOINT** | Endpoint for the GraphQL API | `/graphql` |
 | **APP_PLAYGROUND_API_ENDPOINT** | Endpoint for the API playground | `/graphql` |
 | **APP_DIRECTOR_URL** | Director URL | `https://compass-gateway-auth-oauth.kyma.local/director/graphql` |
