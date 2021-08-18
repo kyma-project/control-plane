@@ -199,6 +199,13 @@ ems:
 connectivity:
   disabled: true
 
+monitoring:
+  namespace: "kcp-system"
+  chartUrl: "TBD"
+  remoteWriteUrl: "TBD"
+  remoteWritePath: "/api/v1/write"
+  disabled: true
+
 cis:
   v1:
     authURL: "TBD"

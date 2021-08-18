@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	monitoringmocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -116,13 +117,19 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
+	monitoringClient := &monitoringmocks.Client{}
+	monitoringClient.On("IsDeployed", mock.Anything).Return(false, nil)
+	monitoringClient.On("IsPresent", mock.Anything).Return(false, nil)
+	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
+	monitoringClient.On("UninstallRelease", mock.Anything).Return(nil, nil)
+
 	reconcilerClient := reconciler.NewFakeClient()
 
 	// TODO put Reconciler client in the queue for steps
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -135,7 +142,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, accountProvider, logs,
+		bundleBuilder, edpClient, monitoringClient, accountProvider, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)

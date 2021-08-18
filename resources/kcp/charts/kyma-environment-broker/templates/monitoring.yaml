@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kcp-monitoring
+  namespace: kcp-system
+rules:
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    verbs: ["*"]
+  - apiGroups: ["operator.victoriametrics.com"]
+    resources: ["vmrules"]
+    verbs: ["*"]
+  - apiGroups: ["operator.victoriametrics.com"]
+    resources: ["vmusers"]
+    verbs: ["*"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kcp-monitoring
+  namespace: kcp-system
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kyma-env-broker.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: monitoring
+  apiGroup: rbac.authorization.k8s.io

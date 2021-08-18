@@ -49,6 +49,9 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 }
 
 func (s *operations) GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	op, exists := s.provisioningOperations[operationID]
 	if !exists {
 		return nil, dberr.NotFound("instance provisioning operation with id %s not found", operationID)
@@ -57,6 +60,9 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 }
 
 func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var result []internal.ProvisioningOperation
 
 	for _, op := range s.provisioningOperations {
@@ -122,6 +128,9 @@ func (s *operations) InsertDeprovisioningOperation(operation internal.Deprovisio
 }
 
 func (s *operations) GetDeprovisioningOperationByID(operationID string) (*internal.DeprovisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	op, exists := s.deprovisioningOperations[operationID]
 	if !exists {
 		return nil, dberr.NotFound("instance deprovisioning operation with id %s not found", operationID)
@@ -130,6 +139,9 @@ func (s *operations) GetDeprovisioningOperationByID(operationID string) (*intern
 }
 
 func (s *operations) GetDeprovisioningOperationByInstanceID(instanceID string) (*internal.DeprovisioningOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var result []internal.DeprovisioningOperation
 
 	for _, op := range s.deprovisioningOperations {
@@ -208,6 +220,9 @@ func (s *operations) InsertUpgradeKymaOperation(operation internal.UpgradeKymaOp
 }
 
 func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.UpgradeKymaOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	op, exists := s.upgradeKymaOperations[operationID]
 	if !exists {
 		return nil, dberr.NotFound("instance upgradeKyma operation with id %s not found", operationID)
@@ -216,6 +231,9 @@ func (s *operations) GetUpgradeKymaOperationByID(operationID string) (*internal.
 }
 
 func (s *operations) GetUpgradeKymaOperationByInstanceID(instanceID string) (*internal.UpgradeKymaOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	for _, op := range s.upgradeKymaOperations {
 		if op.InstanceID == instanceID {
 			return &op, nil
@@ -256,6 +274,9 @@ func (s *operations) InsertUpgradeClusterOperation(operation internal.UpgradeClu
 }
 
 func (s *operations) GetUpgradeClusterOperationByID(operationID string) (*internal.UpgradeClusterOperation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	op, exists := s.upgradeClusterOperations[operationID]
 	if !exists {
 		return nil, dberr.NotFound("instance upgradeKyma operation with id %s not found", operationID)
@@ -281,6 +302,9 @@ func (s *operations) UpdateUpgradeClusterOperation(op internal.UpgradeClusterOpe
 }
 
 func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var rows []internal.Operation
 
 	for _, op := range s.provisioningOperations {
@@ -321,6 +345,9 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 }
 
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var res *internal.Operation
 
 	provisionOp, exists := s.provisioningOperations[operationID]

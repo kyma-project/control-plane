@@ -26,6 +26,8 @@ const (
 	InstanceDashboardURL   = "https://dashboard.local"
 	XSUAADataXSAppName     = "XSApp"
 	KymaVersion            = "1.19.0"
+	MonitoringUsername     = "username"
+	MonitoringPassword     = "password"
 )
 
 type SimpleInputCreator struct {
@@ -124,6 +126,11 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		Overrides: "Overrides",
 	}
 
+	monitoringData := internal.MonitoringData{
+		Username: MonitoringUsername,
+		Password: MonitoringPassword,
+	}
+
 	return internal.InstanceDetails{
 		Avs:          internal.AvsLifecycleData{},
 		EventHub:     internal.EventHub{Deleted: false},
@@ -133,6 +140,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootDomain:  "ShootDomain",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
+		Monitoring:   monitoringData,
 	}
 }
 
