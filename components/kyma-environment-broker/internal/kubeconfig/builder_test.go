@@ -26,6 +26,16 @@ func TestBuilder_Build(t *testing.T) {
 		provisionerClient.On("RuntimeStatus", globalAccountID, runtimeID).Return(schema.RuntimeStatus{
 			RuntimeConfiguration: &schema.RuntimeConfig{
 				Kubeconfig: skrKubeconfig(),
+				ClusterConfig: &schema.GardenerConfig{
+					OidcConfig: &schema.OIDCConfig{
+						ClientID:       clientID,
+						GroupsClaim:    "gclaim",
+						IssuerURL:      issuerURL,
+						SigningAlgs:    nil,
+						UsernameClaim:  "uclaim",
+						UsernamePrefix: "-",
+					},
+				},
 			},
 		}, nil)
 		defer provisionerClient.AssertExpectations(t)
