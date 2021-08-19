@@ -57,8 +57,8 @@ func (b *Builder) Build(instance *internal.Instance) (string, error) {
 		ContextName:   kubeCfg.CurrentContext,
 		CAData:        kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
 		ServerURL:     kubeCfg.Clusters[0].Cluster.Server,
-		OIDCIssuerURL: b.config.IssuerURL,
-		OIDCClientID:  b.config.ClientID,
+		OIDCIssuerURL: status.RuntimeConfiguration.ClusterConfig.OidcConfig.IssuerURL,
+		OIDCClientID:  status.RuntimeConfiguration.ClusterConfig.OidcConfig.ClientID,
 	})
 }
 
