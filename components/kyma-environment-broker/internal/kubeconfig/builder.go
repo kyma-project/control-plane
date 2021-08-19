@@ -12,19 +12,15 @@ import (
 )
 
 type Config struct {
-	IssuerURL    string
-	ClientID     string
 	AllowOrigins string
 }
 
 type Builder struct {
-	config            Config
 	provisionerClient provisioner.Client
 }
 
-func NewBuilder(cfg Config, provisionerClient provisioner.Client) *Builder {
+func NewBuilder(provisionerClient provisioner.Client) *Builder {
 	return &Builder{
-		config:            cfg,
 		provisionerClient: provisionerClient,
 	}
 }

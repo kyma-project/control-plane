@@ -40,10 +40,7 @@ func TestBuilder_Build(t *testing.T) {
 		}, nil)
 		defer provisionerClient.AssertExpectations(t)
 
-		builder := NewBuilder(Config{
-			IssuerURL: issuerURL,
-			ClientID:  clientID,
-		}, provisionerClient)
+		builder := NewBuilder(provisionerClient)
 
 		instance := &internal.Instance{
 			RuntimeID:       runtimeID,
@@ -64,7 +61,7 @@ func TestBuilder_Build(t *testing.T) {
 		provisionerClient.On("RuntimeStatus", globalAccountID, runtimeID).Return(schema.RuntimeStatus{}, fmt.Errorf("cannot return kubeconfig"))
 		defer provisionerClient.AssertExpectations(t)
 
-		builder := NewBuilder(Config{}, provisionerClient)
+		builder := NewBuilder(provisionerClient)
 		instance := &internal.Instance{
 			RuntimeID:       runtimeID,
 			GlobalAccountID: globalAccountID,
@@ -88,7 +85,7 @@ func TestBuilder_Build(t *testing.T) {
 		}, nil)
 		defer provisionerClient.AssertExpectations(t)
 
-		builder := NewBuilder(Config{}, provisionerClient)
+		builder := NewBuilder(provisionerClient)
 		instance := &internal.Instance{
 			RuntimeID:       runtimeID,
 			GlobalAccountID: globalAccountID,
