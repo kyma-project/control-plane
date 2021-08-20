@@ -100,7 +100,7 @@ func CreateProvisioningNoInstallQueue(
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
-	provisionSteps := map[model.OperationStage]operations.Step{
+	provisionNoInstallSteps := map[model.OperationStage]operations.Step{
 		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
 		model.WaitingForClusterDomain:      waitForClusterDomainStep,
 		model.WaitingForClusterCreation:    waitForClusterCreationStep,
@@ -109,7 +109,7 @@ func CreateProvisioningNoInstallQueue(
 	provisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
 		model.ProvisionNoInstall,
-		provisionSteps,
+		provisionNoInstallSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)

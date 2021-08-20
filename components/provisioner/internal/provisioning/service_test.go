@@ -96,7 +96,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	clusterMatcher := getClusterMatcher(expectedCluster)
 	operationMatcher := getOperationMatcher(expectedOperation)
 
-	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
+	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID with Kyma config", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		writeSessionWithinTransactionMock := &sessionMocks.WriteSessionWithinTransaction{}
@@ -125,6 +125,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		//then
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+		assert.Equal(t, gqlschema.OperationTypeProvision, operationStatus.Operation)
 		assert.NotEmpty(t, operationStatus.ID)
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
@@ -170,7 +171,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		//then
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.Equal(t, model.ProvisionNoInstall, operationStatus.Operation)
+		assert.Equal(t, gqlschema.OperationTypeProvisionNoInstall, operationStatus.Operation)
 		assert.NotEmpty(t, operationStatus.ID)
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
@@ -379,7 +380,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when failed to get cluster", func(t *testing.T) {
+	t.Run("Should return error while deprovisioning when failed to get cluster ", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
@@ -400,7 +401,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.AssertExpectations(t)
 	})
 
-	t.Run("Should return error when last operation in progress", func(t *testing.T) {
+	t.Run("Should return error while deprovisioning when last operation in progress", func(t *testing.T) {
 		//given
 		operation := model.Operation{State: model.InProgress}
 
@@ -617,13 +618,19 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	lastOperation := model.Operation{State: model.Succeeded}
 
-	oldKymaConfigId := "old-kyma-config-id"
+	oldKymaConfigId    := "old-kyma-config-id"
+	activeKymaConfigId := "active-kyma-config-id"
 
 	cluster := model.Cluster{
 		ID: runtimeID,
 		KymaConfig: &model.KymaConfig{
 			ID: oldKymaConfigId,
 		},
+		ActiveKymaConfigId: &activeKymaConfigId,
+	}
+
+	clusterWithNoKymaConfig := model.Cluster{
+		ID: runtimeID,
 	}
 
 	expectedOperation := model.Operation{
@@ -698,6 +705,14 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
+			},
+		},
+		{
+			description: "should fail to upgrade Runtime without Kyma config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(clusterWithNoKymaConfig, nil)
 			},
 		},
 		{

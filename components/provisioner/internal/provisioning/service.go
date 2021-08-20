@@ -317,6 +317,7 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
 	}
 
+	// TODO: Think about what about not migrated clusters where no activeKymaConfig is set??? This code will not allow to upgrade them
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}
