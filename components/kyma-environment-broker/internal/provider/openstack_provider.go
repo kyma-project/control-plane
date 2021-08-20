@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"math/rand"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -9,7 +10,9 @@ import (
 )
 
 const (
-	DefaultOpenStackRegion = "eu-de-1"
+	DefaultOpenStackRegion               = "eu-de-1"
+	DefaultKymaExternalFloatingIPNetwork = "FloatingIP-external-cp-kyma"
+	DefaultExposureClass                 = "converged-cloud-internet"
 )
 
 type OpenStackInput struct {
@@ -27,10 +30,11 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMax:  4,
 			MaxSurge:       4,
 			MaxUnavailable: 0,
+			ExposureClassName: ptr.String(DefaultExposureClass),
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                ZonesForOpenStack(DefaultOpenStackRegion),
-					FloatingPoolName:     "FloatingIP-external-cp",
+					FloatingPoolName:     DefaultKymaExternalFloatingIPNetwork,
 					CloudProfileName:     "converged-cloud-cp",
 					LoadBalancerProvider: "f5",
 				},
