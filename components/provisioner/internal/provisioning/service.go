@@ -196,8 +196,6 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppEr
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	}
-	// TODO: separate queues deprovisioningQueue and deprovisioningQueueNoInstall
-	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil
 }

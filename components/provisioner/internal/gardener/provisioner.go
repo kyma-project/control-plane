@@ -189,10 +189,10 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	message := fmt.Sprintf("Deprovisioning started")
 
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
+		return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 	}
 
-	return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
+	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
