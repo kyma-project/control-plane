@@ -36,6 +36,19 @@ type ProvisioningTimeouts struct {
 	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
+// TODO: kwestia timeoutu w KEB
+type ProvisioningNoInstallTimeouts struct {
+	ClusterCreation  time.Duration `envconfig:"default=60m"`
+	ClusterDomains   time.Duration `envconfig:"default=10m"`
+	BindingsCreation time.Duration `envconfig:"default=5m"`
+}
+
+// TODO: kwestia timeoutu w KEB
+type DeprovisioningNoInstallTimeouts struct {
+	ClusterDeletion           time.Duration `envconfig:"default=30m"`
+	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
+}
+
 type DeprovisioningTimeouts struct {
 	ClusterCleanup            time.Duration `envconfig:"default=20m"`
 	ClusterDeletion           time.Duration `envconfig:"default=30m"`
@@ -88,7 +101,7 @@ func CreateProvisioningQueue(
 }
 
 func CreateProvisioningNoInstallQueue(
-	timeouts ProvisioningTimeouts,
+	timeouts ProvisioningNoInstallTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
@@ -165,8 +178,34 @@ func CreateDeprovisioningQueue(
 
 	deprovisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.Deprovision,
+		model.DeprovisionNoInstall,
 		deprovisioningSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(deprovisioningExecutor)
+}
+
+func CreateDeprovisioningNoInstallQueue(
+	timeouts DeprovisioningTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface,
+) OperationQueue {
+
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
+	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
+
+	deprovisioningNoInstallSteps := map[model.OperationStage]operations.Step{
+		model.DeleteCluster:          deleteCluster,
+		model.WaitForClusterDeletion: waitForClusterDeletion,
+	}
+
+	deprovisioningExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.DeprovisionNoInstall,
+		deprovisioningNoInstallSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)

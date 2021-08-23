@@ -18,13 +18,14 @@ const (
 type OperationType string
 
 const (
-	Provision          OperationType = "PROVISION"
-	ProvisionNoInstall OperationType = "PROVISION_NO_INSTALL"
-	Upgrade            OperationType = "UPGRADE"
-	UpgradeShoot       OperationType = "UPGRADE_SHOOT"
-	Deprovision        OperationType = "DEPROVISION"
-	ReconnectRuntime   OperationType = "RECONNECT_RUNTIME"
-	Hibernate          OperationType = "HIBERNATE"
+	Provision            OperationType = "PROVISION"
+	ProvisionNoInstall   OperationType = "PROVISION_NO_INSTALL"
+	Upgrade              OperationType = "UPGRADE"
+	UpgradeShoot         OperationType = "UPGRADE_SHOOT"
+	Deprovision          OperationType = "DEPROVISION"
+	DeprovisionNoInstall OperationType = "DEPROVISION_NO_INSTALL"
+	ReconnectRuntime     OperationType = "RECONNECT_RUNTIME"
+	Hibernate            OperationType = "HIBERNATE"
 )
 
 type OperationStage string

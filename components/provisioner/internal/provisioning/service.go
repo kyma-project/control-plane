@@ -54,12 +54,13 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue          queue.OperationQueue
-	provisioningNoInstallQueue queue.OperationQueue
-	deprovisioningQueue        queue.OperationQueue
-	upgradeQueue               queue.OperationQueue
-	shootUpgradeQueue          queue.OperationQueue
-	hibernationQueue           queue.OperationQueue
+	provisioningQueue            queue.OperationQueue
+	provisioningNoInstallQueue   queue.OperationQueue
+	deprovisioningQueue          queue.OperationQueue
+	deprovisioningNoInstallQueue queue.OperationQueue
+	upgradeQueue                 queue.OperationQueue
+	shootUpgradeQueue            queue.OperationQueue
+	hibernationQueue             queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -72,24 +73,26 @@ func NewProvisioningService(
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
+	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:             inputConverter,
-		graphQLConverter:           graphQLConverter,
-		directorService:            directorService,
-		dbSessionFactory:           factory,
-		provisioner:                provisioner,
-		uuidGenerator:              generator,
-		provisioningQueue:          provisioningQueue,
-		provisioningNoInstallQueue: provisioningNoInstallQueue,
-		deprovisioningQueue:        deprovisioningQueue,
-		upgradeQueue:               upgradeQueue,
-		shootUpgradeQueue:          shootUpgradeQueue,
-		hibernationQueue:           hibernationQueue,
+		inputConverter:               inputConverter,
+		graphQLConverter:             graphQLConverter,
+		directorService:              directorService,
+		dbSessionFactory:             factory,
+		provisioner:                  provisioner,
+		uuidGenerator:                generator,
+		provisioningQueue:            provisioningQueue,
+		provisioningNoInstallQueue:   provisioningNoInstallQueue,
+		deprovisioningQueue:          deprovisioningQueue,
+		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
+		upgradeQueue:                 upgradeQueue,
+		shootUpgradeQueue:            shootUpgradeQueue,
+		hibernationQueue:             hibernationQueue,
 	}
 }
 
@@ -186,6 +189,14 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppEr
 		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
+		r.deprovisioningQueue.Add(operation.ID)
+	} else {
+		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
+		r.deprovisioningNoInstallQueue.Add(operation.ID)
+	}
+	// TODO: separate queues deprovisioningQueue and deprovisioningQueueNoInstall
 	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil

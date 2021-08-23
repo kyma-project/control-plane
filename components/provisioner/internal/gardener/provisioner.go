@@ -192,7 +192,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 	}
 
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
+	return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
@@ -226,6 +226,18 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 	return model.Operation{
 		ID:             id,
 		Type:           model.Deprovision,
+		StartTimestamp: startTime,
+		State:          state,
+		Stage:          stage,
+		Message:        message,
+		ClusterID:      runtimeId,
+	}
+}
+
+func newDeprovisionOperationNoInstall(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
+	return model.Operation{
+		ID:             id,
+		Type:           model.DeprovisionNoInstall,
 		StartTimestamp: startTime,
 		State:          state,
 		Stage:          stage,

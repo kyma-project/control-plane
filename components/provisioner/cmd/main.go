@@ -75,9 +75,11 @@ type config struct {
 		SSLMode  string `envconfig:"default=disable"`
 	}
 
-	ProvisioningTimeout   queue.ProvisioningTimeouts
-	DeprovisioningTimeout queue.DeprovisioningTimeouts
-	HibernationTimeout    queue.HibernationTimeouts
+	ProvisioningTimeout            queue.ProvisioningTimeouts
+	DeprovisioningTimeout          queue.DeprovisioningTimeouts
+	ProvisioningNoInstallTimeout   queue.ProvisioningNoInstallTimeouts
+	DeprovisioningNoInstallTimeout queue.DeprovisioningNoInstallTimeouts
+	HibernationTimeout             queue.HibernationTimeouts
 
 	OperatorRoleBinding provisioningStages.OperatorRoleBinding
 
@@ -106,6 +108,7 @@ type config struct {
 	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
+// TODO Add dump of shoot upgrade timeout
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
 		"SkipDirectorCertVerification: %v, OauthCredentialsNamespace: %s, OauthCredentialsSecretName: %s, "+
@@ -114,7 +117,10 @@ func (c *config) String() string {
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
+		"ProvisioningNoInstallTimeoutClusterCreation: %s, ProvisioningNoInstallTimeoutClusterDomains: %s, ProvisioningNoInstallTimeoutBindingsCreation: %s,"+
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
+		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
+		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t"+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"ForceAllowPrivilegedContainers: %t, "+
@@ -129,7 +135,10 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
+		c.ProvisioningNoInstallTimeout.ClusterCreation.String(), c.ProvisioningNoInstallTimeout.ClusterDomains.String(), c.ProvisioningNoInstallTimeout.BindingsCreation.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
+		c.DeprovisioningNoInstallTimeout.ClusterDeletion.String(), c.DeprovisioningNoInstallTimeout.WaitingForClusterDeletion.String(),
+		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.Gardener.ForceAllowPrivilegedContainers,
@@ -220,7 +229,7 @@ func main() {
 
 	// TODO: Prepare custom configuration for timeouts for no install mode
 	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
-		cfg.ProvisioningTimeout,
+		cfg.ProvisioningNoInstallTimeout,
 		dbsFactory,
 		directorClient,
 		shootClient,
@@ -231,6 +240,8 @@ func main() {
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
+
+	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider)
 
@@ -261,6 +272,7 @@ func main() {
 		provisioningQueue,
 		provisioningNoInstallQueue,
 		deprovisioningQueue,
+		deprovisioningNoInstallQueue,
 		upgradeQueue,
 		shootUpgradeQueue,
 		hibernationQueue,
@@ -279,6 +291,8 @@ func main() {
 	provisioningNoInstallQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
+
+	deprovisioningNoInstallQueue.Run(ctx.Done())
 
 	upgradeQueue.Run(ctx.Done())
 

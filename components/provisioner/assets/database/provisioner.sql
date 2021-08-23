@@ -62,6 +62,7 @@ CREATE TYPE operation_type AS ENUM (
     'UPGRADE_SHOOT',
     'HIBERNATE',
     'PROVISION_NO_INSTALL'
+    'DEPROVISION_NO_INSTALL'
     );
 
 CREATE TABLE operation
