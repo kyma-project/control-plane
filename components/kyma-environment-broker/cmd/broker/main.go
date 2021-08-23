@@ -109,6 +109,7 @@ type Config struct {
 	ServiceManager servicemanager.Config
 
 	KymaVersion                          string
+	KymaPreviewVersion                   string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
 	SkrOidcDefaultValuesYAMLFilePath     string
@@ -283,7 +284,7 @@ func main() {
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping)
 
 	// run queues
 	const workersAmount = 5
