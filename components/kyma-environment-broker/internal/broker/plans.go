@@ -32,6 +32,8 @@ const (
 	OpenStackPlanName = "openstack"
 	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
 	FreemiumPlanName  = "free"
+	PreviewPlanID     = "5cb3d976-b85c-42ea-a636-79cadda109a9"
+	PreviewPlanName   = "preview"
 )
 
 var PlanNamesMapping = map[string]string{
