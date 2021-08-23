@@ -1,6 +1,7 @@
 BEGIN;
 
 DELETE FROM operation WHERE type = 'PROVISION_NO_INSTALL';
+DELETE FROM operation WHERE type = 'DEPROVISION_NO_INSTALL';
 
 ALTER TYPE operation_type RENAME TO operation_type_old;
 
