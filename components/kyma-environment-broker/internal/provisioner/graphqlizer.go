@@ -228,6 +228,18 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
       {{- if .MachineImageVersion }}
       machineImageVersion: "{{.MachineImageVersion}}",
       {{- end }}
+      {{- if .AutoScalerMin }}
+      autoScalerMin: {{ .AutoScalerMin }},
+      {{- end }}
+      {{- if .AutoScalerMax }}
+      autoScalerMax: {{ .AutoScalerMax }},
+      {{- end }}
+      {{- if .MaxSurge }}
+      maxSurge: {{ .MaxSurge }},
+      {{- end }}
+      {{- if .MaxUnavailable }}
+      maxUnavailable: {{ .MaxUnavailable }},
+      {{- end }}
       {{- if .EnableKubernetesVersionAutoUpdate }}
       enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
       {{- end }}

@@ -270,7 +270,16 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		newAdministrators := make([]string, 0, len(r.provisioningParameters.Parameters.RuntimeAdministrators))
 		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
 		r.upgradeShootInput.Administrators = newAdministrators
+	} else {
+		// get default admin (user_id from provisioning operation)
+		r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
 	}
+
+	// use autoscaler value in provisioningParameters if it is not nil
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMin, r.provisioningParameters.Parameters.AutoScalerMin)
+	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
+	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
 
 	return nil
 }

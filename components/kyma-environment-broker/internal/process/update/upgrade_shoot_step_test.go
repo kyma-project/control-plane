@@ -28,6 +28,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 	operation := fixture.FixUpdatingOperation("op-id", "inst-id")
 	operation.RuntimeID = "runtime-id"
 	operation.ProvisionerOperationID = ""
+	operation.ProvisioningParameters.ErsContext.UserID = "test-user-id"
 	operation.ProvisioningParameters.Parameters.OIDC = &internal.OIDCConfigDTO{
 		ClientID:       "client-id",
 		GroupsClaim:    "groups",
@@ -56,7 +57,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 				UsernamePrefix: "-",
 			},
 		},
-		Administrators: nil,
+		Administrators: []string{"test-user-id"},
 	}, req)
 	assert.NotEmpty(t, newOperation.ProvisionerOperationID)
 }

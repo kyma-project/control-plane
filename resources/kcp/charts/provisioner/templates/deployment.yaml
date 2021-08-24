@@ -56,6 +56,8 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.provisioner.graphql.port }}"
+            - name: APP_METRICS_ADDRESS
+              value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
             - name: APP_OAUTH_CREDENTIALS_NAMESPACE
@@ -108,6 +110,8 @@ spec:
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
               value: {{ .Values.upgrade.triggeringTimeout | quote }}
+            - name: APP_PROVISIONING_TIMEOUT_SHOOT_UPGRADE
+              value: {{ .Values.gardener.clusterUpgradeTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_DELETION
               value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_WAITING_FOR_CLUSTER_DELETION

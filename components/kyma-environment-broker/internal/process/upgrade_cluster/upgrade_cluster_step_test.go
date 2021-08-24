@@ -38,12 +38,21 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisioningOperation := fixProvisioningOperation()
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
+
+	// as autoscaler values are not nil in provisioningParameters, the provider values are not used
+	provider := fixGetHyperscalerProviderForPlanID(operation.ProvisioningParameters.PlanID)
+	assert.NotNil(t, provider)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String(fixKubernetesVersion),
 			MachineImage:        ptr.String(fixMachineImage),
 			MachineImageVersion: ptr.String(fixMachineImageVersion),
+			AutoScalerMin:       operation.ProvisioningParameters.Parameters.AutoScalerMin,
+			AutoScalerMax:       operation.ProvisioningParameters.Parameters.AutoScalerMax,
+			MaxSurge:            operation.ProvisioningParameters.Parameters.MaxSurge,
+			MaxUnavailable:      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,
@@ -53,6 +62,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 				UsernamePrefix: expectedOIDC.UsernamePrefix,
 			},
 		},
+		Administrators: []string{provisioningOperation.ProvisioningParameters.ErsContext.UserID},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
 		Operation: "",
