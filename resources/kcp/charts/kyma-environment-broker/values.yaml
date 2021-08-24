@@ -83,6 +83,7 @@ skrOIDCDefaultValues: |-
   usernameClaim: "sub"
 
 kymaVersion: "1.13.0"
+kymaPreviewVersion: "2.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
