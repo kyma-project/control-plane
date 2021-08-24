@@ -23,11 +23,8 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 
 	pp := op.ProvisioningParameters
 
-	// TODO: Add Var to chart
-	// TODO: Add Var to docs
-	// TODO: Make PR to management plane config, as soon as it is defined in the chart
 	// TODO: Clarify: what about FromAccountMapping?
-	if broker.IsPreviewPlan(pp.PlanID) {
+	if broker.IsPreviewPlan(pp.PlanID) && rvc.defaultPreviewVersion != "" {
 		if pp.Parameters.KymaVersion != "" {
 			return internal.NewRuntimeVersionFromParameters(pp.Parameters.KymaVersion), nil
 		}

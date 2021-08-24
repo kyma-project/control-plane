@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -95,6 +96,48 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		require.NoError(t, err)
 		require.Equal(t, versionForSA, ver.Version)
 		require.Equal(t, internal.AccountMapping, ver.Origin)
+	})
+	t.Run("should return previewVersion when preview plan ID and kymaPreviewVersion provided but no kymaVersion", func(t *testing.T) {
+		// given
+		runtimeVer := ""
+		previewVer := "2.0"
+		planID := broker.PreviewPlanID
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{})
+
+		// when
+		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
+					PlanID:     planID,
+				},
+			},
+		})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, previewVer, ver.Version)
+	})
+	t.Run("should return kymaVersion when preview plan ID, kymaPreviewVersion and kymaVersion are provided", func(t *testing.T) {
+		// given
+		runtimeVer := "1.1.1"
+		previewVer := "2.0"
+		planID := broker.PreviewPlanID
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{})
+
+		// when
+		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
+					PlanID:     planID,
+				},
+			},
+		})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, runtimeVer, ver.Version)
 	})
 }
 
