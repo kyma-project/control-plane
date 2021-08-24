@@ -32,6 +32,7 @@ You can also specify a Kyma version using the **kymaVersion** provisioning param
 
 ```bash
    export VERSION=1.15.0
+   export PREVIEW_VERSION=2.0
    curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
    --header 'X-Broker-API-Version: 2.14' \
    --header 'Content-Type: application/json' \
@@ -45,7 +46,8 @@ You can also specify a Kyma version using the **kymaVersion** provisioning param
        },
        \"parameters\": {
            \"name\": \"$NAME\",
-           \"kymaVersion\": \"$VERSION"
+           \"kymaVersion\": \"$VERSION",
+           \"kymaPreviewVersion\": \"$PREVIEW_VERSION"
        }
    }"
 ```
