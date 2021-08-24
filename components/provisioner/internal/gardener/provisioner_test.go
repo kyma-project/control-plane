@@ -93,6 +93,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 			ProjectName:            "project-name",
 			GardenerProviderConfig: gcpGardenerConfig,
 		},
+		ActiveKymaConfigId: util.StringPtr("activekymaconfigid"),
 	}
 
 	t.Run("should start deprovisioning", func(t *testing.T) {
