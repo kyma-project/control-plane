@@ -171,7 +171,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	provisioningQueue.Run(queueCtx.Done())
 
 	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
-		testProvisioningTimeouts(),
+		testProvisioningNoInstallTimeouts(),
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
@@ -181,6 +181,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	provisioningNoInstallQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue.Run(queueCtx.Done())
+
+	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
@@ -244,7 +247,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator(dbsFactory.NewReadSession())
 
@@ -547,9 +550,24 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	}
 }
 
+func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
+	return queue.ProvisioningNoInstallTimeouts{
+		ClusterCreation:  5 * time.Minute,
+		ClusterDomains:   5 * time.Minute,
+		BindingsCreation: 5 * time.Minute,
+	}
+}
+
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
 		ClusterCleanup:            5 * time.Minute,
+		ClusterDeletion:           5 * time.Minute,
+		WaitingForClusterDeletion: 5 * time.Minute,
+	}
+}
+
+func testDeprovisioningNoInstallTimeouts() queue.DeprovisioningNoInstallTimeouts {
+	return queue.DeprovisioningNoInstallTimeouts{
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}

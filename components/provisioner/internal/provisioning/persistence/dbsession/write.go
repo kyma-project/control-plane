@@ -56,7 +56,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
-		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
+		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain // TODO: What does that mean?
 		Exec()
 
 	if err != nil {

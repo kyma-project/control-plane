@@ -188,7 +188,7 @@ func CreateDeprovisioningQueue(
 }
 
 func CreateDeprovisioningNoInstallQueue(
-	timeouts DeprovisioningTimeouts,
+	timeouts DeprovisioningNoInstallTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,

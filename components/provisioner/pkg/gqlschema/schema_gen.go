@@ -981,6 +981,7 @@ enum OperationType {
     Upgrade
     UpgradeShoot
     Deprovision
+    DeprovisionNoInstall
     ReconnectRuntime
     Hibernate
 }

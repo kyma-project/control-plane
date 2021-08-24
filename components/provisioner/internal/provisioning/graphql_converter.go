@@ -161,6 +161,8 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 		return gqlschema.OperationTypeProvisionNoInstall
 	case model.Deprovision:
 		return gqlschema.OperationTypeDeprovision
+	case model.DeprovisionNoInstall:
+		return gqlschema.OperationTypeDeprovisionNoInstall
 	case model.Upgrade:
 		return gqlschema.OperationTypeUpgrade
 	case model.UpgradeShoot:

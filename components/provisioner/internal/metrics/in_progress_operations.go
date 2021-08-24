@@ -18,10 +18,11 @@ type OperationsStatsGetter interface {
 type InProgressOperationsCollector struct {
 	statsGetter OperationsStatsGetter
 
-	provisioningDesc          *prometheus.Desc
-	provisioningNoInstallDesc *prometheus.Desc
-	deprovisioningDesc        *prometheus.Desc
-	upgradeDesc               *prometheus.Desc
+	provisioningDesc            *prometheus.Desc
+	provisioningNoInstallDesc   *prometheus.Desc
+	deprovisioningDesc          *prometheus.Desc
+	deprovisioningNoInstallDesc *prometheus.Desc
+	upgradeDesc                 *prometheus.Desc
 
 	log logrus.FieldLogger
 }
@@ -37,12 +38,17 @@ func NewInProgressOperationsCollector(statsGetter OperationsStatsGetter) *InProg
 			nil),
 		provisioningNoInstallDesc: prometheus.NewDesc(
 			buildFQName(model.ProvisionNoInstall),
-			"The number of provisioning without ionstallation operations in progress",
+			"The number of provisioning without installation operations in progress",
 			[]string{},
 			nil),
 		deprovisioningDesc: prometheus.NewDesc(
 			buildFQName(model.Deprovision),
 			"The number of deprovisioning operations in progress",
+			[]string{},
+			nil),
+		deprovisioningNoInstallDesc: prometheus.NewDesc(
+			buildFQName(model.DeprovisionNoInstall),
+			"The number of deprovisioning without uninstallation operations in progress",
 			[]string{},
 			nil),
 		upgradeDesc: prometheus.NewDesc(
@@ -59,6 +65,7 @@ func (c *InProgressOperationsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.provisioningDesc
 	ch <- c.provisioningNoInstallDesc
 	ch <- c.deprovisioningDesc
+	ch <- c.deprovisioningNoInstallDesc
 	ch <- c.upgradeDesc
 }
 
@@ -81,6 +88,10 @@ func (c *InProgressOperationsCollector) Collect(ch chan<- prometheus.Metric) {
 	c.newMeasure(ch,
 		c.deprovisioningDesc,
 		inProgressOpsCounts.Count[model.Deprovision],
+	)
+	c.newMeasure(ch,
+		c.deprovisioningNoInstallDesc,
+		inProgressOpsCounts.Count[model.DeprovisionNoInstall],
 	)
 	c.newMeasure(ch,
 		c.upgradeDesc,

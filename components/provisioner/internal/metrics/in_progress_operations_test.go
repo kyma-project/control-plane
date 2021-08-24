@@ -15,9 +15,11 @@ func Test_InProgressOperationsCollector_Collect(t *testing.T) {
 
 	operationsCounts := model.OperationsCount{
 		Count: map[model.OperationType]int{
-			model.Provision:   10,
-			model.Deprovision: 5,
-			model.Upgrade:     2,
+			model.Provision:            10,
+			model.ProvisionNoInstall:   6,
+			model.Deprovision:          5,
+			model.DeprovisionNoInstall: 3,
+			model.Upgrade:              2,
 		},
 	}
 
