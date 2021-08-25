@@ -165,7 +165,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	}
 }
 
-// check tenant
+// check tenant // TODO: What does that mean?
 func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
