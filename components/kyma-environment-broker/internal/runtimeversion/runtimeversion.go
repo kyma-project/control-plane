@@ -23,11 +23,20 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 
 	pp := op.ProvisioningParameters
 
-	// TODO: Clarify: what about FromAccountMapping?
 	if broker.IsPreviewPlan(pp.PlanID) && rvc.defaultPreviewVersion != "" {
+
 		if pp.Parameters.KymaVersion != "" {
 			return internal.NewRuntimeVersionFromParameters(pp.Parameters.KymaVersion), nil
 		}
+
+		_, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			return internal.NewRuntimeVersionFromAccountMapping(rvc.defaultPreviewVersion), nil
+		}
+
 		return internal.NewRuntimeVersionFromDefaults(rvc.defaultPreviewVersion), nil
 	}
 
