@@ -46,11 +46,12 @@ You can also specify a Kyma version using the **kymaVersion** provisioning param
        },
        \"parameters\": {
            \"name\": \"$NAME\",
-           \"kymaVersion\": \"$VERSION",
-           \"kymaPreviewVersion\": \"$PREVIEW_VERSION"
+           \"kymaVersion\": \"$VERSION"
        }
    }"
 ```
 
 The **kymaVersion** provisioning parameter overrides the default settings.
 To enable this feature, set the **APP_ENABLE_ON_DEMAND_VERSION** environment variable to `true`.
+
+**Note:** If a Preview Plan is set, `kymaPreviewVersion` can be set to provision a preview version of Kyma. Alternatively `APP_KYMA_PREVIEW_VERSION` can be set as an environment variable.
