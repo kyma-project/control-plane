@@ -311,8 +311,7 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 
 	session := r.dbSessionFactory.NewReadSession()
 
-	err := r.verifyLastOperationFinished(session, runtimeId)
-	if err != nil {
+	if err := r.verifyLastOperationFinished(session, runtimeId); err != nil {
 		return &gqlschema.OperationStatus{}, err
 	}
 
@@ -445,25 +444,20 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error
 
 func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster, withKymaConfig bool) (model.Operation, dberrors.Error) {
 	timestamp := time.Now()
-
 	cluster.CreationTimestamp = timestamp
 
-	err := dbSession.InsertCluster(cluster)
-	if err != nil {
+	if err := dbSession.InsertCluster(cluster); err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	err = dbSession.InsertGardenerConfig(cluster.ClusterConfig)
-	if err != nil {
+	if err := dbSession.InsertGardenerConfig(cluster.ClusterConfig); err != nil {
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
 	provisioningMode := model.ProvisionNoInstall
-
 	if withKymaConfig {
 		provisioningMode = model.Provision
-		err = dbSession.InsertKymaConfig(*cluster.KymaConfig)
-		if err != nil {
+		if err := dbSession.InsertKymaConfig(*cluster.KymaConfig); err != nil {
 			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 		}
 	}
@@ -474,7 +468,6 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 	}
 
 	return operation, nil
-
 }
 
 func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig, administrators []string) (model.Operation, error) {

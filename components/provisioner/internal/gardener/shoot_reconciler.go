@@ -108,23 +108,26 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 
 	var seed gardener_types.Seed
 	if err := r.client.Get(context.Background(), seedKey, &seed); err != nil {
+		logger.Errorf("Cannot get %s seed: %s", seedName, err.Error())
 		return err
 	}
 
 	annotated, err := r.auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
-
 	if err != nil {
 		logger.Errorf("Cannot enable audit logs: %s", err.Error())
 		return nil
 	}
-
 	if !annotated {
 		logger.Debugf("Audit Log Tenant did not change, skipping update of cluster")
 		return nil
 	}
 
 	logger.Infof("Modifying Audit Log Tenant")
-	return r.updateShoot(shoot)
+	if err := r.updateShoot(shoot); err != nil {
+		logger.Errorf("Failed to update shoot: %s", err.Error())
+		return err
+	}
+	return nil
 }
 
 func getSeedName(shoot gardener_types.Shoot) string {

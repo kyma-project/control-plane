@@ -79,7 +79,7 @@ const (
 	rafterSourceURL      = "github.com/kyma-project/kyma.git//resources/rafter"
 	auditLogPolicyCMName = "auditLogPolicyConfigMap"
 	subAccountId         = "sub-account"
-	gardenerGenSeed      = "az-eu2"
+	gardenerGenSeed      = "az-us2"
 
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
@@ -184,7 +184,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	deprovisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	deprovisioningQueue.Run(queueCtx.Done())
+	deprovisioningNoInstallQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
@@ -480,11 +480,11 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	//when Deprovisioning
 	shoot = removeFinalizers(t, shootInterface, shoot)
 	time.Sleep(4 * waitPeriod)
-	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+	emptyShoot, err := shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 	// then
-	require.Error(t, err, "%+v", shoot)
-	require.Empty(t, shoot)
+	require.Error(t, err, "Shoot %s should not be there!", shoot.Name)
+	require.Empty(t, emptyShoot)
 
 	// assert database content
 	runtimeFromDB, err = readSession.GetCluster(runtimeID)
@@ -615,10 +615,12 @@ func ensureShootSeedName(t *testing.T, f gardener_apis.ShootInterface, shootName
 	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
 	require.NoError(t, err)
 
-	s.Spec.SeedName = util.StringPtr(gardenerGenSeed)
+	if util.IsNilOrEmpty(s.Spec.SeedName) {
+		s.Spec.SeedName = util.StringPtr(gardenerGenSeed)
 
-	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
-	require.NoError(t, err)
+		_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
+		require.NoError(t, err)
+	}
 }
 
 func simulateDNSAdmissionPluginRun(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
