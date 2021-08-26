@@ -57,15 +57,16 @@ const (
 )
 
 type Cluster struct {
-	ID                 string
-	Kubeconfig         *string
-	CreationTimestamp  time.Time
-	Deleted            bool
-	Tenant             string
-	SubAccountId       *string
-	ActiveKymaConfigId *string // TODO: Check if this is really needed. We have KymaConfig already
-	                           //       which should be nil when there is NoInstall Provisioning, right?
-	                           //       KymaConfig also has the ID. If so, ActiveKymaConfig may be redundant
+	ID                string
+	Kubeconfig        *string
+	CreationTimestamp time.Time
+	Deleted           bool
+	Tenant            string
+	SubAccountId      *string
+	// TODO: Check if ActiveKymaConfigId is really needed. We have KymaConfig already
+	//       which should be nil when there is NoInstall Provisioning, right?
+	//       KymaConfig also has the ID. If so, ActiveKymaConfig may be redundant
+	ActiveKymaConfigId *string
 	Administrators     []string
 
 	ClusterConfig GardenerConfig `db:"-"`
