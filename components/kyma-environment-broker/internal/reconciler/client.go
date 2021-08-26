@@ -60,7 +60,7 @@ func (c *client) RegisterCluster(cluster Cluster) (*State, error) {
 		c.log.Error(err)
 		return &State{}, err
 	}
-
+	defer res.Body.Close()
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.log.Error(err)
@@ -96,6 +96,7 @@ func (c *client) UpdateCluster(cluster Cluster) (*State, error) {
 		c.log.Error(err)
 		return &State{}, err
 	}
+	defer res.Body.Close()
 
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -141,6 +142,7 @@ func (c *client) GetCluster(clusterName, configVersion string) (*State, error) {
 		c.log.Error(err)
 		return &State{}, err
 	}
+	defer res.Body.Close()
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -169,6 +171,7 @@ func (c *client) GetLatestCluster(clusterName string) (*State, error) {
 		c.log.Error(err)
 		return &State{}, err
 	}
+	defer res.Body.Close()
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -198,6 +201,7 @@ func (c *client) GetStatusChange(clusterName, offset string) ([]*StatusChange, e
 		c.log.Error(err)
 		return []*StatusChange{}, err
 	}
+	defer res.Body.Close()
 
 	getStatusChangeResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {

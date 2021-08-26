@@ -32,5 +32,5 @@
     "shootName": "4deee563",
     "instanceID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5"
   },
-  "kubeConfig": ""
+  "kubeConfig": "replaced-from-file"
 }

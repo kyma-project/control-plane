@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"strconv"
+	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/pkg/errors"
@@ -22,6 +23,7 @@ calling RegisterCluster or UpdateCluster method on already existing cluster resu
 
 */
 type fakeClient struct {
+	mu                sync.Mutex
 	inventoryClusters map[string]*registeredCluster
 }
 
@@ -47,12 +49,18 @@ func (c *fakeClient) UpdateCluster(cluster Cluster) (*State, error) {
 
 // DELETE /v1/clusters/{clusterName}
 func (c *fakeClient) DeleteCluster(clusterName string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	delete(c.inventoryClusters, clusterName)
 	return nil
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
 func (c *fakeClient) GetCluster(clusterName, configVersion string) (*State, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
 		return &State{}, errors.New("not found")
@@ -70,6 +78,9 @@ func (c *fakeClient) GetCluster(clusterName, configVersion string) (*State, erro
 
 // GET v1/clusters/{clusterName}/status
 func (c *fakeClient) GetLatestCluster(clusterName string) (*State, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
 		return &State{}, nil
@@ -82,6 +93,9 @@ func (c *fakeClient) GetLatestCluster(clusterName string) (*State, error) {
 // GET v1/clusters/{clusterName}/statusChanges/{offset}
 // offset is parsed to time.Duration
 func (c *fakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChange, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
 		return []*StatusChange{}, nil
@@ -90,6 +104,9 @@ func (c *fakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChang
 }
 
 func (c *fakeClient) createOrUpdate(cluster Cluster) (*State, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	_, exists := c.inventoryClusters[cluster.Cluster]
 
 	// initial creation call - cluster does not exist in db
@@ -133,6 +150,9 @@ func (c *fakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 }
 
 func (c *fakeClient) ChangeClusterState(clusterName string, clusterVersion int64, desiredState string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.inventoryClusters[clusterName].clusterStates[clusterVersion].Status = desiredState
 	c.inventoryClusters[clusterName].statusChanges = append(c.inventoryClusters[clusterName].statusChanges, &StatusChange{
 		Status:   ptr.String(desiredState),
