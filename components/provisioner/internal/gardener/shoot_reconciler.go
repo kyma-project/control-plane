@@ -71,8 +71,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	seedName := getSeedName(shoot)
 
 	if r.auditLogConfigurator.CanEnableAuditLogsForShoot(seedName) {
-		err := r.enableAuditLogs(log, &shoot, seedName)
-		if err != nil {
+		if err := r.enableAuditLogs(log, &shoot, seedName); err != nil {
 			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
 	}
@@ -83,8 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 func (r *Reconciler) shouldReconcileShoot(shoot gardener_types.Shoot) (bool, error) {
 	session := r.dbsFactory.NewReadSession()
 
-	_, err := session.GetGardenerClusterByName(shoot.Name)
-	if err != nil {
+	if _, err := session.GetGardenerClusterByName(shoot.Name); err != nil {
 		if err.Code() == dberrors.CodeNotFound {
 			return false, nil
 		}
@@ -118,11 +116,11 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 		return nil
 	}
 	if !annotated {
-		logger.Debugf("Audit Log Tenant did not change, skipping update of cluster")
+		logger.Debug("Audit Log Tenant did not change, skipping update of cluster")
 		return nil
 	}
 
-	logger.Infof("Modifying Audit Log Tenant")
+	logger.Info("Modifying Audit Log Tenant")
 	if err := r.updateShoot(shoot); err != nil {
 		logger.Errorf("Failed to update shoot: %s", err.Error())
 		return err

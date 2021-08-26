@@ -7,6 +7,7 @@ import (
 type OperationState string
 
 //TODO: Remove after schema migration
+//      Is it ok to remove it now? Which schema migration exactly?
 const AWS = "aws"
 
 const (
@@ -62,7 +63,9 @@ type Cluster struct {
 	Deleted            bool
 	Tenant             string
 	SubAccountId       *string
-	ActiveKymaConfigId *string
+	ActiveKymaConfigId *string // TODO: Check if this is really needed. We have KymaConfig already
+	                           //       which should be nil when there is NoInstall Provisioning, right?
+	                           //       KymaConfig also has the ID. If so, ActiveKymaConfig may be redundant
 	Administrators     []string
 
 	ClusterConfig GardenerConfig `db:"-"`
