@@ -116,7 +116,7 @@ func (c *fakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 	}
 	// cluster exists in db - add new configuration version
 	//TODO: implement comparision mechanism for configs (new config should not be added if nothing changes in request) - needed for upgrade testing
-    //TODO: implement clusterVersion bumping (happens when Kyma version is updated?)
+	//TODO: implement clusterVersion bumping (happens when Kyma version is updated?)
 	latestConfigVersion := int64(len(c.inventoryClusters[cluster.Cluster].clusterStates))
 	c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion] = &State{
 		Cluster:              cluster.Cluster,
