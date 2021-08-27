@@ -246,6 +246,9 @@ e2e:
   gcp:
     configName: "e2e-runtime-config-gcp"
     planID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+  preview:
+    configName: "e2e-preview"
+    planID: "5cb3d976-b85c-42ea-a636-79cadda109a9"
   trial:
     configName: "e2e-runtime-config-suspension"
     planID: "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
