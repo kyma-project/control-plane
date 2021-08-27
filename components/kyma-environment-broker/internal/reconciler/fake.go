@@ -19,7 +19,7 @@ fakeClient is simulating API and db transactions in Reconciler Inventory
 - registeredCluster.statusChanges is representation of 'inventory_cluster_config_statuses' table
   and it is a slice of *StatusChange; it contains all status changes for the cluster
 
-calling RegisterCluster or UpdateCluster method on already existing cluster results in adding a new ClusterConfig
+calling ApplyClusterConfig method on already existing cluster results in adding a new ClusterConfig
 
 */
 type fakeClient struct {
@@ -38,12 +38,7 @@ func NewFakeClient() *fakeClient {
 }
 
 // POST /v1/clusters
-func (c *fakeClient) RegisterCluster(cluster Cluster) (*State, error) {
-	return c.createOrUpdate(cluster)
-}
-
-// PUT /v1/clusters
-func (c *fakeClient) UpdateCluster(cluster Cluster) (*State, error) {
+func (c *fakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	return c.createOrUpdate(cluster)
 }
 
