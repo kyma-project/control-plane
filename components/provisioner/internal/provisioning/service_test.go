@@ -321,6 +321,10 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 	cluster := model.Cluster{
 		ID: runtimeID,
+		KymaConfig: &model.KymaConfig{
+			ID: "id",
+		},
+		ActiveKymaConfigId: util.StringPtr("activekymaconfigid"),
 	}
 
 	clusterMatcher := getClusterMatcher(cluster)
@@ -343,6 +347,50 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, deprovisioningQueue, nil, nil, nil, nil)
+
+		//when
+		opID, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		require.NoError(t, err)
+
+		//then
+		assert.Equal(t, operationID, opID)
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+	})
+
+	t.Run("Should start Runtime deprovisioning without installation and return operation ID", func(t *testing.T) {
+		//given
+		operation := model.Operation{
+			ID:             operationID,
+			Type:           model.DeprovisionNoInstall,
+			State:          model.InProgress,
+			StartTimestamp: time.Now(),
+			Message:        "Deprovisioning without installation started",
+			ClusterID:      runtimeID,
+		}
+
+		cluster := model.Cluster{
+			ID: runtimeID,
+		}
+		clusterMatcher := getClusterMatcher(cluster)
+		operationMatcher := getOperationMatcher(operation)
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
+
+		deprovisioningNoInstallQueue := &mocks.OperationQueue{}
+
+		deprovisioningNoInstallQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
 
 		//when
 		opID, err := resolver.DeprovisionRuntime(runtimeID, tenant)

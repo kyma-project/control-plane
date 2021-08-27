@@ -126,6 +126,48 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("should start deprovisioning without uninstallation", func(t *testing.T) {
+		// given
+		cluster := model.Cluster{
+			ID: runtimeId,
+			ClusterConfig: model.GardenerConfig{
+				ID:                     "id",
+				ClusterID:              runtimeId,
+				Name:                   clusterName,
+				ProjectName:            "project-name",
+				GardenerProviderConfig: gcpGardenerConfig,
+			},
+			ActiveKymaConfigId: nil,
+		}
+
+		clientset := fake.NewSimpleClientset(
+			&gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{Name: clusterName, Namespace: gardenerNamespace, Finalizers: []string{"test"}},
+			})
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		session := &sessionMocks.WriteSession{}
+
+		shootClient := clientset.CoreV1beta1().Shoots(gardenerNamespace)
+
+		provisionerClient := NewProvisioner(gardenerNamespace, shootClient, sessionFactoryMock, auditLogsPolicyCMName, "")
+
+		// when
+		sessionFactoryMock.On("NewWriteSession").Return(session)
+
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		require.NoError(t, apperr)
+
+		// then
+		assert.Equal(t, model.InProgress, operation.State)
+		assert.Equal(t, operationId, operation.ID)
+		assert.Equal(t, runtimeId, operation.ClusterID)
+		assert.Equal(t, model.DeprovisionNoInstall, operation.Type)
+
+		_, err := shootClient.Get(context.Background(), clusterName, v1.GetOptions{})
+		assert.NoError(t, err)
+	})
+
 	t.Run("should proceed to WaitForClusterDeletion step if shoot does not exist", func(t *testing.T) {
 		// given
 		clientset := fake.NewSimpleClientset()

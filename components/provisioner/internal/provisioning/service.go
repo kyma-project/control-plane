@@ -190,11 +190,11 @@ func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppEr
 	}
 
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
-		r.deprovisioningQueue.Add(operation.ID)
-	} else {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
+	} else {
+		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
+		r.deprovisioningQueue.Add(operation.ID)
 	}
 
 	return operation.ID, nil

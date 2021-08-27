@@ -36,14 +36,12 @@ type ProvisioningTimeouts struct {
 	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
-// TODO: kwestia timeoutu w KEB
 type ProvisioningNoInstallTimeouts struct {
 	ClusterCreation  time.Duration `envconfig:"default=60m"`
 	ClusterDomains   time.Duration `envconfig:"default=10m"`
 	BindingsCreation time.Duration `envconfig:"default=5m"`
 }
 
-// TODO: kwestia timeoutu w KEB
 type DeprovisioningNoInstallTimeouts struct {
 	ClusterDeletion           time.Duration `envconfig:"default=30m"`
 	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
@@ -178,7 +176,7 @@ func CreateDeprovisioningQueue(
 
 	deprovisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.DeprovisionNoInstall,
+		model.Deprovision,
 		deprovisioningSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
