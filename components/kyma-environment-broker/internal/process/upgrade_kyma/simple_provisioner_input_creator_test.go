@@ -3,6 +3,8 @@ package upgrade_kyma
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -96,4 +98,24 @@ func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string
 
 func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName string) {
 	assert.Contains(t, c.enabledComponents, componentName)
+}
+
+func (c *simpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+	return reconciler.Cluster{}, nil
+}
+
+func (c *simpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
+	return gqlschema.ProvisionRuntimeInput{}, nil
+}
+
+func (c *simpleInputCreator) SetKubeconfig(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) SetRuntimeID(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) SetInstanceID(_ string) internal.ProvisionerInputCreator {
+	return c
 }
