@@ -156,8 +156,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Retry:              10 * time.Millisecond,
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs, cli)
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager, &cfg, nil, inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -872,7 +871,7 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	return &accountProvider
 }
 
-func fixServiceManagerFactory() provisioning.SMClientFactory {
+func fixServiceManagerFactory() internal.SMClientFactory {
 	smcf := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{{
 		ID:        "id-001",
 		Name:      "xsuaa",

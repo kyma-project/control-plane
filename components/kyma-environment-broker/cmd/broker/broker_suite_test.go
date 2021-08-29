@@ -12,9 +12,17 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
+	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
@@ -53,6 +61,7 @@ type BrokerSuiteTest struct {
 	db                storage.BrokerStorage
 	provisionerClient *provisioner.FakeClient
 	directorClient    *director.FakeClient
+	gardenerClient    *gardenerFake.Clientset
 
 	httpServer *httptest.Server
 	router     *mux.Router
@@ -134,14 +143,42 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	deprovisioningQueue.SpeedUp(10000)
 
+	// create 'kyma/upgrade' endpoint
+	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
+	gardenerClient := gardenerFake.NewSimpleClientset()
+	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
+
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), "gardener-e2e", runtimeLister, logs)
+
+	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
+		Retry:              10 * time.Millisecond,
+		StatusCheck:        100 * time.Millisecond,
+		UpgradeKymaTimeout: 20 * time.Second,
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager, cfg, smcf, inMemoryFs, logs, cli)
+
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
+		Retry:                 10 * time.Millisecond,
+		StatusCheck:           100 * time.Millisecond,
+		UpgradeClusterTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, *cfg)
+
+	kymaQueue.SpeedUp(1000)
+	clusterQueue.SpeedUp(1000)
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
+
 	ts := &BrokerSuiteTest{
 		db:                db,
 		provisionerClient: provisionerClient,
 		directorClient:    directorClient,
+		gardenerClient:    gardenerClient,
 		t:                 t,
 		router:            mux.NewRouter(),
 	}
 
+	// attach upgrade routes
+	orchestrationHandler.AttachRoutes(ts.router)
+
+	// attach OSB API routes
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
 	ts.httpServer = httptest.NewServer(ts.router)
 	return ts
@@ -249,6 +286,18 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
+func (s *BrokerSuiteTest) WaitForUpgradeKymaState(instanceID string, state domain.LastOperationState) {
+	var op *internal.UpgradeKymaOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, err = s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+		if err != nil {
+			return false, nil
+		}
+		return op.State == state, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+}
+
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -259,6 +308,15 @@ func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+}
+
+func (s *BrokerSuiteTest) WaitForOrchestrationState(orchestrationID string, state string) {
+	var orchestration *internal.Orchestration
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		orchestration, _ = s.db.Orchestrations().GetByID(orchestrationID)
+		return orchestration.State == state, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the orchestration expected state %s. The existing orchestration %+v", state, orchestration)
 }
 
 func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOperationState) string {
@@ -316,6 +374,19 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, op.RuntimeID)
 }
 
+func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByProvisioner(instanceID string) {
+	var op *internal.UpgradeKymaOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+		if op.InstanceDetails.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, op.InstanceDetails.RuntimeID)
+}
+
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
@@ -356,6 +427,34 @@ func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID strin
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
+func (s *BrokerSuiteTest) AssertProvisionerStartedUpgradeKyma(instanceID string) {
+	// wait until UpgradeKymaOperation reaches Upgrade_Kyma step
+	var upgradeKymaOp *internal.UpgradeKymaOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ProvisionerOperationID != "" {
+			upgradeKymaOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var status gqlschema.OperationStatus
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		status = s.provisionerClient.FindOperationByRuntimeIDAndType(upgradeKymaOp.Operation.InstanceDetails.RuntimeID, gqlschema.OperationTypeUpgrade)
+		if status.ID != nil {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
+}
+
 func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
@@ -364,13 +463,27 @@ func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 
 func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
 	m, err := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(m))
 	require.NoError(s.t, err)
 	var provisioningResp struct {
 		Operation string `json:"operation"`
 	}
-	json.Unmarshal(m, &provisioningResp)
+	err = json.Unmarshal(m, &provisioningResp)
+	require.NoError(s.t, err)
 	return provisioningResp.Operation
+}
+
+func (s *BrokerSuiteTest) DecodeOrchestrationID(resp *http.Response) string {
+	m, err := ioutil.ReadAll(resp.Body)
+	s.Log(string(m))
+	require.NoError(s.t, err)
+	var upgradeKymaResp struct {
+		OrchestrationID string `json:"orchestrationID"`
+	}
+	strBody := string(m)
+	s.Log(strBody)
+	err = json.Unmarshal(m, &upgradeKymaResp)
+	require.NoError(s.t, err)
+	return upgradeKymaResp.OrchestrationID
 }
 
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
@@ -450,12 +563,60 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	// simulate the installed fresh Kyma sets the proper label in the Director
 	s.MarkDirectorWithConsoleURL(opID)
 
+	s.CreateShootInGardener(opID)
+
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
+func (s *BrokerSuiteTest) processUpgradeKymaByInstanceID(instanceID string) {
+	s.WaitForUpgradeKymaState(instanceID, domain.InProgress)
+	s.AssertProvisionerStartedUpgradeKyma(instanceID)
+
+	s.FinishUpgradeKymaOperationByProvisioner(instanceID)
 }
 
 func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
 	s.processProvisioningByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) CreateShootInGardener(opID string) {
+	provOp, _ := s.db.Provisioning().GetProvisioningOperationByID(opID)
+	runtimeID := provOp.RuntimeID
+
+	shoot := &gardenerapi.Shoot{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      fmt.Sprintf("shoot%s", runtimeID),
+			Namespace: "gardener-e2e",
+			Labels: map[string]string{
+				globalAccountLabel: globalAccountID,
+				subAccountLabel:    subAccountID,
+			},
+			Annotations: map[string]string{
+				runtimeIDAnnotation: runtimeID,
+			},
+		},
+		Spec: gardenerapi.ShootSpec{
+			Region: "cf-eu10",
+			Maintenance: &gardenerapi.Maintenance{
+				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
+					Begin: "030000+0000",
+					End:   "040000+0000",
+				},
+			},
+		},
+	}
+
+	_, err := s.gardenerClient.CoreV1beta1().Shoots("gardener-e2e").Create(context.Background(), shoot, metaV1.CreateOptions{})
+	require.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertUpgradeKyma(operationID, runtimeID string) {
+	provisioningState, _ := s.db.RuntimeStates().GetByOperationID(operationID)
+	s.Log(provisioningState.RuntimeID)
+	allStates, _ := s.db.RuntimeStates().ListByRuntimeID(runtimeID)
+	assert.Equal(s.t, allStates[0].KymaConfig, allStates[1].KymaConfig)
+	s.Log(string(rune(len(allStates))))
 }

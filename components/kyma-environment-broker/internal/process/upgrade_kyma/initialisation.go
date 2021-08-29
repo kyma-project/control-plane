@@ -35,6 +35,12 @@ const (
 
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
+type SMClientFactory interface {
+	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
+	ForCustomerCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+}
+
 type InitialisationStep struct {
 	operationManager            *process.UpgradeKymaOperationManager
 	operationStorage            storage.Operations
@@ -45,11 +51,11 @@ type InitialisationStep struct {
 	evaluationManager           *avs.EvaluationManager
 	timeSchedule                TimeSchedule
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
-	serviceManagerClientFactory *servicemanager.ClientFactory
+	serviceManagerClientFactory SMClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf *servicemanager.ClientFactory) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf SMClientFactory) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{

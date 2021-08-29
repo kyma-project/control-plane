@@ -54,13 +54,14 @@ func (s *XSUAABindingStep) Run(operation internal.ProvisioningOperation, log log
 
 	// execute binding
 	if operation.XSUAA.BindingID == "" {
-		operation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		op, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 			operation.XSUAA.BindingID = uuid.New().String()
 		}, log)
 		if retry > 0 {
 			log.Errorf("unable to update operation")
-			return operation, time.Second, nil
+			return op, time.Second, nil
 		}
+		operation = op
 	}
 
 	// todo: prepare parameters

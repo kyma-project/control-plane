@@ -3,9 +3,8 @@ package manager
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -19,12 +18,12 @@ import (
 
 type upgradeKymaFactory struct {
 	operationStorage storage.Operations
-	smcf             *servicemanager.ClientFactory
+	smcf             upgrade_kyma.SMClientFactory
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace string, configName string) process.Executor {
+	smcf upgrade_kyma.SMClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace string, configName string) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
