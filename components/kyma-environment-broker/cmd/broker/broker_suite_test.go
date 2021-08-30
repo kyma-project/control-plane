@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
@@ -53,6 +54,7 @@ type BrokerSuiteTest struct {
 	db                storage.BrokerStorage
 	provisionerClient *provisioner.FakeClient
 	directorClient    *director.FakeClient
+	reconcilerClient  reconciler.Client
 
 	httpServer *httptest.Server
 	router     *mux.Router
@@ -113,6 +115,9 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
+	reconcilerClient := reconciler.NewFakeClient()
+
+	// TODO put Reconciler client in the queue for steps
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
@@ -138,8 +143,9 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		db:                db,
 		provisionerClient: provisionerClient,
 		directorClient:    directorClient,
-		t:                 t,
+		reconcilerClient:  reconcilerClient,
 		router:            mux.NewRouter(),
+		t:                 t,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
