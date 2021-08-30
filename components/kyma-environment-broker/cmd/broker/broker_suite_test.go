@@ -420,6 +420,32 @@ func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expecte
 	assert.Equal(s.t, expectedAdmins, instance.Parameters.Parameters.RuntimeAdministrators)
 }
 
+func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconciler.State) {
+	var provisioningOp *internal.ProvisioningOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
+		assert.NoError(s.t, err)
+		if op.ProvisionerOperationID != "" {
+			provisioningOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetLatestCluster(provisioningOp.RuntimeID)
+		if err == nil {
+			return true, nil
+		}
+		return false, err
+	})
+	assert.NoError(s.t, err)
+
+	assert.Equal(s.t, expectedState, state)
+}
+
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	err := wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {

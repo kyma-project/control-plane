@@ -64,14 +64,18 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 							"subaccount_id": "sub-id",
 							"user_id": "john.smith@email.com"
 						},
-						"parameters": {
-							"name": "testing-cluster",
-							"oidc": {
-								"clientID": "id-initial",
-								"signingAlgs": ["xxx"],
-								"issuerURL": "https://issuer.url.com"
-							}
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-initial",
+							"signingAlgs": ["xxx"],
+							"issuerURL": "https://issuer.url.com"
 						}
+					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByOperationID(opID)
