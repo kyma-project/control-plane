@@ -12,19 +12,15 @@ import (
 )
 
 type Config struct {
-	IssuerURL    string
-	ClientID     string
 	AllowOrigins string
 }
 
 type Builder struct {
-	config            Config
 	provisionerClient provisioner.Client
 }
 
-func NewBuilder(cfg Config, provisionerClient provisioner.Client) *Builder {
+func NewBuilder(provisionerClient provisioner.Client) *Builder {
 	return &Builder{
-		config:            cfg,
 		provisionerClient: provisionerClient,
 	}
 }
@@ -57,8 +53,8 @@ func (b *Builder) Build(instance *internal.Instance) (string, error) {
 		ContextName:   kubeCfg.CurrentContext,
 		CAData:        kubeCfg.Clusters[0].Cluster.CertificateAuthorityData,
 		ServerURL:     kubeCfg.Clusters[0].Cluster.Server,
-		OIDCIssuerURL: b.config.IssuerURL,
-		OIDCClientID:  b.config.ClientID,
+		OIDCIssuerURL: status.RuntimeConfiguration.ClusterConfig.OidcConfig.IssuerURL,
+		OIDCClientID:  status.RuntimeConfiguration.ClusterConfig.OidcConfig.ClientID,
 	})
 }
 

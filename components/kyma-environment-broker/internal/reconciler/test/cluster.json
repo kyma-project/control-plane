@@ -1,0 +1,281 @@
+{
+  "runtimeID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5",
+  "runtimeInput": {
+    "name": "ad0d842",
+    "description": "",
+    "labels": {
+      "scenarios": [
+        "DEFAULT"
+      ]
+    }
+  },
+  "kymaConfig": {
+    "version": "1.19.0",
+    "profile": "Production",
+    "components": [
+      {
+        "component": "cluster-essentials",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "limitRange.default.memory",
+            "value": "256Mi"
+          },
+          {
+            "key": "limitRange.max.memory",
+            "value": "8Gi"
+          }
+        ]
+      },
+      {
+        "component": "istio",
+        "namespace": "istio-system",
+        "configuration": [
+          {
+            "key": "kyma_istio_operator",
+            "value": "apiVersion: install.istio.io/v1alpha1\nkind: IstioOperator\nmetadata:\n  namespace: istio-system\nspec:\n  components:\n   # Istio Gateway feature\n    ingressGateways:\n    - name: istio-ingressgateway\n      k8s:\n        hpaSpec:\n          minReplicas: 3\n          maxReplicas: 10\n        strategy:\n          rollingUpdate:\n            maxSurge: 50%\n            maxUnavailable: 1\n    pilot:\n      k8s:\n        affinity:\n          podAntiAffinity:\n            preferredDuringSchedulingIgnoredDuringExecution:\n            - weight: 100\n              podAffinityTerm:\n                labelSelector:\n                  matchExpressions:\n                  - key: app\n                    operator: In\n                    values:\n                    - istiod\n                topologyKey: \"kubernetes.io/hostname\"\n        hpaSpec:\n          minReplicas: 2\n          maxReplicas: 5\n        strategy:\n          rollingUpdate:\n            maxSurge: 50%\n            maxUnavailable: 1\n  values:\n    global:\n      proxy:\n        resources:\n          requests:\n            cpu: 100m\n            memory: 192Mi\n          limits:\n            cpu: 1000m\n            memory: 1024Mi\n    pilot:\n      autoscaleMin: 2\n      autoscaleMax: 5"
+          }
+        ]
+      },
+      {
+        "component": "dex",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "livenessProbe.enabled",
+            "value": "true"
+          }
+        ]
+      },
+      {
+        "component": "ory",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "hydra.deployment.resources.requests.memory",
+            "value": "256Mi"
+          },
+          {
+            "key": "hydra.hydra-maester.deployment.resources.limits.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "oathkeeper.deployment.resources.requests.memory",
+            "value": "64Mi"
+          },
+          {
+            "key": "oathkeeper.oathkeeper-maester.deployment.resources.limits.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "oathkeeper.oathkeeper-maester.deployment.resources.requests.memory",
+            "value": "32Mi"
+          },
+          {
+            "key": "hydra.deployment.resources.limits.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "hydra.deployment.resources.requests.cpu",
+            "value": "100m"
+          },
+          {
+            "key": "hydra.hydra-maester.deployment.resources.requests.cpu",
+            "value": "100m"
+          },
+          {
+            "key": "hydra.hydra.autoMigrate",
+            "value": "true"
+          },
+          {
+            "key": "oathkeeper.oathkeeper-maester.deployment.resources.limits.memory",
+            "value": "1Gi"
+          },
+          {
+            "key": "oathkeeper.oathkeeper-maester.deployment.resources.requests.cpu",
+            "value": "50m"
+          },
+          {
+            "key": "oathkeeper.deployment.resources.limits.memory",
+            "value": "512Mi"
+          },
+          {
+            "key": "hydra.deployment.resources.limits.memory",
+            "value": "1Gi"
+          },
+          {
+            "key": "hydra.hydra-maester.deployment.resources.limits.memory",
+            "value": "1Gi"
+          },
+          {
+            "key": "hydra.hydra-maester.deployment.resources.requests.memory",
+            "value": "256Mi"
+          }
+        ]
+      },
+      {
+        "component": "service-catalog",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "catalog.controllerManager.brokerRelistInterval",
+            "value": "10m"
+          },
+          {
+            "key": "catalog.controllerManager.verbosity",
+            "value": "6"
+          },
+          {
+            "key": "catalog.webhook.verbosity",
+            "value": "6"
+          }
+        ]
+      },
+      {
+        "component": "eventing",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "nats-controller.resources.limits.memory",
+            "value": "1Gi"
+          },
+          {
+            "key": "nats.clusterSize",
+            "value": "3"
+          },
+          {
+            "key": "nats.resources.limits.cpu",
+            "value": "500m"
+          },
+          {
+            "key": "nats.resources.requests.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "event-publisher-nats.resources.limits.cpu",
+            "value": "500m"
+          },
+          {
+            "key": "event-publisher-nats.resources.requests.memory",
+            "value": "256Mi"
+          },
+          {
+            "key": "nats-controller.resources.limits.cpu",
+            "value": "500m"
+          },
+          {
+            "key": "nats-controller.resources.requests.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "nats-controller.resources.requests.memory",
+            "value": "512Mi"
+          },
+          {
+            "key": "nats.resources.limits.memory",
+            "value": "1Gi"
+          },
+          {
+            "key": "nats.resources.requests.memory",
+            "value": "512Mi"
+          },
+          {
+            "key": "event-publisher-nats.resources.limits.memory",
+            "value": "512Mi"
+          },
+          {
+            "key": "event-publisher-nats.resources.requests.cpu",
+            "value": "400m"
+          }
+        ]
+      },
+      {
+        "component": "logging",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+            "key": "loki.persistence.enabled",
+            "value": "true"
+          },
+          {
+            "key": "loki.persistence.size",
+            "value": "30Gi"
+          },
+          {
+            "key": "fluent-bit.config.filters.kubernetes.mergeLog",
+            "value": "Off"
+          },
+          {
+            "key": "fluent-bit.resources.limits.cpu",
+            "value": "400m"
+          },
+          {
+            "key": "fluent-bit.resources.limits.memory",
+            "value": "256Mi"
+          },
+          {
+            "key": "loki.config.table_manager.retention_period",
+            "value": "120h"
+          },
+          {
+            "key": "loki.kyma.auth.useKymaGroups",
+            "value": "true"
+          },
+          {
+            "key": "fluent-bit.config.outputs.loki.alias",
+            "value": "loki-output"
+          },
+          {
+            "key": "fluent-bit.prometheusRules.fluentBitAlertFilter",
+            "value": "name='loki-output'"
+          },
+          {
+            "key": "loki.config.chunk_store_config.max_look_back_period",
+            "value": "120h"
+          },
+          {
+            "key": "fluent-bit.config.script",
+            "value": "math.randomseed(os.time())\nlocal random = math.random\nlocal function uuid()\n    local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'\n    return string.gsub(template, '[xy]', function(c)\n        local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)\n        return string.format('%x', v)\n    end)\nend\nfunction reformat(tag, timestamp, record)\n    payload = record[\"log\"]\n    mpsTenant = \"85ed5dcb-1b79-4ba6-b9c6-fbce36d41536\"\n    customerTenant = \"f7d129fa-b2fe-11eb-8529-0242ac130003\"\n    new_payload = \"{\\\"id\\\": {\\\"externalTenant\\\": \\\"\" .. customerTenant .. \"\\\"},\\\"reason\\\":\" .. record[\"log\"] .. \"}\"\n    new_record = {}\n    new_record[\"type\"] = \"object\"\n    new_record[\"description\"] = \"Dex log record\"\n    new_record[\"time\"] = payload:match(\"\\\"time\\\":\\\"(.-)\\\"\")\n    new_record[\"user\"] = payload:match(\"email=\\\\\\\"(.-)\\\\\\\"\") or \"systemuser\"\n    new_record[\"tenant\"] = mpsTenant\n    new_record[\"uuid\"] = uuid()\n    new_record[\"data\"] = new_payload\n    return 1, 0, new_record\nend\n"
+          },
+          {
+            "key": "fluent-bit.config.extra",
+            "value": "\n[INPUT]\n    Name              tail\n    Tag               dex.*\n    Path              /var/log/containers/*_dex-*.log\n    DB                /var/log/flb_kube_dex.db\n    parser            docker\n    Mem_Buf_Limit     5MB\n    Skip_Long_Lines   On\n    Refresh_Interval  10\n[FILTER]\n    Name    lua\n    Match   dex.*\n    script  script.lua\n    call    reformat\n[FILTER]\n    Name    grep\n    Match   dex.*\n    Regex   time .*\n[FILTER]\n    Name    grep\n    Match   dex.*\n    Regex   data .*\\\"xsuaa\n[OUTPUT]\n    Name             http\n    Match            dex.*\n    Retry_Limit      False\n    Host             api.auditlog.cf.stagingaws.hanavlab.ondemand.com\n    Port             8081\n    URI              /audit-log/v2/security-events\n    Header           Content-Type application/json\n    HTTP_User        ${AUDITLOG_USER}\n    HTTP_Passwd      ${AUDITLOG_PASSWD}\n    Format           json_stream\n    tls              on\n"
+          },
+          {
+            "key": "fluent-bit.config.secrets.AUDITLOG_USER",
+            "value": "10cdf4a38423fc1d"
+          },
+          {
+            "key": "fluent-bit.config.secrets.AUDITLOG_PASSWD",
+            "value": "fcf70646fed58151"
+          },
+          {
+            "key": "fluent-bit.externalServiceEntry.resolution",
+            "value": "DNS"
+          },
+          {
+            "key": "fluent-bit.externalServiceEntry.hosts",
+            "value": "- api.auditlog.cf.stagingaws.hanavlab.ondemand.com"
+          },
+          {
+            "key": "fluent-bit.externalServiceEntry.ports",
+            "value": "- number: 8081\n  name: https\n  protocol: TLS"
+          }
+        ]
+      }
+    ],
+    "administrators": [
+      "test2@test.pl"
+    ]
+  },
+  "kubeConfig": "apiVersion: v1\nkind: Config\ncurrent-context: shoot--wookiee--rafal\ncontexts:\n  - name: shoot--wookiee--rafal\n    context:\n      cluster: shoot--wookiee--rafal\n      user: shoot--wookiee--rafal-token\nclusters:\n  - name: shoot--wookiee--rafal\n    cluster:\n      server: 'https://api.rafal.wookiee.shoot.canary.k8s-hana.ondemand.com'\n      certificate-authority-data: >-\n        LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM5ekNDQWQrZ0F3SUJBZ0lSQU1wT1BDVkdZT0pUYnh3Tno4N2JlTkV3RFFZSktvWklodmNOQVFFTEJRQXcKRlRFVE1CRUdBMVVFQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TVRBNE1EVXdOakExTXpoYUZ3MHpNVEE0TURVdwpOakExTXpoYU1CVXhFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBCkE0SUJEd0F3Z2dFS0FvSUJBUUMxM0Z5WVJQMlpkUkZwMm8vQ2V6Zyt1b3ZjOStCeS9xcmk5Z0x0SmIvRkJhVWEKS2lwcWMrUFJTcGI1bjk1QTZiaGs5YjRqNFVTcTNVdEx1Z1RaYTVUL2UrV2d2eUloUmc3b2liTEh4dVl0cGJFWgpud25WUmJGaWt3Mi9ObW5VNS9ySThrVlEvRFlKYkVTandnOXU5YnFKRjl6MWNzOW9NTkQrQkFBVEZEcFhuM2xvCm4vNGcvalp6UVdSY2w4US9NSEZRSU9PendiQ3k1cjFTN1dEd1hxNll5ZEh1eUhpSEhGVlhjbTZVUklZV3BvdnMKNXVXVU9CQVllZGM3bll3NkgrQVp3NVQvT3ZZZEN3M1VrUnk0Y1VrZDhrVXBmcFBVazhJV3hIaE9ha3ZBTlZBbgpOTXYvWStDNWxBdFU3YkV6MzNUeHZ4Q25yMFNMYTljUXc3QldPNEVwQWdNQkFBR2pRakJBTUE0R0ExVWREd0VCCi93UUVBd0lCcGpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJUQXhKblY2bkpYTEZmMUpXdjQKTEsyeWdybXJWekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBZUFCdDBqLzhjRDhFTEFlV0Znd0dCUWczZTlQYwpnUWlUd3ZkV1duM2hZWlZnUDdGWTV1VWJIczd0ZWFRc2tOTXkwOUViSEczN0ZXZ1Q1ZzFrYTZlWTFYM3Z0MlFPCjgxcFpzWHh4OXdWV1ZZdVRrVTgxYW4xNmlWTG05OVNwYjF0V1FwYk9lK0VSczYyRnlaT1JFS0NLaU1GWnl1R1kKZC9ITHZ1YVFjZUpVN0l2bUZHV3ZFMTFwWkxOR1MyQmRLY0FKZWQ5ZDc2a3BGOVNpeW43YUluSW0wRENMWENZTwpaZG5KSU5DN1RIN2grMjNJa2NWRG1uVnlrL0FGOWVmQ3hLV2hFVGUxRmZWUVlWUTBFTlNKb0Fuck5tSFhOWk9yClc4V0tIaENGYkQzYVdrZzdlZG5Dd0pWMnYyLzBFV2hsdExqV2R0UDlqNmtmYzFMTDdaOXBZWlJTZXc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==\nusers:\n  - name: shoot--wookiee--rafal-token\n    user:\n      token: >-\n        qGJC5t1Zp4y5cY6kngGVcwOMGRHwpMCZSTL5uc2ZqNbwEuIBpI9mrxVORqvWFDDhKB21D2KHHVeAMGrpxCRDr8yd5XzYfYehDVfLGKwVtHKO07XdR5Kwjk8L0zDhi4L6\n",
+  "metadata": {
+    "globalAccountID": "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae",
+    "subAccountID": "f7d129fa-b2fe-11eb-8529-0242ac130003",
+    "serviceID": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+    "servicePlanID": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+    "shootName": "4deee563",
+    "instanceID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5"
+  }
+}
+

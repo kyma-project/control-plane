@@ -51,7 +51,6 @@ func (cmd *LoginCommand) Run() error {
 	}
 
 	viper.Set(GlobalOpts.username, cmd.username)
-	err = viper.WriteConfig()
 
 	return err
 }

@@ -68,6 +68,16 @@ func runtimeStatusData() string {
 			}`, clusterConfig())
 }
 
+/*
+type OIDCConfig {
+    clientID: String!
+    groupsClaim: String!
+    issuerURL: String!
+    signingAlgs: [String!]!
+    usernameClaim: String!
+    usernamePrefix: String!
+}
+*/
 func clusterConfig() string {
 	return fmt.Sprintf(`
 		name
@@ -88,6 +98,14 @@ func clusterConfig() string {
 		providerSpecificConfig {
 			%s
 		}
+        oidcConfig {
+			clientID
+			issuerURL
+			groupsClaim
+			signingAlgs
+			usernameClaim
+			usernamePrefix
+        }
 `, providerSpecificConfig())
 }
 
