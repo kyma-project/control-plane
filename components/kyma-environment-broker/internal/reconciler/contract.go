@@ -43,6 +43,15 @@ type Metadata struct {
 	InstanceID      string `json:"instanceID"`
 }
 
+// reconciling statuses
+const (
+	ReconcilePendingStatus = "reconcile_pending"
+	ReconcileFailedStatus = "reconcile_failed"
+	ReconcilingStatus = "reconciling"
+	ErrorStatus = "error"
+	ReadyStatus = "ready"
+)
+
 type State struct {
 	Cluster              string `json:"cluster"`
 	ClusterVersion       int64  `json:"clusterVersion"`
