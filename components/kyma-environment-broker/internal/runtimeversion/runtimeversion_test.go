@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -18,7 +19,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from ProvisioningParameters when version provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.1.1"
-		rvc := NewRuntimeVersionConfigurator("not-relevant", &AccountVersionMapping{})
+		rvc := NewRuntimeVersionConfigurator("not-relevant", "", &AccountVersionMapping{})
 
 		// when
 		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
@@ -40,7 +41,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 				ProvisioningParameters: internal.ProvisioningParameters{},
 			},
 		}
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{}))
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{}))
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -60,7 +61,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 				},
 			},
 		}
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 		}))
 
@@ -83,7 +84,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 				},
 			},
 		}
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
 		}))
@@ -95,6 +96,82 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		require.NoError(t, err)
 		require.Equal(t, versionForSA, ver.Version)
 		require.Equal(t, internal.AccountMapping, ver.Origin)
+	})
+	t.Run("should return Kyma Version from ProvisioningParameters even when previewVersion provided", func(t *testing.T) {
+		// given
+		runtimeVer := "1.0.0"
+		previewVer := "2.0"
+		planID := broker.PreviewPlanID
+
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
+					PlanID:     planID,
+				},
+			},
+		}
+
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}))
+
+		// when
+		ver, err := rvc.ForProvisioning(operation)
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, runtimeVer, ver.Version)
+	})
+	t.Run("should return previewVersion when version not provided", func(t *testing.T) {
+		// given
+		runtimeVer := ""
+		previewVer := "2.0"
+		planID := broker.PreviewPlanID
+
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
+					PlanID:     planID,
+				},
+			},
+		}
+
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}))
+
+		// when
+		ver, err := rvc.ForProvisioning(operation)
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, previewVer, ver.Version)
+	})
+	t.Run("should return previewVersion when both GA and SA mapping provided", func(t *testing.T) {
+		// given
+		runtimeVer := "1.0.0"
+		previewVer := "2.0"
+		planID := broker.PreviewPlanID
+
+		operation := internal.ProvisioningOperation{
+			Operation: internal.Operation{
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: planID,
+					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+						SubAccountID: fixSubAccountID},
+				},
+			},
+		}
+
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
+			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
+			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
+		}))
+
+		// when
+		ver, err := rvc.ForProvisioning(operation)
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, previewVer, ver.Version)
 	})
 }
 
