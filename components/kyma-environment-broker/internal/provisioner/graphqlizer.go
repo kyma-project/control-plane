@@ -241,10 +241,10 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
       maxUnavailable: {{ .MaxUnavailable }},
       {{- end }}
       {{- if .EnableKubernetesVersionAutoUpdate }}
-      enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
+      enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
       {{- end }}
       {{- if .EnableMachineImageVersionAutoUpdate }}
-      enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
+      enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
       {{- end }}
       {{- if .OidcConfig }}
       oidcConfig: {

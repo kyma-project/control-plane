@@ -350,11 +350,13 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
 
-	// sync with the autoscaler settings
+	// sync with the autoscaler and maintenance settings
 	input.GardenerConfig.AutoScalerMin = &provider.Defaults().GardenerConfig.AutoScalerMin
 	input.GardenerConfig.AutoScalerMax = &provider.Defaults().GardenerConfig.AutoScalerMax
 	input.GardenerConfig.MaxSurge = &provider.Defaults().GardenerConfig.MaxSurge
 	input.GardenerConfig.MaxUnavailable = &provider.Defaults().GardenerConfig.MaxUnavailable
+	input.GardenerConfig.EnableKubernetesVersionAutoUpdate = &f.config.AutoUpdateKubernetesVersion
+	input.GardenerConfig.EnableMachineImageVersionAutoUpdate = &f.config.AutoUpdateMachineImageVersion
 
 	return input
 }
