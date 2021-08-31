@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -328,6 +330,18 @@ func (c *SimpleInputCreator) SetLabel(key, val string) internal.ProvisionerInput
 	return c
 }
 
+func (c *SimpleInputCreator) SetKubeconfig(kcfg string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetInstanceID(kcfg string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetRuntimeID(runtimeID string) internal.ProvisionerInputCreator {
+	return c
+}
+
 func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }
@@ -339,6 +353,14 @@ func (c *SimpleInputCreator) AppendOverrides(component string, overrides []*gqls
 
 func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
+}
+
+func (c *SimpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+	return reconciler.Cluster{}, nil
+}
+
+func (c *SimpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
+	return gqlschema.ProvisionRuntimeInput{}, nil
 }
 
 func (c *SimpleInputCreator) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntimeInput, error) {

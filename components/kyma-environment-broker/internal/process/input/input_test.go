@@ -349,7 +349,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// when
 	shootName := "c-51bcc12"
-	input, err := builder.
+	builder.
 		SetProvisioningParameters(internal.ProvisioningParameters{
 			Parameters: internal.ProvisioningParametersDTO{
 				Name:         "azure-cluster",
@@ -359,10 +359,16 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		}).
 		SetShootName(shootName).
 		SetLabel("label1", "value1").
-		AppendOverrides("keb", kebOverrides).CreateProvisionRuntimeInput()
+		AppendOverrides("keb", kebOverrides)
+	input, err := builder.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+	clusterInput, err := builder.CreateProvisionClusterInput()
+	require.NoError(t, err)
 
 	// then
-	require.NoError(t, err)
+	assert.Equal(t, input.ClusterConfig, clusterInput.ClusterConfig)
+	assert.Equal(t, input.RuntimeInput, clusterInput.RuntimeInput)
+	assert.Nil(t, clusterInput.KymaConfig)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Contains(t, input.RuntimeInput.Name, "azure-cluster")
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
@@ -422,6 +428,8 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			// when
 			input, err := creator.CreateProvisionRuntimeInput()
 			require.NoError(t, err)
+			clusterInput, err := creator.CreateProvisionClusterInput()
+			require.NoError(t, err)
 
 			// then
 			assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
@@ -429,6 +437,9 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			assert.Equal(t, tc.expectedNameWithoutSuffix, input.RuntimeInput.Name[:len(input.RuntimeInput.Name)-6])
 			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
 			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+			assert.Equal(t, tc.expectedNameWithoutSuffix, clusterInput.RuntimeInput.Name[:len(input.RuntimeInput.Name)-6])
+			assert.Equal(t, 1, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMin)
+			assert.Equal(t, 1, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMax)
 		})
 	}
 }
@@ -452,10 +463,12 @@ func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	// when
 	input, err := creator.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
+	clusterInput, err := creator.CreateProvisionClusterInput()
+	require.NoError(t, err)
 
 	// then
 	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+	assert.Equal(t, 2, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func TestShouldSetGlobalConfiguration(t *testing.T) {
@@ -541,9 +554,12 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
 
 	t.Run("should apply default OIDC values when all OIDC fields are empty", func(t *testing.T) {
@@ -576,9 +592,12 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
 
 	t.Run("should apply provided OIDC values", func(t *testing.T) {
@@ -618,9 +637,12 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
 }
 
@@ -644,13 +666,17 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
 		require.NoError(t, err)
+		setRuntimeProperties(creator)
 
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+		assert.Equal(t, expectedAdmins, inventoryInput.KymaConfig.Administrators)
 	})
 
 	t.Run("should apply new admin list", func(t *testing.T) {
@@ -672,14 +698,25 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
 		require.NoError(t, err)
+		setRuntimeProperties(creator)
 
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+		assert.Equal(t, expectedAdmins, inventoryInput.KymaConfig.Administrators)
 	})
+}
+
+func setRuntimeProperties(creator internal.ProvisionerInputCreator) {
+	creator.SetKubeconfig("example kubeconfig payload")
+	creator.SetRuntimeID("runtimeID")
+	creator.SetInstanceID("instanceID")
+	creator.SetShootName("shoot-name")
 }
 
 func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
@@ -812,7 +849,6 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		expectAutoscalerMax := provider.Defaults().GardenerConfig.AutoScalerMax
 		expectMaxSurge := provider.Defaults().GardenerConfig.MaxSurge
 		expectMaxUnavailable := provider.Defaults().GardenerConfig.MaxUnavailable
-		t.Logf("%v, %v, %v, %v", expectAutoscalerMin, expectAutoscalerMax, expectMaxSurge, expectMaxUnavailable)
 
 		assert.Equal(t, expectAutoscalerMin, *input.GardenerConfig.AutoScalerMin)
 		assert.Equal(t, expectAutoscalerMax, *input.GardenerConfig.AutoScalerMax)

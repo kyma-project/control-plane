@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -32,6 +34,12 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+
+	CreateProvisionSKRInventoryInput() (reconciler.Cluster, error)
+	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
+	SetKubeconfig(kcfg string) ProvisionerInputCreator
+	SetRuntimeID(runtimeID string) ProvisionerInputCreator
+	SetInstanceID(instanceID string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for

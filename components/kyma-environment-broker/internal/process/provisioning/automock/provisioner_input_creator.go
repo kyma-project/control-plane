@@ -4,6 +4,7 @@ package automock
 
 import (
 	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	mock "github.com/stretchr/testify/mock"
@@ -44,6 +45,27 @@ func (_m *ProvisionerInputCreator) AppendOverrides(component string, overrides [
 	}
 
 	return r0
+}
+
+// CreateProvisionSKRInventoryInput provides a mock function with given fields:
+func (_m *ProvisionerInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+	ret := _m.Called()
+
+	var r0 reconciler.Cluster
+	if rf, ok := ret.Get(0).(func() reconciler.Cluster); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(reconciler.Cluster)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateProvisionRuntimeInput provides a mock function with given fields:
@@ -97,6 +119,48 @@ func (_m *ProvisionerInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeS
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(gqlschema.UpgradeShootInput)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CreateUpgradeShootInput provides a mock function with given fields:
+func (_m *ProvisionerInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
+	ret := _m.Called()
+
+	var r0 gqlschema.ProvisionRuntimeInput
+	if rf, ok := ret.Get(0).(func() gqlschema.ProvisionRuntimeInput); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(gqlschema.ProvisionRuntimeInput)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CreateUpgradeShootInput provides a mock function with given fields:
+func (_m *ProvisionerInputCreator) CreateProvisiongSKRInventoryInput() (gqlschema.ProvisionRuntimeInput, error) {
+	ret := _m.Called()
+
+	var r0 gqlschema.ProvisionRuntimeInput
+	if rf, ok := ret.Get(0).(func() gqlschema.ProvisionRuntimeInput); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(gqlschema.ProvisionRuntimeInput)
 	}
 
 	var r1 error
@@ -190,6 +254,54 @@ func (_m *ProvisionerInputCreator) SetProvisioningParameters(params internal.Pro
 
 // SetShootName provides a mock function with given fields: _a0
 func (_m *ProvisionerInputCreator) SetShootName(_a0 string) internal.ProvisionerInputCreator {
+	ret := _m.Called(_a0)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
+// SetRuntimeID provides a mock function with given fields: _a0
+func (_m *ProvisionerInputCreator) SetRuntimeID(_a0 string) internal.ProvisionerInputCreator {
+	ret := _m.Called(_a0)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
+// SetInstanceID provides a mock function with given fields: _a0
+func (_m *ProvisionerInputCreator) SetInstanceID(_a0 string) internal.ProvisionerInputCreator {
+	ret := _m.Called(_a0)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
+// SetKubeconfig provides a mock function with given fields: _a0
+func (_m *ProvisionerInputCreator) SetKubeconfig(_a0 string) internal.ProvisionerInputCreator {
 	ret := _m.Called(_a0)
 
 	var r0 internal.ProvisionerInputCreator

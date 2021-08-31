@@ -3,6 +3,8 @@ package provisioning
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -69,6 +71,18 @@ func (c *simpleInputCreator) SetProvisioningParameters(params internal.Provision
 	return c
 }
 
+func (c *simpleInputCreator) SetKubeconfig(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) SetRuntimeID(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) SetInstanceID(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
 func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.overrides[component] = append(c.overrides[component], overrides...)
 	return c
@@ -103,4 +117,12 @@ func (c *simpleInputCreator) AssertLabel(t *testing.T, key, expectedValue string
 
 func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName string) {
 	assert.Contains(t, c.enabledComponents, componentName)
+}
+
+func (c *simpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+	return reconciler.Cluster{}, nil
+}
+
+func (c *simpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
+	return gqlschema.ProvisionRuntimeInput{}, nil
 }
