@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,13 +17,13 @@ import (
 type Client interface {
 	ApplyClusterConfig(cluster Cluster) (*State, error)
 	DeleteCluster(clusterName string) error
-	GetCluster(clusterName, configVersion string) (*State, error)
+	GetCluster(clusterName string, configVersion int64) (*State, error)
 	GetLatestCluster(clusterName string) (*State, error)
 	GetStatusChange(clusterName, offset string) ([]*StatusChange, error)
 }
 
 type Config struct {
-	reconcilerURL string
+	URL string
 }
 
 type client struct {
@@ -48,7 +50,7 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 
 	reader := bytes.NewReader(reqBody)
 
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/clusters", c.config.reconcilerURL), reader)
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/clusters", c.config.URL), reader)
 	if err != nil {
 		c.log.Error(err)
 		return &State{}, err
@@ -60,6 +62,15 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 		return &State{}, err
 	}
 	defer res.Body.Close()
+
+	c.log.Debugf("Got response: statusCode=%d", res.StatusCode)
+	switch {
+	case res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated:
+	case res.StatusCode >= 400 && res.StatusCode < 500:
+		return nil, fmt.Errorf("got status %d", res.StatusCode)
+	case res.StatusCode >= 500:
+		return nil, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+	}
 
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -77,24 +88,33 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 
 // DELETE /v1/clusters/{clusterName}
 func (c *client) DeleteCluster(clusterName string) error {
-	request, err := http.NewRequest("DELETE", fmt.Sprintf("%s/v1/clusters/%s", c.config.reconcilerURL, clusterName), nil)
+	request, err := http.NewRequest("DELETE", fmt.Sprintf("%s/v1/clusters/%s", c.config.URL, clusterName), nil)
 	if err != nil {
 		c.log.Error(err)
 		return err
 	}
 
-	_, err = c.httpClient.Do(request)
+	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
 		return err
 	}
+	switch {
+	case res.StatusCode == http.StatusNotFound:
+		return nil
+	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
+		return fmt.Errorf("got status %d", res.StatusCode)
+	case res.StatusCode >= 500:
+		return kebError.NewTemporaryError("Got status %d", res.StatusCode)
+	default:
+		return nil
+	}
 
-	return nil
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
-func (c *client) GetCluster(clusterName, configVersion string) (*State, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", c.config.reconcilerURL, clusterName, configVersion), nil)
+func (c *client) GetCluster(clusterName string, configVersion int64) (*State, error) {
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", c.config.URL, clusterName, configVersion), nil)
 	if err != nil {
 		c.log.Error(err)
 		return &State{}, err
@@ -123,7 +143,7 @@ func (c *client) GetCluster(clusterName, configVersion string) (*State, error) {
 
 // GET v1/clusters/{clusterName}/status
 func (c *client) GetLatestCluster(clusterName string) (*State, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/status", c.config.reconcilerURL, clusterName), nil)
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/status", c.config.URL, clusterName), nil)
 	if err != nil {
 		c.log.Error(err)
 		return &State{}, err
@@ -153,7 +173,7 @@ func (c *client) GetLatestCluster(clusterName string) (*State, error) {
 // GET v1/clusters/{clusterName}/statusChanges/{offset}
 // offset is parsed to time.Duration
 func (c *client) GetStatusChange(clusterName, offset string) ([]*StatusChange, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/statusChanges/%s", c.config.reconcilerURL, clusterName, offset), nil)
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/statusChanges/%s", c.config.URL, clusterName, offset), nil)
 	if err != nil {
 		c.log.Error(err)
 		return []*StatusChange{}, err

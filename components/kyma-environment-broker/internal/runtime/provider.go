@@ -24,6 +24,8 @@ const (
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
+// todo: a new way of components provider for 2.0
+
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
 type ComponentsListProvider struct {
 	managedRuntimeComponentsYAMLPath       string

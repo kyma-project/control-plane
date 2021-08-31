@@ -58,6 +58,8 @@ spec:
               value: "{{ .Values.enableKubeconfigURLLabel }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
+            - name: APP_RECONCILER_URL
+              value: "{{ .Values.reconciler.URL }}"
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONER_PROVISIONING_TIMEOUT

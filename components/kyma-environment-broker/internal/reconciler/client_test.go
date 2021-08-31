@@ -41,42 +41,7 @@ func Test_RegisterCluster(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
-
-	// when
-	response, err := client.ApplyClusterConfig(*requestedCluster)
-
-	// then
-	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
-	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
-	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
-	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusUrl)
-}
-
-func Test_UpdateCluster(t *testing.T) {
-	// given
-	fixClusterID := "1"
-	fixClusterVersion := int64(1)
-	fixConfigVersion := int64(2)
-	requestedCluster := fixCluster(t, fixClusterID, fixClusterVersion)
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//then
-		assert.Equal(t, "/v1/clusters", r.URL.Path)
-		assert.Equal(t, http.MethodPost, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
-			ClusterVersion:       fixClusterVersion,
-			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
-			StatusUrl:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.Cluster, strconv.FormatInt(fixConfigVersion, 10)),
-		})
-		require.NoError(t, err)
-	}))
-	defer ts.Close()
-
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
+	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{URL: ts.URL})
 
 	// when
 	response, err := client.ApplyClusterConfig(*requestedCluster)
@@ -102,7 +67,7 @@ func Test_DeleteCluster(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
+	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{URL: ts.URL})
 
 	// when
 	err := client.DeleteCluster(fixClusterID)
@@ -131,10 +96,10 @@ func Test_GetCluster(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
+	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{URL: ts.URL})
 
 	// when
-	response, err := client.GetCluster(fixClusterID, strconv.FormatInt(fixConfigVersion, 10))
+	response, err := client.GetCluster(fixClusterID, fixConfigVersion)
 
 	// then
 	require.NoError(t, err)
@@ -164,7 +129,7 @@ func Test_GetLatestCluster(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
+	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{URL: ts.URL})
 
 	// when
 	response, err := client.GetLatestCluster(fixClusterID)
@@ -203,7 +168,7 @@ func Test_GetStatusChange(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
+	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{URL: ts.URL})
 
 	// when
 	response, err := client.GetStatusChange(fixClusterID, fixOffset)

@@ -71,7 +71,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	ctx := context.Background()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	additionalKymaVersions := []string{"1.19", "1.20", "main"}
+	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, additionalKymaVersions)...).Build()
 	cfg := fixConfig()
 
@@ -81,7 +81,14 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
+	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{
+		{
+			Name:        "service-catalog2",
+			ReleaseName: "",
+			Namespace:   "kyma-system",
+			Source:      nil,
+		},
+	}, nil)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
@@ -111,6 +118,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	smcf := fixServiceManagerFactory()
 	iasFakeClient := ias.NewFakeClient()
+	reconcilerClient := reconciler.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 	edpClient := edp.NewFakeClient()
 	accountProvider := fixAccountProvider()
@@ -129,7 +137,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -142,7 +150,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, monitoringClient, accountProvider, logs,
+		bundleBuilder, edpClient, monitoringClient, accountProvider, reconcilerClient, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)
@@ -208,8 +216,12 @@ func (s *BrokerSuiteTest) CreateAPI(inputFactory broker.PlanValidator, cfg *Conf
 				SupportUrl:  "https://kyma-project.io",
 			},
 			Plans: map[string]broker.PlanData{
-				"4deee563-e5ec-4731-b9b1-53b42d855f0c": {
-					Description: "azure",
+				broker.AzurePlanID: {
+					Description: broker.AzurePlanName,
+					Metadata:    broker.PlanMetadata{},
+				},
+				broker.PreviewPlanID: {
+					Description: broker.PreviewPlanName,
 					Metadata:    broker.PlanMetadata{},
 				},
 			},
@@ -365,7 +377,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 
 	var state *reconciler.State
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, "1")
+		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if err != nil {
 			return false, err
 		}
@@ -423,10 +435,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconciling(operationID string)
 
 	var state *reconciler.State
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, "1")
-		if err != nil {
-			return false, err
-		}
+		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
 			return true, nil
 		}
@@ -499,9 +508,14 @@ func (s *BrokerSuiteTest) fetchProvisionInput() gqlschema.ProvisionRuntimeInput 
 	return input
 }
 
-func (s *BrokerSuiteTest) AssertProvisionRuntimeInput(expectedInput gqlschema.ProvisionRuntimeInput) {
+func (s *BrokerSuiteTest) AssertProvider(expectedProvider string) {
 	input := s.fetchProvisionInput()
-	assert.Equal(s.t, expectedInput, input)
+	assert.Equal(s.t, expectedProvider, input.ClusterConfig.GardenerConfig.Provider)
+}
+
+func (s *BrokerSuiteTest) AssertProvisionRuntimeInputWithoutKymaConfig() {
+	input := s.fetchProvisionInput()
+	assert.Nil(s.t, input.KymaConfig)
 }
 
 func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconciler.State) {
@@ -531,16 +545,31 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 }
 
 func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedClusterConfig *reconciler.Cluster) {
-	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
-		assert.NoError(s.t, err)
-		if op.ProvisionerOperationID != "" {
-			provisioningOp = op
-			return true, nil
-		}
-		return false, nil
-	})
+	clusterConfig := s.getClusterConfig(operationID)
+
+	assert.Equal(s.t, *expectedClusterConfig, clusterConfig)
+}
+
+func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKymaConfig reconciler.KymaConfig) {
+	clusterConfig := s.getClusterConfig(operationID)
+
+	assert.Equal(s.t, expectedKymaConfig, clusterConfig.KymaConfig)
+}
+
+func (s *BrokerSuiteTest) AssertClusterConfigWithKubeconfig(id string) {
+	clusterConfig := s.getClusterConfig(id)
+
+	assert.NotEmpty(s.t, clusterConfig.Kubeconfig)
+}
+
+func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconciler.Metadata) {
+	clusterConfig := s.getClusterConfig(id)
+
+	assert.Equal(s.t, metadata, clusterConfig.Metadata)
+}
+
+func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconciler.Cluster {
+	provisioningOp, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 
 	var clusterConfig *reconciler.Cluster
@@ -554,9 +583,9 @@ func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedCluste
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
-	assert.Equal(s.t, *expectedClusterConfig, *clusterConfig)
+	return *clusterConfig
 }
 
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
@@ -619,6 +648,12 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
 	s.processProvisioningByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) ShootName(id string) string {
+	op, err := s.db.Operations().GetProvisioningOperationByID(id)
+	require.NoError(s.t, err)
+	return op.ShootName
 }
 
 func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {

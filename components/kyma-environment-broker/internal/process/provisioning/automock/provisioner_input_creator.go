@@ -48,7 +48,7 @@ func (_m *ProvisionerInputCreator) AppendOverrides(component string, overrides [
 }
 
 // CreateProvisionSKRInventoryInput provides a mock function with given fields:
-func (_m *ProvisionerInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+func (_m *ProvisionerInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
 	ret := _m.Called()
 
 	var r0 reconciler.Cluster
