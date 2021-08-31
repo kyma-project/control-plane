@@ -94,6 +94,12 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }},
         maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
+		{{- end }}
 		{{- if .ProviderSpecificConfig }}
 		providerSpecificConfig: {
 			{{- if .ProviderSpecificConfig.AzureConfig }}
