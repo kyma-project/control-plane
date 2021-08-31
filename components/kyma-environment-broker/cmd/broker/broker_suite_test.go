@@ -420,6 +420,16 @@ func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expecte
 	assert.Equal(s.t, expectedAdmins, instance.Parameters.Parameters.RuntimeAdministrators)
 }
 
+func (s *BrokerSuiteTest) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
+	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	return input
+}
+
+func (s *BrokerSuiteTest) AssertProvisionRuntimeInput(expectedInput gqlschema.ProvisionRuntimeInput) {
+	input := s.fetchProvisionInput()
+	assert.Equal(s.t, expectedInput, input)
+}
+
 func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconciler.State) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
