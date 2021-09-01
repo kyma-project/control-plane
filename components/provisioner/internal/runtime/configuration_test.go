@@ -39,7 +39,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 	cluster := model.Cluster{
 		ID:     runtimeID,
 		Tenant: tenant,
-		KymaConfig: model.KymaConfig{
+		KymaConfig: &model.KymaConfig{
 			Components: []model.KymaComponentConfig{
 				{
 					Namespace: namespace,
@@ -123,7 +123,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		clusterWithoutAgent := model.Cluster{
 			ID:     runtimeID,
 			Tenant: tenant,
-			KymaConfig: model.KymaConfig{
+			KymaConfig: &model.KymaConfig{
 				Components: []model.KymaComponentConfig{
 					{
 						Namespace: namespace,

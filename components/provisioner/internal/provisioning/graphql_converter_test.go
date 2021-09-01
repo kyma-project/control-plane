@@ -202,6 +202,151 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
 	})
 
+	t.Run("Should create proper runtime status struct for gardener config without kyma config", func(t *testing.T) {
+		//given
+		clusterName := "Something"
+		project := "Project"
+		disk := "standard"
+		machine := "machine"
+		machineImage := "gardenlinux"
+		machineImageVersion := "25.0.0"
+		region := "region"
+		zones := []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}
+		volume := 256
+		kubeversion := "kubeversion"
+		kubeconfig := "kubeconfig"
+		provider := "GCP"
+		purpose := "testing"
+		licenceType := "partner"
+		seed := "gcp-eu1"
+		secret := "secret"
+		cidr := "cidr"
+		autoScMax := 2
+		autoScMin := 2
+		surge := 1
+		unavailable := 1
+		enableKubernetesVersionAutoUpdate := true
+		enableMachineImageVersionAutoUpdate := false
+		allowPrivilegedContainers := true
+		exposureClassName := "internet"
+
+		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
+		require.NoError(t, err)
+
+		runtimeStatus := model.RuntimeStatus{
+			LastOperationStatus: model.Operation{
+				ID:        "5f6e3ab6-d803-430a-8fac-29c9c9b4485a",
+				Type:      model.DeprovisionNoInstall,
+				State:     model.Failed,
+				Message:   "Some message",
+				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+			},
+			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
+			RuntimeConfiguration: model.Cluster{
+				ClusterConfig: model.GardenerConfig{
+					Name:                                clusterName,
+					ProjectName:                         project,
+					DiskType:                            &disk,
+					MachineType:                         machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Region:                              region,
+					VolumeSizeGB:                        &volume,
+					KubernetesVersion:                   kubeversion,
+					Provider:                            provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                seed,
+					TargetSecret:                        secret,
+					WorkerCidr:                          cidr,
+					AutoScalerMax:                       autoScMax,
+					AutoScalerMin:                       autoScMin,
+					MaxSurge:                            surge,
+					MaxUnavailable:                      unavailable,
+					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           allowPrivilegedContainers,
+					GardenerProviderConfig:              gardenerProviderConfig,
+					OIDCConfig:                          oidcConfig(),
+					ExposureClassName:                   &exposureClassName,
+				},
+				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: model.HibernationStatus{
+				HibernationPossible: true,
+				Hibernated:          true,
+			},
+		}
+
+		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
+		message := "Some message"
+		runtimeID := "6af76034-272a-42be-ac39-30e075f515a3"
+
+		hibernationPossible := true
+		hibernated := true
+
+		expectedRuntimeStatus := &gqlschema.RuntimeStatus{
+			LastOperationStatus: &gqlschema.OperationStatus{
+				ID:        &operationID,
+				Operation: gqlschema.OperationTypeDeprovisionNoInstall,
+				State:     gqlschema.OperationStateFailed,
+				Message:   &message,
+				RuntimeID: &runtimeID,
+			},
+			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
+				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
+			},
+			RuntimeConfiguration: &gqlschema.RuntimeConfig{
+				ClusterConfig: &gqlschema.GardenerConfig{
+					Name:                                &clusterName,
+					DiskType:                            &disk,
+					MachineType:                         &machine,
+					MachineImage:                        &machineImage,
+					MachineImageVersion:                 &machineImageVersion,
+					Region:                              &region,
+					VolumeSizeGb:                        &volume,
+					KubernetesVersion:                   &kubeversion,
+					Provider:                            &provider,
+					Purpose:                             &purpose,
+					LicenceType:                         &licenceType,
+					Seed:                                &seed,
+					TargetSecret:                        &secret,
+					WorkerCidr:                          &cidr,
+					AutoScalerMax:                       &autoScMax,
+					AutoScalerMin:                       &autoScMin,
+					MaxSurge:                            &surge,
+					MaxUnavailable:                      &unavailable,
+					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
+					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
+					AllowPrivilegedContainers:           &allowPrivilegedContainers,
+					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
+						Zones: zones,
+					},
+					OidcConfig: &gqlschema.OIDCConfig{
+						ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb1111",
+						GroupsClaim:    "groups",
+						IssuerURL:      "https://kymatest.accounts400.ondemand.com",
+						SigningAlgs:    []string{"RS256"},
+						UsernameClaim:  "sub",
+						UsernamePrefix: "-",
+					},
+					ExposureClassName: &exposureClassName,
+				},
+				Kubeconfig: &kubeconfig,
+			},
+			HibernationStatus: &gqlschema.HibernationStatus{
+				HibernationPossible: &hibernationPossible,
+				Hibernated:          &hibernated,
+			},
+		}
+
+		//when
+		gqlStatus := graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus)
+
+		//then
+		assert.Equal(t, expectedRuntimeStatus, gqlStatus)
+	})
+
 	t.Run("Should create proper runtime status struct for gardener config without zones", func(t *testing.T) {
 		//given
 		clusterName := "Something"
@@ -389,8 +534,8 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 	}
 }
 
-func fixKymaConfig(profile *model.KymaProfile) model.KymaConfig {
-	return model.KymaConfig{
+func fixKymaConfig(profile *model.KymaProfile) *model.KymaConfig {
+	return &model.KymaConfig{
 		ID:                  "id",
 		Release:             fixKymaRelease(),
 		Profile:             profile,

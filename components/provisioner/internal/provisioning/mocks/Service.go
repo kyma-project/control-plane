@@ -14,20 +14,20 @@ type Service struct {
 	mock.Mock
 }
 
-// DeprovisionRuntime provides a mock function with given fields: id, tenant
-func (_m *Service) DeprovisionRuntime(id string, tenant string) (string, apperrors.AppError) {
-	ret := _m.Called(id, tenant)
+// DeprovisionRuntime provides a mock function with given fields: id
+func (_m *Service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
+	ret := _m.Called(id)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(id, tenant)
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(id)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(string, string) apperrors.AppError); ok {
-		r1 = rf(id, tenant)
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
+		r1 = rf(id)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)

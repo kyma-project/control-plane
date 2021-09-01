@@ -43,19 +43,16 @@ func (a *auditLogConfigurator) SetAuditLogAnnotation(shoot *gardener_types.Shoot
 	provider := getProviderType(seed)
 
 	providerConfig := auditLogConfig[provider]
-
 	if providerConfig == nil {
 		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
 	}
 
 	auditID := a.getAuditLogInstanceIdentifier(seed)
-
 	if auditID == "" {
 		return false, errors.New("could not find audit identifier")
 	}
 
 	tenant := providerConfig[auditID]
-
 	if tenant == "" {
 		return false, errors.New(fmt.Sprintf("tenant for audit identifier %s is empty", auditID))
 	} else if tenant == shoot.Annotations[auditLogsAnnotation] {

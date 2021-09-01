@@ -68,13 +68,13 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	tenant, err := r.getAndValidateTenant(ctx, id)
+	_, err := r.getAndValidateTenant(ctx, id)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
 	}
 
-	operationID, err := r.provisioning.DeprovisionRuntime(id, tenant)
+	operationID, err := r.provisioning.DeprovisionRuntime(id)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
@@ -87,14 +87,12 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
 
-	_, err := r.getAndValidateTenant(ctx, runtimeId)
-	if err != nil {
+	if _, err := r.getAndValidateTenant(ctx, runtimeId); err != nil {
 		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
 		return &gqlschema.OperationStatus{}, err
 	}
 
-	err = r.validator.ValidateUpgradeInput(input)
-	if err != nil {
+	if err := r.validator.ValidateUpgradeInput(input); err != nil {
 		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
 		return nil, err
 	}
