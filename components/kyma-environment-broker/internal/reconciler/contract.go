@@ -46,10 +46,10 @@ type Metadata struct {
 // reconciling statuses
 const (
 	ReconcilePendingStatus = "reconcile_pending"
-	ReconcileFailedStatus = "reconcile_failed"
-	ReconcilingStatus = "reconciling"
-	ErrorStatus = "error"
-	ReadyStatus = "ready"
+	ReconcileFailedStatus  = "reconcile_failed"
+	ReconcilingStatus      = "reconciling"
+	ErrorStatus            = "error"
+	ReadyStatus            = "ready"
 )
 
 type State struct {

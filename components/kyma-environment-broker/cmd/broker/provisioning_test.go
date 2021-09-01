@@ -7,13 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 )
 
@@ -45,7 +43,7 @@ func TestProvisioning_HappyPath(t *testing.T) {
 
 func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	t.Skip("not implemented yet")
-		
+
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
@@ -54,32 +52,33 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	// when
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
-						"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-						"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
-						"context": {
-							"sm_platform_credentials": {
-								"url": "https://sm.url",
-								"credentials": {}
-							},
-							"globalaccount_id": "g-account-id",
-							"subaccount_id": "sub-id",
-							"user_id": "john.smith@email.com"
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_platform_credentials": {
+							"url": "https://sm.url",
+							"credentials": {}
 						},
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-initial",
-							"signingAlgs": ["xxx"],
-							"issuerURL": "https://issuer.url.com"
-						}
+					"globalaccount_id": "g-account-id",
+					"subaccount_id": "sub-id",
+					"user_id": "john.smith@email.com"
+				},
+				"parameters": {
+					"name": "testing-cluster",
+					"oidc": {
+						"clientID": "id-initial",
+						"signingAlgs": ["xxx"],
+						"issuerURL": "https://issuer.url.com"
 					}
+				}
 		}`)
+
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// then
 	//suite.AssertProvisionRuntimeInput()

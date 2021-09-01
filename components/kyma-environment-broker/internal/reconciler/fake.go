@@ -9,7 +9,7 @@ import (
 )
 
 /*
-fakeClient is simulating API and db transactions in Reconciler Inventory
+FakeClient is simulating API and db transactions in Reconciler Inventory
 
 - registeredCluster is representation of 'inventory_clusters' table
   each unique clusterVersion should be a separate record
@@ -22,7 +22,7 @@ fakeClient is simulating API and db transactions in Reconciler Inventory
 calling ApplyClusterConfig method on already existing cluster results in adding a new ClusterConfig
 
 */
-type fakeClient struct {
+type FakeClient struct {
 	mu                sync.Mutex
 	inventoryClusters map[string]*registeredCluster
 }
@@ -33,17 +33,17 @@ type registeredCluster struct {
 	statusChanges  []*StatusChange
 }
 
-func NewFakeClient() *fakeClient {
-	return &fakeClient{inventoryClusters: map[string]*registeredCluster{}}
+func NewFakeClient() *FakeClient {
+	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}}
 }
 
 // POST /v1/clusters
-func (c *fakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
+func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	return c.createOrUpdate(cluster)
 }
 
 // DELETE /v1/clusters/{clusterName}
-func (c *fakeClient) DeleteCluster(clusterName string) error {
+func (c *FakeClient) DeleteCluster(clusterName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -52,7 +52,7 @@ func (c *fakeClient) DeleteCluster(clusterName string) error {
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
-func (c *fakeClient) GetCluster(clusterName, configVersion string) (*State, error) {
+func (c *FakeClient) GetCluster(clusterName, configVersion string) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -72,7 +72,7 @@ func (c *fakeClient) GetCluster(clusterName, configVersion string) (*State, erro
 }
 
 // GET v1/clusters/{clusterName}/status
-func (c *fakeClient) GetLatestCluster(clusterName string) (*State, error) {
+func (c *FakeClient) GetLatestCluster(clusterName string) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -87,7 +87,7 @@ func (c *fakeClient) GetLatestCluster(clusterName string) (*State, error) {
 
 // GET v1/clusters/{clusterName}/statusChanges/{offset}
 // offset is parsed to time.Duration
-func (c *fakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChange, error) {
+func (c *FakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChange, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -98,7 +98,7 @@ func (c *fakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChang
 	return existingCluster.statusChanges, nil
 }
 
-func (c *fakeClient) createOrUpdate(cluster Cluster) (*State, error) {
+func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -144,7 +144,7 @@ func (c *fakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 	return c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion], nil
 }
 
-func (c *fakeClient) ChangeClusterState(clusterName string, clusterVersion int64, desiredState string) {
+func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64, desiredState string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
