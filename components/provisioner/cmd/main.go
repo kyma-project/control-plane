@@ -388,6 +388,8 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 			upgradeQueue.Add(op.ID)
 		case model.Hibernate:
 			hibernationQueue.Add(op.ID)
+                case model.UpgradeShoot:
+                   shootUpgradeQueue.Add(op.ID)
 		}
 	}
 
