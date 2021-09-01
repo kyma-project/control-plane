@@ -19,10 +19,12 @@ import (
 )
 
 const (
-	fixKymaVersion         = "1.19.0"
-	fixKubernetesVersion   = "1.17.16"
-	fixMachineImage        = "gardenlinux"
-	fixMachineImageVersion = "184.0.0"
+	fixKymaVersion                   = "1.19.0"
+	fixKubernetesVersion             = "1.17.16"
+	fixMachineImage                  = "gardenlinux"
+	fixMachineImageVersion           = "184.0.0"
+	fixAutoUpdateKubernetesVersion   = true
+	fixAutoUpdateMachineImageVersion = true
 )
 
 func TestUpgradeKymaStep_Run(t *testing.T) {
@@ -46,13 +48,15 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:   ptr.String(fixKubernetesVersion),
-			MachineImage:        ptr.String(fixMachineImage),
-			MachineImageVersion: ptr.String(fixMachineImageVersion),
-			AutoScalerMin:       operation.ProvisioningParameters.Parameters.AutoScalerMin,
-			AutoScalerMax:       operation.ProvisioningParameters.Parameters.AutoScalerMax,
-			MaxSurge:            operation.ProvisioningParameters.Parameters.MaxSurge,
-			MaxUnavailable:      operation.ProvisioningParameters.Parameters.MaxUnavailable,
+			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
+			MachineImage:                        ptr.String(fixMachineImage),
+			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
+			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,
+			AutoScalerMax:                       operation.ProvisioningParameters.Parameters.AutoScalerMax,
+			MaxSurge:                            operation.ProvisioningParameters.Parameters.MaxSurge,
+			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
+			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),
+			EnableMachineImageVersionAutoUpdate: ptr.Bool(fixAutoUpdateMachineImageVersion),
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,
@@ -119,10 +123,12 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider, input.Config{
-		KubernetesVersion:   fixKubernetesVersion,
-		MachineImage:        fixMachineImage,
-		MachineImageVersion: fixMachineImageVersion,
-		TrialNodesNumber:    1,
+		KubernetesVersion:             fixKubernetesVersion,
+		MachineImage:                  fixMachineImage,
+		MachineImageVersion:           fixMachineImageVersion,
+		TrialNodesNumber:              1,
+		AutoUpdateKubernetesVersion:   fixAutoUpdateKubernetesVersion,
+		AutoUpdateMachineImageVersion: fixAutoUpdateMachineImageVersion,
 	}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
 	require.NoError(t, err, "Input factory creation error")
 

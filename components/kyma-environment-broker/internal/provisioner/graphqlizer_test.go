@@ -151,24 +151,28 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
         autoScalerMax: 4,
         maxSurge: 4,
 		maxUnavailable: 1,
+		enableKubernetesVersionAutoUpdate: true,
+		enableMachineImageVersionAutoUpdate: true,
 	}`
 
 	// when
 	name := "c-90a3016"
 	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
-		Name:              name,
-		Region:            "europe",
-		VolumeSizeGb:      ptr.Integer(50),
-		WorkerCidr:        "10.250.0.0/19",
-		Provider:          "Azure",
-		DiskType:          ptr.String("Standard_LRS"),
-		TargetSecret:      "scr",
-		MachineType:       "Standard_D4_v3",
-		KubernetesVersion: "1.18",
-		AutoScalerMin:     2,
-		AutoScalerMax:     4,
-		MaxSurge:          4,
-		MaxUnavailable:    1,
+		Name:                                name,
+		Region:                              "europe",
+		VolumeSizeGb:                        ptr.Integer(50),
+		WorkerCidr:                          "10.250.0.0/19",
+		Provider:                            "Azure",
+		DiskType:                            ptr.String("Standard_LRS"),
+		TargetSecret:                        "scr",
+		MachineType:                         "Standard_D4_v3",
+		KubernetesVersion:                   "1.18",
+		AutoScalerMin:                       2,
+		AutoScalerMax:                       4,
+		MaxSurge:                            4,
+		MaxUnavailable:                      1,
+		EnableKubernetesVersionAutoUpdate:   ptr.Bool(true),
+		EnableMachineImageVersionAutoUpdate: ptr.Bool(true),
 	})
 
 	// then

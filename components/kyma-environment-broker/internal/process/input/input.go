@@ -22,15 +22,17 @@ const (
 )
 
 type Config struct {
-	URL                         string
-	ProvisioningTimeout         time.Duration          `envconfig:"default=6h"`
-	DeprovisioningTimeout       time.Duration          `envconfig:"default=5h"`
-	KubernetesVersion           string                 `envconfig:"default=1.16.9"`
-	DefaultGardenerShootPurpose string                 `envconfig:"default=development"`
-	MachineImage                string                 `envconfig:"optional"`
-	MachineImageVersion         string                 `envconfig:"optional"`
-	TrialNodesNumber            int                    `envconfig:"optional"`
-	DefaultTrialProvider        internal.CloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP
+	URL                           string
+	ProvisioningTimeout           time.Duration          `envconfig:"default=6h"`
+	DeprovisioningTimeout         time.Duration          `envconfig:"default=5h"`
+	KubernetesVersion             string                 `envconfig:"default=1.16.9"`
+	DefaultGardenerShootPurpose   string                 `envconfig:"default=development"`
+	MachineImage                  string                 `envconfig:"optional"`
+	MachineImageVersion           string                 `envconfig:"optional"`
+	TrialNodesNumber              int                    `envconfig:"optional"`
+	DefaultTrialProvider          internal.CloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP
+	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
+	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
 }
 
 type RuntimeInput struct {

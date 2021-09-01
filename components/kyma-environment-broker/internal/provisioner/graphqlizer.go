@@ -94,6 +94,12 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }},
         maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
+		{{- end }}
 		{{- if .ProviderSpecificConfig }}
 		providerSpecificConfig: {
 			{{- if .ProviderSpecificConfig.AzureConfig }}
@@ -241,10 +247,10 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
       maxUnavailable: {{ .MaxUnavailable }},
       {{- end }}
       {{- if .EnableKubernetesVersionAutoUpdate }}
-      enableKubernetesVersionAutoUpdate: {{.EnableKubernetesVersionAutoUpdate}},
+      enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
       {{- end }}
       {{- if .EnableMachineImageVersionAutoUpdate }}
-      enableMachineImageVersionAutoUpdate: {{.EnableMachineImageVersionAutoUpdate}},
+      enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
       {{- end }}
       {{- if .OidcConfig }}
       oidcConfig: {

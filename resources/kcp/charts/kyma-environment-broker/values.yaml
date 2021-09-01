@@ -107,6 +107,8 @@ gardener:
   trialNodesNumber: "1"
   freemiumProviders: "azure,aws"
   defaultTrialProvider: "Azure" # Azure, AWS
+  autoUpdateKubernetesVersion: "true"
+  autoUpdateMachineImageVersion: "false"
 
 kubeconfig:
   issuerURL: "TBD"

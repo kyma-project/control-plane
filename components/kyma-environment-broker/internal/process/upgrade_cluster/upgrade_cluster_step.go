@@ -130,12 +130,14 @@ func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeC
 
 func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlschema.GardenerConfigInput {
 	result := &gqlschema.GardenerConfigInput{
-		MachineImage:        input.GardenerConfig.MachineImage,
-		MachineImageVersion: input.GardenerConfig.MachineImageVersion,
-		DiskType:            input.GardenerConfig.DiskType,
-		VolumeSizeGb:        input.GardenerConfig.VolumeSizeGb,
-		Purpose:             input.GardenerConfig.Purpose,
-		OidcConfig:          input.GardenerConfig.OidcConfig,
+		MachineImage:                        input.GardenerConfig.MachineImage,
+		MachineImageVersion:                 input.GardenerConfig.MachineImageVersion,
+		DiskType:                            input.GardenerConfig.DiskType,
+		VolumeSizeGb:                        input.GardenerConfig.VolumeSizeGb,
+		Purpose:                             input.GardenerConfig.Purpose,
+		OidcConfig:                          input.GardenerConfig.OidcConfig,
+		EnableKubernetesVersionAutoUpdate:   input.GardenerConfig.EnableKubernetesVersionAutoUpdate,
+		EnableMachineImageVersionAutoUpdate: input.GardenerConfig.EnableMachineImageVersionAutoUpdate,
 	}
 	if input.GardenerConfig.KubernetesVersion != nil {
 		result.KubernetesVersion = *input.GardenerConfig.KubernetesVersion

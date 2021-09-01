@@ -324,6 +324,10 @@ spec:
               value: {{ .Values.gardener.machineImageVersion }}
             - name: APP_PROVISIONER_TRIAL_NODES_NUMBER
               value: "{{ .Values.gardener.trialNodesNumber }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_KUBERNETES_VERSION
+              value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
+              value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
