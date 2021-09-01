@@ -68,13 +68,13 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	tenant, err := r.getAndValidateTenant(ctx, id)
+	_, err := r.getAndValidateTenant(ctx, id)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
 	}
 
-	operationID, err := r.provisioning.DeprovisionRuntime(id, tenant)
+	operationID, err := r.provisioning.DeprovisionRuntime(id)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err

@@ -27,7 +27,7 @@ import (
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
-	DeprovisionRuntime(id, tenant string) (string, apperrors.AppError)
+	DeprovisionRuntime(id string) (string, apperrors.AppError)
 	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError)
@@ -165,8 +165,7 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 	}
 }
 
-// check tenant // TODO: What does that mean?
-func (r *service) DeprovisionRuntime(id, tenant string) (string, apperrors.AppError) {
+func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
 	err := r.verifyLastOperationFinished(session, id)
@@ -325,7 +324,6 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
 	}
 
-	// TODO: Think about what about not migrated clusters where no activeKymaConfig is set??? This code will not allow to upgrade them
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}

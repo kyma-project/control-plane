@@ -349,7 +349,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
 		//when
-		opID, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		opID, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
 		//then
@@ -393,7 +393,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
 
 		//when
-		opID, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		opID, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
 		//then
@@ -417,7 +417,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		_, err := resolver.DeprovisionRuntime(runtimeID)
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
@@ -440,7 +440,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		_, err := resolver.DeprovisionRuntime(runtimeID)
 		require.Error(t, err)
 
 		//then
@@ -462,7 +462,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		_, err := resolver.DeprovisionRuntime(runtimeID)
 		require.Error(t, err)
 
 		//then
@@ -482,7 +482,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
 
 		//when
-		_, err := resolver.DeprovisionRuntime(runtimeID, tenant)
+		_, err := resolver.DeprovisionRuntime(runtimeID)
 		require.Error(t, err)
 
 		//then

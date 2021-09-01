@@ -198,7 +198,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		//when
@@ -215,7 +215,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		validator := &validatorMocks.Validator{}
 		provisioner := api.NewResolver(provisioningService, validator)
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
 		//when
@@ -235,7 +235,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
 
 		ctx := context.Background()
 
@@ -255,7 +255,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
-		provisioningService.On("DeprovisionRuntime", runtimeID, tenant).Return(expectedID, nil, nil)
+		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
 		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("Very bad error"))
 
 		//when
