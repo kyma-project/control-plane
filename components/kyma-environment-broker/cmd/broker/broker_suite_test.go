@@ -516,6 +516,35 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 	assert.Equal(s.t, expectedState, state)
 }
 
+func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedClusterConfig *reconciler.Cluster) {
+	var provisioningOp *internal.ProvisioningOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
+		assert.NoError(s.t, err)
+		if op.ProvisionerOperationID != "" {
+			provisioningOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var clusterConfig *reconciler.Cluster
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		clusterConfig, err = s.reconcilerClient.LastClusterConfig(provisioningOp.RuntimeID)
+		if err != nil {
+			return false, err
+		}
+		if clusterConfig.Cluster != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	assert.Equal(s.t, *expectedClusterConfig, *clusterConfig)
+}
+
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	err := wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {

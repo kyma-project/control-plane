@@ -82,6 +82,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 
 	// then
 	//suite.AssertProvisionRuntimeInput()
+	//suite.AssertClusterConfig()
 	//suite.AssertClusterState()
 }
 

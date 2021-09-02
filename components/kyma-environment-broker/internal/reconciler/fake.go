@@ -154,3 +154,19 @@ func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64
 		Duration: "10s",
 	})
 }
+
+func (c *FakeClient) LastClusterConfig(runtimeID string) (*Cluster, error) {
+	cluster, found := c.inventoryClusters[runtimeID]
+	if !found {
+		return nil, errors.New("cluster not found in clusters inventory")
+	}
+	return getLastClusterConfig(cluster)
+}
+
+func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
+	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs)-1)]
+	if !found {
+		return nil, errors.New("cluster config not found in cluster configs inventory")
+	}
+	return &clusterConfig, nil
+}
