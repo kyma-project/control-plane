@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -37,6 +39,7 @@ type orchestrationManager struct {
 	k8sClient            client.Client
 	configNamespace      string
 	configName           string
+	cfg                  *broker.KEBConfig
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
@@ -59,6 +62,9 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
 	}
+
+	o.Parameters.Kyma.Version = m.cfg.KymaVersion
+	o.Parameters.Kubernetes.Version = m.cfg.Provisioner.KubernetesVersion
 
 	err = m.orchestrationStorage.Update(*o)
 	if err != nil {

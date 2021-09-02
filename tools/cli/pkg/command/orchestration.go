@@ -64,6 +64,14 @@ var orchestrationColumns = []printer.Column{
 		Header:    "DRY RUN",
 		FieldSpec: "{.Parameters.DryRun}",
 	},
+	{
+		Header:         "TARGETS",
+		FieldFormatter: orchestrationTargets,
+	},
+	{
+		Header:         "DETAILS",
+		FieldFormatter: orchestrationDetails,
+	},
 }
 
 var operationColumns = []printer.Column{
@@ -440,4 +448,38 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	}
 
 	return strings.Join(targets, ",")
+}
+
+// orchestrationTarget returns the string representation of an array of orchestration.RuntimeTarget
+func orchestrationTargets(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+	nTargets := len(sr.Parameters.Targets.Include)
+	for i := 0; i < nTargets; i++ {
+		sb.WriteString(sr.Parameters.Targets.Include[i].Target)
+		if i != (nTargets - 1) {
+			sb.WriteString(", ")
+		}
+	}
+
+	// Limit the targets to 20 characters
+	targets := sb.String()
+	if len(targets) > 20 {
+		targets = targets[0:20]
+	}
+	return targets
+}
+
+func orchestrationDetails(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+	if sr.KymaDetails != nil {
+		sb.WriteString("Kyma: " + sr.KymaDetails.KymaVersion)
+	} else if sr.ClusterDetails != nil {
+		sb.WriteString("K8S: " + sr.ClusterDetails.KubernetesVersion)
+	} else {
+		sb.WriteString("-")
+	}
+
+	return sb.String()
 }

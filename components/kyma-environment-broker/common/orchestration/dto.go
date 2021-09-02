@@ -8,11 +8,16 @@ import (
 
 // Parameters hold the attributes of orchestration create (upgrade) requests.
 type Parameters struct {
-	Targets  TargetSpec   `json:"targets"`
-	Strategy StrategySpec `json:"strategy,omitempty"`
-	DryRun   bool         `json:"dryRun,omitempty"`
+	Targets    TargetSpec           `json:"targets"`
+	Strategy   StrategySpec         `json:"strategy,omitempty"`
+	DryRun     bool                 `json:"dryRun,omitempty"`
+	Kubernetes KubernetesParameters `json:""`
 	// upgrade kyma specific parameters
 	Kyma KymaParameters `json:""`
+}
+
+type KubernetesParameters struct {
+	Version string `json:"kubernetesVersion,omitempty"`
 }
 
 // KymaParameters hold the attributes of kyma upgrade specific orchestration create requests.
@@ -104,15 +109,27 @@ type TargetSpec struct {
 	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
 
+type KymaDetailResponse struct {
+	KymaVersion string `json:"kymaVersion,omitempty"`
+}
+
+type ClusterDetailResponse struct {
+	KubernetesVersion   string `json:"kubernetesVersion,omitempty"`
+	MachineImage        string `json:"machineImage,omitempty"`
+	MachineImageVersion string `json:"machineImageVersion,omitempty"`
+}
+
 type StatusResponse struct {
-	OrchestrationID string         `json:"orchestrationID"`
-	Type            Type           `json:"type"`
-	State           string         `json:"state"`
-	Description     string         `json:"description"`
-	CreatedAt       time.Time      `json:"createdAt"`
-	UpdatedAt       time.Time      `json:"updatedAt"`
-	Parameters      Parameters     `json:"parameters"`
-	OperationStats  map[string]int `json:"operationStats,omitempty"`
+	OrchestrationID string                 `json:"orchestrationID"`
+	Type            Type                   `json:"type"`
+	State           string                 `json:"state"`
+	Description     string                 `json:"description"`
+	CreatedAt       time.Time              `json:"createdAt"`
+	UpdatedAt       time.Time              `json:"updatedAt"`
+	Parameters      Parameters             `json:"parameters"`
+	OperationStats  map[string]int         `json:"operationStats,omitempty"`
+	KymaDetails     *KymaDetailResponse    `json:"kymaDetails,omitempty"`
+	ClusterDetails  *ClusterDetailResponse `json:"clusterDetails,omitempty"`
 }
 
 type OperationResponse struct {

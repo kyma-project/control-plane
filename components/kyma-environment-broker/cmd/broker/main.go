@@ -21,7 +21,6 @@ import (
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
@@ -71,89 +70,6 @@ func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
-// Config holds configuration for the whole application
-type Config struct {
-	// DbInMemory allows to use memory storage instead of the postgres one.
-	// Suitable for development purposes.
-	DbInMemory bool `envconfig:"default=false"`
-
-	// DisableProcessOperationsInProgress allows to disable processing operations
-	// which are in progress on starting application. Set to true if you are
-	// running in a separate testing deployment but with the production DB.
-	DisableProcessOperationsInProgress bool `envconfig:"default=false"`
-
-	// DevelopmentMode if set to true then errors are returned in http
-	// responses, otherwise errors are only logged and generic message
-	// is returned to client.
-	// Currently works only with /info endpoints.
-	DevelopmentMode bool `envconfig:"default=false"`
-
-	// DumpProvisionerRequests enables dumping Provisioner requests. Must be disabled on Production environments
-	// because some data must not be visible in the log file.
-	DumpProvisionerRequests bool `envconfig:"default=false"`
-
-	// OperationTimeout is used to check on a top-level if any operation didn't exceed the time for processing.
-	// It is used for provisioning and deprovisioning operations.
-	OperationTimeout time.Duration `envconfig:"default=24h"`
-
-	Host       string `envconfig:"optional"`
-	Port       string `envconfig:"default=8080"`
-	StatusPort string `envconfig:"default=8071"`
-
-	Provisioner input.Config
-	Director    director.Config
-	Database    storage.Config
-	Gardener    gardener.Config
-	Kubeconfig  kubeconfig.Config
-
-	ServiceManager servicemanager.Config
-
-	KymaVersion                          string
-	KymaPreviewVersion                   string
-	EnableOnDemandVersion                bool `envconfig:"default=false"`
-	ManagedRuntimeComponentsYAMLFilePath string
-	SkrOidcDefaultValuesYAMLFilePath     string
-	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
-	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
-
-	Broker          broker.Config
-	CatalogFilePath string
-
-	Avs avs.Config
-	IAS ias.Config
-	EDP edp.Config
-
-	// Service Manager services
-	XSUAA struct {
-		Disabled bool `envconfig:"default=true"`
-	}
-	Connectivity struct {
-		Disabled bool `envconfig:"default=true"`
-	}
-
-	AuditLog auditlog.Config
-
-	VersionConfig struct {
-		Namespace string
-		Name      string
-	}
-
-	OrchestrationConfig struct {
-		Namespace string
-		Name      string
-	}
-
-	TrialRegionMappingFilePath string
-	MaxPaginationPage          int `envconfig:"default=100"`
-
-	LogLevel string `envconfig:"default=info"`
-
-	// FreemiumProviders is a list of providers for freemium
-	FreemiumProviders []string `envconfig:"default=aws"`
-
-	DomainName string
-}
-
 const (
 	createRuntimeStageName = "create_runtime"
 	checkRuntimeStageName  = "check_runtime"
@@ -165,7 +81,7 @@ func main() {
 	defer cancel()
 
 	// create and fill config
-	var cfg Config
+	var cfg broker.KEBConfig
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
@@ -366,7 +282,7 @@ func main() {
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
-func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
+func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *broker.KEBConfig, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
@@ -511,7 +427,7 @@ func fatalOnError(err error) {
 }
 
 func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.StagedManager, workersAmount int,
-	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
+	cfg *broker.KEBConfig, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
 	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
 	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
@@ -679,7 +595,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *broker.KEBConfig, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
@@ -748,7 +664,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
+	cfg *broker.KEBConfig, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
 	fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
@@ -816,7 +732,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger,
-	cli client.Client, cfg Config) *process.Queue {
+	cli client.Client, cfg broker.KEBConfig) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
 	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg)
