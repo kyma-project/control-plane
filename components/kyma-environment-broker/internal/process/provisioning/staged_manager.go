@@ -108,12 +108,12 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	var when time.Duration
 	processedOperation := *operation
 
-	for i, stage := range m.stages {
+	for _, stage := range m.stages {
 		if processedOperation.IsStageFinished(stage.name) {
 			continue
 		}
 
-		for j, step := range stage.steps {
+		for _, step := range stage.steps {
 
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
@@ -133,15 +133,6 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 			if when > 0 {
 				return when, nil
 			}
-
-			// if last step for the last stage finished wihtout issue, set state to domain.Succeeded and publish event
-			if i+1 == len(m.stages) && j+1 == len(stage.steps) {
-				opeartion := processedOperation
-				opeartion.State = domain.Succeeded
-				m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
-					Operation: opeartion,
-				})
-			}
 		}
 
 		processedOperation, err = m.saveFinishedStage(processedOperation, stage, logOperation)
@@ -151,6 +142,9 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	}
 
 	processedOperation.State = domain.Succeeded
+	m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
+		Operation: processedOperation,
+	})
 	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
