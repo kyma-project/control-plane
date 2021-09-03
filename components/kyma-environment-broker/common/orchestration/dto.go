@@ -11,8 +11,13 @@ type Parameters struct {
 	Targets  TargetSpec   `json:"targets"`
 	Strategy StrategySpec `json:"strategy,omitempty"`
 	DryRun   bool         `json:"dryRun,omitempty"`
+	Kubernetes KubernetesParameters `json:""`
 	// upgrade kyma specific parameters
 	Kyma KymaParameters `json:""`
+}
+
+type KubernetesParameters struct {
+	Version string `json:"kubernetesVersion,omitempty"`
 }
 
 // KymaParameters hold the attributes of kyma upgrade specific orchestration create requests.
