@@ -65,9 +65,9 @@ type ExtensionProviderConfig struct {
 	// ApiVersion is gardener extension api version
 	ApiVersion string `json:"apiVersion"`
 	// DnsProviderReplication indicates whether dnsProvider replication is on
-	DNSProviderReplication DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
+	DNSProviderReplication *DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
 	// ShootIssuers indicates whether shoot Issuers are on
-	ShootIssuers ShootIssuers `json:"shootIssuers,omitempty"`
+	ShootIssuers *ShootIssuers `json:"shootIssuers,omitempty"`
 	// Kind is extension type
 	Kind string `json:"kind"`
 }
@@ -85,7 +85,7 @@ type ShootIssuers struct {
 func NewDNSConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
 		ApiVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
-		DNSProviderReplication: DNSProviderReplication{Enabled: true},
+		DNSProviderReplication: &DNSProviderReplication{Enabled: true},
 		Kind:                   "DNSConfig",
 	}
 }
@@ -93,7 +93,7 @@ func NewDNSConfig() *ExtensionProviderConfig {
 func NewCertConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
 		ApiVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
-		ShootIssuers: ShootIssuers{Enabled: true},
+		ShootIssuers: &ShootIssuers{Enabled: true},
 		Kind:         "CertConfig",
 	}
 }
