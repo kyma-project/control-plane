@@ -87,6 +87,7 @@ type ComplexityRoot struct {
 		DiskType                            func(childComplexity int) int
 		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
 		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
+		ExposureClassName                   func(childComplexity int) int
 		KubernetesVersion                   func(childComplexity int) int
 		LicenceType                         func(childComplexity int) int
 		MachineImage                        func(childComplexity int) int
@@ -365,6 +366,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.EnableMachineImageVersionAutoUpdate(childComplexity), true
+
+	case "GardenerConfig.exposureClassName":
+		if e.complexity.GardenerConfig.ExposureClassName == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.ExposureClassName(childComplexity), true
 
 	case "GardenerConfig.kubernetesVersion":
 		if e.complexity.GardenerConfig.KubernetesVersion == nil {
@@ -897,6 +905,7 @@ type GardenerConfig {
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
     oidcConfig: OIDCConfig
+    exposureClassName: String
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -968,9 +977,11 @@ type OperationStatus {
 
 enum OperationType {
     Provision
+    ProvisionNoInstall
     Upgrade
     UpgradeShoot
     Deprovision
+    DeprovisionNoInstall
     ReconnectRuntime
     Hibernate
 }
@@ -1034,7 +1045,7 @@ input RuntimeInput {
 input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
-    kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
+    kymaConfig: KymaConfigInput         # Configuration of Kyma to be installed on the provisioned cluster. Not passing it will result in a cluster without Kyma installed.
 }
 
 input ClusterConfigInput {
@@ -1066,6 +1077,7 @@ input GardenerConfigInput {
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
+    exposureClassName: String                       # Name of the ExposureClass
 }
 
 input OIDCConfigInput {
@@ -1131,7 +1143,7 @@ input ComponentConfigurationInput {
     namespace: String!                    # Namespace to which component should be installed
     configuration: [ConfigEntryInput]     # Component specific configuration
     sourceURL: String                     # Custom URL for the source files of the given component
-    conflictStrategy: ConflictStrategy  # Defines merging strategy if conflicts occur for component overrides
+    conflictStrategy: ConflictStrategy    # Defines merging strategy if conflicts occur for component overrides
 }
 
 input UpgradeRuntimeInput {
@@ -1161,6 +1173,7 @@ input GardenerUpgradeInput {
     enableMachineImageVersionAutoUpdate: Boolean  # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
     oidcConfig: OIDCConfigInput
+    exposureClassName: String                     # ExposureClass name
 }
 
 type Mutation {
@@ -2762,6 +2775,40 @@ func (ec *executionContext) _GardenerConfig_oidcConfig(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOIDCConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_exposureClassName(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExposureClassName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
@@ -5766,6 +5813,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "exposureClassName":
+			var err error
+			it.ExposureClassName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5865,6 +5918,12 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 		case "oidcConfig":
 			var err error
 			it.OidcConfig, err = ec.unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "exposureClassName":
+			var err error
+			it.ExposureClassName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6056,7 +6115,7 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 			}
 		case "kymaConfig":
 			var err error
-			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			it.KymaConfig, err = ec.unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6434,6 +6493,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
 		case "oidcConfig":
 			out.Values[i] = ec._GardenerConfig_oidcConfig(ctx, field, obj)
+		case "exposureClassName":
+			out.Values[i] = ec._GardenerConfig_exposureClassName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7908,6 +7969,18 @@ func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑproject�
 		return graphql.Null
 	}
 	return ec._KymaConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (KymaConfigInput, error) {
+	return ec.unmarshalInputKymaConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (*KymaConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (KymaProfile, error) {

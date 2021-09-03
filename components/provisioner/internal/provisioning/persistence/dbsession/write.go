@@ -46,12 +46,17 @@ func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
 }
 
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
+	var kymaConfigId *string
+	if cluster.KymaConfig != nil {
+		kymaConfigId = &cluster.KymaConfig.ID
+	}
+
 	_, err := ws.insertInto("cluster").
 		Pair("id", cluster.ID).
 		Pair("creation_timestamp", cluster.CreationTimestamp).
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
-		Pair("active_kyma_config_id", cluster.KymaConfig.ID). // Possible due to deferred constrain
+		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
 		Exec()
 
 	if err != nil {
@@ -115,6 +120,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
+		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 
@@ -179,6 +185,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("max_unavailable", config.MaxUnavailable).
 		Set("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
+		Set("exposure_class_name", config.ExposureClassName).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Exec()
 

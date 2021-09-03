@@ -19,14 +19,17 @@ import (
 )
 
 const (
-	fixKymaVersion         = "1.19.0"
-	fixKubernetesVersion   = "1.17.16"
-	fixMachineImage        = "gardenlinux"
-	fixMachineImageVersion = "184.0.0"
+	fixKymaVersion                   = "1.19.0"
+	fixKubernetesVersion             = "1.17.16"
+	fixMachineImage                  = "gardenlinux"
+	fixMachineImageVersion           = "184.0.0"
+	fixAutoUpdateKubernetesVersion   = true
+	fixAutoUpdateMachineImageVersion = true
 )
 
 func TestUpgradeKymaStep_Run(t *testing.T) {
 	// given
+	expectedOIDC := fixture.FixOIDCConfigDTO()
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
@@ -37,21 +40,33 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisioningOperation := fixProvisioningOperation()
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
+
+	// as autoscaler values are not nil in provisioningParameters, the provider values are not used
+	provider := fixGetHyperscalerProviderForPlanID(operation.ProvisioningParameters.PlanID)
+	assert.NotNil(t, provider)
+
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:   ptr.String(fixKubernetesVersion),
-			MachineImage:        ptr.String(fixMachineImage),
-			MachineImageVersion: ptr.String(fixMachineImageVersion),
+			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
+			MachineImage:                        ptr.String(fixMachineImage),
+			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
+			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,
+			AutoScalerMax:                       operation.ProvisioningParameters.Parameters.AutoScalerMax,
+			MaxSurge:                            operation.ProvisioningParameters.Parameters.MaxSurge,
+			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
+			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),
+			EnableMachineImageVersionAutoUpdate: ptr.Bool(fixAutoUpdateMachineImageVersion),
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "",
-				GroupsClaim:    "",
-				IssuerURL:      "",
-				SigningAlgs:    nil,
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				ClientID:       expectedOIDC.ClientID,
+				GroupsClaim:    expectedOIDC.GroupsClaim,
+				IssuerURL:      expectedOIDC.IssuerURL,
+				SigningAlgs:    expectedOIDC.SigningAlgs,
+				UsernameClaim:  expectedOIDC.UsernameClaim,
+				UsernamePrefix: expectedOIDC.UsernamePrefix,
 			},
 		},
+		Administrators: []string{provisioningOperation.ProvisioningParameters.ErsContext.UserID},
 	}).Return(gqlschema.OperationStatus{
 		ID:        StringPtr(fixProvisionerOperationID),
 		Operation: "",
@@ -108,10 +123,12 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider, input.Config{
-		KubernetesVersion:   fixKubernetesVersion,
-		MachineImage:        fixMachineImage,
-		MachineImageVersion: fixMachineImageVersion,
-		TrialNodesNumber:    1,
+		KubernetesVersion:             fixKubernetesVersion,
+		MachineImage:                  fixMachineImage,
+		MachineImageVersion:           fixMachineImageVersion,
+		TrialNodesNumber:              1,
+		AutoUpdateKubernetesVersion:   fixAutoUpdateKubernetesVersion,
+		AutoUpdateMachineImageVersion: fixAutoUpdateMachineImageVersion,
 	}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
 	require.NoError(t, err, "Input factory creation error")
 

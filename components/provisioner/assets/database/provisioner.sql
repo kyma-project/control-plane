@@ -40,6 +40,7 @@ CREATE TABLE gardener_config
     enable_kubernetes_version_auto_update boolean NOT NULL,
     enable_machine_image_version_auto_update boolean NOT NULL,
     allow_privileged_containers boolean NOT NULL,
+    exposure_class_name varchar(256),
     provider_specific_config jsonb,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
@@ -59,7 +60,9 @@ CREATE TYPE operation_type AS ENUM (
     'DEPROVISION',
     'RECONNECT_RUNTIME',
     'UPGRADE_SHOOT',
-    'HIBERNATE'
+    'HIBERNATE',
+    'PROVISION_NO_INSTALL',
+    'DEPROVISION_NO_INSTALL'
     );
 
 CREATE TABLE operation
@@ -119,7 +122,7 @@ CREATE TABLE kyma_component_config
 
 -- Active Kyma Config column
 
-ALTER TABLE cluster ADD COLUMN active_kyma_config_id uuid NOT NULL;
+ALTER TABLE cluster ADD COLUMN active_kyma_config_id uuid;
 ALTER TABLE cluster ADD CONSTRAINT cluster_active_kyma_config_id_fkey foreign key (active_kyma_config_id) REFERENCES kyma_config (id) DEFERRABLE INITIALLY DEFERRED;
 
 

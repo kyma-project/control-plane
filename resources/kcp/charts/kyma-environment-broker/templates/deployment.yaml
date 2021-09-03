@@ -135,12 +135,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
-            - name: APP_EMS_DISABLED
-              value: "{{ .Values.ems.disabled }}"
             - name: APP_CONNECTIVITY_DISABLED
               value: "{{ .Values.connectivity.disabled }}"
-            - name: APP_EMS_SKIP_DEPROVISION_AZURE_EVENTING_AT_UPGRADE
-              value: "{{ .Values.ems.skipDeprovisionAzureEventingAtUpgrade }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -177,6 +173,8 @@ spec:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-sslMode
+            - name: APP_SERVICE_MANAGER_SUBACCOUNT_WITH_REQUEST_CREDENTIALS
+              value: "{{ .Values.serviceManager.subaccountWithRequestCredentials }}"
             - name: APP_SERVICE_MANAGER_OVERRIDE_MODE
               value: "{{ .Values.serviceManager.overrideMode }}"
             - name: APP_SERVICE_MANAGER_URL
@@ -294,6 +292,8 @@ spec:
               value: "{{ .Values.avs.regionTagClassId }}"
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
+            - name: APP_KYMA_PREVIEW_VERSION
+              value: "{{ .Values.kymaPreviewVersion }}"
             - name: APP_ENABLE_ON_DEMAND_VERSION
               value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
@@ -324,6 +324,10 @@ spec:
               value: {{ .Values.gardener.machineImageVersion }}
             - name: APP_PROVISIONER_TRIAL_NODES_NUMBER
               value: "{{ .Values.gardener.trialNodesNumber }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_KUBERNETES_VERSION
+              value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
+              value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
@@ -360,6 +364,10 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
               value: /config/skrOIDCDefaultValues.yaml
+            - name: APP_ORCHESTRATION_CONFIG_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: APP_ORCHESTRATION_CONFIG_NAME
+              value: "orchestration-config"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

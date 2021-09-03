@@ -170,8 +170,21 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		mockK8sClientProvider)
 	provisioningQueue.Run(queueCtx.Done())
 
+	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
+		testProvisioningNoInstallTimeouts(),
+		dbsFactory,
+		directorServiceMock,
+		shootInterface,
+		secretsInterface,
+		testOperatorRoleBinding(),
+		mockK8sClientProvider)
+	provisioningNoInstallQueue.Run(queueCtx.Done())
+
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
+
+	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
+	deprovisioningNoInstallQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
@@ -203,8 +216,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			clusterConfig := config.provisioningInput.config
 			runtimeInput := config.provisioningInput.runtimeInput
 
-			fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
-			fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
+			_ = fakeK8sClient.CoreV1().Secrets(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
+			_ = fakeK8sClient.CoreV1().ConfigMaps(compassSystemNamespace).Delete(context.Background(), runtimeConfig.AgentConfigurationSecretName, metav1.DeleteOptions{})
 
 			directorServiceMock.Calls = nil
 			directorServiceMock.ExpectedCalls = nil
@@ -234,7 +247,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator(dbsFactory.NewReadSession())
 
@@ -315,7 +328,7 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	shoot := &list.Items[0]
 
-	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot)
+	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot.Name)
 
 	// wait for Shoot to update
 	time.Sleep(2 * waitPeriod)
@@ -412,7 +425,7 @@ func testUpgradeGardenerShoot(t *testing.T, ctx context.Context, resolver *api.R
 	require.NoError(t, err)
 
 	// for wait for shoot new version step
-	simulateShootUpgrade(t, shootInterface, shoot)
+	simulateShootUpgrade(t, shootInterface, shoot.Name)
 
 	// then
 	require.NoError(t, err)
@@ -467,11 +480,11 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	//when Deprovisioning
 	shoot = removeFinalizers(t, shootInterface, shoot)
 	time.Sleep(4 * waitPeriod)
-	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
+	emptyShoot, err := shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 
 	// then
-	require.Error(t, err)
-	require.Empty(t, shoot)
+	require.Error(t, err, "Shoot %s should not be there!", shoot.Name)
+	require.Empty(t, emptyShoot)
 
 	// assert database content
 	runtimeFromDB, err = readSession.GetCluster(runtimeID)
@@ -499,7 +512,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	require.NotEmpty(t, hibernationOperation.ID)
 
 	// when
-	simulateHibernation(t, shootInterface, shoot)
+	simulateHibernation(t, shootInterface, shoot.Name)
 
 	// when
 	// wait for Shoot to update
@@ -537,9 +550,24 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	}
 }
 
+func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
+	return queue.ProvisioningNoInstallTimeouts{
+		ClusterCreation:  5 * time.Minute,
+		ClusterDomains:   5 * time.Minute,
+		BindingsCreation: 5 * time.Minute,
+	}
+}
+
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
 		ClusterCleanup:            5 * time.Minute,
+		ClusterDeletion:           5 * time.Minute,
+		WaitingForClusterDeletion: 5 * time.Minute,
+	}
+}
+
+func testDeprovisioningNoInstallTimeouts() queue.DeprovisioningNoInstallTimeouts {
+	return queue.DeprovisioningNoInstallTimeouts{
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
@@ -566,58 +594,63 @@ func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface,
 	return update
 }
 
-func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shoot *gardener_types.Shoot) {
-	simulateDNSAdmissionPluginRun(shoot)
-	setShootStatusToSuccessful(t, f, shoot)
-	createKubeconfigSecret(t, s, shoot.Name)
-	ensureShootSeedName(t, f, shoot)
+func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shootName string) {
+	simulateDNSAdmissionPluginRun(t, f, shootName)
+	setShootStatusToSuccessful(t, f, shootName)
+	createKubeconfigSecret(t, s, shootName)
+	ensureShootSeedName(t, f, shootName)
 }
 
-func simulateShootUpgrade(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
-	if shoot != nil {
-		shoot, err := shoots.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-		shoot.Status.ObservedGeneration = shoot.ObjectMeta.Generation + 1
-		_, err = shoots.Update(context.Background(), shoot, metav1.UpdateOptions{})
-		require.NoError(t, err)
-	}
-}
+func simulateShootUpgrade(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
+	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
+	require.NoError(t, err)
 
-func ensureShootSeedName(t *testing.T, shoots gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
+	s.Status.ObservedGeneration = s.ObjectMeta.Generation + 1
 
-	shoot, err := shoots.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-
-	if shoot != nil {
-		if shoot.Spec.SeedName == nil || *shoot.Spec.SeedName == "" {
-			seed := gardenerGenSeed
-			shoot.Spec.SeedName = &seed
-			_, err = shoots.Update(context.Background(), shoot, metav1.UpdateOptions{})
-			require.NoError(t, err)
-		}
-	}
-}
-
-func simulateDNSAdmissionPluginRun(shoot *gardener_types.Shoot) {
-	shoot.Spec.DNS = &gardener_types.DNS{Domain: util.StringPtr("domain")}
-}
-
-func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
-	shoot.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
-
-	_, err := f.Update(context.Background(), shoot, metav1.UpdateOptions{})
-
+	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)
 }
 
-func simulateHibernation(t *testing.T, f gardener_apis.ShootInterface, shoot *gardener_types.Shoot) {
-	if shoot != nil {
-		s, err := f.Get(context.Background(), shoot.Name, metav1.GetOptions{})
-		require.NoError(t, err)
+func ensureShootSeedName(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
+	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
+	require.NoError(t, err)
 
-		s.Status.IsHibernated = true
+	if util.IsNilOrEmpty(s.Spec.SeedName) {
+		s.Spec.SeedName = util.StringPtr(gardenerGenSeed)
 
 		_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 		require.NoError(t, err)
 	}
+}
+
+func simulateDNSAdmissionPluginRun(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
+	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	s.Spec.DNS = &gardener_types.DNS{Domain: util.StringPtr("domain")}
+
+	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
+	require.NoError(t, err)
+}
+
+func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
+	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	s.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
+
+	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
+	require.NoError(t, err)
+}
+
+func simulateHibernation(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
+	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	s.Status.IsHibernated = true
+
+	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
+	require.NoError(t, err)
 }
 
 func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName string) {
@@ -628,8 +661,8 @@ func createKubeconfigSecret(t *testing.T, s v1core.SecretInterface, shootName st
 		},
 		Data: map[string][]byte{"kubeconfig": []byte(mockedKubeconfig)},
 	}
-	_, err := s.Create(context.Background(), secret, metav1.CreateOptions{})
 
+	_, err := s.Create(context.Background(), secret, metav1.CreateOptions{})
 	require.NoError(t, err)
 }
 

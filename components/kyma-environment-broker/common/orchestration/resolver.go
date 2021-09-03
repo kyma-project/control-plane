@@ -132,7 +132,6 @@ func (resolver *GardenerRuntimeResolver) getRuntime(runtimeID string) (runtime.R
 
 func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []gardenerapi.Shoot) ([]Runtime, error) {
 	runtimes := []Runtime{}
-
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
 	for _, shoot := range shoots {
 		runtimeID := shoot.Annotations[runtimeIDAnnotation]
@@ -234,8 +233,11 @@ func (*GardenerRuntimeResolver) runtimeFromDTO(runtime runtime.RuntimeDTO, shoot
 		RuntimeID:              runtime.RuntimeID,
 		GlobalAccountID:        runtime.GlobalAccountID,
 		SubAccountID:           runtime.SubAccountID,
+		Plan:                   runtime.ServicePlanName,
+		Region:                 runtime.ProviderRegion,
 		ShootName:              shootName,
 		MaintenanceWindowBegin: windowBegin,
 		MaintenanceWindowEnd:   windowEnd,
+		MaintenanceDays:        []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"},
 	}
 }

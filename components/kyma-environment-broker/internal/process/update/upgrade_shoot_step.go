@@ -91,11 +91,12 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
 	}
 
-	// the input should contain only the OIDC configuration because we don't want to modify any other fields
+	// modify configuration
 	result := gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: fullInput.GardenerConfig.OidcConfig,
 		},
+		Administrators: fullInput.Administrators,
 	}
 
 	return result, nil

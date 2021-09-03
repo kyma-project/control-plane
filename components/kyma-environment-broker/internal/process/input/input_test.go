@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
+	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
@@ -348,7 +349,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 
 	// when
 	shootName := "c-51bcc12"
-	input, err := builder.
+	builder.
 		SetProvisioningParameters(internal.ProvisioningParameters{
 			Parameters: internal.ProvisioningParametersDTO{
 				Name:         "azure-cluster",
@@ -358,10 +359,16 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		}).
 		SetShootName(shootName).
 		SetLabel("label1", "value1").
-		AppendOverrides("keb", kebOverrides).CreateProvisionRuntimeInput()
+		AppendOverrides("keb", kebOverrides)
+	input, err := builder.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+	clusterInput, err := builder.CreateProvisionClusterInput()
+	require.NoError(t, err)
 
 	// then
-	require.NoError(t, err)
+	assert.Equal(t, input.ClusterConfig, clusterInput.ClusterConfig)
+	assert.Equal(t, input.RuntimeInput, clusterInput.RuntimeInput)
+	assert.Nil(t, clusterInput.KymaConfig)
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Contains(t, input.RuntimeInput.Name, "azure-cluster")
 	assert.Equal(t, "azure", input.ClusterConfig.GardenerConfig.Provider)
@@ -421,6 +428,8 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			// when
 			input, err := creator.CreateProvisionRuntimeInput()
 			require.NoError(t, err)
+			clusterInput, err := creator.CreateProvisionClusterInput()
+			require.NoError(t, err)
 
 			// then
 			assert.NotEqual(t, pp.Parameters.Name, input.RuntimeInput.Name)
@@ -428,6 +437,9 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			assert.Equal(t, tc.expectedNameWithoutSuffix, input.RuntimeInput.Name[:len(input.RuntimeInput.Name)-6])
 			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMin)
 			assert.Equal(t, 1, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+			assert.Equal(t, tc.expectedNameWithoutSuffix, clusterInput.RuntimeInput.Name[:len(input.RuntimeInput.Name)-6])
+			assert.Equal(t, 1, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMin)
+			assert.Equal(t, 1, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMax)
 		})
 	}
 }
@@ -451,10 +463,12 @@ func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	// when
 	input, err := creator.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
+	clusterInput, err := creator.CreateProvisionClusterInput()
+	require.NoError(t, err)
 
 	// then
 	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 2, input.ClusterConfig.GardenerConfig.AutoScalerMax)
+	assert.Equal(t, 2, clusterInput.ClusterConfig.GardenerConfig.AutoScalerMax)
 }
 
 func TestShouldSetGlobalConfiguration(t *testing.T) {
@@ -540,9 +554,12 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
 
 	t.Run("should apply default OIDC values when all OIDC fields are empty", func(t *testing.T) {
@@ -575,9 +592,12 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
 
 	t.Run("should apply provided OIDC values", func(t *testing.T) {
@@ -617,9 +637,223 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
 
 		// then
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
+	})
+}
+
+func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
+	t.Run("should apply default admin from user_id field", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"fake-user-id"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = expectedAdmins[0]
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+		assert.Equal(t, expectedAdmins, inventoryInput.KymaConfig.Administrators)
+	})
+
+	t.Run("should apply new admin list", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"newAdmin1@test.com", "newAdmin2@test.com"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.Parameters.RuntimeAdministrators = expectedAdmins
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.ClusterConfig.Administrators)
+		assert.Equal(t, expectedAdmins, inventoryInput.KymaConfig.Administrators)
+	})
+}
+
+func setRuntimeProperties(creator internal.ProvisionerInputCreator) {
+	creator.SetKubeconfig("example kubeconfig payload")
+	creator.SetRuntimeID("runtimeID")
+	creator.SetInstanceID("instanceID")
+	creator.SetShootName("shoot-name")
+}
+
+func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
+	t.Run("should not overwrite default admin (from user_id)", func(t *testing.T) {
+		// given
+		expectedAdmins := []string{"fake-user-id"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = expectedAdmins[0]
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		require.NoError(t, err)
+
+		// when
+		creator.SetProvisioningParameters(provisioningParams)
+		input, err := creator.CreateUpgradeShootInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.Administrators)
+	})
+
+	t.Run("should overwrite default admin with new admins list", func(t *testing.T) {
+		// given
+		userId := "fake-user-id"
+		expectedAdmins := []string{"newAdmin1@test.com", "newAdmin2@test.com"}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.ErsContext.UserID = userId
+		provisioningParams.Parameters.RuntimeAdministrators = expectedAdmins
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		require.NoError(t, err)
+
+		// when
+		creator.SetProvisioningParameters(provisioningParams)
+		input, err := creator.CreateUpgradeShootInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedAdmins, input.Administrators)
+	})
+}
+
+func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
+	t.Run("should apply CreateUpgradeShootInput with provisioning autoscaler parameters", func(t *testing.T) {
+		// given
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		ibf, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		//ar provider HyperscalerInputProvider
+
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+		//provider = &cloudProvider.GcpInput{} // for broker.GCPPlanID
+
+		rtinput, err := ibf.CreateUpgradeShootInput(pp)
+
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, rtinput)
+
+		rtinput = rtinput.SetProvisioningParameters(pp)
+		input, err := rtinput.CreateUpgradeShootInput()
+		assert.NoError(t, err)
+
+		expectAutoscalerMin := *pp.Parameters.AutoScalerMin
+		expectAutoscalerMax := *pp.Parameters.AutoScalerMax
+		expectMaxSurge := *pp.Parameters.MaxSurge
+		expectMaxUnavailable := *pp.Parameters.MaxUnavailable
+		t.Logf("%v, %v, %v, %v", expectAutoscalerMin, expectAutoscalerMax, expectMaxSurge, expectMaxUnavailable)
+
+		assert.Equal(t, expectAutoscalerMin, *input.GardenerConfig.AutoScalerMin)
+		assert.Equal(t, expectAutoscalerMax, *input.GardenerConfig.AutoScalerMax)
+		assert.Equal(t, expectMaxSurge, *input.GardenerConfig.MaxSurge)
+		assert.Equal(t, expectMaxUnavailable, *input.GardenerConfig.MaxUnavailable)
+	})
+
+	t.Run("should apply CreateUpgradeShootInput with provider autoscaler parameters", func(t *testing.T) {
+		// given
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+
+		ibf, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		pp := fixProvisioningParameters(broker.GCPPlanID, "")
+		pp.Parameters.AutoScalerMin = nil
+		pp.Parameters.AutoScalerMax = nil
+		pp.Parameters.MaxSurge = nil
+		pp.Parameters.MaxUnavailable = nil
+
+		provider := &cloudProvider.GcpInput{} // for broker.GCPPlanID
+
+		rtinput, err := ibf.CreateUpgradeShootInput(pp)
+
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, rtinput)
+
+		rtinput = rtinput.SetProvisioningParameters(pp)
+		input, err := rtinput.CreateUpgradeShootInput()
+		assert.NoError(t, err)
+
+		expectAutoscalerMin := provider.Defaults().GardenerConfig.AutoScalerMin
+		expectAutoscalerMax := provider.Defaults().GardenerConfig.AutoScalerMax
+		expectMaxSurge := provider.Defaults().GardenerConfig.MaxSurge
+		expectMaxUnavailable := provider.Defaults().GardenerConfig.MaxUnavailable
+
+		assert.Equal(t, expectAutoscalerMin, *input.GardenerConfig.AutoScalerMin)
+		assert.Equal(t, expectAutoscalerMax, *input.GardenerConfig.AutoScalerMax)
+		assert.Equal(t, expectMaxSurge, *input.GardenerConfig.MaxSurge)
+		assert.Equal(t, expectMaxUnavailable, *input.GardenerConfig.MaxUnavailable)
 	})
 }
 

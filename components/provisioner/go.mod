@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/avast/retry-go v2.6.0+incompatible
-	github.com/gardener/gardener v1.23.0
+	github.com/gardener/gardener v1.24.0
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.7.4
@@ -27,9 +27,9 @@ require (
 	github.com/vektah/gqlparser v1.2.0
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.20.6
-	k8s.io/apiextensions-apiserver v0.20.6
-	k8s.io/apimachinery v0.20.6
+	k8s.io/api v0.20.7
+	k8s.io/apiextensions-apiserver v0.20.7
+	k8s.io/apimachinery v0.20.7
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.8.3
 )
@@ -45,6 +45,7 @@ replace (
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/text => golang.org/x/text v0.3.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.20.7
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
 	k8s.io/client-go => k8s.io/client-go v0.20.5
 )

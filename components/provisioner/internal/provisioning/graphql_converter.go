@@ -56,11 +56,14 @@ func (c graphQLConverter) runtimeAgentConnectionStatusToGraphQLStatus(status mod
 }
 
 func (c graphQLConverter) clusterToToGraphQLRuntimeConfiguration(config model.Cluster) *gqlschema.RuntimeConfig {
-	return &gqlschema.RuntimeConfig{
+	runtimeConfig := &gqlschema.RuntimeConfig{
 		ClusterConfig: c.gardenerConfigToGraphQLConfig(config.ClusterConfig),
-		KymaConfig:    c.kymaConfigToGraphQLConfig(config.KymaConfig),
 		Kubeconfig:    config.Kubeconfig,
 	}
+	if config.KymaConfig != nil {
+		runtimeConfig.KymaConfig = c.kymaConfigToGraphQLConfig(*config.KymaConfig)
+	}
+	return runtimeConfig
 }
 
 func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerConfig) *gqlschema.GardenerConfig {
@@ -94,6 +97,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
+		ExposureClassName:                   config.ExposureClassName,
 	}
 }
 
@@ -153,8 +157,12 @@ func (c graphQLConverter) operationTypeToGraphQLType(operationType model.Operati
 	switch operationType {
 	case model.Provision:
 		return gqlschema.OperationTypeProvision
+	case model.ProvisionNoInstall:
+		return gqlschema.OperationTypeProvisionNoInstall
 	case model.Deprovision:
 		return gqlschema.OperationTypeDeprovision
+	case model.DeprovisionNoInstall:
+		return gqlschema.OperationTypeDeprovisionNoInstall
 	case model.Upgrade:
 		return gqlschema.OperationTypeUpgrade
 	case model.UpgradeShoot:

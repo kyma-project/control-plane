@@ -16,6 +16,9 @@ type Runtime struct {
 	MaintenanceWindowBegin time.Time `json:"maintenanceWindowBegin"`
 	// The corresponding shoot cluster's .spec.maintenance.timeWindow.End value, which is in "HHMMSS+[HHMM TZ]" format, e.g. "040000+0000"
 	MaintenanceWindowEnd time.Time `json:"maintenanceWindowEnd"`
+	MaintenanceDays      []string  `json:"maintenanceDays"`
+	Plan                 string    `json:"plan"`
+	Region               string    `json:"region"`
 }
 
 // RuntimeOperation holds information about operation performed on a runtime
@@ -47,4 +50,60 @@ type Strategy interface {
 	Wait(executionID string)
 	// Cancel shutdowns a given execution.
 	Cancel(executionID string)
+}
+
+func ConvertSliceOfDaysToMap(days []string) map[time.Weekday]bool {
+	m := make(map[time.Weekday]bool)
+	for _, day := range days {
+		switch day {
+		case "Sun":
+			m[time.Sunday] = true
+		case "Mon":
+			m[time.Monday] = true
+		case "Tue":
+			m[time.Tuesday] = true
+		case "Wed":
+			m[time.Wednesday] = true
+		case "Thu":
+			m[time.Thursday] = true
+		case "Fri":
+			m[time.Friday] = true
+		case "Sat":
+			m[time.Saturday] = true
+		}
+	}
+	return m
+}
+
+func FirstAvailableDayDiff(currentDay time.Weekday, availableDays map[time.Weekday]bool) int {
+	availableDay := currentDay
+	for i := time.Weekday(0); i < 7; i++ {
+		nextDay := (currentDay + i) % 7
+		_, isAvailable := availableDays[nextDay]
+		if isAvailable {
+			availableDay = nextDay
+			break
+		}
+	}
+	diff := int(7-currentDay+availableDay) % 7
+
+	return diff
+}
+
+func NextAvailableDayDiff(currentDay time.Weekday, availableDays map[time.Weekday]bool) int {
+	availableDay := currentDay
+	for i := time.Weekday(0); i < 7; i++ {
+		nextDay := (currentDay + i + 1) % 7
+		_, isAvailable := availableDays[nextDay]
+		if isAvailable {
+			availableDay = nextDay
+			break
+		}
+	}
+	diff := int(7-currentDay+availableDay) % 7
+	if diff == 0 {
+		diff = 7
+	}
+
+	return diff
 }

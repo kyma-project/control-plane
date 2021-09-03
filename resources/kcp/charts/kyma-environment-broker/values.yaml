@@ -83,6 +83,7 @@ skrOIDCDefaultValues: |-
   usernameClaim: "sub"
 
 kymaVersion: "1.13.0"
+kymaPreviewVersion: "2.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
@@ -106,6 +107,8 @@ gardener:
   trialNodesNumber: "1"
   freemiumProviders: "azure,aws"
   defaultTrialProvider: "Azure" # Azure, AWS
+  autoUpdateKubernetesVersion: "true"
+  autoUpdateMachineImageVersion: "false"
 
 kubeconfig:
   issuerURL: "TBD"
@@ -120,6 +123,7 @@ serviceManager:
   url: "TBD"
   username: "TBD"
   password: "TBD"
+  subaccountWithRequestCredentials: "TBD"
 
 xsuaa:
   disabled: true

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -32,6 +34,12 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+
+	CreateProvisionSKRInventoryInput() (reconciler.Cluster, error)
+	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
+	SetKubeconfig(kcfg string) ProvisionerInputCreator
+	SetRuntimeID(runtimeID string) ProvisionerInputCreator
+	SetInstanceID(instanceID string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -225,8 +233,8 @@ type InstanceWithOperation struct {
 
 type SMClientFactory interface {
 	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials *servicemanager.Credentials, log logrus.FieldLogger) (*servicemanager.Credentials, error)
+	ForCustomerCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
+	ProvideCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
 }
 
 type InstanceDetails struct {
@@ -451,6 +459,10 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 		op.ProvisioningParameters.Parameters.OIDC = updatingParams.OIDC
 	}
 
+	if len(updatingParams.RuntimeAdministrators) != 0 {
+		op.ProvisioningParameters.Parameters.RuntimeAdministrators = updatingParams.RuntimeAdministrators
+	}
+
 	return op
 }
 
@@ -525,7 +537,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 	return copiedList
 }
 
-func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanager.Credentials {
+func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
@@ -535,7 +547,10 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) *servicemanag
 			URL:      sm.URL,
 		}
 	}
-	return creds
+	return servicemanager.RequestContext{
+		SubaccountID: parameters.ErsContext.SubAccountID,
+		Credentials:  creds,
+	}
 }
 
 func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {

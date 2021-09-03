@@ -32,6 +32,8 @@ const (
 	OpenStackPlanName = "openstack"
 	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
 	FreemiumPlanName  = "free"
+	PreviewPlanID     = "5cb3d976-b85c-42ea-a636-79cadda109a9"
+	PreviewPlanName   = "preview"
 )
 
 var PlanNamesMapping = map[string]string{
@@ -44,6 +46,7 @@ var PlanNamesMapping = map[string]string{
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
 	FreemiumPlanID:  FreemiumPlanName,
+	PreviewPlanID:   PreviewPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -56,6 +59,7 @@ var PlanIDsMapping = map[string]string{
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
 	FreemiumPlanName:  FreemiumPlanID,
+	PreviewPlanName:   PreviewPlanID,
 }
 
 type TrialCloudRegion string
@@ -451,6 +455,15 @@ func IsAzurePlan(planID string) bool {
 func IsFreemiumPlan(planID string) bool {
 	switch planID {
 	case FreemiumPlanID:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsPreviewPlan(planID string) bool {
+	switch planID {
+	case PreviewPlanID:
 		return true
 	default:
 		return false

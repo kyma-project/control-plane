@@ -53,9 +53,6 @@ func (c Client) NewRequest() (*http.Request, error) {
 }
 
 func (c Client) GetAllRuntimes(req *http.Request) (*kebruntime.RuntimesPage, error) {
-	metricTimer := prometheus.NewTimer(sentRequestDuration)
-	defer metricTimer.ObserveDuration()
-
 	morePages := true
 	pageNum := 1
 	recordsSeen := 0
@@ -99,7 +96,9 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		}
 		return false
 	}, func() (err error) {
+		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		resp, err = c.HTTPClient.Do(req)
+		metricTimer.ObserveDuration()
 		if err != nil {
 			c.Logger.Warnf("will be retried: failed while getting runtimes from KEB: %v", err)
 		}

@@ -61,7 +61,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -110,6 +109,7 @@ type Config struct {
 	ServiceManager servicemanager.Config
 
 	KymaVersion                          string
+	KymaPreviewVersion                   string
 	EnableOnDemandVersion                bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath string
 	SkrOidcDefaultValuesYAMLFilePath     string
@@ -127,10 +127,6 @@ type Config struct {
 	XSUAA struct {
 		Disabled bool `envconfig:"default=true"`
 	}
-	Ems struct {
-		Disabled                              bool `envconfig:"default=true"`
-		SkipDeprovisionAzureEventingAtUpgrade bool `envconfig:"default=false"`
-	}
 	Connectivity struct {
 		Disabled bool `envconfig:"default=true"`
 	}
@@ -138,6 +134,11 @@ type Config struct {
 	AuditLog auditlog.Config
 
 	VersionConfig struct {
+		Namespace string
+		Name      string
+	}
+
+	OrchestrationConfig struct {
 		Namespace string
 		Name      string
 	}
@@ -230,15 +231,13 @@ func main() {
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
 	fatalOnError(err)
-	kubernetesClient, err := kubernetes.NewForConfig(gardenerClusterConfig)
-	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)
 	gardenerSharedPool := hyperscaler.NewSharedGardenerAccountPool(gardenerSecretBindings, gardenerShoots)
-	accountProvider := hyperscaler.NewAccountProvider(kubernetesClient, gardenerAccountPool, gardenerSharedPool)
+	accountProvider := hyperscaler.NewAccountProvider(gardenerAccountPool, gardenerSharedPool)
 
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
@@ -285,7 +284,7 @@ func main() {
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping)
 
 	// run queues
 	const workersAmount = 5
@@ -316,7 +315,7 @@ func main() {
 	router.Handle("/metrics", promhttp.Handler())
 
 	// create SKR kubeconfig endpoint
-	kcBuilder := kubeconfig.NewBuilder(cfg.Kubeconfig, provisionerClient)
+	kcBuilder := kubeconfig.NewBuilder(provisionerClient)
 	kcHandler := kubeconfig.NewHandler(db, kcBuilder, cfg.Kubeconfig.AllowOrigins, logs.WithField("service", "kubeconfigHandle"))
 	kcHandler.AttachRoutes(router)
 
@@ -326,8 +325,8 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs)
+		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs, cli)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
@@ -554,12 +553,13 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.XSUAA.Disabled,
 		},
 		{
+			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("EMS_Offering",
-				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
+			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
+				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
+					return &op.Connectivity.Instance
 				}, db.Operations()),
-			disabled: cfg.Ems.Disabled,
+			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -575,11 +575,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 				NamespaceAdminRole:  "nar",
 			}),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -621,11 +616,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewXSUAABindingStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEmsBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -724,11 +714,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewEmsUnbindStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   1,
 			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
 		},
@@ -736,11 +721,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   2,
 			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
 			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewEmsDeprovisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight: 2,
@@ -769,7 +749,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
-	fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
+	fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -781,14 +761,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		weight   int
 		step     upgrade_kyma.Step
 	}{
-		{
-			weight: 1,
-			step: upgrade_kyma.NewServiceManagerOfferingStep("EMS_Offering",
-				provisioning.EmsOfferingName, provisioning.EmsPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Ems.Instance
-				}, db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
 		{
 			weight: 1,
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
@@ -812,18 +784,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewEmsUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Ems.Disabled,
-		},
-		{
-			weight:   4,
 			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   7,
-			step:     upgrade_kyma.NewEmsUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Ems.Disabled,
 		},
 		{
 			weight:   7,
@@ -842,7 +804,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	}
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"))
+		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
+		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
@@ -852,7 +815,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
-	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger) *process.Queue {
+	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, logs logrus.FieldLogger,
+	cli client.Client, cfg Config) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
 	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg)
@@ -875,7 +839,8 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	}
 
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
-		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"))
+		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"),
+		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
 	queue.Run(ctx.Done(), 3)

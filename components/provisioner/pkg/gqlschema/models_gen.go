@@ -120,6 +120,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type GardenerConfigInput struct {
@@ -146,6 +147,7 @@ type GardenerConfigInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type GardenerUpgradeInput struct {
@@ -164,6 +166,7 @@ type GardenerUpgradeInput struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
+	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
 type HibernationStatus struct {
@@ -404,26 +407,30 @@ func (e OperationState) MarshalGQL(w io.Writer) {
 type OperationType string
 
 const (
-	OperationTypeProvision        OperationType = "Provision"
-	OperationTypeUpgrade          OperationType = "Upgrade"
-	OperationTypeUpgradeShoot     OperationType = "UpgradeShoot"
-	OperationTypeDeprovision      OperationType = "Deprovision"
-	OperationTypeReconnectRuntime OperationType = "ReconnectRuntime"
-	OperationTypeHibernate        OperationType = "Hibernate"
+	OperationTypeProvision            OperationType = "Provision"
+	OperationTypeProvisionNoInstall   OperationType = "ProvisionNoInstall"
+	OperationTypeUpgrade              OperationType = "Upgrade"
+	OperationTypeUpgradeShoot         OperationType = "UpgradeShoot"
+	OperationTypeDeprovision          OperationType = "Deprovision"
+	OperationTypeDeprovisionNoInstall OperationType = "DeprovisionNoInstall"
+	OperationTypeReconnectRuntime     OperationType = "ReconnectRuntime"
+	OperationTypeHibernate            OperationType = "Hibernate"
 )
 
 var AllOperationType = []OperationType{
 	OperationTypeProvision,
+	OperationTypeProvisionNoInstall,
 	OperationTypeUpgrade,
 	OperationTypeUpgradeShoot,
 	OperationTypeDeprovision,
+	OperationTypeDeprovisionNoInstall,
 	OperationTypeReconnectRuntime,
 	OperationTypeHibernate,
 }
 
 func (e OperationType) IsValid() bool {
 	switch e {
-	case OperationTypeProvision, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeReconnectRuntime, OperationTypeHibernate:
+	case OperationTypeProvision, OperationTypeProvisionNoInstall, OperationTypeUpgrade, OperationTypeUpgradeShoot, OperationTypeDeprovision, OperationTypeDeprovisionNoInstall, OperationTypeReconnectRuntime, OperationTypeHibernate:
 		return true
 	}
 	return false

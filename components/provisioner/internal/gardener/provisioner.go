@@ -162,6 +162,9 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
 			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to WaitForClusterDeletion state
+			if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+				return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, time.Now()), nil
+			}
 			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, time.Now()), nil
 		}
 	}
@@ -170,6 +173,9 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		annotate(shoot, operationIDAnnotation, operationId)
 		annotate(shoot, legacyOperationIDAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
+		if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+			return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, shoot.DeletionTimestamp.Time), nil
+		}
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
 	}
 
@@ -187,6 +193,10 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
+
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
+	}
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
 }
 
@@ -221,6 +231,18 @@ func newDeprovisionOperation(id, runtimeId, message string, state model.Operatio
 	return model.Operation{
 		ID:             id,
 		Type:           model.Deprovision,
+		StartTimestamp: startTime,
+		State:          state,
+		Stage:          stage,
+		Message:        message,
+		ClusterID:      runtimeId,
+	}
+}
+
+func newDeprovisionOperationNoInstall(id, runtimeId, message string, state model.OperationState, stage model.OperationStage, startTime time.Time) model.Operation {
+	return model.Operation{
+		ID:             id,
+		Type:           model.DeprovisionNoInstall,
 		StartTimestamp: startTime,
 		State:          state,
 		Stage:          stage,

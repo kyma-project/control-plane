@@ -132,6 +132,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 autoScalerMax: 4
                 maxSurge: 4
                 maxUnavailable: 1
+                exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                 providerSpecificConfig: { gcpConfig: { zones: ["europe-west4-a"] } }
               }
             }
@@ -227,6 +228,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 autoScalerMax: 4
                 maxSurge: 4
                 maxUnavailable: 1
+                exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                 providerSpecificConfig: { azureConfig: { vnetCidr: "10.250.0.0/19", zones: ["1", "2"] } }
               }
             }
@@ -322,6 +324,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 autoScalerMax: 4
                 maxSurge: 4
                 maxUnavailable: 1
+                exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                 providerSpecificConfig: { 
                   awsConfig: {
                     publicCidr: "10.250.96.0/22"
@@ -428,6 +431,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   autoScalerMax: 4
                   maxSurge: 4
                   maxUnavailable: 1
+                  exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                   providerSpecificConfig: { 
                     openStackConfig: {
                        zones: ["eu-de-1a"],

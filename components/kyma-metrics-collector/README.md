@@ -1,7 +1,16 @@
 # Kyma Metrics Collector
 
 ## Overview
-Kyma Metrics Collector scrapes all Kyma clusters and uses Shoot information to generate metrics as event streams. The generated event streams are POST-ed to an events collecting system.
+Kyma Metrics Collector (KMC) is a component that scrapes all Kyma clusters to generate metrics. These metrics are sent to Event Data Platform [(EDP)](https://pages.github.tools.sap/edp/edp-docs/docs/overview/tutorial/) as an event stream and used for billing information.
+
+## Functionality
+The basic flow for KMC is as follows:
+* KMC workers get a list of runtimes from Kyma Environment Broker [(KEB)](https://github.com/kyma-project/control-plane/tree/main/components/kyma-environment-broker). 
+ * Additionally, the workers get the kubeconfig, secret and shoot from Gardener. 
+ * KMC adds the runtimes to a queue to work through them and re-queues a runtime should an error occur. 
+ * Information on PVCs, SVCs and Nodes is retrieved from SAP Kyma Runtime (SKR). 
+ * This information is sent to EDP as an event stream.
+ * For every process step, internal metrics are collected with [Prometheus](https://prometheus.io/docs/introduction/overview/) and alerts have been configured to trigger if any part of the functionality malfunctions.
 
 ## Usage
 

@@ -194,7 +194,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
 						},
 					},
-					Purpose: &purpose,
+					Purpose:           &purpose,
+					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
@@ -246,7 +247,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
 						},
 					},
-					Purpose: &purpose,
+					Purpose:           &purpose,
+					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
@@ -297,7 +299,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker(nil),
 						},
 					},
-					Purpose: &purpose,
+					Purpose:           &purpose,
+					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
@@ -349,7 +352,8 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							fixWorker([]string{"zone"}),
 						},
 					},
-					Purpose: &purpose,
+					Purpose:           &purpose,
+					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
 						AllowPrivilegedContainers: util.BoolPtr(false),
 						Version:                   "1.15",
@@ -395,6 +399,7 @@ func TestEditShootConfig(t *testing.T) {
 		WithKubernetesVersion("1.15").
 		WithAutoUpdate(true, false).
 		WithPurpose("testing").
+		WithExposureClassName("internet").
 		WithWorkers(
 			testkit.NewTestWorker("peon").
 				WithMachineType("machine").
@@ -510,6 +515,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
+		ExposureClassName:                   util.StringPtr("internet"),
 	}
 }
 

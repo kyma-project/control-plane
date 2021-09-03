@@ -165,3 +165,25 @@ type StatusResponseList struct {
 type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestrationID"`
 }
+
+type MaintenancePolicyMatch struct {
+	GlobalAccountID string `json:"globalAccountID"`
+	Plan            string `json:"plan"`
+	Region          string `json:"region"`
+}
+
+type MaintenancePolicyEntry struct {
+	Days      []string `json:"days"`
+	TimeBegin string   `json:"timeBegin"`
+	TimeEnd   string   `json:"timeEnd"`
+}
+
+type MaintenancePolicyRule struct {
+	Match                  MaintenancePolicyMatch `json:"match"`
+	MaintenancePolicyEntry `json:""`
+}
+
+type MaintenancePolicy struct {
+	Rules   []MaintenancePolicyRule `json:"rules"`
+	Default MaintenancePolicyEntry  `json:"default"`
+}

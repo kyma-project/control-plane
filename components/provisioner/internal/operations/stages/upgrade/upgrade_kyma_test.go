@@ -121,7 +121,9 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		kymaConfig := model.KymaConfig{}
+
+		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig), KymaConfig: &kymaConfig}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -139,7 +141,9 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		kymaConfig := model.KymaConfig{}
+
+		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig), KymaConfig: &kymaConfig}
 
 		//when
 		_, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -156,7 +160,9 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		kymaConfig := model.KymaConfig{}
+
+		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig), KymaConfig: &kymaConfig}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
@@ -173,7 +179,9 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 
 		upgradeStep := NewUpgradeKymaStep(installationClient, nextStageName, 0)
 
-		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig)}
+		kymaConfig := model.KymaConfig{}
+
+		cluster := model.Cluster{Kubeconfig: util.StringPtr(kubeconfig), KymaConfig: &kymaConfig}
 
 		//when
 		result, err := upgradeStep.Run(cluster, model.Operation{}, logrus.New())
