@@ -84,17 +84,17 @@ type ShootIssuers struct {
 
 func NewDNSConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
-		ApiVersion: "service.dns.extensions.gardener.cloud/v1alpha1",
+		ApiVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
 		DNSProviderReplication: DNSProviderReplication{Enabled: true},
-		Kind: "DNSConfig",
+		Kind:                   "DNSConfig",
 	}
 }
 
 func NewCertConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
-		ApiVersion: "service.cert.extensions.gardener.cloud/v1alpha1",
+		ApiVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
 		ShootIssuers: ShootIssuers{Enabled: true},
-		Kind: "CertConfig",
+		Kind:         "CertConfig",
 	}
 }
 
@@ -170,11 +170,11 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			},
 			Extensions: []gardener_types.Extension{
 				{
-					Type: "shoot-dns-service",
+					Type:           "shoot-dns-service",
 					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig},
 				},
 				{
-					Type: "shoot-cert-service",
+					Type:           "shoot-cert-service",
 					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig},
 				},
 			},
