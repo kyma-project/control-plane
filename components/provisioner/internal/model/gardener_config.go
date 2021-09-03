@@ -61,6 +61,43 @@ type GardenerConfig struct {
 	ExposureClassName                   *string
 }
 
+type ExtensionProviderConfig struct {
+	// ApiVersion is gardener extension api version
+	ApiVersion string `json:"apiVersion"`
+	// DnsProviderReplication indicates whether dnsProvider replication is on
+	DNSProviderReplication DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
+	// ShootIssuers indicates whether shoot Issuers are on
+	ShootIssuers ShootIssuers `json:"shootIssuers,omitempty"`
+	// Kind is extension type
+	Kind string `json:"kind"`
+}
+
+type DNSProviderReplication struct {
+	// Enabled indicates whether replication is on
+	Enabled bool `json:"enabled"`
+}
+
+type ShootIssuers struct {
+	// Enabled indicates whether shoot Issuers are on
+	Enabled bool `json:"enabled"`
+}
+
+func NewDNSConfig() *ExtensionProviderConfig {
+	return &ExtensionProviderConfig{
+		ApiVersion: "service.dns.extensions.gardener.cloud/v1alpha1",
+		DNSProviderReplication: DNSProviderReplication{Enabled: true},
+		Kind: "DNSConfig",
+	}
+}
+
+func NewCertConfig() *ExtensionProviderConfig {
+	return &ExtensionProviderConfig{
+		ApiVersion: "service.cert.extensions.gardener.cloud/v1alpha1",
+		ShootIssuers: ShootIssuers{Enabled: true},
+		Kind: "CertConfig",
+	}
+}
+
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
@@ -83,6 +120,18 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	annotations := make(map[string]string)
 	if c.LicenceType != nil {
 		annotations[LicenceTypeAnnotation] = *c.LicenceType
+	}
+
+	dnsConfig := NewDNSConfig()
+	jsonDNSConfig, err := json.Marshal(dnsConfig)
+	if err != nil {
+		return nil, err.Append("error encoding DNS extension config")
+	}
+
+	certConfig := NewCertConfig()
+	jsonCertConfig, err := json.Marshal(certConfig)
+	if err != nil {
+		return nil, err.Append("error encoding Cert extension config")
 	}
 
 	shoot := &gardener_types.Shoot{
@@ -119,10 +168,20 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
+			Extensions: []gardener_types.Extension{
+				{
+					Type: "shoot-dns-service",
+					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig},
+				},
+				{
+					Type: "shoot-cert-service",
+					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig},
+				},
+			},
 		},
 	}
 
-	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	err = c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
 	if err != nil {
 		return nil, err.Append("error extending shoot config with Provider")
 	}
