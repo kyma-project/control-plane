@@ -123,15 +123,15 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	}
 
 	dnsConfig := NewDNSConfig()
-	jsonDNSConfig, err := json.Marshal(dnsConfig)
-	if err != nil {
-		return nil, err.Append("error encoding DNS extension config")
+	jsonDNSConfig, encodingErr := json.Marshal(dnsConfig)
+	if encodingErr != nil {
+		return nil, apperrors.Internal("error encoding DNS extension config: %s", encodingErr.Error())
 	}
 
 	certConfig := NewCertConfig()
-	jsonCertConfig, err := json.Marshal(certConfig)
-	if err != nil {
-		return nil, err.Append("error encoding Cert extension config")
+	jsonCertConfig, encodingErr := json.Marshal(certConfig)
+	if encodingErr != nil {
+		return nil, apperrors.Internal("error encoding Cert extension config: %s", encodingErr.Error())
 	}
 
 	shoot := &gardener_types.Shoot{
@@ -181,7 +181,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		},
 	}
 
-	err = c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
+	err := c.GardenerProviderConfig.ExtendShootConfig(c, shoot)
 	if err != nil {
 		return nil, err.Append("error extending shoot config with Provider")
 	}
