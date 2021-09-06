@@ -85,7 +85,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   
 </div>
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.   
+> **NOTE:** To access Runtime Provisioner, forward the port on which the GraphQL server is listening.   
 
 ## Steps
 
@@ -103,7 +103,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   3. In the **Members** tab, create a service account for Gardener. 
     
-  4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on GCP. 
+  4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on GCP. 
     
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
@@ -199,7 +199,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
 
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on Azure.
+  4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on Azure.
   
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
@@ -295,7 +295,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
     
   3. In the **Members** tab, create a service account for Gardener. 
 
-  4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on AWS. 
+  4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on AWS. 
   
      > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                           
@@ -404,7 +404,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   
    3. In the **Members** tab, create a service account for Gardener. 
       
-   4. Make a call to the Runtime Provisioner with a **tenant** header to create a cluster on OpenStack. 
+   4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on OpenStack. 
       
        > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
                                                                             
