@@ -136,8 +136,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 providerSpecificConfig: { gcpConfig: { zones: ["europe-west4-a"] } }
               }
             }
-            kymaConfig: {
-              version: "1.12.0"
+            kymaConfig: { # Optional; if you don't provide it, an empty cluster without Kyma is provisioned
+              version: "1.24.5"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
@@ -232,8 +232,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 providerSpecificConfig: { azureConfig: { vnetCidr: "10.250.0.0/19", zones: ["1", "2"] } }
               }
             }
-            kymaConfig: {
-              version: "1.12.0"
+            kymaConfig: { # Optional; if you don't provide it, an empty cluster without Kyma is provisioned
+              version: "1.24.5"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
@@ -342,8 +342,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 }
               }
             }
-            kymaConfig: {
-              version: "1.12.0"
+            kymaConfig: { # Optional; if you don't provide it, an empty cluster without Kyma is provisioned
+              version: "1.24.5"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
                 { component: "compass-runtime-agent", namespace: "compass-system" }
@@ -442,8 +442,8 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                    }
                 }
               }
-              kymaConfig: {
-                version: "1.12.0"
+              kymaConfig: { # Optional; if you don't provide it, an empty cluster without Kyma is provisioned
+                version: "1.24.5"
                 profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
                 components: [
                   { component: "compass-runtime-agent", namespace: "compass-system" }
