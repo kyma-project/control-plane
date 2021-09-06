@@ -17,8 +17,6 @@ Note that the operations of provisioning and deprovisioning are asynchronous. Th
 
 Runtime Provisioner also provides extensions that let you leverage Gardener [DNS](https://github.com/gardener/external-dns-management) and [certificate management](https://github.com/gardener/cert-management). See the respective documentation for more details.
 
-  > **NOTE:** To take advantage of these extensions, you must have [`cert-management`](https://github.com/gardener/cert-management) and [`external-dns-management`](https://github.com/gardener/external-dns-management) installed. If you are not using Gardener for provisioning, see the components` documentation to learn how to install them. If you're using Gardener, the components are already included.
-
 Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning.
 
 Find the specification of the API [here](https://github.com/kyma-project/control-plane/blob/main/components/provisioner/pkg/gqlschema/schema.graphql).
