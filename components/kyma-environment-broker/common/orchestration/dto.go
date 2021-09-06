@@ -8,9 +8,9 @@ import (
 
 // Parameters hold the attributes of orchestration create (upgrade) requests.
 type Parameters struct {
-	Targets  TargetSpec   `json:"targets"`
-	Strategy StrategySpec `json:"strategy,omitempty"`
-	DryRun   bool         `json:"dryRun,omitempty"`
+	Targets    TargetSpec           `json:"targets"`
+	Strategy   StrategySpec         `json:"strategy,omitempty"`
+	DryRun     bool                 `json:"dryRun,omitempty"`
 	Kubernetes KubernetesParameters `json:""`
 	// upgrade kyma specific parameters
 	Kyma KymaParameters `json:""`
