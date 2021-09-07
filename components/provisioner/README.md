@@ -2,7 +2,7 @@
 
 ## Overview
 
-Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. When provisioning a cluster, you can choose whether to provision a cluster with Kyma (Kyma Runtime), by providing **kymaConfig**, or not.
+Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. When provisioning a cluster, you have an option to provision a cluster with Kyma (Kyma Runtime), or without it. To provision a Kyma Runtime, provide its configuration as **kymaConfig**.
 
 For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-project/control-plane/tree/main/docs/provisioner).
 
