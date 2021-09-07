@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	releaseInstallerURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
-	onDemandInstallerURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
+	releaseInstallerURLFormat   = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
+	onDemandInstallerURLFormat  = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
+	releaseComponentsURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-components.yaml"
+	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
