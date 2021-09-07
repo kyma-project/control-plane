@@ -2,7 +2,7 @@
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-preview
+  name: e2e-preview-aws
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
@@ -91,7 +91,7 @@ spec:
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
-  name: e2e-preview-cleanup
+  name: e2e-preview-aws-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
