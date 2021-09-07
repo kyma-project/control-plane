@@ -3,7 +3,7 @@ title: Overview
 type: Overview
 ---
 
-Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. You can provision empty clusters or clusters with Kyma (Kyma Runtimes). Runtime Provisioner is registered in Compass in Director as an Integration System.
+Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. When provisioning a cluster, you can choose whether to provision a cluster with Kyma (Kyma Runtime), by providing **kymaConfig**, or not. Runtime Provisioner is registered in Compass in Director as an Integration System.
 
 It allows you to provision the clusters in the following ways:
 - [through Gardener](#tutorials-provision-clusters-through-gardener) on:
