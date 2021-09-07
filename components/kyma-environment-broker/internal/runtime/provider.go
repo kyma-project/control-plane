@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -51,31 +52,30 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 		return cmps, nil
 	}
 
-	// Read Kyma installer yaml (url)
-	openSourceKymaComponents, err := r.getOpenSourceKymaComponents(kymaVersion)
+	kymaComponents, err := r.getKymaComponents(kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting open source kyma components")
+		return nil, errors.Wrap(err, "while getting Kyma components")
 	}
 
-	// Read mounted config (path)
-	managedRuntimeComponents, err := r.getManagedRuntimeComponents()
+	managedComponents, err := r.getManagedComponents()
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting managed runtime components list")
+		return nil, errors.Wrap(err, "while getting managed components")
 	}
 
-	// Return merged list, managed components added at the end
-	merged := append(openSourceKymaComponents, managedRuntimeComponents...)
+	allComponents := append(kymaComponents, managedComponents...)
 
-	r.components[kymaVersion] = merged
-	return merged, nil
+	r.components[kymaVersion] = allComponents
+	return allComponents, nil
 }
 
-// DownloadFile will download a url to a local file. It's efficient because it will
-// write as it downloads and not load the whole file into memory.
-func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (comp []v1alpha1.KymaComponent, err error) {
-	installerYamlURL := r.getInstallerYamlURL(version)
+func (r *ComponentsListProvider) getKymaComponents(kymaVersion string) (comp []v1alpha1.KymaComponent, err error) {
+	// installerYamlURL := r.getInstallerYamlURL(version)
+	componentsYamlURL, err := r.getComponentsYamlURL(kymaVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting components URL")
+	}
 
-	req, err := http.NewRequest(http.MethodGet, installerYamlURL, nil)
+	req, err := http.NewRequest(http.MethodGet, componentsYamlURL, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating http request")
 	}
@@ -110,7 +110,7 @@ func (r *ComponentsListProvider) getOpenSourceKymaComponents(version string) (co
 
 }
 
-func (r *ComponentsListProvider) getManagedRuntimeComponents() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getManagedComponents() ([]v1alpha1.KymaComponent, error) {
 	yamlFile, err := ioutil.ReadFile(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
@@ -166,9 +166,6 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 }
 
 func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string {
-	if r.isOnDemandRelease(kymaVersion) {
-		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
-	}
 	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion)
 }
 
@@ -183,4 +180,28 @@ func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
 		strings.HasPrefix(version, "main-")
 	return isOnDemandVersion
+}
+
+func (r *ComponentsListProvider) getComponentsYamlURL(kymaVersion string) (string, error) {
+	if r.isOnDemandRelease(kymaVersion) {
+		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion), nil
+	}
+	return r.determineReleaseComponentsURL(kymaVersion)
+}
+
+func (r *ComponentsListProvider) determineReleaseComponentsURL(kymaVersion string) (string, error) {
+	kymaMajorVer := r.getMajorVersion(kymaVersion)
+	majorVerNum, err := strconv.Atoi(kymaMajorVer)
+	if err != nil {
+		return "", errors.New("cannot convert Kyma's major version number to int")
+	}
+	if majorVerNum > 1 {
+		return fmt.Sprintf(releaseComponentsURLFormat, kymaVersion), nil
+	}
+	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion), nil
+}
+
+func (r *ComponentsListProvider) getMajorVersion(version string) string {
+	splitVer := strings.Split(version, ".")
+	return splitVer[0]
 }
