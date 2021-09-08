@@ -70,6 +70,12 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 
 func (r *ComponentsListProvider) getKymaComponents(kymaVersion string) (comp []v1alpha1.KymaComponent, err error) {
 	// installerYamlURL := r.getInstallerYamlURL(version)
+	if r.isOnDemandRelease(kymaVersion) {
+		return r.getKymaComponentsForCustomVersion(kymaVersion)
+	}
+	return r.getKymaComponentsForReleaseVersion(kymaVersion)
+
+
 	componentsYamlURL, err := r.getComponentsYamlURL(kymaVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting components URL")
@@ -204,4 +210,15 @@ func (r *ComponentsListProvider) determineReleaseComponentsURL(kymaVersion strin
 func (r *ComponentsListProvider) getMajorVersion(version string) string {
 	splitVer := strings.Split(version, ".")
 	return splitVer[0]
+}
+
+
+func (r *ComponentsListProvider) getKymaComponentsForCustomVersion(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+	cmpsURL := fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
+	_ = cmpsURL
+	return nil, nil
+}
+
+func (r *ComponentsListProvider) getKymaComponentsForReleaseVersion(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+	return nil, nil
 }
