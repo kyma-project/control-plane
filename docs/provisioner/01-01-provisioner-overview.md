@@ -3,7 +3,8 @@ title: Overview
 type: Overview
 ---
 
-The Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1. The Runtime Provisioner is registered in Compass in the Director as an Integration System.
+Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. When provisioning a cluster, you have an option to provision a cluster with Kyma (Kyma Runtime), or without it. To provision a Kyma Runtime, provide its configuration as **kymaConfig**. 
+Runtime Provisioner is registered in Compass in Director as an Integration System.
 
 It allows you to provision the clusters in the following ways:
 - [through Gardener](#tutorials-provision-clusters-through-gardener) on:
@@ -15,7 +16,9 @@ During the operation of provisioning, you can pass a list of Kyma components you
 
 Note that the operations of provisioning and deprovisioning are asynchronous. The operation of provisioning returns the Runtime Operation Status containing the Runtime ID and the operation ID. The operation of deprovisioning returns the operation ID. You can use the operation ID to [check the Runtime Operation Status](#tutorials-check-runtime-operation-status) and the Runtime ID to [check the Runtime Status](#tutorials-check-runtime-status).
 
-The Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning.
+Runtime Provisioner also provides extensions that let you leverage Gardener [DNS](https://github.com/gardener/external-dns-management) and [certificate management](https://github.com/gardener/cert-management). See the respective documentation for more details.
+
+Runtime Provisioner exposes an API to manage cluster provisioning, installation, and deprovisioning.
 
 Find the specification of the API [here](https://github.com/kyma-project/control-plane/blob/main/components/provisioner/pkg/gqlschema/schema.graphql).
 
