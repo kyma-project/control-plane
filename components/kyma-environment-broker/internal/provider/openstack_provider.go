@@ -2,39 +2,41 @@ package provider
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"math/rand"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 const (
-	DefaultOpenStackRegion               = "eu-de-1"
-	DefaultKymaExternalFloatingIPNetwork = "FloatingIP-external-cp-kyma"
-	DefaultExposureClass                 = "converged-cloud-internet"
+	DefaultOpenStackRegion = "eu-de-1"
+	// DefaultKymaExternalFloatingIPNetwork = "FloatingIP-external-cp-kyma"
+	DefaultExposureClass = "converged-cloud-internet"
 )
 
 type OpenStackInput struct {
+	FloatingPoolName string
 }
 
 func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       nil,
-			MachineType:    "m2.xlarge",
-			Region:         DefaultOpenStackRegion,
-			Provider:       "openstack",
-			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  2,
-			AutoScalerMax:  4,
-			MaxSurge:       4,
-			MaxUnavailable: 0,
+			DiskType:          nil,
+			MachineType:       "m2.xlarge",
+			Region:            DefaultOpenStackRegion,
+			Provider:          "openstack",
+			WorkerCidr:        "10.250.0.0/19",
+			AutoScalerMin:     2,
+			AutoScalerMax:     4,
+			MaxSurge:          4,
+			MaxUnavailable:    0,
 			ExposureClassName: ptr.String(DefaultExposureClass),
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				OpenStackConfig: &gqlschema.OpenStackProviderConfigInput{
 					Zones:                ZonesForOpenStack(DefaultOpenStackRegion),
-					FloatingPoolName:     DefaultKymaExternalFloatingIPNetwork,
+					FloatingPoolName:     p.FloatingPoolName,
 					CloudProfileName:     "converged-cloud-cp",
 					LoadBalancerProvider: "f5",
 				},

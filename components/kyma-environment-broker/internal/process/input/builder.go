@@ -100,6 +100,7 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
+// inputs are created here
 func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
 	var provider HyperscalerInputProvider
 	switch planID {
@@ -108,7 +109,9 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp 
 	case broker.FreemiumPlanID:
 		return f.forFreemiumPlan(pp)
 	case broker.OpenStackPlanID:
-		provider = &cloudProvider.OpenStackInput{}
+		provider = &cloudProvider.OpenStackInput{
+			FloatingPoolName: f.config.OpenstackFloatingPoolName,
+		}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
