@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,24 +78,26 @@ const (
 // RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
-	Version string               `json:"version"`
-	Origin  RuntimeVersionOrigin `json:"origin"`
+	Version      string               `json:"version"`
+	Origin       RuntimeVersionOrigin `json:"origin"`
+	MajorVersion int                  `json:"major_version"`
 }
 
 func (rv RuntimeVersionData) IsEmpty() bool {
 	return rv.Version == ""
 }
 
-func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: Parameters}
+func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Parameters, MajorVersion: majorVersion}
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: Defaults}
+	defaultMajorVerNum, _ := strconv.Atoi(string(version[0]))
+	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
 }
 
-func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
+func NewRuntimeVersionFromAccountMapping(version string, majorVersion int) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: AccountMapping, MajorVersion: majorVersion}
 }
 
 type EventHub struct {

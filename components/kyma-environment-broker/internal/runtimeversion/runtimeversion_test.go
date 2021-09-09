@@ -31,6 +31,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, runtimeVer, ver.Version)
+		require.Equal(t, 1, ver.MajorVersion)
 		require.Equal(t, internal.Parameters, ver.Origin)
 	})
 	t.Run("should return version from Defaults when version not provided", func(t *testing.T) {
@@ -49,6 +50,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, runtimeVer, ver.Version)
+		require.Equal(t, 1, ver.MajorVersion)
 		require.Equal(t, internal.Defaults, ver.Origin)
 	})
 	t.Run("should return version from GlobalAccount mapping when only GlobalAccount mapping provided", func(t *testing.T) {
@@ -71,6 +73,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, versionForGA, ver.Version)
+		require.Equal(t, 1, ver.MajorVersion)
 		require.Equal(t, internal.AccountMapping, ver.Origin)
 	})
 	t.Run("should return version from SubAccount mapping when both GA and SA mapping provided", func(t *testing.T) {
@@ -95,6 +98,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, versionForSA, ver.Version)
+		require.Equal(t, 1, ver.MajorVersion)
 		require.Equal(t, internal.AccountMapping, ver.Origin)
 	})
 	t.Run("should return Kyma Version from ProvisioningParameters even when previewVersion provided", func(t *testing.T) {
@@ -120,6 +124,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, runtimeVer, ver.Version)
+		require.Equal(t, 1, ver.MajorVersion)
 	})
 	t.Run("should return previewVersion when version not provided", func(t *testing.T) {
 		// given
@@ -144,6 +149,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, previewVer, ver.Version)
+		require.Equal(t, 2, ver.MajorVersion)
 	})
 	t.Run("should return previewVersion when both GA and SA mapping provided", func(t *testing.T) {
 		// given
@@ -172,6 +178,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// then
 		require.NoError(t, err)
 		require.Equal(t, previewVer, ver.Version)
+		require.Equal(t, 2, ver.MajorVersion)
 	})
 }
 

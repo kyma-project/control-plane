@@ -67,7 +67,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 		SMClientFactory: u.smcf,
 	}
 	if o.Parameters.Kyma.Version != "" {
-		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version)
+		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, 0)
 	}
 
 	err := u.operationStorage.InsertUpgradeKymaOperation(op)
