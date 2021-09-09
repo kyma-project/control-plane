@@ -1,8 +1,11 @@
 package manager
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
@@ -18,21 +21,25 @@ import (
 )
 
 type upgradeKymaFactory struct {
-	operationStorage storage.Operations
-	smcf             *servicemanager.ClientFactory
+	operationStorage          storage.Operations
+	smcf                      *servicemanager.ClientFactory
+	defaultKymaVersion        string
+	defaultKymaPreviewVersion string
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace string, configName string) process.Executor {
+	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion string) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
 		instanceStorage:      instanceStorage,
 		resolver:             resolver,
 		factory: &upgradeKymaFactory{
-			operationStorage: operationStorage,
-			smcf:             smcf,
+			operationStorage:          operationStorage,
+			smcf:                      smcf,
+			defaultKymaVersion:        defaultKymaVersion,
+			defaultKymaPreviewVersion: defaultKymaPreviewVersion,
 		},
 		executor:        kymaUpgradeExecutor,
 		pollingInterval: pollingInterval,
@@ -67,11 +74,46 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 		SMClientFactory: u.smcf,
 	}
 	if o.Parameters.Kyma.Version != "" {
-		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, 0)
+		var majorVer int
+		var err error
+
+		if broker.IsPreviewPlan(i.ServicePlanID) {
+			majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaPreviewVersion)
+			if err != nil {
+				return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
+			}
+		} else {
+			majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaVersion)
+			if err != nil {
+				return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
+			}
+		}
+
+		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, majorVer)
 	}
 
 	err := u.operationStorage.InsertUpgradeKymaOperation(op)
 	return op.RuntimeOperation, err
+}
+
+func determineMajorVersion(version string, defaultVersion string) (int, error) {
+	if isCustomVersion(version) {
+		return extractMajorVersionNumberFromVersionString(defaultVersion)
+	}
+	return extractMajorVersionNumberFromVersionString(version)
+}
+
+func isCustomVersion(version string) bool {
+	return strings.HasPrefix(version, "PR-") || strings.HasPrefix(version, "main-")
+}
+
+func extractMajorVersionNumberFromVersionString(version string) (int, error) {
+	splitVer := strings.Split(version, ".")
+	majorVerNum, err := strconv.Atoi(splitVer[0])
+	if err != nil {
+		return 0, errors.New("cannot convert major version to int")
+	}
+	return majorVerNum, nil
 }
 
 func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
