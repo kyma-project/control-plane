@@ -3,6 +3,7 @@ module github.com/kyma-project/control-plane/tools/cli
 go 1.16
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/int128/kubelogin v1.22.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018121130-0215158aec4f
