@@ -53,7 +53,7 @@ func NewReconciliationEnableCmd() *cobra.Command {
 }
 
 func (cmd *reconciliationEnableCmd) Validate() error {
-	cmd.reconcilerURL = GlobalOpts.ReconcilerAPIURL()
+	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
 
 	if cmd.opts.shootName != "" {
 		cmd.kebURL = GlobalOpts.KEBAPIURL()

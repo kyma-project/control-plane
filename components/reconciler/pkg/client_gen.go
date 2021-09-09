@@ -117,8 +117,11 @@ type ClientInterface interface {
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetReconciles request
-	GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetReconciliations request
+	GetReconciliations(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetReconciliationsSchedulingIDInfo request
+	GetReconciliationsSchedulingIDInfo(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostClustersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -241,8 +244,20 @@ func (c *Client) GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeI
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetReconcilesRequest(c.Server, params)
+func (c *Client) GetReconciliations(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetReconciliationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetReconciliationsSchedulingIDInfo(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetReconciliationsSchedulingIDInfoRequest(c.Server, schedulingID)
 	if err != nil {
 		return nil, err
 	}
@@ -523,8 +538,8 @@ func NewGetClustersRuntimeIDStatusChangesRequest(server string, runtimeID string
 	return req, nil
 }
 
-// NewGetReconcilesRequest generates requests for GetReconciles
-func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.Request, error) {
+// NewGetReconciliationsRequest generates requests for GetReconciliations
+func NewGetReconciliationsRequest(server string, params *GetReconciliationsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -532,7 +547,7 @@ func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/reconciles")
+	operationPath := fmt.Sprintf("/reconciliations")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -544,9 +559,9 @@ func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.
 
 	queryValues := queryURL.Query()
 
-	if params.RuntimeIDs != nil {
+	if params.RuntimeID != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runtimeIDs", runtime.ParamLocationQuery, *params.RuntimeIDs); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runtimeID", runtime.ParamLocationQuery, *params.RuntimeID); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -560,25 +575,9 @@ func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.
 
 	}
 
-	if params.Statuses != nil {
+	if params.Status != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "statuses", runtime.ParamLocationQuery, *params.Statuses); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Shoots != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shoots", runtime.ParamLocationQuery, *params.Shoots); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -593,6 +592,40 @@ func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.
 	}
 
 	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetReconciliationsSchedulingIDInfoRequest generates requests for GetReconciliationsSchedulingIDInfo
+func NewGetReconciliationsSchedulingIDInfoRequest(server string, schedulingID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "schedulingID", runtime.ParamLocationPath, schedulingID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/reconciliations/%s/info", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
@@ -672,8 +705,11 @@ type ClientWithResponsesInterface interface {
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChangesWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusChangesResponse, error)
 
-	// GetReconciles request
-	GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error)
+	// GetReconciliations request
+	GetReconciliationsWithResponse(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*GetReconciliationsResponse, error)
+
+	// GetReconciliationsSchedulingIDInfo request
+	GetReconciliationsSchedulingIDInfoWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*GetReconciliationsSchedulingIDInfoResponse, error)
 }
 
 type PostClustersResponse struct {
@@ -849,15 +885,16 @@ func (r GetClustersRuntimeIDStatusChangesResponse) StatusCode() int {
 	return 0
 }
 
-type GetReconcilesResponse struct {
+type GetReconciliationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HTTPReconcilerStatus
 	JSON400      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r GetReconcilesResponse) Status() string {
+func (r GetReconciliationsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -865,7 +902,31 @@ func (r GetReconcilesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetReconcilesResponse) StatusCode() int {
+func (r GetReconciliationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetReconciliationsSchedulingIDInfoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HTTPReconciliationOperations
+	JSON400      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetReconciliationsSchedulingIDInfoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetReconciliationsSchedulingIDInfoResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -959,13 +1020,22 @@ func (c *ClientWithResponses) GetClustersRuntimeIDStatusChangesWithResponse(ctx 
 	return ParseGetClustersRuntimeIDStatusChangesResponse(rsp)
 }
 
-// GetReconcilesWithResponse request returning *GetReconcilesResponse
-func (c *ClientWithResponses) GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error) {
-	rsp, err := c.GetReconciles(ctx, params, reqEditors...)
+// GetReconciliationsWithResponse request returning *GetReconciliationsResponse
+func (c *ClientWithResponses) GetReconciliationsWithResponse(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*GetReconciliationsResponse, error) {
+	rsp, err := c.GetReconciliations(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetReconcilesResponse(rsp)
+	return ParseGetReconciliationsResponse(rsp)
+}
+
+// GetReconciliationsSchedulingIDInfoWithResponse request returning *GetReconciliationsSchedulingIDInfoResponse
+func (c *ClientWithResponses) GetReconciliationsSchedulingIDInfoWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*GetReconciliationsSchedulingIDInfoResponse, error) {
+	rsp, err := c.GetReconciliationsSchedulingIDInfo(ctx, schedulingID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetReconciliationsSchedulingIDInfoResponse(rsp)
 }
 
 // ParsePostClustersResponse parses an HTTP response from a PostClustersWithResponse call
@@ -1283,15 +1353,15 @@ func ParseGetClustersRuntimeIDStatusChangesResponse(rsp *http.Response) (*GetClu
 	return response, nil
 }
 
-// ParseGetReconcilesResponse parses an HTTP response from a GetReconcilesWithResponse call
-func ParseGetReconcilesResponse(rsp *http.Response) (*GetReconcilesResponse, error) {
+// ParseGetReconciliationsResponse parses an HTTP response from a GetReconciliationsWithResponse call
+func ParseGetReconciliationsResponse(rsp *http.Response) (*GetReconciliationsResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetReconcilesResponse{
+	response := &GetReconciliationsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1310,6 +1380,53 @@ func ParseGetReconcilesResponse(rsp *http.Response) (*GetReconcilesResponse, err
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetReconciliationsSchedulingIDInfoResponse parses an HTTP response from a GetReconciliationsSchedulingIDInfoWithResponse call
+func ParseGetReconciliationsSchedulingIDInfoResponse(rsp *http.Response) (*GetReconciliationsSchedulingIDInfoResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetReconciliationsSchedulingIDInfoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HTTPReconciliationOperations
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 
