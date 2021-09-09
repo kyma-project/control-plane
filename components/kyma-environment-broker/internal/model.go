@@ -8,18 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
-	"github.com/pkg/errors"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	"github.com/sirupsen/logrus"
-
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
