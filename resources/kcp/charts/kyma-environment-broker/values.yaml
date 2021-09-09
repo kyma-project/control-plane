@@ -50,6 +50,9 @@ provisioner:
   provisioningTimeout: "6h"
   deprovisioningTimeout: "5h"
 
+  openstack:
+      floatingPoolName: "FloatingIP-external-cp-kyma"
+
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gardener"
