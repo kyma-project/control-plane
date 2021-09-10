@@ -89,8 +89,14 @@ func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeV
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	defaultMajorVerNum, _ := strconv.Atoi(string(version[0]))
+	defaultMajorVerNum := determineMajorVersion(version)
 	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
+}
+
+func determineMajorVersion(version string) int {
+	splitVer := strings.Split(version, ".")
+	majorVerNum, _ := strconv.Atoi(splitVer[0])
+	return majorVerNum
 }
 
 func NewRuntimeVersionFromAccountMapping(version string, majorVersion int) *RuntimeVersionData {
