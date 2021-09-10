@@ -12,8 +12,7 @@ import (
 
 const (
 	DefaultOpenStackRegion = "eu-de-1"
-	// DefaultKymaExternalFloatingIPNetwork = "FloatingIP-external-cp-kyma"
-	DefaultExposureClass = "converged-cloud-internet"
+	DefaultExposureClass   = "converged-cloud-internet"
 )
 
 type OpenStackInput struct {

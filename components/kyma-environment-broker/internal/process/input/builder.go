@@ -100,7 +100,6 @@ func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	}
 }
 
-// inputs are created here
 func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
 	var provider HyperscalerInputProvider
 	switch planID {
