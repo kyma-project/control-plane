@@ -64,6 +64,8 @@ spec:
               value: "{{ .Values.provisioner.provisioningTimeout }}"
             - name: APP_PROVISIONER_DEPROVISIONING_TIMEOUT
               value: "{{ .Values.provisioner.deprovisioningTimeout }}"
+            - name: APP_PROVISIONER_OPENSTACK_FLOATING_POOL_NAME
+              value: "{{ .Values.provisioner.openstack.floatingPoolName }}"
             - name: APP_PROVISIONER_DEFAULT_GARDENER_SHOOT_PURPOSE
               value: "{{ .Values.gardener.defaultShootPurpose }}"
             - name: APP_PROVISIONER_DEFAULT_TRIAL_PROVIDER

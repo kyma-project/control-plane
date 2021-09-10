@@ -108,7 +108,9 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp 
 	case broker.FreemiumPlanID:
 		return f.forFreemiumPlan(pp)
 	case broker.OpenStackPlanID:
-		provider = &cloudProvider.OpenStackInput{}
+		provider = &cloudProvider.OpenStackInput{
+			FloatingPoolName: f.config.OpenstackFloatingPoolName,
+		}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
