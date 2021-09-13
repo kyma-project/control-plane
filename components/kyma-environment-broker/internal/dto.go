@@ -102,6 +102,31 @@ type ProvisioningParametersDTO struct {
 type UpdatingParametersDTO struct {
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+	AutoScalerMin         *int           `json:"autoScalerMin"`
+	AutoScalerMax         *int           `json:"autoScalerMax"`
+	MaxSurge              *int           `json:"maxSurge"`
+	MaxUnavailable        *int           `json:"maxUnavailable"`
+}
+
+func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {
+	updated := false
+	if u.AutoScalerMin != nil {
+		updated = true
+		p.AutoScalerMin = u.AutoScalerMin
+	}
+	if u.AutoScalerMax != nil {
+		updated = true
+		p.AutoScalerMax = u.AutoScalerMax
+	}
+	if u.MaxSurge != nil {
+		updated = true
+		p.MaxSurge = u.MaxSurge
+	}
+	if u.MaxUnavailable != nil {
+		updated = true
+		p.MaxUnavailable = u.MaxUnavailable
+	}
+	return updated
 }
 
 type ERSContext struct {

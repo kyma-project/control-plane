@@ -469,6 +469,8 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 		op.ProvisioningParameters.Parameters.RuntimeAdministrators = updatingParams.RuntimeAdministrators
 	}
 
+	updatingParams.UpdateAutoScaler(&op.ProvisioningParameters.Parameters)
+
 	return op
 }
 

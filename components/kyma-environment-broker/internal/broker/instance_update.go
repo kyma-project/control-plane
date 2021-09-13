@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -155,33 +156,37 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		return domain.UpdateServiceSpec{}, err
 	}
 
+	var updateStorage []string
 	// update provisioning parameters in the instance
 	if params.OIDC.IsProvided() {
-		err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
-			instance.Parameters.Parameters.OIDC = params.OIDC
-			instance, err = b.instanceStorage.Update(*instance)
-			if err != nil {
-				logger.Warnf("unable to update instance with new parameters (%s), retrying", err.Error())
-				return false, nil
-			}
-			return false, nil
-		})
+		instance.Parameters.Parameters.OIDC = params.OIDC
+		updateStorage = append(updateStorage, "OIDC")
 	}
 
 	if len(params.RuntimeAdministrators) != 0 {
-		err = wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
-			newAdministrators := make([]string, 0, len(params.RuntimeAdministrators))
-			newAdministrators = append(newAdministrators, params.RuntimeAdministrators...)
-			instance.Parameters.Parameters.RuntimeAdministrators = newAdministrators
+		newAdministrators := make([]string, 0, len(params.RuntimeAdministrators))
+		newAdministrators = append(newAdministrators, params.RuntimeAdministrators...)
+		instance.Parameters.Parameters.RuntimeAdministrators = newAdministrators
+		updateStorage = append(updateStorage, "Runtime Administrators")
+	}
+
+	if params.UpdateAutoScaler(&instance.Parameters.Parameters) {
+		updateStorage = append(updateStorage, "Auto Scaler parameters")
+	}
+	if len(updateStorage) > 0 {
+		if err := wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
 			instance, err = b.instanceStorage.Update(*instance)
 			if err != nil {
-				logger.Warnf("unable to update instance with new runtime administrators (%s), retrying", err.Error())
+				params := strings.Join(updateStorage, ", ")
+				logger.Warnf("unable to update instance with new %v (%s), retrying", params, err.Error())
 				return false, nil
 			}
 			return true, nil
-		})
+		}); err != nil {
+			response := apiresponses.NewFailureResponse(fmt.Errorf("Update operation failed"), http.StatusInternalServerError, err.Error())
+			return domain.UpdateServiceSpec{}, response
+		}
 	}
-
 	logger.Debugf("Adding update operation to the processing queue")
 	b.updatingQueue.Add(operationID)
 
