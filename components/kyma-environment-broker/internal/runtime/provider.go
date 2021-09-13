@@ -5,13 +5,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
-
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
+	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -29,6 +29,7 @@ type ComponentsListProvider struct {
 	managedRuntimeComponentsYAMLPath string
 	httpClient                       HTTPDoer
 	components                       map[string][]v1alpha1.KymaComponent
+	mu                               sync.Mutex
 }
 
 type HTTPDoer interface {
@@ -47,8 +48,11 @@ func NewComponentsListProvider(managedRuntimeComponentsYAMLPath string) *Compone
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // the file system and merge them together.
-func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
-	if cmps, ok := r.components[kymaVersion]; ok {
+func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if cmps, ok := r.components[kymaVersion.Version]; ok {
 		return cmps, nil
 	}
 
@@ -64,56 +68,15 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion string) ([]v1alpha1.K
 
 	allComponents := append(kymaComponents, managedComponents...)
 
-	r.components[kymaVersion] = allComponents
+	r.components[kymaVersion.Version] = allComponents
 	return allComponents, nil
 }
 
-func (r *ComponentsListProvider) getKymaComponents(kymaVersion string) (comp []v1alpha1.KymaComponent, err error) {
-	// installerYamlURL := r.getInstallerYamlURL(version)
-	if r.isOnDemandRelease(kymaVersion) {
-		return r.getKymaComponentsForCustomVersion(kymaVersion)
+func (r *ComponentsListProvider) getKymaComponents(kymaVersion internal.RuntimeVersionData) (comp []v1alpha1.KymaComponent, err error) {
+	if kymaVersion.MajorVersion > 1 {
+		return r.getComponentsFromComponentsYaml(kymaVersion.Version)
 	}
-	return r.getKymaComponentsForReleaseVersion(kymaVersion)
-
-
-	componentsYamlURL, err := r.getComponentsYamlURL(kymaVersion)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting components URL")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, componentsYamlURL, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating http request")
-	}
-
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return nil, kebError.AsTemporaryError(err, "while making request for Kyma components list")
-	}
-	defer func() {
-		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
-		}
-
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
-		}
-	}()
-
-	if err := r.checkStatusCode(resp); err != nil {
-		return nil, err
-	}
-
-	dec := yaml.NewDecoder(resp.Body)
-
-	var t Installation
-	for dec.Decode(&t) == nil {
-		if t.Kind == "Installation" {
-			return t.Spec.Components, nil
-		}
-	}
-	return nil, errors.New("installer cr not found")
-
+	return r.getComponentsFromInstallerYaml(kymaVersion.Version)
 }
 
 func (r *ComponentsListProvider) getManagedComponents() ([]v1alpha1.KymaComponent, error) {
@@ -147,6 +110,12 @@ type Installation struct {
 	Spec v1alpha1.InstallationSpec `json:"spec"`
 }
 
+type kymaComponents struct {
+	DefaultNamespace string                   `yaml:"defaultNamespace"`
+	Prerequisites    []v1alpha1.KymaComponent `yaml:"prerequisites"`
+	Components       []v1alpha1.KymaComponent `yaml:"components"`
+}
+
 func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 	if resp.StatusCode == http.StatusOK {
 		return nil
@@ -171,10 +140,6 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 	}
 }
 
-func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string {
-	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion)
-}
-
 // isOnDemandRelease returns true if the version is recognized as on-demand.
 //
 // Detection rules:
@@ -188,37 +153,99 @@ func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {
 	return isOnDemandVersion
 }
 
-func (r *ComponentsListProvider) getComponentsYamlURL(kymaVersion string) (string, error) {
+func (r *ComponentsListProvider) getInstallerYamlURL(kymaVersion string) string {
 	if r.isOnDemandRelease(kymaVersion) {
-		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion), nil
+		return fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
 	}
-	return r.determineReleaseComponentsURL(kymaVersion)
+	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion)
 }
 
-func (r *ComponentsListProvider) determineReleaseComponentsURL(kymaVersion string) (string, error) {
-	kymaMajorVer := r.getMajorVersion(kymaVersion)
-	majorVerNum, err := strconv.Atoi(kymaMajorVer)
+func (r *ComponentsListProvider) getComponentsYamlURL(kymaVersion string) string {
+	if r.isOnDemandRelease(kymaVersion) {
+		return fmt.Sprintf(onDemandComponentsURLFormat, kymaVersion)
+	}
+	return fmt.Sprintf(releaseComponentsURLFormat, kymaVersion)
+}
+
+func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+	yamlURL := r.getComponentsYamlURL(kymaVersion)
+
+	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
 	if err != nil {
-		return "", errors.New("cannot convert Kyma's major version number to int")
+		return nil, errors.Wrap(err, "while creating http request")
 	}
-	if majorVerNum > 1 {
-		return fmt.Sprintf(releaseComponentsURLFormat, kymaVersion), nil
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return nil, kebError.AsTemporaryError(err, "while making request for Kyma components list")
 	}
-	return fmt.Sprintf(releaseInstallerURLFormat, kymaVersion), nil
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+		}
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+		}
+	}()
+
+	if err = r.checkStatusCode(resp); err != nil {
+		return nil, err
+	}
+
+	dec := yaml.NewDecoder(resp.Body)
+
+	var kymaCmps kymaComponents
+	if err = dec.Decode(&kymaCmps); err != nil {
+		return nil, err
+	}
+
+	allKymaComponents := make([]v1alpha1.KymaComponent, 0)
+	allKymaComponents = append(allKymaComponents, kymaCmps.Prerequisites...)
+	allKymaComponents = append(allKymaComponents, kymaCmps.Components...)
+
+	for i, cmp := range allKymaComponents {
+		if cmp.Namespace == "" {
+			allKymaComponents[i].Namespace = kymaCmps.DefaultNamespace
+		}
+	}
+
+	return allKymaComponents, nil
 }
 
-func (r *ComponentsListProvider) getMajorVersion(version string) string {
-	splitVer := strings.Split(version, ".")
-	return splitVer[0]
-}
+func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+	yamlURL := r.getInstallerYamlURL(kymaVersion)
 
+	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating http request")
+	}
 
-func (r *ComponentsListProvider) getKymaComponentsForCustomVersion(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
-	cmpsURL := fmt.Sprintf(onDemandInstallerURLFormat, kymaVersion)
-	_ = cmpsURL
-	return nil, nil
-}
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return nil, kebError.AsTemporaryError(err, "while making request for Kyma components list")
+	}
+	defer func() {
+		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
+			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+		}
 
-func (r *ComponentsListProvider) getKymaComponentsForReleaseVersion(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
-	return nil, nil
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+		}
+	}()
+
+	if err := r.checkStatusCode(resp); err != nil {
+		return nil, err
+	}
+
+	dec := yaml.NewDecoder(resp.Body)
+
+	var t Installation
+	for dec.Decode(&t) == nil {
+		if t.Kind == "Installation" {
+			return t.Spec.Components, nil
+		}
+	}
+	return nil, errors.New("installer cr not found")
 }

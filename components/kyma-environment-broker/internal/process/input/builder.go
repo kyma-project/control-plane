@@ -48,7 +48,7 @@ type (
 	}
 
 	ComponentListProvider interface {
-		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
+		AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error)
 	}
 )
 
@@ -186,7 +186,7 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 }
 
 func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData) (internal.ComponentConfigurationInputList, error) {
-	allComponents, err := f.componentsProvider.AllComponents(version.Version)
+	allComponents, err := f.componentsProvider.AllComponents(version)
 	if err != nil {
 		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}

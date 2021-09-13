@@ -3,6 +3,7 @@
 package automock
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	v1alpha1 "github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -13,7 +14,7 @@ type ComponentListProvider struct {
 }
 
 // AllComponents provides a mock function with given fields: kymaVersion
-func (_m *ComponentListProvider) AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
 	ret := _m.Called(kymaVersion)
 
 	var r0 []v1alpha1.KymaComponent
