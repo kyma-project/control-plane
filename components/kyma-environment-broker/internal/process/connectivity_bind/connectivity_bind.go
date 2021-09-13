@@ -3,6 +3,7 @@ package connectivity_bind
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"

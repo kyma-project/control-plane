@@ -1,6 +1,8 @@
 package upgrade_kyma
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/connectivity_bind"
@@ -8,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUpgradeConnectivityBind_Run(t *testing.T) {

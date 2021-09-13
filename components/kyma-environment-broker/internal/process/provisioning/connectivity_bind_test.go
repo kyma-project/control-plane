@@ -1,13 +1,14 @@
 package provisioning
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/connectivity_bind"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestConnectivityBind_Run(t *testing.T) {
