@@ -2,19 +2,19 @@
 
 ## Overview
 
-The Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters with Kyma (Kyma Runtimes). The relationship between clusters and Runtimes is 1:1.
+Runtime Provisioner is a Kyma Control Plane component responsible for provisioning, installing, and deprovisioning clusters. When provisioning a cluster, you have an option to provision a cluster with Kyma (Kyma Runtime), or without it. To provision a Kyma Runtime, provide its configuration as **kymaConfig**.
 
 For more details, see the Runtime Provisioner [documentation](https://github.com/kyma-project/control-plane/tree/main/docs/provisioner).
 
 ## Prerequisites
 
-Before you can run the Runtime Provisioner, you have to configure access to the PostgreSQL database. For development purposes, you can run a PostgreSQL instance in the Docker container executing the following command:
+Before you can run Runtime Provisioner, you have to configure access to the PostgreSQL database. For development purposes, you can run a PostgreSQL instance in the Docker container executing the following command:
 
 ```bash
 $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password postgres
 ```
 
-The Runtime Provisioner also needs access to the cluster from which it fetches Secrets.  
+Runtime Provisioner also needs access to the cluster from which it fetches Secrets.  
 
 ## Development
 
@@ -28,7 +28,7 @@ For tests to run properly, update the database schema in `./assets/database/prov
 
 ### Run Provisioner
 
-To run the Runtime Provisioner, use the following command:
+To run Runtime Provisioner, use the following command:
 ```bash
 go run cmd/main.go
 ```

@@ -7,9 +7,9 @@ This tutorial shows how to check the Runtime status.
 
 ## Steps
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.
+> **NOTE:** To access Runtime Provisioner, forward the port on which the GraphQL server is listening.
 
-Make a call to the Runtime Provisioner with a **tenant** header to check the Runtime status. Pass the Runtime ID as `id`. 
+Make a call to Runtime Provisioner with a **tenant** header to check the Runtime status. Pass the Runtime ID as `id`. 
 
 ```graphql
 query { runtimeStatus(id: "{RUNTIME_ID}") {

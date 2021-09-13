@@ -7,9 +7,9 @@ This tutorial shows how to upgrade Gardener Shoot clusters for Kyma Runtimes.
 
 ## Steps
 
-> **NOTE:** To access the Runtime Provisioner, forward the port on which the GraphQL server is listening.
+> **NOTE:** To access Runtime Provisioner, forward the port on which the GraphQL server is listening.
 
-To upgrade a Gardener Shoot cluster used to host the Runtime of a given ID, make a call to the Runtime Provisioner with a **tenant** header using a mutation like this:  
+To upgrade a Gardener Shoot cluster used to host the Runtime of a given ID, make a call to Runtime Provisioner with a **tenant** header using a mutation like this:  
 
 ```graphql
 mutation { 

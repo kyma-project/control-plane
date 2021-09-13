@@ -55,7 +55,7 @@ func TestClient_ReconcileCluster(t *testing.T) {
 	reqPayload := fixPayload(t)
 
 	// when
-	response, err := client.RegisterCluster(*reqPayload)
+	response, err := client.ApplyClusterConfig(*reqPayload)
 
 	// then
 	if err != nil {
