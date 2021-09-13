@@ -27,7 +27,8 @@ type upgradeKymaFactory struct {
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion string) process.Executor {
+	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace, configName, defaultKymaVersion,
+	defaultKymaPreviewVersion string, cfg *broker.KEBConfig) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -45,6 +46,7 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		k8sClient:       cli,
 		configNamespace: configNamespace,
 		configName:      configName,
+		cfg:             cfg,
 	}
 }
 
