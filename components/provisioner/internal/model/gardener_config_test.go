@@ -210,6 +210,20 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
+					Extensions: []gardener_types.Extension{
+						{
+							Type: "shoot-dns-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.dns.extensions.gardener.cloud/v1alpha1","dnsProviderReplication":{"enabled":true},"kind":"DNSConfig"}`),
+							},
+						},
+						{
+							Type: "shoot-cert-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
+							},
+						},
+					},
 				},
 			},
 		},
@@ -257,10 +271,25 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
 						},
 					},
-					Maintenance: &gardener_types.Maintenance{AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
-						KubernetesVersion:   true,
-						MachineImageVersion: false,
+					Maintenance: &gardener_types.Maintenance{
+						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+							KubernetesVersion:   true,
+							MachineImageVersion: false,
+						},
 					},
+					Extensions: []gardener_types.Extension{
+						{
+							Type: "shoot-dns-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.dns.extensions.gardener.cloud/v1alpha1","dnsProviderReplication":{"enabled":true},"kind":"DNSConfig"}`),
+							},
+						},
+						{
+							Type: "shoot-cert-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
+							},
+						},
 					},
 				},
 			},
@@ -315,6 +344,20 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
+					Extensions: []gardener_types.Extension{
+						{
+							Type: "shoot-dns-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.dns.extensions.gardener.cloud/v1alpha1","dnsProviderReplication":{"enabled":true},"kind":"DNSConfig"}`),
+							},
+						},
+						{
+							Type: "shoot-cert-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
+							},
+						},
+					},
 				},
 			},
 		},
@@ -366,6 +409,20 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
 							MachineImageVersion: false,
+						},
+					},
+					Extensions: []gardener_types.Extension{
+						{
+							Type: "shoot-dns-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.dns.extensions.gardener.cloud/v1alpha1","dnsProviderReplication":{"enabled":true},"kind":"DNSConfig"}`),
+							},
+						},
+						{
+							Type: "shoot-cert-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
+							},
 						},
 					},
 				},
