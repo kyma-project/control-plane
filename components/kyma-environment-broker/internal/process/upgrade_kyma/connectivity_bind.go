@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/connectivity_bind"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -57,7 +58,7 @@ func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperatio
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Connectivity provisioning failed: %s", resp.Description), log)
 	}
 	// execute binding
-	var connectivityOverrides *provisioning.ConnectivityConfig
+	var connectivityOverrides *connectivity_bind.ConnectivityConfig
 	if !operation.Connectivity.Instance.Provisioned {
 		if operation.Connectivity.BindingID == "" {
 			operation.Connectivity.BindingID = uuid.New().String()
@@ -67,11 +68,11 @@ func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperatio
 			return s.handleError(operation, err, log, fmt.Sprintf("Bind() call failed"))
 		}
 		// get overrides
-		connectivityOverrides, err = provisioning.GetConnectivityCredentials(respBinding.Binding)
+		connectivityOverrides, err = connectivity_bind.GetConnectivityCredentials(respBinding.Binding)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("unable to load config"))
 		}
-		encryptedOverrides, err := provisioning.EncryptConnectivityConfig(s.secretKey, connectivityOverrides)
+		encryptedOverrides, err := connectivity_bind.EncryptConnectivityConfig(s.secretKey, connectivityOverrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("unable to encrypt configs"))
 		}
@@ -82,26 +83,27 @@ func (s *ConnectivityUpgradeBindStep) Run(operation internal.UpgradeKymaOperatio
 			operation.Connectivity.Instance.ProvisioningTriggered = false
 		}, log)
 		if retry > 0 {
+			log.Errorf("unable to update operation")
 			return operation, time.Second, nil
 		}
 		operation = op
 	} else {
 		// get the credentials from encrypted string in operation.Connectivity.Instance.
-		connectivityOverrides, err = provisioning.DecryptConnectivityConfig(s.secretKey, operation.Connectivity.Overrides)
+		connectivityOverrides, err = connectivity_bind.DecryptConnectivityConfig(s.secretKey, operation.Connectivity.Overrides)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("unable to decrypt configs"))
 		}
+		applyOverrides(connectivityOverrides, operation)
 	}
 
-	// TODO: Decide how we want to pass this data to the SKR. Currently,
-	//       credentials are prepared as a ConnectivityConfig structure.
-	//       See the github card - https://github.com/orgs/kyma-project/projects/6#card-56776111
-	//       ...
-	//       - [ ] define what changes need to be done in KEB to
-	//             allow passing secrets data to the Provisioner
 	log.Debugf("Got Connectivity Service credentials from the binding.")
 
 	return operation, 0, nil
+}
+
+func applyOverrides(connectivityOverrides *connectivity_bind.ConnectivityConfig, operation internal.UpgradeKymaOperation) {
+	overrides := connectivity_bind.PrepareOverrides(connectivityOverrides)
+	operation.InputCreator.AppendOverrides(connectivity_bind.ConnectivityProxyComponentName, overrides)
 }
 
 func (s *ConnectivityUpgradeBindStep) handleError(operation internal.UpgradeKymaOperation, err error, log logrus.FieldLogger, msg string) (internal.UpgradeKymaOperation, time.Duration, error) {

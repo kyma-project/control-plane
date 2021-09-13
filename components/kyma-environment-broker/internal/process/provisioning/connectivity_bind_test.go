@@ -1,99 +1,119 @@
 package provisioning
 
 import (
-	"encoding/json"
-	"testing"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/connectivity_bind"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-const connectivityServiceKey = `
-	{
-		"clientid" : "clientid314159265359",
-		"clientsecret": "Y2xpZW50c2VjcmV0Cg==",
-		"connectivity_service":
-			{
-				"CAs_path": "/api/v1/CAs",
-				"CAs_signing_path": "/api/v1/CAs/signing",
-				"api_path": "/api/v1/CAs/signing",
-				"tunnel_path": "/api/v1/tunnel",
-				"url": "https://connectivity.company.com"
+func TestConnectivityBind_Run(t *testing.T) {
+	t.Run("Should succesfully apply overrides", func(t *testing.T) {
+		connectivityOverrides := &connectivity_bind.ConnectivityConfig{
+
+			ClientId:     "clientid",
+			ClientSecret: "clientsecret",
+			ConnectivityService: struct {
+				CAsPath        string `json:"CAs_path"`
+				CAsSigningPath string `json:"CAs_signing_path"`
+				ApiPath        string `json:"api_path"`
+				TunnelPath     string `json:"tunnel_path"`
+				Url            string `json:"url"`
+			}{
+				CAsPath:        "caspath",
+				CAsSigningPath: "passigningpath",
+				ApiPath:        "apipath",
+				TunnelPath:     "tunnelpath",
+				Url:            "url",
 			},
-		"subaccount_id": "db4dc3bd-3cb7-42d4-a6c0-23aa7842cb7d",
-		"subaccount_subdomain": "some-subaccount-subdomain",
-		"token_service_domain": "authentication.company.com",
-		"token_service_url": "https://authentication.company.com/oauth/token",
-		"token_service_url_pattern": "https://{tenant}.authentication.company.com/oauth/token",
-		"token_service_url_pattern_tenant_key": "subaccount_subdomain",
-		"xsappname": "xsappname314159265359"
-	}
-`
+			SubaccountId:                    "subaccoutid",
+			SubaccountSubdomain:             "subaccountsubdomain",
+			TokenServiceDomain:              "tokenservicedomain",
+			TokenServiceUrl:                 "tokenserviceurl",
+			TokenServiceUrlPattern:          "tokenserviceurlpattern",
+			TokenServiceUrlPatternTenantKey: "tokenserviceurlpatterntenantkey",
+			Xsappname:                       "xsappname",
+		}
 
-func TestConnectivityEncryptDecrypt(t *testing.T) {
-	// given
-	secretKey := "1234567890123456"
-	givenOverrides := ConnectivityConfig{
-		ClientId:     "clientid",
-		ClientSecret: "clientsecret",
-		ConnectivityService: struct {
-			CAsPath        string `json:"CAs_path"`
-			CAsSigningPath string `json:"CAs_signing_path"`
-			ApiPath        string `json:"api_path"`
-			TunnelPath     string `json:"tunnel_path"`
-			Url            string `json:"url"`
-		}{
-			CAsPath:        "caspath",
-			CAsSigningPath: "passigningpath",
-			ApiPath:        "apipath",
-			TunnelPath:     "tunnelpath",
-			Url:            "url",
-		},
-		SubaccountId:                    "subaccoutid",
-		SubaccountSubdomain:             "subaccountsubdomain",
-		TokenServiceDomain:              "tokenservicedomain",
-		TokenServiceUrl:                 "tokenserviceurl",
-		TokenServiceUrlPattern:          "tokenserviceurlpattern",
-		TokenServiceUrlPatternTenantKey: "tokenserviceurlpatterntenantkey",
-		Xsappname:                       "xsappname",
-	}
+		expectedConfigEntryInput := []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "connectivityProxyServiceKey.clientid",
+				Value: connectivityOverrides.ClientId,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.clientsecret",
+				Value: connectivityOverrides.ClientSecret,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.connectivityServiceUrl",
+				Value: connectivityOverrides.ConnectivityService.Url,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.subaccountId",
+				Value: connectivityOverrides.SubaccountId,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.subaccountSubdomain",
+				Value: connectivityOverrides.SubaccountSubdomain,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.tokenServiceDomain",
+				Value: connectivityOverrides.TokenServiceDomain,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.tokenServiceUrl",
+				Value: connectivityOverrides.TokenServiceUrl,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.tokenServiceUrlPattern",
+				Value: connectivityOverrides.TokenServiceUrlPattern,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.tokenServiceUrlPatternTenantKey",
+				Value: connectivityOverrides.TokenServiceUrlPatternTenantKey,
+			},
+			{
+				Key:   "connectivityProxyServiceKey.xsappname",
+				Value: connectivityOverrides.Xsappname,
+			},
+		}
 
-	// when
-	encryptedOverrides, err := EncryptConnectivityConfig(secretKey, &givenOverrides)
-	assert.NoError(t, err)
-	decryptedOverrides, err := DecryptConnectivityConfig(secretKey, encryptedOverrides)
-	assert.NoError(t, err)
+		secretKey := "1111111111111111"
 
-	// then
-	assert.Equal(t, givenOverrides, *decryptedOverrides)
-}
+		inputCreator := &automock.ProvisionerInputCreator{}
+		inputCreator.On("AppendOverrides", connectivity_bind.ConnectivityProxyComponentName, expectedConfigEntryInput).Return(inputCreator)
 
-func TestConnectivityGetCredentials(t *testing.T) {
-	// given
-	binding := servicemanager.Binding{}
+		smClientFactory := servicemanager.NewFakeServiceManagerClientFactory(nil, nil)
 
-	// when
-	err := json.Unmarshal([]byte(connectivityServiceKey), &binding.Credentials)
-	assert.NoError(t, err)
-	assert.NotNil(t, binding.Credentials)
+		encryptedOverrides, err := connectivity_bind.EncryptConnectivityConfig(secretKey, connectivityOverrides)
+		require.NoError(t, err)
 
-	// then
-	connOverrides, err := GetConnectivityCredentials(binding)
-	assert.NoError(t, err)
-	assert.NotNil(t, connOverrides)
-	assert.Equal(t, "clientid314159265359", connOverrides.ClientId)
-	assert.Equal(t, "Y2xpZW50c2VjcmV0Cg==", connOverrides.ClientSecret)
-	assert.Equal(t, "/api/v1/CAs", connOverrides.ConnectivityService.CAsPath)
-	assert.Equal(t, "/api/v1/CAs/signing", connOverrides.ConnectivityService.CAsSigningPath)
-	assert.Equal(t, "/api/v1/CAs/signing", connOverrides.ConnectivityService.ApiPath)
-	assert.Equal(t, "/api/v1/tunnel", connOverrides.ConnectivityService.TunnelPath)
-	assert.Equal(t, "https://connectivity.company.com", connOverrides.ConnectivityService.Url)
-	assert.Equal(t, "db4dc3bd-3cb7-42d4-a6c0-23aa7842cb7d", connOverrides.SubaccountId)
-	assert.Equal(t, "some-subaccount-subdomain", connOverrides.SubaccountSubdomain)
-	assert.Equal(t, "authentication.company.com", connOverrides.TokenServiceDomain)
-	assert.Equal(t, "https://authentication.company.com/oauth/token", connOverrides.TokenServiceUrl)
-	assert.Equal(t, "https://{tenant}.authentication.company.com/oauth/token", connOverrides.TokenServiceUrlPattern)
-	assert.Equal(t, "subaccount_subdomain", connOverrides.TokenServiceUrlPatternTenantKey)
-	assert.Equal(t, "xsappname314159265359", connOverrides.Xsappname)
+		operation := internal.ProvisioningOperation{
+			SMClientFactory: smClientFactory,
+			InputCreator:    inputCreator,
+			Operation: internal.Operation{
+				InstanceDetails: internal.InstanceDetails{
+					Connectivity: internal.ConnectivityData{
+						Instance: internal.ServiceManagerInstanceInfo{
+							ProvisioningTriggered: true,
+							Provisioned:           true,
+						},
+						Overrides: encryptedOverrides,
+					},
+				},
+			},
+		}
+
+		step := NewConnectivityBindStep(nil, secretKey)
+
+		//when
+		_, _, err = step.Run(operation, NewLogDummy())
+		require.NoError(t, err)
+
+		//then
+		inputCreator.AssertExpectations(t)
+	})
 }
