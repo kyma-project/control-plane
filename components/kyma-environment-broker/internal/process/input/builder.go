@@ -56,7 +56,6 @@ type InputBuilderFactory struct {
 	kymaVersion                string
 	config                     Config
 	optComponentsSvc           OptionalComponentService
-	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
 	trialPlatformRegionMapping map[string]string
@@ -67,11 +66,6 @@ type InputBuilderFactory struct {
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
 	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
 
-	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
-	if err != nil {
-		return &InputBuilderFactory{}, errors.Wrap(err, "while creating components list for default Kyma version")
-	}
-
 	freemiumProviders := map[string]struct{}{}
 	for _, p := range enabledFreemiumProviders {
 		freemiumProviders[strings.ToLower(p)] = struct{}{}
@@ -81,7 +75,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		kymaVersion:                defaultKymaVersion,
 		config:                     config,
 		optComponentsSvc:           optComponentsSvc,
-		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
@@ -193,18 +186,11 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 }
 
 func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData) (internal.ComponentConfigurationInputList, error) {
-	switch version.Origin {
-	case internal.Defaults:
-		return f.fullComponentsList, nil
-	case internal.Parameters, internal.AccountMapping:
-		allComponents, err := f.componentsProvider.AllComponents(version.Version)
-		if err != nil {
-			return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
-		}
-		return mapToGQLComponentConfigurationInput(allComponents), nil
+	allComponents, err := f.componentsProvider.AllComponents(version.Version)
+	if err != nil {
+		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
-
-	return internal.ComponentConfigurationInputList{}, errors.Errorf("Unknown version.Origin: %s", version.Origin)
+	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
 func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
