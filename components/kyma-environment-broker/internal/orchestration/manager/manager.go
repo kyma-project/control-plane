@@ -64,7 +64,7 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	}
 
 	o.Parameters.Kyma.Version = m.cfg.KymaVersion
-	o.Parameters.Kubernetes.Version = m.cfg.Provisioner.KubernetesVersion
+	o.Parameters.Kubernetes.Version = m.cfg.KubernetesVersion
 
 	err = m.orchestrationStorage.Update(*o)
 	if err != nil {
