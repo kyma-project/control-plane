@@ -1,9 +1,10 @@
 package manager_test
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/stretchr/testify/assert"
 
@@ -29,7 +30,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 	configName := "policyConfig"
 	kebConfig := broker.KEBConfig{
 		KubernetesVersion: "1.22",
-		KymaVersion: "1.24.5",
+		KymaVersion:       "1.24.5",
 	}
 
 	t.Run("Empty", func(t *testing.T) {
