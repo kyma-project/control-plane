@@ -104,6 +104,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		EnableSeqHttp: true,
 	}
 
+	var kebConfig broker.KEBConfig
+	kebConfig.KubernetesVersion = "1.22"
+	kebConfig.KymaVersion = "1.24.6"
+
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
@@ -157,13 +161,13 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs, cli)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs, cli, kebConfig)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, cfg, kebConfig)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)

@@ -1,6 +1,7 @@
 package manager_test
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"testing"
 	"time"
 
@@ -26,6 +27,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
 	configNamespace := "default"
 	configName := "policyConfig"
+	kebConfig := broker.KEBConfig{
+		KubernetesVersion: "1.22",
+		KymaVersion: "1.24.5",
+	}
 
 	t.Run("Empty", func(t *testing.T) {
 		// given
@@ -44,7 +49,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
+			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion,
+			defaultKymaPreviewVersion, &kebConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -76,7 +82,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion,
+			defaultKymaPreviewVersion, &kebConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -107,7 +114,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion,
+			defaultKymaPreviewVersion, &kebConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -167,7 +175,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion, &kebConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -206,7 +214,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion, &kebConfig)
 
 		// when
 		_, err = svc.Execute(id)
