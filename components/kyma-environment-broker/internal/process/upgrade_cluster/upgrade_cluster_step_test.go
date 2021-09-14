@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -108,18 +107,7 @@ func fixUpgradeClusterOperationWithInputCreator(t *testing.T) internal.UpgradeCl
 }
 
 func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
-	kymaComponentList := []v1alpha1.KymaComponent{
-		{
-			Name:      "to-remove-component",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-	}
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", fixKymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider, input.Config{
