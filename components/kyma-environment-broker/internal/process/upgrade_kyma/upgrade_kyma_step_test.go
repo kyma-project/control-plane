@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -126,7 +127,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
