@@ -14,7 +14,7 @@ import (
 
 const (
 	DefaultAWSRegion       = "eu-central-1"
-	DefaultAWSHAZonesCount = 2
+	DefaultAWSHAZonesCount = 3
 )
 
 var europeAWS = "eu-central-1"
@@ -71,13 +71,13 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 var awsZones = map[string]string{
 	"eu-central-1":   "abc",
 	"eu-west-2":      "abc",
-	"ca-central-1":   "ab",
-	"sa-east-1":      "ac",
+	"ca-central-1":   "abd",
+	"sa-east-1":      "abc",
 	"us-east-1":      "abcdf",
-	"us-west-1":      "ac",
+	"us-west-1":      "ab",
 	"ap-northeast-1": "acd",
-	"ap-northeast-2": "ac",
-	"ap-south-1":     "ab",
+	"ap-northeast-2": "abc",
+	"ap-south-1":     "abc",
 	"ap-southeast-1": "abc",
 	"ap-southeast-2": "abc",
 }
@@ -167,13 +167,13 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5d.xlarge",
+			MachineType:    "m5.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  4,
+			AutoScalerMin:  1,
 			AutoScalerMax:  10,
-			MaxSurge:       4,
+			MaxSurge:       2,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{

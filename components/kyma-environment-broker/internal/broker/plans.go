@@ -148,19 +148,19 @@ func AWSHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AWSRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
-		Minimum:     2,
+		Minimum:     3,
 		Maximum:     3,
-		Default:     2,
+		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 	awsHaControlsOrder := DefaultControlsOrder()
 	awsHaControlsOrder = append(awsHaControlsOrder, "zonesCount")
 	schema := NewSchema(properties, awsHaControlsOrder)
 
-	properties.AutoScalerMin.Default = 4
-	properties.AutoScalerMin.Minimum = 4
+	properties.AutoScalerMin.Default = 1
+	properties.AutoScalerMin.Minimum = 1
 
-	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Minimum = 1
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -225,19 +225,19 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
-		Minimum:     2,
+		Minimum:     3,
 		Maximum:     3,
-		Default:     2,
+		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 	azureHaControlsOrder := DefaultControlsOrder()
 	azureHaControlsOrder = append(azureHaControlsOrder, "zonesCount")
 	schema := NewSchema(properties, azureHaControlsOrder)
 
-	properties.AutoScalerMin.Default = 4
-	properties.AutoScalerMin.Minimum = 4
+	properties.AutoScalerMin.Default = 1
+	properties.AutoScalerMin.Minimum = 1
 
-	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Minimum = 1
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -297,7 +297,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSHASchema([]string{"m5d.xlarge"}),
+			provisioningRawSchema: AWSHASchema([]string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -393,7 +393,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3", "Standard_D8_v3"}),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{

@@ -9,7 +9,7 @@ import (
 
 const (
 	DefaultAzureRegion       = "westeurope"
-	DefaultAzureHAZonesCount = 2
+	DefaultAzureHAZonesCount = 3
 )
 
 var europeAzure = "westeurope"
@@ -164,9 +164,9 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  4,
+			AutoScalerMin:  1,
 			AutoScalerMax:  10,
-			MaxSurge:       4,
+			MaxSurge:       2,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
