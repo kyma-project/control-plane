@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"time"
 
@@ -169,6 +170,10 @@ func main() {
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
+
+  // check default Kyma versions
+	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
+	panicOnError(err)
 
 	// create and fill KEBConfig
 	var kebConfig broker.KEBConfig
@@ -372,6 +377,23 @@ func main() {
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
+func checkDefaultVersions(versions ...string) error {
+	for _, version := range versions {
+		if !isVersionFollowingSemanticVersioning(version) {
+			return errors.New("Kyma default versions are not following semantic versioning")
+		}
+	}
+	return nil
+}
+
+func isVersionFollowingSemanticVersioning(version string) bool {
+	regexpToMatch := regexp.MustCompile("^[0-9]+(\\.{1}[0-9]+)*[0-9]*$")
+	if regexpToMatch.MatchString(version) {
+		return true
+	}
+	return false
+}
+
 func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
@@ -513,6 +535,12 @@ func initClient(cfg *rest.Config) (client.Client, error) {
 func fatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func panicOnError(err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
