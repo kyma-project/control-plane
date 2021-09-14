@@ -171,7 +171,7 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
-  // check default Kyma versions
+	// check default Kyma versions
 	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
 	panicOnError(err)
 
