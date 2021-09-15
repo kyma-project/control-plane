@@ -246,7 +246,7 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]v1alpha1.KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.newAdditionalRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err,"while reading YAML file with additional components for new Kyma")
+		return nil, errors.Wrap(err, "while reading YAML file with additional components for new Kyma")
 	}
 	return r.getComponentsFromYAML(yamlContents)
 }
@@ -254,7 +254,7 @@ func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]v1alpha1
 func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]v1alpha1.KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err,"while reading YAML file with additional components")
+		return nil, errors.Wrap(err, "while reading YAML file with additional components")
 	}
 	return r.getComponentsFromYAML(yamlContents)
 }
