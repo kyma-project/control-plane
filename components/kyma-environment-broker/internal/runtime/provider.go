@@ -26,10 +26,11 @@ const (
 
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
 type ComponentsListProvider struct {
-	managedRuntimeComponentsYAMLPath string
-	httpClient                       HTTPDoer
-	components                       map[string][]v1alpha1.KymaComponent
-	mu                               sync.Mutex
+	managedRuntimeComponentsYAMLPath       string
+	newAdditionalRuntimeComponentsYAMLPath string
+	httpClient                             HTTPDoer
+	components                             map[string][]v1alpha1.KymaComponent
+	mu                                     sync.Mutex
 }
 
 type HTTPDoer interface {
@@ -37,11 +38,12 @@ type HTTPDoer interface {
 }
 
 // NewComponentsListProvider returns new instance of the ComponentsListProvider
-func NewComponentsListProvider(managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
+func NewComponentsListProvider(managedRuntimeComponentsYAMLPath, newAdditionalRuntimeComponentsYAMLPath string) *ComponentsListProvider {
 	return &ComponentsListProvider{
-		httpClient:                       http.DefaultClient,
-		managedRuntimeComponentsYAMLPath: managedRuntimeComponentsYAMLPath,
-		components:                       make(map[string][]v1alpha1.KymaComponent, 0),
+		httpClient:                             http.DefaultClient,
+		managedRuntimeComponentsYAMLPath:       managedRuntimeComponentsYAMLPath,
+		newAdditionalRuntimeComponentsYAMLPath: newAdditionalRuntimeComponentsYAMLPath,
+		components:                             make(map[string][]v1alpha1.KymaComponent, 0),
 	}
 }
 
