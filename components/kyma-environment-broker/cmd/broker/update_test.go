@@ -251,7 +251,6 @@ func TestUpdateContext(t *testing.T) {
 
 func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
-	suite.EnableDumpingProvisionerRequests()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
@@ -311,10 +310,7 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
        
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	updateOpID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByInstanceID(iid)
-
-	suite.WaitForOperationState(updateOpID, domain.Succeeded)
 
 	// check that the region and zone is set
 	suite.AssertAWSRegionAndZone("us-east-1")
