@@ -107,6 +107,12 @@ func AWSRegions() []string {
 		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
 }
 
+func AWSHARegions() []string {
+	// be aware of zones defined in internal/provider/aws_provider.go
+	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1",
+		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
 func OpenStackRegions() []string {
 	return []string{"eu-de-1", "ap-sa-1"}
 }
@@ -145,7 +151,7 @@ func AWSSchema(machineTypes []string) []byte {
 }
 
 func AWSHASchema(machineTypes []string) []byte {
-	properties := NewProvisioningProperties(machineTypes, AWSRegions())
+	properties := NewProvisioningProperties(machineTypes, AWSHARegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
 		Minimum:     3,
@@ -159,8 +165,10 @@ func AWSHASchema(machineTypes []string) []byte {
 
 	properties.AutoScalerMin.Default = 1
 	properties.AutoScalerMin.Minimum = 1
+	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
 	properties.AutoScalerMax.Minimum = 1
+	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -236,8 +244,10 @@ func AzureHASchema(machineTypes []string) []byte {
 
 	properties.AutoScalerMin.Default = 1
 	properties.AutoScalerMin.Minimum = 1
+	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
 	properties.AutoScalerMax.Minimum = 1
+	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {

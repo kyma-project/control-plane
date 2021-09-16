@@ -103,7 +103,7 @@ func TestAWSHAInput_Defaults(t *testing.T) {
 	input := svc.Defaults()
 
 	// then
-	assert.Equal(t, 4, input.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 1, input.GardenerConfig.AutoScalerMin)
 	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
-	assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 2)
+	assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 3)
 }
