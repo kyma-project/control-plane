@@ -107,3 +107,20 @@ func TestAWSHAInput_Defaults(t *testing.T) {
 	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
 	assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 2)
 }
+
+func TestAWSTrialInput_ApplyParameters(t *testing.T) {
+	// given
+	svc := AWSTrialInput{PlatformRegionMapping: map[string]string {
+		"cf-eu10": "europe",
+		"cf-us10": "us",
+	}}
+	input := svc.Defaults()
+
+	// when
+	svc.ApplyParameters(input, internal.ProvisioningParameters{
+		PlatformRegion: "cf-us10",
+	})
+
+	// then
+	assert.Contains(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, input.GardenerConfig.Region)
+}

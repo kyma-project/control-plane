@@ -613,3 +613,9 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 
 	s.processProvisioningByOperationID(opID)
 }
+
+func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
+	input := s.fetchProvisionInput()
+	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
+	assert.Contains(s.t, region, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name)
+}

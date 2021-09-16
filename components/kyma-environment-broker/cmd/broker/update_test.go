@@ -317,7 +317,8 @@ func TestUnsuspensionTrialWithChanged(t *testing.T) {
 
 	suite.WaitForOperationState(updateOpID, domain.Succeeded)
 
-
+	// check that the region and zone is set
+	suite.AssertAWSRegionAndZone("us-east-1")
 }
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {

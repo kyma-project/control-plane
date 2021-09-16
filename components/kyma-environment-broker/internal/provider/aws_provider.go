@@ -259,7 +259,6 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 func (p *AWSTrialInput) updateRegionWithZones(input *gqlschema.ClusterConfigInput, region string) {
 	input.GardenerConfig.Region = region
 	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(region)
-
 }
 
 func (p *AWSTrialInput) Profile() gqlschema.KymaProfile {
