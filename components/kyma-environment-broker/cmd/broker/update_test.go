@@ -310,7 +310,7 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
        }
        
    }`)
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	updateOpID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByInstanceID(iid)
 
