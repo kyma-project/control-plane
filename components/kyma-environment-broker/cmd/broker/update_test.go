@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"testing"
-
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"testing"
 )
 
 func TestUpdate(t *testing.T) {
@@ -246,6 +246,78 @@ func TestUpdateContext(t *testing.T) {
        }
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestUnsuspensionTrialWithChanged(t *testing.T) {
+	suite := NewBrokerSuiteTest(t)
+	suite.EnableDumpingProvisionerRequests()
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	//time.Sleep(15 * time.Second)
+	suite.processProvisioningByOperationID(opID)
+
+	suite.Log("*** Suspension ***")
+
+	// Process Suspension
+	// OSB context update (suspension)
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       }
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
+
+	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
+	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
+
+
+	// WHEN
+	suite.ChangeDefaultTrialProvider(internal.AWS)
+	// OSB update
+	suite.Log("*** Unsuspension ***")
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+			"active": true
+       }
+       
+   }`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOpID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByInstanceID(iid)
+
+	suite.WaitForOperationState(updateOpID, domain.Succeeded)
+
+
 }
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
