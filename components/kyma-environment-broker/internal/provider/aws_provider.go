@@ -167,7 +167,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.xlarge",
+			MachineType:    "m5.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",

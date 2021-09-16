@@ -307,7 +307,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSHASchema([]string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
+			provisioningRawSchema: AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -403,7 +403,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3", "Standard_D8_v3"}),
+			provisioningRawSchema: AzureHASchema([]string{"Standard_D8_v3"}),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{

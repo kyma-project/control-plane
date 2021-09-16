@@ -160,7 +160,7 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "Standard_D4_v3",
+			MachineType:    "Standard_D8_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",

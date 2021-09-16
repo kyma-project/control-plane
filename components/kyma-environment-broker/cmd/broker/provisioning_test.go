@@ -154,7 +154,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D4_v3",
+			expectedMachineType:                "Standard_D8_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "azure",
 			expectedSharedSubscription:         false,
@@ -165,7 +165,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D4_v3",
+			expectedMachineType:                "Standard_D8_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "azure",
 			expectedSharedSubscription:         false,
@@ -189,7 +189,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.xlarge",
+			expectedMachineType:                "m5.2xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,
@@ -201,7 +201,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.xlarge",
+			expectedMachineType:                "m5.2xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,

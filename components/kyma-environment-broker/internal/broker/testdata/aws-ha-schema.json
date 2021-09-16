@@ -20,7 +20,7 @@
     },
     "machineType": {
       "type": "string",
-      "enum": ["m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"]
+      "enum": ["m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"]
     },
     "autoScalerMin": {
       "type": "integer",
