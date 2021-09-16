@@ -78,7 +78,12 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				tc.given.managedRuntimeComponentsYAMLPath,
 				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expManagedComponents := readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			expAdditionalComponents := make([]v1alpha1.KymaComponent, 0)
+			if tc.given.kymaVersion.MajorVersion > 1 {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
+			} else {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			}
 
 			// when
 			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion)
@@ -88,7 +93,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			assert.NotNil(t, allComponents)
 
 			assert.Equal(t, tc.expectedRequestURL, fakeHTTPClient.RequestURL)
-			assertManagedComponentsAtTheEndOfList(t, allComponents, expManagedComponents)
+			assertManagedComponentsAtTheEndOfList(t, allComponents, expAdditionalComponents)
 		})
 	}
 }
