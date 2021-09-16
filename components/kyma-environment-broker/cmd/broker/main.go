@@ -382,7 +382,7 @@ func checkDefaultVersions(versions ...string) error {
 }
 
 func isVersionFollowingSemanticVersioning(version string) bool {
-	regexpToMatch := regexp.MustCompile("^[0-9]+(\\.{1}[0-9]+)*[0-9]*$")
+	regexpToMatch := regexp.MustCompile("(^[0-9]+\\.{1}).*")
 	if regexpToMatch.MatchString(version) {
 		return true
 	}
