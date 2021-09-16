@@ -152,7 +152,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			planID:     broker.AzureHAPlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
 			expectedMachineType:                "Standard_D4_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
@@ -163,7 +163,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"HA Azure - default zonesCount": {
 			planID: broker.AzureHAPlanID,
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
 			expectedMachineType:                "Standard_D4_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
@@ -187,9 +187,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5d.xlarge",
+			expectedMachineType:                "m5.xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,
@@ -197,11 +197,11 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		},
 		"HA AWS - default zonesCount": {
 			planID: broker.AWSHAPlanID,
-			region: "us-west-1",
+			region: "eu-central-1",
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5d.xlarge",
+			expectedMachineType:                "m5.xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,
