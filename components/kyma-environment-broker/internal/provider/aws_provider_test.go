@@ -110,7 +110,7 @@ func TestAWSHAInput_Defaults(t *testing.T) {
 
 func TestAWSTrialInput_ApplyParameters(t *testing.T) {
 	// given
-	svc := AWSTrialInput{PlatformRegionMapping: map[string]string {
+	svc := AWSTrialInput{PlatformRegionMapping: map[string]string{
 		"cf-eu10": "europe",
 		"cf-us10": "us",
 	}}
