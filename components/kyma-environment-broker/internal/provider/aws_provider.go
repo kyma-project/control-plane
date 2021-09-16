@@ -246,13 +246,19 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 		abstractRegion, found := p.PlatformRegionMapping[pp.PlatformRegion]
 		if found {
 			r := toAWSSpecific[abstractRegion]
-			input.GardenerConfig.Region = r
+			p.updateRegionWithZones(input, r)
 		}
 	}
 
 	if params.Region != nil {
-		input.GardenerConfig.Region = toAWSSpecific[*params.Region]
+		r := toAWSSpecific[*params.Region]
+		p.updateRegionWithZones(input, r)
 	}
+}
+
+func (p *AWSTrialInput) updateRegionWithZones(input *gqlschema.ClusterConfigInput, region string) {
+	input.GardenerConfig.Region = region
+	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(region)
 }
 
 func (p *AWSTrialInput) Profile() gqlschema.KymaProfile {
