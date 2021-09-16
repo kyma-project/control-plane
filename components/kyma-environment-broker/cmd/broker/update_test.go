@@ -248,7 +248,7 @@ func TestUpdateContext(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestUnsuspensionTrialWithChanged(t *testing.T) {
+func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
 	suite.EnableDumpingProvisionerRequests()
 	defer suite.TearDown()
@@ -272,7 +272,6 @@ func TestUnsuspensionTrialWithChanged(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	//time.Sleep(15 * time.Second)
 	suite.processProvisioningByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
