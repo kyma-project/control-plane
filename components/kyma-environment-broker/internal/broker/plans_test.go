@@ -29,7 +29,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:         "AWS HA schema is correct",
 			generator:    AWSHASchema,
-			machineTypes: []string{"m5d.xlarge"},
+			machineTypes: []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
 			file:         "aws-ha-schema.json",
 		},
 		{
@@ -47,7 +47,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:         "AzureHA schema is correct",
 			generator:    AzureHASchema,
-			machineTypes: []string{"Standard_D4_v3"},
+			machineTypes: []string{"Standard_D8_v3"},
 			file:         "azure-ha-schema.json",
 		},
 		{

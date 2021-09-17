@@ -101,7 +101,7 @@ func TestAzureHAInput_Defaults(t *testing.T) {
 	input := svc.Defaults()
 
 	// then
-	assert.Equal(t, 4, input.GardenerConfig.AutoScalerMin)
+	assert.Equal(t, 1, input.GardenerConfig.AutoScalerMin)
 	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
-	assert.Equal(t, 2, len(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+	assert.Equal(t, 3, len(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 }
