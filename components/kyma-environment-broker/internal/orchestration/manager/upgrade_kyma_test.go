@@ -16,7 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const poolingInterval = 20 * time.Millisecond
+const (
+	poolingInterval           = 20 * time.Millisecond
+	defaultKymaVersion        = "1.24.5"
+	defaultKymaPreviewVersion = "2.0.0"
+)
 
 func TestUpgradeKymaManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
@@ -40,7 +44,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
 
 		// when
 		_, err = svc.Execute(id)
@@ -72,7 +76,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
 
 		// when
 		_, err = svc.Execute(id)
@@ -103,7 +107,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
 
 		// when
 		_, err = svc.Execute(id)
@@ -163,7 +167,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
 
 		// when
 		_, err = svc.Execute(id)
@@ -202,7 +206,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion)
 
 		// when
 		_, err = svc.Execute(id)

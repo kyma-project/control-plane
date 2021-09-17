@@ -71,12 +71,12 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 var awsZones = map[string]string{
 	"eu-central-1":   "abc",
 	"eu-west-2":      "abc",
-	"ca-central-1":   "abd",
-	"sa-east-1":      "abc",
-	"us-east-1":      "abcdef",
+	"ca-central-1":   "ab",
+	"sa-east-1":      "ac",
+	"us-east-1":      "abcdf",
 	"us-west-1":      "ac",
 	"ap-northeast-1": "acd",
-	"ap-northeast-2": "abcd",
+	"ap-northeast-2": "ac",
 	"ap-south-1":     "ab",
 	"ap-southeast-1": "abc",
 	"ap-southeast-2": "abc",
@@ -246,13 +246,19 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 		abstractRegion, found := p.PlatformRegionMapping[pp.PlatformRegion]
 		if found {
 			r := toAWSSpecific[abstractRegion]
-			input.GardenerConfig.Region = r
+			p.updateRegionWithZones(input, r)
 		}
 	}
 
 	if params.Region != nil {
-		input.GardenerConfig.Region = toAWSSpecific[*params.Region]
+		r := toAWSSpecific[*params.Region]
+		p.updateRegionWithZones(input, r)
 	}
+}
+
+func (p *AWSTrialInput) updateRegionWithZones(input *gqlschema.ClusterConfigInput, region string) {
+	input.GardenerConfig.Region = region
+	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(region)
 }
 
 func (p *AWSTrialInput) Profile() gqlschema.KymaProfile {

@@ -185,7 +185,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"HA AWS - provided zonesCount": {
 			planID:     broker.AWSHAPlanID,
 			zonesCount: ptr.Integer(3),
-			region:     "ap-northeast-2",
+			region:     "us-east-1",
 
 			expectedMinimalNumberOfNodes:       4,
 			expectedMaximumNumberOfNodes:       10,
