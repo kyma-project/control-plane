@@ -6,6 +6,7 @@ require (
 	github.com/int128/kubelogin v1.22.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20210601124357-126439534aac
+	github.com/kyma-project/control-plane/components/mothership v0.0.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
@@ -24,6 +25,7 @@ replace (
 	github.com/gardener/gardener => github.com/gardener/gardener v1.2.3
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
+	github.com/kyma-project/control-plane/components/mothership => ../../components/mothership
 	k8s.io/api => k8s.io/api v0.17.17
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.17
 	k8s.io/apiserver => k8s.io/apiserver v0.17.17

@@ -51,6 +51,7 @@ type GlobalOptionsKey struct {
 	oidcClientID       string
 	oidcClientSecret   string
 	kebAPIURL          string
+	mothershipAPIURL   string
 	kubeconfigAPIURL   string
 	gardenerKubeconfig string
 	gardenerNamespace  string
@@ -129,6 +130,11 @@ func (keys *GlobalOptionsKey) OIDCClientSecret() string {
 // KEBAPIURL gets the keb-api-url global parameter
 func (keys *GlobalOptionsKey) KEBAPIURL() string {
 	return viper.GetString(keys.kebAPIURL)
+}
+
+// MOTHERSHIPAPIURL gets the mothership-api-url global parameter
+func (keys *GlobalOptionsKey) MOTHERSHIPAPIURL() string {
+	return viper.GetString(keys.mothershipAPIURL)
 }
 
 // KubeconfigAPIURL gets the kubeconfig-api-url global parameter
