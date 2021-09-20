@@ -109,13 +109,14 @@ type Config struct {
 
 	ServiceManager servicemanager.Config
 
-	KymaVersion                          string
-	KymaPreviewVersion                   string
-	EnableOnDemandVersion                bool `envconfig:"default=false"`
-	ManagedRuntimeComponentsYAMLFilePath string
-	SkrOidcDefaultValuesYAMLFilePath     string
-	DefaultRequestRegion                 string `envconfig:"default=cf-eu10"`
-	UpdateProcessingEnabled              bool   `envconfig:"default=false"`
+	KymaVersion                                string
+	KymaPreviewVersion                         string
+	EnableOnDemandVersion                      bool `envconfig:"default=false"`
+	ManagedRuntimeComponentsYAMLFilePath       string
+	NewAdditionalRuntimeComponentsYAMLFilePath string
+	SkrOidcDefaultValuesYAMLFilePath           string
+	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
+	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -231,7 +232,7 @@ func main() {
 
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
-	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath)
+	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath, cfg.NewAdditionalRuntimeComponentsYAMLFilePath)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	gardenerClient, err := gardener.NewClient(gardenerClusterConfig)
@@ -381,7 +382,7 @@ func checkDefaultVersions(versions ...string) error {
 }
 
 func isVersionFollowingSemanticVersioning(version string) bool {
-	regexpToMatch := regexp.MustCompile("^[0-9]+(\\.{1}[0-9]+)*[0-9]*$")
+	regexpToMatch := regexp.MustCompile("(^[0-9]+\\.{1}).*")
 	if regexpToMatch.MatchString(version) {
 		return true
 	}

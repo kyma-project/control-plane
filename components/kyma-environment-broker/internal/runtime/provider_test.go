@@ -21,8 +21,9 @@ import (
 
 func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 	type given struct {
-		kymaVersion                      internal.RuntimeVersionData
-		managedRuntimeComponentsYAMLPath string
+		kymaVersion                            internal.RuntimeVersionData
+		managedRuntimeComponentsYAMLPath       string
+		newAdditionalRuntimeComponentsYAMLPath string
 	}
 	tests := []struct {
 		name               string
@@ -32,32 +33,36 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 		{
 			name: "Provide release Kyma version 1.x",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "1.9.0", MajorVersion: 1},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "1.9.0", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/1.9.0/kyma-installer-cluster.yaml",
 		},
 		{
 			name: "Provide on-demand Kyma version based on 1.x",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 1},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-installer-cluster.yaml",
 		},
 		{
 			name: "Provide release Kyma version 2.0.0",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "2.0.0", MajorVersion: 2},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "2.0.0", MajorVersion: 2},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/2.0.0/kyma-components.yaml",
 		},
 		{
 			name: "Provide on-demand Kyma version based on 2.0",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 2},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 2},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-components.yaml",
 		},
@@ -69,9 +74,16 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			componentsYAML := readYAMLFromFile(t, "kyma-components.yaml")
 			fakeHTTPClient := newTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
+			listProvider := runtime.NewComponentsListProvider(
+				tc.given.managedRuntimeComponentsYAMLPath,
+				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expManagedComponents := readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			expAdditionalComponents := make([]v1alpha1.KymaComponent, 0)
+			if tc.given.kymaVersion.MajorVersion > 1 {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
+			} else {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			}
 
 			// when
 			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion)
@@ -81,16 +93,17 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			assert.NotNil(t, allComponents)
 
 			assert.Equal(t, tc.expectedRequestURL, fakeHTTPClient.RequestURL)
-			assertManagedComponentsAtTheEndOfList(t, allComponents, expManagedComponents)
+			assertManagedComponentsAtTheEndOfList(t, allComponents, expAdditionalComponents)
 		})
 	}
 }
 
 func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	type given struct {
-		kymaVersion                      internal.RuntimeVersionData
-		managedRuntimeComponentsYAMLPath string
-		httpErrMessage                   string
+		kymaVersion                            internal.RuntimeVersionData
+		managedRuntimeComponentsYAMLPath       string
+		newAdditionalRuntimeComponentsYAMLPath string
+		httpErrMessage                         string
 	}
 	tests := []struct {
 		name             string
@@ -102,9 +115,10 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 		{
 			name: "Provide release version not found",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "111.000.111", MajorVersion: 1},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Not Found",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "111.000.111", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Not Found",
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
@@ -113,9 +127,10 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 		{
 			name: "Provide on-demand version not found",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Not Found",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Not Found",
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
@@ -124,9 +139,10 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 		{
 			name: "Provide on-demand version not found, temporary server error",
 			given: given{
-				kymaVersion:                      internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Internal Server Error",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Internal Server Error",
 			},
 			returnStatusCode: http.StatusInternalServerError,
 			tempError:        true,
@@ -138,7 +154,9 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 			// given
 			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, tc.given.httpErrMessage, tc.returnStatusCode)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).
+			listProvider := runtime.NewComponentsListProvider(
+				tc.given.managedRuntimeComponentsYAMLPath,
+				tc.given.newAdditionalRuntimeComponentsYAMLPath).
 				WithHTTPClient(fakeHTTPClient)
 
 			// when

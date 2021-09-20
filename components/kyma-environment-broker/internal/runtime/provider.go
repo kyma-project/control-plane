@@ -26,10 +26,11 @@ const (
 
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
 type ComponentsListProvider struct {
-	managedRuntimeComponentsYAMLPath string
-	httpClient                       HTTPDoer
-	components                       map[string][]v1alpha1.KymaComponent
-	mu                               sync.Mutex
+	managedRuntimeComponentsYAMLPath       string
+	newAdditionalRuntimeComponentsYAMLPath string
+	httpClient                             HTTPDoer
+	components                             map[string][]v1alpha1.KymaComponent
+	mu                                     sync.Mutex
 }
 
 type HTTPDoer interface {
@@ -37,11 +38,12 @@ type HTTPDoer interface {
 }
 
 // NewComponentsListProvider returns new instance of the ComponentsListProvider
-func NewComponentsListProvider(managedRuntimeComponentsYAMLPath string) *ComponentsListProvider {
+func NewComponentsListProvider(managedRuntimeComponentsYAMLPath, newAdditionalRuntimeComponentsYAMLPath string) *ComponentsListProvider {
 	return &ComponentsListProvider{
-		httpClient:                       http.DefaultClient,
-		managedRuntimeComponentsYAMLPath: managedRuntimeComponentsYAMLPath,
-		components:                       make(map[string][]v1alpha1.KymaComponent, 0),
+		httpClient:                             http.DefaultClient,
+		managedRuntimeComponentsYAMLPath:       managedRuntimeComponentsYAMLPath,
+		newAdditionalRuntimeComponentsYAMLPath: newAdditionalRuntimeComponentsYAMLPath,
+		components:                             make(map[string][]v1alpha1.KymaComponent, 0),
 	}
 }
 
@@ -61,12 +63,12 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersi
 		return nil, errors.Wrap(err, "while getting Kyma components")
 	}
 
-	managedComponents, err := r.getManagedComponents()
+	additionalComponents, err := r.getAdditionalComponents(kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting managed components")
+		return nil, errors.Wrap(err, "while getting additional components")
 	}
 
-	allComponents := append(kymaComponents, managedComponents...)
+	allComponents := append(kymaComponents, additionalComponents...)
 
 	r.components[kymaVersion.Version] = allComponents
 	return allComponents, nil
@@ -79,20 +81,11 @@ func (r *ComponentsListProvider) getKymaComponents(kymaVersion internal.RuntimeV
 	return r.getComponentsFromInstallerYaml(kymaVersion.Version)
 }
 
-func (r *ComponentsListProvider) getManagedComponents() ([]v1alpha1.KymaComponent, error) {
-	yamlFile, err := ioutil.ReadFile(r.managedRuntimeComponentsYAMLPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
+func (r *ComponentsListProvider) getAdditionalComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
+	if kymaVersion.MajorVersion > 1 {
+		return r.getAdditionalComponentsForNewKyma()
 	}
-
-	var managedList struct {
-		Components []v1alpha1.KymaComponent `json:"components"`
-	}
-	err = yaml.Unmarshal(yamlFile, &managedList)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
-	}
-	return managedList.Components, nil
+	return r.getAdditionalComponentsForKyma()
 }
 
 // Installation represents the installer CR.
@@ -248,4 +241,39 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 		}
 	}
 	return nil, errors.New("installer cr not found")
+}
+
+func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]v1alpha1.KymaComponent, error) {
+	yamlContents, err := r.readYAML(r.newAdditionalRuntimeComponentsYAMLPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading YAML file with additional components for new Kyma")
+	}
+	return r.getComponentsFromYAML(yamlContents)
+}
+
+func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]v1alpha1.KymaComponent, error) {
+	yamlContents, err := r.readYAML(r.managedRuntimeComponentsYAMLPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading YAML file with additional components")
+	}
+	return r.getComponentsFromYAML(yamlContents)
+}
+
+func (r *ComponentsListProvider) readYAML(yamlFilePath string) ([]byte, error) {
+	yamlContents, err := ioutil.ReadFile(yamlFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "while trying to read YAML file")
+	}
+	return yamlContents, nil
+}
+
+func (r *ComponentsListProvider) getComponentsFromYAML(yamlFileContents []byte) ([]v1alpha1.KymaComponent, error) {
+	var components struct {
+		Components []v1alpha1.KymaComponent `json:"components"`
+	}
+	err := yaml.Unmarshal(yamlFileContents, &components)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling YAML file with additional components")
+	}
+	return components.Components, nil
 }
