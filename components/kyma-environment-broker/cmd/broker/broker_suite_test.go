@@ -58,7 +58,8 @@ type BrokerSuiteTest struct {
 	httpServer *httptest.Server
 	router     *mux.Router
 
-	t *testing.T
+	t                   *testing.T
+	inputBuilderFactory input.CreatorForPlan
 }
 
 func (s *BrokerSuiteTest) TearDown() {
@@ -87,7 +88,8 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		MachineImage:                "253",
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, defaultOIDCValues())
+		DefaultTrialProvider:        internal.Azure,
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
 
@@ -139,12 +141,13 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	deprovisioningQueue.SpeedUp(10000)
 
 	ts := &BrokerSuiteTest{
-		db:                db,
-		provisionerClient: provisionerClient,
-		directorClient:    directorClient,
-		reconcilerClient:  reconcilerClient,
-		router:            mux.NewRouter(),
-		t:                 t,
+		db:                  db,
+		provisionerClient:   provisionerClient,
+		directorClient:      directorClient,
+		reconcilerClient:    reconcilerClient,
+		router:              mux.NewRouter(),
+		t:                   t,
+		inputBuilderFactory: inputFactory,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -172,6 +175,10 @@ func defaultOIDCConfig() *gqlschema.OIDCConfigInput {
 		UsernameClaim:  defaultOIDCValues().UsernameClaim,
 		UsernamePrefix: defaultOIDCValues().UsernamePrefix,
 	}
+}
+
+func (s *BrokerSuiteTest) ChangeDefaultTrialProvider(provider internal.CloudProvider) {
+	s.inputBuilderFactory.(*input.InputBuilderFactory).SetDefaultTrialProvider(provider)
 }
 
 func (s *BrokerSuiteTest) CallAPI(method string, path string, body string) *http.Response {
@@ -605,4 +612,10 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
 	s.processProvisioningByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
+	input := s.provisionerClient.GetProvisionRuntimeInput(1)
+	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
+	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
 }

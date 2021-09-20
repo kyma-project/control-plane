@@ -107,6 +107,12 @@ func AWSRegions() []string {
 		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
 }
 
+func AWSHARegions() []string {
+	// be aware of zones defined in internal/provider/aws_provider.go
+	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1",
+		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
+}
+
 func OpenStackRegions() []string {
 	return []string{"eu-de-1", "ap-sa-1"}
 }
@@ -145,22 +151,24 @@ func AWSSchema(machineTypes []string) []byte {
 }
 
 func AWSHASchema(machineTypes []string) []byte {
-	properties := NewProvisioningProperties(machineTypes, AWSRegions())
+	properties := NewProvisioningProperties(machineTypes, AWSHARegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
-		Minimum:     2,
+		Minimum:     3,
 		Maximum:     3,
-		Default:     2,
+		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 	awsHaControlsOrder := DefaultControlsOrder()
 	awsHaControlsOrder = append(awsHaControlsOrder, "zonesCount")
 	schema := NewSchema(properties, awsHaControlsOrder)
 
-	properties.AutoScalerMin.Default = 4
-	properties.AutoScalerMin.Minimum = 4
+	properties.AutoScalerMin.Default = 1
+	properties.AutoScalerMin.Minimum = 1
+	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
-	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Minimum = 1
+	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -225,19 +233,21 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
-		Minimum:     2,
+		Minimum:     3,
 		Maximum:     3,
-		Default:     2,
+		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 	azureHaControlsOrder := DefaultControlsOrder()
 	azureHaControlsOrder = append(azureHaControlsOrder, "zonesCount")
 	schema := NewSchema(properties, azureHaControlsOrder)
 
-	properties.AutoScalerMin.Default = 4
-	properties.AutoScalerMin.Minimum = 4
+	properties.AutoScalerMin.Default = 1
+	properties.AutoScalerMin.Minimum = 1
+	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
-	properties.AutoScalerMax.Minimum = 4
+	properties.AutoScalerMax.Minimum = 1
+	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
 	bytes, err := json.Marshal(schema)
 	if err != nil {
@@ -297,7 +307,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AWSHASchema([]string{"m5d.xlarge"}),
+			provisioningRawSchema: AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -393,7 +403,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 					},
 				},
 			},
-			provisioningRawSchema: AzureHASchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: AzureHASchema([]string{"Standard_D8_v3"}),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{
