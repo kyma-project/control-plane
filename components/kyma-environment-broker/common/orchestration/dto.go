@@ -111,17 +111,15 @@ type TargetSpec struct {
 	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
 
-
-
 type StatusResponse struct {
-	OrchestrationID string                 `json:"orchestrationID"`
-	Type            Type                   `json:"type"`
-	State           string                 `json:"state"`
-	Description     string                 `json:"description"`
-	CreatedAt       time.Time              `json:"createdAt"`
-	UpdatedAt       time.Time              `json:"updatedAt"`
-	Parameters      Parameters             `json:"parameters"`
-	OperationStats  map[string]int         `json:"operationStats,omitempty"`
+	OrchestrationID string         `json:"orchestrationID"`
+	Type            Type           `json:"type"`
+	State           string         `json:"state"`
+	Description     string         `json:"description"`
+	CreatedAt       time.Time      `json:"createdAt"`
+	UpdatedAt       time.Time      `json:"updatedAt"`
+	Parameters      Parameters     `json:"parameters"`
+	OperationStats  map[string]int `json:"operationStats,omitempty"`
 }
 
 type OperationResponse struct {
