@@ -3,12 +3,13 @@ package manager
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -22,8 +23,8 @@ type upgradeClusterFactory struct {
 }
 
 func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
-	kymaClusterExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver,
-	pollingInterval time.Duration, log logrus.FieldLogger, cli client.Client, configNamespace string, configName string, cfg *broker.KEBConfig) process.Executor {
+	kymaClusterExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
+	log logrus.FieldLogger, cli client.Client, cfg internalOrchestration.Config) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -32,13 +33,14 @@ func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, opera
 		factory: &upgradeClusterFactory{
 			operationStorage: operationStorage,
 		},
-		executor:        kymaClusterExecutor,
-		pollingInterval: pollingInterval,
-		log:             log,
-		k8sClient:       cli,
-		configNamespace: configNamespace,
-		configName:      configName,
-		cfg:             cfg,
+		executor:          kymaClusterExecutor,
+		pollingInterval:   pollingInterval,
+		log:               log,
+		k8sClient:         cli,
+		configNamespace:   cfg.Namespace,
+		configName:        cfg.Name,
+		kymaVersion:       cfg.KymaVersion,
+		kubernetesVersion: cfg.KubernetesVersion,
 	}
 }
 
