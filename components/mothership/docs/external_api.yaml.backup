@@ -1,0 +1,347 @@
+openapi: 3.0.0
+info:
+  title: Reconciler mothership external API
+  version: 1.0.0
+servers:
+  - url: http://{host}:{port}/{version}
+    variables:
+      host:
+        default: localhost
+        description: Host for server
+      port:
+        default: '8080'
+        description: Port for server
+      version:
+        enum:
+          - 'v1'
+        default: 'v1'
+
+paths:
+  /reconciles:
+    get:
+      description: 'Get list of current working reconcilers'
+      responses:
+        '200':
+          description: 'Ok'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPReconcilerStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /clusters:
+    put:
+      description: update exisiting cluster
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/cluster'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      description: create new cluster
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/cluster'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/{cluster}:
+    delete:
+      description: delete cluster
+      parameters:
+        - name: cluster
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ClusterNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/{cluster}/status:
+    get:
+      description: 'Get cluster status'
+      parameters:
+        - name: cluster
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ClusterNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/{cluster}/config/{configVersion}/status:
+    get:
+      description: test
+      parameters:
+        - name: cluster
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+        - name: configVersion
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ClusterNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/{cluster}/statusChanges:
+    get:
+      description: test
+      parameters:
+        - name: cluster
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 'Return list of status changes in cluster'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPClusterStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/ClusterNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  responses:
+    Ok:
+      description: 'Ok'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPClusterResponse'
+    InternalError:
+      description: 'Internal server error'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPErrorResponse'
+    BadRequest:
+      description: 'Bad request'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPErrorResponse'
+    ClusterNotFound:
+      description: 'Given cluster not found'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPErrorResponse'
+
+  schemas:
+    HTTPClusterStatusResponse:
+      type: object
+      required: [ statusChanges ]
+      properties:
+        statusChanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/statusChange'
+
+    HTTPErrorResponse:
+      type: object
+      required: [ error ]
+      properties:
+        error:
+          type: string
+
+    HTTPClusterResponse:
+      type: object
+      required: [ cluster, clusterVersion, configurationVersion, status, statusURL ]
+      properties:
+        cluster:
+          type: string
+          format: uuid
+        clusterVersion:
+          type: integer
+          format: int64
+        configurationVersion:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/status'
+        statusURL:
+          type: string
+          format: uri
+
+    HTTPReconcilerStatus:
+      type: array
+      items:
+        $ref: '#/components/schemas/reconcilerStatus'
+
+    reconcilerStatus:
+      type: object
+      required: [ cluster, metadata, created, status ]
+      properties:
+        cluster:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/metadata'
+        created:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    statusChange:
+      type: object
+      required: [ started, duration,status ]
+      properties:
+        started:
+          type: string
+          format: date-time
+        duration:
+          #TODO: what to do with time.Duration
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/status'
+
+    status:
+      type: string
+      enum:
+        - reconcile_pending
+        - ready
+        - error
+        - reconciling
+
+    cluster:
+      type: object
+      required: [ runtimeID, runtimeInput, kymaConfig, metadata, kubeconfig ]
+      properties:
+        runtimeID:
+          type: string
+          format: uuid
+        runtimeInput:
+          $ref: '#/components/schemas/runtimeInput'
+        kymaConfig:
+          $ref: '#/components/schemas/kymaConfig'
+        metadata:
+          $ref: '#/components/schemas/metadata'
+        kubeconfig:
+          description: 'valid kubeconfig to cluster'
+          type: string
+
+    runtimeInput:
+      type: object
+      required: [ name, description ]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    kymaConfig:
+      type: object
+      required: [ version, profile, components, administrators ]
+      properties:
+        version:
+          type: string
+        profile:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/component'
+        administrators:
+          type: array
+          items:
+            type: string
+
+    metadata:
+      type: object
+      required: [ globalAccountID, subAccountID, serviceID, servicePlanID, shootName, instanceID ]
+      properties:
+        globalAccountID:
+          type: string
+        subAccountID:
+          type: string
+        serviceID:
+          type: string
+        servicePlanID:
+          type: string
+        shootName:
+          type: string
+        instanceID:
+          type: string
+
+    component:
+      type: object
+      required: [ component, namespace, configuration, URL, version ]
+      properties:
+        component:
+          type: string
+        namespace:
+          type: string
+        configuration:
+          type: array
+          items:
+            $ref: '#/components/schemas/configuration'
+        URL:
+          type: string
+          format: uri
+        version:
+          type: string
+
+    configuration:
+      type: object
+      required: [ key, value, secret ]
+      properties:
+        key:
+          type: string
+        value:
+          anyOf:
+            - type: string
+            - type: boolean
+            - type: integer
+            - type: number
+        secret:
+          type: boolean

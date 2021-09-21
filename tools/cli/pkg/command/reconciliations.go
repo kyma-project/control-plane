@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
 	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
@@ -16,9 +18,13 @@ const (
 	reconciliationScheme = "https"
 )
 
+var (
+	ErrMothershipResponse = errors.New("reconciler error response")
+)
+
 type ReconciliationParams struct {
 	RuntimeIDs []string
-	States     []mothership.State
+	Statyses   []mothership.Status
 	Shoots     []string
 }
 
@@ -30,11 +36,11 @@ func (rp *ReconciliationParams) asMap() map[string]string {
 		result["runtime-id"] = rtIDs
 	}
 
-	if len(rp.States) > 0 {
+	if len(rp.Statyses) > 0 {
 		var states string
-		for i, state := range rp.States {
+		for i, state := range rp.Statyses {
 			separator := ","
-			if i == len(rp.States) || i == 0 {
+			if i == len(rp.Statyses) || i == 0 {
 				separator = ""
 			}
 			states = fmt.Sprintf("%s%s%s", states, separator, state)
@@ -68,10 +74,10 @@ type ReconciliationCommand struct {
 
 func validateReconciliationStates(rawStates []string, params *ReconciliationParams) error {
 	for _, s := range rawStates {
-		val := mothership.State(strings.Trim(s, " "))
+		val := mothership.Status(strings.Trim(s, " "))
 		switch val {
-		case mothership.StateOK, mothership.StateErr, mothership.StateSuspended, mothership.AllState:
-			params.States = append(params.States, val)
+		case mothership.StatusReady, mothership.StatusError, mothership.StatusReconcilePending, mothership.StatusReconciling:
+			params.Statyses = append(params.Statyses, val)
 		default:
 			return fmt.Errorf("invalid value for state: %s", s)
 		}
@@ -88,7 +94,7 @@ func (cmd *ReconciliationCommand) Validate() error {
 	return validateReconciliationStates(cmd.rawStates, &cmd.params)
 }
 
-func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconciliation) error {
+func (cmd *ReconciliationCommand) printReconciliation(data []mothership.ReconcilerStatus) error {
 	switch {
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
@@ -120,6 +126,18 @@ func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconcil
 	return nil
 }
 
+func isErrResponse(statusCode int) bool {
+	return statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices
+}
+
+func responseErr(resp *http.Response) error {
+	var msg string
+	if err := json.NewDecoder(resp.Body).Decode(&msg); err != nil {
+		msg = "unknown error"
+	}
+	return errors.Wrapf(ErrMothershipResponse, "%s %d", msg, resp.StatusCode)
+}
+
 func (cmd *ReconciliationCommand) Run() error {
 	cmd.log = logger.New()
 
@@ -131,10 +149,24 @@ func (cmd *ReconciliationCommand) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
-	filters := cmd.params.asMap()
-	result, err := client.List(ctx, filters)
+	response, err := client.GetReconciles(ctx, func(ctx context.Context, req *http.Request) error {
+		cmd.params.asMap()
+		return nil
+	})
 	if err != nil {
 		return errors.Wrap(err, "wile listing reconciliations")
+	}
+
+	defer response.Body.Close()
+
+	if isErrResponse(response.StatusCode) {
+		err := responseErr(response)
+		return err
+	}
+
+	var result []mothership.ReconcilerStatus
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return errors.WithStack(ErrMothershipResponse)
 	}
 
 	err = cmd.printReconciliation(result)

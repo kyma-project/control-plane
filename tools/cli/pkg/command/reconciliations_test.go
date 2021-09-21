@@ -24,7 +24,7 @@ func Test_validateReconciliationStates(t *testing.T) {
 		{
 			name: "happy path",
 			args: args{
-				rawStates: []string{"ok", "err", "all", "suspended"},
+				rawStates: []string{"error", "reconcile_pending"},
 				params:    &ReconciliationParams{},
 			},
 			wantErr: false,
@@ -32,7 +32,7 @@ func Test_validateReconciliationStates(t *testing.T) {
 		{
 			name: "err",
 			args: args{
-				rawStates: []string{"ok", "unknown"},
+				rawStates: []string{"reconcile_pending", "unknown"},
 				params:    &ReconciliationParams{},
 			},
 			wantErr: true,
@@ -50,7 +50,7 @@ func Test_validateReconciliationStates(t *testing.T) {
 func TestReconciliationParams_asMap(t *testing.T) {
 	type fields struct {
 		RuntimeIDs []string
-		States     []mothership.State
+		States     []mothership.Status
 		Shoots     []string
 	}
 	tests := []struct {
@@ -75,14 +75,14 @@ func TestReconciliationParams_asMap(t *testing.T) {
 		{
 			name: "just states",
 			fields: fields{
-				States: []mothership.State{
-					mothership.StateOK,
-					mothership.AllState,
-					mothership.StateErr,
+				States: []mothership.Status{
+					mothership.StatusReady,
+					mothership.StatusError,
+					mothership.StatusReconcilePending,
 				},
 			},
 			want: map[string]string{
-				"state": "ok,all,err",
+				"state": "ready,error,reconcile_pending",
 			},
 		},
 		{
@@ -99,7 +99,7 @@ func TestReconciliationParams_asMap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rp := &ReconciliationParams{
 				RuntimeIDs: tt.fields.RuntimeIDs,
-				States:     tt.fields.States,
+				Statyses:   tt.fields.States,
 				Shoots:     tt.fields.Shoots,
 			}
 			if got := rp.asMap(); !reflect.DeepEqual(got, tt.want) {
@@ -128,7 +128,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 					RuntimeIDs: []string{"id1", "id2", "id3"},
 					Shoots:     []string{"shoot1", "shoot2"},
 				},
-				rawStates: []string{"all", "err"},
+				rawStates: []string{"reconcile_pending", "ready"},
 			},
 		},
 		{
@@ -164,12 +164,13 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 
 func TestReconcileRun(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		respoBody := []mothership.Reconciliation{
+		respoBody := []mothership.ReconcilerStatus{
 			{
-				ID: "123",
-			},
-			{
-				ID: "456",
+				Cluster: "test-cluster1",
+				Status:  "reconcile_pending",
+				Metadata: mothership.Metadata{
+					InstanceID: "123",
+				},
 			},
 		}
 		var bodyWriter bytes.Buffer
