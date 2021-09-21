@@ -19,27 +19,27 @@
     },
     "machineType": {
       "type": "string",
-      "enum": ["Standard_D4_v3"]
+      "enum": ["Standard_D8_v3"]
     },
     "autoScalerMin": {
       "type": "integer",
-      "description": "Specifies the minimum number of virtual machines to create",
-      "minimum": 4,
-      "default": 4
+      "description": "Specifies the minimum number of virtual machines to create per zone",
+      "minimum": 1,
+      "default": 1
     },
     "autoScalerMax": {
       "type": "integer",
-      "description": "Specifies the maximum number of virtual machines to create",
-      "minimum": 4,
+      "description": "Specifies the maximum number of virtual machines to create per zone",
+      "minimum": 1,
       "maximum": 40,
       "default": 10
     },
     "zonesCount": {
       "type": "integer",
       "description": "Specifies the number of availability zones for HA cluster",
-      "minimum": 2,
+      "minimum": 3,
       "maximum": 3,
-      "default": 2
+      "default": 3
     }},
   "required": [
     "name"

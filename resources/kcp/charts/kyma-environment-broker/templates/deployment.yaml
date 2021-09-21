@@ -370,6 +370,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_ORCHESTRATION_CONFIG_NAME
               value: "orchestration-config"
+            - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
+              value: /config/newAdditionalRuntimeComponents.yaml
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

@@ -83,6 +83,11 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 	}, nil
 }
 
+// SetDefaultTrialProvider is used for testing scenario, when the default trial provider is being changed
+func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) {
+	f.config.DefaultTrialProvider = p
+}
+
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
 	case broker.AWSPlanID, broker.AWSHAPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,

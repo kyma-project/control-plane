@@ -872,6 +872,9 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider.On("GardenerSharedSecretName", hyperscaler.Azure).Return(
 		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
 
+	accountProvider.On("GardenerSharedSecretName", hyperscaler.AWS).Return(
+		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
+
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
 }

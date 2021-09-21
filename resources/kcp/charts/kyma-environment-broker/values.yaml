@@ -72,6 +72,12 @@ additionalRuntimeComponents: |-
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
+newAdditionalRuntimeComponents: |-
+  - name: "service-manager-proxy"
+    namespace: "kyma-system"
+  - name: "compass-runtime-agent"
+    namespace: "compass-system"
+
 trialRegionsMapping: |-
   cf-eu10: europe
   cf-us10: us
