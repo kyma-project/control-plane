@@ -17,12 +17,14 @@ type Parameters struct {
 }
 
 type KubernetesParameters struct {
-	Version string `json:"kubernetesVersion,omitempty"`
+	KubernetesVersion   string `json:"kubernetesVersion"`
+	MachineImage        string `json:"machineImage"`
+	MachineImageVersion string `json:"machineImageVersion"`
 }
 
 // KymaParameters hold the attributes of kyma upgrade specific orchestration create requests.
 type KymaParameters struct {
-	Version string `json:"kymaVersion,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 const (
@@ -109,15 +111,7 @@ type TargetSpec struct {
 	Exclude []RuntimeTarget `json:"exclude,omitempty"`
 }
 
-type KymaDetailResponse struct {
-	KymaVersion string `json:"kymaVersion,omitempty"`
-}
 
-type ClusterDetailResponse struct {
-	KubernetesVersion   string `json:"kubernetesVersion,omitempty"`
-	MachineImage        string `json:"machineImage,omitempty"`
-	MachineImageVersion string `json:"machineImageVersion,omitempty"`
-}
 
 type StatusResponse struct {
 	OrchestrationID string                 `json:"orchestrationID"`
@@ -128,8 +122,6 @@ type StatusResponse struct {
 	UpdatedAt       time.Time              `json:"updatedAt"`
 	Parameters      Parameters             `json:"parameters"`
 	OperationStats  map[string]int         `json:"operationStats,omitempty"`
-	KymaDetails     *KymaDetailResponse    `json:"kymaDetails,omitempty"`
-	ClusterDetails  *ClusterDetailResponse `json:"clusterDetails,omitempty"`
 }
 
 type OperationResponse struct {
