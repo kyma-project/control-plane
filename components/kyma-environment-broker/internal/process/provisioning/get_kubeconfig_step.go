@@ -28,7 +28,7 @@ func NewGetKubeconfigStep(os storage.Operations,
 var _ Step = (*GetKubeconfigStep)(nil)
 
 func (s *GetKubeconfigStep) Name() string {
-	return "Check_Runtime"
+	return "Get_Kubeconfig"
 }
 
 func (s *GetKubeconfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
