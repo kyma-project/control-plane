@@ -267,7 +267,7 @@ func TestProvisionSucceededEvent(t *testing.T) {
 	const opID = "op-0001234"
 	operation := FixProvisionOperation("op-0001234")
 	mgr, _, pubSub := SetupStagedManager2(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: pubSub})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: pubSub}, nil)
 
 	rc := &resultCollector{}
 	rc.duration = 123
