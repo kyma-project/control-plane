@@ -58,9 +58,6 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		m.log.Warnf("while getting maintenance policy: %s", err)
 	}
 
-	//o.Parameters.Kyma.Version = "1.24"
-	//o.Parameters.Kubernetes.KubernetesVersion = "1.22"
-
 	operations, err := m.resolveOperations(o, maintenancePolicy)
 	if err != nil {
 		return m.failOrchestration(o, errors.Wrap(err, "while resolving operations"))
@@ -126,6 +123,9 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		if err != nil {
 			return result, errors.Wrap(err, "while resolving targets")
 		}
+
+		o.Parameters.Kyma.Version = m.kymaVersion
+		o.Parameters.Kubernetes.KubernetesVersion = m.kubernetesVersion
 
 		for _, r := range runtimes {
 			windowBegin := time.Time{}

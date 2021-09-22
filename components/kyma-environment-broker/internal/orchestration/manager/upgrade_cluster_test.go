@@ -42,7 +42,14 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Pending,
+			Parameters: orchestration.Parameters{
+				Kyma:       &orchestration.KymaParameters{Version: ""},
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+			},
+		})
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
@@ -104,7 +111,9 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			OrchestrationID: id,
 			State:           orchestration.Pending,
 			Parameters: orchestration.Parameters{
-				DryRun: true,
+				DryRun:     true,
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+				Kyma:       &orchestration.KymaParameters{Version: ""},
 			}})
 		require.NoError(t, err)
 

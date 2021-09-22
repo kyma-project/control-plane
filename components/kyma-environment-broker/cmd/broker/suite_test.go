@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 
 	//internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -104,7 +105,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Tenant:        "fooTen",
 		EnableSeqHttp: true,
 	}
-
+	cfg.OrchestrationConfig = internalOrchestration.Config{
+		KymaVersion:       "",
+		KubernetesVersion: "",
+	}
 	/**
 	orchestrationConfig := internalOrchestration.Config {
 		KubernetesVersion: 	"1.22",

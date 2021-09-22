@@ -48,7 +48,14 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Pending,
+			Parameters: orchestration.Parameters{
+				Kyma:       &orchestration.KymaParameters{Version: ""},
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+			},
+		})
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
@@ -110,7 +117,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			OrchestrationID: id,
 			State:           orchestration.Pending,
 			Parameters: orchestration.Parameters{
-				DryRun: true,
+				DryRun:     true,
+				Kyma:       &orchestration.KymaParameters{Version: ""},
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
 			}})
 		require.NoError(t, err)
 
