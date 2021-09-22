@@ -26,6 +26,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		KubernetesVersion: "1.22",
 		Namespace:         "default",
 		Name:              "policyConfig",
+		KymaPreviewVersion: defaultKymaPreviewVersion,
 	}
 
 	t.Run("Empty", func(t *testing.T) {

@@ -82,5 +82,9 @@ func fixOrchestrationParams(runtimeID string) orchestration.Parameters {
 			Parallel: orchestration.ParallelStrategySpec{Workers: 1},
 		},
 		DryRun: false,
+		Kubernetes: &orchestration.KubernetesParameters{
+			KubernetesVersion: "",
+		},
+		Kyma: &orchestration.KymaParameters{Version: ""},
 	}
 }

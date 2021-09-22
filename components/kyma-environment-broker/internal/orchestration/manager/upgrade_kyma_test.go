@@ -52,7 +52,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, orchestrationConfig)
+			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, &orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -84,7 +84,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -115,7 +115,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -175,7 +175,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -214,7 +214,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)

@@ -173,6 +173,9 @@ func main() {
 	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
 	panicOnError(err)
 
+	cfg.OrchestrationConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
+	cfg.OrchestrationConfig.KymaVersion = cfg.KymaVersion
+
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
@@ -832,7 +835,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
-		cli, cfg.OrchestrationConfig)
+		cli, &cfg.OrchestrationConfig)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
