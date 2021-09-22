@@ -58,3 +58,6 @@ local/tmp/
 # Changelog temporary directory
 .changelog/
 docs/investigations/storage/postgres/sql/*.csv
+
+# Mothership oapi
+components/mothership/docs/external_api.yaml

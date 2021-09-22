@@ -500,9 +500,9 @@ func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.
 
 	}
 
-	if params.Shots != nil {
+	if params.Shoots != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shots", runtime.ParamLocationQuery, *params.Shots); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shoots", runtime.ParamLocationQuery, *params.Shoots); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

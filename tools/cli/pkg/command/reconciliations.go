@@ -182,7 +182,7 @@ The command supports filtering Reconciliations based on`,
 			name:      "shoot",
 			shorthand: "c",
 			usage:     "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.",
-			dst:       cmd.params.Shots,
+			dst:       cmd.params.Shoots,
 		},
 	} {
 		slice := make([]string, 0)

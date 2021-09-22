@@ -63,7 +63,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 				output: "json",
 				params: mothership.GetReconcilesParams{
 					RuntimeIDs: &[]string{"id1", "id2", "id3"},
-					Shots:      &[]string{"shoot1", "shoot2"},
+					Shoots:     &[]string{"shoot1", "shoot2"},
 				},
 				rawStates: []string{"reconcile_pending", "ready"},
 			},

@@ -130,7 +130,7 @@ type PutClustersJSONBody Cluster
 type GetReconcilesParams struct {
 	RuntimeIDs *[]string `json:"runtimeIDs,omitempty"`
 	Statuses   *[]Status `json:"statuses,omitempty"`
-	Shots      *[]string `json:"shots,omitempty"`
+	Shoots     *[]string `json:"shoots,omitempty"`
 }
 
 // PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.
