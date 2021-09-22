@@ -162,22 +162,37 @@ The command supports filtering Reconciliations based on`,
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 
-	runtimes := make([]string, 0)
-	cobraCmd.Flags().StringSliceVarP(&runtimes, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
-	if len(runtimes) > 0 {
-		cmd.params.RuntimeIDs = &runtimes
-	}
+	for _, v := range []struct {
+		name, shorthand, usage string
+		dst                    *[]string
+	}{
+		{
+			name:      "runtime-id",
+			shorthand: "r",
+			usage:     "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.",
+			dst:       cmd.params.RuntimeIDs,
+		},
+		{
+			name:      "state",
+			shorthand: "S",
+			usage:     "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.",
+			dst:       &cmd.rawStates,
+		},
+		{
+			name:      "shoot",
+			shorthand: "c",
+			usage:     "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.",
+			dst:       cmd.params.Shots,
+		},
+	} {
+		slice := make([]string, 0)
+		cobraCmd.Flags().StringSliceVarP(&slice, v.name, v.shorthand, nil, v.usage)
 
-	statuses := make([]string, 0)
-	cobraCmd.Flags().StringSliceVarP(&statuses, "state", "S", nil, "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.")
-	if len(statuses) > 0 {
-		cmd.rawStates = statuses
-	}
+		if len(slice) < 1 {
+			continue
+		}
 
-	shoots := make([]string, 0)
-	cobraCmd.Flags().StringSliceVarP(&shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
-	if len(shoots) > 0 {
-		cmd.params.Shots = &shoots
+		v.dst = &slice
 	}
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
