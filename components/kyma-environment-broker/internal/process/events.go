@@ -42,3 +42,7 @@ type UpgradeClusterStepProcessed struct {
 	OldOperation internal.UpgradeClusterOperation
 	Operation    internal.UpgradeClusterOperation
 }
+
+type ProvisioningSucceeded struct {
+	Operation internal.ProvisioningOperation
+}
