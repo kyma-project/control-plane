@@ -4,7 +4,7 @@ export OAPI_FILE=./docs/external_api.yaml
 
 docs/external_api.yaml:
 	# TODO make sure to fetch oapi from main when it will be available!
-	curl https://raw.githubusercontent.com/kyma-incubator/reconciler/b705e2966afbd55ff6f81de1275e960cf8881ef0/openapi/external_api.yaml > $(OAPI_FILE)
+	curl https://raw.githubusercontent.com/kyma-incubator/reconciler/569388cbdde10092e5cdab25d5d87cf6a038a4d2/openapi/external_api.yaml > $(OAPI_FILE)
 
 export CLIENT_FILE=./pkg/client_gen.go
 export TYPES_FILE=./pkg/types_gen.go

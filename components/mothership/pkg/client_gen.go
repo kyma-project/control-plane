@@ -113,7 +113,7 @@ type ClientInterface interface {
 	GetClustersClusterStatusChanges(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetReconciles request
-	GetReconciles(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostClustersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -212,8 +212,8 @@ func (c *Client) GetClustersClusterStatusChanges(ctx context.Context, cluster st
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetReconciles(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetReconcilesRequest(c.Server)
+func (c *Client) GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetReconcilesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -448,7 +448,7 @@ func NewGetClustersClusterStatusChangesRequest(server string, cluster string) (*
 }
 
 // NewGetReconcilesRequest generates requests for GetReconciles
-func NewGetReconcilesRequest(server string) (*http.Request, error) {
+func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -465,6 +465,58 @@ func NewGetReconcilesRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	queryValues := queryURL.Query()
+
+	if params.RuntimeIDs != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runtimeIDs", runtime.ParamLocationQuery, *params.RuntimeIDs); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Statuses != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "statuses", runtime.ParamLocationQuery, *params.Statuses); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Shots != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shots", runtime.ParamLocationQuery, *params.Shots); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
@@ -540,7 +592,7 @@ type ClientWithResponsesInterface interface {
 	GetClustersClusterStatusChangesWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusChangesResponse, error)
 
 	// GetReconciles request
-	GetReconcilesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error)
+	GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error)
 }
 
 type PostClustersResponse struct {
@@ -785,8 +837,8 @@ func (c *ClientWithResponses) GetClustersClusterStatusChangesWithResponse(ctx co
 }
 
 // GetReconcilesWithResponse request returning *GetReconcilesResponse
-func (c *ClientWithResponses) GetReconcilesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error) {
-	rsp, err := c.GetReconciles(ctx, reqEditors...)
+func (c *ClientWithResponses) GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error) {
+	rsp, err := c.GetReconciles(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

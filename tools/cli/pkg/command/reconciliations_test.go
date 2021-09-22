@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
@@ -14,7 +13,7 @@ import (
 func Test_validateReconciliationStates(t *testing.T) {
 	type args struct {
 		rawStates []string
-		params    *ReconciliationParams
+		params    mothership.GetReconcilesParams
 	}
 	tests := []struct {
 		name    string
@@ -25,7 +24,7 @@ func Test_validateReconciliationStates(t *testing.T) {
 			name: "happy path",
 			args: args{
 				rawStates: []string{"error", "reconcile_pending"},
-				params:    &ReconciliationParams{},
+				params:    mothership.GetReconcilesParams{},
 			},
 			wantErr: false,
 		},
@@ -33,77 +32,15 @@ func Test_validateReconciliationStates(t *testing.T) {
 			name: "err",
 			args: args{
 				rawStates: []string{"reconcile_pending", "unknown"},
-				params:    &ReconciliationParams{},
+				params:    mothership.GetReconcilesParams{},
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateReconciliationStates(tt.args.rawStates, tt.args.params); (err != nil) != tt.wantErr {
+			if err := validateReconciliationStates(tt.args.rawStates, &tt.args.params); (err != nil) != tt.wantErr {
 				t.Errorf("validateReconciliationStates() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestReconciliationParams_asMap(t *testing.T) {
-	type fields struct {
-		RuntimeIDs []string
-		States     []mothership.Status
-		Shoots     []string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   map[string]string
-	}{
-		{
-			name:   "no query parameters",
-			fields: fields{},
-			want:   map[string]string{},
-		},
-		{
-			name: "just runtime-ids",
-			fields: fields{
-				RuntimeIDs: []string{"test", "me", "plz"},
-			},
-			want: map[string]string{
-				"runtime-id": "test,me,plz",
-			},
-		},
-		{
-			name: "just states",
-			fields: fields{
-				States: []mothership.Status{
-					mothership.StatusReady,
-					mothership.StatusError,
-					mothership.StatusReconcilePending,
-				},
-			},
-			want: map[string]string{
-				"state": "ready,error,reconcile_pending",
-			},
-		},
-		{
-			name: "just shoot names",
-			fields: fields{
-				Shoots: []string{"test", "me", "plz"},
-			},
-			want: map[string]string{
-				"shoot": "test,me,plz",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rp := &ReconciliationParams{
-				RuntimeIDs: tt.fields.RuntimeIDs,
-				Statyses:   tt.fields.States,
-				Shoots:     tt.fields.Shoots,
-			}
-			if got := rp.asMap(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReconciliationParams.asMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -112,7 +49,7 @@ func TestReconciliationParams_asMap(t *testing.T) {
 func TestReconciliationCommand_Validate(t *testing.T) {
 	type fields struct {
 		output    string
-		params    ReconciliationParams
+		params    mothership.GetReconcilesParams
 		rawStates []string
 	}
 	tests := []struct {
@@ -124,9 +61,9 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 			name: "happy path",
 			fields: fields{
 				output: "json",
-				params: ReconciliationParams{
-					RuntimeIDs: []string{"id1", "id2", "id3"},
-					Shoots:     []string{"shoot1", "shoot2"},
+				params: mothership.GetReconcilesParams{
+					RuntimeIDs: &[]string{"id1", "id2", "id3"},
+					Shots:      &[]string{"shoot1", "shoot2"},
 				},
 				rawStates: []string{"reconcile_pending", "ready"},
 			},
@@ -142,7 +79,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 			name: "reconciliation params error",
 			fields: fields{
 				output:    "table",
-				params:    ReconciliationParams{},
+				params:    mothership.GetReconcilesParams{},
 				rawStates: []string{"invalid-state"},
 			},
 			wantErr: true,

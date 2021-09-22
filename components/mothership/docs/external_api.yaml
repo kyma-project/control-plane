@@ -20,6 +20,28 @@ paths:
   /reconciles:
     get:
       description: 'Get list of current working reconcilers'
+      parameters:
+        - name: runtimeIDs
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: statuses
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/status'
+        - name: shots
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
           description: 'Ok'
@@ -29,6 +51,7 @@ paths:
                 $ref: '#/components/schemas/HTTPReconcilerStatus'
         '400':
           $ref: '#/components/responses/BadRequest'
+
   /clusters:
     put:
       description: update exisiting cluster

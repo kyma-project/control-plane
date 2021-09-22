@@ -22,66 +22,28 @@ var (
 	ErrMothershipResponse = errors.New("reconciler error response")
 )
 
-type ReconciliationParams struct {
-	RuntimeIDs []string
-	Statyses   []mothership.Status
-	Shoots     []string
-}
-
-func (rp *ReconciliationParams) asMap() map[string]string {
-	result := map[string]string{}
-
-	if len(rp.RuntimeIDs) > 0 {
-		rtIDs := strings.Join(rp.RuntimeIDs, ",")
-		result["runtime-id"] = rtIDs
-	}
-
-	if len(rp.Statyses) > 0 {
-		var states string
-		for i, state := range rp.Statyses {
-			separator := ","
-			if i == len(rp.Statyses) || i == 0 {
-				separator = ""
-			}
-			states = fmt.Sprintf("%s%s%s", states, separator, state)
-		}
-		result["state"] = states
-	}
-
-	if len(rp.Shoots) > 0 {
-		var shoots string
-		for i, shoot := range rp.Shoots {
-			separator := ","
-			if i == len(rp.Shoots) || i == 0 {
-				separator = ""
-			}
-			shoots = fmt.Sprintf("%s%s%s", shoots, separator, shoot)
-		}
-		result["shoot"] = shoots
-	}
-
-	return result
-}
-
 type ReconciliationCommand struct {
 	ctx           context.Context
 	mothershipURL string
 	log           logger.Logger
 	output        string
-	params        ReconciliationParams
+	params        mothership.GetReconcilesParams
 	rawStates     []string
 }
 
-func validateReconciliationStates(rawStates []string, params *ReconciliationParams) error {
+func validateReconciliationStates(rawStates []string, params *mothership.GetReconcilesParams) error {
+	statuses := []mothership.Status{}
 	for _, s := range rawStates {
 		val := mothership.Status(strings.Trim(s, " "))
 		switch val {
 		case mothership.StatusReady, mothership.StatusError, mothership.StatusReconcilePending, mothership.StatusReconciling:
-			params.Statyses = append(params.Statyses, val)
+			statuses = append(statuses, val)
 		default:
 			return fmt.Errorf("invalid value for state: %s", s)
 		}
 	}
+
+	params.Statuses = &statuses
 	return nil
 }
 
@@ -99,8 +61,16 @@ func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconcil
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
 			{
-				Header:    "ID",
-				FieldSpec: "{.ID}",
+				Header:    "CLUSTER",
+				FieldSpec: "{.cluster}",
+			},
+			{
+				Header:    "CREATED AT",
+				FieldSpec: "{.created}",
+			},
+			{
+				Header:    "STATUS",
+				FieldSpec: "{.status}",
 			},
 		}, false)
 		if err != nil {
@@ -149,10 +119,7 @@ func (cmd *ReconciliationCommand) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
-	response, err := client.GetReconciles(ctx, func(ctx context.Context, req *http.Request) error {
-		cmd.params.asMap()
-		return nil
-	})
+	response, err := client.GetReconciles(ctx, &cmd.params)
 	if err != nil {
 		return errors.Wrap(err, "wile listing reconciliations")
 	}
@@ -194,9 +161,24 @@ The command supports filtering Reconciliations based on`,
 	}
 
 	SetOutputOpt(cobraCmd, &cmd.output)
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.rawStates, "state", "S", nil, "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+
+	runtimes := make([]string, 0)
+	cobraCmd.Flags().StringSliceVarP(&runtimes, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
+	if len(runtimes) > 0 {
+		cmd.params.RuntimeIDs = &runtimes
+	}
+
+	statuses := make([]string, 0)
+	cobraCmd.Flags().StringSliceVarP(&statuses, "state", "S", nil, "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.")
+	if len(statuses) > 0 {
+		cmd.rawStates = statuses
+	}
+
+	shoots := make([]string, 0)
+	cobraCmd.Flags().StringSliceVarP(&shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+	if len(shoots) > 0 {
+		cmd.params.Shots = &shoots
+	}
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()

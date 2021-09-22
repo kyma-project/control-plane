@@ -126,6 +126,13 @@ type PostClustersJSONBody Cluster
 // PutClustersJSONBody defines parameters for PutClusters.
 type PutClustersJSONBody Cluster
 
+// GetReconcilesParams defines parameters for GetReconciles.
+type GetReconcilesParams struct {
+	RuntimeIDs *[]string `json:"runtimeIDs,omitempty"`
+	Statuses   *[]Status `json:"statuses,omitempty"`
+	Shots      *[]string `json:"shots,omitempty"`
+}
+
 // PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.
 type PostClustersJSONRequestBody PostClustersJSONBody
 
