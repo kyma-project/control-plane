@@ -46,19 +46,17 @@ func (c *OperationDurationCollector) Collect(ch chan<- prometheus.Metric) {
 	c.deprovisioningHistogram.Collect(ch)
 }
 
-func (c *OperationDurationCollector) OnProvisioningStepProcessed(ctx context.Context, ev interface{}) error {
-	stepProcessed, ok := ev.(process.ProvisioningStepProcessed)
+func (c *OperationDurationCollector) OnProvisioningSucceeded(ctx context.Context, ev interface{}) error {
+	provision, ok := ev.(process.ProvisioningSucceeded)
 	if !ok {
-		return fmt.Errorf("expected process.ProvisioningStepProcessed but got %+v", ev)
+		return fmt.Errorf("expected process.ProvisioningSucceeded but got %+v", ev)
 	}
 
-	op := stepProcessed.Operation
+	op := provision.Operation
 	pp := op.ProvisioningParameters
-	if stepProcessed.OldOperation.State == domain.InProgress && op.State == domain.Succeeded {
-		minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
-		c.provisioningHistogram.
-			WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
-	}
+	minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
+	c.provisioningHistogram.
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
 
 	return nil
 }

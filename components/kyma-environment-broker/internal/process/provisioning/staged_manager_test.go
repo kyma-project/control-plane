@@ -2,6 +2,7 @@ package provisioning_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -188,4 +189,71 @@ func (h *CollectingEventHandler) AssertProcessedSteps(t *testing.T, stepNames []
 		assert.Equal(t, stepName, executed)
 	}
 	assert.Len(t, h.StepsProcessed, len(stepNames))
+}
+
+type resultCollector struct {
+	duration float64
+	state    domain.LastOperationState
+}
+
+func (rc *resultCollector) OnProvisionSucceed(ctx context.Context, ev interface{}) error {
+	provision, ok := ev.(process.ProvisioningSucceeded)
+	if !ok {
+		return fmt.Errorf("expected process.ProvisioningSucceeded but got %+v", ev)
+	}
+	op := provision.Operation
+	minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
+	rc.duration = minutes
+	rc.state = op.State
+	return nil
+}
+
+func (rc *resultCollector) WaitForState(t *testing.T, state domain.LastOperationState) {
+	assert.NoError(t, wait.PollImmediate(time.Millisecond, 5*time.Second, func() (bool, error) {
+		return rc.state == state, nil
+	}))
+}
+
+func (rc *resultCollector) AssertSucceededState(t *testing.T) error {
+	assert.Equal(t, domain.Succeeded, rc.state)
+	return nil
+}
+
+func (rc *resultCollector) AssertDurationGreaterThanZero(t *testing.T) error {
+	assert.Greater(t, rc.duration, 0.0)
+	return nil
+}
+
+func SetupStagedManager2(op internal.ProvisioningOperation) (*provisioning.StagedManager, storage.Operations, *event.PubSub) {
+	memoryStorage := storage.NewMemoryStorage()
+	memoryStorage.Operations().InsertProvisioningOperation(op)
+
+	l := logrus.New()
+	l.SetLevel(logrus.DebugLevel)
+	pubSub := event.NewPubSub(nil)
+	mgr := provisioning.NewStagedManager(memoryStorage.Operations(), pubSub, 3*time.Second, l)
+	mgr.SpeedUp(100000)
+	mgr.DefineStages([]string{"stage-1", "stage-2"})
+
+	return mgr, memoryStorage.Operations(), pubSub
+}
+
+func TestProvisionSucceededEvent(t *testing.T) {
+	// given
+	const opID = "op-0001234"
+	operation := FixProvisionOperation("op-0001234")
+	mgr, _, pubSub := SetupStagedManager2(operation)
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: pubSub})
+
+	rc := &resultCollector{}
+	rc.duration = 123
+	pubSub.Subscribe(process.ProvisioningSucceeded{}, rc.OnProvisionSucceed)
+	fmt.Printf("rc: %.4f \n", rc.duration)
+
+	// when
+	mgr.Execute(operation.ID)
+
+	// then
+	rc.WaitForState(t, domain.Succeeded)
+	rc.AssertDurationGreaterThanZero(t)
 }
