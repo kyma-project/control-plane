@@ -7,7 +7,7 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
-FROM alpine:3.14.0
+FROM alpine:3.14.2
 LABEL source=git@github.com:kyma-project/control-plane.git
 
 RUN apk --no-cache add ca-certificates curl
