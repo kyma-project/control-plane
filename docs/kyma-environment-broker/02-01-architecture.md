@@ -19,9 +19,13 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 3. Provisioner registers a new cluster in the Director component.
 
-4. Provisioner creates a new cluster and installs Kyma Runtime.
+4. Provisioner creates a new cluster and installs Kyma Runtime (for Kyma 1.x).
 
-5. When the operation is successful, KEB keeps sending a request for a Dashboard URL to the [Management Plane](https://github.com/kyma-incubator/compass) (Director):
+5. KEB creates a cluster configuration in the Reconciler (for Kyma 2.x).
+
+6. Reconciler installs Kyma (for Kyma 2.x).
+
+7. When the operation is successful, KEB keeps sending a request for a Dashboard URL to the [Management Plane](https://github.com/kyma-incubator/compass) (Director):
 
     a. KEB sends a request to Hydra to refresh the OAuth token, if needed.
 

@@ -30,7 +30,7 @@ func NewCreateClusterConfiguration(os storage.Operations,
 var _ Step = (*CreateClusterConfigurationStep)(nil)
 
 func (s *CreateClusterConfigurationStep) Name() string {
-	return "create_cluster_configuration"
+	return "Create_Cluster_Configuration"
 }
 
 func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
