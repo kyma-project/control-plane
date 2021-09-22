@@ -27,7 +27,7 @@ func NewApplyClusterConfigurationStep(os storage.Operations,
 }
 
 func (s *ApplyClusterConfigurationStep) Name() string {
-		return "Apply_Cluster_Configuration"
+	return "Apply_Cluster_Configuration"
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
