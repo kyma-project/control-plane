@@ -672,38 +672,37 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
 			disabled: cfg.Connectivity.Disabled,
 		},
-		{ // run for non-preview
+		{
 			condition: provisioning.ForKyma1,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
-		{ // run for preview
+		{
 			condition: provisioning.ForKyma2,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		// check the runtime status
-		{ // rename to "CheckProvisioner
+		{
 			stage: checkRuntimeStageName,
 			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
-		{ //  for preview
+		{
 			condition: provisioning.ForKyma2,
 			stage:     createKymaStageName,
 			step:      provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 		},
-		{ // for preview
+		{
 			condition: provisioning.ForKyma2,
 			stage:     createKymaStageName,
 			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), reconcilerClient),
 		},
-		{ // for preview
+		{
 			condition: provisioning.ForKyma2,
 			stage:     checkKymaStageName,
-			// todo: think about timeout
-			step: provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
+			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
-		{ // change name to createKymaStage
+		{
 			stage: checkKymaStageName,
 			step:  provisioning.NewCheckDashboardURLStep(db.Operations(), directorClient, cfg.Provisioner.ProvisioningTimeout),
 		},
