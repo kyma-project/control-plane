@@ -1971,9 +1971,25 @@ components:
           format: uuid
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
         parameters:
-          $ref: '#/components/schemas/Object'
+          $ref: '#/components/schemas/ServiceInstanceUpdateRequestParams'
         previous_values:
           $ref: '#/components/schemas/ServiceInstancePreviousValues'
+    
+    ServiceInstanceUpdateRequestParams:
+      type: object
+      properties:
+        autoScalerMin:
+          type: int
+          example: 3
+        autoScalerMax:
+          type: int
+          example: 10
+        maxSurge:
+          type: int
+          example: 2
+        maxUnavailable:
+          type: int
+          example: 2
 
     ServiceInstancePreviousValues:
       type: object

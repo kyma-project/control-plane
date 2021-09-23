@@ -94,7 +94,11 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 	// modify configuration
 	result := gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			OidcConfig: fullInput.GardenerConfig.OidcConfig,
+			OidcConfig:     fullInput.GardenerConfig.OidcConfig,
+			AutoScalerMax:  operation.UpdatingParameters.AutoScalerMax,
+			AutoScalerMin:  operation.UpdatingParameters.AutoScalerMin,
+			MaxSurge:       operation.UpdatingParameters.MaxSurge,
+			MaxUnavailable: operation.UpdatingParameters.MaxUnavailable,
 		},
 		Administrators: fullInput.Administrators,
 	}
