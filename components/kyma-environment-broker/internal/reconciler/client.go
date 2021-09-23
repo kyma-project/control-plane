@@ -59,7 +59,7 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &State{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 
@@ -97,7 +97,7 @@ func (c *client) DeleteCluster(clusterName string) error {
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return err
+		return kebError.NewTemporaryError(err.Error())
 	}
 	switch {
 	case res.StatusCode == http.StatusNotFound:
@@ -123,7 +123,7 @@ func (c *client) GetCluster(clusterName string, configVersion int64) (*State, er
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &State{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 
@@ -152,7 +152,7 @@ func (c *client) GetLatestCluster(clusterName string) (*State, error) {
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &State{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 
