@@ -28,12 +28,15 @@ type ReconciliationCommand struct {
 	log           logger.Logger
 	output        string
 	params        mothership.GetReconcilesParams
-	rawStates     []string
+	rawStatuses   *[]string
 }
 
-func validateReconciliationStates(rawStates []string, params *mothership.GetReconcilesParams) error {
+func validateReconciliationStatuses(rawStates *[]string, params *mothership.GetReconcilesParams) error {
 	statuses := []mothership.Status{}
-	for _, s := range rawStates {
+	if rawStates == nil {
+		return nil
+	}
+	for _, s := range *rawStates {
 		val := mothership.Status(strings.Trim(s, " "))
 		switch val {
 		case mothership.StatusReady, mothership.StatusError, mothership.StatusReconcilePending, mothership.StatusReconciling:
@@ -53,7 +56,7 @@ func (cmd *ReconciliationCommand) Validate() error {
 		return err
 	}
 	// Validate and transform states
-	return validateReconciliationStates(cmd.rawStates, &cmd.params)
+	return validateReconciliationStatuses(cmd.rawStatuses, &cmd.params)
 }
 
 func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconciliation) error {
@@ -135,7 +138,9 @@ func responseErr(resp *http.Response) error {
 func (cmd *ReconciliationCommand) Run() error {
 	cmd.log = logger.New()
 
-	client, err := mothership.NewClient(cmd.mothershipURL)
+	mothershipURL := GlobalOpts.MothershipAPIURL()
+
+	client, err := mothership.NewClient(mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
@@ -171,7 +176,7 @@ func (cmd *ReconciliationCommand) Run() error {
 // NewUpgradeCmd constructs the reconciliation command and all subcommands under the reconciliation command
 func NewReconciliationCmd(mothershipURL string) *cobra.Command {
 	cmd := ReconciliationCommand{
-		mothershipURL: mothershipURL,
+		mothershipURL: "http://localhost:8080/v1",
 	}
 
 	cobraCmd := &cobra.Command{
@@ -197,10 +202,10 @@ The command supports filtering Reconciliations based on`,
 			dst:       cmd.params.RuntimeIDs,
 		},
 		{
-			name:      "state",
+			name:      "statuses",
 			shorthand: "S",
 			usage:     "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.",
-			dst:       &cmd.rawStates,
+			dst:       cmd.rawStatuses,
 		},
 		{
 			name:      "shoot",

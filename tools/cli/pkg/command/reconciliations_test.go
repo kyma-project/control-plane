@@ -40,7 +40,7 @@ func Test_validateReconciliationStates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateReconciliationStates(tt.args.rawStates, &tt.args.params); (err != nil) != tt.wantErr {
+			if err := validateReconciliationStatuses(&tt.args.rawStates, &tt.args.params); (err != nil) != tt.wantErr {
 				t.Errorf("validateReconciliationStates() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -51,7 +51,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 	type fields struct {
 		output    string
 		params    mothership.GetReconcilesParams
-		rawStates []string
+		rawStates *[]string
 	}
 	tests := []struct {
 		name    string
@@ -66,7 +66,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 					RuntimeIDs: &[]string{"id1", "id2", "id3"},
 					Shoots:     &[]string{"shoot1", "shoot2"},
 				},
-				rawStates: []string{"reconcile_pending", "ready"},
+				rawStates: &[]string{"reconcile_pending", "ready"},
 			},
 		},
 		{
@@ -81,7 +81,7 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 			fields: fields{
 				output:    "table",
 				params:    mothership.GetReconcilesParams{},
-				rawStates: []string{"invalid-state"},
+				rawStates: &[]string{"invalid-state"},
 			},
 			wantErr: true,
 		},
@@ -89,9 +89,9 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &ReconciliationCommand{
-				output:    tt.fields.output,
-				params:    tt.fields.params,
-				rawStates: tt.fields.rawStates,
+				output:      tt.fields.output,
+				params:      tt.fields.params,
+				rawStatuses: tt.fields.rawStates,
 			}
 			if err := cmd.Validate(); (err != nil) != tt.wantErr {
 				t.Errorf("ReconciliationCommand.Validate() error = %v, wantErr %v", err, tt.wantErr)

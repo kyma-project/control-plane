@@ -64,6 +64,7 @@ var GlobalOpts = GlobalOptionsKey{
 	oidcClientID:       "oidc-client-id",
 	oidcClientSecret:   "oidc-client-secret",
 	kebAPIURL:          "keb-api-url",
+	mothershipAPIURL:   "mothership-api-url",
 	kubeconfigAPIURL:   "kubeconfig-api-url",
 	gardenerKubeconfig: "gardener-kubeconfig",
 	gardenerNamespace:  "gardener-namespace",
@@ -84,6 +85,9 @@ func SetGlobalOpts(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
 
+	cmd.PersistentFlags().String(GlobalOpts.mothershipAPIURL, "", "Mothership API URL to use for all commands. Can also be set using the KCP_MOTHERSHIP_API_URL environment variable.")
+	viper.BindPFlag(GlobalOpts.mothershipAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.mothershipAPIURL))
+
 	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL used by the kcp kubeconfig and taskrun commands. Can also be set using the KCP_KUBECONFIG_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kubeconfigAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kubeconfigAPIURL))
 
@@ -98,7 +102,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
 func ValidateGlobalOpts() error {
-	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL}
+	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL, GlobalOpts.mothershipAPIURL}
 	var missingGlobalOpts []string
 	for _, opt := range reqGlobalOpts {
 		if viper.GetString(opt) == "" {
@@ -132,8 +136,8 @@ func (keys *GlobalOptionsKey) KEBAPIURL() string {
 	return viper.GetString(keys.kebAPIURL)
 }
 
-// MOTHERSHIPAPIURL gets the mothership-api-url global parameter
-func (keys *GlobalOptionsKey) MOTHERSHIPAPIURL() string {
+// MothershipAPIURL gets the mothership-api-url global parameter
+func (keys *GlobalOptionsKey) MothershipAPIURL() string {
 	return viper.GetString(keys.mothershipAPIURL)
 }
 
