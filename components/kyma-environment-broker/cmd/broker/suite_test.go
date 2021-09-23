@@ -26,6 +26,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
+	monitoringmocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring/mocks"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -108,6 +110,18 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
+	//monitoring config and client
+	cfg.Monitoring = monitoring.Config{
+		Namespace:       "mornitoring",
+		ChartUrl:        "notEmptyChart",
+		RemoteWriteUrl:  "notEmptyUrl",
+		RemoteWritePath: "notEmptyPath",
+		Disabled:        false,
+	}
+	monitoringClient := &monitoringmocks.Client{}
+	monitoringClient.On("IsPresent", mock.Anything).Return(true, nil)
+	monitoringClient.On("UpgradeRelease", mock.Anything).Return(nil, nil)
+
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
 
@@ -157,7 +171,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, logs, cli)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, monitoringClient, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -507,6 +521,11 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	edpClient := edp.NewFakeClient()
 
+	monitoringClient := &monitoringmocks.Client{}
+	monitoringClient.On("IsDeployed", mock.Anything).Return(false, nil)
+	monitoringClient.On("IsPresent", mock.Anything).Return(false, nil)
+	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
+
 	accountProvider := fixAccountProvider()
 
 	smcf := fixServiceManagerFactory()
@@ -518,7 +537,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -853,6 +872,13 @@ func fixConfig() *Config {
 			Password:      "barPass",
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
+		},
+		Monitoring: monitoring.Config{
+			Namespace:       "mornitoring",
+			ChartUrl:        "notEmptyChart",
+			RemoteWriteUrl:  "notEmptyUrl",
+			RemoteWritePath: "notEmptyPath",
+			Disabled:        false,
 		},
 		FreemiumProviders:       []string{"aws", "azure"},
 		UpdateProcessingEnabled: true,
