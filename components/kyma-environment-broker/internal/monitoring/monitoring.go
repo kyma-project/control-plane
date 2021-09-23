@@ -13,6 +13,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 )
 
 const (
@@ -84,7 +86,7 @@ func (c *client) IsDeployed(releaseName string) (bool, error) {
 
 	releases, err := listAction.Run()
 	if err != nil {
-		return false, err
+		return false, kebError.AsTemporaryError(err, "unable to list releases")
 	}
 	for _, rel := range releases {
 		if rel.Name == releaseName {
@@ -110,7 +112,7 @@ func (c *client) IsPresent(releaseName string) (bool, error) {
 
 	releases, err := listAction.Run()
 	if err != nil {
-		return false, err
+		return false, kebError.AsTemporaryError(err, "unable to list releases")
 	}
 	for _, rel := range releases {
 		if rel.Name == releaseName {
@@ -136,7 +138,7 @@ func (c *client) InstallRelease(params Parameters) (*release.Release, error) {
 	overrides := c.generateOverrideMap(params)
 	reponse, err := installAction.Run(c.monitoringConfig.LocalChart, overrides)
 	if err != nil {
-		return nil, err
+		return nil, kebError.AsTemporaryError(err, "unable to install release")
 	}
 
 	return reponse, nil
@@ -156,7 +158,7 @@ func (c *client) UpgradeRelease(params Parameters) (*release.Release, error) {
 
 	response, err := upgradeAction.Run(releaseName, c.monitoringConfig.LocalChart, overrides)
 	if err != nil {
-		return nil, err
+		return nil, kebError.AsTemporaryError(err, "unable to upgrade release")
 	}
 
 	return response, err
@@ -172,7 +174,7 @@ func (c *client) UninstallRelease(releaseName string) (*release.UninstallRelease
 	uninstallAction.Timeout = 6 * time.Minute
 	response, err := uninstallAction.Run(releaseName)
 	if err != nil {
-		return nil, err
+		return nil, kebError.AsTemporaryError(err, "unable to delete release")
 	}
 
 	return response, err

@@ -52,7 +52,7 @@ func (s *MonitoringUnistallStep) handleError(operation internal.DeprovisioningOp
 	log.Errorf("%s: %s", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
+		return s.operationManager.RetryOperation(operation, msg, 30*time.Second, 10*time.Minute, log)
 	default:
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}
