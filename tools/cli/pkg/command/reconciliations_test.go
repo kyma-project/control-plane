@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
 )
@@ -100,14 +101,16 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 }
 
 func TestReconcileRun(t *testing.T) {
+	now := time.Now()
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		respoBody := []mothership.ReconcilerStatus{
+		respoBody := []mothership.Reconciliation{
 			{
-				Cluster: "test-cluster1",
-				Status:  "reconcile_pending",
-				Metadata: mothership.Metadata{
-					InstanceID: "123",
-				},
+				RuntimeID:    "123",
+				ShootName:    "test-cluster1",
+				SchedulingID: "schedulingID-test",
+				Created:      now,
+				Updated:      now,
+				Lock:         "test",
 			},
 		}
 		var bodyWriter bytes.Buffer

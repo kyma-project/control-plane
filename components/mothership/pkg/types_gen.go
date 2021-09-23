@@ -38,7 +38,7 @@ type HTTPErrorResponse struct {
 }
 
 // HTTPReconcilerStatus defines model for HTTPReconcilerStatus.
-type HTTPReconcilerStatus []ReconcilerStatus
+type HTTPReconcilerStatus []Reconciliation
 
 // Cluster defines model for cluster.
 type Cluster struct {
@@ -84,12 +84,14 @@ type Metadata struct {
 	SubAccountID    string `json:"subAccountID"`
 }
 
-// ReconcilerStatus defines model for reconcilerStatus.
-type ReconcilerStatus struct {
-	Cluster  string    `json:"cluster"`
-	Created  time.Time `json:"created"`
-	Metadata Metadata  `json:"metadata"`
-	Status   string    `json:"status"`
+// Reconciliation defines model for reconciliation.
+type Reconciliation struct {
+	Created      time.Time `json:"created"`
+	Lock         string    `json:"lock"`
+	RuntimeID    string    `json:"runtimeID"`
+	SchedulingID string    `json:"schedulingID"`
+	ShootName    string    `json:"shootName"`
+	Updated      time.Time `json:"updated"`
 }
 
 // RuntimeInput defines model for runtimeInput.

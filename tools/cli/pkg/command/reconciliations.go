@@ -56,21 +56,35 @@ func (cmd *ReconciliationCommand) Validate() error {
 	return validateReconciliationStates(cmd.rawStates, &cmd.params)
 }
 
-func (cmd *ReconciliationCommand) printReconciliation(data []mothership.ReconcilerStatus) error {
+func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconciliation) error {
 	switch {
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
 			{
-				Header:    "CLUSTER",
-				FieldSpec: "{.cluster}",
+				Header:    "RUNTIME ID",
+				FieldSpec: "{.runtimeID}",
 			},
 			{
-				Header:    "CREATED AT",
-				FieldSpec: "{.created}",
+				Header:    "SHOOT NAME",
+				FieldSpec: "{.shootName}",
 			},
 			{
-				Header:    "STATUS",
-				FieldSpec: "{.status}",
+				Header:    "SCHEDULING ID",
+				FieldSpec: "{.schedulingID}",
+			},
+			{
+				Header:         "CREATED AT",
+				FieldSpec:      "{.created}",
+				FieldFormatter: reconciliationCreated,
+			},
+			{
+				Header:         "UPDATED",
+				FieldSpec:      "{.updated}",
+				FieldFormatter: reconciliationUpdated,
+			},
+			{
+				Header:    "LOCK",
+				FieldSpec: "{.lock}",
 			},
 		}, false)
 		if err != nil {
@@ -94,6 +108,16 @@ func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconcil
 		return ccp.PrintObj(data)
 	}
 	return nil
+}
+
+func reconciliationCreated(obj interface{}) string {
+	sr := obj.(mothership.Reconciliation)
+	return sr.Created.Format("2006/01/02 15:04:05")
+}
+
+func reconciliationUpdated(obj interface{}) string {
+	sr := obj.(mothership.Reconciliation)
+	return sr.Updated.Format("2006/01/02 15:04:05")
 }
 
 func isErrResponse(statusCode int) bool {
@@ -131,7 +155,7 @@ func (cmd *ReconciliationCommand) Run() error {
 		return err
 	}
 
-	var result []mothership.ReconcilerStatus
+	var result []mothership.Reconciliation
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return errors.WithStack(ErrMothershipResponse)
 	}
