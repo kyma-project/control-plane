@@ -12,6 +12,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"code.cloudfoundry.org/lager"
@@ -314,7 +315,7 @@ func main() {
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
-		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,monitoringClient,
+		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, monitoringClient,
 		accountProvider, reconcilerClient, logs)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
@@ -343,7 +344,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient,logs, cli)
+		&cfg, accountProvider, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
