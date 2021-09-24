@@ -254,6 +254,7 @@ type InstanceDetails struct {
 	XSUAA        XSUAAData        `json:"xsuaa"`
 	Ems          EmsData          `json:"ems"`
 	Connectivity ConnectivityData `json:"connectivity"`
+	Monitoring   MonitoringData   `json:"monitoring"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -298,6 +299,11 @@ type ConnectivityData struct {
 
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
+}
+
+type MonitoringData struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
@@ -468,6 +474,8 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 	if len(updatingParams.RuntimeAdministrators) != 0 {
 		op.ProvisioningParameters.Parameters.RuntimeAdministrators = updatingParams.RuntimeAdministrators
 	}
+
+	updatingParams.UpdateAutoScaler(&op.ProvisioningParameters.Parameters)
 
 	return op
 }

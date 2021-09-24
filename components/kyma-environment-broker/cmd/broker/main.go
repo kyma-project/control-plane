@@ -39,6 +39,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
@@ -135,6 +136,8 @@ type Config struct {
 	}
 
 	AuditLog auditlog.Config
+
+	Monitoring monitoring.Config
 
 	VersionConfig struct {
 		Namespace string
@@ -257,6 +260,9 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
+	monitoringClient, err := monitoring.NewClient(k8sCfg, cfg.Monitoring)
+	fatalOnError(err)
+
 	avsClient, err := avs.NewClient(ctx, cfg.Avs, logs)
 	fatalOnError(err)
 	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
@@ -299,11 +305,11 @@ func main() {
 	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder,
-		edpClient, accountProvider, fileSystem, logs)
+		edpClient, monitoringClient, accountProvider, fileSystem, logs)
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
-		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient,
+		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, monitoringClient,
 		accountProvider, logs)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
@@ -332,7 +338,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, logs, cli)
+		&cfg, accountProvider, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -545,7 +551,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
 	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
-	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient,
+	smcf provisioning.SMClientFactory, bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient, monitoringClient monitoring.Client,
 	accountProvider hyperscaler.AccountProvider, fileSystem afero.Fs, logs logrus.FieldLogger) *process.Queue {
 
 	const postActionsStageName = "post_actions"
@@ -639,6 +645,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage:    createRuntimeStageName,
+			step:     provisioning.NewMonitoringIntegrationStep(db.Operations(), monitoringClient, cfg.Monitoring),
+			disabled: cfg.Monitoring.Disabled,
+		},
+		{
+			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
@@ -712,7 +723,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
-	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
+	edpClient deprovisioning.EDPClient, monitoringClient monitoring.Client, accountProvider hyperscaler.AccountProvider,
 	logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
@@ -731,6 +742,11 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			weight:   1,
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
+		},
+		{
+			weight:   1,
+			step:     deprovisioning.NewMonitoringUnistallStep(db.Operations(), monitoringClient, cfg.Monitoring),
+			disabled: cfg.Monitoring.Disabled,
 		},
 		{
 			weight:   1,
@@ -779,7 +795,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, accountProvider hyperscaler.AccountProvider, smcf *servicemanager.ClientFactory,
-	fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client) *process.Queue {
+	fileSystem afero.Fs, monitoringClient monitoring.Client, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -816,6 +832,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight:   4,
 			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
+		},
+		{
+			weight:   4,
+			step:     upgrade_kyma.NewMonitoringUpgradeStep(db.Operations(), monitoringClient, cfg.Monitoring),
+			disabled: cfg.Monitoring.Disabled,
 		},
 		{
 			weight:   7,
