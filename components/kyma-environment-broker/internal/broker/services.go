@@ -54,8 +54,15 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 		p := plan.PlanDefinition
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		if err != nil {
-			b.log.Errorf("while unmarshal schema: %s", err)
+			b.log.Errorf("while unmarshal provisioning schema: %s", err)
 			return nil, err
+		}
+		if len(plan.updateRawSchema) > 0 {
+			err = json.Unmarshal(plan.updateRawSchema, &p.Schemas.Instance.Update.Parameters)
+			if err != nil {
+				b.log.Errorf("while unmarshal update schema: %s", err)
+				return nil, err
+			}
 		}
 		availableServicePlans = append(availableServicePlans, p)
 	}
