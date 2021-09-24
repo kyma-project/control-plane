@@ -84,7 +84,7 @@ func (s *MonitoringIntegrationStep) Run(operation internal.ProvisioningOperation
 		vmPassword = operation.Monitoring.Password
 	}
 
-	log.Info("Override username and password")
+	log.Debug("Override username and password")
 	MonitoringOverrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "vmuser.username",
@@ -104,7 +104,7 @@ func (s *MonitoringIntegrationStep) handleError(operation internal.ProvisioningO
 	log.Errorf("%s: %s", msg, err)
 	switch {
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, msg, 10*time.Second, time.Minute*30, log)
+		return s.operationManager.RetryOperation(operation, msg, 30*time.Second, 10*time.Minute, log)
 	default:
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}

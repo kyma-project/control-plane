@@ -1,8 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: kcp-monitoring
-  namespace: kcp-system
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
@@ -15,16 +14,15 @@ rules:
     verbs: ["*"]
 
 ---
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: kcp-monitoring
-  namespace: kcp-system
 subjects:
   - kind: ServiceAccount
     name: {{ include "kyma-env-broker.fullname" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: Role
-  name: monitoring
+  kind: ClusterRole
+  name: kcp-monitoring
   apiGroup: rbac.authorization.k8s.io
