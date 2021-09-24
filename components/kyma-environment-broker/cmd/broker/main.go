@@ -311,7 +311,7 @@ func main() {
 	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, serviceManagerClientFactory, bundleBuilder,
-		edpClient, monitoringClient, accountProvider, fileSystem, logs)
+		edpClient, monitoringClient, accountProvider, fileSystem, reconcilerClient, logs)
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,

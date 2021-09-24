@@ -131,8 +131,6 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
 	monitoringClient.On("UninstallRelease", mock.Anything).Return(nil, nil)
 
-	reconcilerClient := reconciler.NewFakeClient()
-
 	// TODO put Reconciler client in the queue for steps
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
