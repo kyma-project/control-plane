@@ -27,14 +27,6 @@ type upgradeKymaFactory struct {
 	defaultKymaPreviewVersion string
 }
 
-/**
-
-func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
-	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace, configName, defaultKymaVersion,
-	defaultKymaPreviewVersion string, cfg *broker.KEBConfig) process.Executor {
-*/
-
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
 	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config) process.Executor {

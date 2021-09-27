@@ -108,12 +108,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		KymaVersion:       "",
 		KubernetesVersion: "",
 	}
-	/**
-	orchestrationConfig := kebOrchestration.Config {
-		KubernetesVersion: 	"1.22",
-		KymaVersion: "1.24.6",
-	}
-	*/
+
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
