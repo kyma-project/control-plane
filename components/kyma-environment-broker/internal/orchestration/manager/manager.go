@@ -124,13 +124,6 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			return result, errors.Wrap(err, "while resolving targets")
 		}
 
-		if o.Parameters.Kyma.Version == "" {
-			o.Parameters.Kyma.Version = m.kymaVersion
-		}
-		if o.Parameters.Kubernetes.KubernetesVersion == "" {
-			o.Parameters.Kubernetes.KubernetesVersion = m.kubernetesVersion
-		}
-
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
@@ -152,6 +145,13 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			}
 
 			result = append(result, op)
+		}
+
+		if o.Parameters.Kyma.Version == "" {
+			o.Parameters.Kyma.Version = m.kymaVersion
+		}
+		if o.Parameters.Kubernetes.KubernetesVersion == "" {
+			o.Parameters.Kubernetes.KubernetesVersion = m.kubernetesVersion
 		}
 
 		if len(runtimes) != 0 {
