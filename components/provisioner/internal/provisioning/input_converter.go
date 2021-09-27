@@ -47,12 +47,15 @@ type converter struct {
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
 	var err apperrors.AppError
 
-	var kymaConfig model.KymaConfig
+	var kymaConfig *model.KymaConfig
+	var tillerYaml string
 	if input.KymaConfig != nil {
-		kymaConfig, err = c.KymaConfigFromInput(runtimeID, *input.KymaConfig)
+		config, err := c.KymaConfigFromInput(runtimeID, *input.KymaConfig)
+		kymaConfig = &config
 		if err != nil {
 			return model.Cluster{}, err
 		}
+		tillerYaml = kymaConfig.Release.TillerYAML
 	}
 
 	if input.ClusterConfig == nil || input.ClusterConfig.GardenerConfig == nil {
@@ -60,8 +63,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}
 
 	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
-		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers,
-		kymaConfig.Release.TillerYAML)
+		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers, tillerYaml)
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
 		runtimeID,

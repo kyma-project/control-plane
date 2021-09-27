@@ -13,7 +13,7 @@ require (
 	github.com/Peripli/service-manager v0.19.4
 	github.com/Peripli/service-manager-cli v1.11.8
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/gardener/gardener v1.23.0
+	github.com/gardener/gardener v1.24.0
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.2.0
@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210719085025-5909d9db36d6
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -39,9 +39,12 @@ require (
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.20.6
-	k8s.io/apimachinery v0.20.6
+	helm.sh/helm/v3 v3.4.0
+	k8s.io/api v0.20.7
+	k8s.io/apimachinery v0.20.7
+	k8s.io/cli-runtime v0.20.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 
@@ -53,6 +56,7 @@ replace (
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
 	k8s.io/api => k8s.io/api v0.19.12
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.12
-	k8s.io/apimachinery => k8s.io/apimachinery v0.19.12
+	k8s.io/apimachinery => k8s.io/apimachinery v0.20.0
 	k8s.io/client-go => k8s.io/client-go v0.19.12
+	k8s.io/kubectl => k8s.io/kubectl v0.19.0
 )

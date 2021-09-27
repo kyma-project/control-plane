@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -246,6 +247,73 @@ func TestUpdateContext(t *testing.T) {
        }
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testing.T) {
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	suite.Log("*** Suspension ***")
+
+	// Process Suspension
+	// OSB context update (suspension)
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       }
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
+
+	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
+	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
+
+	// WHEN
+	suite.ChangeDefaultTrialProvider(internal.AWS)
+	// OSB update
+	suite.Log("*** Unsuspension ***")
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+			"active": true
+       }
+       
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.processProvisioningByInstanceID(iid)
+
+	// check that the region and zone is set
+	suite.AssertAWSRegionAndZone("us-east-1")
 }
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
@@ -1041,4 +1109,81 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 		Administrators: expectedAdmins2,
 	})
 	suite.AssertInstanceRuntimeAdmins(id, expectedAdmins2)
+}
+
+func TestUpdateAutoscalerParams(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+	"context": {
+		"sm_platform_credentials": {
+			"url": "https://sm.url",
+			"credentials": {}
+		},
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster",
+		"autoScalerMin":5,
+		"autoScalerMax":7,
+		"maxSurge":3,
+		"maxUnavailable":4
+	}
+}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "jack.anvil@email.com"
+	},
+	"parameters": {
+		"autoScalerMin":15,
+		"autoScalerMax":25,
+		"maxSurge":10,
+		"maxUnavailable":7
+	}
+}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+
+	// when
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	min, max, surge, unav := 15, 25, 10, 7
+	// then
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+			AutoScalerMin:  &min,
+			AutoScalerMax:  &max,
+			MaxSurge:       &surge,
+			MaxUnavailable: &unav,
+		},
+		Administrators: []string{"john.smith@email.com"},
+	})
 }

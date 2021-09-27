@@ -12,17 +12,18 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	fixKymaVersion         = "1.19.0"
-	fixKubernetesVersion   = "1.17.16"
-	fixMachineImage        = "gardenlinux"
-	fixMachineImageVersion = "184.0.0"
+	fixKymaVersion                   = "1.19.0"
+	fixKubernetesVersion             = "1.17.16"
+	fixMachineImage                  = "gardenlinux"
+	fixMachineImageVersion           = "184.0.0"
+	fixAutoUpdateKubernetesVersion   = true
+	fixAutoUpdateMachineImageVersion = true
 )
 
 func TestUpgradeKymaStep_Run(t *testing.T) {
@@ -46,13 +47,15 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisionerClient := &provisionerAutomock.Client{}
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:   ptr.String(fixKubernetesVersion),
-			MachineImage:        ptr.String(fixMachineImage),
-			MachineImageVersion: ptr.String(fixMachineImageVersion),
-			AutoScalerMin:       operation.ProvisioningParameters.Parameters.AutoScalerMin,
-			AutoScalerMax:       operation.ProvisioningParameters.Parameters.AutoScalerMax,
-			MaxSurge:            operation.ProvisioningParameters.Parameters.MaxSurge,
-			MaxUnavailable:      operation.ProvisioningParameters.Parameters.MaxUnavailable,
+			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
+			MachineImage:                        ptr.String(fixMachineImage),
+			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
+			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,
+			AutoScalerMax:                       operation.ProvisioningParameters.Parameters.AutoScalerMax,
+			MaxSurge:                            operation.ProvisioningParameters.Parameters.MaxSurge,
+			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
+			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),
+			EnableMachineImageVersionAutoUpdate: ptr.Bool(fixAutoUpdateMachineImageVersion),
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,
@@ -104,25 +107,16 @@ func fixUpgradeClusterOperationWithInputCreator(t *testing.T) internal.UpgradeCl
 }
 
 func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
-	kymaComponentList := []v1alpha1.KymaComponent{
-		{
-			Name:      "to-remove-component",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-	}
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", fixKymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider, input.Config{
-		KubernetesVersion:   fixKubernetesVersion,
-		MachineImage:        fixMachineImage,
-		MachineImageVersion: fixMachineImageVersion,
-		TrialNodesNumber:    1,
+		KubernetesVersion:             fixKubernetesVersion,
+		MachineImage:                  fixMachineImage,
+		MachineImageVersion:           fixMachineImageVersion,
+		TrialNodesNumber:              1,
+		AutoUpdateKubernetesVersion:   fixAutoUpdateKubernetesVersion,
+		AutoUpdateMachineImageVersion: fixAutoUpdateMachineImageVersion,
 	}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
 	require.NoError(t, err, "Input factory creation error")
 

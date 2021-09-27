@@ -65,8 +65,6 @@ func (eClient Client) NewRequest(dataTenant string) (*http.Request, error) {
 }
 
 func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, error) {
-	metricTimer := prometheus.NewTimer(sentRequestDuration)
-
 	var resp *http.Response
 	var err error
 	customBackoff := wait.Backoff{
@@ -81,8 +79,10 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 		return false
 	}, func() (err error) {
+		metricTimer := prometheus.NewTimer(sentRequestDuration)
 		req.Body = ioutil.NopCloser(bytes.NewReader(payload))
 		resp, err = eClient.HttpClient.Do(req)
+		metricTimer.ObserveDuration()
 		if err != nil {
 			eClient.Logger.Debugf("req: %v", req)
 			eClient.Logger.Warnf("will be retried: failed to send event stream to EDP: %v", err)
@@ -96,7 +96,6 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		}
 		return
 	})
-	metricTimer.ObserveDuration()
 	if resp != nil {
 		totalRequest.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
 	}

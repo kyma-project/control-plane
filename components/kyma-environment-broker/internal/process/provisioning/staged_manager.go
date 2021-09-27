@@ -142,6 +142,9 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	}
 
 	processedOperation.State = domain.Succeeded
+	m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
+		Operation: processedOperation,
+	})
 	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")

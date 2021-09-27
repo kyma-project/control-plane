@@ -36,6 +36,17 @@ type ProvisioningTimeouts struct {
 	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
+type ProvisioningNoInstallTimeouts struct {
+	ClusterCreation  time.Duration `envconfig:"default=60m"`
+	ClusterDomains   time.Duration `envconfig:"default=10m"`
+	BindingsCreation time.Duration `envconfig:"default=5m"`
+}
+
+type DeprovisioningNoInstallTimeouts struct {
+	ClusterDeletion           time.Duration `envconfig:"default=30m"`
+	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
+}
+
 type DeprovisioningTimeouts struct {
 	ClusterCleanup            time.Duration `envconfig:"default=20m"`
 	ClusterDeletion           time.Duration `envconfig:"default=30m"`
@@ -80,6 +91,36 @@ func CreateProvisioningQueue(
 		factory.NewReadWriteSession(),
 		model.Provision,
 		provisionSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(provisioningExecutor)
+}
+
+func CreateProvisioningNoInstallQueue(
+	timeouts ProvisioningNoInstallTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface,
+	secretsClient v1core.SecretInterface,
+	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
+	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
+
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
+	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
+	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
+
+	provisionNoInstallSteps := map[model.OperationStage]operations.Step{
+		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
+		model.WaitingForClusterDomain:      waitForClusterDomainStep,
+		model.WaitingForClusterCreation:    waitForClusterCreationStep,
+	}
+
+	provisioningExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.ProvisionNoInstall,
+		provisionNoInstallSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)
@@ -137,6 +178,32 @@ func CreateDeprovisioningQueue(
 		factory.NewReadWriteSession(),
 		model.Deprovision,
 		deprovisioningSteps,
+		failure.NewNoopFailureHandler(),
+		directorClient,
+	)
+
+	return NewQueue(deprovisioningExecutor)
+}
+
+func CreateDeprovisioningNoInstallQueue(
+	timeouts DeprovisioningNoInstallTimeouts,
+	factory dbsession.Factory,
+	directorClient director.DirectorClient,
+	shootClient gardener_apis.ShootInterface,
+) OperationQueue {
+
+	waitForClusterDeletion := deprovisioning.NewWaitForClusterDeletionStep(shootClient, factory, directorClient, model.FinishedStage, timeouts.WaitingForClusterDeletion)
+	deleteCluster := deprovisioning.NewDeleteClusterStep(shootClient, waitForClusterDeletion.Name(), timeouts.ClusterDeletion)
+
+	deprovisioningNoInstallSteps := map[model.OperationStage]operations.Step{
+		model.DeleteCluster:          deleteCluster,
+		model.WaitForClusterDeletion: waitForClusterDeletion,
+	}
+
+	deprovisioningExecutor := operations.NewExecutor(
+		factory.NewReadWriteSession(),
+		model.DeprovisionNoInstall,
+		deprovisioningNoInstallSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)

@@ -31,6 +31,22 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("Should return nil when kyma config input not provided", func(t *testing.T) {
+		//given
+		validator := NewValidator(nil)
+
+		config := gqlschema.ProvisionRuntimeInput{
+			RuntimeInput:  runtimeInput,
+			ClusterConfig: clusterConfig,
+		}
+
+		//when
+		err := validator.ValidateProvisioningInput(config)
+
+		//then
+		require.NoError(t, err)
+	})
+
 	t.Run("Should return error when config is incorrect", func(t *testing.T) {
 		//given
 		validator := NewValidator(nil)

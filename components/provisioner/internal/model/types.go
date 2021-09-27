@@ -7,6 +7,7 @@ import (
 type OperationState string
 
 //TODO: Remove after schema migration
+//      Is it ok to remove it now? Which schema migration exactly?
 const AWS = "aws"
 
 const (
@@ -18,12 +19,14 @@ const (
 type OperationType string
 
 const (
-	Provision        OperationType = "PROVISION"
-	Upgrade          OperationType = "UPGRADE"
-	UpgradeShoot     OperationType = "UPGRADE_SHOOT"
-	Deprovision      OperationType = "DEPROVISION"
-	ReconnectRuntime OperationType = "RECONNECT_RUNTIME"
-	Hibernate        OperationType = "HIBERNATE"
+	Provision            OperationType = "PROVISION"
+	ProvisionNoInstall   OperationType = "PROVISION_NO_INSTALL"
+	Upgrade              OperationType = "UPGRADE"
+	UpgradeShoot         OperationType = "UPGRADE_SHOOT"
+	Deprovision          OperationType = "DEPROVISION"
+	DeprovisionNoInstall OperationType = "DEPROVISION_NO_INSTALL"
+	ReconnectRuntime     OperationType = "RECONNECT_RUNTIME"
+	Hibernate            OperationType = "HIBERNATE"
 )
 
 type OperationStage string
@@ -60,11 +63,11 @@ type Cluster struct {
 	Deleted            bool
 	Tenant             string
 	SubAccountId       *string
-	ActiveKymaConfigId string
+	ActiveKymaConfigId *string
 	Administrators     []string
 
 	ClusterConfig GardenerConfig `db:"-"`
-	KymaConfig    KymaConfig     `db:"-"`
+	KymaConfig    *KymaConfig    `db:"-"`
 }
 
 type Operation struct {

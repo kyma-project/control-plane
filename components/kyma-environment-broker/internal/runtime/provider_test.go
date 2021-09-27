@@ -2,11 +2,14 @@ package runtime_test
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strings"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
@@ -18,8 +21,9 @@ import (
 
 func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 	type given struct {
-		kymaVersion                      string
-		managedRuntimeComponentsYAMLPath string
+		kymaVersion                            internal.RuntimeVersionData
+		managedRuntimeComponentsYAMLPath       string
+		newAdditionalRuntimeComponentsYAMLPath string
 	}
 	tests := []struct {
 		name               string
@@ -27,31 +31,59 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 		expectedRequestURL string
 	}{
 		{
-			name: "Provide release Kyma version",
+			name: "Provide release Kyma version 1.x",
 			given: given{
-				kymaVersion:                      "1.9.0",
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "1.9.0", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/1.9.0/kyma-installer-cluster.yaml",
 		},
 		{
-			name: "Provide on-demand Kyma version",
+			name: "Provide on-demand Kyma version based on 1.x",
 			given: given{
-				kymaVersion:                      "main-ece6e5d9",
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-installer-cluster.yaml",
+		},
+		{
+			name: "Provide release Kyma version 2.0.0",
+			given: given{
+				kymaVersion:                            internal.RuntimeVersionData{Version: "2.0.0", MajorVersion: 2},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+			},
+			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/2.0.0/kyma-components.yaml",
+		},
+		{
+			name: "Provide on-demand Kyma version based on 2.0",
+			given: given{
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 2},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+			},
+			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-components.yaml",
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			installerYAML := readKymaInstallerClusterYAMLFromFile(t)
-			fakeHTTPClient := newTestClient(t, installerYAML, http.StatusOK)
+			installerYAML := readYAMLFromFile(t, "kyma-installer-cluster.yaml")
+			componentsYAML := readYAMLFromFile(t, "kyma-components.yaml")
+			fakeHTTPClient := newTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
+			listProvider := runtime.NewComponentsListProvider(
+				tc.given.managedRuntimeComponentsYAMLPath,
+				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expManagedComponents := readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			expAdditionalComponents := make([]v1alpha1.KymaComponent, 0)
+			if tc.given.kymaVersion.MajorVersion > 1 {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
+			} else {
+				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.managedRuntimeComponentsYAMLPath)
+			}
 
 			// when
 			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion)
@@ -61,16 +93,17 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			assert.NotNil(t, allComponents)
 
 			assert.Equal(t, tc.expectedRequestURL, fakeHTTPClient.RequestURL)
-			assertManagedComponentsAtTheEndOfList(t, allComponents, expManagedComponents)
+			assertManagedComponentsAtTheEndOfList(t, allComponents, expAdditionalComponents)
 		})
 	}
 }
 
 func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	type given struct {
-		kymaVersion                      string
-		managedRuntimeComponentsYAMLPath string
-		httpErrMessage                   string
+		kymaVersion                            internal.RuntimeVersionData
+		managedRuntimeComponentsYAMLPath       string
+		newAdditionalRuntimeComponentsYAMLPath string
+		httpErrMessage                         string
 	}
 	tests := []struct {
 		name             string
@@ -82,43 +115,48 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 		{
 			name: "Provide release version not found",
 			given: given{
-				kymaVersion:                      "111.000.111",
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Not Found",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "111.000.111", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Not Found",
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
-			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-prow-artifacts/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
+			expErrMessage:    "while getting Kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-prow-artifacts/111.000.111/kyma-installer-cluster.yaml, body: Not Found",
 		},
 		{
 			name: "Provide on-demand version not found",
 			given: given{
-				kymaVersion:                      "main-123123",
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Not Found",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Not Found",
 			},
 			returnStatusCode: http.StatusNotFound,
 			tempError:        false,
-			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/main-123123/kyma-installer-cluster.yaml, body: Not Found",
+			expErrMessage:    "while getting Kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 404, url: https://storage.googleapis.com/kyma-development-artifacts/main-123123/kyma-installer-cluster.yaml, body: Not Found",
 		},
 		{
 			name: "Provide on-demand version not found, temporary server error",
 			given: given{
-				kymaVersion:                      "main-123123",
-				managedRuntimeComponentsYAMLPath: path.Join("testdata", "managed-runtime-components.yaml"),
-				httpErrMessage:                   "Internal Server Error",
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-123123", MajorVersion: 1},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
+				httpErrMessage:                         "Internal Server Error",
 			},
 			returnStatusCode: http.StatusInternalServerError,
 			tempError:        true,
-			expErrMessage:    "while getting open source kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 500, url: https://storage.googleapis.com/kyma-development-artifacts/main-123123/kyma-installer-cluster.yaml, body: Internal Server Error",
+			expErrMessage:    "while getting Kyma components: while checking response status code for Kyma components list: got unexpected status code, want 200, got 500, url: https://storage.googleapis.com/kyma-development-artifacts/main-123123/kyma-installer-cluster.yaml, body: Internal Server Error",
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, tc.returnStatusCode)
+			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, tc.given.httpErrMessage, tc.returnStatusCode)
 
-			listProvider := runtime.NewComponentsListProvider(tc.given.managedRuntimeComponentsYAMLPath).
+			listProvider := runtime.NewComponentsListProvider(
+				tc.given.managedRuntimeComponentsYAMLPath,
+				tc.given.newAdditionalRuntimeComponentsYAMLPath).
 				WithHTTPClient(fakeHTTPClient)
 
 			// when
@@ -133,9 +171,10 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 }
 
 type HTTPFakeClient struct {
-	t                *testing.T
-	installerContent string
-	code             int
+	t                 *testing.T
+	installerContent  string
+	componentsContent string
+	code              int
 
 	RequestURL string
 }
@@ -143,18 +182,26 @@ type HTTPFakeClient struct {
 func (f *HTTPFakeClient) Do(req *http.Request) (*http.Response, error) {
 	f.RequestURL = req.URL.String()
 
+	var body io.ReadCloser
+	if strings.Contains(f.RequestURL, "kyma-components.yaml") {
+		body = ioutil.NopCloser(bytes.NewReader([]byte(f.componentsContent)))
+	} else {
+		body = ioutil.NopCloser(bytes.NewReader([]byte(f.installerContent)))
+	}
+
 	return &http.Response{
 		StatusCode: f.code,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(f.installerContent))),
+		Body:       body,
 		Request:    req,
 	}, nil
 }
 
-func newTestClient(t *testing.T, installerContent string, code int) *HTTPFakeClient {
+func newTestClient(t *testing.T, installerContent, componentsContent string, code int) *HTTPFakeClient {
 	return &HTTPFakeClient{
-		t:                t,
-		code:             code,
-		installerContent: installerContent,
+		t:                 t,
+		code:              code,
+		installerContent:  installerContent,
+		componentsContent: componentsContent,
 	}
 }
 
@@ -169,10 +216,10 @@ func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedC
 	})
 }
 
-func readKymaInstallerClusterYAMLFromFile(t *testing.T) string {
+func readYAMLFromFile(t *testing.T, yamlFileName string) string {
 	t.Helper()
 
-	filename := path.Join("testdata", "kyma-installer-cluster.yaml")
+	filename := path.Join("testdata", yamlFileName)
 	yamlFile, err := ioutil.ReadFile(filename)
 	require.NoError(t, err)
 

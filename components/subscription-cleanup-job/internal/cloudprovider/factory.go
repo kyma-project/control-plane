@@ -32,6 +32,10 @@ func (pf *providerFactory) New(hyperscalerType model.HyperscalerType, secretData
 		{
 			return NewAzureResourcesCleaner(secretData)
 		}
+	case model.AWS:
+		{
+			return NewAwsResourcesCleaner(secretData)
+		}
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown hyperscaler type"))
 	}

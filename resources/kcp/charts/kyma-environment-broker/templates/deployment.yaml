@@ -64,6 +64,8 @@ spec:
               value: "{{ .Values.provisioner.provisioningTimeout }}"
             - name: APP_PROVISIONER_DEPROVISIONING_TIMEOUT
               value: "{{ .Values.provisioner.deprovisioningTimeout }}"
+            - name: APP_PROVISIONER_OPENSTACK_FLOATING_POOL_NAME
+              value: "{{ .Values.provisioner.openstack.floatingPoolName }}"
             - name: APP_PROVISIONER_DEFAULT_GARDENER_SHOOT_PURPOSE
               value: "{{ .Values.gardener.defaultShootPurpose }}"
             - name: APP_PROVISIONER_DEFAULT_TRIAL_PROVIDER
@@ -292,6 +294,8 @@ spec:
               value: "{{ .Values.avs.regionTagClassId }}"
             - name: APP_KYMA_VERSION
               value: {{ .Values.kymaVersion }}
+            - name: APP_KYMA_PREVIEW_VERSION
+              value: "{{ .Values.kymaPreviewVersion }}"
             - name: APP_ENABLE_ON_DEMAND_VERSION
               value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
@@ -322,6 +326,10 @@ spec:
               value: {{ .Values.gardener.machineImageVersion }}
             - name: APP_PROVISIONER_TRIAL_NODES_NUMBER
               value: "{{ .Values.gardener.trialNodesNumber }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_KUBERNETES_VERSION
+              value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
+            - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
+              value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
@@ -350,6 +358,16 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
+            - name: APP_MONITORING_NAMESPACE
+              value: "{{ .Values.monitoring.namespace }}"
+            - name: APP_MONITORING_CHART_URL
+              value: "{{ .Values.monitoring.chartUrl }}"
+            - name: APP_MONITORING_REMOTE_WRITE_URL
+              value: "{{ .Values.monitoring.remoteWriteUrl }}"
+            - name: APP_MONITORING_REMOTE_WRITE_PATH
+              value: "{{ .Values.monitoring.remoteWritePath }}"
+            - name: APP_MONITORING_DISABLED
+              value: "{{ .Values.monitoring.disabled }}"
             - name: APP_VERSION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
@@ -362,6 +380,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: APP_ORCHESTRATION_CONFIG_NAME
               value: "orchestration-config"
+            - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
+              value: /config/newAdditionalRuntimeComponents.yaml
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

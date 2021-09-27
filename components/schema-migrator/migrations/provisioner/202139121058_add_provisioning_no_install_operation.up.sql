@@ -1,0 +1,19 @@
+BEGIN;
+
+ALTER TABLE operation ALTER COLUMN type TYPE VARCHAR(255);
+
+DROP TYPE IF EXISTS operation_type;
+CREATE TYPE operation_type AS ENUM (
+    'PROVISION',
+    'UPGRADE',
+    'DEPROVISION',
+    'RECONNECT_RUNTIME',
+    'UPGRADE_SHOOT',
+    'HIBERNATE',
+    'PROVISION_NO_INSTALL',
+    'DEPROVISION_NO_INSTALL'
+    );
+
+ALTER TABLE operation ALTER COLUMN type TYPE operation_type USING (type::operation_type);
+
+COMMIT;

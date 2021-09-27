@@ -61,6 +61,43 @@ type GardenerConfig struct {
 	ExposureClassName                   *string
 }
 
+type ExtensionProviderConfig struct {
+	// ApiVersion is gardener extension api version
+	ApiVersion string `json:"apiVersion"`
+	// DnsProviderReplication indicates whether dnsProvider replication is on
+	DNSProviderReplication *DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
+	// ShootIssuers indicates whether shoot Issuers are on
+	ShootIssuers *ShootIssuers `json:"shootIssuers,omitempty"`
+	// Kind is extension type
+	Kind string `json:"kind"`
+}
+
+type DNSProviderReplication struct {
+	// Enabled indicates whether replication is on
+	Enabled bool `json:"enabled"`
+}
+
+type ShootIssuers struct {
+	// Enabled indicates whether shoot Issuers are on
+	Enabled bool `json:"enabled"`
+}
+
+func NewDNSConfig() *ExtensionProviderConfig {
+	return &ExtensionProviderConfig{
+		ApiVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
+		DNSProviderReplication: &DNSProviderReplication{Enabled: true},
+		Kind:                   "DNSConfig",
+	}
+}
+
+func NewCertConfig() *ExtensionProviderConfig {
+	return &ExtensionProviderConfig{
+		ApiVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
+		ShootIssuers: &ShootIssuers{Enabled: true},
+		Kind:         "CertConfig",
+	}
+}
+
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
@@ -83,6 +120,18 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	annotations := make(map[string]string)
 	if c.LicenceType != nil {
 		annotations[LicenceTypeAnnotation] = *c.LicenceType
+	}
+
+	dnsConfig := NewDNSConfig()
+	jsonDNSConfig, encodingErr := json.Marshal(dnsConfig)
+	if encodingErr != nil {
+		return nil, apperrors.Internal("error encoding DNS extension config: %s", encodingErr.Error())
+	}
+
+	certConfig := NewCertConfig()
+	jsonCertConfig, encodingErr := json.Marshal(certConfig)
+	if encodingErr != nil {
+		return nil, apperrors.Internal("error encoding Cert extension config: %s", encodingErr.Error())
 	}
 
 	shoot := &gardener_types.Shoot{
@@ -117,6 +166,16 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
 					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
+				},
+			},
+			Extensions: []gardener_types.Extension{
+				{
+					Type:           "shoot-dns-service",
+					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig},
+				},
+				{
+					Type:           "shoot-cert-service",
+					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig},
 				},
 			},
 		},

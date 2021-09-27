@@ -977,9 +977,11 @@ type OperationStatus {
 
 enum OperationType {
     Provision
+    ProvisionNoInstall
     Upgrade
     UpgradeShoot
     Deprovision
+    DeprovisionNoInstall
     ReconnectRuntime
     Hibernate
 }
@@ -1043,7 +1045,7 @@ input RuntimeInput {
 input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
-    kymaConfig: KymaConfigInput!        # Configuration of Kyma to be installed on the provisioned cluster
+    kymaConfig: KymaConfigInput         # Configuration of Kyma to be installed on the provisioned cluster. Not passing it will result in a cluster without Kyma installed.
 }
 
 input ClusterConfigInput {
@@ -6113,7 +6115,7 @@ func (ec *executionContext) unmarshalInputProvisionRuntimeInput(ctx context.Cont
 			}
 		case "kymaConfig":
 			var err error
-			it.KymaConfig, err = ec.unmarshalNKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+			it.KymaConfig, err = ec.unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7967,6 +7969,18 @@ func (ec *executionContext) marshalOKymaConfig2ᚖgithubᚗcomᚋkymaᚑproject�
 		return graphql.Null
 	}
 	return ec._KymaConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (KymaConfigInput, error) {
+	return ec.unmarshalInputKymaConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOKymaConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx context.Context, v interface{}) (*KymaConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOKymaConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaConfigInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOKymaProfile2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐKymaProfile(ctx context.Context, v interface{}) (KymaProfile, error) {

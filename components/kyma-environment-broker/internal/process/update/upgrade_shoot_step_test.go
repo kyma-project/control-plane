@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,19 +84,8 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}, nil)
 
-	kymaComponentList := []v1alpha1.KymaComponent{
-		{
-			Name:      "to-remove-component",
-			Namespace: "kyma-system",
-		},
-		{
-			Name:      "keb",
-			Namespace: "kyma-system",
-		},
-	}
 	componentsProvider := &inputAutomock.ComponentListProvider{}
 	const kymaVersion = "1.20"
-	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	const k8sVersion = "1.18"

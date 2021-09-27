@@ -2,16 +2,16 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 )
 
@@ -39,6 +39,51 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 	suite.AssertAllStagesFinished(provisioningOperationID)
 	suite.AssertProvisioningRequest()
+}
+
+func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
+	t.Skip("not implemented yet")
+
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_platform_credentials": {
+							"url": "https://sm.url",
+							"credentials": {}
+						},
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"globalaccount_id": "g-account-id",
+					"subaccount_id": "sub-id",
+					"user_id": "john.smith@email.com"
+				},
+				"parameters": {
+					"name": "testing-cluster",
+					"oidc": {
+						"clientID": "id-initial",
+						"signingAlgs": ["xxx"],
+						"issuerURL": "https://issuer.url.com"
+					}
+				}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+
+	// then
+	//suite.AssertProvisionRuntimeInput()
+	//suite.AssertClusterConfig()
+	//suite.AssertClusterState()
 }
 
 func TestProvisioning_ClusterParameters(t *testing.T) {
@@ -107,9 +152,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			planID:     broker.AzureHAPlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D4_v3",
+			expectedMachineType:                "Standard_D8_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "azure",
 			expectedSharedSubscription:         false,
@@ -118,9 +163,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"HA Azure - default zonesCount": {
 			planID: broker.AzureHAPlanID,
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D4_v3",
+			expectedMachineType:                "Standard_D8_v3",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "azure",
 			expectedSharedSubscription:         false,
@@ -140,11 +185,11 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"HA AWS - provided zonesCount": {
 			planID:     broker.AWSHAPlanID,
 			zonesCount: ptr.Integer(3),
-			region:     "ap-northeast-2",
+			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5d.xlarge",
+			expectedMachineType:                "m5.2xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,
@@ -152,11 +197,11 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		},
 		"HA AWS - default zonesCount": {
 			planID: broker.AWSHAPlanID,
-			region: "us-west-1",
+			region: "eu-central-1",
 
-			expectedMinimalNumberOfNodes:       4,
+			expectedMinimalNumberOfNodes:       1,
 			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5d.xlarge",
+			expectedMachineType:                "m5.2xlarge",
 			expectedProfile:                    gqlschema.KymaProfileProduction,
 			expectedProvider:                   "aws",
 			expectedSharedSubscription:         false,

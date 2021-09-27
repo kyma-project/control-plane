@@ -1,0 +1,1 @@
+ALTER TABLE cluster ALTER COLUMN active_kyma_config_id DROP NOT NULL;

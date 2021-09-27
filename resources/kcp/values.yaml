@@ -1,37 +1,37 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.23.0-alpine-6d753005
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.25.0-alpine-ef998682
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-869"
+      version: "PR-930"
     provisioner:
       dir:
-      version: "PR-892"
+      version: "PR-909"
     kyma_environment_broker:
       dir:
-      version: "PR-896"
+      version: "PR-934"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-857"
+      version: "PR-930"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-857"
+      version: "PR-930"
     subscription_cleanup_job:
       dir:
-      version: "PR-568"
+      version: "PR-925"
     kyma_metrics_collector:
       dir:
-      version: "PR-852"
+      version: "PR-897"
     tests:
       provisioner:
         dir:
         version: "PR-699"
       e2e_provisioning:
         dir:
-        version: "PR-832"
+        version: "PR-930"
   isLocalEnv: false
   oauth2:
     host: oauth2

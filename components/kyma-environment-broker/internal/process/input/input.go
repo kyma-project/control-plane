@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -20,15 +22,18 @@ const (
 )
 
 type Config struct {
-	URL                         string
-	ProvisioningTimeout         time.Duration          `envconfig:"default=6h"`
-	DeprovisioningTimeout       time.Duration          `envconfig:"default=5h"`
-	KubernetesVersion           string                 `envconfig:"default=1.16.9"`
-	DefaultGardenerShootPurpose string                 `envconfig:"default=development"`
-	MachineImage                string                 `envconfig:"optional"`
-	MachineImageVersion         string                 `envconfig:"optional"`
-	TrialNodesNumber            int                    `envconfig:"optional"`
-	DefaultTrialProvider        internal.CloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP
+	URL                           string
+	ProvisioningTimeout           time.Duration          `envconfig:"default=6h"`
+	DeprovisioningTimeout         time.Duration          `envconfig:"default=5h"`
+	KubernetesVersion             string                 `envconfig:"default=1.16.9"`
+	DefaultGardenerShootPurpose   string                 `envconfig:"default=development"`
+	MachineImage                  string                 `envconfig:"optional"`
+	MachineImageVersion           string                 `envconfig:"optional"`
+	TrialNodesNumber              int                    `envconfig:"optional"`
+	DefaultTrialProvider          internal.CloudProvider `envconfig:"default=Azure"` // could be: Azure, AWS, GCP, Openstack, unknown
+	OpenstackFloatingPoolName     string                 `envconfig:"default=FloatingIP-external-cp-kyma"`
+	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
+	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
 }
 
 type RuntimeInput struct {
@@ -50,6 +55,9 @@ type RuntimeInput struct {
 	oidcDefaultValues         internal.OIDCConfigDTO
 
 	trialNodesNumber int
+	instanceID       string
+	runtimeID        string
+	kubeconfig       string
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -66,6 +74,21 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 
 func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
 	r.shootName = &name
+	return r
+}
+
+func (r *RuntimeInput) SetInstanceID(instanceID string) internal.ProvisionerInputCreator {
+	r.instanceID = instanceID
+	return r
+}
+
+func (r *RuntimeInput) SetRuntimeID(runtimeID string) internal.ProvisionerInputCreator {
+	r.runtimeID = runtimeID
+	return r
+}
+
+func (r *RuntimeInput) SetKubeconfig(kubeconfig string) internal.ProvisionerInputCreator {
+	r.kubeconfig = kubeconfig
 	return r
 }
 
@@ -229,6 +252,93 @@ func (r *RuntimeInput) Provider() internal.CloudProvider {
 	return r.hyperscalerInputProvider.Provider()
 }
 
+func (r *RuntimeInput) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+	data, err := r.CreateProvisionRuntimeInput()
+	if err != nil {
+		return reconciler.Cluster{}, err
+	}
+	if r.runtimeID == "" {
+		return reconciler.Cluster{}, errors.New("missing runtime ID")
+	}
+	if r.instanceID == "" {
+		return reconciler.Cluster{}, errors.New("missing instance ID")
+	}
+	if r.shootName == nil {
+		return reconciler.Cluster{}, errors.New("missing shoot name")
+	}
+	if r.kubeconfig == "" {
+		return reconciler.Cluster{}, errors.New("missing kubeconfig")
+	}
+
+	componentConfigs := []reconciler.Components{}
+	for _, cmp := range data.KymaConfig.Components {
+		configs := []reconciler.Configuration{}
+
+		for _, c := range cmp.Configuration {
+			configuration := reconciler.Configuration{
+				Key:    c.Key,
+				Value:  c.Value,
+				Secret: falseIfNil(c.Secret),
+			}
+			configs = append(configs, configuration)
+		}
+
+		componentConfig := reconciler.Components{
+			Component:     cmp.Component,
+			Namespace:     cmp.Namespace,
+			Configuration: configs,
+		}
+		componentConfigs = append(componentConfigs, componentConfig)
+	}
+
+	result := reconciler.Cluster{
+		Cluster: r.runtimeID,
+		RuntimeInput: reconciler.RuntimeInput{
+			Name:        r.provisionRuntimeInput.RuntimeInput.Name,
+			Description: emptyIfNil(data.RuntimeInput.Description),
+		},
+		KymaConfig: reconciler.KymaConfig{
+			Version:        r.provisionRuntimeInput.KymaConfig.Version,
+			Profile:        string(*data.KymaConfig.Profile),
+			Components:     componentConfigs,
+			Administrators: data.ClusterConfig.Administrators,
+		},
+		Metadata: reconciler.Metadata{
+			GlobalAccountID: r.provisioningParameters.ErsContext.GlobalAccountID,
+			SubAccountID:    r.provisioningParameters.ErsContext.SubAccountID,
+			ServiceID:       r.provisioningParameters.ServiceID,
+			ServicePlanID:   r.provisioningParameters.PlanID,
+			ShootName:       *r.shootName,
+			InstanceID:      r.instanceID,
+		},
+		Kubeconfig: r.kubeconfig,
+	}
+	return result, nil
+}
+
+func emptyIfNil(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func falseIfNil(p *bool) bool {
+	if p == nil {
+		return false
+	}
+	return *p
+}
+
+func (r *RuntimeInput) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
+	result, err := r.CreateProvisionRuntimeInput()
+	if err != nil {
+		return gqlschema.ProvisionRuntimeInput{}, nil
+	}
+	result.KymaConfig = nil
+	return result, nil
+}
+
 func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
@@ -253,6 +363,7 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 		r.provisionRuntimeInput.ClusterConfig.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
 	} else {
 		// set admins for new runtime
+		r.provisionRuntimeInput.ClusterConfig.Administrators = []string{}
 		r.provisionRuntimeInput.ClusterConfig.Administrators = append(
 			r.provisionRuntimeInput.ClusterConfig.Administrators,
 			r.provisioningParameters.Parameters.RuntimeAdministrators...,
@@ -351,6 +462,7 @@ func (r *RuntimeInput) disableComponentsForUpgradeRuntime() error {
 func (r *RuntimeInput) applyOverridesForProvisionRuntime() error {
 	for i := range r.provisionRuntimeInput.KymaConfig.Components {
 		if entry, found := r.overrides[r.provisionRuntimeInput.KymaConfig.Components[i].Component]; found {
+			r.provisionRuntimeInput.KymaConfig.Components[i].Configuration = []*gqlschema.ConfigEntryInput{}
 			r.provisionRuntimeInput.KymaConfig.Components[i].Configuration = append(r.provisionRuntimeInput.KymaConfig.Components[i].Configuration, entry...)
 		}
 	}
@@ -361,6 +473,7 @@ func (r *RuntimeInput) applyOverridesForProvisionRuntime() error {
 func (r *RuntimeInput) applyOverridesForUpgradeRuntime() error {
 	for i := range r.upgradeRuntimeInput.KymaConfig.Components {
 		if entry, found := r.overrides[r.upgradeRuntimeInput.KymaConfig.Components[i].Component]; found {
+			r.upgradeRuntimeInput.KymaConfig.Components[i].Configuration = []*gqlschema.ConfigEntryInput{}
 			r.upgradeRuntimeInput.KymaConfig.Components[i].Configuration = append(r.upgradeRuntimeInput.KymaConfig.Components[i].Configuration, entry...)
 		}
 	}

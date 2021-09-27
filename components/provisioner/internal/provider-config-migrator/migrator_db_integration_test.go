@@ -117,7 +117,7 @@ func createFixedClusterConfig(clusterID, kymaConfigID string) model.Cluster {
 		CreationTimestamp: time.Time{},
 		Tenant:            "tenant",
 		SubAccountId:      util.StringPtr("subaccount"),
-		KymaConfig:        model.KymaConfig{ID: kymaConfigID},
+		KymaConfig:        &model.KymaConfig{ID: kymaConfigID},
 	}
 }
 

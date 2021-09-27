@@ -60,7 +60,9 @@ CREATE TYPE operation_type AS ENUM (
     'DEPROVISION',
     'RECONNECT_RUNTIME',
     'UPGRADE_SHOOT',
-    'HIBERNATE'
+    'HIBERNATE',
+    'PROVISION_NO_INSTALL',
+    'DEPROVISION_NO_INSTALL'
     );
 
 CREATE TABLE operation
@@ -120,7 +122,7 @@ CREATE TABLE kyma_component_config
 
 -- Active Kyma Config column
 
-ALTER TABLE cluster ADD COLUMN active_kyma_config_id uuid NOT NULL;
+ALTER TABLE cluster ADD COLUMN active_kyma_config_id uuid;
 ALTER TABLE cluster ADD CONSTRAINT cluster_active_kyma_config_id_fkey foreign key (active_kyma_config_id) REFERENCES kyma_config (id) DEFERRABLE INITIALLY DEFERRED;
 
 

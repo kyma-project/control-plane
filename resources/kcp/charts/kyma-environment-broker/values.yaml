@@ -50,6 +50,9 @@ provisioner:
   provisioningTimeout: "6h"
   deprovisioningTimeout: "5h"
 
+  openstack:
+      floatingPoolName: "FloatingIP-external-cp-kyma"
+
   gardener:
     # name of the secret with kubeconfig to the gardener cluster
     secretName: "gardener"
@@ -69,6 +72,12 @@ additionalRuntimeComponents: |-
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
+newAdditionalRuntimeComponents: |-
+  - name: "service-manager-proxy"
+    namespace: "kyma-system"
+  - name: "compass-runtime-agent"
+    namespace: "compass-system"
+
 trialRegionsMapping: |-
   cf-eu10: europe
   cf-us10: us
@@ -83,6 +92,7 @@ skrOIDCDefaultValues: |-
   usernameClaim: "sub"
 
 kymaVersion: "1.13.0"
+kymaPreviewVersion: "2.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
@@ -106,6 +116,8 @@ gardener:
   trialNodesNumber: "1"
   freemiumProviders: "azure,aws"
   defaultTrialProvider: "Azure" # Azure, AWS
+  autoUpdateKubernetesVersion: "true"
+  autoUpdateMachineImageVersion: "false"
 
 kubeconfig:
   issuerURL: "TBD"
@@ -185,6 +197,13 @@ ems:
   skipDeprovisionAzureEventingAtUpgrade: false
 
 connectivity:
+  disabled: true
+
+monitoring:
+  namespace: "kcp-system"
+  chartUrl: "TBD"
+  remoteWriteUrl: "TBD"
+  remoteWritePath: "/api/v1/write"
   disabled: true
 
 cis:

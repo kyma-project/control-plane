@@ -4,19 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
@@ -32,6 +32,12 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+
+	CreateProvisionSKRInventoryInput() (reconciler.Cluster, error)
+	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
+	SetKubeconfig(kcfg string) ProvisionerInputCreator
+	SetRuntimeID(runtimeID string) ProvisionerInputCreator
+	SetInstanceID(instanceID string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -69,24 +75,32 @@ const (
 // RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
-	Version string               `json:"version"`
-	Origin  RuntimeVersionOrigin `json:"origin"`
+	Version      string               `json:"version"`
+	Origin       RuntimeVersionOrigin `json:"origin"`
+	MajorVersion int                  `json:"major_version"`
 }
 
 func (rv RuntimeVersionData) IsEmpty() bool {
 	return rv.Version == ""
 }
 
-func NewRuntimeVersionFromParameters(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: Parameters}
+func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: Parameters, MajorVersion: majorVersion}
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: Defaults}
+	defaultMajorVerNum := determineMajorVersion(version)
+	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
 }
 
-func NewRuntimeVersionFromAccountMapping(version string) *RuntimeVersionData {
-	return &RuntimeVersionData{Version: version, Origin: AccountMapping}
+func determineMajorVersion(version string) int {
+	splitVer := strings.Split(version, ".")
+	majorVerNum, _ := strconv.Atoi(splitVer[0])
+	return majorVerNum
+}
+
+func NewRuntimeVersionFromAccountMapping(version string, majorVersion int) *RuntimeVersionData {
+	return &RuntimeVersionData{Version: version, Origin: AccountMapping, MajorVersion: majorVersion}
 }
 
 type EventHub struct {
@@ -240,6 +254,7 @@ type InstanceDetails struct {
 	XSUAA        XSUAAData        `json:"xsuaa"`
 	Ems          EmsData          `json:"ems"`
 	Connectivity ConnectivityData `json:"connectivity"`
+	Monitoring   MonitoringData   `json:"monitoring"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -284,6 +299,11 @@ type ConnectivityData struct {
 
 	BindingID string `json:"bindingId"`
 	Overrides string `json:"overrides"`
+}
+
+type MonitoringData struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
@@ -454,6 +474,8 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 	if len(updatingParams.RuntimeAdministrators) != 0 {
 		op.ProvisioningParameters.Parameters.RuntimeAdministrators = updatingParams.RuntimeAdministrators
 	}
+
+	updatingParams.UpdateAutoScaler(&op.ProvisioningParameters.Parameters)
 
 	return op
 }

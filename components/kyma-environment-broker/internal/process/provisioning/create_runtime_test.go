@@ -23,15 +23,17 @@ import (
 )
 
 const (
-	kymaVersion            = "1.10"
-	k8sVersion             = "1.16.9"
-	shootName              = "c-1234567"
-	instanceID             = "58f8c703-1756-48ab-9299-a847974d1fee"
-	operationID            = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
-	globalAccountID        = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
-	subAccountID           = "12df5747-3efb-4df6-ad6f-4414bb661ce3"
-	provisionerOperationID = "1a0ed09b-9bb9-4e6f-a88c-01955c5f1129"
-	runtimeID              = "2498c8ee-803a-43c2-8194-6d6dd0354c30"
+	kymaVersion                   = "1.10"
+	k8sVersion                    = "1.16.9"
+	shootName                     = "c-1234567"
+	instanceID                    = "58f8c703-1756-48ab-9299-a847974d1fee"
+	operationID                   = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
+	globalAccountID               = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
+	subAccountID                  = "12df5747-3efb-4df6-ad6f-4414bb661ce3"
+	provisionerOperationID        = "1a0ed09b-9bb9-4e6f-a88c-01955c5f1129"
+	runtimeID                     = "2498c8ee-803a-43c2-8194-6d6dd0354c30"
+	autoUpdateKubernetesVersion   = true
+	autoUpdateMachineImageVersion = true
 
 	serviceManagerURL      = "http://sm.com"
 	serviceManagerUser     = "admin"
@@ -70,21 +72,23 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
-				Name:              shootName,
-				KubernetesVersion: k8sVersion,
-				DiskType:          ptr.String("pd-standard"),
-				VolumeSizeGb:      ptr.Integer(30),
-				MachineType:       "n1-standard-4",
-				Region:            "europe-west4-a",
-				Provider:          "gcp",
-				Purpose:           &shootPurpose,
-				LicenceType:       nil,
-				WorkerCidr:        "10.250.0.0/19",
-				AutoScalerMin:     3,
-				AutoScalerMax:     4,
-				MaxSurge:          4,
-				MaxUnavailable:    1,
-				TargetSecret:      "",
+				Name:                                shootName,
+				KubernetesVersion:                   k8sVersion,
+				DiskType:                            ptr.String("pd-standard"),
+				VolumeSizeGb:                        ptr.Integer(30),
+				MachineType:                         "n1-standard-4",
+				Region:                              "europe-west4-a",
+				Provider:                            "gcp",
+				Purpose:                             &shootPurpose,
+				LicenceType:                         nil,
+				WorkerCidr:                          "10.250.0.0/19",
+				AutoScalerMin:                       3,
+				AutoScalerMax:                       4,
+				MaxSurge:                            4,
+				MaxUnavailable:                      1,
+				TargetSecret:                        "",
+				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),
+				EnableMachineImageVersionAutoUpdate: ptr.Bool(autoUpdateMachineImageVersion),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: &gqlschema.GCPProviderConfigInput{
 						Zones: []string{"europe-west4-b", "europe-west4-c"},
@@ -255,12 +259,14 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}
 	componentsProvider := &inputAutomock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", kymaVersion).Return(kymaComponentList, nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
-		KubernetesVersion:           k8sVersion,
-		DefaultGardenerShootPurpose: shootPurpose,
+		KubernetesVersion:             k8sVersion,
+		DefaultGardenerShootPurpose:   shootPurpose,
+		AutoUpdateKubernetesVersion:   autoUpdateKubernetesVersion,
+		AutoUpdateMachineImageVersion: autoUpdateMachineImageVersion,
 	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 

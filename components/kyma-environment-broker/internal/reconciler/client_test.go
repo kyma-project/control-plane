@@ -44,7 +44,7 @@ func Test_RegisterCluster(t *testing.T) {
 	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
 
 	// when
-	response, err := client.RegisterCluster(*requestedCluster)
+	response, err := client.ApplyClusterConfig(*requestedCluster)
 
 	// then
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func Test_UpdateCluster(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//then
 		assert.Equal(t, "/v1/clusters", r.URL.Path)
-		assert.Equal(t, http.MethodPut, r.Method)
+		assert.Equal(t, http.MethodPost, r.Method)
 		err := json.NewEncoder(w).Encode(State{
 			Cluster:              requestedCluster.Cluster,
 			ClusterVersion:       fixClusterVersion,
@@ -79,7 +79,7 @@ func Test_UpdateCluster(t *testing.T) {
 	client := NewReconcilerClient(http.DefaultClient, logrus.New().WithField("client", "reconciler"), &Config{reconcilerURL: ts.URL})
 
 	// when
-	response, err := client.UpdateCluster(*requestedCluster)
+	response, err := client.ApplyClusterConfig(*requestedCluster)
 
 	// then
 	require.NoError(t, err)

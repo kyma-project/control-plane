@@ -48,7 +48,7 @@ type (
 	}
 
 	ComponentListProvider interface {
-		AllComponents(kymaVersion string) ([]v1alpha1.KymaComponent, error)
+		AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error)
 	}
 )
 
@@ -56,7 +56,6 @@ type InputBuilderFactory struct {
 	kymaVersion                string
 	config                     Config
 	optComponentsSvc           OptionalComponentService
-	fullComponentsList         internal.ComponentConfigurationInputList
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
 	trialPlatformRegionMapping map[string]string
@@ -67,11 +66,6 @@ type InputBuilderFactory struct {
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
 	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
 
-	components, err := componentsListProvider.AllComponents(defaultKymaVersion)
-	if err != nil {
-		return &InputBuilderFactory{}, errors.Wrap(err, "while creating components list for default Kyma version")
-	}
-
 	freemiumProviders := map[string]struct{}{}
 	for _, p := range enabledFreemiumProviders {
 		freemiumProviders[strings.ToLower(p)] = struct{}{}
@@ -81,13 +75,17 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		kymaVersion:                defaultKymaVersion,
 		config:                     config,
 		optComponentsSvc:           optComponentsSvc,
-		fullComponentsList:         mapToGQLComponentConfigurationInput(components),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
 		oidcDefaultValues:          oidcValues,
 	}, nil
+}
+
+// SetDefaultTrialProvider is used for testing scenario, when the default trial provider is being changed
+func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) {
+	f.config.DefaultTrialProvider = p
 }
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
@@ -108,7 +106,9 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp 
 	case broker.FreemiumPlanID:
 		return f.forFreemiumPlan(pp)
 	case broker.OpenStackPlanID:
-		provider = &cloudProvider.OpenStackInput{}
+		provider = &cloudProvider.OpenStackInput{
+			FloatingPoolName: f.config.OpenstackFloatingPoolName,
+		}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
@@ -191,18 +191,11 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 }
 
 func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData) (internal.ComponentConfigurationInputList, error) {
-	switch version.Origin {
-	case internal.Defaults:
-		return f.fullComponentsList, nil
-	case internal.Parameters, internal.AccountMapping:
-		allComponents, err := f.componentsProvider.AllComponents(version.Version)
-		if err != nil {
-			return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
-		}
-		return mapToGQLComponentConfigurationInput(allComponents), nil
+	allComponents, err := f.componentsProvider.AllComponents(version)
+	if err != nil {
+		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
-
-	return internal.ComponentConfigurationInputList{}, errors.Errorf("Unknown version.Origin: %s", version.Origin)
+	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
 func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
@@ -223,6 +216,8 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
+	provisionInput.ClusterConfig.GardenerConfig.EnableKubernetesVersionAutoUpdate = &f.config.AutoUpdateKubernetesVersion
+	provisionInput.ClusterConfig.GardenerConfig.EnableMachineImageVersionAutoUpdate = &f.config.AutoUpdateMachineImageVersion
 	if provisionInput.ClusterConfig.GardenerConfig.Purpose == nil {
 		provisionInput.ClusterConfig.GardenerConfig.Purpose = &f.config.DefaultGardenerShootPurpose
 	}
@@ -350,11 +345,13 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 		input.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
 
-	// sync with the autoscaler settings
+	// sync with the autoscaler and maintenance settings
 	input.GardenerConfig.AutoScalerMin = &provider.Defaults().GardenerConfig.AutoScalerMin
 	input.GardenerConfig.AutoScalerMax = &provider.Defaults().GardenerConfig.AutoScalerMax
 	input.GardenerConfig.MaxSurge = &provider.Defaults().GardenerConfig.MaxSurge
 	input.GardenerConfig.MaxUnavailable = &provider.Defaults().GardenerConfig.MaxUnavailable
+	input.GardenerConfig.EnableKubernetesVersionAutoUpdate = &f.config.AutoUpdateKubernetesVersion
+	input.GardenerConfig.EnableMachineImageVersionAutoUpdate = &f.config.AutoUpdateMachineImageVersion
 
 	return input
 }

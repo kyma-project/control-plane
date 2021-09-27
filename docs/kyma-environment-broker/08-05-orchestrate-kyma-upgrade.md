@@ -34,13 +34,13 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
    --header 'Content-Type: application/json' \
    --data-raw "{\
        \"targets\": {\
-           \"include\": {\
+           \"include\": [{\
                \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
                \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
                \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
                \"planName\": \"azure\",\
-               \"region\": \"europewest\",\
-            },\
+               \"region\": \"europewest\"\
+            }]\
        },\
        \"dryRun\": false\
    }"
@@ -56,15 +56,15 @@ curl --request POST "https://$BROKER_URL/upgrade/kyma" \
 --header 'Content-Type: application/json' \
 --data-raw "{\
     \"targets\": {\
-        \"include\": {\
+        \"include\": [{\
             \"runtimeID\": \"uuid-sdasd-sda23t-efs\",\
             \"globalAccount\": \"uuid-sdasd-sda23t-efs\",\
             \"subAccount\": \"uuid-sdasd-sda23t-efs\",\
             \"planName\": \"azure\",\
             \"region\": \"europewest\",\
-         },\
+         }]\
     },\
-    \"strategies\": {\
+    \"strategy\": {\
         \"type\": \"parallel\",\
             \"schedule\": \"maintenanceWindow\",\
             \"parallel\": {\

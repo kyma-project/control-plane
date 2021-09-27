@@ -13,8 +13,7 @@ import (
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 
 type Client interface {
-	RegisterCluster(cluster Cluster) (*State, error)
-	UpdateCluster(cluster Cluster) (*State, error)
+	ApplyClusterConfig(cluster Cluster) (*State, error)
 	DeleteCluster(clusterName string) error
 	GetCluster(clusterName, configVersion string) (*State, error)
 	GetLatestCluster(clusterName string) (*State, error)
@@ -40,7 +39,7 @@ func NewReconcilerClient(httpClient *http.Client, log logrus.FieldLogger, cfg *C
 }
 
 // POST /v1/clusters
-func (c *client) RegisterCluster(cluster Cluster) (*State, error) {
+func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	reqBody, err := json.Marshal(cluster)
 	if err != nil {
 		c.log.Error(err)
@@ -50,42 +49,6 @@ func (c *client) RegisterCluster(cluster Cluster) (*State, error) {
 	reader := bytes.NewReader(reqBody)
 
 	request, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/clusters", c.config.reconcilerURL), reader)
-	if err != nil {
-		c.log.Error(err)
-		return &State{}, err
-	}
-
-	res, err := c.httpClient.Do(request)
-	if err != nil {
-		c.log.Error(err)
-		return &State{}, err
-	}
-	defer res.Body.Close()
-	registerClusterResponse, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		c.log.Error(err)
-		return &State{}, err
-	}
-	var response *State
-	err = json.Unmarshal(registerClusterResponse, &response)
-	if err != nil {
-		c.log.Error(err)
-		return &State{}, err
-	}
-	return response, nil
-}
-
-// PUT /v1/clusters
-func (c *client) UpdateCluster(cluster Cluster) (*State, error) {
-	reqBody, err := json.Marshal(cluster)
-	if err != nil {
-		c.log.Error(err)
-		return &State{}, err
-	}
-
-	reader := bytes.NewReader(reqBody)
-
-	request, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/clusters", c.config.reconcilerURL), reader)
 	if err != nil {
 		c.log.Error(err)
 		return &State{}, err
