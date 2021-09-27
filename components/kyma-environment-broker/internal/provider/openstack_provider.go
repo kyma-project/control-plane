@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultOpenStackRegion = "eu-de-1"
+	DefaultOpenStackRegion = "eu-de-2"
 	DefaultExposureClass   = "converged-cloud-internet"
 )
 
