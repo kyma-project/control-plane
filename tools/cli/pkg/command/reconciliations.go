@@ -86,6 +86,10 @@ func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconcil
 				FieldFormatter: reconciliationUpdated,
 			},
 			{
+				Header:    "STATUES",
+				FieldSpec: "{.status}",
+			},
+			{
 				Header:    "LOCK",
 				FieldSpec: "{.lock}",
 			},

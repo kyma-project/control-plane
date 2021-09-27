@@ -91,6 +91,7 @@ type Reconciliation struct {
 	RuntimeID    string    `json:"runtimeID"`
 	SchedulingID string    `json:"schedulingID"`
 	ShootName    string    `json:"shootName"`
+	Status       Status    `json:"status"`
 	Updated      time.Time `json:"updated"`
 }
 
