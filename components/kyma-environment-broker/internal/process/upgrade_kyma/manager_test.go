@@ -73,9 +73,9 @@ func TestManager_Execute(t *testing.T) {
 			manager := NewManager(operations, eventBroker, log)
 			manager.InitStep(&sInit)
 
-			manager.AddStep(2, &sFinal)
-			manager.AddStep(1, &s1)
-			manager.AddStep(1, &s2)
+			manager.AddStep(2, &sFinal, nil)
+			manager.AddStep(1, &s1, nil)
+			manager.AddStep(1, &s2, nil)
 
 			// when
 			repeat, err := manager.Execute(tc.operationID)
