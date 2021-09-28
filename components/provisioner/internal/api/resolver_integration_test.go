@@ -147,6 +147,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 }
@@ -175,6 +176,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 }
@@ -204,6 +206,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 }

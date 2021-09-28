@@ -62,6 +62,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 				GcpConfig: &gqlschema.GCPProviderConfigInput{},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 
@@ -826,6 +827,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			LicenceType:            util.StringPtr("license"),
 			GardenerProviderConfig: providerConfig,
 			OIDCConfig:             oidcConfig(),
+			DNSConfig:              dnsConfig(),
 		},
 	}
 

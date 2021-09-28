@@ -72,6 +72,17 @@ type ComplexityRoot struct {
 		Value  func(childComplexity int) int
 	}
 
+	DNSConfig struct {
+		Domain    func(childComplexity int) int
+		Providers func(childComplexity int) int
+	}
+
+	DNSProvider struct {
+		Primary    func(childComplexity int) int
+		SecretName func(childComplexity int) int
+		Type       func(childComplexity int) int
+	}
+
 	Error struct {
 		Message func(childComplexity int) int
 	}
@@ -84,6 +95,7 @@ type ComplexityRoot struct {
 		AllowPrivilegedContainers           func(childComplexity int) int
 		AutoScalerMax                       func(childComplexity int) int
 		AutoScalerMin                       func(childComplexity int) int
+		DNSConfig                           func(childComplexity int) int
 		DiskType                            func(childComplexity int) int
 		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
 		EnableMachineImageVersionAutoUpdate func(childComplexity int) int
@@ -311,6 +323,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ConfigEntry.Value(childComplexity), true
 
+	case "DNSConfig.domain":
+		if e.complexity.DNSConfig.Domain == nil {
+			break
+		}
+
+		return e.complexity.DNSConfig.Domain(childComplexity), true
+
+	case "DNSConfig.providers":
+		if e.complexity.DNSConfig.Providers == nil {
+			break
+		}
+
+		return e.complexity.DNSConfig.Providers(childComplexity), true
+
+	case "DNSProvider.primary":
+		if e.complexity.DNSProvider.Primary == nil {
+			break
+		}
+
+		return e.complexity.DNSProvider.Primary(childComplexity), true
+
+	case "DNSProvider.secretName":
+		if e.complexity.DNSProvider.SecretName == nil {
+			break
+		}
+
+		return e.complexity.DNSProvider.SecretName(childComplexity), true
+
+	case "DNSProvider.type":
+		if e.complexity.DNSProvider.Type == nil {
+			break
+		}
+
+		return e.complexity.DNSProvider.Type(childComplexity), true
+
 	case "Error.message":
 		if e.complexity.Error.Message == nil {
 			break
@@ -345,6 +392,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.AutoScalerMin(childComplexity), true
+
+	case "GardenerConfig.dnsConfig":
+		if e.complexity.GardenerConfig.DNSConfig == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.DNSConfig(childComplexity), true
 
 	case "GardenerConfig.diskType":
 		if e.complexity.GardenerConfig.DiskType == nil {
@@ -905,6 +959,7 @@ type GardenerConfig {
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
     oidcConfig: OIDCConfig
+    dnsConfig: DNSConfig
     exposureClassName: String
 }
 
@@ -945,6 +1000,17 @@ type OIDCConfig {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+}
+
+type DNSConfig {
+	domain:    String!
+	providers: [DNSProvider!]
+}
+
+type DNSProvider {
+	primary:    Boolean!
+	secretName: String!
+	type:       String!
 }
 
 type ConfigEntry {
@@ -1077,6 +1143,7 @@ input GardenerConfigInput {
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
+    dnsConfig: DNSConfigInput                       # DNS configuration of the Shoot
     exposureClassName: String                       # Name of the ExposureClass
 }
 
@@ -1087,6 +1154,17 @@ input OIDCConfigInput {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+}
+
+input DNSConfigInput {
+	domain:    String!
+	providers: [DNSProviderInput!]
+}
+
+input DNSProviderInput {
+	primary:    Boolean!
+	secretName: String!
+	type:       String!
 }
 
 input ProviderSpecificInput {
@@ -1922,6 +2000,188 @@ func (ec *executionContext) _ConfigEntry_secret(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSConfig_domain(ctx context.Context, field graphql.CollectedField, obj *DNSConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Domain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSConfig_providers(ctx context.Context, field graphql.CollectedField, obj *DNSConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Providers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*DNSProvider)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalODNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSProvider_primary(ctx context.Context, field graphql.CollectedField, obj *DNSProvider) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSProvider",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Primary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSProvider_secretName(ctx context.Context, field graphql.CollectedField, obj *DNSProvider) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSProvider",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecretName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSProvider_type(ctx context.Context, field graphql.CollectedField, obj *DNSProvider) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSProvider",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Error_message(ctx context.Context, field graphql.CollectedField, obj *Error) (ret graphql.Marshaler) {
@@ -2775,6 +3035,40 @@ func (ec *executionContext) _GardenerConfig_oidcConfig(ctx context.Context, fiel
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOIDCConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_dnsConfig(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DNSConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DNSConfig)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalODNSConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GardenerConfig_exposureClassName(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
@@ -5651,6 +5945,60 @@ func (ec *executionContext) unmarshalInputConfigEntryInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDNSConfigInput(ctx context.Context, obj interface{}) (DNSConfigInput, error) {
+	var it DNSConfigInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "domain":
+			var err error
+			it.Domain, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "providers":
+			var err error
+			it.Providers, err = ec.unmarshalODNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDNSProviderInput(ctx context.Context, obj interface{}) (DNSProviderInput, error) {
+	var it DNSProviderInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "primary":
+			var err error
+			it.Primary, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "secretName":
+			var err error
+			it.SecretName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "type":
+			var err error
+			it.Type, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGCPProviderConfigInput(ctx context.Context, obj interface{}) (GCPProviderConfigInput, error) {
 	var it GCPProviderConfigInput
 	var asMap = obj.(map[string]interface{})
@@ -5810,6 +6158,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 		case "oidcConfig":
 			var err error
 			it.OidcConfig, err = ec.unmarshalOOIDCConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "dnsConfig":
+			var err error
+			it.DNSConfig, err = ec.unmarshalODNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6385,6 +6739,72 @@ func (ec *executionContext) _ConfigEntry(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var dNSConfigImplementors = []string{"DNSConfig"}
+
+func (ec *executionContext) _DNSConfig(ctx context.Context, sel ast.SelectionSet, obj *DNSConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, dNSConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DNSConfig")
+		case "domain":
+			out.Values[i] = ec._DNSConfig_domain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "providers":
+			out.Values[i] = ec._DNSConfig_providers(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var dNSProviderImplementors = []string{"DNSProvider"}
+
+func (ec *executionContext) _DNSProvider(ctx context.Context, sel ast.SelectionSet, obj *DNSProvider) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, dNSProviderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DNSProvider")
+		case "primary":
+			out.Values[i] = ec._DNSProvider_primary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secretName":
+			out.Values[i] = ec._DNSProvider_secretName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._DNSProvider_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var errorImplementors = []string{"Error"}
 
 func (ec *executionContext) _Error(ctx context.Context, sel ast.SelectionSet, obj *Error) graphql.Marshaler {
@@ -6493,6 +6913,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
 		case "oidcConfig":
 			out.Values[i] = ec._GardenerConfig_oidcConfig(ctx, field, obj)
+		case "dnsConfig":
+			out.Values[i] = ec._GardenerConfig_dnsConfig(ctx, field, obj)
 		case "exposureClassName":
 			out.Values[i] = ec._GardenerConfig_exposureClassName(ctx, field, obj)
 		default:
@@ -7227,6 +7649,32 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 	return res, nil
 }
 
+func (ec *executionContext) marshalNDNSProvider2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v DNSProvider) graphql.Marshaler {
+	return ec._DNSProvider(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDNSProvider2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v *DNSProvider) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DNSProvider(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDNSProviderInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) (DNSProviderInput, error) {
+	return ec.unmarshalInputDNSProviderInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNDNSProviderInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) (*DNSProviderInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNDNSProviderInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNError2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
 	return ec._Error(ctx, sel, &v)
 }
@@ -7861,6 +8309,89 @@ func (ec *executionContext) marshalOConflictStrategy2ᚖgithubᚗcomᚋkymaᚑpr
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalODNSConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfig(ctx context.Context, sel ast.SelectionSet, v DNSConfig) graphql.Marshaler {
+	return ec._DNSConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalODNSConfig2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfig(ctx context.Context, sel ast.SelectionSet, v *DNSConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DNSConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (DNSConfigInput, error) {
+	return ec.unmarshalInputDNSConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (*DNSConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalODNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v []*DNSProvider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDNSProvider2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalODNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) ([]*DNSProviderInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*DNSProviderInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNDNSProviderInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOError2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v []*Error) graphql.Marshaler {

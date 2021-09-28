@@ -182,6 +182,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
 					Region:            "eu",
+					DNS:               gardenerDNSConfig(dnsConfig()),
 					Provider: gardener_types.Provider{
 						Type: "gcp",
 						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
@@ -249,6 +250,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
 					Region:            "eu",
+					DNS:               gardenerDNSConfig(dnsConfig()),
 					Provider: gardener_types.Provider{
 						Type: "azure",
 						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
@@ -316,6 +318,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
 					Region:            "eu",
+					DNS:               gardenerDNSConfig(dnsConfig()),
 					Provider: gardener_types.Provider{
 						Type: "azure",
 						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
@@ -383,6 +386,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
 					Region:            "eu",
+					DNS:               gardenerDNSConfig(dnsConfig()),
 					Provider: gardener_types.Provider{
 						Type: "aws",
 						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
@@ -434,7 +438,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig())
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig(), dnsConfig())
 
 			// then
 			require.NoError(t, err)
@@ -572,6 +576,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
+		DNSConfig:                           dnsConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),
 	}
 }
@@ -628,5 +633,18 @@ func oidcConfig() *OIDCConfig {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func dnsConfig() *DNSConfig {
+	return &DNSConfig{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []DNSProvider{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
 	}
 }

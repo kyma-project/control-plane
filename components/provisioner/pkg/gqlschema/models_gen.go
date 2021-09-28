@@ -82,6 +82,28 @@ type ConfigEntryInput struct {
 	Secret *bool  `json:"secret"`
 }
 
+type DNSConfig struct {
+	Domain    string         `json:"domain"`
+	Providers []*DNSProvider `json:"providers"`
+}
+
+type DNSConfigInput struct {
+	Domain    string              `json:"domain"`
+	Providers []*DNSProviderInput `json:"providers"`
+}
+
+type DNSProvider struct {
+	Primary    bool   `json:"primary"`
+	SecretName string `json:"secretName"`
+	Type       string `json:"type"`
+}
+
+type DNSProviderInput struct {
+	Primary    bool   `json:"primary"`
+	SecretName string `json:"secretName"`
+	Type       string `json:"type"`
+}
+
 type Error struct {
 	Message *string `json:"message"`
 }
@@ -120,6 +142,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
+	DNSConfig                           *DNSConfig             `json:"dnsConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
@@ -147,6 +170,7 @@ type GardenerConfigInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
+	DNSConfig                           *DNSConfigInput        `json:"dnsConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
 }
 
