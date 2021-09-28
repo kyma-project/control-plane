@@ -384,6 +384,10 @@ spec:
               value: "orchestration-config"
             - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/newAdditionalRuntimeComponents.yaml
+           - name: APP_ORCHESTRATION_CONFIG_KYMA_VERSION
+              value: "kyma-version"
+           - name: APP_ORCHESTRATION_CONFIG_KUBERNETES_VERSION
+              value: "kubernetes-version"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
