@@ -1,0 +1,37 @@
+{{ $global := . }}
+{{- range $component := .Values.global.components }}
+{{ $subchart := printf "%s-component-reconciler" $component }}
+{{ if not (hasKey $global.Subcharts $subchart) }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: component-reconcilers-{{ $component }}
+  namespace:  {{ $global.Release.Namespace }}
+  labels:
+    app: component-reconcilers-{{ $component }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: component-reconcilers-{{ $component }}
+  namespace:  {{ $global.Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: component-reconcilers-{{ $component }}
+  namespace:  {{ $global.Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: component-reconcilers-{{ $component }}
+    namespace:  {{ $global.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: component-reconcilers-{{ $component }}
+{{- end }}
+{{- end }}

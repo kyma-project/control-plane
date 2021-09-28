@@ -1,0 +1,8 @@
+# Default values for component-reconcilers.
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 8080
