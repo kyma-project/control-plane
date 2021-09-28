@@ -149,6 +149,7 @@ func (c *FakeClient) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeS
 				Region: ptr.String("fake-region"),
 				Seed:   ptr.String("fake-seed"),
 			},
+			Kubeconfig: ptr.String("kubeconfig-content"),
 		},
 	}, nil
 }

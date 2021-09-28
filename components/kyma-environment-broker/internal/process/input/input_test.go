@@ -671,7 +671,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
-		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		inventoryInput, err := creator.CreateClusterConfiguration()
 		require.NoError(t, err)
 
 		// then
@@ -703,7 +703,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
-		inventoryInput, err := creator.CreateProvisionSKRInventoryInput()
+		inventoryInput, err := creator.CreateClusterConfiguration()
 		require.NoError(t, err)
 
 		// then

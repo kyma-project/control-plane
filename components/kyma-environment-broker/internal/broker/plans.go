@@ -294,6 +294,21 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 			},
 			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
 		},
+		PreviewPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          PreviewPlanID,
+				Name:        PreviewPlanName,
+				Description: defaultDescription(PreviewPlanName, plans),
+				Metadata:    defaultMetadata(PreviewPlanName, plans), Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
+		},
 		AWSHAPlanID: {
 			PlanDefinition: domain.ServicePlan{
 				ID:          AWSHAPlanID,

@@ -100,7 +100,7 @@ func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName 
 	assert.Contains(t, c.enabledComponents, componentName)
 }
 
-func (c *simpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+func (c *simpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
 	return reconciler.Cluster{}, nil
 }
 

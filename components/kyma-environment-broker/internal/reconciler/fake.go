@@ -1,7 +1,6 @@
 package reconciler
 
 import (
-	"strconv"
 	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -52,7 +51,7 @@ func (c *FakeClient) DeleteCluster(clusterName string) error {
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
-func (c *FakeClient) GetCluster(clusterName, configVersion string) (*State, error) {
+func (c *FakeClient) GetCluster(clusterName string, configVersion int64) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -60,11 +59,7 @@ func (c *FakeClient) GetCluster(clusterName, configVersion string) (*State, erro
 	if !exists {
 		return &State{}, errors.New("not found")
 	}
-	v, err := strconv.ParseInt(configVersion, 10, 64)
-	if err != nil {
-		return &State{}, errors.New("invalid configVersion")
-	}
-	state, exists := existingCluster.clusterStates[v]
+	state, exists := existingCluster.clusterStates[configVersion]
 	if !exists {
 		return &State{}, errors.New("not found")
 	}
@@ -118,10 +113,10 @@ func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 					Status:               "reconcile_pending",
 				},
 			},
-			statusChanges: append(c.inventoryClusters[cluster.Cluster].statusChanges, &StatusChange{
+			statusChanges: []*StatusChange{{
 				Status:   ptr.String("reconcile_pending"),
 				Duration: "10s",
-			}),
+			}},
 		}
 
 		return c.inventoryClusters[cluster.Cluster].clusterStates[1], nil
@@ -163,8 +158,15 @@ func (c *FakeClient) LastClusterConfig(runtimeID string) (*Cluster, error) {
 	return getLastClusterConfig(cluster)
 }
 
+func (c *FakeClient) IsClusterExists(id string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, exists := c.inventoryClusters[id]
+	return exists
+}
+
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
-	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs)-1)]
+	clusterConfig, found := cluster.clusterConfigs[int64(1)]
 	if !found {
 		return nil, errors.New("cluster config not found in cluster configs inventory")
 	}

@@ -90,7 +90,7 @@ func newClient(t *testing.T) Client {
 		reconcilerURL = "http://localhost:8080"
 	}
 
-	cfg := &Config{reconcilerURL: reconcilerURL}
+	cfg := &Config{URL: reconcilerURL}
 	client := NewReconcilerClient(http.DefaultClient, logrus.WithField("test-client", "reconciler"), cfg)
 
 	return client
