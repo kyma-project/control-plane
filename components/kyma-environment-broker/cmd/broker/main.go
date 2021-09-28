@@ -564,15 +564,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName,
 		checkKymaStageName, postActionsStageName})
 	/*
-		The provisioning process contains the following stages:
-		1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
-		2. "create_runtime" - collects all information needed to make an input for the Provisioner request as overrides and labels.
-		Those data is collected using an InputCreator which is not persisted. That's why all steps which prepares such data must be in the same stage as "create runtime step".
-	    checks the runtime provisioning and retries if in progress. All steps which requires InputCreator must be run in this stage.
-		3. "check_kyma" - checks if the Kyma is installed
-		4. "post_actions" - all steps which must be executed after the runtime is provisioned
+			The provisioning process contains the following stages:
+			1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
+			2. "create_runtime" - collects all information needed to make an input for the Provisioner request as overrides and labels.
+			Those data is collected using an InputCreator which is not persisted. That's why all steps which prepares such data must be in the same stage as "create runtime step".
+		    checks the runtime provisioning and retries if in progress. All steps which requires InputCreator must be run in this stage.
+			3. "check_kyma" - checks if the Kyma is installed
+			4. "post_actions" - all steps which must be executed after the runtime is provisioned
 
-		Once the stage is done it will never be retried.
+			Once the stage is done it will never be retried.
 	*/
 
 	provisioningSteps := []struct {
