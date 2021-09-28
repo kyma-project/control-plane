@@ -198,7 +198,7 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		// - the step does not need a retry
 		// - step returns an error
 		// - the loop takes too much time (to not block the worker too long)
-		if when == 0 || err != nil || time.Since(begin) > 15*time.Minute {
+		if when == 0 || err != nil || time.Since(begin) > 10*time.Minute {
 			return processedOperation, when, err
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
