@@ -42,7 +42,7 @@ resources:
   #   memory: 128Mi
 
 reconciler:
-  URL: "http://kcp-reconciler.kcp-system.svc.cluster.local"
+  URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
 
 provisioner:
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
