@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -77,6 +79,7 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 
 	edpClient := fixEDPClient()
+	reconcilerClient := reconciler.NewFakeClient()
 
 	monitoringClient := &monitoringmocks.Client{}
 	monitoringClient.On("IsPresent", mock.Anything).Return(true, nil)
@@ -88,7 +91,7 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, monitoringClient, accountProvider, logs,
+		bundleBuilder, edpClient, monitoringClient, accountProvider, reconcilerClient, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)

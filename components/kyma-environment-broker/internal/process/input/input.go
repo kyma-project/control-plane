@@ -257,7 +257,7 @@ func (r *RuntimeInput) Provider() internal.CloudProvider {
 	return r.hyperscalerInputProvider.Provider()
 }
 
-func (r *RuntimeInput) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) {
 	data, err := r.CreateProvisionRuntimeInput()
 	if err != nil {
 		return reconciler.Cluster{}, err

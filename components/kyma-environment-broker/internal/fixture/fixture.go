@@ -36,6 +36,7 @@ type SimpleInputCreator struct {
 	EnabledComponents []string
 	ShootName         *string
 	CloudProvider     internal.CloudProvider
+	RuntimeID         string
 }
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
@@ -360,6 +361,7 @@ func (c *SimpleInputCreator) SetInstanceID(kcfg string) internal.ProvisionerInpu
 }
 
 func (c *SimpleInputCreator) SetRuntimeID(runtimeID string) internal.ProvisionerInputCreator {
+	c.RuntimeID = runtimeID
 	return c
 }
 
@@ -376,8 +378,11 @@ func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.Config
 	return c
 }
 
-func (c *SimpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
-	return reconciler.Cluster{}, nil
+func (c *SimpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
+	return reconciler.Cluster{
+		Cluster:    c.RuntimeID,
+		Kubeconfig: "sample-kubeconfig",
+	}, nil
 }
 
 func (c *SimpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {

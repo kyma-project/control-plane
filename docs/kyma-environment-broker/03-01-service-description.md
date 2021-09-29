@@ -20,6 +20,7 @@ The supported plans are as follows:
 | `gcp` | Installs Kyma Runtime on the GCP cluster. |
 | `trial` | Installs Kyma trial plan on Azure, AWS or GCP. |
 | `free` | Installs Kyma free plan on Azure or AWS. |
+| 'preview' | Installs Kyma on AWS with a preview version. |
 
 ## Provisioning parameters
 

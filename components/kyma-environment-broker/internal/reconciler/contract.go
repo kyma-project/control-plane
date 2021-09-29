@@ -1,6 +1,12 @@
 package reconciler
 
 // COPIED FROM RECONCILER keb/client.go - may be imported in the future
+const (
+	ClusterStatusPending     string = "reconcile_pending"
+	ClusterStatusReady       string = "ready"
+	ClusterStatusError       string = "error"
+	ClusterStatusReconciling string = "reconciling"
+)
 
 type Cluster struct {
 	Cluster      string       `json:"runtimeID"`
