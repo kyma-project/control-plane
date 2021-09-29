@@ -34,6 +34,9 @@ type Config struct {
 	OpenstackFloatingPoolName     string                 `envconfig:"default=FloatingIP-external-cp-kyma"`
 	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
 	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
+	DnsSecretName                 string                 `envconfig:"optional"`
+	DnsType                       string                 `envconfig:"default=aws-route53"`
+	DnsPrimary                    bool                   `envconfig:"default=true"`
 }
 
 type RuntimeInput struct {

@@ -330,6 +330,12 @@ spec:
               value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
             - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
               value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
+            - name: APP_PROVISIONER_DNS_SECRET_NAME
+              value: "{{ .Values.gardener.dns.secretName }}"
+             - name: APP_PROVISIONER_DNS_TYPE
+              value: "{{ .Values.gardener.dns.type }}"
+             - name: APP_PROVISIONER_DNS_PRIMARY
+              value: "{{ .Values.gardener.dns.primary }}"                     
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED

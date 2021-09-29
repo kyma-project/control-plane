@@ -124,30 +124,31 @@ type GardenerConfig struct {
 }
 
 type GardenerConfigInput struct {
-	Name                                string                 `json:"name"`
-	KubernetesVersion                   string                 `json:"kubernetesVersion"`
-	Provider                            string                 `json:"provider"`
-	TargetSecret                        string                 `json:"targetSecret"`
-	Region                              string                 `json:"region"`
-	MachineType                         string                 `json:"machineType"`
-	MachineImage                        *string                `json:"machineImage"`
-	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	DiskType                            *string                `json:"diskType"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
-	WorkerCidr                          string                 `json:"workerCidr"`
-	AutoScalerMin                       int                    `json:"autoScalerMin"`
-	AutoScalerMax                       int                    `json:"autoScalerMax"`
-	MaxSurge                            int                    `json:"maxSurge"`
-	MaxUnavailable                      int                    `json:"maxUnavailable"`
-	Purpose                             *string                `json:"purpose"`
-	LicenceType                         *string                `json:"licenceType"`
-	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
-	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
-	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
-	Seed                                *string                `json:"seed"`
-	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
-	ExposureClassName                   *string                `json:"exposureClassName"`
+	Name                                string                     `json:"name"`
+	KubernetesVersion                   string                     `json:"kubernetesVersion"`
+	Provider                            string                     `json:"provider"`
+	TargetSecret                        string                     `json:"targetSecret"`
+	Region                              string                     `json:"region"`
+	MachineType                         string                     `json:"machineType"`
+	MachineImage                        *string                    `json:"machineImage"`
+	MachineImageVersion                 *string                    `json:"machineImageVersion"`
+	DiskType                            *string                    `json:"diskType"`
+	VolumeSizeGb                        *int                       `json:"volumeSizeGB"`
+	WorkerCidr                          string                     `json:"workerCidr"`
+	AutoScalerMin                       int                        `json:"autoScalerMin"`
+	AutoScalerMax                       int                        `json:"autoScalerMax"`
+	MaxSurge                            int                        `json:"maxSurge"`
+	MaxUnavailable                      int                        `json:"maxUnavailable"`
+	Purpose                             *string                    `json:"purpose"`
+	LicenceType                         *string                    `json:"licenceType"`
+	EnableKubernetesVersionAutoUpdate   *bool                      `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate *bool                      `json:"enableMachineImageVersionAutoUpdate"`
+	AllowPrivilegedContainers           *bool                      `json:"allowPrivilegedContainers"`
+	ProviderSpecificConfig              *ProviderSpecificInput     `json:"providerSpecificConfig"`
+	DnsProvidersSpecificConfig          *DnsProvidersSpecificInput `json:"dnsProvidersSpecificConfig"`
+	Seed                                *string                    `json:"seed"`
+	OidcConfig                          *OIDCConfigInput           `json:"oidcConfig"`
+	ExposureClassName                   *string                    `json:"exposureClassName"`
 }
 
 type GardenerUpgradeInput struct {
@@ -236,6 +237,14 @@ type ProviderSpecificInput struct {
 	AzureConfig     *AzureProviderConfigInput     `json:"azureConfig"`
 	AwsConfig       *AWSProviderConfigInput       `json:"awsConfig"`
 	OpenStackConfig *OpenStackProviderConfigInput `json:"openStackConfig"`
+}
+
+// one dns provider is supported
+type DnsProvidersSpecificInput struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        *bool    `json:"primary"`
+	SecretName     *string  `json:"secretName"`
+	Type           *string  `json:"type"`
 }
 
 type ProvisionRuntimeInput struct {
