@@ -103,6 +103,16 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "shoot.test.customdomain.com",
+					Providers: []*gqlschema.DNSProviderInput{
+						{
+							Primary:    true,
+							SecretName: "aws-route53-secret",
+							Type:       "aws-route53",
+						},
+					},
+				},
 			},
 			Administrators: []string{administrator},
 		},

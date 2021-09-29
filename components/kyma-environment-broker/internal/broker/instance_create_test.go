@@ -59,7 +59,7 @@ func TestProvision_Provision(t *testing.T) {
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
 			},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{ShootDomain: "example.com"},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -81,7 +81,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
 		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
 		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
 
@@ -98,7 +98,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 	})
 
