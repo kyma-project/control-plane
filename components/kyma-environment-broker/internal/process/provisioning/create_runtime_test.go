@@ -41,7 +41,17 @@ const (
 )
 
 var (
-	shootPurpose = "development"
+	shootPurpose  = "development"
+	testDNSConfig = &gqlschema.DNSConfigInput{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []*gqlschema.DNSProviderInput{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
+	}
 )
 
 func TestCreateRuntimeStep_Run(t *testing.T) {
@@ -103,16 +113,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
-				DNSConfig: &gqlschema.DNSConfigInput{
-					Domain: "shoot.test.customdomain.com",
-					Providers: []*gqlschema.DNSProviderInput{
-						{
-							Primary:    true,
-							SecretName: "aws-route53-secret",
-							Type:       "aws-route53",
-						},
-					},
-				},
+				DNSConfig: testDNSConfig,
 			},
 			Administrators: []string{administrator},
 		},

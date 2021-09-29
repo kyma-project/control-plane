@@ -73,6 +73,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
+				DNSConfig: testDNSConfig,
 			},
 			Administrators: []string{administrator},
 		},
