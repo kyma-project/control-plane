@@ -190,7 +190,7 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
-		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedStages:         map[string]struct{}{"prepare": {}, "check_provisioning": {}},
 	}
 }
 
@@ -320,6 +320,19 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func FixDNSConfigDTO() internal.DNSConfigDTO {
+	return internal.DNSConfigDTO{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []*internal.DNSProviderDTO{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
 	}
 }
 

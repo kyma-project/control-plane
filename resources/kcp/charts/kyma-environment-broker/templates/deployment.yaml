@@ -382,6 +382,8 @@ spec:
               value: "orchestration-config"
             - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/newAdditionalRuntimeComponents.yaml
+            - name: APP_SKR_DNS_CONFIG_YAML_FILE_PATH
+              value: /config/skrDNSConfig.yaml
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

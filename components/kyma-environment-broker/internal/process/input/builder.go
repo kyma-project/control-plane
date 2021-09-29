@@ -61,10 +61,11 @@ type InputBuilderFactory struct {
 	trialPlatformRegionMapping map[string]string
 	enabledFreemiumProviders   map[string]struct{}
 	oidcDefaultValues          internal.OIDCConfigDTO
+	dnsConfig                  internal.DNSConfigDTO
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider, componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
+	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO, dnsConfig internal.DNSConfigDTO) (CreatorForPlan, error) {
 
 	freemiumProviders := map[string]struct{}{}
 	for _, p := range enabledFreemiumProviders {
@@ -80,6 +81,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
 		oidcDefaultValues:          oidcValues,
+		dnsConfig:                  dnsConfig,
 	}, nil
 }
 
@@ -161,6 +163,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		componentsDisabler:        runtime.NewDisabledComponentsService(disabledComponents),
 		enabledOptionalComponents: map[string]struct{}{},
 		oidcDefaultValues:         f.oidcDefaultValues,
+		dnsConfig:                 f.dnsConfig,
 		trialNodesNumber:          f.config.TrialNodesNumber,
 	}, nil
 }

@@ -53,6 +53,7 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
+	dnsConfig                 internal.DNSConfigDTO
 
 	trialNodesNumber int
 	instanceID       string
@@ -174,6 +175,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "configure OIDC",
 			execute: r.configureOIDC,
+		},
+		{
+			name:    "configure DNS",
+			execute: r.configureDNS,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -552,6 +557,33 @@ func (r *RuntimeInput) configureOIDC() error {
 	if r.upgradeShootInput.GardenerConfig != nil {
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
+	return nil
+}
+
+func (r *RuntimeInput) configureDNS() error {
+	// set dns from config or provided params to provisioning inpuit (if exists)
+	// This method could be used for:
+	// provisioning
+
+	dns := r.provisioningParameters.Parameters.DNS
+	if dns == nil {
+		dns = &r.dnsConfig
+	}
+	if dns != nil && r.provisionRuntimeInput.ClusterConfig != nil {
+		providers := []*gqlschema.DNSProviderInput{}
+		for _, p := range dns.Providers {
+			providers = append(providers, &gqlschema.DNSProviderInput{
+				Primary:    p.Primary,
+				SecretName: p.SecretName,
+				Type:       p.Type,
+			})
+		}
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &gqlschema.DNSConfigInput{
+			Domain:    dns.Domain,
+			Providers: providers,
+		}
+	}
+
 	return nil
 }
 

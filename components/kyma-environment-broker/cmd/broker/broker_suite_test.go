@@ -90,7 +90,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
 		DefaultTrialProvider:        internal.Azure,
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues(), fixture.FixDNSConfigDTO())
 
 	db := storage.NewMemoryStorage()
 

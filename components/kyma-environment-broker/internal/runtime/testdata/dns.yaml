@@ -1,0 +1,5 @@
+domain: shoot.test.customdomain.com
+providers:
+  - primary: true
+    secretName: aws-route53-secret
+    type: aws-route53

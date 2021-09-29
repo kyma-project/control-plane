@@ -130,7 +130,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://console.%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -139,7 +139,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 	operation.DashboardURL = dashboardURL
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)

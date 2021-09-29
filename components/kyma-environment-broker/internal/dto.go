@@ -17,6 +17,16 @@ type OIDCConfigDTO struct {
 	UsernamePrefix string   `json:"usernamePrefix" yaml:"usernamePrefix"`
 }
 
+type DNSConfigDTO struct {
+	Domain    string            `json:"domain" yaml:"domain"`
+	Providers []*DNSProviderDTO `json:"providers" yaml:"providers"`
+}
+type DNSProviderDTO struct {
+	Primary    bool   `json:"primary" yaml:"primary"`
+	SecretName string `json:"secretName" yaml:"secretName"`
+	Type       string `json:"type" yaml:"type"`
+}
+
 func (o *OIDCConfigDTO) IsProvided() bool {
 	if o == nil {
 		return false
@@ -73,12 +83,13 @@ const (
 )
 
 type ProvisioningParametersDTO struct {
-	Name         string  `json:"name"`
-	TargetSecret *string `json:"targetSecret"`
-	VolumeSizeGb *int    `json:"volumeSizeGb"`
-	MachineType  *string `json:"machineType"`
-	Region       *string `json:"region"`
-	Purpose      *string `json:"purpose"`
+	Name         string        `json:"name"`
+	TargetSecret *string       `json:"targetSecret"`
+	VolumeSizeGb *int          `json:"volumeSizeGb"`
+	MachineType  *string       `json:"machineType"`
+	Region       *string       `json:"region"`
+	DNS          *DNSConfigDTO `json:"dns,omitempty"`
+	Purpose      *string       `json:"purpose"`
 	// LicenceType - based on this parameter, some options can be enabled/disabled when preparing the input
 	// for the provisioner e.g. use default overrides for SKR instead overrides from resource
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"

@@ -891,8 +891,6 @@ github.com/kyma-incubator/compass v0.0.0-20200813093525-96b1a733a11b/go.mod h1:Q
 github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b h1:TdXnmnG+AP4viO0ZLds6pCTmR4c6sfd39J90sM9kaiM=
 github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b/go.mod h1:mXQbZvsoQH+zJB8ywkFIqtG2Rp8Lt7bhwIzKPRRnlNA=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210924084850-be29da785309 h1:6LStvpnsUbqL2LqBplidelStZ7MY06KDUe2pg6Aqg18=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210924084850-be29da785309/go.mod h1:WeQmbtBLbkjMbg4npPKPqTz2JFij2emvZwalK1fRiMg=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
 github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c/go.mod h1:aR7hDBCzR0sN0tEF6+RnwsvAM/FYlBR+tYxZs0BmmvA=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20200817094157-8392259f5be1/go.mod h1:Svisep1qUjML69qtRee5OcDOpWVjxID2Nb6E/xyhQ5k=
@@ -914,6 +912,8 @@ github.com/lib/pq v1.8.0/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/lib/pq v1.9.0/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/lib/pq v1.10.2 h1:AqzbZs4ZoCBp+GtejcpCpcxM3zlSMx29dXbUSeVtJb8=
 github.com/lib/pq v1.10.2/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
+github.com/life0215/control-plane/components/provisioner v0.0.0-20210928052041-13869158d38e h1:oRuGtOqjJu+q0AzYzxJLvX85cQ6xCTGif0DqxrjAHTQ=
+github.com/life0215/control-plane/components/provisioner v0.0.0-20210928052041-13869158d38e/go.mod h1:1jtJDlW2PYm9M00yNwlziXGaXlsxiPtcNx82s9vtcBg=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhnIaL+V+BEER86oLrvS+kWobKpbJuye0=
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
