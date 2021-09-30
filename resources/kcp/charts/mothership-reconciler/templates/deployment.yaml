@@ -42,7 +42,7 @@ spec:
         {{- end }}
       {{ end }}
       - image: "{{ .Values.global.images.mothership_reconciler_image }}"
-        imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - mothership
           - mothership

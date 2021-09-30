@@ -12,6 +12,8 @@ preComponents:
   - istio
 
 deployment:
+  imagePullPolicy: "IfNotPresent"
+
   replicasCount: 1
 
   imagePullSecrets: []
