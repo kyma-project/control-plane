@@ -16,7 +16,7 @@ import (
 func TestSchemaGenerator(t *testing.T) {
 	tests := []struct {
 		name         string
-		generator    func([]string) []byte
+		generator    func([]string) RootSchema
 		machineTypes []string
 		file         string
 	}{
@@ -66,21 +66,22 @@ func TestSchemaGenerator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.generator(tt.machineTypes)
-			validateSchema(t, got, tt.file)
+			rawSchema := marshalSchema(got)
+			validateSchema(t, rawSchema, tt.file)
 		})
 	}
 }
 
 func TestTrialSchemaGenerator(t *testing.T) {
-	validateSchema(t, TrialSchema(), "azure-trial-schema.json")
+	validateSchema(t, marshalSchema(TrialSchema()), "azure-trial-schema.json")
 }
 
 func TestFreemiumAzureSchemaGenerator(t *testing.T) {
-	validateSchema(t, FreemiumSchema(internal.Azure), "free-azure-schema.json")
+	validateSchema(t, marshalSchema(FreemiumSchema(internal.Azure)), "free-azure-schema.json")
 }
 
 func TestFreemiumAWSSchemaGenerator(t *testing.T) {
-	validateSchema(t, FreemiumSchema(internal.AWS), "free-aws-schema.json")
+	validateSchema(t, marshalSchema(FreemiumSchema(internal.AWS)), "free-aws-schema.json")
 }
 
 func validateSchema(t *testing.T, got []byte, file string) {
