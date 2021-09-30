@@ -7,3 +7,7 @@ dependencies:
   condition: global.kyma_environment_broker.enabled
 - name: kyma-metrics-collector
   condition: global.kyma_metrics_collector.enabled
+- name: mothership-reconciler
+  condition: global.mothership_reconciler.enabled
+- name: component-reconcilers
+  condition: global.component_reconcilers.enabled

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mothership-reconciler
+description: A Helm chart for Kyma Mothership Reconciler
+type: application
+version: 0.1.0

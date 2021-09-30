@@ -1,0 +1,20 @@
+db:
+  driver: postgres
+  encryption:
+    keyFile: "/encryption/reconciler.key"
+  blockQueries: true
+  postgres:
+    host: {{ .Values.db.serviceHost }}
+    database: {{ .Values.db.reconcilerDbName }}
+    port: {{ .Values.db.servicePort }}
+    user: {{ .Values.db.reconcilerUsername }}
+    password: {{ .Values.db.reconcilerPassword }}
+    useSsl: {{ .Values.db.useSsl }}
+mothership:
+  scheme: {{ .Values.service.scheme }}
+  host: {{ include "mothership-reconciler.fullname" . }}
+  port: {{ .Values.service.port }}
+{{- if .Values.preComponents }}
+preComponents:
+{{ toYaml .Values.preComponents | indent 6 }}
+{{- end }}

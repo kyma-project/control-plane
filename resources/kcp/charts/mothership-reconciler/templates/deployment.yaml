@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+  {{- include "mothership-reconciler.labels" . | nindent 4 }}
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+    {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  replicas: {{ .Values.deployment.replicasCount }}
+  template:
+    metadata:
+      labels:
+      {{- include "mothership-reconciler.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.deployment.podSecurityContext }}
+      securityContext:
+      {{ toYaml .Values.deployment.podSecurityContext | indent 8 }}
+      {{- end }}
+      {{- if .Values.deployment.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.deployment.imagePullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      {{- if eq .Values.global.database.embedded.enabled false}}
+      - name: cloudsql-proxy
+        image: {{ .Values.global.images.cloudsql_proxy_image }}
+        command: ["/cloud_sql_proxy",
+                  "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                  "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+        volumeMounts:
+        - name: cloudsql-instance-credentials
+          mountPath: /secrets/cloudsql-instance-credentials
+          readOnly: true
+        {{- with .Values.deployment.securityContext }}
+        securityContext:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+      {{ end }}
+      - image: "{{ .Values.global.images.mothership_reconciler_image }}"
+        imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+        args:
+          - mothership
+          - mothership
+          - start
+          - --reconcilers=components-configuration/component-reconcilers.json
+          - --config=mothership-configuration/reconciler.yaml
+          - --migrate
+        name: mothership-reconciler
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        resources:
+        {{ toYaml .Values.resources | indent 10 }}
+        {{- if .Values.securityContext }}
+        securityContext:
+{{ toYaml .Values.securityContext | indent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: encryption-key
+          mountPath: "/encryption"
+        - name: component-reconcilers-configuration
+          mountPath: "/components-configuration"
+        - name: mothership-reconciler-configuration
+          mountPath: "/mothership-configuration"
+      volumes:
+      {{- if eq .Values.global.database.embedded.enabled false }}
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      {{- end }}
+      - name: encryption-key
+        secret:
+          secretName: {{ .Values.encryptionKeySecret }}
+      - name: component-reconcilers-configuration
+        configMap:
+          name: {{ .Values.componentsConfigMap }}
+      - name: mothership-reconciler-configuration
+        secret:
+          secretName: {{ .Values.configurationSecret }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
