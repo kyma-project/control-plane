@@ -137,10 +137,10 @@ global:
     enabled: false
   
   mothership_reconciler:
-    enabled: true
+    enabled: false
   
   component_reconcilers:
-    enabled: true
+    enabled: false
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
