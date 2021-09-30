@@ -135,6 +135,12 @@ global:
 
   kyma_metrics_collector:
     enabled: false
+  
+  mothership_reconciler:
+    enabled: true
+  
+  component_reconcilers:
+    enabled: true
 
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
