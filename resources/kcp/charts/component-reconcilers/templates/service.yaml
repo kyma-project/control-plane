@@ -20,5 +20,6 @@ spec:
   selector:
     kyma-project.io/component-reconciler: ""
     component: {{ $component }}
+---
 {{- end }}
 {{- end }}

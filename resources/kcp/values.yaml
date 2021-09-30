@@ -44,6 +44,14 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
+  
+  components:
+    - base
+    - busolamigrator
+    - connectivityproxy
+    - istio
+    - ory
+    - rafter
 
   auditlog:
     configMapName: "kcp-auditlog-config"

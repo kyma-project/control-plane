@@ -2,10 +2,18 @@
 nameOverride: ""
 fullnameOverride: ""
 
-encryptionKeySecret: "kcp-recocniler-key"
-postgresSecret: "kcp-reconciler-postgres"
+encryptionKeySecret: "kcp-reconciler-key"
+configurationSecret: "kcp-mothership-reconciler"
 componentsConfigMap: "kcp-component-reconcilers"
-configurationConfigMap: "kcp-mothership-reconciler"
+
+db:
+  encryptionKey: ""
+  reconcilerDbName: "reconciler"
+  reconcilerPassword: ""
+  reconcilerUsername: ""
+  serviceHost: "localhost"
+  servicePort: "5432"
+  useSsl: false
 
 preComponents:
   - cluster-essentials

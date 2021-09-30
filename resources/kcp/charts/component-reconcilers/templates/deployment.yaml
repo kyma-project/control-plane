@@ -24,8 +24,8 @@ spec:
     spec:
       serviceAccountName: component-reconcilers-{{ $component }}
       containers:
-      - image: "{{ .Values.global.images.mothership_reconciler_image }}"
-        imagePullPolicy: {{ $global.Values.global.image.pullPolicy }}
+      - image: "{{ $global.Values.global.images.mothership_reconciler_image }}"
+        imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
         args:
           - reconciler
           - start
@@ -45,5 +45,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: workspace
+---
 {{- end }}
 {{- end }}

@@ -38,7 +38,7 @@ spec:
           readOnly: true
         {{- with .Values.deployment.securityContext }}
         securityContext:
-{{ toYaml . | indent 12 }}
+{{ toYaml . | indent 10 }}
         {{- end }}
       {{ end }}
       - image: "{{ .Values.global.images.mothership_reconciler_image }}"
@@ -59,7 +59,7 @@ spec:
         {{ toYaml .Values.resources | indent 10 }}
         {{- if .Values.securityContext }}
         securityContext:
-        {{ toYaml .Values.securityContext | indent 10 }}
+{{ toYaml .Values.securityContext | indent 10 }}
         {{- end }}
         env:
         - name: RECONCILER_DATABASE_USER
@@ -107,8 +107,8 @@ spec:
         configMap:
           name: {{ .Values.componentsConfigMap }}
       - name: mothership-reconciler-configuration
-        configMap:
-          name: {{ .Values.configurationConfigMap }}
+        secret:
+          secretName: {{ .Values.configurationSecret }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
       {{ toYaml . | indent 8 }}
