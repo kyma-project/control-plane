@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configurationConfigMap }}
+  name: {{ .Values.componentsConfigMap }}
   namespace: {{ .Release.Namespace }}
 data:
   component-reconcilers.json: |-

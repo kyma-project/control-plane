@@ -61,32 +61,6 @@ spec:
         securityContext:
 {{ toYaml .Values.securityContext | indent 10 }}
         {{- end }}
-        env:
-        - name: RECONCILER_DATABASE_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.postgresSecret }}
-              key: postgresql-reconciler-username
-        - name: RECONCILER_DATABASE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.postgresSecret }}
-              key: postgresql-reconciler-password
-        - name: RECONCILER_DATABASE_HOST
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.postgresSecret }}
-              key: postgresql-serviceName
-        - name: RECONCILER_DATABASE_PORT
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.postgresSecret }}
-              key: postgresql-servicePort
-        - name: RECONCILER_DATABASE_NAME
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.postgresSecret }}
-              key: postgresql-reconciler-db-name
         volumeMounts:
         - name: encryption-key
           mountPath: "/encryption"
