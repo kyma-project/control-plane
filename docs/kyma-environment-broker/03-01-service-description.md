@@ -242,5 +242,5 @@ Free plan allows you to install Kyma on Azure or AWS. The configurable provision
 ___
 
 
-<a name="update"><sup>1</sup> this parameter is available for `PATCH` as well and can be updated with the same constraints as during provisioning</a>
+<a name="update"><sup>1</sup> This parameter is available for `PATCH` as well, and can be updated with the same constraints as during provisioning.</a>
 
