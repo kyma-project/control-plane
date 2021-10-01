@@ -48,8 +48,8 @@ global:
   
   components:
     - base
-    - busolamigrator
-    - connectivityproxy
+    - busola-migrator
+    - connectivity-proxy
     - istio
     - ory
     - rafter
