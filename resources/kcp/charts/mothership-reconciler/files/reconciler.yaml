@@ -10,6 +10,7 @@ db:
     user: {{ .Values.db.reconcilerUsername }}
     password: {{ .Values.db.reconcilerPassword }}
     useSsl: {{ .Values.db.useSsl }}
+    migrationsDir: "./configs/db/postgres"
 mothership:
   scheme: {{ .Values.service.scheme }}
   host: {{ include "mothership-reconciler.fullname" . }}
