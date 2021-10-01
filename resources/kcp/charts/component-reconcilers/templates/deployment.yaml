@@ -24,7 +24,7 @@ spec:
     spec:
       serviceAccountName: component-reconcilers-{{ $component }}
       containers:
-      - image: "{{ $global.Values.global.images.mothership_reconciler_image }}"
+      - image: "{{ $global.Values.global.images.component_reconciler_image }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
         args:
           - reconciler
