@@ -512,6 +512,7 @@ func TestOpenstack(t *testing.T) {
 
 	// when
 	got, err := g.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		ExposureClassName:      ptr.String("converged-cloud-internet"),
 		ProviderSpecificConfig: &input,
 	})
 
@@ -528,6 +529,7 @@ func TestOpenstack(t *testing.T) {
         autoScalerMax: 0,
         maxSurge: 0,
 		maxUnavailable: 0,
+		exposureClassName: "converged-cloud-internet",
 		providerSpecificConfig: {
 			openStackConfig: {
 		zones: ["z1"],

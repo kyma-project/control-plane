@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultOpenStackRegion = "eu-de-1"
+	DefaultOpenStackRegion = "eu-de-2"
 	DefaultExposureClass   = "converged-cloud-internet"
 )
 
@@ -66,6 +66,7 @@ func (p *OpenStackInput) Provider() internal.CloudProvider {
 // The table is tested in a unit test to check if all necessary regions are covered
 var openstackZones = map[string]string{
 	"eu-de-1": "abd",
+	"eu-de-2": "abd",
 	"ap-sa-1": "a",
 }
 

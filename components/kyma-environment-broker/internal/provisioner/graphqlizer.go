@@ -94,6 +94,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
         autoScalerMax: {{ .AutoScalerMax }},
         maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
+		{{- if .ExposureClassName }}
+		exposureClassName: "{{ .ExposureClassName }}",
+		{{- end }}
 		{{- if .EnableKubernetesVersionAutoUpdate }}
 		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
 		{{- end }}
@@ -245,6 +248,9 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
       {{- end }}
       {{- if .MaxUnavailable }}
       maxUnavailable: {{ .MaxUnavailable }},
+      {{- end }}
+	  {{- if .ExposureClassName }}
+	  exposureClassName: "{{ .ExposureClassName }}",
       {{- end }}
       {{- if .EnableKubernetesVersionAutoUpdate }}
       enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
