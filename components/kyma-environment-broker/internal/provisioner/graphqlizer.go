@@ -165,11 +165,11 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 
 func (g *Graphqlizer) OpenStackProviderConfigInputToGraphQL(in gqlschema.OpenStackProviderConfigInput) (string, error) {
 	return fmt.Sprintf(`{
-		zones: %s,
-		floatingPoolName: "%s",
-		cloudProfileName: "%s",
-		loadBalancerProvider: "%s"
-}`, g.marshal(in.Zones), in.FloatingPoolName, in.CloudProfileName, in.LoadBalancerProvider), nil
+				zones: %s,
+				floatingPoolName: "%s",
+				cloudProfileName: "%s",
+				loadBalancerProvider: "%s"
+			}`, g.marshal(in.Zones), in.FloatingPoolName, in.CloudProfileName, in.LoadBalancerProvider), nil
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {

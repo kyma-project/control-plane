@@ -532,11 +532,11 @@ func TestOpenstack(t *testing.T) {
 		exposureClassName: "converged-cloud-internet",
 		providerSpecificConfig: {
 			openStackConfig: {
-		zones: ["z1"],
-		floatingPoolName: "fp",
-		cloudProfileName: "cp",
-		loadBalancerProvider: "lbp"
-},
+				zones: ["z1"],
+				floatingPoolName: "fp",
+				cloudProfileName: "cp",
+				loadBalancerProvider: "lbp"
+			},
 		}
 	}`, got)
 
