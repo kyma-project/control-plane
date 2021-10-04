@@ -199,6 +199,9 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
 	}
+	if err := parameters.AutoScalerParameters.Validate(); err != nil {
+		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+	}
 
 	planValidator, err := b.validator(&details, provider)
 	if err != nil {

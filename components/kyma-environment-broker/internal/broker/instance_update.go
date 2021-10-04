@@ -144,6 +144,10 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		logger.Errorf("unable to unmarshal parameters: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parametera")
 	}
+	if err := params.AutoScalerParameters.Validate(); err != nil {
+		logger.Errorf("invalid autoscaler parameters: %s", err.Error())
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+	}
 	logger.Debugf("Updating with params: %+v", params)
 
 	operationID := uuid.New().String()
