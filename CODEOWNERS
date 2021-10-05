@@ -29,6 +29,10 @@
 /components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
 /tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
 
+# Reconciler
+/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @rJankowski93 @suleymanakbas91 @kyma-incubator/wookiee
+/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @rJankowski93 @suleymanakbas91 @kyma-incubator/wookiee
+
 
 # e2e-provisioning
 /tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan @ebensom
