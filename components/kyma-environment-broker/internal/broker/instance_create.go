@@ -43,6 +43,7 @@ type ProvisionEndpoint struct {
 	enabledPlanIDs    map[string]struct{}
 	plansConfig       PlansConfig
 	kymaVerOnDemand   bool
+	planDefaults      PlanDefaults
 
 	shootDomain  string
 	shootProject string
@@ -58,6 +59,7 @@ func NewProvision(cfg Config,
 	builderFactory PlanValidator,
 	plansConfig PlansConfig,
 	kvod bool,
+	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 ) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
@@ -78,6 +80,7 @@ func NewProvision(cfg Config,
 		kymaVerOnDemand:   kvod,
 		shootDomain:       gardenerConfig.ShootDomain,
 		shootProject:      gardenerConfig.Project,
+		planDefaults:      planDefaults,
 	}
 }
 
@@ -199,7 +202,16 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
 	}
-	if err := parameters.AutoScalerParameters.Validate(); err != nil {
+	defaults, err := b.planDefaults(details.PlanID, provider, parameters.Provider)
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while obtaining plan defaults")
+	}
+	var autoscalerMin, autoscalerMax int
+	if defaults.GardenerConfig != nil {
+		p := defaults.GardenerConfig
+		autoscalerMin, autoscalerMax = p.AutoScalerMin, p.AutoScalerMax
+	}
+	if err := parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
 		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
 	}
 

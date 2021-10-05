@@ -82,19 +82,24 @@ type AutoScalerParameters struct {
 
 // FIXME: this is a makeshift check until the provisioner is capable of returning error messages
 // https://github.com/kyma-project/control-plane/issues/946
-func (p AutoScalerParameters) Validate() error {
-	if p.AutoScalerMin == nil && p.AutoScalerMax == nil {
-		return nil
+func (p AutoScalerParameters) Validate(planMin, planMax int) error {
+	min, max := planMin, planMax
+	if p.AutoScalerMin != nil {
+		min = *p.AutoScalerMin
 	}
-	if p.AutoScalerMin == nil || p.AutoScalerMax == nil {
-		missing := "Min"
-		if p.AutoScalerMax == nil {
-			missing = "Max"
+	if p.AutoScalerMax != nil {
+		max = *p.AutoScalerMax
+	}
+	if min > max {
+		userMin := fmt.Sprintf("%v", p.AutoScalerMin)
+		if p.AutoScalerMin != nil {
+			userMin = fmt.Sprintf("%v", *p.AutoScalerMin)
 		}
-		return fmt.Errorf("When setting Auto Scaler Min/Max you need to provide both, missing: %v", missing)
-	}
-	if *p.AutoScalerMin > *p.AutoScalerMax {
-		return fmt.Errorf("Auto Scaler Max %v should be larger than Auto Scaler Min %v", *p.AutoScalerMax, *p.AutoScalerMin)
+		userMax := fmt.Sprintf("%v", p.AutoScalerMax)
+		if p.AutoScalerMax != nil {
+			userMax = fmt.Sprintf("%v", *p.AutoScalerMax)
+		}
+		return fmt.Errorf("AutoScalerMax %v should be larger than AutoScalerMin %v. User provided values min:%v, max:%v; plan defaults min:%v, max:%v", max, min, userMin, userMax, planMin, planMax)
 	}
 	return nil
 }
