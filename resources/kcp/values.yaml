@@ -50,7 +50,7 @@ global:
     - base
     - busola-migrator
     - connectivity-proxy
-    - istio
+    - istio-configuration
     - ory
     - rafter
 
