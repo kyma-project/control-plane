@@ -41,13 +41,12 @@ spec:
 {{ toYaml . | indent 10 }}
         {{- end }}
       {{ end }}
-      - image: "{{ .Values.global.images.mothership_reconciler_image }}"
+      - image: "{{ .Values.global.images.mothership_reconciler.path }}:{{ .Values.global.images.mothership_reconciler.tag }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - mothership
           - mothership
           - start
-          - --reconcilers=components-configuration/component-reconcilers.json
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
         name: mothership-reconciler
@@ -64,8 +63,6 @@ spec:
         volumeMounts:
         - name: encryption-key
           mountPath: "/encryption"
-        - name: component-reconcilers-configuration
-          mountPath: "/components-configuration"
         - name: mothership-reconciler-configuration
           mountPath: "/mothership-configuration"
       volumes:
@@ -77,9 +74,6 @@ spec:
       - name: encryption-key
         secret:
           secretName: {{ .Values.encryptionKeySecret }}
-      - name: component-reconcilers-configuration
-        configMap:
-          name: {{ .Values.componentsConfigMap }}
       - name: mothership-reconciler-configuration
         secret:
           secretName: {{ .Values.configurationSecret }}
