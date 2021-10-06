@@ -19,8 +19,7 @@ type ProvisioningProperties struct {
 	AutoScalerMin *Type    `json:"autoScalerMin,omitempty"`
 	AutoScalerMax *Type    `json:"autoScalerMax,omitempty"`
 	ZonesCount    *Type    `json:"zonesCount,omitempty"`
-
-	//OIDC OIDCType `json:"oidc,omitempty"`
+	OIDC          OIDCType `json:"oidc,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -114,7 +113,6 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 			Default:     10,
 			Description: "Specifies the maximum number of virtual machines to create",
 		},
-		//OIDC: NewOIDCSchema(),
 	}
 }
 

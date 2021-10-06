@@ -185,7 +185,6 @@ func FreemiumSchema(provider internal.CloudProvider) RootSchema {
 				Type: "string",
 				Enum: ToInterfaceSlice(regions),
 			},
-			//OIDC: NewOIDCSchema(),
 		}, []string{"name", "region"})
 
 	return schema
@@ -218,7 +217,6 @@ func TrialSchema() RootSchema {
 	return NewSchema(
 		ProvisioningProperties{
 			Name: NameProperty(),
-			//OIDC: NewOIDCSchema(),
 		}, []string{"name"})
 }
 
@@ -264,7 +262,7 @@ type Plan struct {
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
+func Plans(plans PlansConfig, provider internal.CloudProvider, includeOIDCParams bool) map[string]Plan {
 	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 	gcpSchema := GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"})
@@ -274,6 +272,11 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 	azureHASchema := AzureHASchema([]string{"Standard_D8_v3"})
 	freemiumSchema := FreemiumSchema(provider)
 	trialSchema := TrialSchema()
+
+	if includeOIDCParams {
+		includeOIDCSchema(&awsSchema, &awsHASchema, &gcpSchema, &openstackSchema, &azureSchema,
+			&azureLiteSchema, &azureHASchema, &freemiumSchema, &trialSchema)
+	}
 
 	return map[string]Plan{
 		AWSPlanID: {
@@ -473,6 +476,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 			provisioningRawSchema: marshalSchema(trialSchema),
 			updateRawSchema:       schemaForUpdate(trialSchema),
 		},
+	}
+}
+
+func includeOIDCSchema(schemas ...*RootSchema) {
+	for _, schema := range schemas {
+		pp := schema.Properties.(ProvisioningProperties)
+		pp.OIDC = NewOIDCSchema()
+		schema.Properties = pp
 	}
 }
 
