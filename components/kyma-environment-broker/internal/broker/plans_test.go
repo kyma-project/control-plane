@@ -97,6 +97,97 @@ func TestFreemiumAWSSchemaGenerator(t *testing.T) {
 	validateSchema(t, schemaForUpdate(FreemiumSchema(internal.AWS)), "update-free-aws-schema.json")
 }
 
+func TestSchemaWithOIDC(t *testing.T) {
+	tests := []struct {
+		name         string
+		generator    func([]string) RootSchema
+		machineTypes []string
+		file         string
+		updateFile   string
+	}{
+		{
+			name:         "AWS schema with OIDC is correct",
+			generator:    AWSSchema,
+			machineTypes: []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			file:         "aws-schema-oidc.json",
+			updateFile:   "update-aws-schema-oidc.json",
+		},
+		{
+			name:         "AWS HA schema with OIDC is correct",
+			generator:    AWSHASchema,
+			machineTypes: []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			file:         "aws-ha-schema-oidc.json",
+			updateFile:   "update-aws-ha-schema-oidc.json",
+		},
+		{
+			name:         "Azure schema with OIDC is correct",
+			generator:    AzureSchema,
+			machineTypes: []string{"Standard_D8_v3"},
+			file:         "azure-schema-oidc.json",
+			updateFile:   "update-azure-schema-oidc.json",
+		},
+		{
+			name:         "AzureLite schema with OIDC is correct",
+			generator:    AzureLiteSchema,
+			machineTypes: []string{"Standard_D4_v3"},
+			file:         "azure-lite-schema-oidc.json",
+			updateFile:   "update-azure-lite-schema-oidc.json",
+		},
+		{
+			name:         "AzureHA schema with OIDC is correct",
+			generator:    AzureHASchema,
+			machineTypes: []string{"Standard_D8_v3"},
+			file:         "azure-ha-schema-oidc.json",
+			updateFile:   "update-azure-ha-schema-oidc.json",
+		},
+		{
+			name:         "GCP schema with OIDC is correct",
+			generator:    GCPSchema,
+			machineTypes: []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
+			file:         "gcp-schema-oidc.json",
+			updateFile:   "update-gcp-schema-oidc.json",
+		},
+		{
+			name:         "OpenStack schema with OIDC is correct",
+			generator:    OpenStackSchema,
+			machineTypes: []string{"m1.large"},
+			file:         "openstack-schema-oidc.json",
+			updateFile:   "update-openstack-schema-oidc.json",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.generator(tt.machineTypes)
+			includeOIDCSchema(&got)
+			rawSchema := marshalSchema(got)
+			rawUpdateSchema := schemaForUpdate(got)
+			validateSchema(t, rawSchema, tt.file)
+			validateSchema(t, rawUpdateSchema, tt.updateFile)
+		})
+	}
+}
+
+func TestTrialSchemaWithOIDC(t *testing.T) {
+	schema := TrialSchema()
+	includeOIDCSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "azure-trial-schema-oidc.json")
+	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema-oidc.json")
+}
+
+func TestFreemiumAzureSchemaWithOIDC(t *testing.T) {
+	schema := FreemiumSchema(internal.Azure)
+	includeOIDCSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "free-azure-schema-oidc.json")
+	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema-oidc.json")
+}
+
+func TestFreemiumAWSSchemaWithOIDC(t *testing.T) {
+	schema := FreemiumSchema(internal.AWS)
+	includeOIDCSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "free-aws-schema-oidc.json")
+	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema-oidc.json")
+}
+
 func validateSchema(t *testing.T, got []byte, file string) {
 	var prettyWant bytes.Buffer
 	want := readJsonFile(t, file)
