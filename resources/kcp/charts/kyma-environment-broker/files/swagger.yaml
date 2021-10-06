@@ -447,7 +447,7 @@ paths:
       security:
         - oAuth2ClientCredentials: [broker:write]
       tags:
-        - Instances (not implemented)
+        - Instances
       operationId: serviceInstance.update
       parameters:
         - $ref: '#/components/parameters/APIVersion'
@@ -516,6 +516,9 @@ paths:
           required: true
           schema:
             type: string
+        - name: force
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -948,7 +951,7 @@ paths:
       security:
         - oAuth2ClientCredentials: [broker:write]
       tags:
-        - Instances (not implemented)
+        - Instances
       operationId: serviceInstance.region.update
       parameters:
         - $ref: '#/components/parameters/APIVersion'
@@ -1029,6 +1032,9 @@ paths:
           required: true
           schema:
             type: string
+        - name: force
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -1937,23 +1943,151 @@ components:
         context:
           $ref: '#/components/schemas/Context'
         parameters:
-          $ref: '#/components/schemas/Object'
+          $ref: '#/components/schemas/ServiceInstanceProvisionRequestParameters'
+ 
+    OIDC:
+      type: object
+      properties:
+        clientID:
+          type: string
+          description: The client ID for the OpenID Connect client
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        groupsClaim:
+          type: string
+          description: If provided, the name of a custom OpenID Connect claim for specifying user groups
+          example: groups
+        issuerURL:
+          type: string
+          description: The URL of the OpenID issuer, only HTTPS scheme will be accepted
+          example: https://kymatest.accounts400.ondemand.com
+        signingAlgs:
+          type: array
+          description: List of allowed JOSE asymmetric signing algorithms
+          items:
+            type: string
+            example: "RS256"
+        usernameClaim:
+          type: string
+          description: The OpenID claim to use as the user name
+          example: "sub"
+        usernamePrefix:
+          type: string
+          description: If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'
+          example: "-"
+
+    ServiceInstanceProvisionRequestParameters:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        targetSecret:
+          type: string
+        volumeSizeGb:
+          type: integer
+          example: 25
+        machineType:
+          type: string
+          example: Standard_D8_v3
+        region:
+          type: string
+          example: "westeurope"
+        purpose:
+          type: string
+          example: evaluation
+        licence_type:
+          type: string
+          example: TestDevelopmentAndDemo
+        zones:
+          type: array
+          items:
+            type: string
+        zonesCount:
+          type: integer
+          example: 1
+        autoScalerMin:
+          type: integer
+          example: 3
+        autoScalerMax:
+          type: integer
+          example: 10
+        maxSurge:
+          type: integer
+          example: 2
+        maxUnavailable:
+          type: integer
+          example: 2
+        components:
+          type: array
+          items:
+            type: string
+        kymaVersion:
+          type: string
+          example: "2.0"
+        overridesVersion:
+          type: string
+        administrators:
+          type: array
+          items:
+            type: string
+        provider:
+          type: string
+          enum: ["Azure", "AWS", "GCP", "OpenStack"]
+        oidc:
+          $ref: '#/components/schemas/OIDC'
+        service_id:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        plan_id:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+
+    ServiceInstanceProvisionLabels:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: instance123 
+        KubeconfigURL:
+          type: string
+          format: url
+          example: https://kubeconfigs.kyma.com/kubeconfig/instance123
+
+    ServiceInstanceProvisionMeta:
+      type: object
+      properties:
+        labels:
+          $ref: '#/components/schemas/ServiceInstanceProvisionLabels'
 
     ServiceInstanceProvision:
       type: object
       properties:
+        operation:
+          type: string
+          format: uuid
+          example: c64c69ac-b3fc-4d3a-9fe8-a8acc850b1f4
         dashboard_url:
           type: string
           example: https://dashboard.kyma.com
+        metadata:
+          $ref: '#/components/schemas/ServiceInstanceProvisionMeta'
 
     ServiceInstanceAsyncOperation:
       type: object
       properties:
+        operation:
+          type: string
+          format: uuid
+          example: c64c69ac-b3fc-4d3a-9fe8-a8acc850b1f4
         dashboard_url:
           type: string
           example: https://dashboard.kyma.com
-        operation:
-          type: string # could be a link object to last operation
+        metadata:
+          $ref: '#/components/schemas/ServiceInstanceProvisionMeta'
 
     ServiceInstanceUpdateRequest:
       type: object
@@ -1979,17 +2113,19 @@ components:
       type: object
       properties:
         autoScalerMin:
-          type: int
+          type: integer
           example: 3
         autoScalerMax:
-          type: int
+          type: integer
           example: 10
         maxSurge:
-          type: int
+          type: integer
           example: 2
         maxUnavailable:
-          type: int
+          type: integer
           example: 2
+        oidc:
+          $ref: '#/components/schemas/OIDC'
 
     ServiceInstancePreviousValues:
       type: object
@@ -2102,6 +2238,22 @@ components:
           type: string
         mount_config:
           $ref: '#/components/schemas/Object'
+ 
+    ServiceManagerCredentialsBasic:
+        username:
+          type: string
+        password:
+          type: string
+
+    ServiceManagerCredentials:
+      basic:
+        $ref: '#/components/schemas/ServiceManagerCredentialsBasic'
+
+    SMPlatformCredentials:
+      credentials:
+        $ref: '#/components/schemas/ServiceManagerCredentials'
+      url:
+        type: string
 
     Context:
       description: "See [Context Conventions](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object) for more details."
@@ -2115,6 +2267,14 @@ components:
           type: string
           format: uuid
           example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        tenant_id:
+          type: string
+        sm_platform_credentials:
+          $ref: '#/components/schemas/SMPlatformCredentials'
+        active:
+          type: boolean
+        user_id:
+          type: string
 
     ServiceMetadata:
       description: "See [Service Metadata Conventions](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#service-metadata) for more details."
