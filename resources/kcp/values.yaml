@@ -14,7 +14,7 @@ global:
       version: "PR-944"
     kyma_environment_broker:
       dir:
-      version: "PR-953"
+      version: "PR-964"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-938"
@@ -45,7 +45,7 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
-  
+
   components:
     - base
     - busola-migrator
@@ -136,10 +136,10 @@ global:
 
   kyma_metrics_collector:
     enabled: false
-  
+
   mothership_reconciler:
     enabled: false
-  
+
   component_reconcilers:
     enabled: false
 

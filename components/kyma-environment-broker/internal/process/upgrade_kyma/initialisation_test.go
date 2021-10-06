@@ -173,6 +173,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		upgradeOperation := fixUpgradeKymaOperation()
 		upgradeOperation.ProvisionerOperationID = ""
+		upgradeOperation.InputCreator = &input.RuntimeInput{}
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
