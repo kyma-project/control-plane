@@ -81,8 +81,33 @@ func NewProvision(cfg Config,
 	}
 }
 
-// Provision creates a new service instance
-//   PUT /v2/service_instances/{instance_id}
+// swagger:operation PUT /oauth/v2/service_instances/{instance_id} Instances serviceInstance
+//
+// provision a service instance
+//
+// this endpoint will provision a kyma runtime instance
+// ---
+// consumes:
+// - application/json
+//
+// produces:
+// - application/json
+//
+// parameters:
+// - $ref: "#/components/parameters/APIVersion"
+// - name: instance_id
+//   in: path
+//   description: instance id of instance to provision
+//   required: true
+//   type: string
+//
+// responses:
+//   200: ServiceInstanceProvision
+//   201: ServiceInstanceProvision
+//   202: ServiceInstanceAsyncOperation
+//   400: Error
+//   409: Error
+//   422: Error
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	operationID := uuid.New().String()
 	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID, "planID": details.PlanID})
