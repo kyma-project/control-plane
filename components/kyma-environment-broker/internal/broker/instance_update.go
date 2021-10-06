@@ -38,6 +38,8 @@ type UpdateEndpoint struct {
 	operationStorage storage.Operations
 
 	updatingQueue *process.Queue
+
+	planDefaults PlanDefaults
 }
 
 func NewUpdate(cfg Config,
@@ -46,6 +48,7 @@ func NewUpdate(cfg Config,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
 	queue *process.Queue,
+	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
@@ -56,6 +59,7 @@ func NewUpdate(cfg Config,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
 		updatingQueue:        queue,
+		planDefaults:         planDefaults,
 	}
 }
 
@@ -151,6 +155,20 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
+	defaults, err := b.planDefaults(details.PlanID, instance.Provider, &instance.Provider)
+	if err != nil {
+		logger.Errorf("unable to obtain plan defaults: %s", err.Error())
+		return domain.UpdateServiceSpec{}, errors.New("unable to obtain plan defaults")
+	}
+	var autoscalerMin, autoscalerMax int
+	if defaults.GardenerConfig != nil {
+		p := defaults.GardenerConfig
+		autoscalerMin, autoscalerMax = p.AutoScalerMin, p.AutoScalerMax
+	}
+	if err := operation.ProvisioningParameters.Parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
+		logger.Errorf("invalid autoscaler parameters: %s", err.Error())
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+	}
 	err = b.operationStorage.InsertUpdatingOperation(operation)
 	if err != nil {
 		return domain.UpdateServiceSpec{}, err
