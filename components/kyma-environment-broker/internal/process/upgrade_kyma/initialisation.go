@@ -110,7 +110,14 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 			}
 		}
 
+		// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
+		provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
+		if err != nil {
+			log.Errorf("while getting provisioning operation from storage")
+			return operation, s.timeSchedule.Retry, nil
+		}
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
+			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
@@ -118,14 +125,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		operation = op
 	}
-
-	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
-	provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
-	if err != nil {
-		log.Errorf("while getting provisioning operation from storage")
-		return operation, s.timeSchedule.Retry, nil
-	}
-	operation.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 
 	if operation.ProvisionerOperationID == "" {
 		log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
@@ -147,13 +146,6 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
-
-		operation, repeat := s.operationManager.SimpleUpdateOperation(operation)
-		if repeat != 0 {
-			log.Errorf("cannot save the operation")
-			return operation, time.Second, nil
-		}
-
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)

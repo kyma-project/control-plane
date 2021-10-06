@@ -31,6 +31,9 @@ func (s *MonitoringUnistallStep) Name() string {
 
 func (s *MonitoringUnistallStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	releaseName := operation.InstanceDetails.ShootName
+	if releaseName == "" {
+		return s.operationManager.OperationFailed(operation, "rmi release name cannot be empty", log)
+	}
 	isPresent, err := s.client.IsPresent(releaseName)
 	if err != nil {
 		return s.handleError(operation, err, "failed to check release existence", log)

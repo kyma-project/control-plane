@@ -65,7 +65,10 @@ func TestMonitoringIntegrationStep_Run(t *testing.T) {
 					ShootName:    "c-012345",
 				},
 				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e"},
+					ErsContext: internal.ERSContext{
+						GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e",
+						SubAccountID:    "3cb65e5b-e455-4799-bf35-be46e8f5a533",
+					},
 					Parameters: internal.ProvisioningParametersDTO{Region: StringPtr("eastus")},
 				},
 			},
@@ -133,7 +136,10 @@ func TestMonitoringIntegrationRetryStep_Run(t *testing.T) {
 					ShootName:    "c-012345",
 				},
 				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e"},
+					ErsContext: internal.ERSContext{
+						GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e",
+						SubAccountID:    "3cb65e5b-e455-4799-bf35-be46e8f5a533",
+					},
 					Parameters: internal.ProvisioningParametersDTO{Region: StringPtr("eastus")},
 				},
 			},
@@ -192,7 +198,10 @@ func TestMonitoringIntegrationSkipStep_Run(t *testing.T) {
 					},
 				},
 				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e"},
+					ErsContext: internal.ERSContext{
+						GlobalAccountID: "d9d501c2-bdcb-49f2-8e86-1c4e05b90f5e",
+						SubAccountID:    "3cb65e5b-e455-4799-bf35-be46e8f5a533",
+					},
 					Parameters: internal.ProvisioningParametersDTO{Region: StringPtr("eastus")},
 				},
 			},
