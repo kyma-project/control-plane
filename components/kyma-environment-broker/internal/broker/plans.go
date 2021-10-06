@@ -230,7 +230,7 @@ func marshalSchema(schema RootSchema) []byte {
 
 func schemaForUpdate(provisioningRoot RootSchema) []byte {
 	pp := provisioningRoot.Properties.(ProvisioningProperties)
-	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil {
+	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil && pp.OIDC == nil {
 		return []byte{}
 	}
 	up := UpdateProperties{}
@@ -249,6 +249,9 @@ func schemaForUpdate(provisioningRoot RootSchema) []byte {
 			Description: pp.AutoScalerMin.Description,
 			Type:        pp.AutoScalerMin.Type,
 		}
+	}
+	if pp.OIDC != nil {
+		up.OIDC = pp.OIDC
 	}
 
 	return marshalSchema(NewUpdateSchema(up))
@@ -480,9 +483,11 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeOIDCParams
 }
 
 func includeOIDCSchema(schemas ...*RootSchema) {
+	oidcSchema := NewOIDCSchema()
+
 	for _, schema := range schemas {
 		pp := schema.Properties.(ProvisioningProperties)
-		pp.OIDC = NewOIDCSchema()
+		pp.OIDC = &oidcSchema
 		schema.Properties = pp
 	}
 }

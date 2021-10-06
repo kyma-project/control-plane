@@ -13,18 +13,19 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name          NameType `json:"name"`
-	Region        *Type    `json:"region,omitempty"`
-	MachineType   *Type    `json:"machineType,omitempty"`
-	AutoScalerMin *Type    `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type    `json:"autoScalerMax,omitempty"`
-	ZonesCount    *Type    `json:"zonesCount,omitempty"`
-	OIDC          OIDCType `json:"oidc,omitempty"`
+	Name          NameType  `json:"name"`
+	Region        *Type     `json:"region,omitempty"`
+	MachineType   *Type     `json:"machineType,omitempty"`
+	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
+	ZonesCount    *Type     `json:"zonesCount,omitempty"`
+	OIDC          *OIDCType `json:"oidc,omitempty"`
 }
 
 type UpdateProperties struct {
-	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
+	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
+	OIDC          *OIDCType `json:"oidc,omitempty"`
 }
 
 type OIDCProperties struct {
