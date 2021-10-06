@@ -489,6 +489,7 @@ func includeOIDCSchema(schemas ...*RootSchema) {
 		pp := schema.Properties.(ProvisioningProperties)
 		pp.OIDC = &oidcSchema
 		schema.Properties = pp
+		schema.ControlsOrder = append(schema.ControlsOrder, "oidc")
 	}
 }
 
