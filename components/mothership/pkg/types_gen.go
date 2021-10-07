@@ -13,6 +13,10 @@ const (
 
 	StatusReady Status = "ready"
 
+	StatusReconcileDisabled Status = "reconcile_disabled"
+
+	StatusReconcileFailed Status = "reconcile_failed"
+
 	StatusReconcilePending Status = "reconcile_pending"
 
 	StatusReconciling Status = "reconciling"
@@ -36,9 +40,6 @@ type HTTPClusterStatusResponse struct {
 type HTTPErrorResponse struct {
 	Error string `json:"error"`
 }
-
-// HTTPReconcilerStatus defines model for HTTPReconcilerStatus.
-type HTTPReconcilerStatus []Reconciliation
 
 // Cluster defines model for cluster.
 type Cluster struct {
@@ -84,17 +85,6 @@ type Metadata struct {
 	SubAccountID    string `json:"subAccountID"`
 }
 
-// Reconciliation defines model for reconciliation.
-type Reconciliation struct {
-	Created      time.Time `json:"created"`
-	Lock         string    `json:"lock"`
-	RuntimeID    string    `json:"runtimeID"`
-	SchedulingID string    `json:"schedulingID"`
-	ShootName    string    `json:"shootName"`
-	Status       Status    `json:"status"`
-	Updated      time.Time `json:"updated"`
-}
-
 // RuntimeInput defines model for runtimeInput.
 type RuntimeInput struct {
 	Description string `json:"description"`
@@ -109,6 +99,11 @@ type StatusChange struct {
 	Duration int64     `json:"duration"`
 	Started  time.Time `json:"started"`
 	Status   Status    `json:"status"`
+}
+
+// StatusUpdate defines model for statusUpdate.
+type StatusUpdate struct {
+	Status Status `json:"status"`
 }
 
 // BadRequest defines model for BadRequest.
@@ -129,15 +124,14 @@ type PostClustersJSONBody Cluster
 // PutClustersJSONBody defines parameters for PutClusters.
 type PutClustersJSONBody Cluster
 
-// GetReconcilesParams defines parameters for GetReconciles.
-type GetReconcilesParams struct {
-	RuntimeIDs *[]string `json:"runtimeIDs,omitempty"`
-	Statuses   *[]Status `json:"statuses,omitempty"`
-	Shoots     *[]string `json:"shoots,omitempty"`
-}
+// PutClustersClusterStatusJSONBody defines parameters for PutClustersClusterStatus.
+type PutClustersClusterStatusJSONBody StatusUpdate
 
 // PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.
 type PostClustersJSONRequestBody PostClustersJSONBody
 
 // PutClustersJSONRequestBody defines body for PutClusters for application/json ContentType.
 type PutClustersJSONRequestBody PutClustersJSONBody
+
+// PutClustersClusterStatusJSONRequestBody defines body for PutClustersClusterStatus for application/json ContentType.
+type PutClustersClusterStatusJSONRequestBody PutClustersClusterStatusJSONBody
