@@ -116,6 +116,7 @@ type Config struct {
 	ManagedRuntimeComponentsYAMLFilePath       string
 	NewAdditionalRuntimeComponentsYAMLFilePath string
 	SkrOidcDefaultValuesYAMLFilePath           string
+	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 
@@ -253,8 +254,10 @@ func main() {
 	logs.Infof("Platform region mapping for trial: %v", regions)
 	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SkrOidcDefaultValuesYAMLFilePath)
 	fatalOnError(err)
+	dnsCustomValues, err := runtime.ReadDNSProvidersValuesFromYAML(cfg.SkrDnsProvidersValuesYAMLFilePath)
+	fatalOnError(err)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
-		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcDefaultValues)
+		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcDefaultValues, dnsCustomValues)
 	fatalOnError(err)
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))

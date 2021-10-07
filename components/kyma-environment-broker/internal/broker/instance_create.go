@@ -275,6 +275,10 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 		}
 	}
 
+	if parameters.DNS.IsProvided() {
+		return parameters, errors.New("DNS Providers cannot be empty")
+	}
+
 	return parameters, nil
 }
 

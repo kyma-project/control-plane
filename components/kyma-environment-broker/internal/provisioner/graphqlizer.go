@@ -126,7 +126,23 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
             usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
         }
         {{- end }}
-	}`)
+        {{- if .DNSConfig }}
+        dnsConfig: {
+            {{- with .DNSConfig.Providers }}
+            providers: [
+                {{- range . }}
+                {
+                    domainsInclude: {{ .DomainsInclude | marshal }},
+                    primary: {{ .Primary }},
+                    secretName: {{ .SecretName | strQuote }},
+                    type: {{ .Type | strQuote }},
+                }
+                {{- end }}
+            ]
+            {{- end }}
+        }
+        {{- end }}
+    }`)
 }
 
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {

@@ -330,12 +330,6 @@ spec:
               value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
             - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
               value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
-            - name: APP_PROVISIONER_DNS_SECRET_NAME
-              value: "{{ .Values.gardener.dns.secretName }}"
-             - name: APP_PROVISIONER_DNS_TYPE
-              value: "{{ .Values.gardener.dns.type }}"
-             - name: APP_PROVISIONER_DNS_PRIMARY
-              value: "{{ .Values.gardener.dns.primary }}"                     
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
@@ -382,6 +376,8 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
               value: /config/skrOIDCDefaultValues.yaml
+             - name: APP_SKR_DNS_PROVIDERS_VALUES_YAML_FILE_PATH
+              value: /config/skrDNSProvidersValues.yaml
             - name: APP_ORCHESTRATION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_ORCHESTRATION_CONFIG_NAME

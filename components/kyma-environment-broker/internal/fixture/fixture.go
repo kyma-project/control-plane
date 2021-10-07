@@ -69,6 +69,17 @@ func FixERSContext(id string) internal.ERSContext {
 
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	trialCloudProvider := internal.Azure
+	dnsProviders := internal.DNSConfigDTO{
+		Providers: []internal.DNSProviderDTO{
+			internal.DNSProviderDTO{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_indto",
+				Type:           "route53_type_test",
+			},
+		},
+	}
+
 	return internal.ProvisioningParametersDTO{
 		Name:           "cluster-test",
 		VolumeSizeGb:   ptr.Integer(50),
@@ -83,6 +94,7 @@ func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 		MaxUnavailable: ptr.Integer(1),
 		KymaVersion:    KymaVersion,
 		Provider:       &trialCloudProvider,
+		DNS:            &dnsProviders,
 	}
 }
 
@@ -320,6 +332,19 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func FixDNSConfigDTO() internal.DNSConfigDTO {
+	return internal.DNSConfigDTO{
+		Providers: []internal.DNSProviderDTO{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_incustom",
+				Type:           "route53_type_test",
+			},
+		},
 	}
 }
 

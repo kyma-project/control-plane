@@ -234,6 +234,80 @@ func Test_GardenerConfigInputToGraphQLWithOIDC(t *testing.T) {
 	assert.Equal(t, exp, got)
 }
 
+func Test_GardenerConfigInputToGraphQLWithDNS(t *testing.T) {
+	// given
+	sut := Graphqlizer{}
+	exp := `{
+		name: "c-90a3016",
+		kubernetesVersion: "1.18",
+		volumeSizeGB: 50,
+		machineType: "Standard_D4_v3",
+		region: "europe",
+		provider: "Azure",
+		diskType: "Standard_LRS",
+		targetSecret: "scr",
+		workerCidr: "10.250.0.0/19",
+        autoScalerMin: 0,
+        autoScalerMax: 0,
+        maxSurge: 0,
+		maxUnavailable: 0,
+        oidcConfig: {
+            clientID: "client-id",
+            issuerURL: "https://issuer.url",
+            groupsClaim: "",
+            signingAlgs: [],
+            usernameClaim: "",
+            usernamePrefix: "",
+        }
+        dnsConfig: {
+            providers: [
+                {
+                    domainsInclude: ["kymatest.ondemand.com"],
+                    primary: true,
+                    secretName: "aws-secret-for-custom-domain",
+                    type: "aws-route53",
+                }
+            ]
+        }
+    }`
+
+	// when
+	name := "c-90a3016"
+	got, err := sut.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		Name:              name,
+		Region:            "europe",
+		VolumeSizeGb:      ptr.Integer(50),
+		WorkerCidr:        "10.250.0.0/19",
+		Provider:          "Azure",
+		DiskType:          ptr.String("Standard_LRS"),
+		TargetSecret:      "scr",
+		MachineType:       "Standard_D4_v3",
+		KubernetesVersion: "1.18",
+		OidcConfig: &gqlschema.OIDCConfigInput{
+			ClientID:       "client-id",
+			GroupsClaim:    "",
+			IssuerURL:      "https://issuer.url",
+			SigningAlgs:    nil,
+			UsernameClaim:  "",
+			UsernamePrefix: "",
+		},
+		DNSConfig: &gqlschema.DNSConfigInput{
+			Providers: []*gqlschema.DNSProviderInput{
+				&gqlschema.DNSProviderInput{
+					DomainsInclude: []string{"kymatest.ondemand.com"},
+					Primary:        true,
+					SecretName:     "aws-secret-for-custom-domain",
+					Type:           "aws-route53",
+				},
+			},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, exp, got)
+}
+
 func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
 	// given
 	sut := Graphqlizer{}
