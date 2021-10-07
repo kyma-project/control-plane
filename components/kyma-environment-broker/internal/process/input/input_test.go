@@ -1,8 +1,9 @@
 package input
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -105,7 +106,6 @@ func TestShouldEnableComponents(t *testing.T) {
 		assert.Len(t, input.KymaConfig.Components, 2)
 	})
 }
-
 
 func fixTrialProviders() []string {
 	return []string{"azure", "aws"}
