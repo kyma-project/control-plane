@@ -155,7 +155,11 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
-	defaults, err := b.planDefaults(details.PlanID, instance.Provider, &instance.Provider)
+	planID := instance.Parameters.PlanID
+	if len(details.PlanID) != 0 {
+		planID = details.PlanID
+	}
+	defaults, err := b.planDefaults(planID, instance.Provider, &instance.Provider)
 	if err != nil {
 		logger.Errorf("unable to obtain plan defaults: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to obtain plan defaults")
