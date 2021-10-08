@@ -130,22 +130,26 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		}
 		{{- end }}
 		{{- if .DNSConfig }}
-		dnsConfig: {
-			{{- with .DNSConfig.Providers }}
+		dnsConfig: {{ DNSConfigInputToGraphQL .DNSConfig }}
+		{{- end }}
+	}`)
+}
+
+func (g *Graphqlizer) DNSConfigInputToGraphQL(in gqlschema.DNSConfigInput) (string, error) {
+	return g.genericToGraphQL(in, `{
+			{{- with .Providers }}
 			providers: [
 				{{- range . }}
 				{
 					domainsInclude: {{ .DomainsInclude | marshal }},
 					primary: {{ .Primary }},
-					secretName: {{ .SecretName | strQuote }},
-					type: {{ .Type | strQuote }},
+					secretName: "{{ .SecretName }}",
+					type: "{{ .Type }}",
 				}
 				{{- end }}
 			]
 			{{- end }}
-		}
-		{{- end }}
-	}`)
+		}`)
 }
 
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
@@ -346,6 +350,7 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 	fm["GCPProviderConfigInputToGraphQL"] = g.GCPProviderConfigInputToGraphQL
 	fm["AWSProviderConfigInputToGraphQL"] = g.AWSProviderConfigInputToGraphQL
 	fm["OpenStackProviderConfigInputToGraphQL"] = g.OpenStackProviderConfigInputToGraphQL
+	fm["DNSConfigInputToGraphQL"] = g.DNSConfigInputToGraphQL
 	fm["LabelsToGQL"] = g.LabelsToGQL
 	fm["strQuote"] = strconv.Quote
 
