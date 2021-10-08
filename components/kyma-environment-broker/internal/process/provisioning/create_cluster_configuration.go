@@ -38,6 +38,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		SetInstanceID(operation.InstanceID).
 		SetKubeconfig(operation.Kubeconfig).
 		SetShootName(operation.ShootName).
+		SetShootDomain(operation.ShootDomain).
 		SetProvisioningParameters(operation.ProvisioningParameters)
 
 	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()

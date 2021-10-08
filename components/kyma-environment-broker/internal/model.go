@@ -38,6 +38,7 @@ type ProvisionerInputCreator interface {
 	SetKubeconfig(kcfg string) ProvisionerInputCreator
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
 	SetInstanceID(instanceID string) ProvisionerInputCreator
+	SetShootDomain(shootDomain string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
