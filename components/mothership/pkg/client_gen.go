@@ -116,6 +116,9 @@ type ClientInterface interface {
 
 	// GetClustersClusterStatusChanges request
 	GetClustersClusterStatusChanges(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetReconciles request
+	GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) PostClustersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -228,6 +231,18 @@ func (c *Client) PutClustersClusterStatus(ctx context.Context, cluster string, b
 
 func (c *Client) GetClustersClusterStatusChanges(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClustersClusterStatusChangesRequest(c.Server, cluster)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetReconcilesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -508,6 +523,85 @@ func NewGetClustersClusterStatusChangesRequest(server string, cluster string) (*
 	return req, nil
 }
 
+// NewGetReconcilesRequest generates requests for GetReconciles
+func NewGetReconcilesRequest(server string, params *GetReconcilesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/reconciles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if params.RuntimeIDs != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runtimeIDs", runtime.ParamLocationQuery, *params.RuntimeIDs); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Statuses != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "statuses", runtime.ParamLocationQuery, *params.Statuses); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Shoots != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shoots", runtime.ParamLocationQuery, *params.Shoots); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -577,6 +671,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetClustersClusterStatusChanges request
 	GetClustersClusterStatusChangesWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusChangesResponse, error)
+
+	// GetReconciles request
+	GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error)
 }
 
 type PostClustersResponse struct {
@@ -752,6 +849,29 @@ func (r GetClustersClusterStatusChangesResponse) StatusCode() int {
 	return 0
 }
 
+type GetReconcilesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HTTPReconcilerStatus
+	JSON400      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetReconcilesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetReconcilesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // PostClustersWithBodyWithResponse request with arbitrary body returning *PostClustersResponse
 func (c *ClientWithResponses) PostClustersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostClustersResponse, error) {
 	rsp, err := c.PostClustersWithBody(ctx, contentType, body, reqEditors...)
@@ -837,6 +957,15 @@ func (c *ClientWithResponses) GetClustersClusterStatusChangesWithResponse(ctx co
 		return nil, err
 	}
 	return ParseGetClustersClusterStatusChangesResponse(rsp)
+}
+
+// GetReconcilesWithResponse request returning *GetReconcilesResponse
+func (c *ClientWithResponses) GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error) {
+	rsp, err := c.GetReconciles(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetReconcilesResponse(rsp)
 }
 
 // ParsePostClustersResponse parses an HTTP response from a PostClustersWithResponse call
@@ -1148,6 +1277,39 @@ func ParseGetClustersClusterStatusChangesResponse(rsp *http.Response) (*GetClust
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetReconcilesResponse parses an HTTP response from a GetReconcilesWithResponse call
+func ParseGetReconcilesResponse(rsp *http.Response) (*GetReconcilesResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetReconcilesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HTTPReconcilerStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	}
 

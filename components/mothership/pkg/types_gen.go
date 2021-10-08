@@ -41,6 +41,9 @@ type HTTPErrorResponse struct {
 	Error string `json:"error"`
 }
 
+// HTTPReconcilerStatus defines model for HTTPReconcilerStatus.
+type HTTPReconcilerStatus []Reconciliation
+
 // Cluster defines model for cluster.
 type Cluster struct {
 	// valid kubeconfig to cluster
@@ -85,6 +88,17 @@ type Metadata struct {
 	SubAccountID    string `json:"subAccountID"`
 }
 
+// Reconciliation defines model for reconciliation.
+type Reconciliation struct {
+	Created      time.Time `json:"created"`
+	Lock         string    `json:"lock"`
+	RuntimeID    string    `json:"runtimeID"`
+	SchedulingID string    `json:"schedulingID"`
+	ShootName    string    `json:"shootName"`
+	Status       Status    `json:"status"`
+	Updated      time.Time `json:"updated"`
+}
+
 // RuntimeInput defines model for runtimeInput.
 type RuntimeInput struct {
 	Description string `json:"description"`
@@ -126,6 +140,13 @@ type PutClustersJSONBody Cluster
 
 // PutClustersClusterStatusJSONBody defines parameters for PutClustersClusterStatus.
 type PutClustersClusterStatusJSONBody StatusUpdate
+
+// GetReconcilesParams defines parameters for GetReconciles.
+type GetReconcilesParams struct {
+	RuntimeIDs *[]string `json:"runtimeIDs,omitempty"`
+	Statuses   *[]Status `json:"statuses,omitempty"`
+	Shoots     *[]string `json:"shoots,omitempty"`
+}
 
 // PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.
 type PostClustersJSONRequestBody PostClustersJSONBody
