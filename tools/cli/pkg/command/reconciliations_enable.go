@@ -7,23 +7,22 @@ import (
 	"github.com/spf13/cobra"
 
 	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
-type reconcilationEnableOpts struct {
+type reconciliationEnableOpts struct {
 	runtimeID string
 	shootName string
 	force     bool
 }
 
-type reconcilationEnableCmd struct {
-	ctx context.Context
-	log logger.Logger
+type reconciliationEnableCmd struct {
+	mothershipURL string
+	ctx           context.Context
 
-	opts reconcilationEnableOpts
+	opts reconciliationEnableOpts
 }
 
-func (cmd *reconcilationEnableCmd) Validate() error {
+func (cmd *reconciliationEnableCmd) Validate() error {
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
 		return errors.New("runtime-id or shoot is empty")
 	}
@@ -35,12 +34,8 @@ func (cmd *reconcilationEnableCmd) Validate() error {
 	return nil
 }
 
-func (cmd *reconcilationEnableCmd) Run() error {
-	cmd.log = logger.New()
-
-	mothershipURL := GlobalOpts.MothershipAPIURL()
-
-	client, err := mothership.NewClient(mothershipURL)
+func (cmd *reconciliationEnableCmd) Run() error {
+	client, err := mothership.NewClient(cmd.mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
@@ -71,23 +66,23 @@ func (cmd *reconcilationEnableCmd) Run() error {
 	return nil
 }
 
-func NewReconcilationEnableCmd() *cobra.Command {
-	cmd := reconcilationEnableCmd{
-		log: logger.New(),
+func NewReconciliationEnableCmd() *cobra.Command {
+	cmd := reconciliationEnableCmd{
+		mothershipURL: GlobalOpts.MothershipAPIURL(),
 	}
 
 	cobraCmd := &cobra.Command{
 		Use:     "enable",
 		Aliases: []string{"e"},
-		Short:   "TODO",
-		Long:    `TODO`,
+		Short:   "Enable cluster reconciliation.",
+		Long:    `Enable reconciliation for a cluster based on the given parameter such as the ID of the runtime or shoot name.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
 
-	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "TODO")
-	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "r", "", "TODO")
-	cobraCmd.Flags().BoolVarP(&cmd.opts.force, "force:", "f", false, "TODO")
+	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "r", "", "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+	cobraCmd.Flags().BoolVarP(&cmd.opts.force, "force", "f", false, "TODO: Reconcile cluster as soon as possible.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()

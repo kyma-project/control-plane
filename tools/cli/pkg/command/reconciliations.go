@@ -27,7 +27,7 @@ type ReconciliationCommand struct {
 	mothershipURL string
 	log           logger.Logger
 	output        string
-	params        mothership.GetReconcilesParams 
+	params        mothership.GetReconcilesParams
 	rawStatuses   *[]string
 }
 
@@ -194,8 +194,8 @@ The command supports filtering Reconciliations based on`,
 	}
 
 	cobraCmd.AddCommand(
-		NewReconcilationEnableCmd(),
-		NewReconcilationDisableCmd(),
+		NewReconciliationEnableCmd(),
+		NewReconciliationDisableCmd(),
 	)
 
 	SetOutputOpt(cobraCmd, &cmd.output)
