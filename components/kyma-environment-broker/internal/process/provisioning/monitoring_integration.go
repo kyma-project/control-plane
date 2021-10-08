@@ -37,13 +37,16 @@ func (s *MonitoringIntegrationStep) Name() string {
 
 func (s *MonitoringIntegrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	releaseName := operation.InstanceDetails.ShootName
+	if releaseName == "" {
+		return s.operationManager.OperationFailed(operation, "rmi release name cannot be empty", log)
+	}
 	isDeployed, err := s.client.IsDeployed(releaseName)
 	isPresent, err2 := s.client.IsPresent(releaseName)
 	if err != nil || err2 != nil {
 		return s.handleError(operation, err, "err while getting release", log)
 	}
 	vmPassword := monitoring.GeneratePassword(16)
-	planName, _ := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
+	planName := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	region := ""
 	if operation.ProvisioningParameters.Parameters.Region != nil {
 		region = *operation.ProvisioningParameters.Parameters.Region
@@ -52,7 +55,7 @@ func (s *MonitoringIntegrationStep) Run(operation internal.ProvisioningOperation
 		ReleaseName:     releaseName,
 		InstanceID:      operation.InstanceID,
 		GlobalAccountID: operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-		SubaccountID:    operation.InstanceDetails.SubAccountID,
+		SubaccountID:    operation.ProvisioningParameters.ErsContext.SubAccountID,
 		ShootName:       operation.InstanceDetails.ShootName,
 		PlanName:        planName,
 		Region:          region,

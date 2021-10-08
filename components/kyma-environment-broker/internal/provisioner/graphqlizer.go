@@ -23,7 +23,7 @@ type Graphqlizer struct{}
 func (g *Graphqlizer) ProvisionRuntimeInputToGraphQL(in gqlschema.ProvisionRuntimeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
 		{{- if .RuntimeInput }}
-      	runtimeInput: {{ RuntimeInputToGraphQL .RuntimeInput }},
+	  	runtimeInput: {{ RuntimeInputToGraphQL .RuntimeInput }},
 		{{- end }}
 		{{- if .ClusterConfig }}
 		clusterConfig: {{ ClusterConfigToGraphQL .ClusterConfig }},
@@ -65,11 +65,11 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 	return g.genericToGraphQL(in, `{
 		{{- if .Name }}
 		name: "{{.Name}}",
-        {{- end }}
+		{{- end }}
 		kubernetesVersion: "{{.KubernetesVersion}}",
-        {{- if .VolumeSizeGb }}
+		{{- if .VolumeSizeGb }}
 		volumeSizeGB: {{.VolumeSizeGb }},
-        {{- end }}
+		{{- end }}
 		machineType: "{{.MachineType}}",
 		{{- if .MachineImage }}
 		machineImage: "{{.MachineImage}}",
@@ -85,15 +85,18 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .LicenceType }}
 		licenceType: "{{ .LicenceType }}",
 		{{- end }}
-        {{- if .DiskType }}
+		{{- if .DiskType }}
 		diskType: "{{.DiskType}}",
-        {{- end }}
+		{{- end }}
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
-        autoScalerMin: {{ .AutoScalerMin }},
-        autoScalerMax: {{ .AutoScalerMax }},
-        maxSurge: {{ .MaxSurge }},
+		autoScalerMin: {{ .AutoScalerMin }},
+		autoScalerMax: {{ .AutoScalerMax }},
+		maxSurge: {{ .MaxSurge }},
 		maxUnavailable: {{ .MaxUnavailable }},
+		{{- if .ExposureClassName }}
+		exposureClassName: "{{ .ExposureClassName }}",
+		{{- end }}
 		{{- if .EnableKubernetesVersionAutoUpdate }}
 		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
 		{{- end }}
@@ -108,41 +111,41 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 			{{- if .ProviderSpecificConfig.GcpConfig }}
 			gcpConfig: {{ GCPProviderConfigInputToGraphQL .ProviderSpecificConfig.GcpConfig }},
 			{{- end}}
-            {{- if .ProviderSpecificConfig.AwsConfig }}
+			{{- if .ProviderSpecificConfig.AwsConfig }}
 			awsConfig: {{ AWSProviderConfigInputToGraphQL .ProviderSpecificConfig.AwsConfig }},
 			{{- end}}
-            {{- if .ProviderSpecificConfig.OpenStackConfig }}
+			{{- if .ProviderSpecificConfig.OpenStackConfig }}
 			openStackConfig: {{ OpenStackProviderConfigInputToGraphQL .ProviderSpecificConfig.OpenStackConfig }},
 			{{- end}}
-        }
+		}
 		{{- end}}
-        {{- if .OidcConfig }}
-        oidcConfig: {
-            clientID: "{{ .OidcConfig.ClientID }}",
-            issuerURL: "{{ .OidcConfig.IssuerURL }}",
-            groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
-            signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
-            usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
-            usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
-        }
-        {{- end }}
-        {{- if .DNSConfig }}
-        dnsConfig: {
-            {{- with .DNSConfig.Providers }}
-            providers: [
-                {{- range . }}
-                {
-                    domainsInclude: {{ .DomainsInclude | marshal }},
-                    primary: {{ .Primary }},
-                    secretName: {{ .SecretName | strQuote }},
-                    type: {{ .Type | strQuote }},
-                }
-                {{- end }}
-            ]
-            {{- end }}
-        }
-        {{- end }}
-    }`)
+		{{- if .OidcConfig }}
+		oidcConfig: {
+			clientID: "{{ .OidcConfig.ClientID }}",
+			issuerURL: "{{ .OidcConfig.IssuerURL }}",
+			groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
+			signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
+			usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
+			usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
+		}
+		{{- end }}
+		{{- if .DNSConfig }}
+		dnsConfig: {
+			{{- with .DNSConfig.Providers }}
+			providers: [
+				{{- range . }}
+				{
+					domainsInclude: {{ .DomainsInclude | marshal }},
+					primary: {{ .Primary }},
+					secretName: {{ .SecretName | strQuote }},
+					type: {{ .Type | strQuote }},
+				}
+				{{- end }}
+			]
+			{{- end }}
+		}
+		{{- end }}
+	}`)
 }
 
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
@@ -163,14 +166,14 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 		vpcCidr: "{{.VpcCidr}}",
 		{{- with .AwsZones }}
 		awsZones: [
-		  {{- range . }}
-		  {
-			name: "{{ .Name }}",
-			workerCidr: "{{ .WorkerCidr }}",
-			publicCidr: "{{ .PublicCidr }}",
-			internalCidr: "{{ .InternalCidr }}",
-		  }
-		  {{- end }}
+			{{- range . }}
+			{
+				name: "{{ .Name }}",
+				workerCidr: "{{ .WorkerCidr }}",
+				publicCidr: "{{ .PublicCidr }}",
+				internalCidr: "{{ .InternalCidr }}",
+			}
+			{{- end }}
 		]
 		{{- end }}
 	}`)
@@ -178,11 +181,11 @@ func (g *Graphqlizer) AWSProviderConfigInputToGraphQL(in gqlschema.AWSProviderCo
 
 func (g *Graphqlizer) OpenStackProviderConfigInputToGraphQL(in gqlschema.OpenStackProviderConfigInput) (string, error) {
 	return fmt.Sprintf(`{
-		zones: %s,
-		floatingPoolName: "%s",
-		cloudProfileName: "%s",
-		loadBalancerProvider: "%s"
-}`, g.marshal(in.Zones), in.FloatingPoolName, in.CloudProfileName, in.LoadBalancerProvider), nil
+				zones: %s,
+				floatingPoolName: "%s",
+				cloudProfileName: "%s",
+				loadBalancerProvider: "%s"
+			}`, g.marshal(in.Zones), in.FloatingPoolName, in.CloudProfileName, in.LoadBalancerProvider), nil
 }
 
 func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string, error) {
@@ -195,45 +198,45 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 		conflictStrategy: {{ .ConflictStrategy }},
 		{{- end }}
 		{{- with .Components }}
-        components: [
-		  {{- range . }}
-          {
-            component: "{{ .Component }}",
-            namespace: "{{ .Namespace }}",
-            {{- if .SourceURL }}
-            sourceURL: "{{ .SourceURL }}",
-            {{- end }}
-			{{- if .ConflictStrategy }}
-			conflictStrategy: {{ .ConflictStrategy }},
-			{{- end }}
-      	    {{- with .Configuration }}
-            configuration: [
-			  {{- range . }}
-              {
-                key: "{{ .Key }}",
-                value: {{ .Value | strQuote }},
-				{{- if .Secret }}
-                secret: true,
+		components: [
+			{{- range . }}
+			{
+				component: "{{ .Component }}",
+				namespace: "{{ .Namespace }}",
+				{{- if .SourceURL }}
+				sourceURL: "{{ .SourceURL }}",
 				{{- end }}
-              }
-		      {{- end }}
-            ]
-		    {{- end }}
-          }
-		  {{- end }}
-        ]
-      	{{- end }}
+				{{- if .ConflictStrategy }}
+				conflictStrategy: {{ .ConflictStrategy }},
+				{{- end }}
+				{{- with .Configuration }}
+				configuration: [
+					{{- range . }}
+					{
+						key: "{{ .Key }}",
+						value: {{ .Value | strQuote }},
+						{{- if .Secret }}
+						secret: true,
+						{{- end }}
+					}
+					{{- end }}
+				]
+				{{- end }}
+			}
+			{{- end }}
+		]
+	  	{{- end }}
 		{{- with .Configuration }}
 		configuration: [
-		  {{- range . }}
-		  {
-			key: "{{ .Key }}",
-			value: {{ .Value | strQuote }},
-			{{- if .Secret }}
-			secret: true,
+			{{- range . }}
+			{
+				key: "{{ .Key }}",
+				value: {{ .Value | strQuote }},
+				{{- if .Secret }}
+				secret: true,
+				{{- end }}
+			}
 			{{- end }}
-		  }
-		  {{- end }}
 		]
 		{{- end }}
 	}`)
@@ -241,44 +244,47 @@ func (g *Graphqlizer) KymaConfigToGraphQL(in gqlschema.KymaConfigInput) (string,
 
 func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgradeInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-      {{- if .KubernetesVersion }}
-      kubernetesVersion: "{{.KubernetesVersion}}",
-      {{- end }}
-      {{- if .MachineImage }}
-      machineImage: "{{.MachineImage}}",
-      {{- end}}
-      {{- if .MachineImageVersion }}
-      machineImageVersion: "{{.MachineImageVersion}}",
-      {{- end }}
-      {{- if .AutoScalerMin }}
-      autoScalerMin: {{ .AutoScalerMin }},
-      {{- end }}
-      {{- if .AutoScalerMax }}
-      autoScalerMax: {{ .AutoScalerMax }},
-      {{- end }}
-      {{- if .MaxSurge }}
-      maxSurge: {{ .MaxSurge }},
-      {{- end }}
-      {{- if .MaxUnavailable }}
-      maxUnavailable: {{ .MaxUnavailable }},
-      {{- end }}
-      {{- if .EnableKubernetesVersionAutoUpdate }}
-      enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
-      {{- end }}
-      {{- if .EnableMachineImageVersionAutoUpdate }}
-      enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
-      {{- end }}
-      {{- if .OidcConfig }}
-      oidcConfig: {
-        clientID: "{{ .OidcConfig.ClientID }}",
-        issuerURL: "{{ .OidcConfig.IssuerURL }}",
-        groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
-        signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
-        usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
-        usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
-      },
-      {{- end }}
-    }`)
+		{{- if .KubernetesVersion }}
+		kubernetesVersion: "{{.KubernetesVersion}}",
+		{{- end }}
+		{{- if .MachineImage }}
+		machineImage: "{{.MachineImage}}",
+		{{- end}}
+		{{- if .MachineImageVersion }}
+		machineImageVersion: "{{.MachineImageVersion}}",
+		{{- end }}
+		{{- if .AutoScalerMin }}
+		autoScalerMin: {{ .AutoScalerMin }},
+		{{- end }}
+		{{- if .AutoScalerMax }}
+		autoScalerMax: {{ .AutoScalerMax }},
+		{{- end }}
+		{{- if .MaxSurge }}
+		maxSurge: {{ .MaxSurge }},
+		{{- end }}
+		{{- if .MaxUnavailable }}
+		maxUnavailable: {{ .MaxUnavailable }},
+		{{- end }}
+		{{- if .ExposureClassName }}
+		exposureClassName: "{{ .ExposureClassName }}",
+		{{- end }}
+		{{- if .EnableKubernetesVersionAutoUpdate }}
+		enableKubernetesVersionAutoUpdate: {{ .EnableKubernetesVersionAutoUpdate }},
+		{{- end }}
+		{{- if .EnableMachineImageVersionAutoUpdate }}
+		enableMachineImageVersionAutoUpdate: {{ .EnableMachineImageVersionAutoUpdate }},
+		{{- end }}
+		{{- if .OidcConfig }}
+		oidcConfig: {
+			clientID: "{{ .OidcConfig.ClientID }}",
+			issuerURL: "{{ .OidcConfig.IssuerURL }}",
+			groupsClaim: "{{ .OidcConfig.GroupsClaim }}",
+			signingAlgs: {{ .OidcConfig.SigningAlgs | marshal }},
+			usernameClaim: "{{ .OidcConfig.UsernameClaim }}",
+			usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
+		},
+		{{- end }}
+	}`)
 }
 
 func (g *Graphqlizer) marshal(obj interface{}) string {
@@ -321,10 +327,10 @@ func (g *Graphqlizer) UpgradeRuntimeInputToGraphQL(in gqlschema.UpgradeRuntimeIn
 
 func (g Graphqlizer) UpgradeShootInputToGraphQL(in gqlschema.UpgradeShootInput) (string, error) {
 	return g.genericToGraphQL(in, `{
-    gardenerConfig: {{ GardenerUpgradeInputToGraphQL .GardenerConfig }},
-    {{- if .Administrators }}
-    administrators: {{.Administrators | marshal }},
-    {{- end }}
+	gardenerConfig: {{ GardenerUpgradeInputToGraphQL .GardenerConfig }},
+	{{- if .Administrators }}
+	administrators: {{.Administrators | marshal }},
+	{{- end }}
 }`)
 }
 

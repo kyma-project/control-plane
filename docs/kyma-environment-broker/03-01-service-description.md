@@ -20,6 +20,7 @@ The supported plans are as follows:
 | `gcp` | Installs Kyma Runtime on the GCP cluster. |
 | `trial` | Installs Kyma trial plan on Azure, AWS or GCP. |
 | `free` | Installs Kyma free plan on Azure or AWS. |
+| 'preview' | Installs Kyma on AWS with a preview version. |
 
 ## Provisioning parameters
 
@@ -69,10 +70,10 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 
   </details>
   <details>
@@ -86,10 +87,10 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 
  </details>
 
@@ -104,10 +105,10 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 | **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
 
  </details>
@@ -126,10 +127,10 @@ These are the provisioning parameters for AWS that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 
   </details>
   <details>
@@ -143,10 +144,10 @@ These are the provisioning parameters for AWS that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `4` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `4` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 | **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
 
 
@@ -167,10 +168,10 @@ These are the provisioning parameters for GCP that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
 | **region** | string | Defines the cluster region. | No | `europe-west4` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
  
  </details>
  </div>
@@ -189,10 +190,10 @@ These are the provisioning parameters for Openstack that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
 | **region** | string | Defines the cluster region. | No | `europe-west4` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
-| **autoScalerMin** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
-| **autoScalerMax** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
-| **maxSurge** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 
  </details>
  </div>
@@ -237,3 +238,9 @@ The mapping between the platform region and the provider region (Azure, AWS or G
 ## Free plan
 
 Free plan allows you to install Kyma on Azure or AWS. The configurable provisioning parameters are the same as for the trial plan.
+
+___
+
+
+<a name="update"><sup>1</sup> This parameter is available for `PATCH` as well, and can be updated with the same constraints as during provisioning.</a>
+

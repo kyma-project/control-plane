@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if r.auditLogConfigurator.CanEnableAuditLogsForShoot(seedName) {
 		if err := r.enableAuditLogs(log, &shoot, seedName); err != nil {
-			log.Errorf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
+			log.Warnf("Failed to enable audit logs for %s shoot: %s", shoot.Name, err.Error())
 		}
 	}
 
@@ -106,13 +106,13 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 
 	var seed gardener_types.Seed
 	if err := r.client.Get(context.Background(), seedKey, &seed); err != nil {
-		logger.Errorf("Cannot get %s seed: %s", seedName, err.Error())
+		logger.Warnf("Cannot get %s seed: %s", seedName, err.Error())
 		return err
 	}
 
 	annotated, err := r.auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
 	if err != nil {
-		logger.Errorf("Cannot enable audit logs: %s", err.Error())
+		logger.Warnf("Cannot enable audit logs: %s", err.Error())
 		return nil
 	}
 	if !annotated {
@@ -122,7 +122,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 
 	logger.Info("Modifying Audit Log Tenant")
 	if err := r.updateShoot(shoot); err != nil {
-		logger.Errorf("Failed to update shoot: %s", err.Error())
+		logger.Warnf("Failed to update shoot: %s", err.Error())
 		return err
 	}
 	return nil

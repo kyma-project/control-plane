@@ -117,40 +117,22 @@ func OpenStackRegions() []string {
 	return []string{"eu-de-1", "ap-sa-1"}
 }
 
-func OpenStackSchema(machineTypes []string) []byte {
+func OpenStackSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, OpenStackRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return NewSchema(properties, DefaultControlsOrder())
 }
 
-func GCPSchema(machineTypes []string) []byte {
+func GCPSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, GCPRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return NewSchema(properties, DefaultControlsOrder())
 }
 
-func AWSSchema(machineTypes []string) []byte {
+func AWSSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AWSRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return NewSchema(properties, DefaultControlsOrder())
 }
 
-func AWSHASchema(machineTypes []string) []byte {
+func AWSHASchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AWSHARegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
@@ -170,39 +152,23 @@ func AWSHASchema(machineTypes []string) []byte {
 	properties.AutoScalerMax.Minimum = 1
 	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return schema
 }
 
-func AzureSchema(machineTypes []string) []byte {
+func AzureSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return NewSchema(properties, DefaultControlsOrder())
 }
 
-func AzureLiteSchema(machineTypes []string) []byte {
+func AzureLiteSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.AutoScalerMax.Maximum = 4
 	properties.AutoScalerMax.Default = 2
 
-	schema := NewSchema(properties, DefaultControlsOrder())
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return NewSchema(properties, DefaultControlsOrder())
 }
 
-func FreemiumSchema(provider internal.CloudProvider) []byte {
+func FreemiumSchema(provider internal.CloudProvider) RootSchema {
 	var regions []string
 	switch provider {
 	case internal.AWS:
@@ -222,14 +188,10 @@ func FreemiumSchema(provider internal.CloudProvider) []byte {
 			//OIDC: NewOIDCSchema(),
 		}, []string{"name", "region"})
 
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+	return schema
 }
 
-func AzureHASchema(machineTypes []string) []byte {
+func AzureHASchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
@@ -249,6 +211,18 @@ func AzureHASchema(machineTypes []string) []byte {
 	properties.AutoScalerMax.Minimum = 1
 	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
+	return schema
+}
+
+func TrialSchema() RootSchema {
+	return NewSchema(
+		ProvisioningProperties{
+			Name: NameProperty(),
+			//OIDC: NewOIDCSchema(),
+		}, []string{"name"})
+}
+
+func marshalSchema(schema RootSchema) []byte {
 	bytes, err := json.Marshal(schema)
 	if err != nil {
 		panic(err)
@@ -256,28 +230,51 @@ func AzureHASchema(machineTypes []string) []byte {
 	return bytes
 }
 
-func TrialSchema() []byte {
-	schema := NewSchema(
-		ProvisioningProperties{
-			Name: NameProperty(),
-			//OIDC: NewOIDCSchema(),
-		}, []string{"name"})
-
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
+func schemaForUpdate(provisioningRoot RootSchema) []byte {
+	pp := provisioningRoot.Properties.(ProvisioningProperties)
+	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil {
+		return []byte{}
 	}
-	return bytes
+	up := UpdateProperties{}
+	if pp.AutoScalerMax != nil {
+		up.AutoScalerMax = &Type{
+			Minimum:     pp.AutoScalerMax.Minimum,
+			Maximum:     pp.AutoScalerMax.Maximum,
+			Description: pp.AutoScalerMax.Description,
+			Type:        pp.AutoScalerMax.Type,
+		}
+	}
+	if pp.AutoScalerMin != nil {
+		up.AutoScalerMin = &Type{
+			Minimum:     pp.AutoScalerMin.Minimum,
+			Maximum:     pp.AutoScalerMin.Maximum,
+			Description: pp.AutoScalerMin.Description,
+			Type:        pp.AutoScalerMin.Type,
+		}
+	}
+
+	return marshalSchema(NewUpdateSchema(up))
 }
 
 type Plan struct {
 	PlanDefinition        domain.ServicePlan
 	provisioningRawSchema []byte
+	updateRawSchema       []byte
 }
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
+	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
+	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
+	gcpSchema := GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"})
+	openstackSchema := OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"})
+	azureSchema := AzureSchema([]string{"Standard_D8_v3"})
+	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"})
+	azureHASchema := AzureHASchema([]string{"Standard_D8_v3"})
+	freemiumSchema := FreemiumSchema(provider)
+	trialSchema := TrialSchema()
+
 	return map[string]Plan{
 		AWSPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -289,10 +286,33 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
+			provisioningRawSchema: marshalSchema(awsSchema),
+			updateRawSchema:       schemaForUpdate(awsSchema),
+		},
+		PreviewPlanID: {
+			PlanDefinition: domain.ServicePlan{
+				ID:          PreviewPlanID,
+				Name:        PreviewPlanName,
+				Description: defaultDescription(PreviewPlanName, plans),
+				Metadata:    defaultMetadata(PreviewPlanName, plans), Schemas: &domain.ServiceSchemas{
+					Instance: domain.ServiceInstanceSchema{
+						Create: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
+					},
+				},
+			},
+			provisioningRawSchema: marshalSchema(awsSchema),
+			updateRawSchema:       schemaForUpdate(awsSchema),
 		},
 		AWSHAPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -304,10 +324,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}),
+			provisioningRawSchema: marshalSchema(awsHASchema),
+			updateRawSchema:       schemaForUpdate(awsHASchema),
 		},
 		GCPPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -320,10 +344,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"}),
+			provisioningRawSchema: marshalSchema(gcpSchema),
+			updateRawSchema:       schemaForUpdate(gcpSchema),
 		},
 		OpenStackPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -336,10 +364,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"}),
+			provisioningRawSchema: marshalSchema(openstackSchema),
+			updateRawSchema:       schemaForUpdate(openstackSchema),
 		},
 		AzurePlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -352,10 +384,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: AzureSchema([]string{"Standard_D8_v3"}),
+			provisioningRawSchema: marshalSchema(azureSchema),
+			updateRawSchema:       schemaForUpdate(azureSchema),
 		},
 		AzureLitePlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -368,10 +404,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: AzureLiteSchema([]string{"Standard_D4_v3"}),
+			provisioningRawSchema: marshalSchema(azureLiteSchema),
+			updateRawSchema:       schemaForUpdate(azureLiteSchema),
 		},
 		FreemiumPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -384,10 +424,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: FreemiumSchema(provider),
+			provisioningRawSchema: marshalSchema(freemiumSchema),
+			updateRawSchema:       schemaForUpdate(freemiumSchema),
 		},
 		AzureHAPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -400,10 +444,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: AzureHASchema([]string{"Standard_D8_v3"}),
+			provisioningRawSchema: marshalSchema(azureHASchema),
+			updateRawSchema:       schemaForUpdate(azureHASchema),
 		},
 		TrialPlanID: {
 			PlanDefinition: domain.ServicePlan{
@@ -416,10 +464,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider) map[string]Plan {
 						Create: domain.Schema{
 							Parameters: make(map[string]interface{}),
 						},
+						Update: domain.Schema{
+							Parameters: make(map[string]interface{}),
+						},
 					},
 				},
 			},
-			provisioningRawSchema: TrialSchema(),
+			provisioningRawSchema: marshalSchema(trialSchema),
+			updateRawSchema:       schemaForUpdate(trialSchema),
 		},
 	}
 }

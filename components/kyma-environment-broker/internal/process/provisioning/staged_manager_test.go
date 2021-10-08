@@ -26,10 +26,10 @@ func TestHappyPath(t *testing.T) {
 	const opID = "op-0001234"
 	operation := FixProvisionOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector}, nil)
 
 	// when
 	mgr.Execute(operation.ID)
@@ -41,16 +41,40 @@ func TestHappyPath(t *testing.T) {
 	assert.True(t, op.IsStageFinished("stage-2"))
 }
 
+func TestHappyPathWiothStepCondition(t *testing.T) {
+	// given
+	const opID = "op-0001234"
+	operation := FixProvisionOperation("op-0001234")
+	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, func(_ internal.ProvisioningOperation) bool {
+		return false
+	})
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, func(_ internal.ProvisioningOperation) bool {
+		return true
+	})
+	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector}, nil)
+
+	// when
+	mgr.Execute(operation.ID)
+
+	// then
+	eventCollector.AssertProcessedSteps(t, []string{"first", "third", "first-2"})
+	op, _ := operationStorage.GetProvisioningOperationByID(operation.ID)
+	assert.True(t, op.IsStageFinished("stage-1"))
+	assert.True(t, op.IsStageFinished("stage-2"))
+}
+
 func TestWithRetry(t *testing.T) {
 	// given
 	const opID = "op-0001234"
 	operation := FixProvisionOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &onceRetryingStep{name: "first-2", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "second-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &onceRetryingStep{name: "first-2", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &testingStep{name: "second-2", eventPublisher: eventCollector}, nil)
 
 	// when
 	retry, _ := mgr.Execute(operation.ID)
@@ -69,10 +93,10 @@ func TestSkipFinishedStage(t *testing.T) {
 	operation.FinishStage("stage-1")
 
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector}, nil)
 
 	// when
 	retry, _ := mgr.Execute(operation.ID)
@@ -243,7 +267,7 @@ func TestProvisionSucceededEvent(t *testing.T) {
 	const opID = "op-0001234"
 	operation := FixProvisionOperation("op-0001234")
 	mgr, _, pubSub := SetupStagedManager2(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: pubSub})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: pubSub}, nil)
 
 	rc := &resultCollector{}
 	rc.duration = 123

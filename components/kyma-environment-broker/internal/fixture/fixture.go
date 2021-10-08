@@ -36,6 +36,7 @@ type SimpleInputCreator struct {
 	EnabledComponents []string
 	ShootName         *string
 	CloudProvider     internal.CloudProvider
+	RuntimeID         string
 }
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
@@ -81,20 +82,22 @@ func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	}
 
 	return internal.ProvisioningParametersDTO{
-		Name:           "cluster-test",
-		VolumeSizeGb:   ptr.Integer(50),
-		MachineType:    ptr.String("Standard_D8_v3"),
-		Region:         ptr.String(Region),
-		Purpose:        ptr.String("Purpose"),
-		LicenceType:    ptr.String("LicenceType"),
-		Zones:          []string{"1"},
-		AutoScalerMin:  ptr.Integer(3),
-		AutoScalerMax:  ptr.Integer(10),
-		MaxSurge:       ptr.Integer(4),
-		MaxUnavailable: ptr.Integer(1),
-		KymaVersion:    KymaVersion,
-		Provider:       &trialCloudProvider,
-		DNS:            &dnsProviders,
+		Name:         "cluster-test",
+		VolumeSizeGb: ptr.Integer(50),
+		MachineType:  ptr.String("Standard_D8_v3"),
+		Region:       ptr.String(Region),
+		Purpose:      ptr.String("Purpose"),
+		LicenceType:  ptr.String("LicenceType"),
+		Zones:        []string{"1"},
+		AutoScalerParameters: internal.AutoScalerParameters{
+			AutoScalerMin:  ptr.Integer(3),
+			AutoScalerMax:  ptr.Integer(10),
+			MaxSurge:       ptr.Integer(4),
+			MaxUnavailable: ptr.Integer(1),
+		},
+		KymaVersion: KymaVersion,
+		Provider:    &trialCloudProvider,
+		DNS:         &dnsProviders,
 	}
 }
 
@@ -372,6 +375,7 @@ func (c *SimpleInputCreator) SetInstanceID(kcfg string) internal.ProvisionerInpu
 }
 
 func (c *SimpleInputCreator) SetRuntimeID(runtimeID string) internal.ProvisionerInputCreator {
+	c.RuntimeID = runtimeID
 	return c
 }
 
@@ -388,8 +392,11 @@ func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.Config
 	return c
 }
 
-func (c *SimpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
-	return reconciler.Cluster{}, nil
+func (c *SimpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
+	return reconciler.Cluster{
+		Cluster:    c.RuntimeID,
+		Kubeconfig: "sample-kubeconfig",
+	}, nil
 }
 
 func (c *SimpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
