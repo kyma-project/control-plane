@@ -1,0 +1,5 @@
+apiVersion: v2
+name: component-reconcilers
+description: A Helm chart for Kyma Component Reconcilers
+type: application
+version: 0.1.0

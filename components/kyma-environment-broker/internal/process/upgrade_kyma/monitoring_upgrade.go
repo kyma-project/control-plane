@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -37,23 +36,21 @@ func (s *MonitoringUpgradeStep) Name() string {
 
 func (s *MonitoringUpgradeStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	releaseName := operation.InstanceDetails.ShootName
+	if releaseName == "" {
+		return s.operationManager.OperationFailed(operation, "rmi release name cannot be empty", log)
+	}
 	isPresent, err := s.client.IsPresent(releaseName)
 	if err != nil {
 		return s.handleError(operation, err, "err while getting release", log)
-	}
-	planName, _ := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
-	region := ""
-	if operation.ProvisioningParameters.Parameters.Region != nil {
-		region = *operation.ProvisioningParameters.Parameters.Region
 	}
 	params := monitoring.Parameters{
 		ReleaseName:     releaseName,
 		InstanceID:      operation.InstanceID,
 		GlobalAccountID: operation.ProvisioningParameters.ErsContext.GlobalAccountID,
-		SubaccountID:    operation.InstanceDetails.SubAccountID,
+		SubaccountID:    operation.ProvisioningParameters.ErsContext.SubAccountID,
 		ShootName:       operation.InstanceDetails.ShootName,
-		PlanName:        planName,
-		Region:          region,
+		PlanName:        operation.RuntimeOperation.Plan,
+		Region:          operation.RuntimeOperation.Region,
 	}
 
 	if !isPresent {
