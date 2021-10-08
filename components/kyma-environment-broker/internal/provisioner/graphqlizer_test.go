@@ -60,43 +60,43 @@ func TestKymaConfigToGraphQLAllParametersProvided(t *testing.T) {
 		version: "966",
 		profile: Production,
 		conflictStrategy: Replace,
-        components: [
-          {
-            component: "pico",
-            namespace: "bello",
-          }
-          {
-            component: "custom-component",
-            namespace: "bello",
-            sourceURL: "github.com/kyma-incubator/custom-component",
-			conflictStrategy: Replace,
-          }
-          {
-            component: "hakuna",
-            namespace: "matata",
-            configuration: [
-              {
-                key: "testing-secret-key",
-                value: "testing-secret-value",
-                secret: true,
-              }
-              {
-                key: "testing-public-key",
-                value: "testing-public-value\nmultiline",
-              }
-            ]
-          }
-        ]
+		components: [
+			{
+				component: "pico",
+				namespace: "bello",
+			}
+			{
+				component: "custom-component",
+				namespace: "bello",
+				sourceURL: "github.com/kyma-incubator/custom-component",
+				conflictStrategy: Replace,
+			}
+			{
+				component: "hakuna",
+				namespace: "matata",
+				configuration: [
+					{
+						key: "testing-secret-key",
+						value: "testing-secret-value",
+						secret: true,
+					}
+					{
+						key: "testing-public-key",
+						value: "testing-public-value\nmultiline",
+					}
+				]
+			}
+		]
 		configuration: [
-		  {
-			key: "important-global-override",
-			value: "false",
-		  }
-		  {
-			key: "ultimate.answer",
-			value: "42",
-			secret: true,
-		  }
+			{
+				key: "important-global-override",
+				value: "false",
+			}
+			{
+				key: "ultimate.answer",
+				value: "42",
+				secret: true,
+			}
 		]
 	}`
 
@@ -147,9 +147,9 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		diskType: "Standard_LRS",
 		targetSecret: "scr",
 		workerCidr: "10.250.0.0/19",
-        autoScalerMin: 2,
-        autoScalerMax: 4,
-        maxSurge: 4,
+		autoScalerMin: 2,
+		autoScalerMax: 4,
+		maxSurge: 4,
 		maxUnavailable: 1,
 		enableKubernetesVersionAutoUpdate: true,
 		enableMachineImageVersionAutoUpdate: true,
@@ -193,18 +193,18 @@ func Test_GardenerConfigInputToGraphQLWithOIDC(t *testing.T) {
 		diskType: "Standard_LRS",
 		targetSecret: "scr",
 		workerCidr: "10.250.0.0/19",
-        autoScalerMin: 0,
-        autoScalerMax: 0,
-        maxSurge: 0,
+		autoScalerMin: 0,
+		autoScalerMax: 0,
+		maxSurge: 0,
 		maxUnavailable: 0,
-        oidcConfig: {
-            clientID: "client-id",
-            issuerURL: "https://issuer.url",
-            groupsClaim: "",
-            signingAlgs: [],
-            usernameClaim: "",
-            usernamePrefix: "",
-        }
+		oidcConfig: {
+			clientID: "client-id",
+			issuerURL: "https://issuer.url",
+			groupsClaim: "",
+			signingAlgs: [],
+			usernameClaim: "",
+			usernamePrefix: "",
+		}
 	}`
 
 	// when
@@ -249,9 +249,9 @@ func Test_GardenerConfigInputToGraphQLWithMachineImage(t *testing.T) {
 		diskType: "Standard_LRS",
 		targetSecret: "scr",
 		workerCidr: "10.250.0.0/19",
-        autoScalerMin: 0,
-        autoScalerMax: 0,
-        maxSurge: 0,
+		autoScalerMin: 0,
+		autoScalerMax: 0,
+		maxSurge: 0,
 		maxUnavailable: 0,
 	}`
 
@@ -403,18 +403,18 @@ func TestAWSProviderConfigInputToGraphQL(t *testing.T) {
 			expected: `{
 		vpcCidr: "10.250.0.0/16",
 		awsZones: [
-		  {
-			name: "eu-central-1a",
-			workerCidr: "10.250.0.0/22",
-			publicCidr: "10.250.20.0/22",
-			internalCidr: "10.250.40.0/22",
-		  }
-		  {
-			name: "eu-central-1b",
-			workerCidr: "10.250.4.0/22",
-			publicCidr: "10.250.24.0/22",
-			internalCidr: "10.250.44.0/22",
-		  }
+			{
+				name: "eu-central-1a",
+				workerCidr: "10.250.0.0/22",
+				publicCidr: "10.250.20.0/22",
+				internalCidr: "10.250.40.0/22",
+			}
+			{
+				name: "eu-central-1b",
+				workerCidr: "10.250.4.0/22",
+				publicCidr: "10.250.24.0/22",
+				internalCidr: "10.250.44.0/22",
+			}
 		]
 	}`,
 		},
@@ -446,26 +446,26 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	// given
 	sut := Graphqlizer{}
 	exp := `{
-    gardenerConfig: {
-      kubernetesVersion: "1.18.0",
-      machineImage: "gardenlinux",
-      machineImageVersion: "184.0.0",
-      autoScalerMin: 2,
-      autoScalerMax: 4,
-      maxSurge: 4,
-      maxUnavailable: 1,
-      enableKubernetesVersionAutoUpdate: true,
-      enableMachineImageVersionAutoUpdate: false,
-      oidcConfig: {
-        clientID: "cid",
-        issuerURL: "issuer.url",
-        groupsClaim: "groups",
-        signingAlgs: ["RSA256"],
-        usernameClaim: "sub",
-        usernamePrefix: "-",
-      },
-    },
-    administrators: ["newAdmin@kyma.cx"],
+	gardenerConfig: {
+		kubernetesVersion: "1.18.0",
+		machineImage: "gardenlinux",
+		machineImageVersion: "184.0.0",
+		autoScalerMin: 2,
+		autoScalerMax: 4,
+		maxSurge: 4,
+		maxUnavailable: 1,
+		enableKubernetesVersionAutoUpdate: true,
+		enableMachineImageVersionAutoUpdate: false,
+		oidcConfig: {
+			clientID: "cid",
+			issuerURL: "issuer.url",
+			groupsClaim: "groups",
+			signingAlgs: ["RSA256"],
+			usernameClaim: "sub",
+			usernamePrefix: "-",
+		},
+	},
+	administrators: ["newAdmin@kyma.cx"],
 }`
 
 	// when
@@ -512,6 +512,7 @@ func TestOpenstack(t *testing.T) {
 
 	// when
 	got, err := g.GardenerConfigInputToGraphQL(gqlschema.GardenerConfigInput{
+		ExposureClassName:      ptr.String("converged-cloud-internet"),
 		ProviderSpecificConfig: &input,
 	})
 
@@ -524,18 +525,19 @@ func TestOpenstack(t *testing.T) {
 		provider: "",
 		targetSecret: "",
 		workerCidr: "",
-        autoScalerMin: 0,
-        autoScalerMax: 0,
-        maxSurge: 0,
+		autoScalerMin: 0,
+		autoScalerMax: 0,
+		maxSurge: 0,
 		maxUnavailable: 0,
+		exposureClassName: "converged-cloud-internet",
 		providerSpecificConfig: {
 			openStackConfig: {
-		zones: ["z1"],
-		floatingPoolName: "fp",
-		cloudProfileName: "cp",
-		loadBalancerProvider: "lbp"
-},
-        }
+				zones: ["z1"],
+				floatingPoolName: "fp",
+				cloudProfileName: "cp",
+				loadBalancerProvider: "lbp"
+			},
+		}
 	}`, got)
 
 }

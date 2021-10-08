@@ -23,6 +23,11 @@ type ProvisioningProperties struct {
 	//OIDC OIDCType `json:"oidc,omitempty"`
 }
 
+type UpdateProperties struct {
+	AutoScalerMin *Type `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type `json:"autoScalerMax,omitempty"`
+}
+
 type OIDCProperties struct {
 	ClientID       Type `json:"clientID"`
 	GroupsClaim    Type `json:"groupsClaim"`
@@ -144,6 +149,19 @@ func NewSchema(properties ProvisioningProperties, controlsOrder []string) RootSc
 		ShowFormView:  true,
 		Required:      []string{"name"},
 		ControlsOrder: controlsOrder,
+	}
+}
+
+func NewUpdateSchema(properties UpdateProperties) RootSchema {
+	return RootSchema{
+		Schema: "http://json-schema.org/draft-04/schema#",
+		Type: Type{
+			Type: "object",
+		},
+		Properties:    properties,
+		ShowFormView:  true,
+		Required:      []string{},
+		ControlsOrder: []string{},
 	}
 }
 

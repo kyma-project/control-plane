@@ -1,0 +1,11 @@
+# Default values for component-reconcilers.
+
+nameOverride: ""
+fullnameOverride: ""
+
+deployment:
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  type: ClusterIP
+  port: 8080

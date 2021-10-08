@@ -119,6 +119,19 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
 			seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
 		},
+		{name: "Azure on Gardener With Custom Domain",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener with Custom Domain, when zones passed",
+			runtimeID:      "63701b36-76cb-4225-a119-e31512467f26",
+			auditLogTenant: "a7d8c33d-70e3-4d95-b6ef-4d45c31086ed",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInputWithCustomDomain("1", "2"),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 2",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+			seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
+		},
 	}
 }
 
@@ -147,7 +160,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 				},
 			},
 			OidcConfig: oidcInput(),
-			DNSConfig:  dnsInput(),
+			DNSConfig:  nil,
 		},
 	}
 }
@@ -176,7 +189,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 				},
 			},
 			OidcConfig: oidcInput(),
-			DNSConfig:  dnsInput(),
+			DNSConfig:  nil,
 		},
 	}
 }
@@ -203,6 +216,36 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 					FloatingPoolName:     "FloatingIP-external-cp",
 					CloudProfileName:     "converged-cloud-cp",
 					LoadBalancerProvider: "f5",
+				},
+			},
+			OidcConfig: oidcInput(),
+			DNSConfig:  nil,
+		},
+	}
+}
+
+func azureGardenerClusterConfigInputWithCustomDomain(zones ...string) gqlschema.ClusterConfigInput {
+	return gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.CreateGardenerClusterName(),
+			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
+			Provider:          "Azure",
+			TargetSecret:      "secret",
+			Seed:              util.StringPtr("az-eu2"),
+			Region:            "westeurope",
+			MachineType:       "Standard_D8_v3",
+			DiskType:          util.StringPtr("Standard_LRS"),
+			VolumeSizeGb:      util.IntPtr(40),
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "cidr",
+					Zones:    zones,
 				},
 			},
 			OidcConfig: oidcInput(),
