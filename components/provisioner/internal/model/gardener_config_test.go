@@ -210,6 +210,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
+					DNS: &gardener_types.DNS{
+						Providers: gardenerDnsProvidersConfig(dnsConfig()),
+					},
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -276,6 +279,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							KubernetesVersion:   true,
 							MachineImageVersion: false,
 						},
+					},
+					DNS: &gardener_types.DNS{
+						Providers: gardenerDnsProvidersConfig(dnsConfig()),
 					},
 					Extensions: []gardener_types.Extension{
 						{
@@ -344,6 +350,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
+					DNS: &gardener_types.DNS{
+						Providers: gardenerDnsProvidersConfig(dnsConfig()),
+					},
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -411,6 +420,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
+					DNS: &gardener_types.DNS{
+						Providers: gardenerDnsProvidersConfig(dnsConfig()),
+					},
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -434,7 +446,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			gardenerProviderConfig := fixGardenerConfig(testCase.provider, testCase.providerConfig)
 
 			// when
-			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig())
+			template, err := gardenerProviderConfig.ToShootTemplate("gardener-namespace", "account", "sub-account", oidcConfig(), dnsConfig())
 
 			// then
 			require.NoError(t, err)
@@ -628,5 +640,18 @@ func oidcConfig() *OIDCConfig {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func dnsConfig() *DNSConfig {
+	return &DNSConfig{
+		Providers: []*DNSProvider{
+			&DNSProvider{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_ingardenerconfig",
+				Type:           "route53_type_test",
+			},
+		},
 	}
 }
