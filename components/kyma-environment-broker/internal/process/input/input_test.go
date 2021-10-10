@@ -740,7 +740,7 @@ func TestCreateClusterConfiguration_Globals(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
 	inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
-		Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO(), fixture.FixDNSConfigDTO())
 	assert.NoError(t, err)
 
 	provisioningParams := fixture.FixProvisioningParameters(id)
