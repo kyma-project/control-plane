@@ -920,7 +920,7 @@ func fixConfig() *Config {
 		UpdateProcessingEnabled: true,
 		Gardener: gardener.Config{
 			Project:     "kyma",
-			ShootDomain: "sap.com",
+			ShootDomain: "kyma.sap.com",
 		},
 	}
 }
