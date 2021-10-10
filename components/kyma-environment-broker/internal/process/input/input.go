@@ -62,6 +62,7 @@ type RuntimeInput struct {
 	instanceID       string
 	runtimeID        string
 	kubeconfig       string
+	shootDomain      string
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -78,6 +79,11 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 
 func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
 	r.shootName = &name
+	return r
+}
+
+func (r *RuntimeInput) SetShootDomain(name string) internal.ProvisionerInputCreator {
+	r.shootDomain = name
 	return r
 }
 
@@ -280,7 +286,11 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 
 	componentConfigs := []reconciler.Components{}
 	for _, cmp := range data.KymaConfig.Components {
-		configs := []reconciler.Configuration{}
+		configs := []reconciler.Configuration{
+			// because there is no section like global configuration, all "global" settings must
+			// be present in all component configurations.
+			{Key: "global.domainName", Value: r.shootDomain},
+		}
 
 		for _, c := range cmp.Configuration {
 			configuration := reconciler.Configuration{

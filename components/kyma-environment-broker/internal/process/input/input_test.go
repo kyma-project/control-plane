@@ -3,6 +3,8 @@ package input
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -359,6 +361,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		}).
 		SetShootName(shootName).
 		SetLabel("label1", "value1").
+		SetShootDomain("shoot.domain.sap").
 		AppendOverrides("keb", kebOverrides)
 	input, err := builder.CreateProvisionRuntimeInput()
 	require.NoError(t, err)
@@ -729,6 +732,30 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 	})
 }
 
+func TestCreateClusterConfiguration_Globals(t *testing.T) {
+	// given
+	id := uuid.New().String()
+
+	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+	componentsProvider := &automock.ComponentListProvider{}
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+	inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+		Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+	assert.NoError(t, err)
+
+	provisioningParams := fixture.FixProvisioningParameters(id)
+	creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+	require.NoError(t, err)
+	setRuntimeProperties(creator)
+
+	// when
+	inventoryInput, err := creator.CreateClusterConfiguration()
+	require.NoError(t, err)
+
+	// then
+	assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot.domain.sap")
+}
+
 func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 	t.Run("should apply default admin from user_id field", func(t *testing.T) {
 		// given
@@ -795,11 +822,25 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 	})
 }
 
+func assertAllConfigsContainsGlobals(t *testing.T, components []reconciler.Components, domainName string) {
+	for _, cmp := range components {
+		found := false
+		for _, cfg := range cmp.Configuration {
+			if cfg.Key == "global.domainName" {
+				assert.Equal(t, domainName, cfg.Value)
+				found = true
+			}
+		}
+		assert.True(t, found, "Component %s must contain `global.domainName` config", cmp.Component)
+	}
+}
+
 func setRuntimeProperties(creator internal.ProvisionerInputCreator) {
 	creator.SetKubeconfig("example kubeconfig payload")
 	creator.SetRuntimeID("runtimeID")
 	creator.SetInstanceID("instanceID")
 	creator.SetShootName("shoot-name")
+	creator.SetShootDomain("shoot.domain.sap")
 }
 
 func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {

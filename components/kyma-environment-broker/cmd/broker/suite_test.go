@@ -918,6 +918,10 @@ func fixConfig() *Config {
 		},
 		FreemiumProviders:       []string{"aws", "azure"},
 		UpdateProcessingEnabled: true,
+		Gardener: gardener.Config{
+			Project:     "kyma",
+			ShootDomain: "sap.com",
+		},
 	}
 }
 

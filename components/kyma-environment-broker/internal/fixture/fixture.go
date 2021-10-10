@@ -35,6 +35,7 @@ type SimpleInputCreator struct {
 	Labels            map[string]string
 	EnabledComponents []string
 	ShootName         *string
+	ShootDomain       string
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
 }
@@ -152,7 +153,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		SubAccountID: subAccountId,
 		RuntimeID:    runtimeId,
 		ShootName:    "ShootName",
-		ShootDomain:  "ShootDomain",
+		ShootDomain:  "shoot.domain.com",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
 		Monitoring:   monitoringData,
@@ -213,7 +214,7 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	return &SimpleInputCreator{
 		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		Labels:            make(map[string]string),
-		EnabledComponents: []string{},
+		EnabledComponents: []string{"istio-configuration"},
 		ShootName:         ptr.String("ShootName"),
 		CloudProvider:     provider,
 	}
@@ -358,6 +359,11 @@ func (c *SimpleInputCreator) SetProvisioningParameters(params internal.Provision
 
 func (c *SimpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
 	c.ShootName = &name
+	return c
+}
+
+func (c *SimpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
+	c.ShootDomain = name
 	return c
 }
 
