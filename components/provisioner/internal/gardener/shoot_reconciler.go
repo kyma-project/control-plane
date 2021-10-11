@@ -125,6 +125,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 		logger.Warnf("Failed to update shoot: %s", err.Error())
 		return err
 	}
+	logger.Infof("enableAuditLogs shoot.Annotations: %+v", shoot.Annotations)
 	return nil
 }
 

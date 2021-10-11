@@ -86,6 +86,9 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 		g.applyAuditConfig(shootTemplate)
 	}
 
+	st, _ := json.MarshalIndent(shootTemplate, "", " ")
+	fmt.Printf("shootTemplate: %+v \n", string(st))
+
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
 	if k8serr != nil {
 		appError := util.K8SErrorToAppError(k8serr)

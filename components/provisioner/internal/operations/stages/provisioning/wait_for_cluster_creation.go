@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -55,6 +56,9 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 	}
 
 	lastOperation := shoot.Status.LastOperation
+	shootBytes, _ := json.MarshalIndent(shoot, "", " ")
+	logger.Infof("WaitForClusterCreationStep shoot: %s", string(shootBytes))
+	log.Infof("WaitForClusterCreationStep lastOperation: %s \n", lastOperation)
 
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
@@ -78,7 +82,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		}
 	}
 
-	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
+	return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 }
 
 func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot) (operations.StageResult, error) {
@@ -98,6 +102,7 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 	if err != nil {
 		return operations.StageResult{}, err
 	}
+	fmt.Printf("proceedToInstallation kubeconfig: %s \n", kubeconfig)
 
 	dberr := s.dbSession.UpdateKubeconfig(cluster.ID, string(kubeconfig))
 	if dberr != nil {

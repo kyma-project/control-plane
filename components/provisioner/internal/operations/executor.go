@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -65,6 +66,10 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 	}
 
 	cluster, err := e.dbSession.GetCluster(operation.ClusterID)
+
+	clu, _ := json.MarshalIndent(cluster, "", " ")
+	log.Infof("cluster from db: %s", string(clu))
+
 	if err != nil {
 		log.Errorf("error getting cluster while processing operation: %s", err.Error())
 		return ProcessingResult{Requeue: true, Delay: defaultDelay}
