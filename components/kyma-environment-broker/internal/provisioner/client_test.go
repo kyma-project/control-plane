@@ -575,6 +575,16 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
 				Name:                   "abcd",
 				VolumeSizeGb:           ptr.Integer(50),
+				DNSConfig: &schema.DNSConfigInput{
+					Providers: []*schema.DNSProviderInput{
+						&schema.DNSProviderInput{
+							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+							Primary:        true,
+							SecretName:     "efg",
+							Type:           "route53_type_test",
+						},
+					},
+				},
 			},
 		},
 		KymaConfig: &schema.KymaConfigInput{
