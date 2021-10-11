@@ -96,11 +96,10 @@ skrOIDCDefaultValues: |-
 
 skrDNSProvidersValues: |-
   providers:
-  - domainsInclude:
-    - dev.kyma.ondemand.com
+  - domainsInclude: [ "dev.kyma.ondemand.com" ]
     primary: true
-    secretName: vv-test-aws-route53-secret
-    type: aws-route53
+    secretName: "vv-test-aws-route53-secret"
+    type: "aws-route53"
 
 kymaVersion: "1.13.0"
 kymaPreviewVersion: "2.0"
