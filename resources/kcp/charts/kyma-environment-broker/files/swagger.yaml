@@ -2240,17 +2240,23 @@ components:
           $ref: '#/components/schemas/Object'
  
     ServiceManagerCredentialsBasic:
-        username:
+        type: object
+        properties:
+          username:
           type: string
         password:
           type: string
 
     ServiceManagerCredentials:
-      basic:
+      type: object
+      properties:
+        basic:
         $ref: '#/components/schemas/ServiceManagerCredentialsBasic'
 
     SMPlatformCredentials:
-      credentials:
+      type: object
+      properties:
+        credentials:
         $ref: '#/components/schemas/ServiceManagerCredentials'
       url:
         type: string
