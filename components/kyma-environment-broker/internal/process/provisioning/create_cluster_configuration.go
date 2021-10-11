@@ -36,7 +36,10 @@ func (s *CreateClusterConfigurationStep) Name() string {
 func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	operation.InputCreator.SetRuntimeID(operation.RuntimeID).
 		SetInstanceID(operation.InstanceID).
-		SetKubeconfig(operation.Kubeconfig)
+		SetKubeconfig(operation.Kubeconfig).
+		SetShootName(operation.ShootName).
+		SetShootDomain(operation.ShootDomain).
+		SetProvisioningParameters(operation.ProvisioningParameters)
 
 	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {

@@ -268,6 +268,22 @@ func (_m *ProvisionerInputCreator) SetShootName(_a0 string) internal.Provisioner
 	return r0
 }
 
+// SetShootDomain provides a mock function with given fields: _a0
+func (_m *ProvisionerInputCreator) SetShootDomain(_a0 string) internal.ProvisionerInputCreator {
+	ret := _m.Called(_a0)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
 // SetRuntimeID provides a mock function with given fields: _a0
 func (_m *ProvisionerInputCreator) SetRuntimeID(_a0 string) internal.ProvisionerInputCreator {
 	ret := _m.Called(_a0)

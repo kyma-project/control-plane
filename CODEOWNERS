@@ -8,7 +8,7 @@
 * @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue @voigt @wozniakjan @ebensom
+/resources/kcp/values.yaml @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @themue @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @rJankowski93 @suleymanakbas91 @kyma-incubator/wookiee
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @crabtree @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @voigt @wozniakjan @ebensom
@@ -28,6 +28,10 @@
 /docs/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
 /components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
 /tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
+
+# Reconciler
+/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @rJankowski93 @suleymanakbas91 @kyma-incubator/wookiee
+/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @rJankowski93 @suleymanakbas91 @kyma-incubator/wookiee
 
 
 # e2e-provisioning

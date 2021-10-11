@@ -284,6 +284,7 @@ func (o *RuntimeOptions) ProvideRuntimeAdmins() []string {
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
 	runtimeID := uuid.New().String()
+	shootName := fmt.Sprintf("shoot%s", runtimeID)
 	planID := options.ProvidePlanID()
 	planName := broker.AzurePlanName
 	globalAccountID := options.ProvideGlobalAccountID()
@@ -311,7 +312,9 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		Parameters:      provisioningParameters,
 		ProviderRegion:  options.ProvidePlatformRegion(),
 		InstanceDetails: internal.InstanceDetails{
-			RuntimeID: runtimeID,
+			RuntimeID:   runtimeID,
+			ShootName:   shootName,
+			ShootDomain: "fake.domain",
 		},
 	}
 
@@ -322,13 +325,15 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			InstanceID:             instanceID,
 			ProvisioningParameters: provisioningParameters,
 			InstanceDetails: internal.InstanceDetails{
-				RuntimeID: instance.RuntimeID,
+				RuntimeID:   instance.RuntimeID,
+				ShootName:   shootName,
+				ShootDomain: "fake.domain",
 			},
 		},
 	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fmt.Sprintf("shoot%s", runtimeID),
+			Name:      shootName,
 			Namespace: s.gardenerNamespace,
 			Labels: map[string]string{
 				globalAccountLabel: globalAccountID,
@@ -915,6 +920,10 @@ func fixConfig() *Config {
 		},
 		FreemiumProviders:       []string{"aws", "azure"},
 		UpdateProcessingEnabled: true,
+		Gardener: gardener.Config{
+			Project:     "kyma",
+			ShootDomain: "sap.com",
+		},
 	}
 }
 

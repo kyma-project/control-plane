@@ -54,6 +54,10 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 
 func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error) {
 	id := uuid.New().String()
+	details, err := i.GetInstanceDetails()
+	if err != nil {
+		return orchestration.RuntimeOperation{}, err
+	}
 	op := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ID:                     id,
@@ -66,7 +70,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			Description:            "Operation created",
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
-			InstanceDetails:        i.InstanceDetails,
+			InstanceDetails:        details,
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{
 			ID:      id,
@@ -94,7 +98,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, majorVer)
 	}
 
-	err := u.operationStorage.InsertUpgradeKymaOperation(op)
+	err = u.operationStorage.InsertUpgradeKymaOperation(op)
 	return op.RuntimeOperation, err
 }
 

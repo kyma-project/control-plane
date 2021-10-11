@@ -12,9 +12,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"code.cloudfoundry.org/lager"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
@@ -42,6 +39,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
@@ -54,6 +52,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
@@ -329,7 +328,7 @@ func main() {
 	// create server
 	router := mux.NewRouter()
 
-	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, updateQueue, logger, logs)
+	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, updateQueue, logger, logs, inputFactory.GetPlanDefaults)
 
 	// create metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
@@ -403,7 +402,7 @@ func isVersionFollowingSemanticVersioning(version string) bool {
 	return false
 }
 
-func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger) {
+func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger, planDefaults broker.PlanDefaults) {
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
@@ -412,9 +411,9 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, logs),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, planDefaults, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, updateQueue, logs),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, updateQueue, planDefaults, logs),
 		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
@@ -562,19 +561,18 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	accountProvider hyperscaler.AccountProvider, fileSystem afero.Fs, reconcilerClient reconciler.Client, logs logrus.FieldLogger) *process.Queue {
 
 	const postActionsStageName = "post_actions"
-	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName, checkRuntimeStageName,
-		createKymaStageName, checkKymaStageName, postActionsStageName})
+	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName,
+		checkKymaStageName, postActionsStageName})
 	/*
-		The provisioning process contains the following stages:
-		1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
-		2. "create_runtime" - collects all information needed to make an input for the Provisioner request as overrides and labels.
-		Those data is collected using an InputCreator which is not persisted. That's why all steps which prepares such data must be in the same stage as "create runtime step".
-		3. "check_runtime_status" - checks the runtime provisioning and retries if in progress
-		4. "create_kyma" - only for 2.0, creates cluster configuration in the reconciler
-		5. "check_kyma" - checks if the Kyma is installed
-		6. "post_actions" - all steps which must be executed after the runtime is provisioned
+			The provisioning process contains the following stages:
+			1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
+			2. "create_runtime" - collects all information needed to make an input for the Provisioner request as overrides and labels.
+			Those data is collected using an InputCreator which is not persisted. That's why all steps which prepares such data must be in the same stage as "create runtime step".
+		    All steps which requires InputCreator must be run in this stage.
+			3. "check_kyma" - checks if the Kyma is installed
+			4. "post_actions" - all steps which must be executed after the runtime is provisioned
 
-		Once the stage is done it will never be retried.
+			Once the stage is done it will never be retried.
 	*/
 
 	provisioningSteps := []struct {
@@ -686,22 +684,22 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		// check the runtime status
 		{
-			stage: checkRuntimeStageName,
+			stage: createRuntimeStageName,
 			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
 		{
 			condition: provisioning.ForKyma2,
-			stage:     createKymaStageName,
+			stage:     createRuntimeStageName,
 			step:      provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 		},
 		{
 			condition: provisioning.ForKyma2,
-			stage:     createKymaStageName,
+			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), reconcilerClient),
 		},
 		{
 			condition: provisioning.ForKyma2,
-			stage:     checkKymaStageName,
+			stage:     createRuntimeStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
 		{

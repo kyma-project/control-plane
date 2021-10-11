@@ -6,6 +6,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 )
 
@@ -13,6 +15,8 @@ const (
 	KymaServiceID   = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 	KymaServiceName = "kymaruntime"
 )
+
+type PlanDefaults func(planID string, platformProvider internal.CloudProvider, parametersProvider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error)
 
 type KymaEnvironmentBroker struct {
 	*ServicesEndpoint
@@ -29,10 +33,11 @@ type KymaEnvironmentBroker struct {
 
 // Config represents configuration for broker
 type Config struct {
-	EnablePlans              EnablePlans `envconfig:"default=azure"`
-	OnlySingleTrialPerGA     bool        `envconfig:"default=true"`
-	URL                      string
-	EnableKubeconfigURLLabel bool `envconfig:"default=false"`
+	EnablePlans               EnablePlans `envconfig:"default=azure"`
+	OnlySingleTrialPerGA      bool        `envconfig:"default=true"`
+	URL                       string
+	EnableKubeconfigURLLabel  bool `envconfig:"default=false"`
+	IncludeOIDCParamsInSchema bool `envconfig:"default=false"`
 }
 
 type ServicesConfig map[string]Service

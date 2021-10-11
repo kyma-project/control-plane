@@ -43,6 +43,7 @@ type ProvisionEndpoint struct {
 	enabledPlanIDs    map[string]struct{}
 	plansConfig       PlansConfig
 	kymaVerOnDemand   bool
+	planDefaults      PlanDefaults
 
 	shootDomain  string
 	shootProject string
@@ -58,6 +59,7 @@ func NewProvision(cfg Config,
 	builderFactory PlanValidator,
 	plansConfig PlansConfig,
 	kvod bool,
+	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 ) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
@@ -78,6 +80,7 @@ func NewProvision(cfg Config,
 		kymaVerOnDemand:   kvod,
 		shootDomain:       gardenerConfig.ShootDomain,
 		shootProject:      gardenerConfig.Project,
+		planDefaults:      planDefaults,
 	}
 }
 
@@ -155,7 +158,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider)[provisioningParameters.PlanID].PlanDefinition.Name,
+		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].PlanDefinition.Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
@@ -198,6 +201,18 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	parameters, err = b.extractInputParameters(details)
 	if err != nil {
 		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
+	}
+	defaults, err := b.planDefaults(details.PlanID, provider, parameters.Provider)
+	if err != nil {
+		return ersContext, parameters, errors.Wrap(err, "while obtaining plan defaults")
+	}
+	var autoscalerMin, autoscalerMax int
+	if defaults.GardenerConfig != nil {
+		p := defaults.GardenerConfig
+		autoscalerMin, autoscalerMax = p.AutoScalerMin, p.AutoScalerMax
+	}
+	if err := parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
+		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
 	}
 
 	planValidator, err := b.validator(&details, provider)
@@ -309,7 +324,7 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 }
 
 func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
-	plans := Plans(b.plansConfig, provider)
+	plans := Plans(b.plansConfig, provider, b.config.IncludeOIDCParamsInSchema)
 	plan := plans[details.PlanID]
 	schema := string(plan.provisioningRawSchema)
 	return jsonschema.NewValidatorFromStringSchema(schema)

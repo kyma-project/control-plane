@@ -13,14 +13,19 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name          NameType `json:"name"`
-	Region        *Type    `json:"region,omitempty"`
-	MachineType   *Type    `json:"machineType,omitempty"`
-	AutoScalerMin *Type    `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type    `json:"autoScalerMax,omitempty"`
-	ZonesCount    *Type    `json:"zonesCount,omitempty"`
+	Name          NameType  `json:"name"`
+	Region        *Type     `json:"region,omitempty"`
+	MachineType   *Type     `json:"machineType,omitempty"`
+	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
+	ZonesCount    *Type     `json:"zonesCount,omitempty"`
+	OIDC          *OIDCType `json:"oidc,omitempty"`
+}
 
-	//OIDC OIDCType `json:"oidc,omitempty"`
+type UpdateProperties struct {
+	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
+	OIDC          *OIDCType `json:"oidc,omitempty"`
 }
 
 type OIDCProperties struct {
@@ -109,7 +114,6 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 			Default:     10,
 			Description: "Specifies the maximum number of virtual machines to create",
 		},
-		//OIDC: NewOIDCSchema(),
 	}
 }
 
@@ -144,6 +148,19 @@ func NewSchema(properties ProvisioningProperties, controlsOrder []string) RootSc
 		ShowFormView:  true,
 		Required:      []string{"name"},
 		ControlsOrder: controlsOrder,
+	}
+}
+
+func NewUpdateSchema(properties UpdateProperties) RootSchema {
+	return RootSchema{
+		Schema: "http://json-schema.org/draft-04/schema#",
+		Type: Type{
+			Type: "object",
+		},
+		Properties:    properties,
+		ShowFormView:  true,
+		Required:      []string{},
+		ControlsOrder: []string{},
 	}
 }
 

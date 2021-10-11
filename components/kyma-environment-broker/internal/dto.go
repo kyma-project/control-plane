@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -72,7 +73,40 @@ const (
 	Openstack       CloudProvider = "OpenStack"
 )
 
+type AutoScalerParameters struct {
+	AutoScalerMin  *int `json:"autoScalerMin"`
+	AutoScalerMax  *int `json:"autoScalerMax"`
+	MaxSurge       *int `json:"maxSurge"`
+	MaxUnavailable *int `json:"maxUnavailable"`
+}
+
+// FIXME: this is a makeshift check until the provisioner is capable of returning error messages
+// https://github.com/kyma-project/control-plane/issues/946
+func (p AutoScalerParameters) Validate(planMin, planMax int) error {
+	min, max := planMin, planMax
+	if p.AutoScalerMin != nil {
+		min = *p.AutoScalerMin
+	}
+	if p.AutoScalerMax != nil {
+		max = *p.AutoScalerMax
+	}
+	if min > max {
+		userMin := fmt.Sprintf("%v", p.AutoScalerMin)
+		if p.AutoScalerMin != nil {
+			userMin = fmt.Sprintf("%v", *p.AutoScalerMin)
+		}
+		userMax := fmt.Sprintf("%v", p.AutoScalerMax)
+		if p.AutoScalerMax != nil {
+			userMax = fmt.Sprintf("%v", *p.AutoScalerMax)
+		}
+		return fmt.Errorf("AutoScalerMax %v should be larger than AutoScalerMin %v. User provided values min:%v, max:%v; plan defaults min:%v, max:%v", max, min, userMin, userMax, planMin, planMax)
+	}
+	return nil
+}
+
 type ProvisioningParametersDTO struct {
+	AutoScalerParameters `json:",inline"`
+
 	Name         string  `json:"name"`
 	TargetSecret *string `json:"targetSecret"`
 	VolumeSizeGb *int    `json:"volumeSizeGb"`
@@ -85,10 +119,6 @@ type ProvisioningParametersDTO struct {
 	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
 	ZonesCount                  *int     `json:"zonesCount"`
-	AutoScalerMin               *int     `json:"autoScalerMin"`
-	AutoScalerMax               *int     `json:"autoScalerMax"`
-	MaxSurge                    *int     `json:"maxSurge"`
-	MaxUnavailable              *int     `json:"maxUnavailable"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
 	OverridesVersion            string   `json:"overridesVersion"`
@@ -100,12 +130,10 @@ type ProvisioningParametersDTO struct {
 }
 
 type UpdatingParametersDTO struct {
+	AutoScalerParameters `json:",inline"`
+
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
-	AutoScalerMin         *int           `json:"autoScalerMin"`
-	AutoScalerMax         *int           `json:"autoScalerMax"`
-	MaxSurge              *int           `json:"maxSurge"`
-	MaxUnavailable        *int           `json:"maxUnavailable"`
 }
 
 func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {

@@ -35,6 +35,7 @@ type SimpleInputCreator struct {
 	Labels            map[string]string
 	EnabledComponents []string
 	ShootName         *string
+	ShootDomain       string
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
 }
@@ -71,19 +72,21 @@ func FixERSContext(id string) internal.ERSContext {
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	trialCloudProvider := internal.Azure
 	return internal.ProvisioningParametersDTO{
-		Name:           "cluster-test",
-		VolumeSizeGb:   ptr.Integer(50),
-		MachineType:    ptr.String("Standard_D8_v3"),
-		Region:         ptr.String(Region),
-		Purpose:        ptr.String("Purpose"),
-		LicenceType:    ptr.String("LicenceType"),
-		Zones:          []string{"1"},
-		AutoScalerMin:  ptr.Integer(3),
-		AutoScalerMax:  ptr.Integer(10),
-		MaxSurge:       ptr.Integer(4),
-		MaxUnavailable: ptr.Integer(1),
-		KymaVersion:    KymaVersion,
-		Provider:       &trialCloudProvider,
+		Name:         "cluster-test",
+		VolumeSizeGb: ptr.Integer(50),
+		MachineType:  ptr.String("Standard_D8_v3"),
+		Region:       ptr.String(Region),
+		Purpose:      ptr.String("Purpose"),
+		LicenceType:  ptr.String("LicenceType"),
+		Zones:        []string{"1"},
+		AutoScalerParameters: internal.AutoScalerParameters{
+			AutoScalerMin:  ptr.Integer(3),
+			AutoScalerMax:  ptr.Integer(10),
+			MaxSurge:       ptr.Integer(4),
+			MaxUnavailable: ptr.Integer(1),
+		},
+		KymaVersion: KymaVersion,
+		Provider:    &trialCloudProvider,
 	}
 }
 
@@ -138,7 +141,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		SubAccountID: subAccountId,
 		RuntimeID:    runtimeId,
 		ShootName:    "ShootName",
-		ShootDomain:  "ShootDomain",
+		ShootDomain:  "shoot.domain.com",
 		XSUAA:        xsuaaData,
 		Ems:          emsData,
 		Monitoring:   monitoringData,
@@ -199,7 +202,7 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	return &SimpleInputCreator{
 		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		Labels:            make(map[string]string),
-		EnabledComponents: []string{},
+		EnabledComponents: []string{"istio-configuration"},
 		ShootName:         ptr.String("ShootName"),
 		CloudProvider:     provider,
 	}
@@ -331,6 +334,11 @@ func (c *SimpleInputCreator) SetProvisioningParameters(params internal.Provision
 
 func (c *SimpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
 	c.ShootName = &name
+	return c
+}
+
+func (c *SimpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
+	c.ShootDomain = name
 	return c
 }
 

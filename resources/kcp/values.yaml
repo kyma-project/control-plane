@@ -6,19 +6,19 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-930"
+      version: "PR-938"
     provisioner:
       dir:
-      version: "PR-909"
+      version: "PR-944"
     kyma_environment_broker:
       dir:
-      version: "PR-866"
+      version: "PR-962"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-930"
+      version: "PR-938"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-930"
+      version: "PR-938"
     subscription_cleanup_job:
       dir:
       version: "PR-925"
@@ -43,6 +43,14 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
+
+  components:
+    - base
+    - busola-migrator
+    - connectivity-proxy
+    - istio-configuration
+    - ory
+    - rafter
 
   auditlog:
     configMapName: "kcp-auditlog-config"
@@ -125,6 +133,12 @@ global:
       brokerDBName: ""
 
   kyma_metrics_collector:
+    enabled: false
+
+  mothership_reconciler:
+    enabled: false
+
+  component_reconcilers:
     enabled: false
 
   oathkeeper:
