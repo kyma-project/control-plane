@@ -49,6 +49,7 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
+          - --verbose
         name: mothership-reconciler
         ports:
         - name: http
