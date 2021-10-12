@@ -58,7 +58,7 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	}
 
 	if c.config.DumpRequest {
-		c.log.Debugf(string(reqBody))
+		fmt.Println(string(reqBody))
 	}
 	res, err := c.httpClient.Do(request)
 	if err != nil {

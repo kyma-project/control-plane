@@ -657,7 +657,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewMonitoringIntegrationStep(db.Operations(), monitoringClient, cfg.Monitoring),
-			disabled: cfg.Monitoring.Disabled,
+				disabled: cfg.Monitoring.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
