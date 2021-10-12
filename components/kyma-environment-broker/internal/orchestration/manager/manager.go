@@ -38,8 +38,8 @@ type orchestrationManager struct {
 	k8sClient            client.Client
 	configNamespace      string
 	configName           string
-	kymaVersion          string
-	kubernetesVersion    string
+	kymaVersion          string `envconfig:"optional"`
+	kubernetesVersion    string `envconfig:"optional"`
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
