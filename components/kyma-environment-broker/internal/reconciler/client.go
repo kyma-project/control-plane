@@ -58,7 +58,7 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	}
 
 	if c.config.DumpRequest {
-		fmt.Println(string(reqBody))
+		fmt.Println("Reconciler request: " + string(reqBody))
 	}
 	res, err := c.httpClient.Do(request)
 	if err != nil {
