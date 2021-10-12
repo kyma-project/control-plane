@@ -23,7 +23,8 @@ type Client interface {
 }
 
 type Config struct {
-	URL string
+	URL         string
+	DumpRequest bool   `envconfig:"default=false"`
 }
 
 type client struct {
@@ -56,6 +57,9 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 		return &State{}, err
 	}
 
+	if c.config.DumpRequest {
+		c.log.Debugf(string(reqBody))
+	}
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
