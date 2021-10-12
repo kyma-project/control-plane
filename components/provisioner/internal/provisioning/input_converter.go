@@ -138,14 +138,17 @@ func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
 
 func dnsConfigFromInput(input *gqlschema.DNSConfigInput) *model.DNSConfig {
 	config := model.DNSConfig{}
-	if input != nil && len(input.Providers) != 0 {
-		for _, v := range input.Providers {
-			config.Providers = append(config.Providers, &model.DNSProvider{
-				DomainsInclude: v.DomainsInclude,
-				Primary:        v.Primary,
-				SecretName:     v.SecretName,
-				Type:           v.Type,
-			})
+	if input != nil {
+		config.Domain = input.Domain
+		if len(input.Providers) != 0 {
+			for _, v := range input.Providers {
+				config.Providers = append(config.Providers, &model.DNSProvider{
+					DomainsInclude: v.DomainsInclude,
+					Primary:        v.Primary,
+					SecretName:     v.SecretName,
+					Type:           v.Type,
+				})
+			}
 		}
 
 		return &config

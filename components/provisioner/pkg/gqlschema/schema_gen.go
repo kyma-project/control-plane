@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 	}
 
 	DNSConfig struct {
+		Domain    func(childComplexity int) int
 		Providers func(childComplexity int) int
 	}
 
@@ -322,6 +323,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ConfigEntry.Value(childComplexity), true
+
+	case "DNSConfig.domain":
+		if e.complexity.DNSConfig.Domain == nil {
+			break
+		}
+
+		return e.complexity.DNSConfig.Domain(childComplexity), true
 
 	case "DNSConfig.providers":
 		if e.complexity.DNSConfig.Providers == nil {
@@ -966,6 +974,7 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type DNSConfig {
+    domain: String!
     providers: [DNSProvider]!  
 }
 
@@ -1164,6 +1173,7 @@ input ProviderSpecificInput {
 }
 
 input DNSConfigInput {
+    domain: String!
     providers: [DNSProviderInput]!
 }
 
@@ -2000,6 +2010,43 @@ func (ec *executionContext) _ConfigEntry_secret(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DNSConfig_domain(ctx context.Context, field graphql.CollectedField, obj *DNSConfig) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "DNSConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Domain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DNSConfig_providers(ctx context.Context, field graphql.CollectedField, obj *DNSConfig) (ret graphql.Marshaler) {
@@ -5954,6 +6001,12 @@ func (ec *executionContext) unmarshalInputDNSConfigInput(ctx context.Context, ob
 
 	for k, v := range asMap {
 		switch k {
+		case "domain":
+			var err error
+			it.Domain, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "providers":
 			var err error
 			it.Providers, err = ec.unmarshalNDNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, v)
@@ -6753,6 +6806,11 @@ func (ec *executionContext) _DNSConfig(ctx context.Context, sel ast.SelectionSet
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DNSConfig")
+		case "domain":
+			out.Values[i] = ec._DNSConfig_domain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "providers":
 			out.Values[i] = ec._DNSConfig_providers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

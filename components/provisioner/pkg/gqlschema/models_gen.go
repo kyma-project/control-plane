@@ -83,10 +83,12 @@ type ConfigEntryInput struct {
 }
 
 type DNSConfig struct {
+	Domain    string         `json:"domain"`
 	Providers []*DNSProvider `json:"providers"`
 }
 
 type DNSConfigInput struct {
+	Domain    string              `json:"domain"`
 	Providers []*DNSProviderInput `json:"providers"`
 }
 

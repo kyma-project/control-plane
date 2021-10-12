@@ -144,6 +144,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 	// operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
 	operation.DashboardURL = dashboardURL
 

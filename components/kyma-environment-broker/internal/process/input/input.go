@@ -563,6 +563,8 @@ func (r *RuntimeInput) configureDNS() error {
 		}
 	}
 
+	dnsParamsToSet.Domain = r.shootDomain
+
 	if r.provisionRuntimeInput.ClusterConfig != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsParamsToSet
 	}

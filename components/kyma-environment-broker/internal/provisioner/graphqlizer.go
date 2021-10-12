@@ -137,6 +137,7 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 
 func (g *Graphqlizer) DNSConfigInputToGraphQL(in gqlschema.DNSConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+			domain: "{{ .Domain }}",
 			{{- with .Providers }}
 			providers: [
 				{{- range . }}

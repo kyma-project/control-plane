@@ -135,6 +135,7 @@ func (s *CreateRuntimeStep) updateInstance(id, runtimeID, region string) error {
 func (s *CreateRuntimeStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
+	operation.InputCreator.SetShootDomain(operation.ShootDomain)
 	operation.InputCreator.SetLabel(brokerKeyPrefix+"instance_id", operation.InstanceID)
 	operation.InputCreator.SetLabel(globalKeyPrefix+"subaccount_id", operation.ProvisioningParameters.ErsContext.SubAccountID)
 	operation.InputCreator.SetLabel(grafanaURLLabel, fmt.Sprintf("https://grafana.%s", operation.ShootDomain))

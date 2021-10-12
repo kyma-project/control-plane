@@ -523,6 +523,7 @@ func oidcConfig() *model.OIDCConfig {
 
 func dnsInput() *gqlschema.DNSConfigInput {
 	return &gqlschema.DNSConfigInput{
+		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*gqlschema.DNSProviderInput{
 			&gqlschema.DNSProviderInput{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
@@ -536,6 +537,7 @@ func dnsInput() *gqlschema.DNSConfigInput {
 
 func dnsConfig() *model.DNSConfig {
 	return &model.DNSConfig{
+		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*model.DNSProvider{
 			&model.DNSProvider{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},

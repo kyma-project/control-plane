@@ -210,9 +210,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
-					DNS: &gardener_types.DNS{
-						Providers: gardenerDnsProvidersConfig(dnsConfig()),
-					},
+					DNS: gardenerDnsConfig(dnsConfig()),
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -280,9 +278,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
-					DNS: &gardener_types.DNS{
-						Providers: gardenerDnsProvidersConfig(dnsConfig()),
-					},
+					DNS: gardenerDnsConfig(dnsConfig()),
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -350,9 +346,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
-					DNS: &gardener_types.DNS{
-						Providers: gardenerDnsProvidersConfig(dnsConfig()),
-					},
+					DNS: gardenerDnsConfig(dnsConfig()),
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -420,9 +414,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							MachineImageVersion: false,
 						},
 					},
-					DNS: &gardener_types.DNS{
-						Providers: gardenerDnsProvidersConfig(dnsConfig()),
-					},
+					DNS: gardenerDnsConfig(dnsConfig()),
 					Extensions: []gardener_types.Extension{
 						{
 							Type: "shoot-dns-service",
@@ -645,6 +637,7 @@ func oidcConfig() *OIDCConfig {
 
 func dnsConfig() *DNSConfig {
 	return &DNSConfig{
+		Domain: "cluster.devtest.kyma.ondemand.com",
 		Providers: []*DNSProvider{
 			&DNSProvider{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},

@@ -576,6 +576,7 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 				Name:                   "abcd",
 				VolumeSizeGb:           ptr.Integer(50),
 				DNSConfig: &schema.DNSConfigInput{
+					Domain: "test.devtest.kyma.ondemand.com",
 					Providers: []*schema.DNSProviderInput{
 						&schema.DNSProviderInput{
 							DomainsInclude: []string{"devtest.kyma.ondemand.com"},

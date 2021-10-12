@@ -104,6 +104,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					UsernamePrefix: "-",
 				},
 				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "kyma.org",
 					Providers: []*gqlschema.DNSProviderInput{
 						&gqlschema.DNSProviderInput{
 							DomainsInclude: []string{"devtest.kyma.ondemand.com"},

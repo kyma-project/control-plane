@@ -260,6 +260,7 @@ func Test_GardenerConfigInputToGraphQLWithDNS(t *testing.T) {
 			usernamePrefix: "",
 		}
 		dnsConfig: {
+			domain: "c-90a3016.kymatest.ondemand.com",
 			providers: [
 				{
 					domainsInclude: ["kymatest.ondemand.com"],
@@ -292,6 +293,7 @@ func Test_GardenerConfigInputToGraphQLWithDNS(t *testing.T) {
 			UsernamePrefix: "",
 		},
 		DNSConfig: &gqlschema.DNSConfigInput{
+			Domain: name + ".kymatest.ondemand.com",
 			Providers: []*gqlschema.DNSProviderInput{
 				&gqlschema.DNSProviderInput{
 					DomainsInclude: []string{"kymatest.ondemand.com"},

@@ -37,6 +37,7 @@ type GardenerConfig {
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
 
 type DNSConfig {
+    domain: String!
     providers: [DNSProvider]!  
 }
 
@@ -235,6 +236,7 @@ input ProviderSpecificInput {
 }
 
 input DNSConfigInput {
+    domain: String!
     providers: [DNSProviderInput]!
 }
 
