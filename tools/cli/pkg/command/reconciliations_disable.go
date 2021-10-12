@@ -21,6 +21,8 @@ type reconciliationDisableCmd struct {
 }
 
 func (cmd *reconciliationDisableCmd) Validate() error {
+	cmd.mothershipURL = GlobalOpts.MothershipAPIURL()
+
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
 		return errors.New("runtime-id or shoot is empty")
 	}
@@ -42,9 +44,9 @@ func (cmd *reconciliationDisableCmd) Run() error {
 	defer cancel()
 
 	// TODO: use shootID or runtimeID
-	resp, err := client.PutClustersClusterStatus(
+	resp, err := client.PutClustersRuntimeIDStatus(
 		ctx, cmd.opts.runtimeID,
-		mothership.PutClustersClusterStatusJSONRequestBody{Status: mothership.StatusReconcileDisabled},
+		mothership.PutClustersRuntimeIDStatusJSONRequestBody{Status: mothership.StatusReconcileDisabled},
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile updating cluster status")
@@ -60,9 +62,7 @@ func (cmd *reconciliationDisableCmd) Run() error {
 }
 
 func NewReconciliationDisableCmd() *cobra.Command {
-	cmd := reconciliationDisableCmd{
-		mothershipURL: GlobalOpts.MothershipAPIURL(),
-	}
+	cmd := reconciliationDisableCmd{}
 
 	cobraCmd := &cobra.Command{
 		Use:     "disable",

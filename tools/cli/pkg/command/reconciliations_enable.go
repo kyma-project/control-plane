@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -23,6 +24,8 @@ type reconciliationEnableCmd struct {
 }
 
 func (cmd *reconciliationEnableCmd) Validate() error {
+	cmd.mothershipURL = GlobalOpts.MothershipAPIURL()
+
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
 		return errors.New("runtime-id or shoot is empty")
 	}
@@ -35,6 +38,7 @@ func (cmd *reconciliationEnableCmd) Validate() error {
 }
 
 func (cmd *reconciliationEnableCmd) Run() error {
+	fmt.Println(cmd.mothershipURL)
 	client, err := mothership.NewClient(cmd.mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
@@ -49,9 +53,9 @@ func (cmd *reconciliationEnableCmd) Run() error {
 	}
 
 	// TODO: use shootID or runtimeID
-	resp, err := client.PutClustersClusterStatus(
+	resp, err := client.PutClustersRuntimeIDStatus(
 		ctx, cmd.opts.runtimeID,
-		mothership.PutClustersClusterStatusJSONRequestBody{Status: status},
+		mothership.PutClustersRuntimeIDStatusJSONRequestBody{Status: status},
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile updating cluster status")
@@ -67,9 +71,7 @@ func (cmd *reconciliationEnableCmd) Run() error {
 }
 
 func NewReconciliationEnableCmd() *cobra.Command {
-	cmd := reconciliationEnableCmd{
-		mothershipURL: GlobalOpts.MothershipAPIURL(),
-	}
+	cmd := reconciliationEnableCmd{}
 
 	cobraCmd := &cobra.Command{
 		Use:     "enable",
