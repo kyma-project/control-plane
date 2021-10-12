@@ -12,9 +12,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -36,6 +33,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/metrics"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
@@ -48,6 +46,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime/components"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"

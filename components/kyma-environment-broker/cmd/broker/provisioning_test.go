@@ -94,6 +94,11 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 				Namespace: "kyma-system",
 				Configuration: []reconciler.Configuration{
 					{
+						Key:    "global.domainName",
+						Value:  fmt.Sprintf("%s.sap.com", suite.ShootName(opID)),
+						Secret: false,
+					},
+					{
 						Key:    "setting-one",
 						Value:  "1234",
 						Secret: false,

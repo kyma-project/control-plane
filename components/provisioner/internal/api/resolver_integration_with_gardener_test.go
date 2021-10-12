@@ -332,7 +332,8 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot.Name, shoot.Spec.DNS)
 
 	// wait for Shoot to update
-	time.Sleep(2 * waitPeriod)
+	// make sure WaitForClusterCreationStep can finish after 20s delay
+	time.Sleep(4 * waitPeriod)
 
 	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 	require.NoError(t, err)
