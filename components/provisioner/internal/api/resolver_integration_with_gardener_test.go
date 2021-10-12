@@ -261,55 +261,55 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
 
-			// testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
+			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
-			// testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
+			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
-			// testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
+			testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 
-			// testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
+			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
 	}
 
-	// t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
-	// 	// given
-	// 	installationServiceMock.Calls = nil
-	// 	installationServiceMock.ExpectedCalls = nil
+	t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
+		// given
+		installationServiceMock.Calls = nil
+		installationServiceMock.ExpectedCalls = nil
 
-	// 	_, err := shootInterface.Create(context.Background(), &gardener_types.Shoot{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name: "shoot-with-unknown-id",
-	// 			Annotations: map[string]string{
-	// 				"kcp.provisioner.kyma-project.io/runtime-id":     "fbed9b28-473c-4b3e-88a3-803d94d38785",
-	// 				"compass.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
-	// 			},
-	// 		},
-	// 		Spec: gardener_types.ShootSpec{},
-	// 		Status: gardener_types.ShootStatus{
-	// 			LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-	// 		},
-	// 	}, metav1.CreateOptions{})
-	// 	require.NoError(t, err)
+		_, err := shootInterface.Create(context.Background(), &gardener_types.Shoot{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "shoot-with-unknown-id",
+				Annotations: map[string]string{
+					"kcp.provisioner.kyma-project.io/runtime-id":     "fbed9b28-473c-4b3e-88a3-803d94d38785",
+					"compass.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
+				},
+			},
+			Spec: gardener_types.ShootSpec{},
+			Status: gardener_types.ShootStatus{
+				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
+			},
+		}, metav1.CreateOptions{})
+		require.NoError(t, err)
 
-	// 	_, err = shootInterface.Create(context.Background(), &gardener_types.Shoot{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name: "shoot-without-id",
-	// 		},
-	// 		Spec: gardener_types.ShootSpec{},
-	// 		Status: gardener_types.ShootStatus{
-	// 			LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-	// 		},
-	// 	}, metav1.CreateOptions{})
-	// 	require.NoError(t, err)
+		_, err = shootInterface.Create(context.Background(), &gardener_types.Shoot{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "shoot-without-id",
+			},
+			Spec: gardener_types.ShootSpec{},
+			Status: gardener_types.ShootStatus{
+				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
+			},
+		}, metav1.CreateOptions{})
+		require.NoError(t, err)
 
-	// 	// when
-	// 	time.Sleep(waitPeriod) // Wait few second to make sure shoots were reconciled
+		// when
+		time.Sleep(waitPeriod) // Wait few second to make sure shoots were reconciled
 
-	// 	// then
-	// 	installationServiceMock.AssertNotCalled(t, "InstallKyma", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-	// 	installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-	// 	installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
-	// })
+		// then
+		installationServiceMock.AssertNotCalled(t, "InstallKyma", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
+	})
 }
 
 func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogTenant string) {
