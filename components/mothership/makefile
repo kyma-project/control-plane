@@ -4,7 +4,7 @@ export OAPI_FILE=./docs/external_api.yaml
 
 docs/external_api.yaml:
 	# TODO make sure to fetch oapi from main when it will be available!
-	curl -o $(OAPI_FILE) --create-dirs https://raw.githubusercontent.com/kyma-incubator/reconciler/75501377a62c5e50044bd0e5c206a8bca6a09163/openapi/external_api.yaml
+	curl -o $(OAPI_FILE) --create-dirs https://raw.githubusercontent.com/kyma-incubator/reconciler/3a5c93d64b9f1078cf07f7fae8915d75ed20b6e6/openapi/external_api.yaml
 
 export CLIENT_FILE=./pkg/client_gen.go
 export TYPES_FILE=./pkg/types_gen.go

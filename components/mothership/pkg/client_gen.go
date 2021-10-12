@@ -100,22 +100,22 @@ type ClientInterface interface {
 
 	PutClusters(ctx context.Context, body PutClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeleteClustersCluster request
-	DeleteClustersCluster(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteClustersRuntimeID request
+	DeleteClustersRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetClustersClusterConfigConfigVersionStatus request
-	GetClustersClusterConfigConfigVersionStatus(ctx context.Context, cluster string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetClustersRuntimeIDConfigConfigVersionStatus request
+	GetClustersRuntimeIDConfigConfigVersionStatus(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetClustersClusterStatus request
-	GetClustersClusterStatus(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetClustersRuntimeIDStatus request
+	GetClustersRuntimeIDStatus(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PutClustersClusterStatus request with any body
-	PutClustersClusterStatusWithBody(ctx context.Context, cluster string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutClustersRuntimeIDStatus request with any body
+	PutClustersRuntimeIDStatusWithBody(ctx context.Context, runtimeID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PutClustersClusterStatus(ctx context.Context, cluster string, body PutClustersClusterStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutClustersRuntimeIDStatus(ctx context.Context, runtimeID string, body PutClustersRuntimeIDStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetClustersClusterStatusChanges request
-	GetClustersClusterStatusChanges(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetClustersRuntimeIDStatusChanges request
+	GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetReconciles request
 	GetReconciles(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -169,8 +169,8 @@ func (c *Client) PutClusters(ctx context.Context, body PutClustersJSONRequestBod
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteClustersCluster(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteClustersClusterRequest(c.Server, cluster)
+func (c *Client) DeleteClustersRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClustersRuntimeIDRequest(c.Server, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +181,8 @@ func (c *Client) DeleteClustersCluster(ctx context.Context, cluster string, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClustersClusterConfigConfigVersionStatus(ctx context.Context, cluster string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClustersClusterConfigConfigVersionStatusRequest(c.Server, cluster, configVersion)
+func (c *Client) GetClustersRuntimeIDConfigConfigVersionStatus(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClustersRuntimeIDConfigConfigVersionStatusRequest(c.Server, runtimeID, configVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -193,8 +193,8 @@ func (c *Client) GetClustersClusterConfigConfigVersionStatus(ctx context.Context
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClustersClusterStatus(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClustersClusterStatusRequest(c.Server, cluster)
+func (c *Client) GetClustersRuntimeIDStatus(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClustersRuntimeIDStatusRequest(c.Server, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -205,8 +205,8 @@ func (c *Client) GetClustersClusterStatus(ctx context.Context, cluster string, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutClustersClusterStatusWithBody(ctx context.Context, cluster string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutClustersClusterStatusRequestWithBody(c.Server, cluster, contentType, body)
+func (c *Client) PutClustersRuntimeIDStatusWithBody(ctx context.Context, runtimeID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutClustersRuntimeIDStatusRequestWithBody(c.Server, runtimeID, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -217,8 +217,8 @@ func (c *Client) PutClustersClusterStatusWithBody(ctx context.Context, cluster s
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutClustersClusterStatus(ctx context.Context, cluster string, body PutClustersClusterStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutClustersClusterStatusRequest(c.Server, cluster, body)
+func (c *Client) PutClustersRuntimeIDStatus(ctx context.Context, runtimeID string, body PutClustersRuntimeIDStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutClustersRuntimeIDStatusRequest(c.Server, runtimeID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -229,8 +229,8 @@ func (c *Client) PutClustersClusterStatus(ctx context.Context, cluster string, b
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClustersClusterStatusChanges(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClustersClusterStatusChangesRequest(c.Server, cluster)
+func (c *Client) GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClustersRuntimeIDStatusChangesRequest(c.Server, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -333,13 +333,13 @@ func NewPutClustersRequestWithBody(server string, contentType string, body io.Re
 	return req, nil
 }
 
-// NewDeleteClustersClusterRequest generates requests for DeleteClustersCluster
-func NewDeleteClustersClusterRequest(server string, cluster string) (*http.Request, error) {
+// NewDeleteClustersRuntimeIDRequest generates requests for DeleteClustersRuntimeID
+func NewDeleteClustersRuntimeIDRequest(server string, runtimeID string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster", runtime.ParamLocationPath, cluster)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -367,13 +367,13 @@ func NewDeleteClustersClusterRequest(server string, cluster string) (*http.Reque
 	return req, nil
 }
 
-// NewGetClustersClusterConfigConfigVersionStatusRequest generates requests for GetClustersClusterConfigConfigVersionStatus
-func NewGetClustersClusterConfigConfigVersionStatusRequest(server string, cluster string, configVersion string) (*http.Request, error) {
+// NewGetClustersRuntimeIDConfigConfigVersionStatusRequest generates requests for GetClustersRuntimeIDConfigConfigVersionStatus
+func NewGetClustersRuntimeIDConfigConfigVersionStatusRequest(server string, runtimeID string, configVersion string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster", runtime.ParamLocationPath, cluster)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -408,13 +408,13 @@ func NewGetClustersClusterConfigConfigVersionStatusRequest(server string, cluste
 	return req, nil
 }
 
-// NewGetClustersClusterStatusRequest generates requests for GetClustersClusterStatus
-func NewGetClustersClusterStatusRequest(server string, cluster string) (*http.Request, error) {
+// NewGetClustersRuntimeIDStatusRequest generates requests for GetClustersRuntimeIDStatus
+func NewGetClustersRuntimeIDStatusRequest(server string, runtimeID string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster", runtime.ParamLocationPath, cluster)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -442,24 +442,24 @@ func NewGetClustersClusterStatusRequest(server string, cluster string) (*http.Re
 	return req, nil
 }
 
-// NewPutClustersClusterStatusRequest calls the generic PutClustersClusterStatus builder with application/json body
-func NewPutClustersClusterStatusRequest(server string, cluster string, body PutClustersClusterStatusJSONRequestBody) (*http.Request, error) {
+// NewPutClustersRuntimeIDStatusRequest calls the generic PutClustersRuntimeIDStatus builder with application/json body
+func NewPutClustersRuntimeIDStatusRequest(server string, runtimeID string, body PutClustersRuntimeIDStatusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPutClustersClusterStatusRequestWithBody(server, cluster, "application/json", bodyReader)
+	return NewPutClustersRuntimeIDStatusRequestWithBody(server, runtimeID, "application/json", bodyReader)
 }
 
-// NewPutClustersClusterStatusRequestWithBody generates requests for PutClustersClusterStatus with any type of body
-func NewPutClustersClusterStatusRequestWithBody(server string, cluster string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutClustersRuntimeIDStatusRequestWithBody generates requests for PutClustersRuntimeIDStatus with any type of body
+func NewPutClustersRuntimeIDStatusRequestWithBody(server string, runtimeID string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster", runtime.ParamLocationPath, cluster)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -489,13 +489,13 @@ func NewPutClustersClusterStatusRequestWithBody(server string, cluster string, c
 	return req, nil
 }
 
-// NewGetClustersClusterStatusChangesRequest generates requests for GetClustersClusterStatusChanges
-func NewGetClustersClusterStatusChangesRequest(server string, cluster string) (*http.Request, error) {
+// NewGetClustersRuntimeIDStatusChangesRequest generates requests for GetClustersRuntimeIDStatusChanges
+func NewGetClustersRuntimeIDStatusChangesRequest(server string, runtimeID string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster", runtime.ParamLocationPath, cluster)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -655,22 +655,22 @@ type ClientWithResponsesInterface interface {
 
 	PutClustersWithResponse(ctx context.Context, body PutClustersJSONRequestBody, reqEditors ...RequestEditorFn) (*PutClustersResponse, error)
 
-	// DeleteClustersCluster request
-	DeleteClustersClusterWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*DeleteClustersClusterResponse, error)
+	// DeleteClustersRuntimeID request
+	DeleteClustersRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*DeleteClustersRuntimeIDResponse, error)
 
-	// GetClustersClusterConfigConfigVersionStatus request
-	GetClustersClusterConfigConfigVersionStatusWithResponse(ctx context.Context, cluster string, configVersion string, reqEditors ...RequestEditorFn) (*GetClustersClusterConfigConfigVersionStatusResponse, error)
+	// GetClustersRuntimeIDConfigConfigVersionStatus request
+	GetClustersRuntimeIDConfigConfigVersionStatusWithResponse(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDConfigConfigVersionStatusResponse, error)
 
-	// GetClustersClusterStatus request
-	GetClustersClusterStatusWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusResponse, error)
+	// GetClustersRuntimeIDStatus request
+	GetClustersRuntimeIDStatusWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusResponse, error)
 
-	// PutClustersClusterStatus request with any body
-	PutClustersClusterStatusWithBodyWithResponse(ctx context.Context, cluster string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutClustersClusterStatusResponse, error)
+	// PutClustersRuntimeIDStatus request with any body
+	PutClustersRuntimeIDStatusWithBodyWithResponse(ctx context.Context, runtimeID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutClustersRuntimeIDStatusResponse, error)
 
-	PutClustersClusterStatusWithResponse(ctx context.Context, cluster string, body PutClustersClusterStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*PutClustersClusterStatusResponse, error)
+	PutClustersRuntimeIDStatusWithResponse(ctx context.Context, runtimeID string, body PutClustersRuntimeIDStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*PutClustersRuntimeIDStatusResponse, error)
 
-	// GetClustersClusterStatusChanges request
-	GetClustersClusterStatusChangesWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusChangesResponse, error)
+	// GetClustersRuntimeIDStatusChanges request
+	GetClustersRuntimeIDStatusChangesWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusChangesResponse, error)
 
 	// GetReconciles request
 	GetReconcilesWithResponse(ctx context.Context, params *GetReconcilesParams, reqEditors ...RequestEditorFn) (*GetReconcilesResponse, error)
@@ -724,7 +724,7 @@ func (r PutClustersResponse) StatusCode() int {
 	return 0
 }
 
-type DeleteClustersClusterResponse struct {
+type DeleteClustersRuntimeIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HTTPClusterResponse
@@ -734,7 +734,7 @@ type DeleteClustersClusterResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r DeleteClustersClusterResponse) Status() string {
+func (r DeleteClustersRuntimeIDResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -742,14 +742,14 @@ func (r DeleteClustersClusterResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DeleteClustersClusterResponse) StatusCode() int {
+func (r DeleteClustersRuntimeIDResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetClustersClusterConfigConfigVersionStatusResponse struct {
+type GetClustersRuntimeIDConfigConfigVersionStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HTTPClusterResponse
@@ -759,7 +759,7 @@ type GetClustersClusterConfigConfigVersionStatusResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetClustersClusterConfigConfigVersionStatusResponse) Status() string {
+func (r GetClustersRuntimeIDConfigConfigVersionStatusResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -767,14 +767,14 @@ func (r GetClustersClusterConfigConfigVersionStatusResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetClustersClusterConfigConfigVersionStatusResponse) StatusCode() int {
+func (r GetClustersRuntimeIDConfigConfigVersionStatusResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetClustersClusterStatusResponse struct {
+type GetClustersRuntimeIDStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HTTPClusterResponse
@@ -784,7 +784,7 @@ type GetClustersClusterStatusResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetClustersClusterStatusResponse) Status() string {
+func (r GetClustersRuntimeIDStatusResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -792,14 +792,14 @@ func (r GetClustersClusterStatusResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetClustersClusterStatusResponse) StatusCode() int {
+func (r GetClustersRuntimeIDStatusResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PutClustersClusterStatusResponse struct {
+type PutClustersRuntimeIDStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON201      *HTTPClusterResponse
@@ -809,7 +809,7 @@ type PutClustersClusterStatusResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PutClustersClusterStatusResponse) Status() string {
+func (r PutClustersRuntimeIDStatusResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -817,14 +817,14 @@ func (r PutClustersClusterStatusResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PutClustersClusterStatusResponse) StatusCode() int {
+func (r PutClustersRuntimeIDStatusResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetClustersClusterStatusChangesResponse struct {
+type GetClustersRuntimeIDStatusChangesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HTTPClusterStatusResponse
@@ -834,7 +834,7 @@ type GetClustersClusterStatusChangesResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetClustersClusterStatusChangesResponse) Status() string {
+func (r GetClustersRuntimeIDStatusChangesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -842,7 +842,7 @@ func (r GetClustersClusterStatusChangesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetClustersClusterStatusChangesResponse) StatusCode() int {
+func (r GetClustersRuntimeIDStatusChangesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -906,57 +906,57 @@ func (c *ClientWithResponses) PutClustersWithResponse(ctx context.Context, body 
 	return ParsePutClustersResponse(rsp)
 }
 
-// DeleteClustersClusterWithResponse request returning *DeleteClustersClusterResponse
-func (c *ClientWithResponses) DeleteClustersClusterWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*DeleteClustersClusterResponse, error) {
-	rsp, err := c.DeleteClustersCluster(ctx, cluster, reqEditors...)
+// DeleteClustersRuntimeIDWithResponse request returning *DeleteClustersRuntimeIDResponse
+func (c *ClientWithResponses) DeleteClustersRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*DeleteClustersRuntimeIDResponse, error) {
+	rsp, err := c.DeleteClustersRuntimeID(ctx, runtimeID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDeleteClustersClusterResponse(rsp)
+	return ParseDeleteClustersRuntimeIDResponse(rsp)
 }
 
-// GetClustersClusterConfigConfigVersionStatusWithResponse request returning *GetClustersClusterConfigConfigVersionStatusResponse
-func (c *ClientWithResponses) GetClustersClusterConfigConfigVersionStatusWithResponse(ctx context.Context, cluster string, configVersion string, reqEditors ...RequestEditorFn) (*GetClustersClusterConfigConfigVersionStatusResponse, error) {
-	rsp, err := c.GetClustersClusterConfigConfigVersionStatus(ctx, cluster, configVersion, reqEditors...)
+// GetClustersRuntimeIDConfigConfigVersionStatusWithResponse request returning *GetClustersRuntimeIDConfigConfigVersionStatusResponse
+func (c *ClientWithResponses) GetClustersRuntimeIDConfigConfigVersionStatusWithResponse(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDConfigConfigVersionStatusResponse, error) {
+	rsp, err := c.GetClustersRuntimeIDConfigConfigVersionStatus(ctx, runtimeID, configVersion, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetClustersClusterConfigConfigVersionStatusResponse(rsp)
+	return ParseGetClustersRuntimeIDConfigConfigVersionStatusResponse(rsp)
 }
 
-// GetClustersClusterStatusWithResponse request returning *GetClustersClusterStatusResponse
-func (c *ClientWithResponses) GetClustersClusterStatusWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusResponse, error) {
-	rsp, err := c.GetClustersClusterStatus(ctx, cluster, reqEditors...)
+// GetClustersRuntimeIDStatusWithResponse request returning *GetClustersRuntimeIDStatusResponse
+func (c *ClientWithResponses) GetClustersRuntimeIDStatusWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusResponse, error) {
+	rsp, err := c.GetClustersRuntimeIDStatus(ctx, runtimeID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetClustersClusterStatusResponse(rsp)
+	return ParseGetClustersRuntimeIDStatusResponse(rsp)
 }
 
-// PutClustersClusterStatusWithBodyWithResponse request with arbitrary body returning *PutClustersClusterStatusResponse
-func (c *ClientWithResponses) PutClustersClusterStatusWithBodyWithResponse(ctx context.Context, cluster string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutClustersClusterStatusResponse, error) {
-	rsp, err := c.PutClustersClusterStatusWithBody(ctx, cluster, contentType, body, reqEditors...)
+// PutClustersRuntimeIDStatusWithBodyWithResponse request with arbitrary body returning *PutClustersRuntimeIDStatusResponse
+func (c *ClientWithResponses) PutClustersRuntimeIDStatusWithBodyWithResponse(ctx context.Context, runtimeID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutClustersRuntimeIDStatusResponse, error) {
+	rsp, err := c.PutClustersRuntimeIDStatusWithBody(ctx, runtimeID, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutClustersClusterStatusResponse(rsp)
+	return ParsePutClustersRuntimeIDStatusResponse(rsp)
 }
 
-func (c *ClientWithResponses) PutClustersClusterStatusWithResponse(ctx context.Context, cluster string, body PutClustersClusterStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*PutClustersClusterStatusResponse, error) {
-	rsp, err := c.PutClustersClusterStatus(ctx, cluster, body, reqEditors...)
+func (c *ClientWithResponses) PutClustersRuntimeIDStatusWithResponse(ctx context.Context, runtimeID string, body PutClustersRuntimeIDStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*PutClustersRuntimeIDStatusResponse, error) {
+	rsp, err := c.PutClustersRuntimeIDStatus(ctx, runtimeID, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutClustersClusterStatusResponse(rsp)
+	return ParsePutClustersRuntimeIDStatusResponse(rsp)
 }
 
-// GetClustersClusterStatusChangesWithResponse request returning *GetClustersClusterStatusChangesResponse
-func (c *ClientWithResponses) GetClustersClusterStatusChangesWithResponse(ctx context.Context, cluster string, reqEditors ...RequestEditorFn) (*GetClustersClusterStatusChangesResponse, error) {
-	rsp, err := c.GetClustersClusterStatusChanges(ctx, cluster, reqEditors...)
+// GetClustersRuntimeIDStatusChangesWithResponse request returning *GetClustersRuntimeIDStatusChangesResponse
+func (c *ClientWithResponses) GetClustersRuntimeIDStatusChangesWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusChangesResponse, error) {
+	rsp, err := c.GetClustersRuntimeIDStatusChanges(ctx, runtimeID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetClustersClusterStatusChangesResponse(rsp)
+	return ParseGetClustersRuntimeIDStatusChangesResponse(rsp)
 }
 
 // GetReconcilesWithResponse request returning *GetReconcilesResponse
@@ -1048,15 +1048,15 @@ func ParsePutClustersResponse(rsp *http.Response) (*PutClustersResponse, error) 
 	return response, nil
 }
 
-// ParseDeleteClustersClusterResponse parses an HTTP response from a DeleteClustersClusterWithResponse call
-func ParseDeleteClustersClusterResponse(rsp *http.Response) (*DeleteClustersClusterResponse, error) {
+// ParseDeleteClustersRuntimeIDResponse parses an HTTP response from a DeleteClustersRuntimeIDWithResponse call
+func ParseDeleteClustersRuntimeIDResponse(rsp *http.Response) (*DeleteClustersRuntimeIDResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &DeleteClustersClusterResponse{
+	response := &DeleteClustersRuntimeIDResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1095,15 +1095,15 @@ func ParseDeleteClustersClusterResponse(rsp *http.Response) (*DeleteClustersClus
 	return response, nil
 }
 
-// ParseGetClustersClusterConfigConfigVersionStatusResponse parses an HTTP response from a GetClustersClusterConfigConfigVersionStatusWithResponse call
-func ParseGetClustersClusterConfigConfigVersionStatusResponse(rsp *http.Response) (*GetClustersClusterConfigConfigVersionStatusResponse, error) {
+// ParseGetClustersRuntimeIDConfigConfigVersionStatusResponse parses an HTTP response from a GetClustersRuntimeIDConfigConfigVersionStatusWithResponse call
+func ParseGetClustersRuntimeIDConfigConfigVersionStatusResponse(rsp *http.Response) (*GetClustersRuntimeIDConfigConfigVersionStatusResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetClustersClusterConfigConfigVersionStatusResponse{
+	response := &GetClustersRuntimeIDConfigConfigVersionStatusResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1142,15 +1142,15 @@ func ParseGetClustersClusterConfigConfigVersionStatusResponse(rsp *http.Response
 	return response, nil
 }
 
-// ParseGetClustersClusterStatusResponse parses an HTTP response from a GetClustersClusterStatusWithResponse call
-func ParseGetClustersClusterStatusResponse(rsp *http.Response) (*GetClustersClusterStatusResponse, error) {
+// ParseGetClustersRuntimeIDStatusResponse parses an HTTP response from a GetClustersRuntimeIDStatusWithResponse call
+func ParseGetClustersRuntimeIDStatusResponse(rsp *http.Response) (*GetClustersRuntimeIDStatusResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetClustersClusterStatusResponse{
+	response := &GetClustersRuntimeIDStatusResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1189,15 +1189,15 @@ func ParseGetClustersClusterStatusResponse(rsp *http.Response) (*GetClustersClus
 	return response, nil
 }
 
-// ParsePutClustersClusterStatusResponse parses an HTTP response from a PutClustersClusterStatusWithResponse call
-func ParsePutClustersClusterStatusResponse(rsp *http.Response) (*PutClustersClusterStatusResponse, error) {
+// ParsePutClustersRuntimeIDStatusResponse parses an HTTP response from a PutClustersRuntimeIDStatusWithResponse call
+func ParsePutClustersRuntimeIDStatusResponse(rsp *http.Response) (*PutClustersRuntimeIDStatusResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PutClustersClusterStatusResponse{
+	response := &PutClustersRuntimeIDStatusResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1236,15 +1236,15 @@ func ParsePutClustersClusterStatusResponse(rsp *http.Response) (*PutClustersClus
 	return response, nil
 }
 
-// ParseGetClustersClusterStatusChangesResponse parses an HTTP response from a GetClustersClusterStatusChangesWithResponse call
-func ParseGetClustersClusterStatusChangesResponse(rsp *http.Response) (*GetClustersClusterStatusChangesResponse, error) {
+// ParseGetClustersRuntimeIDStatusChangesResponse parses an HTTP response from a GetClustersRuntimeIDStatusChangesWithResponse call
+func ParseGetClustersRuntimeIDStatusChangesResponse(rsp *http.Response) (*GetClustersRuntimeIDStatusChangesResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer rsp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetClustersClusterStatusChangesResponse{
+	response := &GetClustersRuntimeIDStatusChangesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

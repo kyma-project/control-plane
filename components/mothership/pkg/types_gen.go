@@ -138,8 +138,8 @@ type PostClustersJSONBody Cluster
 // PutClustersJSONBody defines parameters for PutClusters.
 type PutClustersJSONBody Cluster
 
-// PutClustersClusterStatusJSONBody defines parameters for PutClustersClusterStatus.
-type PutClustersClusterStatusJSONBody StatusUpdate
+// PutClustersRuntimeIDStatusJSONBody defines parameters for PutClustersRuntimeIDStatus.
+type PutClustersRuntimeIDStatusJSONBody StatusUpdate
 
 // GetReconcilesParams defines parameters for GetReconciles.
 type GetReconcilesParams struct {
@@ -154,5 +154,5 @@ type PostClustersJSONRequestBody PostClustersJSONBody
 // PutClustersJSONRequestBody defines body for PutClusters for application/json ContentType.
 type PutClustersJSONRequestBody PutClustersJSONBody
 
-// PutClustersClusterStatusJSONRequestBody defines body for PutClustersClusterStatus for application/json ContentType.
-type PutClustersClusterStatusJSONRequestBody PutClustersClusterStatusJSONBody
+// PutClustersRuntimeIDStatusJSONRequestBody defines body for PutClustersRuntimeIDStatus for application/json ContentType.
+type PutClustersRuntimeIDStatusJSONRequestBody PutClustersRuntimeIDStatusJSONBody
