@@ -26,7 +26,7 @@ func (cmd *reconciliationDisableCmd) Validate() error {
 	}
 
 	if cmd.opts.runtimeID != "" && cmd.opts.shootName != "" {
-		return errors.New("runtime-id and shoot are used in the same time")
+		return errors.New("runtime-id and shoot are provided in the same time")
 	}
 
 	return nil
@@ -74,7 +74,7 @@ func NewReconciliationDisableCmd() *cobra.Command {
 	}
 
 	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "r", "", "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+	// cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "r", "", "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()
