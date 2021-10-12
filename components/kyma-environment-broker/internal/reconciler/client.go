@@ -24,7 +24,7 @@ type Client interface {
 
 type Config struct {
 	URL         string
-	DumpRequest bool   `envconfig:"default=false"`
+	DumpRequest bool `envconfig:"default=false"`
 }
 
 type client struct {
