@@ -146,7 +146,7 @@ type Config struct {
 		Name      string
 	}
 
-	OrchestrationConfig orchestration.Config
+	OrchestrationConfig orchestration.Config `envconfig:"-"`
 
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
