@@ -2,6 +2,21 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      }
+    },
+    "region": {
+      "type": "string",
+      "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
+    },
     "oidc": {
       "type": "object",
       "description": "OIDC configuration",
@@ -40,9 +55,26 @@
         "clientID",
         "issuerURL"
       ]
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     }
   },
-  "required": [],
+  "required": [
+    "name"
+  ],
   "_show_form_view": true,
-  "_controlsOrder": []
+  "_controlsOrder": [
+    "name",
+    "region",
+    "oidc",
+    "administrators"
+  ]
 }

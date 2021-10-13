@@ -13,6 +13,34 @@
         ]
       }
     },
+    "region": {
+      "type": "string",
+      "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
+    },
+    "machineType": {
+      "type": "string",
+      "enum": ["Standard_D8_v3"]
+    },
+    "autoScalerMin": {
+      "type": "integer",
+      "description": "Specifies the minimum number of virtual machines to create per zone",
+      "minimum": 1,
+      "default": 1
+    },
+    "autoScalerMax": {
+      "type": "integer",
+      "description": "Specifies the maximum number of virtual machines to create per zone",
+      "minimum": 1,
+      "maximum": 40,
+      "default": 10
+    },
+    "zonesCount": {
+      "type": "integer",
+      "description": "Specifies the number of availability zones for HA cluster",
+      "minimum": 3,
+      "maximum": 3,
+      "default": 3
+    },
     "oidc": {
       "type": "object",
       "description": "OIDC configuration",
@@ -51,6 +79,16 @@
         "clientID",
         "issuerURL"
       ]
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     }
   },
   "required": [
@@ -59,6 +97,12 @@
   "_show_form_view": true,
   "_controlsOrder": [
     "name",
-    "oidc"
+    "region",
+    "machineType",
+    "autoScalerMin",
+    "autoScalerMax",
+    "zonesCount",
+    "oidc",
+    "administrators"
   ]
 }
