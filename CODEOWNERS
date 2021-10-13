@@ -42,10 +42,10 @@
 /resources/oidc-kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
 
 # KCP CLI
-/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan @kyma-project/wookiee
+/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed
 
 # mothership 
-/components/mothership @kyma-project/wookiee
+/components/mothership @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
