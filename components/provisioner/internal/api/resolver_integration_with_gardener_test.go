@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -337,8 +336,6 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 	require.NoError(t, err)
-	sa, _ := json.MarshalIndent(shoot, "", " ")
-	fmt.Printf("shoot after simulateSuccessfulClusterProvisioning: %+v \n", string(sa))
 
 	// then
 	assert.Equal(t, runtimeID, shoot.Annotations["kcp.provisioner.kyma-project.io/runtime-id"])
@@ -350,9 +347,6 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	// when checking Runtime Status
 	runtimeStatusProvisioned, err := resolver.RuntimeStatus(ctx, *provisionRuntime.RuntimeID)
-
-	b, _ := json.MarshalIndent(runtimeStatusProvisioned, "", " ")
-	fmt.Printf("runtimeStatusProvisioned %s \n runtimeStatusProvisioned err: %+v\n", string(b), err)
 
 	// then
 	require.NoError(t, err)

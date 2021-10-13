@@ -109,14 +109,6 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 	}
 
-	// create SKR shoot name
-	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
-
-	if parameters.DNS != nil {
-		parameters.DNS.Domain = fmt.Sprintf("%s.%s", shootName, parameters.DNS.Domain)
-	}
-
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID:           details.PlanID,
 		ServiceID:        details.ServiceID,
@@ -128,6 +120,10 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
 	logger.Infof("Runtime parameters: %+v", parameters)
+
+	// create SKR shoot name
+	shootName := gardener.CreateShootName()
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 
 	// check if operation with instance ID already created
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)

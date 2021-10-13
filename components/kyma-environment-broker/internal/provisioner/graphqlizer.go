@@ -129,6 +129,20 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 			usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
 		}
 		{{- end }}
+		{{- if .DNSConfig }}
+		dnsConfig: {
+			domain: "{{ .DNSConfig.Domain }}",
+			providers: [
+				{{- range .DNSConfig.Providers }}
+				{
+					primary: {{ .Primary }},
+					secretName: "{{ .SecretName }}",
+					type: "{{ .Type }}"
+				}
+				{{- end }}
+			]
+		}
+		{{- end }}
 	}`)
 }
 

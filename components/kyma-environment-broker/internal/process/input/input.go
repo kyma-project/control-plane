@@ -75,6 +75,9 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 }
 
 func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
+	if r.dnsConfig.Domain != "" {
+		r.dnsConfig.Domain = fmt.Sprintf("%s.%s", name, strings.Trim(r.dnsConfig.Domain, "."))
+	}
 	r.shootName = &name
 	return r
 }
@@ -575,10 +578,7 @@ func (r *RuntimeInput) configureDNS() error {
 	// This method could be used for:
 	// provisioning
 
-	dns := r.provisioningParameters.Parameters.DNS
-	if dns == nil {
-		dns = &r.dnsConfig
-	}
+	dns := &r.dnsConfig
 	if dns != nil && r.provisionRuntimeInput.ClusterConfig != nil {
 		providers := []*gqlschema.DNSProviderInput{}
 		for _, p := range dns.Providers {

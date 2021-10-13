@@ -329,7 +329,7 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 
 func FixDNSConfigDTO() internal.DNSConfigDTO {
 	return internal.DNSConfigDTO{
-		Domain: "shoot.test.customdomain.com",
+		Domain: "test.customdomain.com",
 		Providers: []*internal.DNSProviderDTO{
 			{
 				Primary:    true,

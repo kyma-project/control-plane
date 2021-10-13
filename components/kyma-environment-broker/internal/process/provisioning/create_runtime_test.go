@@ -43,7 +43,7 @@ const (
 var (
 	shootPurpose  = "development"
 	testDNSConfig = &gqlschema.DNSConfigInput{
-		Domain: "shoot.test.customdomain.com",
+		Domain: "c-1234567.test.customdomain.com",
 		Providers: []*gqlschema.DNSProviderInput{
 			{
 				Primary:    true,

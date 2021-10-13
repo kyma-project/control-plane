@@ -81,44 +81,44 @@ Everything else should be tested in appropriate package
 */
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
-		// {name: "Azure on Gardener",
-		// 	description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
-		// 	runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
-		// 	auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
-		// 	provisioningInput: provisioningInput{
-		// 		config: azureGardenerClusterConfigInput("1", "2"),
-		// 		runtimeInput: gqlschema.RuntimeInput{
-		// 			Name:        "test runtime 2",
-		// 			Description: new(string),
-		// 		}},
-		// 	upgradeShootInput: NewUpgradeShootInput(),
-		// 	seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
-		// },
-		// {name: "Azure on Gardener seed is empty",
-		// 	description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
-		// 	runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
-		// 	auditLogTenant: "",
-		// 	provisioningInput: provisioningInput{
-		// 		config: azureGardenerClusterConfigInputNoSeed(),
-		// 		runtimeInput: gqlschema.RuntimeInput{
-		// 			Name:        "test runtime 5",
-		// 			Description: new(string),
-		// 		}},
-		// 	upgradeShootInput: NewUpgradeShootInput(),
-		// },
-		// {name: "OpenStack on Gardener",
-		// 	description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
-		// 	runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
-		// 	auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
-		// 	provisioningInput: provisioningInput{
-		// 		config: openStackGardenerClusterConfigInput(),
-		// 		runtimeInput: gqlschema.RuntimeInput{
-		// 			Name:        "test runtime 6",
-		// 			Description: new(string),
-		// 		}},
-		// 	upgradeShootInput: NewUpgradeOpenStackShootInput(),
-		// 	seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
-		// },
+		{name: "Azure on Gardener",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInput("1", "2"),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 2",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+			seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
+		},
+		{name: "Azure on Gardener seed is empty",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
+			auditLogTenant: "",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInputNoSeed(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 5",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+		},
+		{name: "OpenStack on Gardener",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
+			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
+			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			provisioningInput: provisioningInput{
+				config: openStackGardenerClusterConfigInput(),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 6",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeOpenStackShootInput(),
+			seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
+		},
 		{name: "Azure on Gardener With Custom Domain",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener with Custom Domain, when zones passed",
 			runtimeID:      "63701b36-76cb-4225-a119-e31512467f26",
@@ -126,11 +126,11 @@ func newTestProvisioningConfigs() []testCase {
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInputWithCustomDomain("1", "2"),
 				runtimeInput: gqlschema.RuntimeInput{
-					Name:        "test runtime 2",
+					Name:        "test runtime 8",
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
-			seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
+			seed:              seedConfig("az-eu3", "cf.eu20", "azure"),
 		},
 	}
 }
