@@ -102,7 +102,7 @@ disableProcessOperationsInProgress: "false"
 enablePlans: "azure,gcp,azure_lite,azure_ha,trial"
 onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
-includeOIDCParamsInSchema: "false"
+includeAdditionalParamsInSchema: "false"
 
 osbUpdateProcessingEnabled: "false"
 

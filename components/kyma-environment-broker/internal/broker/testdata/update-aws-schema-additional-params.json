@@ -51,6 +51,16 @@
         "clientID",
         "issuerURL"
       ]
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     }
   },
   "required": [],

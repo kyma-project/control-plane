@@ -15,11 +15,11 @@
     },
     "region": {
       "type": "string",
-      "enum": ["eu-de-1", "ap-sa-1"]
+      "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
     },
     "machineType": {
       "type": "string",
-      "enum": ["m1.large"]
+      "enum": ["Standard_D8_v3"]
     },
     "autoScalerMin": {
       "type": "integer",
@@ -72,7 +72,18 @@
         "clientID",
         "issuerURL"
       ]
-    }},
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    }
+  },
   "required": [
     "name"
   ],
@@ -83,6 +94,7 @@
     "machineType",
     "autoScalerMin",
     "autoScalerMax",
-    "oidc"
+    "oidc",
+    "administrators"
   ]
 }

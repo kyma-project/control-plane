@@ -230,7 +230,7 @@ func marshalSchema(schema RootSchema) []byte {
 
 func schemaForUpdate(provisioningRoot RootSchema) []byte {
 	pp := provisioningRoot.Properties.(ProvisioningProperties)
-	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil && pp.OIDC == nil {
+	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil && pp.OIDC == nil && pp.Administrators == nil {
 		return []byte{}
 	}
 	up := UpdateProperties{}
@@ -253,6 +253,9 @@ func schemaForUpdate(provisioningRoot RootSchema) []byte {
 	if pp.OIDC != nil {
 		up.OIDC = pp.OIDC
 	}
+	if pp.Administrators != nil {
+		up.Administrators = pp.Administrators
+	}
 
 	return marshalSchema(NewUpdateSchema(up))
 }
@@ -265,7 +268,7 @@ type Plan struct {
 
 // plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-func Plans(plans PlansConfig, provider internal.CloudProvider, includeOIDCParams bool) map[string]Plan {
+func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]Plan {
 	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 	gcpSchema := GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"})
@@ -276,9 +279,20 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeOIDCParams
 	freemiumSchema := FreemiumSchema(provider)
 	trialSchema := TrialSchema()
 
-	if includeOIDCParams {
-		includeOIDCSchema(&awsSchema, &awsHASchema, &gcpSchema, &openstackSchema, &azureSchema,
-			&azureLiteSchema, &azureHASchema, &freemiumSchema, &trialSchema)
+	if includeAdditionalParamsInSchema {
+		schemas := []*RootSchema{
+			&awsSchema,
+			&awsHASchema,
+			&gcpSchema,
+			&openstackSchema,
+			&azureSchema,
+			&azureLiteSchema,
+			&azureHASchema,
+			&freemiumSchema,
+			&trialSchema,
+		}
+		includeOIDCSchema(schemas...)
+		includeAdminsSchema(schemas...)
 	}
 
 	return map[string]Plan{
@@ -490,6 +504,17 @@ func includeOIDCSchema(schemas ...*RootSchema) {
 		pp.OIDC = &oidcSchema
 		schema.Properties = pp
 		schema.ControlsOrder = append(schema.ControlsOrder, "oidc")
+	}
+}
+
+func includeAdminsSchema(schemas ...*RootSchema) {
+	adminsProperty := AdministratorsProperty()
+
+	for _, schema := range schemas {
+		pp := schema.Properties.(ProvisioningProperties)
+		pp.Administrators = adminsProperty
+		schema.Properties = pp
+		schema.ControlsOrder = append(schema.ControlsOrder, "administrators")
 	}
 }
 

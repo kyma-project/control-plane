@@ -29,8 +29,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
 			file:           "aws-schema.json",
 			updateFile:     "update-aws-schema.json",
-			fileOIDC:       "aws-schema-oidc.json",
-			updateFileOIDC: "update-aws-schema-oidc.json",
+			fileOIDC:       "aws-schema-additional-params.json",
+			updateFileOIDC: "update-aws-schema-additional-params.json",
 		},
 		{
 			name:           "AWS HA schema is correct",
@@ -38,8 +38,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
 			file:           "aws-ha-schema.json",
 			updateFile:     "update-aws-ha-schema.json",
-			fileOIDC:       "aws-ha-schema-oidc.json",
-			updateFileOIDC: "update-aws-ha-schema-oidc.json",
+			fileOIDC:       "aws-ha-schema-additional-params.json",
+			updateFileOIDC: "update-aws-ha-schema-additional-params.json",
 		},
 		{
 			name:           "Azure schema is correct",
@@ -47,8 +47,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"Standard_D8_v3"},
 			file:           "azure-schema.json",
 			updateFile:     "update-azure-schema.json",
-			fileOIDC:       "azure-schema-oidc.json",
-			updateFileOIDC: "update-azure-schema-oidc.json",
+			fileOIDC:       "azure-schema-additional-params.json",
+			updateFileOIDC: "update-azure-schema-additional-params.json",
 		},
 		{
 			name:           "AzureLite schema is correct",
@@ -56,8 +56,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"Standard_D4_v3"},
 			file:           "azure-lite-schema.json",
 			updateFile:     "update-azure-lite-schema.json",
-			fileOIDC:       "azure-lite-schema-oidc.json",
-			updateFileOIDC: "update-azure-lite-schema-oidc.json",
+			fileOIDC:       "azure-lite-schema-additional-params.json",
+			updateFileOIDC: "update-azure-lite-schema-additional-params.json",
 		},
 		{
 			name:           "AzureHA schema is correct",
@@ -65,8 +65,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"Standard_D8_v3"},
 			file:           "azure-ha-schema.json",
 			updateFile:     "update-azure-ha-schema.json",
-			fileOIDC:       "azure-ha-schema-oidc.json",
-			updateFileOIDC: "update-azure-ha-schema-oidc.json",
+			fileOIDC:       "azure-ha-schema-additional-params.json",
+			updateFileOIDC: "update-azure-ha-schema-additional-params.json",
 		},
 		{
 			name:           "GCP schema is correct",
@@ -74,8 +74,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
 			file:           "gcp-schema.json",
 			updateFile:     "update-gcp-schema.json",
-			fileOIDC:       "gcp-schema-oidc.json",
-			updateFileOIDC: "update-gcp-schema-oidc.json",
+			fileOIDC:       "gcp-schema-additional-params.json",
+			updateFileOIDC: "update-gcp-schema-additional-params.json",
 		},
 		{
 			name:           "OpenStack schema is correct",
@@ -83,8 +83,8 @@ func TestSchemaGenerator(t *testing.T) {
 			machineTypes:   []string{"m1.large"},
 			file:           "openstack-schema.json",
 			updateFile:     "update-openstack-schema.json",
-			fileOIDC:       "openstack-schema-oidc.json",
-			updateFileOIDC: "update-openstack-schema-oidc.json",
+			fileOIDC:       "openstack-schema-additional-params.json",
+			updateFileOIDC: "update-openstack-schema-additional-params.json",
 		},
 	}
 	for _, tt := range tests {
@@ -93,6 +93,7 @@ func TestSchemaGenerator(t *testing.T) {
 			validateSchema(t, marshalSchema(got), tt.file)
 			validateSchema(t, schemaForUpdate(got), tt.updateFile)
 			includeOIDCSchema(&got)
+			includeAdminsSchema(&got)
 			validateSchema(t, marshalSchema(got), tt.fileOIDC)
 			validateSchema(t, schemaForUpdate(got), tt.updateFileOIDC)
 		})
@@ -104,8 +105,9 @@ func TestTrialSchemaGenerator(t *testing.T) {
 	validateSchema(t, marshalSchema(schema), "azure-trial-schema.json")
 	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema.json")
 	includeOIDCSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "azure-trial-schema-oidc.json")
-	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema-oidc.json")
+	includeAdminsSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "azure-trial-schema-additional-params.json")
+	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema-additional-params.json")
 }
 
 func TestFreemiumAzureSchemaGenerator(t *testing.T) {
@@ -113,8 +115,9 @@ func TestFreemiumAzureSchemaGenerator(t *testing.T) {
 	validateSchema(t, marshalSchema(schema), "free-azure-schema.json")
 	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema.json")
 	includeOIDCSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "free-azure-schema-oidc.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema-oidc.json")
+	includeAdminsSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "free-azure-schema-additional-params.json")
+	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema-additional-params.json")
 }
 
 func TestFreemiumAWSSchemaGenerator(t *testing.T) {
@@ -122,8 +125,9 @@ func TestFreemiumAWSSchemaGenerator(t *testing.T) {
 	validateSchema(t, marshalSchema(schema), "free-aws-schema.json")
 	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema.json")
 	includeOIDCSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "free-aws-schema-oidc.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema-oidc.json")
+	includeAdminsSchema(&schema)
+	validateSchema(t, marshalSchema(schema), "free-aws-schema-additional-params.json")
+	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema-additional-params.json")
 }
 
 func validateSchema(t *testing.T, got []byte, file string) {
