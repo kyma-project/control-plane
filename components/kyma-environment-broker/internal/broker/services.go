@@ -46,7 +46,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 	}
 
 	provider, ok := middleware.ProviderFromContext(ctx)
-	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeOIDCParamsInSchema) {
+	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema) {
 		// filter out not enabled plans
 		if _, exists := b.enabledPlanIDs[plan.PlanDefinition.ID]; !exists {
 			continue
