@@ -13,19 +13,21 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name          NameType  `json:"name"`
-	Region        *Type     `json:"region,omitempty"`
-	MachineType   *Type     `json:"machineType,omitempty"`
-	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
-	ZonesCount    *Type     `json:"zonesCount,omitempty"`
-	OIDC          *OIDCType `json:"oidc,omitempty"`
+	Name           NameType  `json:"name"`
+	Region         *Type     `json:"region,omitempty"`
+	MachineType    *Type     `json:"machineType,omitempty"`
+	AutoScalerMin  *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
+	ZonesCount     *Type     `json:"zonesCount,omitempty"`
+	OIDC           *OIDCType `json:"oidc,omitempty"`
+	Administrators *Type     `json:"administrators,omitempty"`
 }
 
 type UpdateProperties struct {
-	AutoScalerMin *Type     `json:"autoScalerMin,omitempty"`
-	AutoScalerMax *Type     `json:"autoScalerMax,omitempty"`
-	OIDC          *OIDCType `json:"oidc,omitempty"`
+	AutoScalerMin  *Type     `json:"autoScalerMin,omitempty"`
+	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
+	OIDC           *OIDCType `json:"oidc,omitempty"`
+	Administrators *Type     `json:"administrators,omitempty"`
 }
 
 type OIDCProperties struct {
@@ -174,4 +176,15 @@ func ToInterfaceSlice(input []string) []interface{} {
 		interfaces[i] = item
 	}
 	return interfaces
+}
+
+func AdministratorsProperty() *Type {
+	return &Type{
+		Type:        "array",
+		Title:       "Runtime administrators",
+		Description: "Specifies the list of runtime administrators",
+		Items: []Type{{
+			Type: "string",
+		}},
+	}
 }
