@@ -736,9 +736,19 @@ func TestCreateClusterConfiguration_Globals(t *testing.T) {
 	// given
 	id := uuid.New().String()
 
-	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+	componentList := []v1alpha1.KymaComponent{
+		{Name: "dex", Namespace: "kyma-system"},
+		{Name: "ory", Namespace: "kyma-system"},
+		{
+			Name:      "custom",
+			Namespace: "kyma-system",
+			Source:    &v1alpha1.ComponentSource{URL: "http://source.url"},
+		},
+	}
+
+	optComponentsSvc := dummyOptionalComponentServiceMock(componentList)
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(componentList, nil)
 	inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
 		Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO(), fixture.FixDNSConfigDTO())
 	assert.NoError(t, err)
@@ -754,6 +764,13 @@ func TestCreateClusterConfiguration_Globals(t *testing.T) {
 
 	// then
 	assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot.domain.sap")
+
+	// check custom source URL
+	for _, component := range inventoryInput.KymaConfig.Components {
+		if component.Component == "custom" {
+			assert.Equal(t, "http://source.url", component.URL)
+		}
+	}
 }
 
 func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {

@@ -306,6 +306,9 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 			Namespace:     cmp.Namespace,
 			Configuration: configs,
 		}
+		if cmp.SourceURL != nil {
+			componentConfig.URL = *cmp.SourceURL
+		}
 		componentConfigs = append(componentConfigs, componentConfig)
 	}
 

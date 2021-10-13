@@ -140,7 +140,7 @@ func (h *RuntimeInfoHandler) planNameOrDefault(inst internal.InstanceWithOperati
 	if inst.ServicePlanName != "" {
 		return inst.ServicePlanName
 	}
-	return broker.Plans(h.plansConfig, "")[inst.ServicePlanID].PlanDefinition.Name
+	return broker.Plans(h.plansConfig, "", false)[inst.ServicePlanID].PlanDefinition.Name
 }
 
 func getIfNotZero(in time.Time) *time.Time {
