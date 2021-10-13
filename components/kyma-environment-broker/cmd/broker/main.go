@@ -644,8 +644,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			condition: provisioning.ForKyma1,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 		},
 		{
 			stage: createRuntimeStageName,
@@ -857,6 +858,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 3,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
+			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
 			weight: 3,
