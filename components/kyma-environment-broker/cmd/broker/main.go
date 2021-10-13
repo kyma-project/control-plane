@@ -180,8 +180,11 @@ func main() {
 	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
 	panicOnError(err)
 
-	cfg.OrchestrationConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
-	cfg.OrchestrationConfig.KymaVersion = cfg.KymaVersion
+	orchConfig := orchestration.Config{}
+	orchConfig.KymaVersion = cfg.KymaVersion
+	orchConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
+
+	cfg.OrchestrationConfig = orchConfig
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
