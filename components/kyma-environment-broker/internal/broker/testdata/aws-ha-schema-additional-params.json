@@ -15,33 +15,32 @@
     },
     "region": {
       "type": "string",
-      "enum": ["asia-south1", "asia-southeast1",
-        "asia-east2", "asia-east1",
-        "asia-northeast1", "asia-northeast2", "asia-northeast-3",
-        "australia-southeast1",
-        "europe-west2", "europe-west4", "europe-west5", "europe-west6", "europe-west3",
-        "europe-north1",
-        "us-west1", "us-west2", "us-west3",
-        "us-central1",
-        "us-east4",
-        "northamerica-northeast1", "southamerica-east1"]
+      "enum": ["eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1",
+        "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"]
     },
     "machineType": {
       "type": "string",
-      "enum": ["n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"]
+      "enum": ["m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"]
     },
     "autoScalerMin": {
       "type": "integer",
-      "description": "Specifies the minimum number of virtual machines to create",
-      "minimum": 2,
-      "default": 2
+      "description": "Specifies the minimum number of virtual machines to create per zone",
+      "minimum": 1,
+      "default": 1
     },
     "autoScalerMax": {
       "type": "integer",
-      "description": "Specifies the maximum number of virtual machines to create",
-      "minimum": 2,
+      "description": "Specifies the maximum number of virtual machines to create per zone",
+      "minimum": 1,
       "maximum": 40,
       "default": 10
+    },
+    "zonesCount": {
+      "type": "integer",
+      "description": "Specifies the number of availability zones for HA cluster",
+      "minimum": 3,
+      "maximum": 3,
+      "default": 3
     },
     "oidc": {
       "type": "object",
@@ -81,7 +80,18 @@
         "clientID",
         "issuerURL"
       ]
-    }},
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    }
+  },
   "required": [
     "name"
   ],
@@ -92,6 +102,8 @@
     "machineType",
     "autoScalerMin",
     "autoScalerMax",
-    "oidc"
+    "zonesCount",
+    "oidc",
+    "administrators"
   ]
 }

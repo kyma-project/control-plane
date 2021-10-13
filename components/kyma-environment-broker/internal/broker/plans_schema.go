@@ -181,7 +181,7 @@ func ToInterfaceSlice(input []string) []interface{} {
 func AdministratorsProperty() *Type {
 	return &Type{
 		Type:        "array",
-		Title:       "Runtime administrators",
+		Title:       "Administrators",
 		Description: "Specifies the list of runtime administrators",
 		Items: []Type{{
 			Type: "string",

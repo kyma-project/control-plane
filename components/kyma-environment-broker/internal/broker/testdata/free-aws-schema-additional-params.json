@@ -2,16 +2,21 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "autoScalerMin": {
-      "type": "integer",
-      "description": "Specifies the minimum number of virtual machines to create per zone",
-      "minimum": 1
+    "name": {
+      "type": "string",
+      "title": "Cluster Name",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      }
     },
-    "autoScalerMax": {
-      "type": "integer",
-      "description": "Specifies the maximum number of virtual machines to create per zone",
-      "minimum": 1,
-      "maximum": 40
+    "region": {
+      "type": "string",
+      "enum": ["eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
+        "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"]
     },
     "oidc": {
       "type": "object",
@@ -51,9 +56,26 @@
         "clientID",
         "issuerURL"
       ]
+    },
+    "administrators": {
+      "type": "array",
+      "title": "Administrators",
+      "description": "Specifies the list of runtime administrators",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     }
   },
-  "required": [],
+  "required": [
+    "name"
+  ],
   "_show_form_view": true,
-  "_controlsOrder": []
+  "_controlsOrder": [
+    "name",
+    "region",
+    "oidc",
+    "administrators"
+  ]
 }
