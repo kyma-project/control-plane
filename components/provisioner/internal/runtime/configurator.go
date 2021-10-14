@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	AgentConfigurationSecretName = "compass-agent-configuration"
-	runtimeAgentComponentName    = "compass-runtime-agent"
+	AgentConfigurationSecretName   = "compass-agent-configuration"
+	runtimeAgentComponentNameSpace = "compass-system"
 )
 
 //go:generate mockery -name=Configurator
@@ -44,12 +44,9 @@ func NewRuntimeConfigurator(builder k8s.K8sClientProvider, directorClient direct
 }
 
 func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError {
-	runtimeAgentComponent, found := cluster.KymaConfig.GetComponentConfig(runtimeAgentComponentName)
-	if found {
-		err := c.configureAgent(cluster, runtimeAgentComponent.Namespace, kubeconfigRaw)
-		if err != nil {
-			return err.Append("error configuring Runtime Agent")
-		}
+	err := c.configureAgent(cluster, runtimeAgentComponentNameSpace, kubeconfigRaw)
+	if err != nil {
+		return err.Append("error configuring Runtime Agent")
 	}
 
 	return nil
