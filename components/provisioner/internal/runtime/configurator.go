@@ -76,6 +76,11 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		"TOKEN":         token.Token,
 	}
 
+	err = util.RetryOnError(10*time.Second, 3, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
+		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), runtimeAgentComponentNameSpace)
+		return
+	})
+
 	secret := &core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      AgentConfigurationSecretName,
@@ -84,6 +89,26 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 	return c.upsertSecret(k8sClient.CoreV1().Secrets(namespace), secret)
+}
+
+func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface, namespace string) apperrors.AppError {
+	found, err := namespaceInterface.Get(context.Background(), namespace, meta.GetOptions{})
+
+	if err != nil {
+		return apperrors.Internal("Failed to get namespaces: %s", err.Error())
+	}
+
+	if found == nil {
+		ns := &core.Namespace{
+			ObjectMeta: meta.ObjectMeta{Name: namespace},
+		}
+		_, err := namespaceInterface.Create(context.Background(), ns, meta.CreateOptions{})
+
+		if err != nil {
+			return apperrors.Internal("Failed to create namespace: %s", err.Error())
+		}
+	}
+	return nil
 }
 
 func (c *configurator) upsertSecret(secretInterface v1.SecretInterface, secret *core.Secret) apperrors.AppError {
