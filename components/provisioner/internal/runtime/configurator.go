@@ -76,7 +76,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		"TOKEN":         token.Token,
 	}
 
-	err = util.RetryOnError(10*time.Second, 3, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
+	err = util.RetryOnError(3*time.Second, 2, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
 		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), runtimeAgentComponentNameSpace)
 		return
 	})
@@ -96,21 +96,13 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 }
 
 func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface, namespace string) apperrors.AppError {
-	found, err := namespaceInterface.Get(context.Background(), namespace, meta.GetOptions{})
-
-	if err != nil {
-		return apperrors.Internal("Failed to get namespaces: %s", err.Error())
+	ns := &core.Namespace{
+		ObjectMeta: meta.ObjectMeta{Name: namespace},
 	}
+	_, err := namespaceInterface.Create(context.Background(), ns, meta.CreateOptions{})
 
-	if found == nil {
-		ns := &core.Namespace{
-			ObjectMeta: meta.ObjectMeta{Name: namespace},
-		}
-		_, err := namespaceInterface.Create(context.Background(), ns, meta.CreateOptions{})
-
-		if err != nil {
-			return apperrors.Internal("Failed to create namespace: %s", err.Error())
-		}
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
+		return apperrors.Internal("Failed to create namespace: %s", err.Error())
 	}
 	return nil
 }
@@ -123,6 +115,7 @@ func (c *configurator) upsertSecret(secretInterface v1.SecretInterface, secret *
 	if !k8serrors.IsAlreadyExists(err) {
 		return util.K8SErrorToAppError(err).Append("error creating Secret on Runtime")
 	}
+
 	_, err = secretInterface.Update(context.Background(), secret, meta.UpdateOptions{})
 	if err != nil {
 		return util.K8SErrorToAppError(err).Append("error updating Secret on Runtime")
