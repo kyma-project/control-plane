@@ -2,7 +2,7 @@ package orchestration
 
 type Config struct {
 	KymaVersion        string `envconfig:"-"`
-	KymaPreviewVersion string
+	KymaPreviewVersion string `envconfig:"-"`
 	KubernetesVersion  string `envconfig:"-"`
 	Namespace          string
 	Name               string
