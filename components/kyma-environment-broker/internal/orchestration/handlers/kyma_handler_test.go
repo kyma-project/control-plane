@@ -36,6 +36,12 @@ func TestKymaHandler_AttachRoutes(t *testing.T) {
 					},
 				},
 			},
+			Kubernetes: &orchestration.KubernetesParameters{
+				KubernetesVersion: "",
+			},
+			Kyma: &orchestration.KymaParameters{
+				Version: "",
+			},
 		}
 		p, err := json.Marshal(&params)
 		require.NoError(t, err)

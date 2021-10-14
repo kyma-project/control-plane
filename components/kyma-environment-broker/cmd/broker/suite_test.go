@@ -107,6 +107,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Tenant:        "fooTen",
 		EnableSeqHttp: true,
 	}
+	cfg.OrchestrationConfig = kebOrchestration.Config{
+		KymaVersion:       "",
+		KubernetesVersion: "",
+	}
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()

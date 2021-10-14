@@ -13,6 +13,12 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -63,11 +69,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -145,10 +146,7 @@ type Config struct {
 		Name      string
 	}
 
-	OrchestrationConfig struct {
-		Namespace string
-		Name      string
-	}
+	OrchestrationConfig orchestration.Config
 
 	TrialRegionMappingFilePath string
 	MaxPaginationPage          int `envconfig:"default=100"`
@@ -181,6 +179,10 @@ func main() {
 	// check default Kyma versions
 	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
 	panicOnError(err)
+
+	cfg.OrchestrationConfig.KymaVersion = cfg.KymaVersion
+	cfg.OrchestrationConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
+	cfg.OrchestrationConfig.KymaPreviewVersion = cfg.KymaPreviewVersion
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
@@ -903,7 +905,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
-		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name, cfg.KymaVersion, cfg.KymaPreviewVersion)
+		cli, &cfg.OrchestrationConfig)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
@@ -938,7 +940,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"),
-		cli, cfg.OrchestrationConfig.Namespace, cfg.OrchestrationConfig.Name)
+		cli, cfg.OrchestrationConfig)
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
 	queue.Run(ctx.Done(), 3)
