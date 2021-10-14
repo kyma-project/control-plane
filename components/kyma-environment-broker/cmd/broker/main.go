@@ -58,7 +58,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
@@ -130,9 +129,6 @@ type Config struct {
 	EDP edp.Config
 
 	// Service Manager services
-	XSUAA struct {
-		Disabled bool `envconfig:"default=true"`
-	}
 	Connectivity struct {
 		Disabled bool `envconfig:"default=true"`
 	}
@@ -591,14 +587,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioner.ProvisioningTimeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
 		},
 		{
-			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("XSUAA_Offering",
-				"xsuaa", "application", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.XSUAA.Instance
-				}, db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
 			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
 			stage: createRuntimeStageName,
 			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
@@ -610,17 +598,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
-		},
-		{
-			stage: createRuntimeStageName,
-			step: provisioning.NewXSUAAProvisioningStep(db.Operations(), uaa.Config{
-				// todo: set correct values from env variables
-				DeveloperGroup:      "devGroup",
-				DeveloperRole:       "devRole",
-				NamespaceAdminGroup: "nag",
-				NamespaceAdminRole:  "nar",
-			}),
-			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -663,11 +640,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewXSUAABindingStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -787,18 +759,8 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight:   1,
-			step:     deprovisioning.NewXSUAAUnbindStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   1,
 			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
 			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
 		},
 		{
 			weight: 2,
