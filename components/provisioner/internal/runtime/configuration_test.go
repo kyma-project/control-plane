@@ -34,19 +34,11 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 	tenant := "tenant"
 	token := "shdfv7123ygfbw832b"
 
-	namespace := "kcp-system"
+	namespace := "compass-system"
 
 	cluster := model.Cluster{
 		ID:     runtimeID,
 		Tenant: tenant,
-		KymaConfig: &model.KymaConfig{
-			Components: []model.KymaComponentConfig{
-				{
-					Namespace: namespace,
-					Component: runtimeAgentComponentName,
-				},
-			},
-		},
 	}
 
 	oneTimeToken := graphql.OneTimeTokenForRuntimeExt{
@@ -117,29 +109,6 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		}
 
 		assertData(secret.StringData)
-	})
-	t.Run("Should skip Runtime Agent configuration if component not provided", func(t *testing.T) {
-		//given
-		clusterWithoutAgent := model.Cluster{
-			ID:     runtimeID,
-			Tenant: tenant,
-			KymaConfig: &model.KymaConfig{
-				Components: []model.KymaComponentConfig{
-					{
-						Namespace: namespace,
-						Component: "core",
-					},
-				},
-			},
-		}
-
-		configProvider := NewRuntimeConfigurator(nil, nil)
-
-		//when
-		err := configProvider.ConfigureRuntime(clusterWithoutAgent, kubeconfig)
-
-		//then
-		require.NoError(t, err)
 	})
 
 	t.Run("Should retry on GetConnectionToken and configure Runtime Agent", func(t *testing.T) {
