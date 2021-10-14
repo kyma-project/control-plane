@@ -14,14 +14,16 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-//go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ComponentListProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=CreatorForPlan --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ComponentsDisabler --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OptionalComponentService --output=automock --outpkg=automock --case=underscore
 
 type (
 	OptionalComponentService interface {
 		ExecuteDisablers(components internal.ComponentConfigurationInputList, names ...string) (internal.ComponentConfigurationInputList, error)
 		ComputeComponentsToDisable(optComponentsToKeep []string) []string
+		AddComponentToDisable(name string, disabler runtime.ComponentDisabler)
 	}
 
 	ComponentsDisabler interface {
