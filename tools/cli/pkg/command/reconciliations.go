@@ -26,7 +26,7 @@ func responseErr(resp *http.Response) error {
 
 // TODO: Changes in context of NewReconciliationCmd are imlpementing here - https://github.com/kyma-project/control-plane/pull/931
 // NewUpgradeCmd constructs the reconciliation command and all subcommands under the reconciliation command
-func NewReconciliationCmd(mothershipURL string) *cobra.Command {
+func NewReconciliationCmd() *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "reconciliations",
 		Aliases: []string{"rc"},

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +18,8 @@ func Test_reconciliationDisableCmd_Run(t *testing.T) {
 		opts reconciliationDisableOpts
 	}
 	type httpFields struct {
-		statusCode int
+		mothershipStatus int
+		kebData          runtime.RuntimesPage
 	}
 	tests := []struct {
 		name       string
@@ -26,43 +28,106 @@ func Test_reconciliationDisableCmd_Run(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name: "ok with status 201",
+			name: "ok with status 201 and runtime-id",
 			fields: fields{
-				ctx:  context.Background(),
-				opts: reconciliationDisableOpts{},
+				ctx: context.Background(),
+				opts: reconciliationDisableOpts{
+					runtimeID: "test-runtime-id",
+				},
 			},
 			httpFields: httpFields{
-				statusCode: 201,
+				mothershipStatus: 201,
 			},
 			wantErr: false,
 		},
 		{
-			name: "err with status 500",
+			name: "ok with status 201 and shoot",
+			fields: fields{
+				ctx: context.Background(),
+				opts: reconciliationDisableOpts{
+					shootName: "test-shoot",
+				},
+			},
+			httpFields: httpFields{
+				mothershipStatus: 201,
+				kebData: runtime.RuntimesPage{
+					Count: 1,
+					Data: []runtime.RuntimeDTO{
+						{
+							RuntimeID: "test-id",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "err with status 500 from the mothership",
 			fields: fields{
 				ctx:  context.Background(),
 				opts: reconciliationDisableOpts{},
 			},
 			httpFields: httpFields{
-				statusCode: 500,
+				mothershipStatus: 500,
+			},
+			wantErr: true,
+		},
+
+		{
+			name: "err with empty keb response",
+			fields: fields{
+				ctx: context.Background(),
+				opts: reconciliationDisableOpts{
+					shootName: "test-shoot",
+				},
+			},
+			httpFields: httpFields{
+				mothershipStatus: 201,
+				kebData: runtime.RuntimesPage{
+					Count: 0,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "err with no unique content from the keb",
+			fields: fields{
+				ctx: context.Background(),
+				opts: reconciliationDisableOpts{
+					shootName: "test-shoot",
+				},
+			},
+			httpFields: httpFields{
+				mothershipStatus: 201,
+				kebData: runtime.RuntimesPage{
+					Count: 21,
+				},
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mothershipSvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var request mothership.PutClustersRuntimeIDStatusJSONRequestBody
 				err := json.NewDecoder(r.Body).Decode(&request)
 
 				require.NoError(t, err)
 				require.Equal(t, mothership.StatusReconcileDisabled, request.Status)
 
-				w.WriteHeader(tt.httpFields.statusCode)
+				w.WriteHeader(tt.httpFields.mothershipStatus)
 			}))
-			defer svr.Close()
+			defer mothershipSvr.Close()
+
+			kebSvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				err := json.NewEncoder(w).Encode(tt.httpFields.kebData)
+				require.NoError(t, err)
+			}))
+			defer kebSvr.Close()
 
 			cmd := reconciliationDisableCmd{
-				mothershipURL: svr.URL,
+				mothershipURL: mothershipSvr.URL,
+				kebURL:        kebSvr.URL,
 				ctx:           tt.fields.ctx,
 				opts:          tt.fields.opts,
 			}
