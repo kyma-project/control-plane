@@ -199,6 +199,78 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }
 
+func TestProvisioningWithReconcilerWithBtpOperator_HappyPath(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_platform_credentials": {
+							"url": "https://sm.url",
+						    "btp_operator":{
+							   "client_id":"<redacted>",
+							   "client_secret":"<redacted>",
+							   "token_url":"https://jw.authentication.stagingaws.hanavlab.ondemand.com",
+							   "cluster_id":"ab32866b-8d97-409c-a3c4-145340d7be8e"
+						    }
+						},
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+
+	// then
+	suite.AssertProvider("aws")
+	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
+
+	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+		GlobalAccountID: "g-account-id",
+		SubAccountID:    "sub-id",
+		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ShootName:       suite.ShootName(opID),
+		InstanceID:      iid,
+	})
+
+	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+		Version:        "2.0",
+		Profile:        "Production",
+		Administrators: []string{"john.smith@email.com"},
+		Components: []reconciler.Components{
+			{
+				Component: "service-catalog2",
+				Namespace: "kyma-system",
+				Configuration: []reconciler.Configuration{
+					{
+						Key:    "global.domainName",
+						Value:  fmt.Sprintf("%s.kyma.sap.com", suite.ShootName(opID)),
+						Secret: false,
+					},
+					{
+						Key:    "setting-one",
+						Value:  "1234",
+						Secret: false,
+					},
+				},
+			},
+		},
+	})
+	suite.AssertClusterConfigWithKubeconfig(opID)
+}
+
 func TestProvisioning_ClusterParameters(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		planID           string

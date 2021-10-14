@@ -60,7 +60,7 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 }
 
 func (e *Encrypter) EncryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
+	if pp.ErsContext.ServiceManager == nil || pp.ErsContext.ServiceManager.Credentials == nil {
 		return nil
 	}
 	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
@@ -77,7 +77,7 @@ func (e *Encrypter) EncryptBasicAuth(pp *internal.ProvisioningParameters) error 
 	}
 
 	pp.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
+		Credentials: &internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: string(username),
 				Password: string(password),
@@ -89,7 +89,7 @@ func (e *Encrypter) EncryptBasicAuth(pp *internal.ProvisioningParameters) error 
 }
 
 func (e *Encrypter) DecryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
+	if pp.ErsContext.ServiceManager == nil || pp.ErsContext.ServiceManager.Credentials == nil {
 		return nil
 	}
 	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth

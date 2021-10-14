@@ -600,8 +600,14 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewServiceManagerOverridesStep(db.Operations()),
+			condition: provisioning.ForPlatformCredentialsProvided,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewServiceManagerOverridesStep(db.Operations()),
+		},
+		{
+			condition: provisioning.ForBTPOperatorCredentialsProvided,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
 		},
 		{
 			condition: provisioning.ForKyma1,

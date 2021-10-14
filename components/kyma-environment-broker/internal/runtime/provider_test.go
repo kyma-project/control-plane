@@ -66,6 +66,15 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			},
 			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-components.yaml",
 		},
+		{
+			name: "Provide on-demand Kyma version based on 2.0 with BTP Operator",
+			given: given{
+				kymaVersion:                            internal.RuntimeVersionData{Version: "main-ece6e5d9", MajorVersion: 2, BTPOperatorCredentialsProvided: true},
+				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
+				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components-with-btp-op.yaml"),
+			},
+			expectedRequestURL: "https://storage.googleapis.com/kyma-development-artifacts/main-ece6e5d9/kyma-components.yaml",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

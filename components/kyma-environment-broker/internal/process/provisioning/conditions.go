@@ -11,3 +11,21 @@ func ForKyma2(op internal.ProvisioningOperation) bool {
 func ForKyma1(op internal.ProvisioningOperation) bool {
 	return op.RuntimeVersion.MajorVersion == 1
 }
+
+func ForPlatformCredentialsProvided(op internal.ProvisioningOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.Credentials != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func ForBTPOperatorCredentialsProvided(op internal.ProvisioningOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.BTPOperatorCredentials != nil {
+			return true
+		}
+	}
+	return false
+}

@@ -76,9 +76,10 @@ const (
 // RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
-	Version      string               `json:"version"`
-	Origin       RuntimeVersionOrigin `json:"origin"`
-	MajorVersion int                  `json:"major_version"`
+	Version                        string               `json:"version"`
+	Origin                         RuntimeVersionOrigin `json:"origin"`
+	MajorVersion                   int                  `json:"major_version"`
+	BTPOperatorCredentialsProvided bool                 `json:"-"`
 }
 
 func (rv RuntimeVersionData) IsEmpty() bool {
@@ -571,17 +572,30 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 
 func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
+	var btpOperatorCreds *servicemanager.BTPOperatorCredentials
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
-		creds = &servicemanager.Credentials{
-			Username: sm.Credentials.BasicAuth.Username,
-			Password: sm.Credentials.BasicAuth.Password,
-			URL:      sm.URL,
+		if sm.Credentials != nil {
+			creds = &servicemanager.Credentials{
+				Username: sm.Credentials.BasicAuth.Username,
+				Password: sm.Credentials.BasicAuth.Password,
+				URL:      sm.URL,
+			}
+			if sm.BTPOperatorCredentials != nil {
+				btpOperatorCreds = &servicemanager.BTPOperatorCredentials{
+					ClientID:     sm.BTPOperatorCredentials.ClientID,
+					ClientSecret: sm.BTPOperatorCredentials.ClientSecret,
+					TokenURL:     sm.BTPOperatorCredentials.TokenURL,
+					ClusterID:    sm.BTPOperatorCredentials.ClusterID,
+				}
+			}
 		}
 	}
+
 	return servicemanager.RequestContext{
-		SubaccountID: parameters.ErsContext.SubAccountID,
-		Credentials:  creds,
+		SubaccountID:           parameters.ErsContext.SubAccountID,
+		Credentials:            creds,
+		BTPOperatorCredentials: btpOperatorCreds,
 	}
 }
 

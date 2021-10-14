@@ -11,7 +11,7 @@ import (
 func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 	// given
 	factory := NewClientFactory(Config{
-		OverrideMode:                     "Always",
+		OverrideMode:                     SMOverrideModeAlways,
 		URL:                              "http://default.url",
 		Password:                         "default_password",
 		Username:                         "default_username",
@@ -20,14 +20,15 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 
 	for tn, tc := range map[string]struct {
 		givenRequest        RequestContext
-		expectedCredentials Credentials
+		expectedCredentials *Credentials
 	}{
 		"regular SubAccount": {
 			givenRequest: RequestContext{
-				SubaccountID: "regular_saID",
-				Credentials:  nil,
+				SubaccountID:           "regular_saID",
+				Credentials:            nil,
+				BTPOperatorCredentials: nil,
 			},
-			expectedCredentials: Credentials{
+			expectedCredentials: &Credentials{
 				Password: "default_password",
 				Username: "default_username",
 				URL:      "http://default.url",
@@ -42,11 +43,98 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 					URL:      "http://url",
 				},
 			},
-			expectedCredentials: Credentials{
+			expectedCredentials: &Credentials{
 				Password: "p",
 				Username: "u",
 				URL:      "http://url",
 			},
+		},
+		"with BTP Operator credentials": {
+			givenRequest: RequestContext{
+				SubaccountID: "regular_saID",
+				Credentials: &Credentials{
+					Password: "p",
+					Username: "u",
+					URL:      "http://url",
+				},
+				BTPOperatorCredentials: &BTPOperatorCredentials{
+					ClientID:     "c-id",
+					ClientSecret: "c-s",
+					TokenURL:     "http://btp-url",
+					ClusterID:    "cl-id",
+				},
+			},
+			expectedCredentials: &Credentials{
+				Password: "default_password",
+				Username: "default_username",
+				URL:      "http://default.url",
+			},
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			// when
+			cli, err := factory.ForCustomerCredentials(tc.givenRequest, logrus.New())
+
+			// then
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedCredentials, cli.(*client).creds)
+		})
+	}
+}
+
+func TestClientFactory_ForCustomerCredentials_ModeWhenNotSentInRequest(t *testing.T) {
+	// given
+	factory := NewClientFactory(Config{
+		OverrideMode:                     SMOverrideModeWhenNotSentInRequest,
+		URL:                              "http://default.url",
+		Password:                         "default_password",
+		Username:                         "default_username",
+		SubaccountWithRequestCredentials: "special_subaccountID",
+	})
+
+	for tn, tc := range map[string]struct {
+		givenRequest        RequestContext
+		expectedCredentials *Credentials
+	}{
+		"regular SubAccount": {
+			givenRequest: RequestContext{
+				SubaccountID:           "regular_saID",
+				Credentials:            nil,
+				BTPOperatorCredentials: nil,
+			},
+			expectedCredentials: &Credentials{
+				Password: "default_password",
+				Username: "default_username",
+				URL:      "http://default.url",
+			},
+		},
+		"special SubAccount": {
+			givenRequest: RequestContext{
+				SubaccountID: "special_subaccountID",
+				Credentials: &Credentials{
+					Password: "p",
+					Username: "u",
+					URL:      "http://url",
+				},
+			},
+			expectedCredentials: &Credentials{
+				Password: "p",
+				Username: "u",
+				URL:      "http://url",
+			},
+		},
+		"with BTP Operator credentials": {
+			givenRequest: RequestContext{
+				SubaccountID: "regular_saID",
+				Credentials:  nil,
+				BTPOperatorCredentials: &BTPOperatorCredentials{
+					ClientID:     "c-id",
+					ClientSecret: "c-s",
+					TokenURL:     "http://btp-url",
+					ClusterID:    "cl-id",
+				},
+			},
+			expectedCredentials: nil,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {

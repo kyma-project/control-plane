@@ -146,10 +146,10 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during createing provision input")
+		return nil, errors.Wrap(err, "during creating provision input")
 	}
 
-	initInput, err := f.initProvisionRuntimeInput(provider, version)
+	initInput, err := f.initProvisionRuntimeInput(provider, version, pp.ErsContext.ServiceManager)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
@@ -206,14 +206,22 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	if err != nil {
 		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
+
 	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
-func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
+func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData, smCredentials *internal.ServiceManagerEntryDTO) (gqlschema.ProvisionRuntimeInput, error) {
+	if smCredentials != nil {
+		if smCredentials.BTPOperatorCredentials != nil {
+			version.BTPOperatorCredentialsProvided = true
+		}
+	}
+
 	components, err := f.provideComponentList(version)
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err
 	}
+
 	kymaProfile := provider.Profile()
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{

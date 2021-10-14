@@ -1,0 +1,11 @@
+components:
+  - name: "btp-operator"
+    namespace: "sap-btp-operator"
+  - name: "compass-runtime-agent"
+    namespace: "compass-system"
+  - name: "new-component1"
+    namespace: "kyma-system"
+  - name: "new-component2"
+    namespace: "kyma-system"
+  - name: "new-component3"
+    namespace: "compass-system"

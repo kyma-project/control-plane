@@ -18,7 +18,7 @@ import (
 
 type (
 	client struct {
-		creds      Credentials
+		creds      *Credentials
 		httpClient *http.Client
 	}
 )

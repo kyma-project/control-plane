@@ -70,7 +70,7 @@ func fixOperationWithPlanID(planID string) internal.DeprovisioningOperation {
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.GlobalAccountID = globalAccountID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.SubAccountID = subAccountID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
+		Credentials: &internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: serviceManagerUser,
 				Password: serviceManagerPassword,

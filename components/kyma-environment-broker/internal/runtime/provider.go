@@ -83,9 +83,33 @@ func (r *ComponentsListProvider) getKymaComponents(kymaVersion internal.RuntimeV
 
 func (r *ComponentsListProvider) getAdditionalComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
 	if kymaVersion.MajorVersion > 1 {
-		return r.getAdditionalComponentsForNewKyma()
+		additionalComponents, err := r.getAdditionalComponentsForNewKyma()
+		if err != nil {
+			return nil, err
+		}
+		additionalComponents = r.chooseServiceManagerComponent(kymaVersion.BTPOperatorCredentialsProvided, additionalComponents)
+		return additionalComponents, nil
 	}
 	return r.getAdditionalComponentsForKyma()
+}
+
+func (r *ComponentsListProvider) chooseServiceManagerComponent(btpCredentialsProvided bool, additionalComponents []v1alpha1.KymaComponent) []v1alpha1.KymaComponent {
+	if btpCredentialsProvided {
+		var additionalComponentsWithBTPOperator []v1alpha1.KymaComponent
+		for _, c := range additionalComponents {
+			if c.Name != "service-manager-proxy" {
+				additionalComponentsWithBTPOperator = append(additionalComponentsWithBTPOperator, c)
+			}
+		}
+		return additionalComponentsWithBTPOperator
+	}
+	var additionalComponentsWithSMProxy []v1alpha1.KymaComponent
+	for _, c := range additionalComponents {
+		if c.Name != "btp-operator" {
+			additionalComponentsWithSMProxy = append(additionalComponentsWithSMProxy, c)
+		}
+	}
+	return additionalComponentsWithSMProxy
 }
 
 // Installation represents the installer CR.

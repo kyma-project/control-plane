@@ -22,9 +22,17 @@ type Credentials struct {
 	URL      string
 }
 
+type BTPOperatorCredentials struct {
+	ClientID     string
+	ClientSecret string
+	TokenURL     string
+	ClusterID    string
+}
+
 type RequestContext struct {
-	SubaccountID string
-	Credentials  *Credentials
+	SubaccountID           string
+	Credentials            *Credentials
+	BTPOperatorCredentials *BTPOperatorCredentials
 }
 
 func NewClientFactory(cfg Config) *ClientFactory {
@@ -37,9 +45,9 @@ func NewClientFactory(cfg Config) *ClientFactory {
 	}
 }
 
-func (c Credentials) WithNormalizedURL() Credentials {
+func (c Credentials) WithNormalizedURL() *Credentials {
 	url := strings.TrimSuffix(c.URL, "/")
-	return Credentials{
+	return &Credentials{
 		Username: c.Username,
 		Password: c.Password,
 		URL:      url,
@@ -54,7 +62,7 @@ func (f *ClientFactory) ForCustomerCredentials(request RequestContext, log logru
 		return nil, errors.Wrap(err, "unable to create Service Manager client")
 	}
 	return &client{
-		creds:      *credentials,
+		creds:      credentials,
 		httpClient: f.httpClient,
 	}, nil
 }
@@ -63,7 +71,7 @@ func (f *ClientFactory) ForCustomerCredentials(request RequestContext, log logru
 // ...
 func (f *ClientFactory) ForCredentials(credentials *Credentials) Client {
 	return &client{
-		creds:      *credentials,
+		creds:      credentials,
 		httpClient: f.httpClient,
 	}
 }
@@ -77,9 +85,13 @@ func (f *ClientFactory) ProvideCredentials(request RequestContext, log logrus.Fi
 			URL:      f.config.URL,
 		}, nil
 	}
-	if request.Credentials == nil {
+	if request.Credentials == nil && request.BTPOperatorCredentials == nil {
 		log.Warnf("Service Manager Credentials are required to be send in provisioning request (override_mode: %q)", f.config.OverrideMode)
 		return nil, errors.New("Service Manager Credentials are required to be send in provisioning request.")
+	}
+	if request.BTPOperatorCredentials != nil {
+		// TODO: Apply credentials using BTP Operator credentials flow ?
+		return nil, nil
 	}
 	log.Infof("Provides customer ServiceManager credentials")
 	return request.Credentials, nil
@@ -94,7 +106,7 @@ func (f *ClientFactory) shouldOverride(request RequestContext) bool {
 		return true
 	}
 
-	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && request.Credentials == nil {
+	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && request.Credentials == nil && request.BTPOperatorCredentials == nil {
 		return true
 	}
 

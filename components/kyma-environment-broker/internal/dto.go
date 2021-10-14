@@ -172,8 +172,9 @@ type ERSContext struct {
 }
 
 type ServiceManagerEntryDTO struct {
-	Credentials ServiceManagerCredentials `json:"credentials"`
-	URL         string                    `json:"url"`
+	Credentials            *ServiceManagerCredentials `json:"credentials"`
+	BTPOperatorCredentials *BTPOperatorCredentials    `json:"btp_operator"`
+	URL                    string                     `json:"url"`
 }
 
 type ServiceManagerCredentials struct {
@@ -183,4 +184,11 @@ type ServiceManagerCredentials struct {
 type ServiceManagerBasicAuth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type BTPOperatorCredentials struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	TokenURL     string `json:"token_url"`
+	ClusterID    string `json:"cluster_id"`
 }
