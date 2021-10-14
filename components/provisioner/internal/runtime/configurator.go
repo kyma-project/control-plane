@@ -81,6 +81,10 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		return
 	})
 
+	if err != nil {
+		return err.Append("error getting or creating namespace")
+	}
+
 	secret := &core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      AgentConfigurationSecretName,
