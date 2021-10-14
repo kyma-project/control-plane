@@ -40,7 +40,7 @@ func NewReconciliationEnableCmd() *cobra.Command {
 	}
 
 	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "Runtime ID of the specific Kyma Runtime.")
-	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "s", "", "Shoot cluster name of the specific Kyma Runtime.")
+	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "c", "", "Shoot cluster name of the specific Kyma Runtime.")
 	cobraCmd.Flags().BoolVarP(&cmd.opts.force, "force", "f", false, "Enable cluster reconciliation in the next reconcilation cycle (as soon as possible).")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
