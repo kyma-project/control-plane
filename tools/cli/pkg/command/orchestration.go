@@ -483,4 +483,3 @@ func orchestrationDetails(obj interface{}) string {
 
 	return sb.String()
 }
-
