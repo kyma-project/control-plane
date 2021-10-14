@@ -50,6 +50,10 @@ func NewReconciliationDisableCmd() *cobra.Command {
 
 func (cmd *reconciliationDisableCmd) Validate() error {
 	cmd.mothershipURL = GlobalOpts.MothershipAPIURL()
+	if cmd.mothershipURL == "" {
+		return errors.New("missing required options: mothership-api-url. See kcp --help for more information")
+	}
+
 	if cmd.opts.shootName != "" {
 		cmd.kebURL = GlobalOpts.KEBAPIURL()
 		cmd.kebAuth = CLICredentialManager(logger.New())
