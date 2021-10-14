@@ -149,7 +149,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Wrap(err, "during creating provision input")
 	}
 
-	initInput, err := f.initProvisionRuntimeInput(provider, version, pp.ErsContext.ServiceManager)
+	initInput, err := f.initProvisionRuntimeInput(provider, version)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
@@ -210,13 +210,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
-func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData, smCredentials *internal.ServiceManagerEntryDTO) (gqlschema.ProvisionRuntimeInput, error) {
-	if smCredentials != nil {
-		if smCredentials.BTPOperatorCredentials != nil {
-			version.BTPOperatorCredentialsProvided = true
-		}
-	}
-
+func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData) (gqlschema.ProvisionRuntimeInput, error) {
 	components, err := f.provideComponentList(version)
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err

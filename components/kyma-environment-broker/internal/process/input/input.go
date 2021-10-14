@@ -68,6 +68,13 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 	return r
 }
 
+func (r *RuntimeInput) DisableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
+	r.mutex.Lock("disabledOptionalComponents")
+	defer r.mutex.Unlock("disabledOptionalComponents")
+	delete(r.enabledOptionalComponents, componentName)
+	return r
+}
+
 func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	r.provisioningParameters = params
 	return r

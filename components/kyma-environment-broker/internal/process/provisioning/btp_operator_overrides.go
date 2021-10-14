@@ -57,5 +57,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation,
 		},
 	}
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
+	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
+	operation.InputCreator.DisableOptionalComponent(ServiceManagerComponentName)
 	return operation, 0, nil
 }

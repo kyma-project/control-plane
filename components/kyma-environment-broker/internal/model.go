@@ -31,6 +31,7 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
+	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
 	CreateClusterConfiguration() (reconciler.Cluster, error)
@@ -76,10 +77,9 @@ const (
 // RuntimeVersionData describes the Kyma Version used for the cluster
 // provisioning or upgrade
 type RuntimeVersionData struct {
-	Version                        string               `json:"version"`
-	Origin                         RuntimeVersionOrigin `json:"origin"`
-	MajorVersion                   int                  `json:"major_version"`
-	BTPOperatorCredentialsProvided bool                 `json:"-"`
+	Version      string               `json:"version"`
+	Origin       RuntimeVersionOrigin `json:"origin"`
+	MajorVersion int                  `json:"major_version"`
 }
 
 func (rv RuntimeVersionData) IsEmpty() bool {
