@@ -183,6 +183,7 @@ func main() {
 	orchConfig := orchestration.Config{}
 	orchConfig.KymaVersion = cfg.KymaVersion
 	orchConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
+	orchConfig.KymaPreviewVersion = cfg.KymaPreviewVersion
 
 	cfg.OrchestrationConfig = orchConfig
 
