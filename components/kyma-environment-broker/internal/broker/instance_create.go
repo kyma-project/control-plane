@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -45,8 +46,9 @@ type ProvisionEndpoint struct {
 	kymaVerOnDemand   bool
 	planDefaults      PlanDefaults
 
-	shootDomain  string
-	shootProject string
+	shootDomain      string
+	shootProject     string
+	shootDNSProvider gqlschema.DNSProviderInput
 
 	log logrus.FieldLogger
 }
@@ -80,6 +82,7 @@ func NewProvision(cfg Config,
 		kymaVerOnDemand:   kvod,
 		shootDomain:       gardenerConfig.ShootDomain,
 		shootProject:      gardenerConfig.Project,
+		shootDNSProvider:  gardenerConfig.DNSProvider,
 		planDefaults:      planDefaults,
 	}
 }
@@ -143,6 +146,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	operation.ShootDNSProvider = b.shootDNSProvider
 	operation.DashboardURL = dashboardURL
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)

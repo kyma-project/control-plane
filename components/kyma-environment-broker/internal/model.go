@@ -248,14 +248,15 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string           `json:"sub_account_id"`
-	RuntimeID    string           `json:"runtime_id"`
-	ShootName    string           `json:"shoot_name"`
-	ShootDomain  string           `json:"shoot_domain"`
-	XSUAA        XSUAAData        `json:"xsuaa"`
-	Ems          EmsData          `json:"ems"`
-	Connectivity ConnectivityData `json:"connectivity"`
-	Monitoring   MonitoringData   `json:"monitoring"`
+	SubAccountID     string                     `json:"sub_account_id"`
+	RuntimeID        string                     `json:"runtime_id"`
+	ShootName        string                     `json:"shoot_name"`
+	ShootDomain      string                     `json:"shoot_domain"`
+	ShootDNSProvider gqlschema.DNSProviderInput `json:"shoot_dns_provider"`
+	XSUAA            XSUAAData                  `json:"xsuaa"`
+	Ems              EmsData                    `json:"ems"`
+	Connectivity     ConnectivityData           `json:"connectivity"`
+	Monitoring       MonitoringData             `json:"monitoring"`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`

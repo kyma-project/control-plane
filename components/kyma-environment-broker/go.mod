@@ -49,9 +49,9 @@ require (
 )
 
 replace (
+	github.com/kyma-project/control-plane/components/provisioner => github.com/life0215/control-plane/components/provisioner v0.0.0-20210928052041-13869158d38e
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
-
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
 	k8s.io/api => k8s.io/api v0.19.12
