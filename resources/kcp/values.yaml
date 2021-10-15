@@ -57,6 +57,7 @@ global:
     - istio-configuration
     - ory
     - rafter
+    - eventing
 
   auditlog:
     configMapName: "kcp-auditlog-config"
