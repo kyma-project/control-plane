@@ -18,6 +18,7 @@ db:
 preComponents:
   - cluster-essentials
   - istio-configuration
+  - certificates
 
 deployment:
   imagePullPolicy: "IfNotPresent"
