@@ -27,6 +27,7 @@ type simpleInputCreator struct {
 	enabledComponents []string
 	shootName         *string
 	provider          internal.CloudProvider
+	shootDomain       string
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -48,6 +49,11 @@ func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInput
 
 func (c *simpleInputCreator) SetShootName(name string) internal.ProvisionerInputCreator {
 	c.shootName = &name
+	return c
+}
+
+func (c *simpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
+	c.shootDomain = name
 	return c
 }
 
@@ -119,7 +125,7 @@ func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName 
 	assert.Contains(t, c.enabledComponents, componentName)
 }
 
-func (c *simpleInputCreator) CreateProvisionSKRInventoryInput() (reconciler.Cluster, error) {
+func (c *simpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
 	return reconciler.Cluster{}, nil
 }
 

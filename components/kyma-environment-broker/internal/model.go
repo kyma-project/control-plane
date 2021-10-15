@@ -33,11 +33,12 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
-	CreateProvisionSKRInventoryInput() (reconciler.Cluster, error)
+	CreateClusterConfiguration() (reconciler.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
 	SetKubeconfig(kcfg string) ProvisionerInputCreator
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
 	SetInstanceID(instanceID string) ProvisionerInputCreator
+	SetShootDomain(shootDomain string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -255,6 +256,10 @@ type InstanceDetails struct {
 	Ems          EmsData          `json:"ems"`
 	Connectivity ConnectivityData `json:"connectivity"`
 	Monitoring   MonitoringData   `json:"monitoring"`
+
+	// used for kyma 2.x
+	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
+	Kubeconfig                  string `json:"-"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -322,7 +327,8 @@ type DeprovisioningOperation struct {
 	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary bool `json:"temporary"`
+	Temporary                   bool `json:"temporary"`
+	ClusterConfigurationDeleted bool `json:"clusterConfigurationDeleted"`
 }
 
 type UpdatingOperation struct {

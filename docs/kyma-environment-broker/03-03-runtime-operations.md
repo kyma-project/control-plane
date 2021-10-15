@@ -28,6 +28,9 @@ The provisioning process contains the following steps:
 | create_runtime | ServiceManagerOverrides                | Service Manager          | Configures overrides with Service Manager credentials.                                                                                          | Team Gopher        |
 | create_runtime | Create_Runtime                         | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                                                       | @jasiu001 (Team Gopher)        |
 | check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of the Provisioner process and asks the Director for the Dashboard URL if the provisioning in Gardener is finished. |  @piotrmiskiewicz (Team Gopher) | 
+| create_kyma    | Get_Kubeconfig                         | Provisioning             | Gets the kubeconfig (executed only for Kyma 2.0).                                                                                            | @piotrmiskiewicz (Team Gopher) |
+| create_kyma    | Create_Cluster_Configuration           | Reconciler               | Applies the cluster configuration  (executed only for Kyma 2.0).                                       | @piotrmiskiewicz (Team Gopher) |
+| create_kyma    | Check_Cluster_Configuration            | Reconciler               | Checks if the cluster configuration is applied (executed only for Kyma 2.0).                         | @piotrmiskiewicz (Team Gopher) |
 | post_actions   | AVS_Create_External_Eval_Step          | AvS                      | Sets up external monitoring of Kyma Runtime.                                                                                      | @piotrmiskiewicz (Team Gopher) |
 | post_actions   | AVS_Tags                               | AvS                      | Sets up proper tags in the internal monitoring system.                                                                            | @piotrmiskiewicz (Team Gopher) |
 | post_actions   | IAS_Type                               | Identity Authentication Service | Configures OpenID Connect (OIDC) authentication.                                                                                            | @piotrmiskiewicz (Team Gopher) |
@@ -52,6 +55,7 @@ The deprovisioning process contains the following steps:
 | De-provision_AVS_Evaluations | AvS            | Done        | Removes external and internal monitoring of Kyma Runtime.                                                  | @jasiu001 (Team Gopher)  |
 | IAS_Deregistration           | Identity Authentication Service | Done | Removes the ServiceProvider from IAS. | @jasiu001 (Team Gopher) |
 | EDP_Deregistration           | Event Data Platform | Done | Removes all entries about SKR from Event Data Platform. | @jasiu001 (Team Gopher) |
+| Deregister_Cluster           | Reconciler     | Done | Removes the cluster from the Reconciler. | @piotrmiskiewicz (Team Gopher) | 
 | Remove_Runtime               | Deprovisioning | Done        | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | @polskikiel (Team Gopher) |
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
@@ -69,6 +73,8 @@ The upgrade process contains the following steps:
 | Upgrade_Kyma_Initialisation  | Upgrade | Done        | Initializes the `UpgradeOperation` instance with data fetched from the `ProvisioningOperation`. | @ksputo (Team Gopher) |
 | Overrides_From_Secrets_And_Config_Step  | Upgrade | Done        | Builds an input configuration that is passed as overrides to Runtime Provisioner. | @ksputo (Team Gopher) |
 | Upgrade_Runtime              | Upgrade | Done        | Triggers the upgrade of a Runtime in Runtime Provisioner. | @ksputo (Team Gopher) |
+| Get_Kubeconfig               | Upgrade | Done        | Gets the kubeconfig file (executed only for Kyma 2.0). | @piotrmiskiewicz (Team Gopher) |
+| Apply_Cluster_Configuration  | Upgrade | Done        | Applies a cluster configuration to the Reconciler (executed only for Kyma 2.0). | @piotrmiskiewicz (Team Gopher) |
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
 

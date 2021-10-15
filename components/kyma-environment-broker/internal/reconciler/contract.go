@@ -1,6 +1,12 @@
 package reconciler
 
 // COPIED FROM RECONCILER keb/client.go - may be imported in the future
+const (
+	ClusterStatusPending     string = "reconcile_pending"
+	ClusterStatusReady       string = "ready"
+	ClusterStatusError       string = "error"
+	ClusterStatusReconciling string = "reconciling"
+)
 
 type Cluster struct {
 	Cluster      string       `json:"runtimeID"`
@@ -22,6 +28,7 @@ type Configuration struct {
 }
 
 type Components struct {
+	URL           string          `json:"URL"`
 	Component     string          `json:"component"`
 	Namespace     string          `json:"namespace"`
 	Configuration []Configuration `json:"configuration"`

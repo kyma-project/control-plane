@@ -45,6 +45,7 @@ type (
 		CreateProvisionInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		CreateUpgradeInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		CreateUpgradeShootInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		GetPlanDefaults(planID string, platformProvider internal.CloudProvider, parametersProvider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error)
 	}
 
 	ComponentListProvider interface {
@@ -91,20 +92,28 @@ func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
 	case broker.AWSPlanID, broker.AWSHAPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
-		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.AzureHAPlanID:
+		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.AzureHAPlanID, broker.PreviewPlanID:
 		return true
 	default:
 		return false
 	}
 }
 
-func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
+func (f *InputBuilderFactory) GetPlanDefaults(planID string, platformProvider internal.CloudProvider, parametersProvider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+	h, err := f.getHyperscalerProviderForPlanID(planID, platformProvider, parametersProvider)
+	if err != nil {
+		return nil, err
+	}
+	return h.Defaults(), nil
+}
+
+func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, platformProvider internal.CloudProvider, parametersProvider *internal.CloudProvider) (HyperscalerInputProvider, error) {
 	var provider HyperscalerInputProvider
 	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{}
 	case broker.FreemiumPlanID:
-		return f.forFreemiumPlan(pp)
+		return f.forFreemiumPlan(platformProvider)
 	case broker.OpenStackPlanID:
 		provider = &cloudProvider.OpenStackInput{
 			FloatingPoolName: f.config.OpenstackFloatingPoolName,
@@ -116,8 +125,10 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pp 
 	case broker.AzureHAPlanID:
 		provider = &cloudProvider.AzureHAInput{}
 	case broker.TrialPlanID:
-		provider = f.forTrialPlan(pp.Parameters.Provider)
+		provider = f.forTrialPlan(parametersProvider)
 	case broker.AWSPlanID:
+		provider = &cloudProvider.AWSInput{}
+	case broker.PreviewPlanID:
 		provider = &cloudProvider.AWSInput{}
 	case broker.AWSHAPlanID:
 		provider = &cloudProvider.AWSHAInput{}
@@ -133,7 +144,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -235,7 +246,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -316,7 +327,7 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp)
+	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -356,9 +367,7 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	return input
 }
 
-func (f *InputBuilderFactory) forFreemiumPlan(pp internal.ProvisioningParameters) (HyperscalerInputProvider, error) {
-	provider := pp.PlatformProvider
-
+func (f *InputBuilderFactory) forFreemiumPlan(provider internal.CloudProvider) (HyperscalerInputProvider, error) {
 	if !f.IsFreemiumProviderEnabled(provider) {
 		return nil, fmt.Errorf("freemium provider %s is not enabled", provider)
 	}

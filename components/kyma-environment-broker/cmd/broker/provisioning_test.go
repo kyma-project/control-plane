@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -42,8 +44,6 @@ func TestProvisioning_HappyPath(t *testing.T) {
 }
 
 func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
-	t.Skip("not implemented yet")
-
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
@@ -63,27 +63,51 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
-					"globalaccount_id": "g-account-id",
-					"subaccount_id": "sub-id",
-					"user_id": "john.smith@email.com"
-				},
-				"parameters": {
-					"name": "testing-cluster",
-					"oidc": {
-						"clientID": "id-initial",
-						"signingAlgs": ["xxx"],
-						"issuerURL": "https://issuer.url.com"
+					"parameters": {
+						"name": "testing-cluster"
 					}
-				}
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
 	suite.processReconcilingByOperationID(opID)
 
 	// then
-	//suite.AssertProvisionRuntimeInput()
-	//suite.AssertClusterConfig()
-	//suite.AssertClusterState()
+	suite.AssertProvider("aws")
+	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
+
+	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+		GlobalAccountID: "g-account-id",
+		SubAccountID:    "sub-id",
+		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ShootName:       suite.ShootName(opID),
+		InstanceID:      iid,
+	})
+
+	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+		Version:        "2.0",
+		Profile:        "Production",
+		Administrators: []string{"john.smith@email.com"},
+		Components: []reconciler.Components{
+			{
+				Component: "service-catalog2",
+				Namespace: "kyma-system",
+				Configuration: []reconciler.Configuration{
+					{
+						Key:    "global.domainName",
+						Value:  fmt.Sprintf("%s.kyma.sap.com", suite.ShootName(opID)),
+						Secret: false,
+					},
+					{
+						Key:    "setting-one",
+						Value:  "1234",
+						Secret: false,
+					},
+				},
+			},
+		},
+	})
+	suite.AssertClusterConfigWithKubeconfig(opID)
 }
 
 func TestProvisioning_ClusterParameters(t *testing.T) {

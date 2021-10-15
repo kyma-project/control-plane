@@ -5,17 +5,19 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type upgradeKymaFactory struct {
@@ -27,7 +29,7 @@ type upgradeKymaFactory struct {
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, configNamespace, configName, defaultKymaVersion, defaultKymaPreviewVersion string) process.Executor {
+	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -36,20 +38,26 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		factory: &upgradeKymaFactory{
 			operationStorage:          operationStorage,
 			smcf:                      smcf,
-			defaultKymaVersion:        defaultKymaVersion,
-			defaultKymaPreviewVersion: defaultKymaPreviewVersion,
+			defaultKymaVersion:        cfg.KymaVersion,
+			defaultKymaPreviewVersion: cfg.KymaPreviewVersion,
 		},
-		executor:        kymaUpgradeExecutor,
-		pollingInterval: pollingInterval,
-		log:             log,
-		k8sClient:       cli,
-		configNamespace: configNamespace,
-		configName:      configName,
+		executor:          kymaUpgradeExecutor,
+		pollingInterval:   pollingInterval,
+		log:               log,
+		k8sClient:         cli,
+		configNamespace:   cfg.Namespace,
+		configName:        cfg.Name,
+		kymaVersion:       cfg.KymaVersion,
+		kubernetesVersion: cfg.KubernetesVersion,
 	}
 }
 
 func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error) {
 	id := uuid.New().String()
+	details, err := i.GetInstanceDetails()
+	if err != nil {
+		return orchestration.RuntimeOperation{}, err
+	}
 	op := internal.UpgradeKymaOperation{
 		Operation: internal.Operation{
 			ID:                     id,
@@ -62,7 +70,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			Description:            "Operation created",
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
-			InstanceDetails:        i.InstanceDetails,
+			InstanceDetails:        details,
 		},
 		RuntimeOperation: orchestration.RuntimeOperation{
 			ID:      id,
@@ -90,7 +98,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, majorVer)
 	}
 
-	err := u.operationStorage.InsertUpgradeKymaOperation(op)
+	err = u.operationStorage.InsertUpgradeKymaOperation(op)
 	return op.RuntimeOperation, err
 }
 

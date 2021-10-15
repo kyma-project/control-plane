@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
@@ -105,6 +107,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Tenant:        "fooTen",
 		EnableSeqHttp: true,
 	}
+	cfg.OrchestrationConfig = kebOrchestration.Config{
+		KymaVersion:       "",
+		KubernetesVersion: "",
+	}
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
@@ -149,6 +155,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	require.NoError(t, coreV1.AddToScheme(sch))
 	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(kymaVer, additionalKymaVersions)...)
 
+	reconcilerClient := reconciler.NewFakeClient()
 	gardenerClient := gardenerFake.NewSimpleClientset()
 	provisionerClient := provisioner.NewFakeClient()
 	const gardenerProject = "testing"
@@ -171,7 +178,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), nil, inMemoryFs, monitoringClient, logs, cli)
+		&cfg, hyperscaler.NewAccountProvider(nil, nil), reconcilerClient, nil, inMemoryFs, monitoringClient, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -277,6 +284,7 @@ func (o *RuntimeOptions) ProvideRuntimeAdmins() []string {
 
 func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) string {
 	runtimeID := uuid.New().String()
+	shootName := fmt.Sprintf("shoot%s", runtimeID)
 	planID := options.ProvidePlanID()
 	planName := broker.AzurePlanName
 	globalAccountID := options.ProvideGlobalAccountID()
@@ -304,7 +312,9 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		Parameters:      provisioningParameters,
 		ProviderRegion:  options.ProvidePlatformRegion(),
 		InstanceDetails: internal.InstanceDetails{
-			RuntimeID: runtimeID,
+			RuntimeID:   runtimeID,
+			ShootName:   shootName,
+			ShootDomain: "fake.domain",
 		},
 	}
 
@@ -315,13 +325,15 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			InstanceID:             instanceID,
 			ProvisioningParameters: provisioningParameters,
 			InstanceDetails: internal.InstanceDetails{
-				RuntimeID: instance.RuntimeID,
+				RuntimeID:   instance.RuntimeID,
+				ShootName:   shootName,
+				ShootDomain: "fake.domain",
 			},
 		},
 	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fmt.Sprintf("shoot%s", runtimeID),
+			Name:      shootName,
 			Namespace: s.gardenerNamespace,
 			Labels: map[string]string{
 				globalAccountLabel: globalAccountID,
@@ -433,16 +445,38 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-free":     "true",
 				"overrides-plan-azure_ha": "true",
 				"overrides-plan-aws_ha":   "true",
+				"overrides-plan-preview":  "true",
 			},
 		},
 		Data: map[string]string{
 			"foo": "bar",
 		},
 	}
+	scOverride := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "service-catalog2-overrides",
+			Namespace: "kcp-system",
+			Labels: map[string]string{
+				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
+				"overrides-plan-azure":    "true",
+				"overrides-plan-trial":    "true",
+				"overrides-plan-aws":      "true",
+				"overrides-plan-free":     "true",
+				"overrides-plan-azure_ha": "true",
+				"overrides-plan-aws_ha":   "true",
+				"overrides-plan-preview":  "true",
+				"component":               "service-catalog2",
+			},
+		},
+		Data: map[string]string{
+			"setting-one": "1234",
+		},
+	}
 	for _, version := range additionalKymaVersions {
 		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
+		scOverride.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 	}
-	resources = append(resources, override)
+	resources = append(resources, override, scOverride)
 
 	return resources
 }
@@ -532,12 +566,14 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	directorClient := director.NewFakeClient()
 
+	reconcilerClient := reconciler.NewFakeClient()
+
 	eventBroker := event.NewPubSub(logs)
 
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -857,10 +893,12 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:           "1.21",
+		KymaVersion:        "1.21",
+		KymaPreviewVersion: "2.0",
+
 		EnableOnDemandVersion: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial"},
+			EnablePlans: []string{"azure", "trial", "preview"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
@@ -882,6 +920,10 @@ func fixConfig() *Config {
 		},
 		FreemiumProviders:       []string{"aws", "azure"},
 		UpdateProcessingEnabled: true,
+		Gardener: gardener.Config{
+			Project:     "kyma",
+			ShootDomain: "sap.com",
+		},
 	}
 }
 

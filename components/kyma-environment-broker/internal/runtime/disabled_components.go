@@ -44,6 +44,9 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 		broker.AWSPlanID: {
 			components.KnativeEventingKafka: {},
 		},
+		broker.PreviewPlanID: {
+			components.KnativeEventingKafka: {},
+		},
 		broker.AWSHAPlanID: {
 			components.KnativeEventingKafka: {},
 		},

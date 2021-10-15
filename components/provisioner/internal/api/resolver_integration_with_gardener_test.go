@@ -177,7 +177,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		shootInterface,
 		secretsInterface,
 		testOperatorRoleBinding(),
-		mockK8sClientProvider)
+		mockK8sClientProvider,
+		runtimeConfigurator)
 	provisioningNoInstallQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
