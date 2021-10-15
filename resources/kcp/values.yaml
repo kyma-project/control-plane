@@ -58,7 +58,6 @@ global:
     - ory
     - rafter
     - eventing
-    - certificates
 
   auditlog:
     configMapName: "kcp-auditlog-config"
