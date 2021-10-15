@@ -4,8 +4,9 @@ go 1.16
 
 require (
 	github.com/int128/kubelogin v1.22.0
+	github.com/kyma-incubator/compass/components/director v0.0.0-20210416142045-25b90bbc9ee6 // indirect
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20210601124357-126439534aac
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211014103031-2eccb3d2b504
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
