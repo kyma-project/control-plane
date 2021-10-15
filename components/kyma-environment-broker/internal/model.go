@@ -392,6 +392,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
+	ClusterSetup  reconciler.Cluster            `json:"clusterSetup"`
 }
 
 // OperationStats provide number of operations per type and state

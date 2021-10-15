@@ -59,3 +59,15 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 
 	return internal.RuntimeState{}, dberr.NotFound("runtime state with operation ID %s not found", operationID)
 }
+
+func (s *runtimeState) GetLastByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	states, err := s.ListByRuntimeID(runtimeID)
+	if err != nil {
+		return internal.RuntimeState{}, err
+	}
+
+	return states[0], nil
+}
