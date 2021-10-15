@@ -61,9 +61,6 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 }
 
 func (s *runtimeState) GetLastByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	states, err := s.ListByRuntimeID(runtimeID)
 	if err != nil {
 		return internal.RuntimeState{}, err
