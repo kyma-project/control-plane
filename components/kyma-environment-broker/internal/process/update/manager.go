@@ -36,13 +36,23 @@ type Step interface {
 	Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error)
 }
 
-type stage struct {
-	name  string
-	steps []Step
+type StepCondition func(operation internal.UpdatingOperation) bool
+
+type StepWithCondition struct {
+	Step
+	condition StepCondition
 }
 
-func (s *stage) AddStep(step Step) {
-	s.steps = append(s.steps, step)
+type stage struct {
+	name  string
+	steps []StepWithCondition
+}
+
+func (s *stage) AddStep(step Step, cnd StepCondition) {
+	s.steps = append(s.steps, StepWithCondition{
+		Step:      step,
+		condition: cnd,
+	})
 }
 
 func NewManager(storage storage.Operations, pub event.Publisher, operationTimeout time.Duration, logger logrus.FieldLogger) *Manager {
@@ -64,14 +74,14 @@ func (m *Manager) SpeedUp(speedFactor int64) {
 func (m *Manager) DefineStages(names []string) {
 	m.stages = make([]*stage, len(names))
 	for i, n := range names {
-		m.stages[i] = &stage{name: n, steps: []Step{}}
+		m.stages[i] = &stage{name: n, steps: []StepWithCondition{}}
 	}
 }
 
-func (m *Manager) AddStep(stageName string, step Step) error {
+func (m *Manager) AddStep(stageName string, step Step, cnd StepCondition) error {
 	for _, s := range m.stages {
 		if s.name == stageName {
-			s.AddStep(step)
+			s.AddStep(step, cnd)
 			return nil
 		}
 	}
@@ -118,6 +128,10 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
+			if step.condition != nil && !step.condition(processedOperation) {
+				logStep.Debugf("Skipping")
+				continue
+			}
 			logStep.Infof("Start step")
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)

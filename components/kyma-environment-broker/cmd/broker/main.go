@@ -713,11 +713,42 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
 
-	manager.DefineStages([]string{"cluster", "check"})
-	manager.AddStep("cluster", update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory))
-	manager.AddStep("cluster", update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient))
-	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute))
+	manager.DefineStages([]string{"runtime", "cluster", "check"})
+	updateSteps := []struct {
+		stage     string
+		step      update.Step
+		condition update.StepCondition
+	}{
+		{
+			stage:     "runtime",
+			step:      update.NewSCMigrationStep(),
+			condition: update.ForMigration,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewBTPOperatorOverridesStep(),
+			condition: update.ForMigrationOrKyma2,
+		},
+		{
+			stage: "cluster",
+			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
+		},
+		{
+			stage: "cluster",
+			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+		},
+		{
+			stage: "check",
+			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+		},
+	}
 
+	for _, step := range updateSteps {
+		err := manager.AddStep(step.stage, step.step, step.condition)
+		if err != nil {
+			fatalOnError(err)
+		}
+	}
 	queue := process.NewQueue(manager, logs)
 	queue.Run(ctx.Done(), workersAmount)
 
