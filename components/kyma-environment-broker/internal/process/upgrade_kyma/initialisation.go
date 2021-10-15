@@ -119,6 +119,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 			op.State = domain.InProgress
+			op.ClusterConfigurationVersion = 0
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil
