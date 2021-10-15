@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 )
 
@@ -13,14 +14,24 @@ type RuntimeVersionConfigurator struct {
 	defaultVersion        string
 	defaultPreviewVersion string
 	accountMapping        *AccountVersionMapping
+	runtimeStateDB        storage.RuntimeStates
 }
 
-func NewRuntimeVersionConfigurator(defaultVersion string, previewVersion string, accountMapping *AccountVersionMapping) *RuntimeVersionConfigurator {
+func NewRuntimeVersionConfigurator(defaultVersion string, previewVersion string, accountMapping *AccountVersionMapping, runtimeStates storage.RuntimeStates) *RuntimeVersionConfigurator {
 	return &RuntimeVersionConfigurator{
 		defaultVersion:        defaultVersion,
 		defaultPreviewVersion: previewVersion,
 		accountMapping:        accountMapping,
+		runtimeStateDB:        runtimeStates,
 	}
+}
+
+func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error) {
+	r, err := rvc.runtimeStateDB.GetLastByRuntimeID(op.RuntimeID)
+	if err != nil {
+		return nil, err
+	}
+	return internal.NewRuntimeVersionFromDefaults(r.KymaConfig.Version), nil
 }
 
 func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {

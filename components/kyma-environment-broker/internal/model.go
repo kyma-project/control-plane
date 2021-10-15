@@ -345,6 +345,8 @@ type UpdatingOperation struct {
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
+
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
