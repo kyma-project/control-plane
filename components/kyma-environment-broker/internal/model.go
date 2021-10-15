@@ -265,6 +265,8 @@ type InstanceDetails struct {
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
+
+	SCMigrationTriggered bool `json:"migration_triggered"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation

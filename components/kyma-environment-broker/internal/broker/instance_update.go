@@ -88,6 +88,13 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
+	if ersContext.ServiceManager != nil && ersContext.ServiceManager.IsMigrationFromSCtoOperator {
+		instance.InstanceDetails.SCMigrationTriggered = true
+		if instance, err = b.instanceStorage.Update(*instance); err != nil {
+			logger.Errorf("failed to persist SC migration trigger, aborting update: %s", err.Error())
+			return domain.UpdateServiceSpec{}, errors.New("failed to persist SC migration trigger")
+		}
+	}
 
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
