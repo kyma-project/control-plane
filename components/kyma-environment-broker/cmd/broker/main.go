@@ -701,7 +701,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			condition: provisioning.ForKyma2,
-			stage:     createRuntimeStageName,
+			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
 		{
