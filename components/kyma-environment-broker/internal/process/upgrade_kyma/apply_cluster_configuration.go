@@ -31,6 +31,11 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if operation.ClusterConfigurationVersion != 0 {
+		log.Debugf("Cluster configuration already created, skipping")
+		return operation, 0, nil
+	}
+
 	operation.InputCreator.SetRuntimeID(operation.Runtime.RuntimeID).
 		SetInstanceID(operation.InstanceID).
 		SetKubeconfig(operation.Kubeconfig)
