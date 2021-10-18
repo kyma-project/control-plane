@@ -761,8 +761,8 @@ github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188/g
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb h1:PU13re+51gRHXDMgQcLVfBzPWCw810/2klnyFh8xflc=
 github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb/go.mod h1:PDFrNKcvGvi8T7l15Eh40Gy6+/tzlARJCluVwK8j9bI=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211014103031-2eccb3d2b504 h1:j/jT3UsQOg2VoQNjCM9T9QSrv8lXE2B5jeC0ok1QG3M=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211014103031-2eccb3d2b504/go.mod h1:ZCtO5tLlAy6hj7w/RLXS8nzAIPnXI9qd4O97eQses8E=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018070328-b57a59adc9c6 h1:ynDefIRY0YK6vwiMb1WgKard/HzPiTKTrMC8HO6f50E=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018070328-b57a59adc9c6/go.mod h1:ZCtO5tLlAy6hj7w/RLXS8nzAIPnXI9qd4O97eQses8E=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702142454-d5c043eb0dbe/go.mod h1:kej5mA0lXpMuwh8iFu48vqaXyVByulBFZlXUmaFvIgk=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675 h1:+vZWvVqlXSSYAfUgP3NBJJskx/aEIkpnmb7DjKX4mbo=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675/go.mod h1:WeQmbtBLbkjMbg4npPKPqTz2JFij2emvZwalK1fRiMg=
