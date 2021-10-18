@@ -19,7 +19,7 @@ func isErrResponse(statusCode int) bool {
 func responseErr(resp *http.Response) error {
 	var msg string
 	if err := json.NewDecoder(resp.Body).Decode(&msg); err != nil {
-		msg = "unknown error"
+		msg = errors.Wrap(err, "unexpected error").Error()
 	}
 	return errors.Wrapf(ErrMothershipResponse, "%s %d", msg, resp.StatusCode)
 }
