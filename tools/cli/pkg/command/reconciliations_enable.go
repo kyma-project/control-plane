@@ -8,7 +8,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
+	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
@@ -83,19 +83,19 @@ func (cmd *reconciliationEnableCmd) Run() error {
 		}
 	}
 
-	client, err := mothership.NewClient(cmd.mothershipURL)
+	client, err := reconciler.NewClient(cmd.mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	status := mothership.StatusReady
+	status := reconciler.StatusReady
 	if cmd.opts.force {
-		status = mothership.StatusReconcilePending
+		status = reconciler.StatusReconcilePending
 	}
 
 	resp, err := client.PutClustersRuntimeIDStatus(
 		ctx, cmd.opts.runtimeID,
-		mothership.PutClustersRuntimeIDStatusJSONRequestBody{Status: status},
+		reconciler.PutClustersRuntimeIDStatusJSONRequestBody{Status: status},
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile updating cluster status")

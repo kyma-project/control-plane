@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
+	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	"github.com/stretchr/testify/require"
 )
 
@@ -109,11 +109,11 @@ func Test_reconciliationDisableCmd_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mothershipSvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var request mothership.PutClustersRuntimeIDStatusJSONRequestBody
+				var request reconciler.PutClustersRuntimeIDStatusJSONRequestBody
 				err := json.NewDecoder(r.Body).Decode(&request)
 
 				require.NoError(t, err)
-				require.Equal(t, mothership.StatusReconcileDisabled, request.Status)
+				require.Equal(t, reconciler.StatusReconcileDisabled, request.Status)
 
 				w.WriteHeader(tt.httpFields.mothershipStatus)
 			}))

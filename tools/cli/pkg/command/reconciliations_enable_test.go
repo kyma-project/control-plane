@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
+	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +37,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReady),
+				mothershipExpectedStatus: string(reconciler.StatusReady),
 				mothershipStatusCode:     201,
 			},
 			wantErr: false,
@@ -51,7 +51,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReady),
+				mothershipExpectedStatus: string(reconciler.StatusReady),
 				mothershipStatusCode:     201,
 				kebData: runtime.RuntimesPage{
 					Count: 1,
@@ -73,7 +73,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReconcilePending),
+				mothershipExpectedStatus: string(reconciler.StatusReconcilePending),
 				mothershipStatusCode:     201,
 			},
 			wantErr: false,
@@ -85,7 +85,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				opts: reconciliationEnableOpts{},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReady),
+				mothershipExpectedStatus: string(reconciler.StatusReady),
 				mothershipStatusCode:     500,
 			},
 			wantErr: true,
@@ -99,7 +99,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReady),
+				mothershipExpectedStatus: string(reconciler.StatusReady),
 				mothershipStatusCode:     201,
 				kebData: runtime.RuntimesPage{
 					Count: 0,
@@ -116,7 +116,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 				},
 			},
 			httpFields: httpFields{
-				mothershipExpectedStatus: string(mothership.StatusReady),
+				mothershipExpectedStatus: string(reconciler.StatusReady),
 				mothershipStatusCode:     201,
 				kebData: runtime.RuntimesPage{
 					Count: 21,
@@ -128,7 +128,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mothershipSvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var request mothership.PutClustersRuntimeIDStatusJSONRequestBody
+				var request reconciler.PutClustersRuntimeIDStatusJSONRequestBody
 				err := json.NewDecoder(r.Body).Decode(&request)
 
 				require.NoError(t, err)

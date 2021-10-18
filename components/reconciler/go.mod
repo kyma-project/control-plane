@@ -1,4 +1,4 @@
-module github.com/kyma-project/control-plane/components/mothership
+module github.com/kyma-project/control-plane/components/reconciler
 
 go 1.16
 

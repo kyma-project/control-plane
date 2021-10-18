@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 
-	mothership "github.com/kyma-project/control-plane/components/mothership/pkg"
+	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -79,14 +79,14 @@ func (cmd *reconciliationDisableCmd) Run() error {
 		}
 	}
 
-	client, err := mothership.NewClient(cmd.mothershipURL)
+	client, err := reconciler.NewClient(cmd.mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
 	resp, err := client.PutClustersRuntimeIDStatus(
 		ctx, cmd.opts.runtimeID,
-		mothership.PutClustersRuntimeIDStatusJSONRequestBody{Status: mothership.StatusReconcileDisabled},
+		reconciler.PutClustersRuntimeIDStatusJSONRequestBody{Status: reconciler.StatusReconcileDisabled},
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile updating cluster status")
