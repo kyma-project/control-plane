@@ -146,7 +146,8 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	provisionManager.SpeedUp(10000)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, logs)
+	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
@@ -445,6 +446,36 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		}
 		if state.Cluster != "" {
 			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
+	var updatingOp *internal.UpdatingOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ProvisionerOperationID != "" {
+			updatingOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, 1)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, 1, reconciler.ReadyStatus)
 			return true, nil
 		}
 		return false, nil
@@ -990,7 +1021,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			},
 		},
 		{
-			URL:       "",
+			URL:       "https://sm-proxy",
 			Component: "service-manager-proxy",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
@@ -1078,7 +1109,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 			},
 		},
 		{
-			URL:       "",
+			URL:       "https://btp-operator",
 			Component: "btp-operator",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{

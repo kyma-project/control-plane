@@ -74,7 +74,7 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		t.Run(tN, func(t *testing.T) {
 			// given
 			inputCreatorMock := &automock.ProvisionerInputCreator{}
-			inputCreatorMock.On("AppendOverrides", ServiceManagerComponentName, tC.expCredentialsValues).
+			inputCreatorMock.On("AppendOverrides", internal.ServiceManagerComponentName, tC.expCredentialsValues).
 				Return(nil).Once()
 			inputCreatorMock.On("EnableOptionalComponent", mock.Anything).
 				Return(nil)

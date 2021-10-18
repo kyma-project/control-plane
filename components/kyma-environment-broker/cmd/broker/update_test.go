@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -1545,4 +1546,126 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 	updateOps, err := suite.db.Operations().ListUpdatingOperationsByInstanceID(iid)
 	require.NoError(t, err)
 	assert.Len(t, updateOps, 0, "should not create any update operations")
+}
+
+func TestUpdateSCMigration(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := "InstanceID-SCMigration"
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+	"context": {
+		"sm_platform_credentials": {
+			"url": "https://sm.url",
+			"credentials": {
+				"basic": {
+					"username": "u-name",
+					"password": "pass"
+				}
+			}
+		},
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster",
+		"kymaVersion": "2.0"
+	}
+}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	i, err := suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after provisioning, before update")
+	rs, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.Equal(t, opID, rs.OperationID, "runtime state provisioning operation ID")
+	assert.NoError(t, err, "getting runtime state after provisioning, before update")
+	assert.ElementsMatch(t, rs.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "logging", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog"})
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "john.smith@email.com",
+		"sm_operator_credentials": {
+			"clientid": "testClientID",
+			"clientsecret": "testClientSecret",
+			"sm_url": "https://service-manager.kyma.com",
+			"url": "https://test.auth.com",
+			"xsappname": "testXsappname"
+		},
+		"isMigration": true
+	}
+}`)
+
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+
+	// check first call to reconciler installing BTP-Operator and sc-migration
+	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime mid update")
+	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
+	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "logging", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
+
+	// finish updating, check second call to reconciler and see that sc-migration and svcat related components are gone
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
+		GardenerConfig: &gqlschema.GardenerUpgradeInput{
+			OidcConfig: &gqlschema.OIDCConfigInput{
+				ClientID:       "clinet-id-oidc",
+				GroupsClaim:    "gropups",
+				IssuerURL:      "https://issuer.url",
+				SigningAlgs:    []string{"RSA256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			},
+		},
+		Administrators: []string{"john.smith@email.com"},
+	})
+
+	i, err = suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after update")
+	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
+	rsu2, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime after update")
+	assert.Equal(t, updateOperationID, rsu2.OperationID, "runtime state update operation ID")
+	assert.ElementsMatch(t, rsu2.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
+	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"logging", "monitoring", "btp-operator"})
+	for _, c := range rsu2.ClusterSetup.KymaConfig.Components {
+		if c.Component == "btp-operator" {
+			exp := reconciler.Components{
+				Component: "btp-operator",
+				Namespace: "kyma-system",
+				URL:       "https://btp-operator",
+				Configuration: []reconciler.Configuration{
+					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
+					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
+					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
+					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
+					{Key: "cluster.id", Value: ""},
+				},
+			}
+			assert.Equal(t, exp, c)
+		}
+	}
+}
+
+func componentNames(components []reconciler.Components) []string {
+	names := make([]string, 0, len(components))
+	for _, c := range components {
+		names = append(names, c.Component)
+	}
+	return names
 }
