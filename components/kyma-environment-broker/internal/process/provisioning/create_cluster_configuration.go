@@ -17,13 +17,14 @@ type CreateClusterConfigurationStep struct {
 	reconcilerClient    reconciler.Client
 	operationManager    *process.ProvisionOperationManager
 	provisioningTimeout time.Duration
+	runtimeStateStorage storage.RuntimeStates
 }
 
-func NewCreateClusterConfiguration(os storage.Operations,
-	reconcilerClient reconciler.Client) *CreateClusterConfigurationStep {
+func NewCreateClusterConfiguration(os storage.Operations, runtimeStorage storage.RuntimeStates, reconcilerClient reconciler.Client) *CreateClusterConfigurationStep {
 	return &CreateClusterConfigurationStep{
-		reconcilerClient: reconcilerClient,
-		operationManager: process.NewProvisionOperationManager(os),
+		reconcilerClient:    reconcilerClient,
+		operationManager:    process.NewProvisionOperationManager(os),
+		runtimeStateStorage: runtimeStorage,
 	}
 }
 
@@ -68,6 +69,18 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
+
+	runtimeState, err := s.runtimeStateStorage.GetLastByRuntimeID(operation.RuntimeID)
+	if err != nil {
+		log.Errorf("Unable to get last RuntimeState for provided RuntimeID", err.Error())
+		return s.operationManager.OperationFailed(operation, "missing RuntimeState for provided RuntimeID", log)
+	}
+	runtimeState.ClusterSetup = clusterConfigurtation
+	err = s.runtimeStateStorage.Insert(runtimeState)
+	if err != nil {
+		log.Errorf("cannot insert runtimeState: %s", err)
+		return operation, 10 * time.Second, nil
+	}
 
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
