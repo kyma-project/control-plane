@@ -12,13 +12,24 @@ func ForKyma1(op internal.UpdatingOperation) bool {
 	return op.RuntimeVersion.MajorVersion == 1
 }
 
-func ForMigration(op internal.UpdatingOperation) bool {
-	if op.ProvisioningParameters.ErsContext.ServiceManager == nil {
-		return false
+func ForPlatformCredentialsProvided(op internal.UpdatingOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.Credentials != nil {
+			return true
+		}
 	}
-	return op.ProvisioningParameters.ErsContext.ServiceManager.IsMigrationFromSCtoOperator || op.InstanceDetails.SCMigrationTriggered
+	return false
 }
 
-func ForMigrationOrKyma2(op internal.UpdatingOperation) bool {
-	return ForMigration(op) || ForKyma2(op)
+func ForBTPOperatorCredentialsProvided(op internal.UpdatingOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.BTPOperatorCredentials != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func ForMigration(op internal.UpdatingOperation) bool {
+	return op.InstanceDetails.SCMigrationTriggered
 }

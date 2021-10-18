@@ -161,7 +161,12 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		}
 		return nil, err
 	}
+
+	// note for migration, instance has more up-to-date version of migration state than a previous operation
+	migrationTriggered := inst.InstanceDetails.SCMigrationTriggered
 	inst.InstanceDetails = op.InstanceDetails
+	inst.InstanceDetails.SCMigrationTriggered = migrationTriggered
+
 	return &inst, nil
 }
 

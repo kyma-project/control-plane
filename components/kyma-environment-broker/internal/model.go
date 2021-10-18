@@ -341,12 +341,12 @@ type DeprovisioningOperation struct {
 type UpdatingOperation struct {
 	Operation
 
+	RuntimeVersion     RuntimeVersionData    `json:"runtime_version"`
 	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
 
 	// following fields are not stored in the storage
-	InputCreator ProvisionerInputCreator `json:"-"`
-
-	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+	InputCreator     ProvisionerInputCreator `json:"-"`
+	LastRuntimeState RuntimeState            `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -392,13 +392,14 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 }
 
 func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
-	return RuntimeState{
+	r := RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
 		RuntimeID:    runtimeID,
 		OperationID:  operationID,
 		ClusterSetup: reconcilerInput,
 	}
+	return r
 }
 
 type RuntimeState struct {

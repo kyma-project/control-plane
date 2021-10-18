@@ -7,6 +7,9 @@ import (
 	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -203,4 +206,29 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
+}
+
+func getComponent(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (*v1alpha1.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range allComponents {
+		if c.Name == component {
+			return &c, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find %v component in all component list", component)
+}
+
+func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconciler.Components, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion)
+	if err != nil {
+		return reconciler.Components{}, err
+	}
+	return reconciler.Components{
+		Component: c.Name,
+		Namespace: c.Namespace,
+		URL:       c.Source.URL,
+	}, nil
 }

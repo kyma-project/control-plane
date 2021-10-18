@@ -88,14 +88,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
-	if ersContext.ServiceManager != nil && ersContext.ServiceManager.IsMigrationFromSCtoOperator {
-		instance.InstanceDetails.SCMigrationTriggered = true
-		if instance, err = b.instanceStorage.Update(*instance); err != nil {
-			logger.Errorf("failed to persist SC migration trigger, aborting update: %s", err.Error())
-			return domain.UpdateServiceSpec{}, errors.New("failed to persist SC migration trigger")
-		}
-	}
-
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
 	if err != nil {
@@ -129,6 +121,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 	}
 
+	// TODO: forbid kyma downgrade
+	// TODO: forbid IsMigrationFromSCtoOperator with kyma1.x
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
@@ -152,8 +146,15 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}, nil
 }
 
+func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails) bool {
+	if len(details.RawParameters) != 0 {
+		return true
+	}
+	return instance.InstanceDetails.SCMigrationTriggered
+}
+
 func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
-	if len(details.RawParameters) == 0 {
+	if !shouldUpdate(instance, details) {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
 			IsAsync:       false,
@@ -170,12 +171,14 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		return domain.UpdateServiceSpec{}, apiresponses.ErrAsyncRequired
 	}
 	var params internal.UpdatingParametersDTO
-	err := json.Unmarshal(details.RawParameters, &params)
-	if err != nil {
-		logger.Errorf("unable to unmarshal parameters: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parametera")
+	if len(details.RawParameters) != 0 {
+		err := json.Unmarshal(details.RawParameters, &params)
+		if err != nil {
+			logger.Errorf("unable to unmarshal parameters: %s", err.Error())
+			return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parameters")
+		}
+		logger.Debugf("Updating with params: %+v", params)
 	}
-	logger.Debugf("Updating with params: %+v", params)
 
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
@@ -264,6 +267,12 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
+	}
+	if ersContext.ServiceManager != nil {
+		instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
+	}
+	if ersContext.ServiceManager != nil && ersContext.ServiceManager.IsMigrationFromSCtoOperator {
+		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)

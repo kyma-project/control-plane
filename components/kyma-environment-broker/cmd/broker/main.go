@@ -342,7 +342,8 @@ func main() {
 		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
-	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, logs)
+	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
+		runtimeProvider, reconcilerClient, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -711,31 +712,47 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 }
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
-	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
+	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, logs logrus.FieldLogger) *process.Queue {
 
-	manager.DefineStages([]string{"runtime", "cluster", "check"})
+	manager.DefineStages([]string{"cluster", "runtime", "check"})
 	updateSteps := []struct {
 		stage     string
 		step      update.Step
 		condition update.StepCondition
 	}{
 		{
-			stage:     "runtime",
-			step:      update.NewSCMigrationStep(),
-			condition: update.ForMigration,
-		},
-		{
-			stage:     "runtime",
-			step:      update.NewBTPOperatorOverridesStep(),
-			condition: update.ForMigrationOrKyma2,
-		},
-		{
 			stage: "cluster",
-			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
+			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory, runtimeVerConfigurator, runtimeStatesDb),
 		},
 		{
 			stage: "cluster",
 			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
+			condition: update.ForBTPOperatorCredentialsProvided,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewSCMigrationStep(runtimeProvider),
+			condition: update.ForMigration,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			condition: update.ForKyma2,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewCheckSCMigrationDone(reconcilerClient),
+			condition: update.ForKyma2,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			condition: update.ForKyma2,
 		},
 		{
 			stage: "check",
@@ -841,6 +858,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsProvided,
 			step:   upgrade_kyma.NewBTPOperatorOverridesStep(),
+		},
+		{
+			weight: 3,
+			step:   upgrade_kyma.NewBTPOperatorOverridesStep(),
+			cnd:    upgrade_kyma.ForBTPOperatorCredentialsProvided,
 		},
 		{
 			weight: 4,

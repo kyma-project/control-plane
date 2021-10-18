@@ -22,29 +22,37 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	sm := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
+	sm := operation.ProvisioningParameters.ErsContext.ServiceManager
+	creds := sm.BTPOperatorCredentials
 	overrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "manager.secret.clientid",
-			Value:  sm.ClientID,
+			Value:  creds.ClientID,
 			Secret: ptr.Bool(true),
 		},
 		{
 			Key:    "manager.secret.clientsecret",
-			Value:  sm.ClientSecret,
+			Value:  creds.ClientSecret,
 			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "manager.secret.url",
-			Value: sm.ServiceManagerURL,
+			Value: sm.URL,
 		},
 		{
 			Key:   "manager.secret.tokenurl",
-			Value: sm.URL,
+			Value: creds.TokenURL,
+		},
+		{
+			Key:   "cluster.id",
+			Value: creds.ClusterID,
 		},
 	}
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
-
+	operation.InputCreator.DisableOptionalComponent("service-manager-proxy")
+	operation.InputCreator.DisableOptionalComponent("service-catalog")
+	operation.InputCreator.DisableOptionalComponent("service-catalog-addons")
+	operation.InputCreator.DisableOptionalComponent("helm-broker")
 	return operation, 0, nil
 }

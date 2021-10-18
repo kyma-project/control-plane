@@ -12,10 +12,20 @@ func ForKyma1(op internal.UpgradeKymaOperation) bool {
 	return op.RuntimeVersion.MajorVersion == 1
 }
 
-func WhenBTPOperatorCredentialsNotProvided(op internal.UpgradeKymaOperation) bool {
-	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil
+func ForPlatformCredentialsProvided(op internal.UpgradeKymaOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.Credentials != nil {
+			return true
+		}
+	}
+	return false
 }
 
-func WhenBTPOperatorCredentialsProvided(op internal.UpgradeKymaOperation) bool {
-	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil
+func ForBTPOperatorCredentialsProvided(op internal.UpgradeKymaOperation) bool {
+	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
+		if op.ProvisioningParameters.ErsContext.ServiceManager.BTPOperatorCredentials != nil {
+			return true
+		}
+	}
+	return false
 }
