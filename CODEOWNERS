@@ -44,8 +44,8 @@
 # KCP CLI
 /tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed
 
-# mothership 
-/components/mothership @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed
+# reconciler 
+/components/reconciler @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
