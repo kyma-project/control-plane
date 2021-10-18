@@ -96,7 +96,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		MachineImage:                "253",
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-		DefaultTrialProvider:        internal.Azure,
+		DefaultTrialProvider:        internal.AWS,
 	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
@@ -505,7 +505,7 @@ func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expecte
 }
 
 func (s *BrokerSuiteTest) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
@@ -658,7 +658,7 @@ func (s *BrokerSuiteTest) ShootName(id string) string {
 }
 
 func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
-	input := s.provisionerClient.GetProvisionRuntimeInput(1)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
 }

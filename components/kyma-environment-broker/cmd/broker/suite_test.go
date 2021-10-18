@@ -790,7 +790,7 @@ func (s *ProvisioningSuite) AssertProvider(provider string) {
 }
 
 func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
