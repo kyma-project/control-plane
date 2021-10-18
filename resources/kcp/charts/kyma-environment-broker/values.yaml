@@ -122,6 +122,11 @@ gardener:
   defaultTrialProvider: "Azure" # Azure, AWS
   autoUpdateKubernetesVersion: "true"
   autoUpdateMachineImageVersion: "false"
+  dnsProvider:
+    enabled: false
+    primary: true
+    type: "aws-route53"
+    secretName: "aws-route53-sa"
 
 kubeconfig:
   issuerURL: "TBD"

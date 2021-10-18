@@ -386,6 +386,14 @@ spec:
               value: "orchestration-config"
             - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/newAdditionalRuntimeComponents.yaml
+            {{ if .Values.gardener.dnsProvider.enabled -}}
+            - name: APP_GARDENER_DNS_PROVIDER_PRIMARY
+              value: "{{ .Values.gardener.dnsProvider.primary }}"
+            - name: APP_GARDENER_DNS_PROVIDER_TYPE
+              value: "{{ .Values.gardener.dnsProvider.type }}"
+            - name: APP_GARDENER_DNS_PROVIDER_SECRET_NAME
+              value: "{{ .Values.gardener.dnsProvider.secretName }}"
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
