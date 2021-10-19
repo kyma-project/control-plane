@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -204,7 +205,8 @@ func (cmd *TaskRunCommand) resolveOperations() ([]orchestration.RuntimeOperation
 		return nil, errors.Wrap(err, "while getting Gardener client")
 	}
 
-	lister := NewRuntimeLister(runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), cmd.cred))
+	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), cmd.cred)
+	lister := NewRuntimeLister(runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient))
 	resolver := orchestration.NewGardenerRuntimeResolver(gardenClient, GlobalOpts.GardenerNamespace(), lister, cmd.log)
 	runtimes, err := resolver.Resolve(cmd.targets)
 	if err != nil {
