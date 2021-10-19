@@ -128,11 +128,6 @@ type Config struct {
 	IAS ias.Config
 	EDP edp.Config
 
-	// Service Manager services
-	Connectivity struct {
-		Disabled bool `envconfig:"default=true"`
-	}
-
 	AuditLog auditlog.Config
 
 	Monitoring monitoring.Config
@@ -587,22 +582,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioner.ProvisioningTimeout, cfg.OperationTimeout, runtimeVerConfigurator, smcf),
 		},
 		{
-			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
-				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Connectivity.Instance
-				}, db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -640,11 +621,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:    createRuntimeStageName,
 			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			condition: provisioning.ForKyma1,
@@ -758,15 +734,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			weight:   1,
-			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight: 2,
-			step:   deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
-		},
-		{
 			weight: 5,
 			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
@@ -807,15 +774,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		cnd      upgrade_kyma.StepCondition
 	}{
 		{
-			weight: 1,
-			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
-				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Connectivity.Instance
-				}, db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -830,18 +788,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   4,
 			step:     upgrade_kyma.NewMonitoringUpgradeStep(db.Operations(), monitoringClient, cfg.Monitoring),
 			disabled: cfg.Monitoring.Disabled,
-		},
-		{
-			weight:   7,
-			step:     upgrade_kyma.NewConnectivityUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight: 10,
