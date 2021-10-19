@@ -74,6 +74,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					GcpConfig: gcpGardenerProvider,
 				},
 				OidcConfig:        oidcInput(),
+				DNSConfig:         dnsInput(),
 				ExposureClassName: util.StringPtr("internet"),
 			},
 			Administrators: []string{administrator},
@@ -110,6 +111,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedGCPProviderCfg,
 			OIDCConfig:                          oidcConfig(),
+			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
 		},
 		Kubeconfig:     nil,
@@ -152,6 +154,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 						},
 					},
 					OidcConfig:        oidcInput(),
+					DNSConfig:         dnsInput(),
 					ExposureClassName: util.StringPtr("internet"),
 				},
 				Administrators: []string{administrator},
@@ -193,6 +196,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				AllowPrivilegedContainers:           true,
 				GardenerProviderConfig:              expectedAzureProviderCfg,
 				OIDCConfig:                          oidcConfig(),
+				DNSConfig:                           dnsConfig(),
 				ExposureClassName:                   util.StringPtr("internet"),
 			},
 			Kubeconfig:     nil,
@@ -256,6 +260,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					AwsConfig: awsGardenerProvider,
 				},
 				OidcConfig:        oidcInput(),
+				DNSConfig:         dnsInput(),
 				ExposureClassName: util.StringPtr("internet"),
 			},
 			Administrators: []string{administrator},
@@ -292,6 +297,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedAWSProviderCfg,
 			OIDCConfig:                          oidcConfig(),
+			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
 		},
 		Kubeconfig:     nil,
@@ -334,6 +340,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					OpenStackConfig: openstackGardenerProvider,
 				},
 				OidcConfig:        oidcInput(),
+				DNSConfig:         dnsInput(),
 				ExposureClassName: util.StringPtr("internet"),
 			},
 			Administrators: []string{administrator},
@@ -368,6 +375,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedOpenStackProviderCfg,
 			OIDCConfig:                          oidcConfig(),
+			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
 		},
 		Kubeconfig:     nil,
@@ -491,6 +499,19 @@ func oidcInput() *gqlschema.OIDCConfigInput {
 	}
 }
 
+func dnsInput() *gqlschema.DNSConfigInput {
+	return &gqlschema.DNSConfigInput{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []*gqlschema.DNSProviderInput{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
+	}
+}
+
 func upgradedOidcInput() *gqlschema.OIDCConfigInput {
 	return &gqlschema.OIDCConfigInput{
 		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
@@ -510,6 +531,19 @@ func oidcConfig() *model.OIDCConfig {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func dnsConfig() *model.DNSConfig {
+	return &model.DNSConfig{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []model.DNSProvider{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
 	}
 }
 

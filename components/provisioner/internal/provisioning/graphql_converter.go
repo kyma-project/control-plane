@@ -97,6 +97,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
+		DNSConfig:                           c.dnsConfigToGraphQLConfig(config.DNSConfig),
 		ExposureClassName:                   config.ExposureClassName,
 	}
 }
@@ -112,6 +113,24 @@ func (c graphQLConverter) oidcConfigToGraphQLConfig(config *model.OIDCConfig) *g
 		SigningAlgs:    config.SigningAlgs,
 		UsernameClaim:  config.UsernameClaim,
 		UsernamePrefix: config.UsernamePrefix,
+	}
+}
+
+func (c graphQLConverter) dnsConfigToGraphQLConfig(config *model.DNSConfig) *gqlschema.DNSConfig {
+	if config == nil {
+		return nil
+	}
+	dnsPr := []*gqlschema.DNSProvider{}
+	for _, p := range config.Providers {
+		dnsPr = append(dnsPr, &gqlschema.DNSProvider{
+			Primary:    p.Primary,
+			SecretName: p.SecretName,
+			Type:       p.Type,
+		})
+	}
+	return &gqlschema.DNSConfig{
+		Domain:    config.Domain,
+		Providers: dnsPr,
 	}
 }
 

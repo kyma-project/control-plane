@@ -30,6 +30,7 @@ type GardenerConfig {
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
     oidcConfig: OIDCConfig
+    dnsConfig: DNSConfig
     exposureClassName: String
 }
 
@@ -70,6 +71,17 @@ type OIDCConfig {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+}
+
+type DNSConfig {
+	domain:    String!
+	providers: [DNSProvider!]
+}
+
+type DNSProvider {
+	primary:    Boolean!
+	secretName: String!
+	type:       String!
 }
 
 type ConfigEntry {
@@ -202,6 +214,7 @@ input GardenerConfigInput {
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
+    dnsConfig: DNSConfigInput                       # DNS configuration of the Shoot
     exposureClassName: String                       # Name of the ExposureClass
 }
 
@@ -212,6 +225,17 @@ input OIDCConfigInput {
     signingAlgs: [String!]!
     usernameClaim: String!
     usernamePrefix: String!
+}
+
+input DNSConfigInput {
+	domain:    String!
+	providers: [DNSProviderInput!]
+}
+
+input DNSProviderInput {
+	primary:    Boolean!
+	secretName: String!
+	type:       String!
 }
 
 input ProviderSpecificInput {

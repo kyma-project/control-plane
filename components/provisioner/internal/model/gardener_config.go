@@ -31,6 +31,17 @@ type OIDCConfig struct {
 	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
+type DNSConfig struct {
+	Domain    string        `json:"domain"`
+	Providers []DNSProvider `json:"providers"`
+}
+
+type DNSProvider struct {
+	Primary    bool   `json:"primary"`
+	SecretName string `json:"secretName"`
+	Type       string `json:"type"`
+}
+
 type GardenerConfig struct {
 	ID                                  string
 	ClusterID                           string
@@ -58,6 +69,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
+	DNSConfig                           *DNSConfig
 	ExposureClassName                   *string
 }
 
@@ -82,7 +94,7 @@ type ShootIssuers struct {
 	Enabled bool `json:"enabled"`
 }
 
-func NewDNSConfig() *ExtensionProviderConfig {
+func NewDNSExtensionConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
 		ApiVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
 		DNSProviderReplication: &DNSProviderReplication{Enabled: true},
@@ -90,7 +102,7 @@ func NewDNSConfig() *ExtensionProviderConfig {
 	}
 }
 
-func NewCertConfig() *ExtensionProviderConfig {
+func NewCertExtensionConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
 		ApiVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
 		ShootIssuers: &ShootIssuers{Enabled: true},
@@ -98,7 +110,7 @@ func NewCertConfig() *ExtensionProviderConfig {
 	}
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig, dnsConfig *DNSConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -122,13 +134,13 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		annotations[LicenceTypeAnnotation] = *c.LicenceType
 	}
 
-	dnsConfig := NewDNSConfig()
-	jsonDNSConfig, encodingErr := json.Marshal(dnsConfig)
+	dnsExtensionConfig := NewDNSExtensionConfig()
+	jsonDNSConfig, encodingErr := json.Marshal(dnsExtensionConfig)
 	if encodingErr != nil {
 		return nil, apperrors.Internal("error encoding DNS extension config: %s", encodingErr.Error())
 	}
 
-	certConfig := NewCertConfig()
+	certConfig := NewCertExtensionConfig()
 	jsonCertConfig, encodingErr := json.Marshal(certConfig)
 	if encodingErr != nil {
 		return nil, apperrors.Internal("error encoding Cert extension config: %s", encodingErr.Error())
@@ -148,6 +160,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			SecretBindingName: c.TargetSecret,
 			SeedName:          seed,
 			Region:            c.Region,
+			DNS:               gardenerDNSConfig(dnsConfig),
 			Kubernetes: gardener_types.Kubernetes{
 				AllowPrivilegedContainers: &c.AllowPrivilegedContainers,
 				Version:                   c.KubernetesVersion,
@@ -198,6 +211,24 @@ func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
 			SigningAlgs:    oidcConfig.SigningAlgs,
 			UsernameClaim:  &oidcConfig.UsernameClaim,
 			UsernamePrefix: &oidcConfig.UsernamePrefix,
+		}
+	}
+	return nil
+}
+
+func gardenerDNSConfig(dnsConfig *DNSConfig) *gardener_types.DNS {
+	if dnsConfig != nil {
+		providers := []gardener_types.DNSProvider{}
+		for _, p := range dnsConfig.Providers {
+			providers = append(providers, gardener_types.DNSProvider{
+				Primary:    &p.Primary,
+				SecretName: &p.SecretName,
+				Type:       &p.Type,
+			})
+		}
+		return &gardener_types.DNS{
+			Domain:    &dnsConfig.Domain,
+			Providers: providers,
 		}
 	}
 	return nil

@@ -119,6 +119,19 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
 			seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
 		},
+		{name: "Azure on Gardener With Custom Domain",
+			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener with Custom Domain, when zones passed",
+			runtimeID:      "63701b36-76cb-4225-a119-e31512467f26",
+			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
+			provisioningInput: provisioningInput{
+				config: azureGardenerClusterConfigInputWithCustomDomain("1", "2"),
+				runtimeInput: gqlschema.RuntimeInput{
+					Name:        "test runtime 8",
+					Description: new(string),
+				}},
+			upgradeShootInput: NewUpgradeShootInput(),
+			seed:              seedConfig("az-eu3", "cf.eu20", "azure"),
+		},
 	}
 }
 
@@ -147,6 +160,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  nil,
 		},
 	}
 }
@@ -175,6 +189,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  nil,
 		},
 	}
 }
@@ -204,6 +219,37 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 				},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  nil,
+		},
+	}
+}
+
+func azureGardenerClusterConfigInputWithCustomDomain(zones ...string) gqlschema.ClusterConfigInput {
+	return gqlschema.ClusterConfigInput{
+		GardenerConfig: &gqlschema.GardenerConfigInput{
+			Name:              util.CreateGardenerClusterName(),
+			KubernetesVersion: "version",
+			Purpose:           util.StringPtr("evaluation"),
+			Provider:          "Azure",
+			TargetSecret:      "secret",
+			Seed:              util.StringPtr("az-eu2"),
+			Region:            "westeurope",
+			MachineType:       "Standard_D8_v3",
+			DiskType:          util.StringPtr("Standard_LRS"),
+			VolumeSizeGb:      util.IntPtr(40),
+			WorkerCidr:        "cidr",
+			AutoScalerMin:     1,
+			AutoScalerMax:     5,
+			MaxSurge:          1,
+			MaxUnavailable:    2,
+			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
+				AzureConfig: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "cidr",
+					Zones:    zones,
+				},
+			},
+			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 }

@@ -44,6 +44,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			MaxUnavailable:         1,
 			ProviderSpecificConfig: nil,
 			OidcConfig:             oidcInput(),
+			DNSConfig:              dnsInput(),
 		},
 	}
 
@@ -729,5 +730,18 @@ func oidcInput() *gqlschema.OIDCConfigInput {
 		SigningAlgs:    []string{"RS257"},
 		UsernameClaim:  "sup",
 		UsernamePrefix: "-",
+	}
+}
+
+func dnsInput() *gqlschema.DNSConfigInput {
+	return &gqlschema.DNSConfigInput{
+		Domain: "shoot.test.customdomain.com",
+		Providers: []*gqlschema.DNSProviderInput{
+			{
+				Primary:    true,
+				SecretName: "aws-route53-secret",
+				Type:       "aws-route53",
+			},
+		},
 	}
 }

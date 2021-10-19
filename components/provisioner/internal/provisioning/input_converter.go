@@ -117,6 +117,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ClusterID:                           runtimeID,
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
+		DNSConfig:                           dnsConfigFromInput(input.DNSConfig),
 		ExposureClassName:                   input.ExposureClassName,
 	}, nil
 }
@@ -130,6 +131,23 @@ func oidcConfigFromInput(config *gqlschema.OIDCConfigInput) *model.OIDCConfig {
 			SigningAlgs:    config.SigningAlgs,
 			UsernameClaim:  config.UsernameClaim,
 			UsernamePrefix: config.UsernamePrefix,
+		}
+	}
+	return nil
+}
+
+func dnsConfigFromInput(config *gqlschema.DNSConfigInput) *model.DNSConfig {
+	if config != nil {
+		providers := []model.DNSProvider{}
+		for _, p := range config.Providers {
+			providers = append(providers, model.DNSProvider{
+				Primary:    p.Primary,
+				SecretName: p.SecretName,
+				Type:       p.Type})
+		}
+		return &model.DNSConfig{
+			Domain:    config.Domain,
+			Providers: providers,
 		}
 	}
 	return nil

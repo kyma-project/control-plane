@@ -329,10 +329,11 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 
 	shoot := &list.Items[0]
 
-	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot.Name)
+	simulateSuccessfulClusterProvisioning(t, shootInterface, secretsInterface, shoot.Name, shoot.Spec.DNS)
 
 	// wait for Shoot to update
-	time.Sleep(2 * waitPeriod)
+	// make sure WaitForClusterCreationStep can finish after 20s delay
+	time.Sleep(4 * waitPeriod)
 
 	shoot, err = shootInterface.Get(context.Background(), shoot.Name, metav1.GetOptions{})
 	require.NoError(t, err)
@@ -595,8 +596,10 @@ func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface,
 	return update
 }
 
-func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shootName string) {
-	simulateDNSAdmissionPluginRun(t, f, shootName)
+func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shootName string, dns *gardener_types.DNS) {
+	if dns == nil || dns.Domain == nil || *dns.Domain == "" {
+		simulateDNSAdmissionPluginRun(t, f, shootName)
+	}
 	setShootStatusToSuccessful(t, f, shootName)
 	createKubeconfigSecret(t, s, shootName)
 	ensureShootSeedName(t, f, shootName)
