@@ -19,7 +19,7 @@ type reconciliationEnableOpts struct {
 }
 
 type reconciliationEnableCmd struct {
-	mothershipURL string
+	reconcilerURL string
 	kebURL        string
 	kebAuth       oauth2.TokenSource
 	ctx           context.Context
@@ -53,7 +53,7 @@ func NewReconciliationEnableCmd() *cobra.Command {
 }
 
 func (cmd *reconciliationEnableCmd) Validate() error {
-	cmd.mothershipURL = GlobalOpts.MothershipAPIURL()
+	cmd.reconcilerURL = GlobalOpts.ReconcilerAPIURL()
 
 	if cmd.opts.shootName != "" {
 		cmd.kebURL = GlobalOpts.KEBAPIURL()
@@ -61,7 +61,7 @@ func (cmd *reconciliationEnableCmd) Validate() error {
 	}
 
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
-		return errors.New("runtime-id or shoot is empty")
+		return errors.New("runtime-id and shoot is empty")
 	}
 
 	if cmd.opts.runtimeID != "" && cmd.opts.shootName != "" {
@@ -83,7 +83,7 @@ func (cmd *reconciliationEnableCmd) Run() error {
 		}
 	}
 
-	client, err := reconciler.NewClient(cmd.mothershipURL)
+	client, err := reconciler.NewClient(cmd.reconcilerURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}

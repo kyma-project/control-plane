@@ -145,7 +145,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 			defer kebSvr.Close()
 
 			cmd := reconciliationEnableCmd{
-				mothershipURL: mothershipSvr.URL,
+				reconcilerURL: mothershipSvr.URL,
 				kebURL:        kebSvr.URL,
 				kebAuth:       nil,
 				ctx:           tt.fields.ctx,
