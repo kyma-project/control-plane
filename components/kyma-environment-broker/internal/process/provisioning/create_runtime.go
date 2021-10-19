@@ -70,8 +70,13 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		requestInput.ClusterConfig.GardenerConfig.Name)
 
 	if operation.ShootDNSProvider.Type != "" {
-		requestInput.ClusterConfig.GardenerConfig.DNSConfig.Domain = operation.ShootDomain
-		requestInput.ClusterConfig.GardenerConfig.DNSConfig.Providers[0] = &operation.ShootDNSProvider
+		var dnsconfig = gqlschema.DNSConfigInput{}
+		var providers = []*gqlschema.DNSProviderInput{
+			&operation.ShootDNSProvider,
+		}
+		dnsconfig.Domain = operation.ShootDomain
+		dnsconfig.Providers = providers
+		requestInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsconfig
 	}
 
 	provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)

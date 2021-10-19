@@ -40,14 +40,6 @@ const (
 	brokerURL        = "example.com"
 )
 
-var (
-	shootDNSProvider = gqlschema.DNSProviderInput{
-		Type:       "aws-route53",
-		Primary:    true,
-		SecretName: "aws-route53-secret",
-	}
-)
-
 func TestProvision_Provision(t *testing.T) {
 	t.Run("new operation will be created", func(t *testing.T) {
 		// given
@@ -140,7 +132,7 @@ func TestProvision_Provision(t *testing.T) {
 			gardener.Config{
 				Project:     "test",
 				ShootDomain: "custom.com",
-				DNSProvider: shootDNSProvider,
+				DNSProvider: *fixture.FixDNSProviders()[0],
 			},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
@@ -176,7 +168,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
 		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
 		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
-		assert.Equal(t, shootDNSProvider, operation.ShootDNSProvider)
+		assert.Equal(t, *fixture.FixDNSProviders()[0], operation.ShootDNSProvider)
 
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)

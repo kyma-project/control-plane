@@ -136,15 +136,16 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:          internal.AvsLifecycleData{},
-		EventHub:     internal.EventHub{Deleted: false},
-		SubAccountID: subAccountId,
-		RuntimeID:    runtimeId,
-		ShootName:    "ShootName",
-		ShootDomain:  "shoot.domain.com",
-		XSUAA:        xsuaaData,
-		Ems:          emsData,
-		Monitoring:   monitoringData,
+		Avs:              internal.AvsLifecycleData{},
+		EventHub:         internal.EventHub{Deleted: false},
+		SubAccountID:     subAccountId,
+		RuntimeID:        runtimeId,
+		ShootName:        "ShootName",
+		ShootDomain:      "shoot.domain.com",
+		ShootDNSProvider: *FixDNSProviders()[0],
+		XSUAA:            xsuaaData,
+		Ems:              emsData,
+		Monitoring:       monitoringData,
 	}
 }
 
@@ -194,7 +195,7 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
-		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedStages:         map[string]struct{}{"prepare": {}, "check_provisioning": {}},
 	}
 }
 
@@ -324,6 +325,16 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func FixDNSProviders() []*gqlschema.DNSProviderInput {
+	return []*gqlschema.DNSProviderInput{
+		{
+			Primary:    true,
+			Type:       "aws-route53",
+			SecretName: "aws-route53-sa",
+		},
 	}
 }
 

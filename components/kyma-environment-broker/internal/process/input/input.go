@@ -59,7 +59,6 @@ type RuntimeInput struct {
 	runtimeID        string
 	kubeconfig       string
 	shootDomain      string
-	shootDNSProvider gqlschema.DNSProviderInput
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {

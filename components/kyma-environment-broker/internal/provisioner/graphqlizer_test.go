@@ -3,6 +3,7 @@ package provisioner
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -519,7 +520,7 @@ func Test_GardenerConfigInputToGraphQLWithDNS(t *testing.T) {
 			providers: [
 				{
 					primary: true,
-					secretName: "aws-route53-secret",
+					secretName: "aws-route53-sa",
 					type: "aws-route53"
 				}
 			]
@@ -539,14 +540,8 @@ func Test_GardenerConfigInputToGraphQLWithDNS(t *testing.T) {
 		MachineType:       "Standard_D4_v3",
 		KubernetesVersion: "1.18",
 		DNSConfig: &gqlschema.DNSConfigInput{
-			Domain: "shoot.test.customdomain.com",
-			Providers: []*gqlschema.DNSProviderInput{
-				{
-					Primary:    true,
-					SecretName: "aws-route53-secret",
-					Type:       "aws-route53",
-				},
-			},
+			Domain:    "shoot.test.customdomain.com",
+			Providers: fixture.FixDNSProviders(),
 		},
 	})
 

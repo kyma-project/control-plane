@@ -103,6 +103,10 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain:    "kyma.org",
+					Providers: fixture.FixDNSProviders(),
+				},
 			},
 			Administrators: []string{administrator},
 		},

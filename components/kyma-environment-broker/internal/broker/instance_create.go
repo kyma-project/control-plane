@@ -46,8 +46,9 @@ type ProvisionEndpoint struct {
 	kymaVerOnDemand   bool
 	planDefaults      PlanDefaults
 
-	shootDomain      string
-	shootProject     string
+	shootDomain  string
+	shootProject string
+
 	shootDNSProvider gqlschema.DNSProviderInput
 
 	log logrus.FieldLogger
