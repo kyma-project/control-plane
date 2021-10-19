@@ -3,9 +3,7 @@ module github.com/kyma-project/control-plane/tools/cli
 go 1.16
 
 require (
-	github.com/gardener/gardener v1.33.0 // indirect
 	github.com/int128/kubelogin v1.22.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20210416142045-25b90bbc9ee6 // indirect
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018121130-0215158aec4f
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
@@ -24,10 +22,9 @@ replace (
 	github.com/99designs/gqlgen => github.com/99designs/gqlgen v0.9.3
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/gardener/gardener => github.com/gardener/gardener v1.24.0
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
 	github.com/kyma-incubator/compass/components/director => github.com/kyma-incubator/compass/components/director v0.0.0-20210329081251-209fb6d91e72
 	k8s.io/api => k8s.io/api v0.19.12
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.0
-	k8s.io/apiserver => k8s.io/apiserver v0.17.17
+	k8s.io/apiserver => k8s.io/apiserver v0.19.12
 	k8s.io/client-go => k8s.io/client-go v0.19.12
 )
