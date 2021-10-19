@@ -75,9 +75,6 @@ func (r *RuntimeInput) SetProvisioningParameters(params internal.ProvisioningPar
 }
 
 func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreator {
-	if r.shootDNSProvider.Type != "" {
-		r.shootDomain = fmt.Sprintf("%s.%s", *r.shootName, r.shootDomain)
-	}
 	r.shootName = &name
 	return r
 }
@@ -184,10 +181,6 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "configure OIDC",
 			execute: r.configureOIDC,
-		},
-		{
-			name:    "configure Shoot DNS Provider",
-			execute: r.configureShootDNSProvider,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -572,14 +565,6 @@ func (r *RuntimeInput) configureOIDC() error {
 	}
 	if r.upgradeShootInput.GardenerConfig != nil {
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
-	}
-	return nil
-}
-
-func (r *RuntimeInput) configureShootDNSProvider() error {
-	if r.shootDNSProvider.Type != "" {
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig.Domain = r.shootDomain
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig.Providers[0] = &r.shootDNSProvider
 	}
 	return nil
 }

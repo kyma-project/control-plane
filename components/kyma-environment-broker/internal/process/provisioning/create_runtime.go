@@ -69,6 +69,11 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 		requestInput.ClusterConfig.GardenerConfig.Provider,
 		requestInput.ClusterConfig.GardenerConfig.Name)
 
+	if operation.ShootDNSProvider.Type != "" {
+		requestInput.ClusterConfig.GardenerConfig.DNSConfig.Domain = operation.ShootDomain
+		requestInput.ClusterConfig.GardenerConfig.DNSConfig.Providers[0] = &operation.ShootDNSProvider
+	}
+
 	provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 	switch {
 	case kebError.IsTemporaryError(err):
