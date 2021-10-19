@@ -607,7 +607,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			condition: provisioning.ForBTPOperatorCredentialsProvided,
 			stage:     createRuntimeStageName,
-			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
+			step:      provisioning.NewBTPOperatorOverridesStep(),
 		},
 		{
 			condition: provisioning.ForKyma1,

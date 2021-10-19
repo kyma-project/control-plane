@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path"
 	"testing"
 	"time"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -36,7 +36,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -80,15 +79,29 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
-	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{
-		{
-			Name:        "service-catalog2",
-			ReleaseName: "",
-			Namespace:   "kyma-system",
-			Source:      nil,
-		},
-	}, nil)
+	installerYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-installer-cluster.yaml")
+	componentsYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-components.yaml")
+	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
+
+	//TODO: change assertions to expect componentList based on files to simulate flow closer to real scenario
+	// instead of mocking single component. This way we should be able to assert the removal of components from the list (helm-broker, service-catalog)
+	// when btp-operator credentials are provided
+	componentListProvider := kebRuntime.NewComponentsListProvider(
+		path.Join("testdata", "managed-runtime-components.yaml"),
+		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
+	//componentListProvider := runtime.NewComponentsListProvider(
+	//	tc.given.managedRuntimeComponentsYAMLPath,
+	//	tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)kebRuntime.NewComponentsListProvider()
+	//
+	//componentListProvider := &automock.ComponentListProvider{}
+	//componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{
+	//	{
+	//		Name:        "service-catalog2",
+	//		ReleaseName: "",
+	//		Namespace:   "kyma-system",
+	//		Source:      nil,
+	//	},
+	//}, nil)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
