@@ -18,10 +18,7 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	step := NewCreateClusterConfiguration(st.Operations(), st.RuntimeStates(), reconcilerClient)
 	operation := fixture.FixProvisioningOperation(operationID, instanceID)
 	operation.RuntimeID = runtimeID
-	runtimeStateID := "runtimeState1"
-	runtimeState := fixture.FixRuntimeState(runtimeStateID, runtimeID, operationID)
 	st.Operations().InsertProvisioningOperation(operation)
-	st.RuntimeStates().Insert(runtimeState)
 
 	// when
 	_, d, err := step.Run(operation, logrus.New())
@@ -29,11 +26,5 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, d)
-
-	// when
-	gotRuntimeState, err := st.RuntimeStates().GetLastByRuntimeID(runtimeID)
-
-	// then
-	require.NoError(t, err)
-	assert.Equal(t, runtimeID, gotRuntimeState.RuntimeID)
+	assert.True(t, reconcilerClient.IsClusterExists(runtimeID))
 }

@@ -52,6 +52,13 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
 	}
 
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfigurtation.Cluster, operation.ID, &clusterConfigurtation))
+	if err != nil {
+		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
+		return operation, 10 * time.Second, nil
+	}
+
 	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
 		clusterConfigurtation.Cluster,
 		clusterConfigurtation.KymaConfig.Version,
@@ -69,18 +76,6 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
-
-	runtimeState, err := s.runtimeStateStorage.GetLastByRuntimeID(operation.RuntimeID)
-	if err != nil {
-		log.Errorf("Unable to get last RuntimeState for provided RuntimeID", err.Error())
-		return s.operationManager.OperationFailed(operation, "missing RuntimeState for provided RuntimeID", log)
-	}
-	runtimeState.ClusterSetup = clusterConfigurtation
-	err = s.runtimeStateStorage.Insert(runtimeState)
-	if err != nil {
-		log.Errorf("cannot insert runtimeState: %s", err)
-		return operation, 10 * time.Second, nil
-	}
 
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion

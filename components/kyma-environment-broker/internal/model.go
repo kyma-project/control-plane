@@ -382,30 +382,18 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	}
 }
 
-func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput, reconcilerInput *reconciler.Cluster) RuntimeState {
-	var (
-		kymaConfigInput    gqlschema.KymaConfigInput
-		clusterConfigInput gqlschema.GardenerConfigInput
-		clusterSetupInput  reconciler.Cluster
-	)
-	if kymaConfig != nil {
-		kymaConfigInput = *kymaConfig
-	}
-	if clusterConfig != nil {
-		clusterConfigInput = *clusterConfig
-	}
+func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
+	var clusterSetupInput reconciler.Cluster
 	if reconcilerInput != nil {
 		clusterSetupInput = *reconcilerInput
 	}
 
 	return RuntimeState{
-		ID:            uuid.New().String(),
-		CreatedAt:     time.Now(),
-		RuntimeID:     runtimeID,
-		OperationID:   operationID,
-		KymaConfig:    kymaConfigInput,
-		ClusterConfig: clusterConfigInput,
-		ClusterSetup:  clusterSetupInput,
+		ID:           uuid.New().String(),
+		CreatedAt:    time.Now(),
+		RuntimeID:    runtimeID,
+		OperationID:  operationID,
+		ClusterSetup: clusterSetupInput,
 	}
 }
 
