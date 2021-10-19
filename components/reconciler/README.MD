@@ -15,5 +15,5 @@ The Mothership REST Client is generated from [this](https://raw.githubuserconten
 To generate the Mothership REST Client run:
 
 ```bash
-    make generate
+    make all
 ```
