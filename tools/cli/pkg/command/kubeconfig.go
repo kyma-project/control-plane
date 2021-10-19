@@ -3,9 +3,10 @@ package command
 import (
 	"context"
 	"fmt"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"os"
+
+	"golang.org/x/oauth2"
 
 	"github.com/pkg/errors"
 

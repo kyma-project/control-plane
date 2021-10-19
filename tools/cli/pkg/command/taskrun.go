@@ -3,7 +3,6 @@ package command
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
