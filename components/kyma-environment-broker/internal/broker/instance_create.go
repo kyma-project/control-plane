@@ -331,7 +331,7 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 }
 
 func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
-	plans := Plans(b.plansConfig, provider, b.config.IncludeOIDCParamsInSchema)
+	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
 	plan := plans[details.PlanID]
 	schema := string(plan.provisioningRawSchema)
 	return jsonschema.NewValidatorFromStringSchema(schema)

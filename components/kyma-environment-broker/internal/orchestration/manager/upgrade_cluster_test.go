@@ -4,8 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
@@ -18,8 +21,13 @@ import (
 
 func TestUpgradeClusterManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
-	configNamespace := "default"
-	configName := "policyConfig"
+	orchestrationConfig := internalOrchestration.Config{
+		KymaVersion:        "1.24.5",
+		KubernetesVersion:  "1.22",
+		Namespace:          "default",
+		Name:               "policyConfig",
+		KymaPreviewVersion: defaultKymaPreviewVersion,
+	}
 
 	t.Run("Empty", func(t *testing.T) {
 		// given
@@ -34,11 +42,18 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
-		err := store.Orchestrations().Insert(internal.Orchestration{OrchestrationID: id, State: orchestration.Pending})
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Pending,
+			Parameters: orchestration.Parameters{
+				Kyma:       &orchestration.KymaParameters{Version: ""},
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+			},
+		})
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, 20*time.Millisecond, logrus.New(), k8sClient, orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -70,7 +85,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -96,12 +111,14 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			OrchestrationID: id,
 			State:           orchestration.Pending,
 			Parameters: orchestration.Parameters{
-				DryRun: true,
+				DryRun:     true,
+				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+				Kyma:       &orchestration.KymaParameters{Version: ""},
 			}})
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -161,7 +178,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)
@@ -201,7 +218,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver,
-			poolingInterval, logrus.New(), k8sClient, configNamespace, configName)
+			poolingInterval, logrus.New(), k8sClient, orchestrationConfig)
 
 		// when
 		_, err = svc.Execute(id)

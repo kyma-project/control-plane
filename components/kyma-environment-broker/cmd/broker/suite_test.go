@@ -107,6 +107,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Tenant:        "fooTen",
 		EnableSeqHttp: true,
 	}
+	cfg.OrchestrationConfig = kebOrchestration.Config{
+		KymaVersion:       "",
+		KubernetesVersion: "",
+	}
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
@@ -788,7 +792,7 @@ func (s *ProvisioningSuite) AssertProvider(provider string) {
 }
 
 func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
