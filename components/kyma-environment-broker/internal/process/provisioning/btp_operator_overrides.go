@@ -51,5 +51,10 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation,
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
 	operation.InputCreator.DisableOptionalComponent(ServiceManagerComponentName)
+
+	operation.InputCreator.DisableOptionalComponent("helm-broker")
+	operation.InputCreator.DisableOptionalComponent("service-catalog")
+	operation.InputCreator.DisableOptionalComponent("service-catalog-addons")
+
 	return operation, 0, nil
 }
