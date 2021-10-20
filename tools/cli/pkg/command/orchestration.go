@@ -456,7 +456,24 @@ func orchestrationTargets(obj interface{}) string {
 	var sb strings.Builder
 	nTargets := len(sr.Parameters.Targets.Include)
 	for i := 0; i < nTargets; i++ {
-		sb.WriteString(sr.Parameters.Targets.Include[i].Target)
+		runtimeTarget := sr.Parameters.Targets.Include[i]
+		if runtimeTarget.Target != "" {
+			sb.WriteString(runtimeTarget.Target)
+		} else if runtimeTarget.GlobalAccount != "" {
+			sb.WriteString("GlobalAccount=" + runtimeTarget.GlobalAccount)
+		} else if runtimeTarget.SubAccount != "" {
+			sb.WriteString("SubAccount=" + runtimeTarget.SubAccount)
+		} else if runtimeTarget.Region != "" {
+			sb.WriteString("Region=" + runtimeTarget.Region)
+		} else if runtimeTarget.RuntimeID != "" {
+			sb.WriteString("RuntimeID=" + runtimeTarget.RuntimeID)
+		} else if runtimeTarget.PlanName != "" {
+			sb.WriteString("PlanName=" + runtimeTarget.PlanName)
+		} else if runtimeTarget.Shoot != "" {
+			sb.WriteString("Shoot=" + runtimeTarget.Shoot)
+		} else if runtimeTarget.InstanceID != "" {
+			sb.WriteString("InstanceID=" + runtimeTarget.InstanceID)
+		}
 		if i != (nTargets - 1) {
 			sb.WriteString(", ")
 		}
@@ -473,10 +490,15 @@ func orchestrationTargets(obj interface{}) string {
 func orchestrationDetails(obj interface{}) string {
 	sr := obj.(orchestration.StatusResponse)
 	var sb strings.Builder
-	if sr.Parameters.Kyma != nil {
-		sb.WriteString("Kyma: " + sr.Parameters.Kyma.Version)
-	} else if sr.Parameters.Kubernetes != nil {
-		sb.WriteString("K8S: " + sr.Parameters.Kubernetes.KubernetesVersion)
+
+	if sr.Type == orchestration.UpgradeKymaOrchestration {
+		if sr.Parameters.Kyma != nil && sr.Parameters.Kyma.Version != "" {
+			sb.WriteString("Kyma: " + sr.Parameters.Kyma.Version)
+		}
+	} else if sr.Type == orchestration.UpgradeClusterOrchestration {
+		if sr.Parameters.Kubernetes != nil && sr.Parameters.Kubernetes.KubernetesVersion != "" {
+			sb.WriteString("K8S: " + sr.Parameters.Kubernetes.KubernetesVersion)
+		}
 	} else {
 		sb.WriteString("-")
 	}
