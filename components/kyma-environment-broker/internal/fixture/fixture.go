@@ -335,7 +335,7 @@ func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
 		OperationID:   operationID,
 		KymaConfig:    gqlschema.KymaConfigInput{},
 		ClusterConfig: gqlschema.GardenerConfigInput{},
-		ClusterSetup:  reconciler.Cluster{},
+		ClusterSetup:  nil,
 	}
 }
 

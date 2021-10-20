@@ -94,7 +94,11 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 	return result, nil
 }
 
-func (s *runtimeState) GetLastByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+func (s *runtimeState) GetLatestByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	return internal.RuntimeState{}, errors.New("not implemented")
+}
+
+func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
 	return internal.RuntimeState{}, errors.New("not implemented")
 }
 

@@ -383,17 +383,12 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 }
 
 func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
-	var clusterSetupInput reconciler.Cluster
-	if reconcilerInput != nil {
-		clusterSetupInput = *reconcilerInput
-	}
-
 	return RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
 		RuntimeID:    runtimeID,
 		OperationID:  operationID,
-		ClusterSetup: clusterSetupInput,
+		ClusterSetup: reconcilerInput,
 	}
 }
 
@@ -407,7 +402,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-	ClusterSetup  reconciler.Cluster            `json:"clusterSetup"`
+	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
 }
 
 // OperationStats provide number of operations per type and state
