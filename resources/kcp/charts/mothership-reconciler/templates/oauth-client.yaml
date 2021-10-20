@@ -1,0 +1,9 @@
+apiVersion: hydra.ory.sh/v1alpha1
+kind: OAuth2Client
+metadata:
+  name: {{ include "mothership-reconciler.fullname" . }}
+spec:
+  grantTypes:
+    - "client_credentials"
+  scope: [ "broker:write read" ]
+  secretName: {{ include "mothership-reconciler.fullname" . }}-oauth
