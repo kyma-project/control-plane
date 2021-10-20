@@ -98,7 +98,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.Connectivity.Disabled = true
 	cfg.AuditLog.Disabled = false
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
@@ -790,7 +789,7 @@ func (s *ProvisioningSuite) AssertProvider(provider string) {
 }
 
 func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
@@ -950,22 +949,11 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		CatalogID: "off-cat-id-001",
 		BrokerID:  brokerID,
 	},
-		{
-			ID:        "connectivity-oferring-id",
-			Name:      provisioning.ConnectivityOfferingName,
-			CatalogID: "connectivity-service-id",
-			BrokerID:  brokerID,
-		},
 	}, []types.ServicePlan{{
 		ID:        "xsuaa-plan-id",
 		Name:      "application",
 		CatalogID: "xsuaa",
 	},
-		{
-			ID:        "connectivity-plan-id",
-			Name:      provisioning.ConnectivityPlanName,
-			CatalogID: provisioning.ConnectivityPlanName,
-		},
 	})
 	smcf.SynchronousProvisioning()
 

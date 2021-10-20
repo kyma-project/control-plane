@@ -147,11 +147,11 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			result = append(result, op)
 		}
 
-		if o.Parameters.Kyma.Version == "" {
-			o.Parameters.Kyma.Version = m.kymaVersion
+		if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
+			o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
 		}
-		if o.Parameters.Kubernetes.KubernetesVersion == "" {
-			o.Parameters.Kubernetes.KubernetesVersion = m.kubernetesVersion
+		if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
+			o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
 		}
 
 		if len(runtimes) != 0 {

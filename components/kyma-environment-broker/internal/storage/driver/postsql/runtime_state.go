@@ -94,6 +94,14 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 	return result, nil
 }
 
+func (s *runtimeState) GetLatestByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	return internal.RuntimeState{}, errors.New("not implemented")
+}
+
+func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	return internal.RuntimeState{}, errors.New("not implemented")
+}
+
 func (s *runtimeState) runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
 	kymaCfg, err := json.Marshal(op.KymaConfig)
 	if err != nil {

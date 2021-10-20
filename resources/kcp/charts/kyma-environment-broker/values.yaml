@@ -138,9 +138,6 @@ serviceManager:
   password: "TBD"
   subaccountWithRequestCredentials: "TBD"
 
-xsuaa:
-  disabled: true
-
 avs:
   secretName: "avs-creds"
   apiEndpoint: "TBD"
@@ -199,9 +196,6 @@ edp:
 ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
-
-connectivity:
-  disabled: true
 
 monitoring:
   namespace: "kcp-system"
