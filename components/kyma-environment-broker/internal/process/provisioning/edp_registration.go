@@ -110,6 +110,8 @@ func (s *EDPRegistrationStep) selectServicePlan(planID string) string {
 	switch planID {
 	case broker.FreemiumPlanID:
 		return "free"
+	case broker.AzureLitePlanID:
+		return "tdd"
 	default:
 		return "standard"
 	}
