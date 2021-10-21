@@ -352,6 +352,18 @@ func FixDNSConfigDTO() internal.DNSConfigDTO {
 	}
 }
 
+func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
+	return internal.RuntimeState{
+		ID:            id,
+		CreatedAt:     time.Now(),
+		RuntimeID:     runtimeID,
+		OperationID:   operationID,
+		KymaConfig:    gqlschema.KymaConfigInput{},
+		ClusterConfig: gqlschema.GardenerConfigInput{},
+		ClusterSetup:  nil,
+	}
+}
+
 // SimpleInputCreator implements ProvisionerInputCreator interface
 func (c *SimpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c

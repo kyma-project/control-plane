@@ -102,8 +102,6 @@ spec:
                   optional: true
             - name: APP_DIRECTOR_OAUTH_SCOPE
               value: "{{ .Values.director.scope }}"
-            - name: APP_XSUAA_DISABLED
-              value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
             - name: APP_IAS_USER_ID
@@ -141,8 +139,6 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
-            - name: APP_CONNECTIVITY_DISABLED
-              value: "{{ .Values.connectivity.disabled }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:

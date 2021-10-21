@@ -17,13 +17,14 @@ type CreateClusterConfigurationStep struct {
 	reconcilerClient    reconciler.Client
 	operationManager    *process.ProvisionOperationManager
 	provisioningTimeout time.Duration
+	runtimeStateStorage storage.RuntimeStates
 }
 
-func NewCreateClusterConfiguration(os storage.Operations,
-	reconcilerClient reconciler.Client) *CreateClusterConfigurationStep {
+func NewCreateClusterConfiguration(os storage.Operations, runtimeStorage storage.RuntimeStates, reconcilerClient reconciler.Client) *CreateClusterConfigurationStep {
 	return &CreateClusterConfigurationStep{
-		reconcilerClient: reconcilerClient,
-		operationManager: process.NewProvisionOperationManager(os),
+		reconcilerClient:    reconcilerClient,
+		operationManager:    process.NewProvisionOperationManager(os),
+		runtimeStateStorage: runtimeStorage,
 	}
 }
 
@@ -49,6 +50,13 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	if err != nil {
 		log.Errorf("Unable to create cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
+	}
+
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfigurtation.Cluster, operation.ID, &clusterConfigurtation))
+	if err != nil {
+		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
+		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
