@@ -7,9 +7,6 @@ configurationSecret: "kcp-mothership-reconciler"
 componentsConfigMap: "kcp-component-reconcilers"
 
 host: "mothership-reconciler"
-oauth:
-  id: ""
-  secret: ""
 oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
   keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
