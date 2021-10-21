@@ -975,7 +975,7 @@ union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProv
 
 type DNSConfig {
     domain: String!
-    providers: [DNSProvider]!  
+    providers: [DNSProvider]!
 }
 
 type DNSProvider {
@@ -1150,7 +1150,7 @@ input GardenerConfigInput {
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
-    dnsConfig: DNSConfigInput!            # DNS custom specific parameters
+    dnsConfig: DNSConfigInput                       # DNS custom specific parameters
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
@@ -6207,7 +6207,7 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			}
 		case "dnsConfig":
 			var err error
-			it.DNSConfig, err = ec.unmarshalNDNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
+			it.DNSConfig, err = ec.unmarshalODNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7713,18 +7713,6 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalNDNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (DNSConfigInput, error) {
-	return ec.unmarshalInputDNSConfigInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNDNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (*DNSConfigInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNDNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNDNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v []*DNSProvider) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -8427,6 +8415,18 @@ func (ec *executionContext) marshalODNSConfig2ᚖgithubᚗcomᚋkymaᚑproject�
 		return graphql.Null
 	}
 	return ec._DNSConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (DNSConfigInput, error) {
+	return ec.unmarshalInputDNSConfigInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODNSConfigInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx context.Context, v interface{}) (*DNSConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODNSConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSConfigInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalODNSProvider2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v DNSProvider) graphql.Marshaler {

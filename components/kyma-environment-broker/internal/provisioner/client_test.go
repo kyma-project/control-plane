@@ -58,6 +58,26 @@ func TestClient_ProvisionRuntime(t *testing.T) {
 		assert.Equal(t, "test", tr.getRuntime().name)
 	})
 
+	t.Run("should trigger provisioning without dns config", func(t *testing.T) {
+		// Given
+		tr := &testResolver{t: t, runtime: &testRuntime{}}
+		testServer := fixHTTPServer(tr)
+		defer testServer.Close()
+
+		client := NewProvisionerClient(testServer.URL, false)
+
+		// When
+		status, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInputWithoutDnsConfig())
+
+		// Then
+		assert.NoError(t, err)
+		assert.Equal(t, ptr.String(provisionRuntimeOperationID), status.ID)
+		assert.Equal(t, schema.OperationStateInProgress, status.State)
+		assert.Equal(t, ptr.String(provisionRuntimeID), status.RuntimeID)
+
+		assert.Equal(t, "test", tr.getRuntime().name)
+	})
+
 	t.Run("provisioner should return error", func(t *testing.T) {
 		// Given
 		tr := &testResolver{t: t, runtime: &testRuntime{}, failed: true}
@@ -586,6 +606,30 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 						},
 					},
 				},
+			},
+		},
+		KymaConfig: &schema.KymaConfigInput{
+			Components: []*schema.ComponentConfigurationInput{
+				{
+					Component: "test",
+				},
+			},
+		},
+	}
+}
+
+func fixProvisionRuntimeInputWithoutDnsConfig() schema.ProvisionRuntimeInput {
+	return schema.ProvisionRuntimeInput{
+		RuntimeInput: &schema.RuntimeInput{
+			Name:        "test",
+			Description: nil,
+			Labels:      nil,
+		},
+		ClusterConfig: &schema.ClusterConfigInput{
+			GardenerConfig: &schema.GardenerConfigInput{
+				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
+				Name:                   "abcd",
+				VolumeSizeGb:           ptr.Integer(50),
 			},
 		},
 		KymaConfig: &schema.KymaConfigInput{
