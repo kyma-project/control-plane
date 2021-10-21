@@ -17,6 +17,8 @@ type ReconciliationOperationInfoCommand struct {
 	log          logger.Logger
 	output       string
 	schedulingID string
+
+	provideMshipClient mothershipClientProvider
 }
 
 func (cmd *ReconciliationOperationInfoCommand) Validate() error {
@@ -118,7 +120,7 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 	// fetch reconciliations
 	mothershipURL := GlobalOpts.MothershipAPIURL()
 
-	client, err := mothership.NewClient(mothershipURL)
+	client, err := cmd.provideMshipClient(mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
@@ -150,7 +152,13 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 
 // NewUpgradeCmd constructs the reconciliation command and all subcommands under the reconciliation command
 func NewReconciliationOperationInfoCmd() *cobra.Command {
-	cmd := ReconciliationOperationInfoCommand{}
+	return newReconciliationOperationInfoCmd(defaultMothershipClientProvider)
+}
+
+func newReconciliationOperationInfoCmd(mp mothershipClientProvider) *cobra.Command {
+	cmd := ReconciliationOperationInfoCommand{
+		provideMshipClient: mp,
+	}
 
 	cobraCmd := &cobra.Command{
 		Use:     "info",
