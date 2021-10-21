@@ -107,6 +107,11 @@ Description:      {{.Description}}
 Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+{{- if eq .Type "upgradeKyma" }}
+Kyma Version:     {{.Parameters.Kyma.Version }}
+{{- else if eq .Type "upgradeCluster" }}
+K8s Version:      {{.Parameters.Kubernetes.KubernetesVersion }}
+{{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
   {{ orchestrationTarget $t }}
