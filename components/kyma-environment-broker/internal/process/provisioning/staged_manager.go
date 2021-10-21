@@ -153,6 +153,8 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
+	logOperation.Infof("Operation succeeded")
+
 	processedOperation.State = domain.Succeeded
 	m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
 		Operation: processedOperation,
