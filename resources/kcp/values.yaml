@@ -106,7 +106,7 @@ global:
   database:
     manageSecrets: true
     embedded:
-      enabled: false
+      enabled: true
       provisioner:
         name: "provisioner"
       broker:
@@ -143,7 +143,7 @@ global:
     enabled: false
 
   mothership_reconciler:
-    enabled: true
+    enabled: false
 
   component_reconcilers:
     enabled: false
