@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
 	"github.com/pkg/errors"
@@ -19,6 +20,16 @@ var (
 	ErrMothershipResponse = errors.New("reconciler error response")
 )
 
+//go:generate mockgen -destination=automock/keb_client.go -package=automock -source=reconciliations.go kebClient
+
+type kebClient interface {
+	ListRuntimes(runtime.ListParameters) (runtime.RuntimesPage, error)
+}
+
+type kebClientProvider = func(ctx context.Context, url string, mgr credential.Manager) kebClient
+
+type mothershipClientProvider = func(url string) (mothership.ClientInterface, error)
+
 type ReconciliationCommand struct {
 	ctx         context.Context
 	log         logger.Logger
@@ -27,6 +38,9 @@ type ReconciliationCommand struct {
 	runtimeIds  []string
 	shoots      []string
 	statuses    []mothership.Status
+
+	provideKebClient   kebClientProvider
+	provideMshipClient mothershipClientProvider
 }
 
 func toReconciliationStatuses(rawStates []string) ([]mothership.Status, error) {
@@ -146,7 +160,7 @@ func (cmd *ReconciliationCommand) Run() error {
 	runtimes := append([]string{}, cmd.runtimeIds...)
 	// fetch runtime ids for all shoot names
 	if len(cmd.shoots) > 0 {
-		kebClient := runtime.NewClient(ctx, GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
+		kebClient := cmd.provideKebClient(ctx, GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
 
 		listRtResp, err := kebClient.ListRuntimes(runtime.ListParameters{Shoots: cmd.shoots})
 		if err != nil {
@@ -162,7 +176,7 @@ func (cmd *ReconciliationCommand) Run() error {
 	// fetch reconciliations
 	mothershipURL := GlobalOpts.MothershipAPIURL()
 
-	client, err := mothership.NewClient(mothershipURL)
+	client, err := cmd.provideMshipClient(mothershipURL)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
@@ -193,9 +207,11 @@ func (cmd *ReconciliationCommand) Run() error {
 	return nil
 }
 
-// NewUpgradeCmd constructs the reconciliation command and all subcommands under the reconciliation command
-func NewReconciliationCmd() *cobra.Command {
-	cmd := ReconciliationCommand{}
+func newReconciliationCmd(kp kebClientProvider, mp mothershipClientProvider) *cobra.Command {
+	cmd := ReconciliationCommand{
+		provideKebClient:   kp,
+		provideMshipClient: mp,
+	}
 
 	cobraCmd := &cobra.Command{
 		Use:     "reconciliations",
@@ -225,6 +241,21 @@ The command supports filtering Reconciliations based on`,
 
 	cmd.ctx = context.Background()
 	return cobraCmd
+}
+
+var (
+	defaultKebClientProvider kebClientProvider = func(ctx context.Context, url string, mgr credential.Manager) kebClient {
+		return runtime.NewClient(ctx, url, mgr)
+	}
+
+	defaultMothershipClientProvider mothershipClientProvider = func(url string) (mothership.ClientInterface, error) {
+		return mothership.NewClient(url)
+	}
+)
+
+// NewUpgradeCmd constructs the reconciliation command and all subcommands under the reconciliation command
+func NewReconciliationCmd() *cobra.Command {
+	return newReconciliationCmd(defaultKebClientProvider, defaultMothershipClientProvider)
 }
 
 func newGetReconciliationsParams(runtimes []string, statuses []mothership.Status) *mothership.GetReconciliationsParams {

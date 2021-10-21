@@ -1,9 +1,19 @@
 package command
 
 import (
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	msmock "github.com/kyma-project/control-plane/components/reconciler/pkg/automock"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/command/automock"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
 )
 
 func Test_validateReconciliationStates(t *testing.T) {
@@ -88,6 +98,176 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 			}
 			if err := cmd.Validate(); (err != nil) != tt.wantErr {
 				t.Errorf("ReconciliationCommand.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+var (
+	testCtx    = context.Background()
+	errTest    = errors.New("test error")
+	outputJSON = "json"
+
+	buildProvideEmptyKebResponse = func(ctrl *gomock.Controller) kebClientProvider {
+		return func(ctx context.Context, url string, mgr credential.Manager) kebClient {
+			m := automock.NewMockkebClient(ctrl)
+			m.EXPECT().
+				ListRuntimes(gomock.Any()).
+				Return(&runtime.RuntimesPage{
+					Data:       []runtime.RuntimeDTO{},
+					Count:      0,
+					TotalCount: 0,
+				}, nil).
+				Times(1)
+			return m
+		}
+	}
+)
+
+func TestReconciliationCommand_Run(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	type fields struct {
+		ctx                context.Context
+		output             string
+		runtimeIds         []string
+		shoots             []string
+		rawStatuses        []string
+		provideKebClient   kebClientProvider
+		provideMshipClient mothershipClientProvider
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "happy path: none",
+			fields: fields{
+				ctx:              testCtx,
+				output:           outputJSON,
+				provideKebClient: buildProvideEmptyKebResponse(ctrl),
+				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliations(gomock.Any(), gomock.All()).
+						Return(&http.Response{
+							StatusCode: 200,
+							Body:       io.NopCloser(strings.NewReader("[]")),
+						}, nil).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "keb err response",
+			fields: fields{
+				ctx:    testCtx,
+				output: outputJSON,
+				shoots: []string{"test"},
+				provideKebClient: func(ctx context.Context, url string, mgr credential.Manager) kebClient {
+					m := automock.NewMockkebClient(ctrl)
+					m.EXPECT().
+						ListRuntimes(gomock.Any()).
+						Return(runtime.RuntimesPage{}, errTest).
+						Times(1)
+					return m
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "mothership err",
+			fields: fields{
+				ctx:              testCtx,
+				output:           outputJSON,
+				provideKebClient: buildProvideEmptyKebResponse(ctrl),
+				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliations(gomock.Any(), gomock.Any()).
+						Return(nil, errTest).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "happy path",
+			fields: fields{
+				ctx:        testCtx,
+				output:     outputJSON,
+				shoots:     []string{"c1", "c2"},
+				runtimeIds: []string{"r1", "r2"},
+				provideKebClient: func(ctx context.Context, url string, mgr credential.Manager) kebClient {
+					m := automock.NewMockkebClient(ctrl)
+					m.EXPECT().
+						ListRuntimes(gomock.AssignableToTypeOf(runtime.ListParameters{})).
+						Return(
+							runtime.RuntimesPage{
+								Data: []runtime.RuntimeDTO{
+									{RuntimeID: "r3"},
+									{RuntimeID: "r4"},
+								},
+							}, nil).
+						Times(1)
+					return m
+				},
+				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliations(gomock.Any(), gomock.Any()).
+						Return(
+							&http.Response{
+								StatusCode: 200,
+								Body:       io.NopCloser(strings.NewReader("[]")),
+							}, nil).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Mothership internal error",
+			fields: fields{
+				ctx:              testCtx,
+				output:           outputJSON,
+				runtimeIds:       []string{},
+				provideKebClient: buildProvideEmptyKebResponse(ctrl),
+				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliations(gomock.Any(), gomock.Any()).
+						Return(&http.Response{
+							StatusCode: 500,
+							Body:       io.NopCloser(strings.NewReader("This is fine")),
+						}, nil).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &ReconciliationCommand{
+				ctx: tt.fields.ctx,
+				// log:                tt.fields.log,
+				output:             tt.fields.output,
+				rawStatuses:        tt.fields.rawStatuses,
+				runtimeIds:         tt.fields.runtimeIds,
+				shoots:             tt.fields.shoots,
+				provideKebClient:   tt.fields.provideKebClient,
+				provideMshipClient: tt.fields.provideMshipClient,
+			}
+			if err := cmd.Run(); (err != nil) != tt.wantErr {
+				t.Errorf("ReconciliationCommand.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
