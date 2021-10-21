@@ -34,7 +34,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 	_, repeat, err := step.Run(internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         broker.AzureLitePlanID,
+				PlanID:         broker.AzureHAPlanID,
 				PlatformRegion: edpRegion,
 				ErsContext: internal.ERSContext{
 					SubAccountID: edpName,
@@ -136,7 +136,7 @@ func TestEDPRegistrationStep_selectServicePlan(t *testing.T) {
 		},
 		"Azure Lite": {
 			planID:   broker.AzureLitePlanID,
-			expected: "standard",
+			expected: "tdd",
 		},
 		"Azure-HA": {
 			planID:   broker.AzureHAPlanID,
