@@ -457,23 +457,7 @@ func orchestrationTargets(obj interface{}) string {
 	nTargets := len(sr.Parameters.Targets.Include)
 	for i := 0; i < nTargets; i++ {
 		runtimeTarget := sr.Parameters.Targets.Include[i]
-		if runtimeTarget.Target != "" {
-			sb.WriteString(runtimeTarget.Target)
-		} else if runtimeTarget.GlobalAccount != "" {
-			sb.WriteString("GlobalAccount=" + runtimeTarget.GlobalAccount)
-		} else if runtimeTarget.SubAccount != "" {
-			sb.WriteString("SubAccount=" + runtimeTarget.SubAccount)
-		} else if runtimeTarget.Region != "" {
-			sb.WriteString("Region=" + runtimeTarget.Region)
-		} else if runtimeTarget.RuntimeID != "" {
-			sb.WriteString("RuntimeID=" + runtimeTarget.RuntimeID)
-		} else if runtimeTarget.PlanName != "" {
-			sb.WriteString("PlanName=" + runtimeTarget.PlanName)
-		} else if runtimeTarget.Shoot != "" {
-			sb.WriteString("Shoot=" + runtimeTarget.Shoot)
-		} else if runtimeTarget.InstanceID != "" {
-			sb.WriteString("InstanceID=" + runtimeTarget.InstanceID)
-		}
+		sb.WriteString(orchestrationTarget(runtimeTarget))
 		if i != (nTargets - 1) {
 			sb.WriteString(", ")
 		}
