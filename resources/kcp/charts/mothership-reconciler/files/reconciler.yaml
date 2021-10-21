@@ -22,6 +22,6 @@ mothership:
         url: http://{{ $component }}-reconciler:8080/v1/run
 {{- end }}
 {{- if .Values.preComponents }}
-preComponents:
-{{ toYaml .Values.preComponents | indent 2 }}
+    preComponents:
+{{ toYaml .Values.preComponents | indent 6 }}
 {{- end }}
