@@ -12,28 +12,12 @@ spec:
       allowHeaders:
       - Authorization
       - Content-Type
-      - X-Broker-API-Version
-      allowMethods: ["GET", "PUT", "DELETE"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: /oauth/([^/]+/)?v2/.*
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
       allowMethods: ["GET"]
       allowOrigins:
       - regex: ".*"
     match:
     - uri:
-      regex: "/reconciles.*"
+        regex: "/v.+/reconciles.*"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}
@@ -48,7 +32,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-      regex: "/clusters.*"
+        regex: "/v.+/clusters.*"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}
@@ -63,7 +47,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-      regex: "/clusters/.+"
+        regex: "/v.+/clusters/.+"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}
@@ -78,7 +62,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-      regex: "/clusters/.+/status.*"
+        regex: "/v.+/clusters/.+/status.*"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}
@@ -93,7 +77,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-      regex: "/clusters/.+/config/.+/status.*"
+        regex: "/v.+/clusters/.+/config/.+/status.*"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}
@@ -108,7 +92,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-      regex: "/clusters/.+/statusChanges.*"
+        regex: "/v.+/clusters/.+/statusChanges.*"
     route:
     - destination:
         host: {{ .Values.global.oathkeeper.host }}

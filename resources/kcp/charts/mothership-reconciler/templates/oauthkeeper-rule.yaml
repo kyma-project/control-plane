@@ -1,23 +1,6 @@
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  name: mothership-api
-spec:
-  match:
-    methods: ["GET", "PUT", "DELETE"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></oauth/([^/]+/)?v2/.*>
-  authenticators:
-  - handler: oauth2_introspection
-    config:
-      required_scope: ["broker:write"]
-  authorizer:
-    handler: allow
-  upstream:
-    url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
   name: mothership-reconciles
   namespace: {{ .Release.Namespace }}
 spec:
@@ -26,13 +9,13 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></reconciles.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/reconciles.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
 ---
@@ -47,13 +30,13 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["PUT", "POST"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></clusters.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
 ---
@@ -68,13 +51,13 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["DELETE"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></clusters/.+>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
 ---
@@ -89,13 +72,13 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["PUT", "GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></clusters/.+/status.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/status.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
 ---
@@ -110,13 +93,13 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["PUT"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></clusters/.+/config/.+/status.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/config/.+/status.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
 ---
@@ -131,12 +114,12 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.operator }}"]
+      required_scope: ["{{ .Values.oidc.groups.admin }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
     methods: ["GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></clusters/.+/statusChanges.*>
+    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/statusChanges.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
