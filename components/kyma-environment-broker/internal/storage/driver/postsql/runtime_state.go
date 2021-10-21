@@ -121,7 +121,29 @@ func (s *runtimeState) GetLatestByRuntimeID(runtimeID string) (internal.RuntimeS
 }
 
 func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
-	return internal.RuntimeState{}, errors.New("not implemented")
+	sess := s.NewReadSession()
+	var state dbmodel.RuntimeStateDTO
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		state, lastErr = sess.GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)
+			}
+			log.Errorf("while getting RuntimeState: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return internal.RuntimeState{}, lastErr
+	}
+	result, err := s.toRuntimeState(&state)
+	if err != nil {
+		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+	}
+
+	return result, nil
 }
 
 func (s *runtimeState) runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
