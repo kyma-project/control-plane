@@ -2,7 +2,7 @@
 
 ## Overview
 
-This module allows making communication with the Reconciler's main component by generating The Mothership REST Client.
+This module allows communication with the Reconciler's main component by generating the Mothership REST Client.
 
 The Mothership REST Client is generated from [this](https://raw.githubusercontent.com/kyma-incubator/reconciler/569388cbdde10092e5cdab25d5d87cf6a038a4d2/openapi/external_api.yaml) OpenAPI spec.
 
@@ -10,7 +10,7 @@ The Mothership REST Client is generated from [this](https://raw.githubuserconten
 
 - [oapi-codegen](https://github.com/deepmap/oapi-codegen)
 
-## Generate Client
+## Generate the Mothership REST Client
 
 To generate the Mothership REST Client run:
 
