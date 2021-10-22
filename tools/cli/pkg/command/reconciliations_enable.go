@@ -111,7 +111,8 @@ func (cmd *reconciliationEnableCmd) Run() error {
 }
 
 func getRuntimeID(ctx context.Context, kebAddress, shootName string, auth oauth2.TokenSource) (string, error) {
-	kebClient := runtime.NewClient(ctx, kebAddress, auth)
+	httpClient := oauth2.NewClient(ctx, auth)
+	kebClient := runtime.NewClient(kebAddress, httpClient)
 
 	listRtResp, err := kebClient.ListRuntimes(runtime.ListParameters{Shoots: []string{shootName}})
 	if err != nil {

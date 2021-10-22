@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -204,7 +206,8 @@ func (cmd *TaskRunCommand) resolveOperations() ([]orchestration.RuntimeOperation
 		return nil, errors.Wrap(err, "while getting Gardener client")
 	}
 
-	lister := NewRuntimeLister(runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), cmd.cred))
+	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), cmd.cred)
+	lister := NewRuntimeLister(runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient))
 	resolver := orchestration.NewGardenerRuntimeResolver(gardenClient, GlobalOpts.GardenerNamespace(), lister, cmd.log)
 	runtimes, err := resolver.Resolve(cmd.targets)
 	if err != nil {
