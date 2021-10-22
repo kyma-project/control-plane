@@ -3,6 +3,7 @@ package postsql
 import (
 	"encoding/json"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -146,14 +147,18 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 	return result, nil
 }
 
-func (s *runtimeState) runtimeStateToDB(op internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
-	kymaCfg, err := json.Marshal(op.KymaConfig)
+func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
+	kymaCfg, err := json.Marshal(state.KymaConfig)
 	if err != nil {
 		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding kyma config")
 	}
-	clusterCfg, err := json.Marshal(op.ClusterConfig)
+	clusterCfg, err := json.Marshal(state.ClusterConfig)
 	if err != nil {
 		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding cluster config")
+	}
+	clusterSetup, err := s.provideClusterSetup(state.ClusterSetup)
+	if err != nil {
+		return dbmodel.RuntimeStateDTO{}, err
 	}
 
 	encKymaCfg, err := s.cipher.Encrypt(kymaCfg)
@@ -162,21 +167,23 @@ func (s *runtimeState) runtimeStateToDB(op internal.RuntimeState) (dbmodel.Runti
 	}
 
 	return dbmodel.RuntimeStateDTO{
-		ID:            op.ID,
-		CreatedAt:     op.CreatedAt,
-		RuntimeID:     op.RuntimeID,
-		OperationID:   op.OperationID,
+		ID:            state.ID,
+		CreatedAt:     state.CreatedAt,
+		RuntimeID:     state.RuntimeID,
+		OperationID:   state.OperationID,
 		KymaConfig:    string(encKymaCfg),
 		ClusterConfig: string(clusterCfg),
-		KymaVersion:   op.KymaConfig.Version,
-		K8SVersion:    op.ClusterConfig.KubernetesVersion,
+		ClusterSetup:  string(clusterSetup),
+		KymaVersion:   state.KymaConfig.Version,
+		K8SVersion:    state.ClusterConfig.KubernetesVersion,
 	}, nil
 }
 
 func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.RuntimeState, error) {
 	var (
-		kymaCfg    gqlschema.KymaConfigInput
-		clusterCfg gqlschema.GardenerConfigInput
+		kymaCfg      gqlschema.KymaConfigInput
+		clusterCfg   gqlschema.GardenerConfigInput
+		clusterSetup *reconciler.Cluster
 	)
 	if dto.KymaConfig != "" {
 		cfg, err := s.cipher.Decrypt([]byte(dto.KymaConfig))
@@ -192,6 +199,15 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster config")
 		}
 	}
+	if dto.ClusterSetup != "" {
+		setup, err := s.cipher.Decrypt([]byte(dto.ClusterSetup))
+		if err != nil {
+			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting cluster setup")
+		}
+		if err := json.Unmarshal(setup, clusterSetup); err != nil {
+			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster setup")
+		}
+	}
 	return internal.RuntimeState{
 		ID:            dto.ID,
 		CreatedAt:     dto.CreatedAt,
@@ -199,6 +215,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 		OperationID:   dto.OperationID,
 		KymaConfig:    kymaCfg,
 		ClusterConfig: clusterCfg,
+		ClusterSetup:  clusterSetup,
 	}, nil
 }
 
@@ -214,4 +231,42 @@ func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]inte
 	}
 
 	return result, nil
+}
+
+func (s *runtimeState) provideClusterSetup(clusterSetup *reconciler.Cluster) ([]byte, error) {
+	marshalledClusterSetup, err := s.marshalClusterSetup(clusterSetup)
+	if err != nil {
+		return nil, errors.Wrap(err, "while encoding reconciler input")
+	}
+	encryptedClusterSetup, err := s.encryptClusterSetup(marshalledClusterSetup)
+	if err != nil {
+		return nil, errors.Wrap(err, "while encrypting reconciler input")
+	}
+	return encryptedClusterSetup, nil
+}
+
+func (s *runtimeState) marshalClusterSetup(clusterSetup *reconciler.Cluster) ([]byte, error) {
+	var (
+		result []byte
+		err    error
+	)
+	if clusterSetup != nil {
+		result, err = json.Marshal(clusterSetup)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		result, err = json.Marshal("")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *runtimeState) encryptClusterSetup(marshalledClusterSetup []byte) ([]byte, error) {
+	if string(marshalledClusterSetup) == "" {
+		return marshalledClusterSetup, nil
+	}
+	return s.cipher.Encrypt(marshalledClusterSetup)
 }
