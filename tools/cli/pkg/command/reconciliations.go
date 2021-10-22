@@ -147,10 +147,10 @@ func isErrResponse(statusCode int) bool {
 
 func responseErr(resp *http.Response) error {
 	msg, err := ioutil.ReadAll(resp.Body)
-	if err != nil { //json.NewDecoder(resp.Body).Decode(&msg); err != nil {
+	if err != nil {
 		msg = []byte(errors.Wrap(err, "unexpected error").Error())
 	}
-	return errors.Wrapf(ErrMothershipResponse, "%s %d", string(msg), resp.StatusCode)
+	return errors.Wrapf(ErrMothershipResponse, "%v %d", msg, resp.StatusCode)
 }
 
 func (cmd *ReconciliationCommand) Run() error {
