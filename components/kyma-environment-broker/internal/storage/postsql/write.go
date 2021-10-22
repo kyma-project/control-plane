@@ -183,6 +183,7 @@ func (ws writeSession) InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.E
 		Pair("k8s_version", state.K8SVersion).
 		Pair("kyma_config", state.KymaConfig).
 		Pair("cluster_config", state.ClusterConfig).
+		Pair("cluster_setup", state.ClusterSetup).
 		Exec()
 
 	if err != nil {
