@@ -122,6 +122,11 @@ var (
 			return m
 		}
 	}
+
+	http500TestResponse = http.Response{
+		StatusCode: 500,
+		Body:       io.NopCloser(strings.NewReader("This is fine")),
+	}
 )
 
 func TestReconciliationCommand_Run(t *testing.T) {
@@ -243,10 +248,7 @@ func TestReconciliationCommand_Run(t *testing.T) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliations(gomock.Any(), gomock.Any()).
-						Return(&http.Response{
-							StatusCode: 500,
-							Body:       io.NopCloser(strings.NewReader("This is fine")),
-						}, nil).
+						Return(&http500TestResponse, nil).
 						Times(1)
 					return m, nil
 				},
