@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 type ReconciliationOperationInfoCommand struct {
@@ -118,9 +119,11 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 	defer cancel()
 
 	// fetch reconciliations
+	auth := CLICredentialManager(cmd.log)
+	httpClient := oauth2.NewClient(ctx, auth)
 	mothershipURL := GlobalOpts.MothershipAPIURL()
 
-	client, err := cmd.provideMshipClient(mothershipURL)
+	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}

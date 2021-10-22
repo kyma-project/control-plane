@@ -85,8 +85,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
 
-	// TODO: remove the default value for this field after exposing the mothership and adding his URL to the config file
-	cmd.PersistentFlags().String(GlobalOpts.mothershipAPIURL, "http://localhost:8080/v1", "Mothership API URL to use for all commands. Can also be set using the KCP_MOTHERSHIP_API_URL environment variable.")
+	cmd.PersistentFlags().String(GlobalOpts.mothershipAPIURL, "", "Mothership API URL to use for all commands. Can also be set using the KCP_MOTHERSHIP_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.mothershipAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.mothershipAPIURL))
 
 	cmd.PersistentFlags().String(GlobalOpts.kubeconfigAPIURL, "", "OIDC Kubeconfig Service API URL used by the kcp kubeconfig and taskrun commands. Can also be set using the KCP_KUBECONFIG_API_URL environment variable.")

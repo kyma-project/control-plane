@@ -35,7 +35,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 				ctx:          testCtx,
 				output:       outputJSON,
 				schedulingID: "",
-				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
@@ -54,7 +54,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			fields: fields{
 				ctx:    testCtx,
 				output: outputJSON,
-				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					return m, errTest
 				},
@@ -66,7 +66,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			fields: fields{
 				ctx:    testCtx,
 				output: outputJSON,
-				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
@@ -82,7 +82,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			fields: fields{
 				ctx:    testCtx,
 				output: outputJSON,
-				provideMshipClient: func(url string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).

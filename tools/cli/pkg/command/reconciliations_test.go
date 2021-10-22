@@ -152,7 +152,7 @@ func TestReconciliationCommand_Run(t *testing.T) {
 				ctx:              testCtx,
 				output:           outputJSON,
 				provideKebClient: buildProvideEmptyKebResponse(ctrl),
-				provideMshipClient: func(_ string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(_ string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliations(gomock.Any(), gomock.All()).
@@ -189,7 +189,7 @@ func TestReconciliationCommand_Run(t *testing.T) {
 				ctx:              testCtx,
 				output:           outputJSON,
 				provideKebClient: buildProvideEmptyKebResponse(ctrl),
-				provideMshipClient: func(_ string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(_ string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliations(gomock.Any(), gomock.Any()).
@@ -221,7 +221,7 @@ func TestReconciliationCommand_Run(t *testing.T) {
 						Times(1)
 					return m
 				},
-				provideMshipClient: func(_ string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(_ string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliations(gomock.Any(), gomock.Any()).
@@ -243,7 +243,7 @@ func TestReconciliationCommand_Run(t *testing.T) {
 				output:           outputJSON,
 				runtimeIds:       []string{},
 				provideKebClient: buildProvideEmptyKebResponse(ctrl),
-				provideMshipClient: func(_ string) (mothership.ClientInterface, error) {
+				provideMshipClient: func(_ string, _ *http.Client) (mothership.ClientInterface, error) {
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliations(gomock.Any(), gomock.Any()).
