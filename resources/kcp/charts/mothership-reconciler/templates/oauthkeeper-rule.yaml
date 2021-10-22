@@ -9,7 +9,7 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
+      required_scope: ["{{ .Values.oidc.groups.operator }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
@@ -30,96 +30,12 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
+      required_scope: ["{{ .Values.oidc.groups.operator }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
   match:
-    methods: ["PUT", "POST"]
+    methods: ["PUT", "POST", "GET", "DELETE"]
     url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters.*>
-  upstream:
-    url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: mothership-clusters-runtimeid
-  namespace: {{ .Release.Namespace }}
-spec:
-  authenticators:
-  - handler: jwt
-    config:
-      jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
-      scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
-  authorizer:
-    handler: allow
-  match:
-    methods: ["DELETE"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+>
-  upstream:
-    url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: mothership-clusters-runtimeid-status
-  namespace: {{ .Release.Namespace }}
-spec:
-  authenticators:
-  - handler: jwt
-    config:
-      jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
-      scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
-  authorizer:
-    handler: allow
-  match:
-    methods: ["PUT", "GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/status.*>
-  upstream:
-    url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: mothership-clusters-runtimeid-config-version-status
-  namespace: {{ .Release.Namespace }}
-spec:
-  authenticators:
-  - handler: jwt
-    config:
-      jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
-      scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
-  authorizer:
-    handler: allow
-  match:
-    methods: ["PUT"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/config/.+/status.*>
-  upstream:
-    url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: mothership-clusters-runtimeid-statuschanges
-  namespace: {{ .Release.Namespace }}
-spec:
-  authenticators:
-  - handler: jwt
-    config:
-      jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
-      scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
-      trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
-  authorizer:
-    handler: allow
-  match:
-    methods: ["GET"]
-    url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></v.+/clusters/.+/statusChanges.*>
   upstream:
     url: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80

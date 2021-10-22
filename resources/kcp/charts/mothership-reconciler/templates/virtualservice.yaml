@@ -27,7 +27,7 @@ spec:
       allowHeaders:
       - Authorization
       - Content-Type
-      allowMethods: ["PUT", "POST"]
+      allowMethods: ["PUT", "POST", "GET", "DELETE"]
       allowOrigins:
       - regex: ".*"
     match:
@@ -38,64 +38,3 @@ spec:
         host: {{ .Values.global.oathkeeper.host }}
         port:
           number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["DELETE"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: "/v.+/clusters/.+"
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["PUT", "GET"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: "/v.+/clusters/.+/status.*"
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["GET"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: "/v.+/clusters/.+/config/.+/status.*"
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["GET"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: "/v.+/clusters/.+/statusChanges.*"
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-    

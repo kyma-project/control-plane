@@ -11,7 +11,6 @@ oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
   keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
   groups:
-    admin: runtimeAdmin
     operator: runtimeOperator
 
 db:
