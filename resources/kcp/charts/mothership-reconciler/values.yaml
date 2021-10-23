@@ -8,8 +8,8 @@ componentsConfigMap: "kcp-component-reconcilers"
 
 host: "mothership-reconciler"
 oidc:
-  issuer: https://dex.{{ .Values.global.ingress.domainName }}
-  keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
+  issuer: ""
+  keysURL: ""
   groups:
     operator: runtimeOperator
 

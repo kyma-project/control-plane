@@ -20,9 +20,9 @@ spec:
         regex: "/v.+/reconciles.*"
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -35,6 +35,6 @@ spec:
         regex: "/v.+/clusters.*"
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
