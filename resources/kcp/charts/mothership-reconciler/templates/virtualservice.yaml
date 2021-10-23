@@ -20,7 +20,7 @@ spec:
         regex: "/v.+/reconciles.*"
     route:
     - destination:
-        host: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
         port:
           number: 80
   - corsPolicy:
@@ -35,6 +35,6 @@ spec:
         regex: "/v.+/clusters.*"
     route:
     - destination:
-        host: http://{{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
         port:
           number: 80
