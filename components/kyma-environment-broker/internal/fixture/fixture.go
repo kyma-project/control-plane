@@ -36,6 +36,7 @@ type SimpleInputCreator struct {
 	EnabledComponents []string
 	ShootName         *string
 	ShootDomain       string
+	shootDnsProviders internal.DNSProvidersData
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
 }
@@ -71,16 +72,6 @@ func FixERSContext(id string) internal.ERSContext {
 
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	trialCloudProvider := internal.Azure
-	dnsProviders := internal.DNSConfigDTO{
-		Providers: []internal.DNSProviderDTO{
-			internal.DNSProviderDTO{
-				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
-				Primary:        true,
-				SecretName:     "aws_dns_domain_secrets_test_indto",
-				Type:           "route53_type_test",
-			},
-		},
-	}
 
 	return internal.ProvisioningParametersDTO{
 		Name:         "cluster-test",
@@ -98,7 +89,6 @@ func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 		},
 		KymaVersion: KymaVersion,
 		Provider:    &trialCloudProvider,
-		DNS:         &dnsProviders,
 	}
 }
 
@@ -339,9 +329,9 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 	}
 }
 
-func FixDNSConfigDTO() internal.DNSConfigDTO {
-	return internal.DNSConfigDTO{
-		Providers: []internal.DNSProviderDTO{
+func FixDNSProvidersConfig() internal.DNSProvidersData {
+	return internal.DNSProvidersData{
+		Providers: []internal.DNSProviderData{
 			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
@@ -376,6 +366,11 @@ func (c *SimpleInputCreator) SetShootName(name string) internal.ProvisionerInput
 
 func (c *SimpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	c.ShootDomain = name
+	return c
+}
+
+func (c *SimpleInputCreator) SetShootDNSProviders(providers internal.DNSProvidersData) internal.ProvisionerInputCreator {
+	c.shootDnsProviders = providers
 	return c
 }
 

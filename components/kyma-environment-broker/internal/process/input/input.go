@@ -53,13 +53,13 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
-	dnsCustomValues           internal.DNSConfigDTO
 
-	trialNodesNumber int
-	instanceID       string
-	runtimeID        string
-	kubeconfig       string
-	shootDomain      string
+	trialNodesNumber  int
+	instanceID        string
+	runtimeID         string
+	kubeconfig        string
+	shootDomain       string
+	shootDnsProviders internal.DNSProvidersData
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -81,6 +81,11 @@ func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreato
 
 func (r *RuntimeInput) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	r.shootDomain = name
+	return r
+}
+
+func (r *RuntimeInput) SetShootDNSProviders(dnsProviders internal.DNSProvidersData) internal.ProvisionerInputCreator {
+	r.shootDnsProviders = dnsProviders
 	return r
 }
 
@@ -541,19 +546,9 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 func (r *RuntimeInput) configureDNS() error {
 	dnsParamsToSet := gqlschema.DNSConfigInput{}
 
-	//if dns providers are given in the DTO
-	if r.provisioningParameters.Parameters.DNS.IsProvided() {
-		dns := r.provisioningParameters.Parameters.DNS
-		for _, v := range dns.Providers {
-			dnsParamsToSet.Providers = append(dnsParamsToSet.Providers, &gqlschema.DNSProviderInput{
-				DomainsInclude: v.DomainsInclude,
-				Primary:        v.Primary,
-				SecretName:     v.SecretName,
-				Type:           v.Type,
-			})
-		}
-	} else {
-		for _, v := range r.dnsCustomValues.Providers {
+	//if dns providers is given
+	if len(r.shootDnsProviders.Providers) != 0 {
+		for _, v := range r.shootDnsProviders.Providers {
 			dnsParamsToSet.Providers = append(dnsParamsToSet.Providers, &gqlschema.DNSProviderInput{
 				DomainsInclude: v.DomainsInclude,
 				Primary:        v.Primary,

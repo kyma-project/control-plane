@@ -21,17 +21,3 @@ func ReadOIDCDefaultValuesFromYAML(yamlFilePath string) (internal.OIDCConfigDTO,
 	}
 	return values, nil
 }
-
-func ReadDNSProvidersValuesFromYAML(yamlFilePath string) (internal.DNSConfigDTO, error) {
-	var values internal.DNSConfigDTO
-	yamlFile, err := ioutil.ReadFile(yamlFilePath)
-	if err != nil {
-		return internal.DNSConfigDTO{}, errors.Wrap(err, "while reading YAML file with DNS default values")
-	}
-
-	err = yaml.Unmarshal(yamlFile, &values)
-	if err != nil {
-		return internal.DNSConfigDTO{}, errors.Wrap(err, "while unmarshalling YAML file with DNS default values")
-	}
-	return values, nil
-}

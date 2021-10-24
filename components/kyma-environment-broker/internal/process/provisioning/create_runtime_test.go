@@ -109,7 +109,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 						&gqlschema.DNSProviderInput{
 							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 							Primary:        true,
-							SecretName:     "aws_dns_domain_secrets_test_incustom",
+							SecretName:     "aws_dns_domain_secrets_test_intest",
 							Type:           "route53_type_test",
 						},
 					},
@@ -194,6 +194,16 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
 	provisioningOperation.InstanceDetails.ShootName = shootName
+	provisioningOperation.InstanceDetails.ShootDNSProviders = internal.DNSProvidersData{
+		Providers: []internal.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_intest",
+				Type:           "route53_type_test",
+			},
+		},
+	}
 	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region)
 	provisioningOperation.RuntimeID = ""
 
@@ -278,7 +288,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		DefaultGardenerShootPurpose:   shootPurpose,
 		AutoUpdateKubernetesVersion:   autoUpdateKubernetesVersion,
 		AutoUpdateMachineImageVersion: autoUpdateMachineImageVersion,
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO(), fixture.FixDNSConfigDTO())
+	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{

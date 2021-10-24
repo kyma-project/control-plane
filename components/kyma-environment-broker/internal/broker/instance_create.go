@@ -45,8 +45,9 @@ type ProvisionEndpoint struct {
 	kymaVerOnDemand   bool
 	planDefaults      PlanDefaults
 
-	shootDomain  string
-	shootProject string
+	shootDomain       string
+	shootProject      string
+	shootDnsProviders internal.DNSProvidersData
 
 	log logrus.FieldLogger
 }
@@ -80,6 +81,7 @@ func NewProvision(cfg Config,
 		kymaVerOnDemand:   kvod,
 		shootDomain:       gardenerConfig.ShootDomain,
 		shootProject:      gardenerConfig.Project,
+		shootDnsProviders: gardenerConfig.DNSProviders,
 		planDefaults:      planDefaults,
 	}
 }
@@ -143,6 +145,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	operation.ShootDNSProviders = b.shootDnsProviders
 	operation.DashboardURL = dashboardURL
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
@@ -287,10 +290,6 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
 			return parameters, errors.New("OIDC parameters ClientID & IssuerURL cannot be empty")
 		}
-	}
-
-	if parameters.DNS.IsProvided() {
-		return parameters, errors.New("DNS Providers cannot be empty")
 	}
 
 	return parameters, nil

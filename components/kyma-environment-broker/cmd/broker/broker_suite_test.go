@@ -97,7 +97,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
 		DefaultTrialProvider:        internal.AWS,
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues(), defaultDNSValues())
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
 
@@ -179,13 +179,13 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 	}
 }
 
-func defaultDNSValues() internal.DNSConfigDTO {
-	return internal.DNSConfigDTO{
-		Providers: []internal.DNSProviderDTO{
-			internal.DNSProviderDTO{
+func defaultDNSValues() internal.DNSProvidersData {
+	return internal.DNSProvidersData{
+		Providers: []internal.DNSProviderData{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
-				SecretName:     "aws_dns_domain_secrets_test_indto",
+				SecretName:     "aws_dns_domain_secrets_test_insuite",
 				Type:           "route53_type_test",
 			},
 		},

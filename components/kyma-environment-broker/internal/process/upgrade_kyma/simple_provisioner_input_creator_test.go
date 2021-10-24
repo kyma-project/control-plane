@@ -25,6 +25,7 @@ type simpleInputCreator struct {
 	enabledComponents []string
 	shootName         *string
 	shootDomain       string
+	shootDnsProviders internal.DNSProvidersData
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -44,6 +45,11 @@ func (c *simpleInputCreator) SetShootName(name string) internal.ProvisionerInput
 
 func (c *simpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	c.shootDomain = name
+	return c
+}
+
+func (c *simpleInputCreator) SetShootDNSProviders(providers internal.DNSProvidersData) internal.ProvisionerInputCreator {
+	c.shootDnsProviders = providers
 	return c
 }
 

@@ -18,33 +18,11 @@ type OIDCConfigDTO struct {
 	UsernamePrefix string   `json:"usernamePrefix" yaml:"usernamePrefix"`
 }
 
-type DNSConfigDTO struct {
-	// Domain    string
-	Providers []DNSProviderDTO `json:"providers" yaml:"providers"`
-}
-
-type DNSProviderDTO struct {
-	DomainsInclude []string `json:"domainsInclude" yaml:"domainsInclude"`
-	Primary        bool     `json:"primary" yaml:"primary"`
-	SecretName     string   `json:"secretName" yaml:"secretName"`
-	Type           string   `json:"type" yaml:"type"`
-}
-
 func (o *OIDCConfigDTO) IsProvided() bool {
 	if o == nil {
 		return false
 	}
 	if o.ClientID == "" && o.IssuerURL == "" && o.GroupsClaim == "" && o.UsernamePrefix == "" && o.UsernameClaim == "" && len(o.SigningAlgs) == 0 {
-		return false
-	}
-	return true
-}
-
-func (d *DNSConfigDTO) IsProvided() bool {
-	if d == nil {
-		return false
-	}
-	if len(d.Providers) == 0 {
 		return false
 	}
 	return true
@@ -149,7 +127,6 @@ type ProvisioningParametersDTO struct {
 	Provider *CloudProvider `json:"provider"`
 
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
-	DNS  *DNSConfigDTO  `json:"dns,omitempty"`
 }
 
 type UpdatingParametersDTO struct {

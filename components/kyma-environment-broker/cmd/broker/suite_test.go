@@ -136,7 +136,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
-	dnsDefaults := fixture.FixDNSConfigDTO()
 
 	kymaVer := "1.15.1"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
@@ -146,7 +145,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults, dnsDefaults)
+	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
@@ -514,7 +513,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
-	dnsDefaults := fixture.FixDNSConfigDTO()
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
@@ -523,7 +521,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		ProvisioningTimeout:         time.Minute,
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults, dnsDefaults)
+	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 
 	require.NoError(t, err)
 
@@ -625,6 +623,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.ShootDNSProviders = internal.DNSProvidersData{}
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 
