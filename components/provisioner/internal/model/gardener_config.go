@@ -181,9 +181,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
-			// DNS: &gardener_types.DNS{
-			// 	Providers: gardenerDnsProvidersConfig(dnsProviders),
-			// },
 			DNS: gardenerDnsConfig(dnsInputConfig),
 			Extensions: []gardener_types.Extension{
 				{
