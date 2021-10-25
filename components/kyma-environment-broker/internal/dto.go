@@ -58,8 +58,8 @@ func (p ProvisioningParameters) IsEqual(input ProvisioningParameters) bool {
 	}
 
 	p.Parameters.TargetSecret,
-	p.Parameters.LicenceType,
-	input.Parameters.LicenceType = nil, nil, nil
+		p.Parameters.LicenceType,
+		input.Parameters.LicenceType = nil, nil, nil
 
 	if !reflect.DeepEqual(p.Parameters, input.Parameters) {
 		return false
