@@ -19,5 +19,6 @@ func ReadDNSProvidersValuesFromYAML(yamlFilePath string) (internal.DNSProvidersD
 	if err != nil {
 		return internal.DNSProvidersData{}, errors.Wrap(err, "while unmarshalling YAML file with DNS default values")
 	}
+
 	return values, nil
 }
