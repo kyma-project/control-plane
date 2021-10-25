@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/oauth2"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
@@ -94,7 +96,8 @@ The command supports filtering Runtimes based on various attributes. See the lis
 // Run executes the runtimes command
 func (cmd *RuntimeCommand) Run() error {
 	cmd.log = logger.New()
-	client := runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
+	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), CLICredentialManager(cmd.log))
+	client := runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
 
 	rp, err := client.ListRuntimes(cmd.params)
 	if err != nil {
@@ -158,7 +161,8 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	return operationStatusToString(runtime.FindLastOperation(rt))
+	op := rt.LastOperation()
+	return operationStatusToString(op, op.Type)
 }
 
 func operationStatusToString(op runtime.Operation, t runtime.OperationType) string {

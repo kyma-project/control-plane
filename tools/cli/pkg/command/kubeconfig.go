@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"golang.org/x/oauth2"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
@@ -100,7 +102,8 @@ func (cmd *KubeconfigCommand) Validate() error {
 }
 
 func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred credential.Manager) error {
-	rtClient := runtime.NewClient(ctx, GlobalOpts.KEBAPIURL(), cred)
+	httpClient := oauth2.NewClient(ctx, cred)
+	rtClient := runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
 	params := runtime.ListParameters{}
 	if cmd.shoot != "" {
 		params.Shoots = []string{cmd.shoot}
