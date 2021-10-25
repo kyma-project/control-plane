@@ -328,7 +328,9 @@ func (mgr *RuntimeTaskMakager) Execute(operationID string) (time.Duration, error
 
 	// Start execution of the command
 	err = command.Start()
-
+	if err != nil {
+		log.Errorf("Error: command started with error: %s\n", err.Error())
+	}
 	// Wait for the command subprocess to finish
 	echoerWg.Wait()
 	err = command.Wait()
