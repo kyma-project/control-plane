@@ -4,7 +4,7 @@ global:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.25.0-alpine-ef998682
     mothership_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/mothership
-      tag: "455f43a4"
+      tag: "d3077133"
     component_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/component
       tag: "455f43a4"
