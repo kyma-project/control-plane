@@ -569,6 +569,40 @@ func TestCreateProvisionRuntimeInput_ConfigureDNS(t *testing.T) {
 		assert.Equal(t, expectedDnsValues, clusterInput.ClusterConfig.GardenerConfig.DNSConfig)
 	})
 
+	t.Run("should apply the DNS Providers values while DNS providers is empty", func(t *testing.T) {
+		// given
+		expectedDnsValues := &gqlschema.DNSConfigInput{
+			Domain: "shoot-name.domain.sap",
+		}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.4", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+		creator.SetShootDNSProviders(internal.DNSProvidersData{})
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedDnsValues, input.ClusterConfig.GardenerConfig.DNSConfig)
+		assert.Equal(t, expectedDnsValues, clusterInput.ClusterConfig.GardenerConfig.DNSConfig)
+	})
+
 }
 
 func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {

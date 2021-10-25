@@ -253,7 +253,7 @@ type InstanceDetails struct {
 	RuntimeID         string           `json:"runtime_id"`
 	ShootName         string           `json:"shoot_name"`
 	ShootDomain       string           `json:"shoot_domain"`
-	ShootDNSProviders DNSProvidersData `json:"shoot_dnsProviders"`
+	ShootDNSProviders DNSProvidersData `json:"shoot_dns_providers"`
 	XSUAA             XSUAAData        `json:"xsuaa"`
 	Ems               EmsData          `json:"ems"`
 	Connectivity      ConnectivityData `json:"connectivity"`

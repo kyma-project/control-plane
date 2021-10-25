@@ -138,15 +138,16 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:          internal.AvsLifecycleData{},
-		EventHub:     internal.EventHub{Deleted: false},
-		SubAccountID: subAccountId,
-		RuntimeID:    runtimeId,
-		ShootName:    "ShootName",
-		ShootDomain:  "shoot.domain.com",
-		XSUAA:        xsuaaData,
-		Ems:          emsData,
-		Monitoring:   monitoringData,
+		Avs:               internal.AvsLifecycleData{},
+		EventHub:          internal.EventHub{Deleted: false},
+		SubAccountID:      subAccountId,
+		RuntimeID:         runtimeId,
+		ShootName:         "ShootName",
+		ShootDomain:       "shoot.domain.com",
+		ShootDNSProviders: FixDNSProvidersConfig(),
+		XSUAA:             xsuaaData,
+		Ems:               emsData,
+		Monitoring:        monitoringData,
 	}
 }
 
