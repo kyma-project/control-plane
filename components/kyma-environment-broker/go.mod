@@ -59,5 +59,5 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.0
 	k8s.io/client-go => k8s.io/client-go v0.19.12
 	k8s.io/kubectl => k8s.io/kubectl v0.19.0
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20211021075615-2756cb6533c8
+	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20211024150845-49f626649c1d
 )
