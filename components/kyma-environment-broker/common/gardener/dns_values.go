@@ -8,17 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func SetGardenerDnsConfig(config *internal.DNSProvidersData, yamlFilePath string) error {
-	dnsValues, err := ReadDNSProvidersValuesFromYAML(yamlFilePath)
-	if err != nil {
-		return err
-	}
-
-	config = &dnsValues
-
-	return nil
-}
-
 func ReadDNSProvidersValuesFromYAML(yamlFilePath string) (internal.DNSProvidersData, error) {
 	var values internal.DNSProvidersData
 	yamlFile, err := ioutil.ReadFile(yamlFilePath)

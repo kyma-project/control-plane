@@ -13,7 +13,6 @@ func TestReadDNSProvidersValuesFromYAML(t *testing.T) {
 	t.Run("should read default DNS Providers values", func(t *testing.T) {
 		// given
 		dnsTestFilePath := "testdata/dns-values.yaml"
-
 		expectedDNSProvidersValues := internal.DNSProvidersData{
 			Providers: []internal.DNSProviderData{
 				{
@@ -27,7 +26,6 @@ func TestReadDNSProvidersValuesFromYAML(t *testing.T) {
 
 		// when
 		dnsProvidersValues, err := ReadDNSProvidersValuesFromYAML(dnsTestFilePath)
-		t.Logf("%v,%v,%v,%v\n", dnsProvidersValues.Providers[0].DomainsInclude, dnsProvidersValues.Providers[0].Primary, dnsProvidersValues.Providers[0].SecretName, dnsProvidersValues.Providers[0].Type)
 
 		// then
 		require.NoError(t, err)
