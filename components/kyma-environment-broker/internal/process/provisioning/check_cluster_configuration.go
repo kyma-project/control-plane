@@ -60,8 +60,9 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	case reconciler.ClusterStatusReady:
 		return operation, 0, nil
 	case reconciler.ClusterStatusError:
-		log.Warnf("Reconciler failed")
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("Reconciler failed"), log)
+		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
+		log.Warnf(errMsg)
+		return s.operationManager.OperationFailed(operation, errMsg, log)
 	default:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), log)
 	}
