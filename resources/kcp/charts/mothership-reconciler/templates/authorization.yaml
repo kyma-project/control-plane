@@ -26,6 +26,6 @@ spec:
       {{- include "mothership-reconciler.labels" . | nindent 6 }}
   action: ALLOW
   rules:
-    when:
+  - when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.operator }}"]
