@@ -1,6 +1,8 @@
 components:
   - name: "service-manager-proxy"
     namespace: "kyma-system"
+  - name: "btp-operator"
+    namespace: "kyma-system"
   - name: "uaa-activator"
     namespace: "kyma-system"
   - name: "compass-runtime-agent"

@@ -17,7 +17,10 @@ import (
 
 const (
 	// label key used to send to director
-	grafanaURLLabel = "operator_grafanaUrl"
+	grafanaURLLabel                   = "operator_grafanaUrl"
+	HelmBrokerComponentName           = "helm-broker"
+	ServiceCatalogComponentName       = "service-catalog"
+	ServiceCatalogAddonsComponentName = "service-catalog-addons"
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
@@ -84,6 +87,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+		s.disableServiceManagementComponents(&operation)
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
@@ -130,4 +134,13 @@ func (s *InitialisationStep) updateInstance(id string, provider internal.CloudPr
 	}
 
 	return nil
+}
+
+func (s *InitialisationStep) disableServiceManagementComponents(op *internal.ProvisioningOperation) {
+	op.InputCreator.DisableOptionalComponent(HelmBrokerComponentName)
+	op.InputCreator.DisableOptionalComponent(ServiceCatalogComponentName)
+	op.InputCreator.DisableOptionalComponent(ServiceCatalogAddonsComponentName)
+
+	op.InputCreator.DisableOptionalComponent(ServiceManagerComponentName)
+	op.InputCreator.DisableOptionalComponent(BTPOperatorComponentName)
 }

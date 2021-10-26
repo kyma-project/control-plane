@@ -52,5 +52,12 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 		},
 	}
 	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
+
+	operation.InputCreator.EnableOptionalComponent(HelmBrokerComponentName)
+	operation.InputCreator.EnableOptionalComponent(ServiceCatalogComponentName)
+	operation.InputCreator.EnableOptionalComponent(ServiceCatalogAddonsComponentName)
+
+	operation.InputCreator.EnableOptionalComponent(ServiceManagerComponentName)
+
 	return operation, 0, nil
 }

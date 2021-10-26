@@ -11,7 +11,7 @@ import (
 
 const BTPOperatorComponentName = "btp-operator"
 
-type BTPOperatorOverridesStep struct {}
+type BTPOperatorOverridesStep struct{}
 
 func NewBTPOperatorOverridesStep() *BTPOperatorOverridesStep {
 	return &BTPOperatorOverridesStep{}
@@ -22,39 +22,33 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	sm := operation.ProvisioningParameters.ErsContext.ServiceManager
-	creds := sm.BTPOperatorCredentials
+	sm := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
 	overrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "manager.secret.clientid",
-			Value:  creds.ClientID,
+			Value:  sm.ClientID,
 			Secret: ptr.Bool(true),
 		},
 		{
 			Key:    "manager.secret.clientsecret",
-			Value:  creds.ClientSecret,
+			Value:  sm.ClientSecret,
 			Secret: ptr.Bool(true),
 		},
 		{
 			Key:   "manager.secret.url",
-			Value: sm.URL,
+			Value: sm.ServiceManagerURL,
 		},
 		{
 			Key:   "manager.secret.tokenurl",
-			Value: creds.TokenURL,
+			Value: sm.URL,
 		},
 		{
 			Key:   "cluster.id",
-			Value: creds.ClusterID,
+			Value: operation.InstanceDetails.RuntimeID, //
 		},
 	}
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
-	operation.InputCreator.DisableOptionalComponent(ServiceManagerComponentName)
-
-	operation.InputCreator.DisableOptionalComponent("helm-broker")
-	operation.InputCreator.DisableOptionalComponent("service-catalog")
-	operation.InputCreator.DisableOptionalComponent("service-catalog-addons")
 
 	return operation, 0, nil
 }

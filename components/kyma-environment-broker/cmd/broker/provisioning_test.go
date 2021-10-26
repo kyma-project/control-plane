@@ -141,16 +141,21 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 					"context": {
 						"sm_platform_credentials": {
 							"url": "https://sm.url",
-							"credentials": {}
+							"credentials": {
+								"basic": {
+									"username":"smUsername",
+									"password":"smPassword"
+							  	}
+						}
+							},
+							"globalaccount_id": "g-account-id",
+							"subaccount_id": "sub-id",
+							"user_id": "john.smith@email.com"
 						},
-						"globalaccount_id": "g-account-id",
-						"subaccount_id": "sub-id",
-						"user_id": "john.smith@email.com"
-					},
-					"parameters": {
-						"name": "testing-cluster"
-					}
-		}`)
+						"parameters": {
+							"name": "testing-cluster"
+						}
+			}`)
 
 	opID := suite.DecodeOperationID(resp)
 	suite.processReconcilingByOperationID(opID)
@@ -172,29 +177,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components: []reconciler.Component{
-			{
-				Component: "service-catalog2",
-				Namespace: "kyma-system",
-				Configuration: []reconciler.Configuration{
-					{
-						Key:    "global.domainName",
-						Value:  fmt.Sprintf("%s.kyma.sap.com", suite.ShootName(opID)),
-						Secret: false,
-					},
-					{
-						Key:    "foo",
-						Value:  "bar",
-						Secret: false,
-					},
-					{
-						Key:    "setting-one",
-						Value:  "1234",
-						Secret: false,
-					},
-				},
-			},
-		},
+		Components:     suite.fixExpectedComponentListWithSMCredentials(opID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }
@@ -211,14 +194,12 @@ func TestProvisioningWithReconcilerWithBtpOperator_HappyPath(t *testing.T) {
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
 					"context": {
-						"sm_platform_credentials": {
-							"url": "https://sm.url",
-						    "btp_operator":{
-							   "client_id":"<redacted>",
-							   "client_secret":"<redacted>",
-							   "token_url":"https://jw.authentication.stagingaws.hanavlab.ondemand.com",
-							   "cluster_id":"ab32866b-8d97-409c-a3c4-145340d7be8e"
-						    }
+						"sm_operator_credentials": {
+						  "clientid": "testClientID",
+						  "clientsecret": "testClientSecret",
+						  "sm_url": "https://service-manager.kyma.com",
+						  "url": "https://test.auth.com",
+						  "xsappname": "testXsappname"
 						},
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
@@ -249,25 +230,9 @@ func TestProvisioningWithReconcilerWithBtpOperator_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components: []reconciler.Components{
-			{
-				Component: "service-catalog2",
-				Namespace: "kyma-system",
-				Configuration: []reconciler.Configuration{
-					{
-						Key:    "global.domainName",
-						Value:  fmt.Sprintf("%s.kyma.sap.com", suite.ShootName(opID)),
-						Secret: false,
-					},
-					{
-						Key:    "setting-one",
-						Value:  "1234",
-						Secret: false,
-					},
-				},
-			},
-		},
+		Components:     suite.fixExpectedComponentListWithSMOperatorCredentials(opID),
 	})
+
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning/automock"
@@ -73,8 +74,10 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 		t.Run(tN, func(t *testing.T) {
 			// given
 			inputCreatorMock := &automock.ProvisionerInputCreator{}
-			inputCreatorMock.On("AppendOverrides", "service-manager-proxy", tC.expCredentialsValues).
+			inputCreatorMock.On("AppendOverrides", ServiceManagerComponentName, tC.expCredentialsValues).
 				Return(nil).Once()
+			inputCreatorMock.On("EnableOptionalComponent", mock.Anything).
+				Return(nil)
 
 			factory := servicemanager.NewClientFactory(tC.overrideParams)
 			operation := internal.ProvisioningOperation{

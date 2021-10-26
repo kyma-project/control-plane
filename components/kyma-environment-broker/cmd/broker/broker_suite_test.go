@@ -83,25 +83,9 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	componentsYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-components.yaml")
 	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
-	//TODO: change assertions to expect componentList based on files to simulate flow closer to real scenario
-	// instead of mocking single component. This way we should be able to assert the removal of components from the list (helm-broker, service-catalog)
-	// when btp-operator credentials are provided
 	componentListProvider := kebRuntime.NewComponentsListProvider(
 		path.Join("testdata", "managed-runtime-components.yaml"),
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
-	//componentListProvider := runtime.NewComponentsListProvider(
-	//	tc.given.managedRuntimeComponentsYAMLPath,
-	//	tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)kebRuntime.NewComponentsListProvider()
-	//
-	//componentListProvider := &automock.ComponentListProvider{}
-	//componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{
-	//	{
-	//		Name:        "service-catalog2",
-	//		ReleaseName: "",
-	//		Namespace:   "kyma-system",
-	//		Source:      nil,
-	//	},
-	//}, nil)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
@@ -674,4 +658,182 @@ func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
 	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
+}
+
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string) []reconciler.Components {
+	return []reconciler.Components{
+		{
+			URL:       "",
+			Component: "logging",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "monitoring",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
+					Value:  "cid",
+					Secret: true,
+				},
+				{
+					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
+					Value:  "csc",
+					Secret: true,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "service-catalog",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "service-catalog-addons",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "helm-broker",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "service-manager-proxy",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "config.sm.url",
+					Value:  "https://sm.url",
+					Secret: false,
+				},
+				{
+					Key:    "sm.user",
+					Value:  "smUsername",
+					Secret: false,
+				},
+				{
+					Key:    "sm.password",
+					Value:  "smPassword",
+					Secret: true,
+				},
+			},
+		},
+	}
+}
+
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID string) []reconciler.Components {
+	return []reconciler.Components{
+		{
+			URL:       "",
+			Component: "logging",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "monitoring",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
+					Value:  "cid",
+					Secret: true,
+				},
+				{
+					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
+					Value:  "csc",
+					Secret: true,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "btp-operator",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "manager.secret.clientid",
+					Value:  "testClientID",
+					Secret: true,
+				},
+				{
+					Key:    "manager.secret.clientsecret",
+					Value:  "testClientSecret",
+					Secret: true,
+				},
+				{
+					Key:    "manager.secret.url",
+					Value:  "https://service-manager.kyma.com",
+					Secret: false,
+				},
+				{
+					Key:    "manager.secret.tokenurl",
+					Value:  "https://test.auth.com",
+					Secret: false,
+				},
+				{
+					Key:    "cluster.id",
+					Value:  "",
+					Secret: false,
+				},
+			},
+		},
+	}
 }

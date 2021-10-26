@@ -581,14 +581,6 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanage
 				Password: sm.Credentials.BasicAuth.Password,
 				URL:      sm.URL,
 			}
-			if sm.BTPOperatorCredentials != nil {
-				btpOperatorCreds = &servicemanager.BTPOperatorCredentials{
-					ClientID:     sm.BTPOperatorCredentials.ClientID,
-					ClientSecret: sm.BTPOperatorCredentials.ClientSecret,
-					TokenURL:     sm.BTPOperatorCredentials.TokenURL,
-					ClusterID:    sm.BTPOperatorCredentials.ClusterID,
-				}
-			}
 		}
 	}
 
