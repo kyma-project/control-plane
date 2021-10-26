@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -12,8 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
-
-const ServiceManagerComponentName = "service-manager-proxy"
 
 type ServiceManagerOverridesStep struct {
 	operationManager *process.ProvisionOperationManager
@@ -51,13 +50,13 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 			Secret: ptr.Bool(true),
 		},
 	}
-	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.AppendOverrides(input.ServiceManagerComponentName, smOverrides)
 
-	operation.InputCreator.EnableOptionalComponent(HelmBrokerComponentName)
-	operation.InputCreator.EnableOptionalComponent(ServiceCatalogComponentName)
-	operation.InputCreator.EnableOptionalComponent(ServiceCatalogAddonsComponentName)
+	operation.InputCreator.EnableOptionalComponent(input.HelmBrokerComponentName)
+	operation.InputCreator.EnableOptionalComponent(input.ServiceCatalogComponentName)
+	operation.InputCreator.EnableOptionalComponent(input.ServiceCatalogAddonsComponentName)
 
-	operation.InputCreator.EnableOptionalComponent(ServiceManagerComponentName)
+	operation.InputCreator.EnableOptionalComponent(input.ServiceManagerComponentName)
 
 	return operation, 0, nil
 }

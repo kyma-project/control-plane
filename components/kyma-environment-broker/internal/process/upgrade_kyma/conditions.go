@@ -13,19 +13,9 @@ func ForKyma1(op internal.UpgradeKymaOperation) bool {
 }
 
 func ForPlatformCredentialsProvided(op internal.UpgradeKymaOperation) bool {
-	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
-		if op.ProvisioningParameters.ErsContext.ServiceManager.Credentials != nil {
-			return true
-		}
-	}
-	return false
+	return op.ProvisioningParameters.ErsContext.ServiceManager != nil
 }
 
 func ForBTPOperatorCredentialsProvided(op internal.UpgradeKymaOperation) bool {
-	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
-		if op.ProvisioningParameters.ErsContext.ServiceManager.BTPOperatorCredentials != nil {
-			return true
-		}
-	}
-	return false
+	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil
 }

@@ -44,8 +44,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 }
 
 func setBTPOperatorOverrides(c *reconciler.Components, operation internal.UpdatingOperation) {
-	sm := operation.ProvisioningParameters.ErsContext.ServiceManager
-	creds := sm.BTPOperatorCredentials
+	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
 	c.Configuration = []reconciler.Configuration{
 		{
 			Key:    "manager.secret.clientid",
@@ -59,16 +58,17 @@ func setBTPOperatorOverrides(c *reconciler.Components, operation internal.Updati
 		},
 		{
 			Key:   "manager.secret.url",
-			Value: sm.URL,
+			Value: creds.ServiceManagerURL,
 		},
 		{
 			Key:   "manager.secret.tokenurl",
-			Value: creds.TokenURL,
+			Value: creds.URL,
 		},
 		{
-			//TODO: this won't be part of the payload
+			// TODO: get this from
+			// https://github.com/kyma-project/kyma/blob/dba460de8273659cd8cd431d2737015a1d1909e5/tests/fast-integration/skr-svcat-migration-test/test-helpers.js#L39-L42
 			Key:   "cluster.id",
-			Value: creds.ClusterID,
+			Value: "",
 		},
 	}
 }
