@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	mothershipClient "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
 	"github.com/pkg/errors"
@@ -28,7 +30,7 @@ type kebClient interface {
 
 type kebClientProvider = func(url string, httpClient *http.Client) kebClient
 
-type mothershipClientProvider = func(url string) (mothership.ClientInterface, error)
+type mothershipClientProvider = func(url string, httpClient *http.Client) (mothership.ClientInterface, error)
 
 type ReconciliationCommand struct {
 	ctx         context.Context
@@ -144,11 +146,11 @@ func isErrResponse(statusCode int) bool {
 }
 
 func responseErr(resp *http.Response) error {
-	var msg string
-	if err := json.NewDecoder(resp.Body).Decode(&msg); err != nil {
-		msg = errors.Wrap(err, "unexpected error").Error()
+	msg, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		msg = []byte(errors.Wrap(err, "unexpected error").Error())
 	}
-	return errors.Wrapf(ErrMothershipResponse, "%s %d", msg, resp.StatusCode)
+	return errors.Wrapf(ErrMothershipResponse, "%v %d", msg, resp.StatusCode)
 }
 
 func (cmd *ReconciliationCommand) Run() error {
@@ -157,11 +159,12 @@ func (cmd *ReconciliationCommand) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
+	auth := CLICredentialManager(cmd.log)
+	httpClient := oauth2.NewClient(ctx, auth)
+
 	runtimes := append([]string{}, cmd.runtimeIds...)
 	// fetch runtime ids for all shoot names
 	if len(cmd.shoots) > 0 {
-		auth := CLICredentialManager(cmd.log)
-		httpClient := oauth2.NewClient(ctx, auth)
 		kebClient := cmd.provideKebClient(GlobalOpts.KEBAPIURL(), httpClient)
 
 		listRtResp, err := kebClient.ListRuntimes(runtime.ListParameters{Shoots: cmd.shoots})
@@ -178,7 +181,7 @@ func (cmd *ReconciliationCommand) Run() error {
 	// fetch reconciliations
 	mothershipURL := GlobalOpts.MothershipAPIURL()
 
-	client, err := cmd.provideMshipClient(mothershipURL)
+	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
@@ -251,8 +254,8 @@ var (
 		return runtime.NewClient(url, httpClient)
 	}
 
-	defaultMothershipClientProvider mothershipClientProvider = func(url string) (mothership.ClientInterface, error) {
-		return mothership.NewClient(url)
+	defaultMothershipClientProvider mothershipClientProvider = func(url string, httpClient *http.Client) (mothership.ClientInterface, error) {
+		return mothershipClient.NewClient(url, httpClient)
 	}
 )
 

@@ -4,7 +4,9 @@ import (
 	"context"
 
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	client "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -18,7 +20,7 @@ type reconciliationDisableOpts struct {
 type reconciliationDisableCmd struct {
 	reconcilerURL string
 	kebURL        string
-	kebAuth       oauth2.TokenSource
+	auth          oauth2.TokenSource
 	ctx           context.Context
 
 	opts reconciliationDisableOpts
@@ -50,10 +52,10 @@ func NewReconciliationDisableCmd() *cobra.Command {
 
 func (cmd *reconciliationDisableCmd) Validate() error {
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
+	cmd.auth = CLICredentialManager(logger.New())
 
 	if cmd.opts.shootName != "" {
 		cmd.kebURL = GlobalOpts.KEBAPIURL()
-		cmd.kebAuth = CLICredentialManager(logger.New())
 	}
 
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
@@ -71,15 +73,17 @@ func (cmd *reconciliationDisableCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
+	httpClient := oauth2.NewClient(ctx, cmd.auth)
+
 	if cmd.opts.shootName != "" {
 		var err error
-		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, cmd.kebAuth)
+		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, httpClient)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}
 	}
 
-	client, err := reconciler.NewClient(cmd.reconcilerURL)
+	client, err := client.NewClient(cmd.reconcilerURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}

@@ -147,7 +147,7 @@ func Test_reconciliationEnableCmd_Run(t *testing.T) {
 			cmd := reconciliationEnableCmd{
 				reconcilerURL: mothershipSvr.URL,
 				kebURL:        kebSvr.URL,
-				kebAuth:       nil,
+				auth:          nil,
 				ctx:           tt.fields.ctx,
 				opts:          tt.fields.opts,
 			}

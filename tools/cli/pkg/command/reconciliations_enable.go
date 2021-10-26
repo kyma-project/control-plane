@@ -2,13 +2,15 @@ package command
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	mothershipClient "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 )
 
@@ -21,7 +23,7 @@ type reconciliationEnableOpts struct {
 type reconciliationEnableCmd struct {
 	reconcilerURL string
 	kebURL        string
-	kebAuth       oauth2.TokenSource
+	auth          oauth2.TokenSource
 	ctx           context.Context
 
 	opts reconciliationEnableOpts
@@ -54,10 +56,10 @@ func NewReconciliationEnableCmd() *cobra.Command {
 
 func (cmd *reconciliationEnableCmd) Validate() error {
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
+	cmd.auth = CLICredentialManager(logger.New())
 
 	if cmd.opts.shootName != "" {
 		cmd.kebURL = GlobalOpts.KEBAPIURL()
-		cmd.kebAuth = CLICredentialManager(logger.New())
 	}
 
 	if cmd.opts.runtimeID == "" && cmd.opts.shootName == "" {
@@ -75,27 +77,29 @@ func (cmd *reconciliationEnableCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
+	httpClient := oauth2.NewClient(ctx, cmd.auth)
+
 	if cmd.opts.shootName != "" {
 		var err error
-		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, cmd.kebAuth)
+		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, httpClient)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}
 	}
 
-	client, err := reconciler.NewClient(cmd.reconcilerURL)
+	client, err := mothershipClient.NewClient(cmd.reconcilerURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	status := reconciler.StatusReady
+	status := mothership.StatusReady
 	if cmd.opts.force {
-		status = reconciler.StatusReconcilePending
+		status = mothership.StatusReconcilePending
 	}
 
 	resp, err := client.PutClustersRuntimeIDStatus(
 		ctx, cmd.opts.runtimeID,
-		reconciler.PutClustersRuntimeIDStatusJSONRequestBody{Status: status},
+		mothership.PutClustersRuntimeIDStatusJSONRequestBody{Status: status},
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile updating cluster status")
@@ -110,8 +114,7 @@ func (cmd *reconciliationEnableCmd) Run() error {
 	return nil
 }
 
-func getRuntimeID(ctx context.Context, kebAddress, shootName string, auth oauth2.TokenSource) (string, error) {
-	httpClient := oauth2.NewClient(ctx, auth)
+func getRuntimeID(ctx context.Context, kebAddress, shootName string, httpClient *http.Client) (string, error) {
 	kebClient := runtime.NewClient(kebAddress, httpClient)
 
 	listRtResp, err := kebClient.ListRuntimes(runtime.ListParameters{Shoots: []string{shootName}})
