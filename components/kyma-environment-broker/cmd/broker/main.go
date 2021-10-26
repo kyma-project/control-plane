@@ -58,7 +58,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-	uaa "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager/xsuaa"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
@@ -128,14 +127,6 @@ type Config struct {
 	Avs avs.Config
 	IAS ias.Config
 	EDP edp.Config
-
-	// Service Manager services
-	XSUAA struct {
-		Disabled bool `envconfig:"default=true"`
-	}
-	Connectivity struct {
-		Disabled bool `envconfig:"default=true"`
-	}
 
 	AuditLog auditlog.Config
 
@@ -592,40 +583,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("XSUAA_Offering",
-				"xsuaa", "application", func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.XSUAA.Instance
-				}, db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			stage: createRuntimeStageName,
-			step: provisioning.NewServiceManagerOfferingStep("Connectivity_Offering",
-				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.ProvisioningOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Connectivity.Instance
-				}, db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			stage: createRuntimeStageName,
 			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
-		},
-		{
-			stage: createRuntimeStageName,
-			step: provisioning.NewXSUAAProvisioningStep(db.Operations(), uaa.Config{
-				// todo: set correct values from env variables
-				DeveloperGroup:      "devGroup",
-				DeveloperRole:       "devRole",
-				NamespaceAdminGroup: "nag",
-				NamespaceAdminRole:  "nar",
-			}),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewConnectivityProvisionStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -665,16 +623,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewXSUAABindingStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewConnectivityBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
 			condition: provisioning.ForKyma1,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
@@ -697,11 +645,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			condition: provisioning.ForKyma2,
 			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), reconcilerClient),
+			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
 		},
 		{
 			condition: provisioning.ForKyma2,
-			stage:     createRuntimeStageName,
+			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
 		{
@@ -786,25 +734,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			weight:   1,
-			step:     deprovisioning.NewXSUAAUnbindStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight:   1,
-			step:     deprovisioning.NewConnectivityUnbindStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   2,
-			step:     deprovisioning.NewXSUAADeprovisionStep(db.Operations()),
-			disabled: cfg.XSUAA.Disabled,
-		},
-		{
-			weight: 2,
-			step:   deprovisioning.NewConnectivityDeprovisionStep(db.Operations()),
-		},
-		{
 			weight: 5,
 			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
@@ -845,15 +774,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		cnd      upgrade_kyma.StepCondition
 	}{
 		{
-			weight: 1,
-			// TODO: Should we skip Connectivity for trial plan? Determine during story productization
-			step: upgrade_kyma.NewServiceManagerOfferingStep("Connectivity_Offering",
-				provisioning.ConnectivityOfferingName, provisioning.ConnectivityPlanName, func(op *internal.UpgradeKymaOperation) *internal.ServiceManagerInstanceInfo {
-					return &op.Connectivity.Instance
-				}, db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -868,18 +788,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight:   4,
-			step:     upgrade_kyma.NewConnectivityUpgradeProvisionStep(db.Operations()),
-			disabled: cfg.Connectivity.Disabled,
-		},
-		{
-			weight:   4,
 			step:     upgrade_kyma.NewMonitoringUpgradeStep(db.Operations(), monitoringClient, cfg.Monitoring),
 			disabled: cfg.Monitoring.Disabled,
-		},
-		{
-			weight:   7,
-			step:     upgrade_kyma.NewConnectivityUpgradeBindStep(db.Operations(), cfg.Database.SecretKey),
-			disabled: cfg.Connectivity.Disabled,
 		},
 		{
 			weight: 10,

@@ -138,9 +138,6 @@ serviceManager:
   password: "TBD"
   subaccountWithRequestCredentials: "TBD"
 
-xsuaa:
-  disabled: true
-
 avs:
   secretName: "avs-creds"
   apiEndpoint: "TBD"
@@ -199,9 +196,6 @@ edp:
 ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
-
-connectivity:
-  disabled: true
 
 monitoring:
   namespace: "kcp-system"
@@ -275,3 +269,6 @@ e2e:
   upgrade:
     configName: "e2e-upgrade-runtime-config-azure"
     timeout: "100m"
+  ha_aws:
+    configName: "e2e-runtime-config-ha-aws"
+    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"  

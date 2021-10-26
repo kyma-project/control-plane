@@ -1,6 +1,12 @@
 package reconciler
 
+import (
+	"fmt"
+	"strings"
+)
+
 // COPIED FROM RECONCILER keb/client.go - may be imported in the future
+// this would require updating KEB kubernetes deps to match reconciler
 const (
 	ClusterStatusPending     string = "reconcile_pending"
 	ClusterStatusReady       string = "ready"
@@ -60,14 +66,28 @@ const (
 )
 
 type State struct {
-	Cluster              string `json:"cluster"`
-	ClusterVersion       int64  `json:"clusterVersion"`
-	ConfigurationVersion int64  `json:"configurationVersion"`
-	Status               string `json:"status"`
-	StatusUrl            string `json:"statusUrl,omitempty"`
+	Cluster              string    `json:"cluster"`
+	ClusterVersion       int64     `json:"clusterVersion"`
+	ConfigurationVersion int64     `json:"configurationVersion"`
+	Failures             []Failure `json:"failures,omitempty"`
+	Status               string    `json:"status"`
+	StatusUrl            string    `json:"statusUrl,omitempty"`
+}
+
+type Failure struct {
+	Component string `json:"component"`
+	Reason    string `json:"reason"`
 }
 
 type StatusChange struct {
 	Status   *string
 	Duration string
+}
+
+func (s State) PrettyFailures() string {
+	var errs []string
+	for _, f := range s.Failures {
+		errs = append(errs, fmt.Sprintf("component %v failed: %v", f.Component, f.Reason))
+	}
+	return strings.Join(errs, ", ")
 }

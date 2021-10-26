@@ -64,6 +64,14 @@ var orchestrationColumns = []printer.Column{
 		Header:    "DRY RUN",
 		FieldSpec: "{.Parameters.DryRun}",
 	},
+	{
+		Header:         "TARGETS",
+		FieldFormatter: orchestrationTargets,
+	},
+	{
+		Header:         "DETAILS",
+		FieldFormatter: orchestrationDetails,
+	},
 }
 
 var operationColumns = []printer.Column{
@@ -99,6 +107,11 @@ Description:      {{.Description}}
 Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+{{- if eq .Type "upgradeKyma" }}
+Kyma Version:     {{.Parameters.Kyma.Version }}
+{{- else if eq .Type "upgradeCluster" }}
+K8s Version:      {{.Parameters.Kubernetes.KubernetesVersion }}
+{{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
   {{ orchestrationTarget $t }}
@@ -440,4 +453,44 @@ func orchestrationTarget(t orchestration.RuntimeTarget) string {
 	}
 
 	return strings.Join(targets, ",")
+}
+
+// orchestrationTarget returns the string representation of an array of orchestration.RuntimeTarget
+func orchestrationTargets(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+	nTargets := len(sr.Parameters.Targets.Include)
+	for i := 0; i < nTargets; i++ {
+		runtimeTarget := sr.Parameters.Targets.Include[i]
+		sb.WriteString(orchestrationTarget(runtimeTarget))
+		if i != (nTargets - 1) {
+			sb.WriteString(", ")
+		}
+	}
+
+	// Limit the targets to 20 characters
+	targets := sb.String()
+	if len(targets) > 20 {
+		targets = targets[0:20]
+	}
+	return targets
+}
+
+func orchestrationDetails(obj interface{}) string {
+	sr := obj.(orchestration.StatusResponse)
+	var sb strings.Builder
+
+	if sr.Type == orchestration.UpgradeKymaOrchestration {
+		if sr.Parameters.Kyma != nil && sr.Parameters.Kyma.Version != "" {
+			sb.WriteString("Kyma: " + sr.Parameters.Kyma.Version)
+		}
+	} else if sr.Type == orchestration.UpgradeClusterOrchestration {
+		if sr.Parameters.Kubernetes != nil && sr.Parameters.Kubernetes.KubernetesVersion != "" {
+			sb.WriteString("K8S: " + sr.Parameters.Kubernetes.KubernetesVersion)
+		}
+	} else {
+		sb.WriteString("-")
+	}
+
+	return sb.String()
 }

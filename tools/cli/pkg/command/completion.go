@@ -10,7 +10,6 @@ import (
 
 // CompletionCommand represents an execution of the kcp completion command
 type CompletionCommand struct {
-	cobraCmd       *cobra.Command
 	completeTarget string
 }
 

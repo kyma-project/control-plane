@@ -14,10 +14,14 @@ db:
   serviceHost: "localhost"
   servicePort: "5432"
   useSsl: false
+  file: "reconciler.db"
+  deploySchema: true
+  resetDatabase: false
 
 preComponents:
   - cluster-essentials
   - istio-configuration
+  - certificates
 
 deployment:
   imagePullPolicy: "IfNotPresent"
