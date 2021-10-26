@@ -1,0 +1,31 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mothership-reconciler.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  jwtRules:
+  - issuer: "{{ tpl .Values.oidc.issuer $ }}"
+    jwksUri: "{{ tpl .Values.oidc.keysURL $ }}"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mothership-reconciler.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  action: ALLOW
+  rules:
+  - when:
+    - key: request.auth.claims[groups]
+      values: ["{{ .Values.oidc.groups.operator }}"]
