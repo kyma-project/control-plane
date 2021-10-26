@@ -144,7 +144,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 
 func assertServiceManagerCreds(t *testing.T, dto *internal.ServiceManagerEntryDTO) {
 	assert.Equal(t, &internal.ServiceManagerEntryDTO{
-		Credentials: &internal.ServiceManagerCredentials{
+		Credentials: internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: "u",
 				Password: "p",

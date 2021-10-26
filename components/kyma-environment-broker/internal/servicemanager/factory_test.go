@@ -24,9 +24,8 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 	}{
 		"regular SubAccount": {
 			givenRequest: RequestContext{
-				SubaccountID:           "regular_saID",
-				Credentials:            nil,
-				BTPOperatorCredentials: nil,
+				SubaccountID: "regular_saID",
+				Credentials:  nil,
 			},
 			expectedCredentials: &Credentials{
 				Password: "default_password",
@@ -47,27 +46,6 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 				Password: "p",
 				Username: "u",
 				URL:      "http://url",
-			},
-		},
-		"with BTP Operator credentials": {
-			givenRequest: RequestContext{
-				SubaccountID: "regular_saID",
-				Credentials: &Credentials{
-					Password: "p",
-					Username: "u",
-					URL:      "http://url",
-				},
-				BTPOperatorCredentials: &BTPOperatorCredentials{
-					ClientID:     "c-id",
-					ClientSecret: "c-s",
-					TokenURL:     "http://btp-url",
-					ClusterID:    "cl-id",
-				},
-			},
-			expectedCredentials: &Credentials{
-				Password: "default_password",
-				Username: "default_username",
-				URL:      "http://default.url",
 			},
 		},
 	} {
@@ -98,9 +76,8 @@ func TestClientFactory_ForCustomerCredentials_ModeWhenNotSentInRequest(t *testin
 	}{
 		"regular SubAccount": {
 			givenRequest: RequestContext{
-				SubaccountID:           "regular_saID",
-				Credentials:            nil,
-				BTPOperatorCredentials: nil,
+				SubaccountID: "regular_saID",
+				Credentials:  nil,
 			},
 			expectedCredentials: &Credentials{
 				Password: "default_password",
@@ -122,19 +99,6 @@ func TestClientFactory_ForCustomerCredentials_ModeWhenNotSentInRequest(t *testin
 				Username: "u",
 				URL:      "http://url",
 			},
-		},
-		"with BTP Operator credentials": {
-			givenRequest: RequestContext{
-				SubaccountID: "regular_saID",
-				Credentials:  nil,
-				BTPOperatorCredentials: &BTPOperatorCredentials{
-					ClientID:     "c-id",
-					ClientSecret: "c-s",
-					TokenURL:     "http://btp-url",
-					ClusterID:    "cl-id",
-				},
-			},
-			expectedCredentials: nil,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {

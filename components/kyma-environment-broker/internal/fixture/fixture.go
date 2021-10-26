@@ -42,7 +42,7 @@ type SimpleInputCreator struct {
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
 	return &internal.ServiceManagerEntryDTO{
-		Credentials: &internal.ServiceManagerCredentials{
+		Credentials: internal.ServiceManagerCredentials{
 			BasicAuth: internal.ServiceManagerBasicAuth{
 				Username: ServiceManagerUsername,
 				Password: ServiceManagerPassword,

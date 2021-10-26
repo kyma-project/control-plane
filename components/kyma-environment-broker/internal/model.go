@@ -572,22 +572,19 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 
 func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
-	var btpOperatorCreds *servicemanager.BTPOperatorCredentials
+
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
-		if sm.Credentials != nil {
-			creds = &servicemanager.Credentials{
-				Username: sm.Credentials.BasicAuth.Username,
-				Password: sm.Credentials.BasicAuth.Password,
-				URL:      sm.URL,
-			}
+		creds = &servicemanager.Credentials{
+			Username: sm.Credentials.BasicAuth.Username,
+			Password: sm.Credentials.BasicAuth.Password,
+			URL:      sm.URL,
 		}
 	}
 
 	return servicemanager.RequestContext{
-		SubaccountID:           parameters.ErsContext.SubAccountID,
-		Credentials:            creds,
-		BTPOperatorCredentials: btpOperatorCreds,
+		SubaccountID: parameters.ErsContext.SubAccountID,
+		Credentials:  creds,
 	}
 }
 

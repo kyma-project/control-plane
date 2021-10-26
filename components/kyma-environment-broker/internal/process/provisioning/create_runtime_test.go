@@ -208,7 +208,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
 			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: &internal.ServiceManagerCredentials{
+				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: serviceManagerUser,
 						Password: serviceManagerPassword,

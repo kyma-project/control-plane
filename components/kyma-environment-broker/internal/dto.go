@@ -173,8 +173,8 @@ type ERSContext struct {
 }
 
 type ServiceManagerEntryDTO struct {
-	Credentials *ServiceManagerCredentials `json:"credentials"`
-	URL         string                     `json:"url"`
+	Credentials ServiceManagerCredentials `json:"credentials"`
+	URL         string                    `json:"url"`
 }
 
 type ServiceManagerCredentials struct {

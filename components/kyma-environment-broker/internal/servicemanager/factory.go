@@ -22,17 +22,9 @@ type Credentials struct {
 	URL      string
 }
 
-type BTPOperatorCredentials struct {
-	ClientID     string
-	ClientSecret string
-	TokenURL     string
-	ClusterID    string
-}
-
 type RequestContext struct {
-	SubaccountID           string
-	Credentials            *Credentials
-	BTPOperatorCredentials *BTPOperatorCredentials
+	SubaccountID string
+	Credentials  *Credentials
 }
 
 func NewClientFactory(cfg Config) *ClientFactory {
@@ -85,13 +77,9 @@ func (f *ClientFactory) ProvideCredentials(request RequestContext, log logrus.Fi
 			URL:      f.config.URL,
 		}, nil
 	}
-	if request.Credentials == nil && request.BTPOperatorCredentials == nil {
+	if request.Credentials == nil {
 		log.Warnf("Service Manager Credentials are required to be send in provisioning request (override_mode: %q)", f.config.OverrideMode)
 		return nil, errors.New("Service Manager Credentials are required to be send in provisioning request.")
-	}
-	if request.BTPOperatorCredentials != nil {
-		// TODO: Apply credentials using BTP Operator credentials flow ?
-		return nil, nil
 	}
 	log.Infof("Provides customer ServiceManager credentials")
 	return request.Credentials, nil
@@ -106,7 +94,7 @@ func (f *ClientFactory) shouldOverride(request RequestContext) bool {
 		return true
 	}
 
-	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && request.Credentials == nil && request.BTPOperatorCredentials == nil {
+	if f.config.OverrideMode == SMOverrideModeWhenNotSentInRequest && request.Credentials == nil {
 		return true
 	}
 

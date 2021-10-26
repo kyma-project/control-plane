@@ -13,12 +13,7 @@ func ForKyma1(op internal.ProvisioningOperation) bool {
 }
 
 func ForPlatformCredentialsProvided(op internal.ProvisioningOperation) bool {
-	if op.ProvisioningParameters.ErsContext.ServiceManager != nil {
-		if op.ProvisioningParameters.ErsContext.ServiceManager.Credentials != nil {
-			return true
-		}
-	}
-	return false
+	return op.ProvisioningParameters.ErsContext.ServiceManager != nil
 }
 
 func ForBTPOperatorCredentialsProvided(op internal.ProvisioningOperation) bool {

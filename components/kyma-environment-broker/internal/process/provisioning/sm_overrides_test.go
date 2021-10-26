@@ -152,7 +152,7 @@ func (SMOverrideTestSuite) SMRequestParameters(smURL, smUser, smPass string) int
 	return internal.ProvisioningParameters{
 		ErsContext: internal.ERSContext{
 			ServiceManager: &internal.ServiceManagerEntryDTO{URL: smURL,
-				Credentials: &internal.ServiceManagerCredentials{
+				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: smUser,
 						Password: smPass,

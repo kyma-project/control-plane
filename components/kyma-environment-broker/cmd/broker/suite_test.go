@@ -599,7 +599,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 			UserID:          options.ProvideUserID(),
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 				URL: "sm_url",
-				Credentials: &internal.ServiceManagerCredentials{
+				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: "sm_username",
 						Password: "sm_password",
@@ -654,7 +654,7 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 			SubAccountID:    options.ProvideSubAccountID(),
 			ServiceManager: &internal.ServiceManagerEntryDTO{
 				URL: "sm_url",
-				Credentials: &internal.ServiceManagerCredentials{
+				Credentials: internal.ServiceManagerCredentials{
 					BasicAuth: internal.ServiceManagerBasicAuth{
 						Username: "sm_username",
 						Password: "sm_password",
