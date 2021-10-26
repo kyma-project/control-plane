@@ -111,6 +111,8 @@ global:
         name: "provisioner"
       broker:
         name: "broker"
+      reconciler:
+        name: "reconciler"
 
       #TODO remove below after migration to separate user will be done
       provisionerDBName: "provisioner"
