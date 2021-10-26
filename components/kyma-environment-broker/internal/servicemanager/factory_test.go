@@ -11,7 +11,7 @@ import (
 func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 	// given
 	factory := NewClientFactory(Config{
-		OverrideMode:                     SMOverrideModeAlways,
+		OverrideMode:                     "Always",
 		URL:                              "http://default.url",
 		Password:                         "default_password",
 		Username:                         "default_username",
@@ -20,14 +20,14 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 
 	for tn, tc := range map[string]struct {
 		givenRequest        RequestContext
-		expectedCredentials *Credentials
+		expectedCredentials Credentials
 	}{
 		"regular SubAccount": {
 			givenRequest: RequestContext{
 				SubaccountID: "regular_saID",
 				Credentials:  nil,
 			},
-			expectedCredentials: &Credentials{
+			expectedCredentials: Credentials{
 				Password: "default_password",
 				Username: "default_username",
 				URL:      "http://default.url",
@@ -42,7 +42,7 @@ func TestClientFactory_ForCustomerCredentials_ModeAlways(t *testing.T) {
 					URL:      "http://url",
 				},
 			},
-			expectedCredentials: &Credentials{
+			expectedCredentials: Credentials{
 				Password: "p",
 				Username: "u",
 				URL:      "http://url",
@@ -72,14 +72,14 @@ func TestClientFactory_ForCustomerCredentials_ModeWhenNotSentInRequest(t *testin
 
 	for tn, tc := range map[string]struct {
 		givenRequest        RequestContext
-		expectedCredentials *Credentials
+		expectedCredentials Credentials
 	}{
 		"regular SubAccount": {
 			givenRequest: RequestContext{
 				SubaccountID: "regular_saID",
 				Credentials:  nil,
 			},
-			expectedCredentials: &Credentials{
+			expectedCredentials: Credentials{
 				Password: "default_password",
 				Username: "default_username",
 				URL:      "http://default.url",
@@ -94,7 +94,7 @@ func TestClientFactory_ForCustomerCredentials_ModeWhenNotSentInRequest(t *testin
 					URL:      "http://url",
 				},
 			},
-			expectedCredentials: &Credentials{
+			expectedCredentials: Credentials{
 				Password: "p",
 				Username: "u",
 				URL:      "http://url",

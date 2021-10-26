@@ -37,9 +37,9 @@ func NewClientFactory(cfg Config) *ClientFactory {
 	}
 }
 
-func (c Credentials) WithNormalizedURL() *Credentials {
+func (c Credentials) WithNormalizedURL() Credentials {
 	url := strings.TrimSuffix(c.URL, "/")
-	return &Credentials{
+	return Credentials{
 		Username: c.Username,
 		Password: c.Password,
 		URL:      url,
@@ -54,7 +54,7 @@ func (f *ClientFactory) ForCustomerCredentials(request RequestContext, log logru
 		return nil, errors.Wrap(err, "unable to create Service Manager client")
 	}
 	return &client{
-		creds:      credentials,
+		creds:      *credentials,
 		httpClient: f.httpClient,
 	}, nil
 }
@@ -63,7 +63,7 @@ func (f *ClientFactory) ForCustomerCredentials(request RequestContext, log logru
 // ...
 func (f *ClientFactory) ForCredentials(credentials *Credentials) Client {
 	return &client{
-		creds:      credentials,
+		creds:      *credentials,
 		httpClient: f.httpClient,
 	}
 }
