@@ -42,9 +42,6 @@ type ProvisionerInputCreator interface {
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
 	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
-
-	CreateBTPOperatorProvisionInput(creds *ServiceManagerOperatorCredentials)
-	CreateBTPOperatorUpdateInput(creds *ServiceManagerOperatorCredentials) error
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -50,13 +49,13 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 			Secret: ptr.Bool(true),
 		},
 	}
-	operation.InputCreator.AppendOverrides(input.ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.AppendOverrides(internal.ServiceManagerComponentName, smOverrides)
 
-	operation.InputCreator.EnableOptionalComponent(input.HelmBrokerComponentName)
-	operation.InputCreator.EnableOptionalComponent(input.ServiceCatalogComponentName)
-	operation.InputCreator.EnableOptionalComponent(input.ServiceCatalogAddonsComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.HelmBrokerComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceCatalogComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
 
-	operation.InputCreator.EnableOptionalComponent(input.ServiceManagerComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceManagerComponentName)
 
 	return operation, 0, nil
 }

@@ -91,9 +91,11 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		}
 		operation.RuntimeVersion = *version
 	}
-	operation.LastRuntimeState, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
-	if err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+	if operation.RuntimeVersion.MajorVersion == 2 {
+		operation.LastRuntimeState, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
+		if err != nil {
+			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+		}
 	}
 
 	return s.initializeUpgradeShootRequest(operation, log)

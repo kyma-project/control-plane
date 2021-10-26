@@ -27,11 +27,15 @@ func NewRuntimeVersionConfigurator(defaultVersion string, previewVersion string,
 }
 
 func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error) {
-	r, err := rvc.runtimeStateDB.GetLatestWithReconcilerInputByRuntimeID(op.RuntimeID)
+	r, err := rvc.runtimeStateDB.GetLatestByRuntimeID(op.RuntimeID)
 	if err != nil {
 		return nil, err
 	}
-	return internal.NewRuntimeVersionFromDefaults(r.ClusterSetup.KymaConfig.Version), nil
+	if r.ClusterSetup != nil && r.ClusterSetup.KymaConfig.Version != "" {
+		return internal.NewRuntimeVersionFromDefaults(r.ClusterSetup.KymaConfig.Version), nil
+	} else {
+		return internal.NewRuntimeVersionFromDefaults(r.KymaConfig.Version), nil
+	}
 }
 
 func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {

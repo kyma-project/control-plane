@@ -10,12 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	ServiceCatalogComponentName       = "service-catalog"
-	ServiceCatalogAddonsComponentName = "service-catalog-addons"
-	HelmBrokerComponentName           = "heml-broker"
-)
-
 type SCMigrationCheckStep struct {
 	reconcilerClient reconciler.Client
 }
@@ -59,10 +53,11 @@ func (s *SCMigrationCheckStep) Run(operation internal.UpdatingOperation, log log
 func (s *SCMigrationCheckStep) removeServiceCatalog(operation *internal.UpdatingOperation) {
 	components := make([]reconciler.Components, 0, len(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components))
 	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
-		if c.Component != ServiceCatalogComponentName &&
-			c.Component != ServiceCatalogAddonsComponentName &&
-			c.Component != HelmBrokerComponentName &&
-			c.Component != SCMigrationComponentName {
+		if c.Component != internal.ServiceCatalogComponentName &&
+			c.Component != internal.ServiceCatalogAddonsComponentName &&
+			c.Component != internal.HelmBrokerComponentName &&
+			c.Component != internal.SCMigrationComponentName &&
+			c.Component != internal.ServiceManagerComponentName {
 			components = append(components, c)
 		}
 	}

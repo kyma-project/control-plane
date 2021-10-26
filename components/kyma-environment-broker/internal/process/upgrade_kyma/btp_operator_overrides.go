@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 
 	"github.com/sirupsen/logrus"
 )
@@ -20,11 +19,15 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation.InputCreator.CreateBTPOperatorUpdateInput(operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
-	operation.InputCreator.EnableOptionalComponent(input.BTPOperatorComponentName)
-	operation.InputCreator.DisableOptionalComponent(input.ServiceManagerComponentName)
-	operation.InputCreator.DisableOptionalComponent(input.HelmBrokerComponentName)
-	operation.InputCreator.DisableOptionalComponent(input.ServiceCatalogComponentName)
-	operation.InputCreator.DisableOptionalComponent(input.ServiceCatalogAddonsComponentName)
+	if operation.InstanceDetails.SCMigrationTriggered {
+		internal.CreateBTPOperatorUpdateInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
+	} else {
+		internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
+	}
+	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
 	return operation, 0, nil
 }

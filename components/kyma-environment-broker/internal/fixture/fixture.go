@@ -447,38 +447,3 @@ func (c *SimpleInputCreator) DisableOptionalComponent(name string) internal.Prov
 func (c *SimpleInputCreator) Provider() internal.CloudProvider {
 	return c.CloudProvider
 }
-
-func (r *SimpleInputCreator) CreateBTPOperatorProvisionInput(creds *internal.ServiceManagerOperatorCredentials) {
-	overrides := []*gqlschema.ConfigEntryInput{
-		{
-			Key:    "manager.secret.clientid",
-			Value:  creds.ClientID,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "manager.secret.clientsecret",
-			Value:  creds.ClientSecret,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:   "manager.secret.url",
-			Value: creds.ServiceManagerURL,
-		},
-		{
-			Key:   "manager.secret.tokenurl",
-			Value: creds.URL,
-		},
-	}
-	r.AppendOverrides("btp-operator", overrides)
-}
-
-func (r *SimpleInputCreator) CreateBTPOperatorUpdateInput(creds *internal.ServiceManagerOperatorCredentials) error {
-	overrides := []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "cluster.id",
-			Value: "mock",
-		},
-	}
-	r.AppendOverrides("btp-operator", overrides)
-	return nil
-}

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +18,7 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	operation.InputCreator.CreateBTPOperatorProvisionInput(operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
-	operation.InputCreator.EnableOptionalComponent(input.BTPOperatorComponentName)
+	internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
+	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
 	return operation, 0, nil
 }

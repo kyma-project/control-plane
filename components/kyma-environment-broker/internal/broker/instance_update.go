@@ -271,7 +271,11 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	if ersContext.ServiceManager != nil {
 		instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
 	}
-	if ersContext.ServiceManager != nil && ersContext.IsMigration {
+	if ersContext.SMOperatorCredentials != nil {
+		instance.Parameters.ErsContext.SMOperatorCredentials = ersContext.SMOperatorCredentials
+	}
+
+	if ersContext.IsMigration {
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 

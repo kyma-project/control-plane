@@ -84,7 +84,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
-		s.disableServiceManagementComponents(&operation)
+		internal.DisableServiceManagementComponents(operation.InputCreator)
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
@@ -131,21 +131,4 @@ func (s *InitialisationStep) updateInstance(id string, provider internal.CloudPr
 	}
 
 	return nil
-}
-
-func (s *InitialisationStep) disableServiceManagementComponents(op *internal.ProvisioningOperation) {
-	// Those components are included when `sm_platform_credentials` object is provided and enabled in `sm_overrides.go` step
-	// After migration to btp-operator those will be removed completely
-	op.InputCreator.DisableOptionalComponent(input.HelmBrokerComponentName)
-	op.InputCreator.DisableOptionalComponent(input.ServiceCatalogComponentName)
-	op.InputCreator.DisableOptionalComponent(input.ServiceCatalogAddonsComponentName)
-
-	// service-manager-proxy is also enabled when `sm_platform_credentials` object is provided in `sm_overrides.go` step
-	// After migration to btp-operator it won't be possible to install sm-proxy anymore and it will be removed
-	op.InputCreator.DisableOptionalComponent(input.ServiceManagerComponentName)
-
-	// btp-operator is only installed when `sm_operator_credentials` object is provided and then enabled in `btp_operator_overrides.go` step
-	// This will also be installed (enabled) when migration is called
-	// After migration, this will be the default component for Service Management and will be installed as long as `sm_operator_credentials` are provided
-	op.InputCreator.DisableOptionalComponent(input.BTPOperatorComponentName)
 }
