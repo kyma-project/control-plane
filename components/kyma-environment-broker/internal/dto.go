@@ -191,5 +191,5 @@ type ServiceManagerOperatorCredentials struct {
 	ClientSecret      string `json:"clientsecret"`
 	ServiceManagerURL string `json:"sm_url"`
 	URL               string `json:"url"`
-	Xsappname         string `json:"xsappname"`
+	XSAppName         string `json:"xsappname"`
 }

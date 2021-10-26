@@ -828,11 +828,6 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID
 					Value:  "https://test.auth.com",
 					Secret: false,
 				},
-				{
-					Key:    "cluster.id",
-					Value:  "",
-					Secret: false,
-				},
 			},
 		},
 	}

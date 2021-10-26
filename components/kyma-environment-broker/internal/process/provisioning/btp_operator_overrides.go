@@ -42,10 +42,6 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation,
 			Key:   "manager.secret.tokenurl",
 			Value: sm.URL,
 		},
-		{
-			Key:   "cluster.id",
-			Value: operation.InstanceDetails.RuntimeID, //
-		},
 	}
 	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
