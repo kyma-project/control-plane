@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Project        string `envconfig:"default=gardenerProject"`
-	ShootDomain    string `envconfig:"optional"`
-	KubeconfigPath string `envconfig:"default=./dev/kubeconfig.yaml"`
-	DNSProviders   internal.DNSProvidersData
+	Project        string                    `envconfig:"default=gardenerProject"`
+	ShootDomain    string                    `envconfig:"optional"`
+	KubeconfigPath string                    `envconfig:"default=./dev/kubeconfig.yaml"`
+	DNSProviders   internal.DNSProvidersData `envconfig:"-"`
 }
