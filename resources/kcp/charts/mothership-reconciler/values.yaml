@@ -6,13 +6,6 @@ encryptionKeySecret: "kcp-reconciler-key"
 configurationSecret: "kcp-mothership-reconciler"
 componentsConfigMap: "kcp-component-reconcilers"
 
-host: "mothership-reconciler"
-oidc:
-  issuer: ""
-  keysURL: ""
-  groups:
-    operator: runtimeOperator
-
 db:
   encryptionKey: ""
   reconcilerDbName: "reconciler"
