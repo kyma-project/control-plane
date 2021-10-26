@@ -180,7 +180,7 @@ func (cmd *ReconciliationCommand) Run() error {
 
 	// fetch reconciliations
 	mothershipURL := GlobalOpts.MothershipAPIURL()
-	
+
 	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
