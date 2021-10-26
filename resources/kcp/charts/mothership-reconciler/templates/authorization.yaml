@@ -29,3 +29,8 @@ spec:
   - when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.operator }}"]
+  - to:
+    - operation:
+        hosts:
+        - '*svc.cluster.local'
+ 
