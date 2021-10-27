@@ -203,6 +203,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 		if err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting cluster setup")
 		}
+		clusterSetup = &reconciler.Cluster{}
 		if err := json.Unmarshal(setup, clusterSetup); err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster setup")
 		}
