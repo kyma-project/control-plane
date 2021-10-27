@@ -150,7 +150,7 @@ func responseErr(resp *http.Response) error {
 	if err != nil {
 		msg = []byte(errors.Wrap(err, "unexpected error").Error())
 	}
-	return errors.Wrapf(ErrMothershipResponse, "%v %d", msg, resp.StatusCode)
+	return errors.Wrapf(ErrMothershipResponse, "%s %d", string(msg), resp.StatusCode)
 }
 
 func (cmd *ReconciliationCommand) Run() error {
