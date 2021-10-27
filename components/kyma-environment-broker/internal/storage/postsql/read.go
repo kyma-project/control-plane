@@ -405,7 +405,7 @@ func (r readSession) GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel
 func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
 	var state dbmodel.RuntimeStateDTO
 	runtimeIDIsEqual := dbr.Eq("runtime_id", runtimeID)
-	reconcilerInputIsNotEmptyString := dbr.Neq("cluster_setup", "''")
+	reconcilerInputIsNotEmptyString := dbr.Neq("cluster_setup", "")
 	reconcilerInputIsNotNil := dbr.Neq("cluster_setup", nil)
 	innerCondition := dbr.And(reconcilerInputIsNotEmptyString, reconcilerInputIsNotNil)
 	condition := dbr.And(runtimeIDIsEqual, innerCondition)
