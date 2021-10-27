@@ -31,6 +31,7 @@ type UpdateEndpoint struct {
 	log    logrus.FieldLogger
 
 	instanceStorage      storage.Instances
+	runtimeStates        storage.RuntimeStates
 	contextUpdateHandler ContextUpdateHandler
 	brokerURL            string
 	processingEnabled    bool
@@ -44,6 +45,7 @@ type UpdateEndpoint struct {
 
 func NewUpdate(cfg Config,
 	instanceStorage storage.Instances,
+	runtimeStates storage.RuntimeStates,
 	operationStorage storage.Operations,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
@@ -55,6 +57,7 @@ func NewUpdate(cfg Config,
 		config:               cfg,
 		log:                  log.WithField("service", "UpdateEndpoint"),
 		instanceStorage:      instanceStorage,
+		runtimeStates:        runtimeStates,
 		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
@@ -121,8 +124,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 	}
 
-	// TODO: forbid kyma downgrade
-	// TODO: forbid IsMigrationFromSCtoOperator with kyma1.x
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
@@ -276,6 +277,15 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 
 	if ersContext.IsMigration {
+		if k2, version, err := b.isKyma2(instance); !k2 {
+			msg := fmt.Sprintf("performing btp-operator migration is supported only for kyma 2.x, current version: %v", version)
+			logger.Errorf(msg)
+			return nil, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
+		} else if err != nil {
+			msg := "failed to determine kyma version"
+			logger.Errorf("%v: %v", msg, err)
+			return nil, fmt.Errorf(msg)
+		}
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 
@@ -310,4 +320,19 @@ func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.Pr
 	}
 
 	return ptr.Bool(deprovisioning.CreatedAt.Before(provisioning.CreatedAt)), nil
+}
+
+func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, error) {
+	s, err := b.runtimeStates.GetLatestByRuntimeID(instance.RuntimeID)
+	if err != nil {
+		return false, "", err
+	}
+	kv := ""
+	if s.KymaConfig.Version != "" {
+		kv = s.KymaConfig.Version
+	}
+	if s.ClusterSetup != nil && s.ClusterSetup.KymaConfig.Version != "" {
+		kv = s.ClusterSetup.KymaConfig.Version
+	}
+	return internal.DetermineMajorVersion(kv) == 2, kv, nil
 }

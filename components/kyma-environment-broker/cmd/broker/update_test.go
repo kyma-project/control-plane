@@ -1662,6 +1662,60 @@ func TestUpdateSCMigration(t *testing.T) {
 	}
 }
 
+func TestUpdateSCMigrationRejection(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	id := "InstanceID-SCMigration"
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+	"context": {
+		"sm_platform_credentials": {
+			"url": "https://sm.url",
+			"credentials": {
+				"basic": {
+					"username": "u-name",
+					"password": "pass"
+				}
+			}
+		},
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster"
+	}
+}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "john.smith@email.com",
+		"sm_operator_credentials": {
+			"clientid": "testClientID",
+			"clientsecret": "testClientSecret",
+			"sm_url": "https://service-manager.kyma.com",
+			"url": "https://test.auth.com",
+			"xsappname": "testXsappname"
+		},
+		"isMigration": true
+	}
+}`)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+}
+
 func componentNames(components []reconciler.Components) []string {
 	names := make([]string, 0, len(components))
 	for _, c := range components {

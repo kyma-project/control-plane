@@ -93,11 +93,11 @@ func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeV
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	defaultMajorVerNum := determineMajorVersion(version)
+	defaultMajorVerNum := DetermineMajorVersion(version)
 	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
 }
 
-func determineMajorVersion(version string) int {
+func DetermineMajorVersion(version string) int {
 	splitVer := strings.Split(version, ".")
 	majorVerNum, _ := strconv.Atoi(splitVer[0])
 	return majorVerNum
