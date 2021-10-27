@@ -3,7 +3,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
@@ -72,6 +75,56 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 
 	// then
 	suite.AssertAWSRegionAndZone("eu-west-1")
+}
+
+func TestProvisioning_HandleExistingOperation(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	firstResp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+
+	secondResp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+
+	firstBodyBytes, _ := ioutil.ReadAll(firstResp.Body)
+	secondBodyBytes, _ := ioutil.ReadAll(secondResp.Body)
+
+	// then
+	assert.Equal(t, string(firstBodyBytes), string(secondBodyBytes))
 }
 
 func TestProvisioningWithReconciler_HappyPath(t *testing.T) {

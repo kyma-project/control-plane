@@ -155,7 +155,6 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, existOperationID, response.OperationData)
 		assert.Len(t, response.Metadata.Labels, 2)
-		assert.True(t, response.AlreadyExists)
 	})
 
 	t.Run("more than one trial is not allowed", func(t *testing.T) {

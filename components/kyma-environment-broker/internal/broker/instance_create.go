@@ -296,6 +296,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 }
 
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
+
 	if !operation.ProvisioningParameters.IsEqual(input) {
 		err := errors.New("provisioning operation already exist")
 		msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
@@ -311,8 +312,8 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
-		AlreadyExists: true,
 		OperationData: operation.ID,
+		DashboardURL:  operation.DashboardURL,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
