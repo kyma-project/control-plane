@@ -3,12 +3,11 @@ package postsql
 import (
 	"encoding/json"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -256,10 +255,7 @@ func (s *runtimeState) marshalClusterSetup(clusterSetup *reconciler.Cluster) ([]
 			return nil, err
 		}
 	} else {
-		result, err = json.Marshal("")
-		if err != nil {
-			return nil, err
-		}
+		result = make([]byte, 0, 0)
 	}
 	return result, nil
 }

@@ -3,11 +3,9 @@ package postsql_test
 import (
 	"context"
 	"testing"
-	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +15,7 @@ func TestRuntimeState(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("RuntimeStates", func(t *testing.T) {
+	t.Run("should insert and fetch RuntimeState", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -32,18 +30,9 @@ func TestRuntimeState(t *testing.T) {
 		require.NotNil(t, brokerStorage)
 
 		fixID := "test"
-		givenRuntimeState := internal.RuntimeState{
-			ID:          fixID,
-			CreatedAt:   time.Now(),
-			RuntimeID:   fixID,
-			OperationID: fixID,
-			KymaConfig: gqlschema.KymaConfigInput{
-				Version: fixID,
-			},
-			ClusterConfig: gqlschema.GardenerConfigInput{
-				KubernetesVersion: fixID,
-			},
-		}
+		givenRuntimeState := fixture.FixRuntimeState(fixID, fixID, fixID)
+		givenRuntimeState.KymaConfig.Version = fixID
+		givenRuntimeState.ClusterConfig.KubernetesVersion = fixID
 
 		svc := brokerStorage.RuntimeStates()
 
