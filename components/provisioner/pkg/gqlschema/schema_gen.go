@@ -975,7 +975,7 @@ union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProv
 
 type DNSConfig {
     domain: String!
-    providers: [DNSProvider]!
+    providers: [DNSProvider]
 }
 
 type DNSProvider {
@@ -1174,7 +1174,7 @@ input ProviderSpecificInput {
 
 input DNSConfigInput {
     domain: String!
-    providers: [DNSProviderInput]!
+    providers: [DNSProviderInput]
 }
 
 input DNSProviderInput {
@@ -2075,15 +2075,12 @@ func (ec *executionContext) _DNSConfig_providers(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*DNSProvider)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNDNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, field.Selections, res)
+	return ec.marshalODNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DNSProvider_domainsInclude(ctx context.Context, field graphql.CollectedField, obj *DNSProvider) (ret graphql.Marshaler) {
@@ -6009,7 +6006,7 @@ func (ec *executionContext) unmarshalInputDNSConfigInput(ctx context.Context, ob
 			}
 		case "providers":
 			var err error
-			it.Providers, err = ec.unmarshalNDNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, v)
+			it.Providers, err = ec.unmarshalODNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6813,9 +6810,6 @@ func (ec *executionContext) _DNSConfig(ctx context.Context, sel ast.SelectionSet
 			}
 		case "providers":
 			out.Values[i] = ec._DNSConfig_providers(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7713,63 +7707,6 @@ func (ec *executionContext) unmarshalNComponentConfigurationInput2ᚕᚖgithub�
 	return res, nil
 }
 
-func (ec *executionContext) marshalNDNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v []*DNSProvider) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalODNSProvider2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalNDNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) ([]*DNSProviderInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*DNSProviderInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalODNSProviderInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 func (ec *executionContext) marshalNError2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐError(ctx context.Context, sel ast.SelectionSet, v Error) graphql.Marshaler {
 	return ec._Error(ctx, sel, &v)
 }
@@ -8433,6 +8370,46 @@ func (ec *executionContext) marshalODNSProvider2githubᚗcomᚋkymaᚑprojectᚋ
 	return ec._DNSProvider(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalODNSProvider2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v []*DNSProvider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODNSProvider2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalODNSProvider2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProvider(ctx context.Context, sel ast.SelectionSet, v *DNSProvider) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -8442,6 +8419,26 @@ func (ec *executionContext) marshalODNSProvider2ᚖgithubᚗcomᚋkymaᚑproject
 
 func (ec *executionContext) unmarshalODNSProviderInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) (DNSProviderInput, error) {
 	return ec.unmarshalInputDNSProviderInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalODNSProviderInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) ([]*DNSProviderInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*DNSProviderInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalODNSProviderInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalODNSProviderInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐDNSProviderInput(ctx context.Context, v interface{}) (*DNSProviderInput, error) {

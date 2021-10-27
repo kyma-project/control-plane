@@ -38,7 +38,7 @@ union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProv
 
 type DNSConfig {
     domain: String!
-    providers: [DNSProvider]!
+    providers: [DNSProvider]
 }
 
 type DNSProvider {
@@ -237,7 +237,7 @@ input ProviderSpecificInput {
 
 input DNSConfigInput {
     domain: String!
-    providers: [DNSProviderInput]!
+    providers: [DNSProviderInput]
 }
 
 input DNSProviderInput {
