@@ -17,7 +17,7 @@ spec:
       - regex: ".*"
     match:
     - uri:
-        regex: "/v.+/reconciles.*"
+        regex: "/v.+/reconciliations.*"
     route:
     - destination:
         host: {{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
