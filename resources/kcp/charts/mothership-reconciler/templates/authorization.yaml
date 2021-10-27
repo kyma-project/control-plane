@@ -27,6 +27,8 @@ spec:
       {{- include "mothership-reconciler.labels" . | nindent 6 }}
   action: ALLOW
   rules:
+
+  # external communication
   - to:
     - operation:
         hosts:
@@ -34,8 +36,16 @@ spec:
     when:
     - key: request.auth.claims[groups]
       values: ["{{ .Values.oidc.groups.operator }}"]
-  - to:
-    - operation:
-        notHosts:
-        - "*.{{ .Values.global.ingress.domainName }}"
+
+  # internal communication
+  - from:
+    - source:
+        principals: 
+        - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.global.kyma_environment_broker.serviceAccountName }}"
+{{ $global := . }}
+{{ range $component := .Values.global.components }}
+        - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component }}"
+{{- end }}
+
+
  

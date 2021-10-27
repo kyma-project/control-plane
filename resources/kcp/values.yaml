@@ -72,6 +72,7 @@ global:
 
   kyma_environment_broker:
     enabled: false
+    serviceAccountName: "kcp-kyma-environment-broker"
     secrets:
       integrationSystemCredentials:
         name: kcp-kyma-environment-broker-credentials
@@ -146,6 +147,7 @@ global:
 
   mothership_reconciler:
     enabled: false
+    serviceAccountName: "mothership-reconciler"
 
   component_reconcilers:
     enabled: false
