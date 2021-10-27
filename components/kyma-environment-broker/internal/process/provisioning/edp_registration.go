@@ -43,7 +43,7 @@ func (s *EDPRegistrationStep) Name() string {
 func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
 
-	log.Infof("Create DataTenant for %s subaccount", subAccountID)
+	log.Infof("Create DataTenant for %s subaccount (env=%s)", subAccountID, s.config.Environment)
 	err := s.client.CreateDataTenant(edp.DataTenantPayload{
 		Name:        subAccountID,
 		Environment: s.config.Environment,
@@ -60,10 +60,12 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 		edp.MaasConsumerSubAccountKey:  subAccountID,
 		edp.MaasConsumerServicePlan:    s.selectServicePlan(operation.ProvisioningParameters.PlanID),
 	} {
-		err = s.client.CreateMetadataTenant(subAccountID, s.config.Environment, edp.MetadataTenantPayload{
+		payload := edp.MetadataTenantPayload{
 			Key:   key,
 			Value: value,
-		})
+		}
+		log.Infof("Sending metadata %s: %s", payload.Key, payload.Value)
+		err = s.client.CreateMetadataTenant(subAccountID, s.config.Environment, payload)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("cannot create DataTenant metadata %s", key))
 		}
