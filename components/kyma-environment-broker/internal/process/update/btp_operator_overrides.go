@@ -11,6 +11,8 @@ import (
 
 const BTPOperatorComponentName = "btp-operator"
 
+var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
+
 type BTPOperatorOverridesStep struct {
 	components input.ComponentListProvider
 }
@@ -37,38 +39,21 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 		if err != nil {
 			return operation, 0, err
 		}
-		setBTPOperatorOverrides(&c, operation)
+		if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
+			logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)
+			return operation, 30 * time.Second, nil
+		}
 		operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
 	}
 	return operation, 0, nil
 }
 
-func setBTPOperatorOverrides(c *reconciler.Components, operation internal.UpdatingOperation) {
+func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconciler.Component, operation internal.UpdatingOperation) error {
 	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
-	c.Configuration = []reconciler.Configuration{
-		{
-			Key:    "manager.secret.clientid",
-			Value:  creds.ClientID,
-			Secret: true,
-		},
-		{
-			Key:    "manager.secret.clientsecret",
-			Value:  creds.ClientSecret,
-			Secret: true,
-		},
-		{
-			Key:   "manager.secret.url",
-			Value: creds.ServiceManagerURL,
-		},
-		{
-			Key:   "manager.secret.tokenurl",
-			Value: creds.URL,
-		},
-		{
-			// TODO: get this from
-			// https://github.com/kyma-project/kyma/blob/dba460de8273659cd8cd431d2737015a1d1909e5/tests/fast-integration/skr-svcat-migration-test/test-helpers.js#L39-L42
-			Key:   "cluster.id",
-			Value: "",
-		},
+	config, err := internal.GetBTPOperatorReconcilerOverrides(creds, ConfigMapGetter(operation.InstanceDetails.Kubeconfig))
+	if err != nil {
+		return err
 	}
+	c.Configuration = config
+	return nil
 }

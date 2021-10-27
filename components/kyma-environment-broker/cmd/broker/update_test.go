@@ -1551,6 +1551,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 func TestUpdateSCMigration(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := "InstanceID-SCMigration"
 
@@ -1654,7 +1655,7 @@ func TestUpdateSCMigration(t *testing.T) {
 					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
 					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
-					{Key: "cluster.id", Value: ""},
+					{Key: "cluster.id", Value: "cluster_id"},
 				},
 			}
 			assert.Equal(t, exp, c)

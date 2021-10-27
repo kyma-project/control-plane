@@ -1152,3 +1152,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 		},
 	}
 }
+
+func mockBTPOperatorClusterID() {
+	update.ConfigMapGetter = func(string) internal.ClusterIDGetter {
+		return func() (string, error) {
+			return "cluster_id", nil
+		}
+	}
+}

@@ -1,8 +1,15 @@
 package internal
 
 import (
+	"context"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -14,6 +21,8 @@ const (
 	ServiceManagerComponentName       = "service-manager-proxy"
 )
 
+type ClusterIDGetter func() (string, error)
+
 func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 	r.DisableOptionalComponent(SCMigrationComponentName)
 	r.DisableOptionalComponent(HelmBrokerComponentName)
@@ -23,8 +32,8 @@ func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 	r.DisableOptionalComponent(BTPOperatorComponentName)
 }
 
-func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials) {
-	overrides := []*gqlschema.ConfigEntryInput{
+func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials) []*gqlschema.ConfigEntryInput {
+	return []*gqlschema.ConfigEntryInput{
 		{
 			Key:    "manager.secret.clientid",
 			Value:  creds.ClientID,
@@ -44,18 +53,68 @@ func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceMa
 			Value: creds.URL,
 		},
 	}
+}
+
+func getBTPOperatorUpdateOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
+	return []*gqlschema.ConfigEntryInput{
+		{
+			Key:   "cluster.id",
+			Value: clusterId,
+		},
+	}
+}
+
+func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) ([]reconciler.Configuration, error) {
+	id, err := clusterIdGetter()
+	if err != nil {
+		return nil, err
+	}
+	provisioning := getBTPOperatorProvisioningOverrides(creds)
+	update := getBTPOperatorUpdateOverrides(creds, id)
+	all := append(provisioning, update...)
+	var config []reconciler.Configuration
+	for _, c := range all {
+		secret := false
+		if c.Secret != nil {
+			secret = *c.Secret
+		}
+		rc := reconciler.Configuration{Key: c.Key, Value: c.Value, Secret: secret}
+		config = append(config, rc)
+	}
+	return config, nil
+}
+
+func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials) {
+	overrides := getBTPOperatorProvisioningOverrides(creds)
 	r.AppendOverrides(BTPOperatorComponentName, overrides)
 }
 
-func CreateBTPOperatorUpdateInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials) error {
-	// TODO: get this from
-	// https://github.com/kyma-project/kyma/blob/dba460de8273659cd8cd431d2737015a1d1909e5/tests/fast-integration/skr-svcat-migration-test/test-helpers.js#L39-L42
-	overrides := []*gqlschema.ConfigEntryInput{
-		{
-			Key:   "cluster.id",
-			Value: "",
-		},
+func CreateBTPOperatorUpdateInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) error {
+	id, err := clusterIdGetter()
+	if err != nil {
+		return err
 	}
-	r.AppendOverrides(BTPOperatorComponentName, overrides)
+	provisioning := getBTPOperatorProvisioningOverrides(creds)
+	update := getBTPOperatorUpdateOverrides(creds, id)
+	r.AppendOverrides(BTPOperatorComponentName, provisioning)
+	r.AppendOverrides(BTPOperatorComponentName, update)
 	return nil
+}
+
+func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
+	return func() (string, error) {
+		cfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+		if err != nil {
+			return "", err
+		}
+		cs, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return "", err
+		}
+		cm, err := cs.CoreV1().ConfigMaps("kyma-system").Get(context.Background(), "cluster-info", metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		return cm.Data["id"], nil
+	}
 }

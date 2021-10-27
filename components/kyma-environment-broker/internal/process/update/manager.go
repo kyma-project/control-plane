@@ -221,12 +221,12 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 	return nil, fmt.Errorf("failed to find %v component in all component list", component)
 }
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconciler.Components, error) {
+func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconciler.Component, error) {
 	c, err := getComponent(componentProvider, component, kymaVersion)
 	if err != nil {
-		return reconciler.Components{}, err
+		return reconciler.Component{}, err
 	}
-	return reconciler.Components{
+	return reconciler.Component{
 		Component: c.Name,
 		Namespace: c.Namespace,
 		URL:       c.Source.URL,

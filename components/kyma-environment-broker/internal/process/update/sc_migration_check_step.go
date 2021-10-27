@@ -25,19 +25,15 @@ func (s *SCMigrationCheckStep) Name() string {
 }
 
 func (s *SCMigrationCheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	fmt.Println("DEBUG_DELETE check")
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 
 	if kebError.IsTemporaryError(err) {
-		fmt.Println("DEBUG_DELETE check temporary err")
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %v", err)
 		return operation, 1 * time.Minute, nil
 	} else if err != nil {
-		fmt.Println("DEBUG_DELETE check err")
 		log.Errorf("Reconciler GetCluster method failed: %v", err)
 		return operation, 0, fmt.Errorf("unable to get cluster state: %v", err)
 	}
-	fmt.Println("DEBUG_DELETE check", state.Status)
 	switch state.Status {
 	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
 		return operation, 30 * time.Second, nil
@@ -55,7 +51,7 @@ func (s *SCMigrationCheckStep) Run(operation internal.UpdatingOperation, log log
 }
 
 func (s *SCMigrationCheckStep) removeServiceCatalog(operation *internal.UpdatingOperation) {
-	components := make([]reconciler.Components, 0, len(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components))
+	components := make([]reconciler.Component, 0, len(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components))
 	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
 		if c.Component != internal.ServiceCatalogComponentName &&
 			c.Component != internal.ServiceCatalogAddonsComponentName &&
