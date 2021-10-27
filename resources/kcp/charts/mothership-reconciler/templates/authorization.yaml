@@ -12,6 +12,7 @@ spec:
   jwtRules:
   - issuer: "{{ tpl .Values.oidc.issuer $ }}"
     jwksUri: "{{ tpl .Values.oidc.keysURL $ }}"
+    outputPayloadToHeader: x-jwt
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
