@@ -3,6 +3,7 @@ package kubeconfig
 import (
 	"errors"
 	"fmt"
+	"github.com/kennygrant/sanitize"
 	"net/http"
 	"strings"
 
@@ -135,7 +136,7 @@ func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWrite
 
 	for _, o := range strings.Split(h.allowOrigins, ",") {
 		if o == origin {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Origin", sanitize.HTML(origin))
 			return
 		}
 	}
