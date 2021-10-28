@@ -3,9 +3,10 @@ package kubeconfig
 import (
 	"errors"
 	"fmt"
-	"github.com/kennygrant/sanitize"
 	"net/http"
 	"strings"
+
+	"github.com/kennygrant/sanitize"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
