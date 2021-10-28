@@ -623,7 +623,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
-	operation.ShootDNSProviders = internal.DNSProvidersData{}
+	operation.ShootDNSProviders = gardener.DNSProvidersData{}
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 

@@ -710,9 +710,9 @@ func fixRequestContextWithProvider(t *testing.T, region string, provider interna
 	return ctx
 }
 
-func fixDNSProviders() internal.DNSProvidersData {
-	return internal.DNSProvidersData{
-		Providers: []internal.DNSProviderData{
+func fixDNSProviders() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
 			{
 				DomainsInclude: []string{"dev.example.com"},
 				Primary:        true,

@@ -3,7 +3,6 @@ package gardener
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,8 +12,8 @@ func TestReadDNSProvidersValuesFromYAML(t *testing.T) {
 	t.Run("should read default DNS Providers values", func(t *testing.T) {
 		// given
 		dnsTestFilePath := "testdata/dns-values.yaml"
-		expectedDNSProvidersValues := internal.DNSProvidersData{
-			Providers: []internal.DNSProviderData{
+		expectedDNSProvidersValues := DNSProvidersData{
+			Providers: []DNSProviderData{
 				{
 					DomainsInclude: []string{"dev.kyma.ondemand.com"},
 					Primary:        true,
@@ -41,6 +40,6 @@ func TestReadDNSProvidersValuesFromYAML(t *testing.T) {
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, internal.DNSProvidersData{}, dnsProvidersValues)
+		assert.Equal(t, DNSProvidersData{}, dnsProvidersValues)
 	})
 }

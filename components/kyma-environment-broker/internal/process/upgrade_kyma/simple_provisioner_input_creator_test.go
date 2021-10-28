@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ type simpleInputCreator struct {
 	enabledComponents []string
 	shootName         *string
 	shootDomain       string
-	shootDnsProviders internal.DNSProvidersData
+	shootDnsProviders gardener.DNSProvidersData
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -48,7 +49,7 @@ func (c *simpleInputCreator) SetShootDomain(name string) internal.ProvisionerInp
 	return c
 }
 
-func (c *simpleInputCreator) SetShootDNSProviders(providers internal.DNSProvidersData) internal.ProvisionerInputCreator {
+func (c *simpleInputCreator) SetShootDNSProviders(providers gardener.DNSProvidersData) internal.ProvisionerInputCreator {
 	c.shootDnsProviders = providers
 	return c
 }

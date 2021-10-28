@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -590,7 +591,7 @@ func TestCreateProvisionRuntimeInput_ConfigureDNS(t *testing.T) {
 		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
 		require.NoError(t, err)
 		setRuntimeProperties(creator)
-		creator.SetShootDNSProviders(internal.DNSProvidersData{})
+		creator.SetShootDNSProviders(gardener.DNSProvidersData{})
 
 		// when
 		input, err := creator.CreateProvisionRuntimeInput()

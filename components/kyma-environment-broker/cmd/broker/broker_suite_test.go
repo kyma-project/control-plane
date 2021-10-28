@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -179,9 +180,9 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 	}
 }
 
-func defaultDNSValues() internal.DNSProvidersData {
-	return internal.DNSProvidersData{
-		Providers: []internal.DNSProviderData{
+func defaultDNSValues() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
 			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,

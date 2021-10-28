@@ -47,7 +47,7 @@ type ProvisionEndpoint struct {
 
 	shootDomain       string
 	shootProject      string
-	shootDnsProviders internal.DNSProvidersData
+	shootDnsProviders gardener.DNSProvidersData
 
 	log logrus.FieldLogger
 }

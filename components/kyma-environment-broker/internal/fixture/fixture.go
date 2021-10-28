@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -36,7 +37,7 @@ type SimpleInputCreator struct {
 	EnabledComponents []string
 	ShootName         *string
 	ShootDomain       string
-	shootDnsProviders internal.DNSProvidersData
+	shootDnsProviders gardener.DNSProvidersData
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
 }
@@ -330,9 +331,9 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 	}
 }
 
-func FixDNSProvidersConfig() internal.DNSProvidersData {
-	return internal.DNSProvidersData{
-		Providers: []internal.DNSProviderData{
+func FixDNSProvidersConfig() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
 			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
@@ -370,7 +371,7 @@ func (c *SimpleInputCreator) SetShootDomain(name string) internal.ProvisionerInp
 	return c
 }
 
-func (c *SimpleInputCreator) SetShootDNSProviders(providers internal.DNSProvidersData) internal.ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetShootDNSProviders(providers gardener.DNSProvidersData) internal.ProvisionerInputCreator {
 	c.shootDnsProviders = providers
 	return c
 }
