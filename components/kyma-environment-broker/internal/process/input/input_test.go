@@ -729,7 +729,7 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 	})
 }
 
-func TestCreateClusterConfiguration_Globals(t *testing.T) {
+func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 	// given
 	id := uuid.New().String()
 
@@ -754,6 +754,11 @@ func TestCreateClusterConfiguration_Globals(t *testing.T) {
 	creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
 	require.NoError(t, err)
 	setRuntimeProperties(creator)
+	creator.AppendOverrides("dex", []*gqlschema.ConfigEntryInput{
+		{Key: "key-1", Value: "pico"},
+		{Key: "key-false", Value: "false"},
+		{Key: "key-true", Value: "true"},
+	})
 
 	// when
 	inventoryInput, err := creator.CreateClusterConfiguration()
@@ -761,6 +766,17 @@ func TestCreateClusterConfiguration_Globals(t *testing.T) {
 
 	// then
 	assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot-name.domain.sap")
+	assert.Equal(t, reconciler.Component{
+		URL:       "",
+		Component: "dex",
+		Namespace: "kyma-system",
+		Configuration: []reconciler.Configuration{
+			{Key: "global.domainName", Value: "shoot-name.domain.sap", Secret: false},
+			{Key: "key-1", Value: "pico", Secret: false},
+			{Key: "key-false", Value: false, Secret: false},
+			{Key: "key-true", Value: true, Secret: false},
+		},
+	}, inventoryInput.KymaConfig.Components[0])
 
 	// check custom source URL
 	for _, component := range inventoryInput.KymaConfig.Components {
@@ -836,7 +852,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 	})
 }
 
-func assertAllConfigsContainsGlobals(t *testing.T, components []reconciler.Components, domainName string) {
+func assertAllConfigsContainsGlobals(t *testing.T, components []reconciler.Component, domainName string) {
 	for _, cmp := range components {
 		found := false
 		for _, cfg := range cmp.Configuration {
