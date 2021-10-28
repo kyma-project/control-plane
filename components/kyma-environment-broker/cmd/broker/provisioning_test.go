@@ -172,7 +172,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components: []reconciler.Components{
+		Components: []reconciler.Component{
 			{
 				Component: "service-catalog2",
 				Namespace: "kyma-system",
