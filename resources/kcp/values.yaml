@@ -58,6 +58,7 @@ global:
     - ory
     - rafter
     - eventing
+    - serverless
 
   auditlog:
     configMapName: "kcp-auditlog-config"
