@@ -296,13 +296,13 @@ paths:
             items:
               type: string
               enum: [
-                "succeeded",
-                "failed",
-                "provisioning",
-                "deprovisioning",
-                "upgrading",
-                "suspended",
-                "all"
+                  "succeeded",
+                  "failed",
+                  "provisioning",
+                  "deprovisioning",
+                  "upgrading",
+                  "suspended",
+                  "all"
               ]
       responses:
         '200':
@@ -368,7 +368,7 @@ paths:
     get:
       summary: get the catalog of services that the service broker offers
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Catalog
       operationId: catalog.get
@@ -386,7 +386,7 @@ paths:
     put:
       summary: provision a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.provision
@@ -445,7 +445,7 @@ paths:
     patch:
       summary: update a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.update
@@ -492,7 +492,7 @@ paths:
     delete:
       summary: deprovision a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.deprovision
@@ -517,6 +517,7 @@ paths:
           schema:
             type: string
         - name: force
+          in: query
           schema:
             type: boolean
       responses:
@@ -553,7 +554,7 @@ paths:
     get:
       summary: gets a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.get
@@ -583,7 +584,7 @@ paths:
     get:
       summary: last requested operation state for service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.lastOperation.get
@@ -634,7 +635,7 @@ paths:
     get:
       summary: last requested operation state for service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.lastOperation.get
@@ -691,7 +692,7 @@ paths:
     put:
       summary: generation of a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.binding
@@ -761,7 +762,7 @@ paths:
     delete:
       summary: deprovision of a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.unbinding
@@ -824,7 +825,7 @@ paths:
     get:
       summary: gets a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.get
@@ -860,7 +861,7 @@ paths:
     get:
       summary: get the catalog of services that the service broker offers
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Catalog
       operationId: catalog.region.get
@@ -884,7 +885,7 @@ paths:
     put:
       summary: provision a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.region.provision
@@ -949,7 +950,7 @@ paths:
     patch:
       summary: update a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.region.update
@@ -1002,7 +1003,7 @@ paths:
     delete:
       summary: deprovision a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.region.deprovision
@@ -1033,6 +1034,7 @@ paths:
           schema:
             type: string
         - name: force
+          in: query
           schema:
             type: boolean
       responses:
@@ -1069,7 +1071,7 @@ paths:
     get:
       summary: gets a service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.region.get
@@ -1105,7 +1107,7 @@ paths:
     get:
       summary: last requested operation state for service instance
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Instances
       operationId: serviceInstance.region.lastOperation.get
@@ -1162,7 +1164,7 @@ paths:
     get:
       summary: last requested operation state for service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.region.lastOperation.get
@@ -1225,7 +1227,7 @@ paths:
     put:
       summary: generation of a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.region.binding
@@ -1301,7 +1303,7 @@ paths:
     delete:
       summary: deprovision of a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.region.unbinding
@@ -1370,7 +1372,7 @@ paths:
     get:
       summary: gets a service binding
       security:
-        - oAuth2ClientCredentials: [broker:write]
+        - oAuth2ClientCredentials: ["broker:write"]
       tags:
         - Bindings (not implemented)
       operationId: serviceBinding.region.get
@@ -1509,8 +1511,8 @@ components:
         type:
           type: string
           enum: [
-            "upgradeKyma",
-            "upgradeCluster"
+              "upgradeKyma",
+              "upgradeCluster"
           ]
           description: "Orchestration type, either kyma upgrade or cluster upgrade"
           example: "upgradeKyma"
@@ -1944,7 +1946,7 @@ components:
           $ref: '#/components/schemas/Context'
         parameters:
           $ref: '#/components/schemas/ServiceInstanceProvisionRequestParameters'
- 
+
     OIDC:
       type: object
       properties:
@@ -2051,7 +2053,7 @@ components:
       properties:
         Name:
           type: string
-          example: instance123 
+          example: instance123
         KubeconfigURL:
           type: string
           format: url
@@ -2108,7 +2110,7 @@ components:
           $ref: '#/components/schemas/ServiceInstanceUpdateRequestParams'
         previous_values:
           $ref: '#/components/schemas/ServiceInstancePreviousValues'
-    
+
     ServiceInstanceUpdateRequestParams:
       type: object
       properties:
@@ -2238,11 +2240,11 @@ components:
           type: string
         mount_config:
           $ref: '#/components/schemas/Object'
- 
+
     ServiceManagerCredentialsBasic:
-        type: object
-        properties:
-          username:
+      type: object
+      properties:
+        username:
           type: string
         password:
           type: string
@@ -2251,15 +2253,15 @@ components:
       type: object
       properties:
         basic:
-        $ref: '#/components/schemas/ServiceManagerCredentialsBasic'
+          $ref: '#/components/schemas/ServiceManagerCredentialsBasic'
 
     SMPlatformCredentials:
       type: object
       properties:
         credentials:
-        $ref: '#/components/schemas/ServiceManagerCredentials'
-      url:
-        type: string
+          $ref: '#/components/schemas/ServiceManagerCredentials'
+        url:
+          type: string
 
     Context:
       description: "See [Context Conventions](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#context-object) for more details."
