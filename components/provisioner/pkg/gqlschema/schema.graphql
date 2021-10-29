@@ -29,11 +29,24 @@ type GardenerConfig {
     enableMachineImageVersionAutoUpdate: Boolean
     allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
+    dnsConfig: DNSConfig
     oidcConfig: OIDCConfig
     exposureClassName: String
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
+
+type DNSConfig {
+    domain: String!
+    providers: [DNSProvider]
+}
+
+type DNSProvider {
+    domainsInclude: [String!]!
+    primary: Boolean!
+    secretName: String!
+    type: String!
+}
 
 type GCPProviderConfig {
     zones: [String!]!
@@ -200,6 +213,7 @@ input GardenerConfigInput {
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
     allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
+    dnsConfig: DNSConfigInput                       # DNS custom specific parameters
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
@@ -219,6 +233,18 @@ input ProviderSpecificInput {
     azureConfig: AzureProviderConfigInput         # Azure-specific configuration for the cluster to be provisioned
     awsConfig: AWSProviderConfigInput             # AWS-specific configuration for the cluster to be provisioned
     openStackConfig: OpenStackProviderConfigInput # OpenStack-specific configuration for the cluster to be provisioned
+}
+
+input DNSConfigInput {
+    domain: String!
+    providers: [DNSProviderInput]
+}
+
+input DNSProviderInput {
+    domainsInclude: [String!]!
+    primary: Boolean!
+    secretName: String!
+    type: String!
 }
 
 input GCPProviderConfigInput {
