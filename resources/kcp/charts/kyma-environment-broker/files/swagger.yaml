@@ -296,13 +296,13 @@ paths:
             items:
               type: string
               enum: [
-                  "succeeded",
-                  "failed",
-                  "provisioning",
-                  "deprovisioning",
-                  "upgrading",
-                  "suspended",
-                  "all"
+                "succeeded",
+                "failed",
+                "provisioning",
+                "deprovisioning",
+                "upgrading",
+                "suspended",
+                "all"
               ]
       responses:
         '200':
