@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	DefaultGCPRegion = "europe-west4"
+	DefaultGCPRegion      = "europe-west3"
+	DefaultGCPMachineType = "n2-standard-8"
 )
 
-var europeGcp = "europe-west4"
-var usGcp = "us-east4"
-var asiaGcp = "asia-southeast1"
+var europeGcp = "europe-west3"
+var usGcp = "us-central1"
+var asiaGcp = "asia-northeast1"
 
 var toGCPSpecific = map[string]*string{
 	string(broker.Europe): &europeGcp,
@@ -37,7 +38,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("pd-standard"),
 			VolumeSizeGb:   ptr.Integer(30),
-			MachineType:    "n1-standard-4",
+			MachineType:    DefaultGCPMachineType,
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",

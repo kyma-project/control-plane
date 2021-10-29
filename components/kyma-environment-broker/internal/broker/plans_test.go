@@ -71,7 +71,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "GCP schema is correct",
 			generator:      GCPSchema,
-			machineTypes:   []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
+			machineTypes:   []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"},
 			file:           "gcp-schema.json",
 			updateFile:     "update-gcp-schema.json",
 			fileOIDC:       "gcp-schema-additional-params.json",

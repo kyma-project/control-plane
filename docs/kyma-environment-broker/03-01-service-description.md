@@ -164,9 +164,9 @@ These are the provisioning parameters for GCP that you can configure:
     
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n1-standard-4` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n2-standard-8` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
-| **region** | string | Defines the cluster region. | No | `europe-west4` |
+| **region** | string | Defines the cluster region. | No | `europe-west3` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
