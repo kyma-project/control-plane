@@ -95,11 +95,7 @@ skrOIDCDefaultValues: |-
   usernameClaim: "sub"
 
 skrDNSProvidersValues: |-
-  providers:
-    - domainsInclude: [ "dev.kyma.ondemand.com" ]
-      primary: true
-      secretName: "aws-route53-secret-dev"
-      type: "aws-route53"
+  providers: []
 
 kymaVersion: "1.13.0"
 kymaPreviewVersion: "2.0"
@@ -115,7 +111,7 @@ osbUpdateProcessingEnabled: "false"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
-  shootDomain: "dev.kyma.ondemand.com"
+  shootDomain: "kyma-dev.shoot.canary.k8s-hana.ondemand.com"
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   secretName: "gardener-credentials"
   kubernetesVersion: "1.16.9"
