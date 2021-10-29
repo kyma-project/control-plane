@@ -29,9 +29,7 @@ func TestEDPRegistration_Run(t *testing.T) {
 		Environment: edpEnvironment,
 		Required:    true,
 	})
-
-	// when
-	_, repeat, err := step.Run(internal.ProvisioningOperation{
+	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
 				PlanID:         broker.AzureHAPlanID,
@@ -41,7 +39,11 @@ func TestEDPRegistration_Run(t *testing.T) {
 				},
 			},
 		},
-	}, logger.NewLogDummy())
+	}
+	memoryStorage.Operations().InsertProvisioningOperation(operation)
+
+	// when
+	_, repeat, err := step.Run(operation, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, 0*time.Second, repeat)
