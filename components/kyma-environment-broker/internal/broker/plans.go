@@ -89,16 +89,9 @@ func AzureRegions() []string {
 
 func GCPRegions() []string {
 	return []string{
-		"asia-south1", "asia-southeast1",
-		"asia-east2", "asia-east1",
-		"asia-northeast1", "asia-northeast2", "asia-northeast-3",
-		"australia-southeast1",
-		"europe-west2", "europe-west4", "europe-west5", "europe-west6", "europe-west3",
-		"europe-north1",
-		"us-west1", "us-west2", "us-west3",
-		"us-central1",
-		"us-east4",
-		"northamerica-northeast1", "southamerica-east1"}
+		"europe-west3",
+		"asia-northeast1",
+		"us-central1"}
 }
 
 func AWSRegions() []string {
@@ -266,12 +259,12 @@ type Plan struct {
 	updateRawSchema       []byte
 }
 
-// plans is designed to hold plan defaulting logic
+// Plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]Plan {
 	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
-	gcpSchema := GCPSchema([]string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"})
+	gcpSchema := GCPSchema([]string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"})
 	openstackSchema := OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"})
 	azureSchema := AzureSchema([]string{"Standard_D8_v3"})
 	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"})
