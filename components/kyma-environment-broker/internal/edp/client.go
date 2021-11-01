@@ -75,7 +75,7 @@ func (c *Client) CreateDataTenant(data DataTenantPayload) error {
 		return errors.Wrap(err, "while marshaling dataTenant payload")
 	}
 
-	return c.post(c.dataTenantURL(), rawData)
+	return c.post(c.dataTenantURL(), rawData, data.Name)
 }
 
 func (c *Client) DeleteDataTenant(name, env string) (err error) {
@@ -95,7 +95,7 @@ func (c *Client) DeleteDataTenant(name, env string) (err error) {
 		return kebError.AsTemporaryError(err, "while requesting about delete dataTenant")
 	}
 
-	return c.processResponse(response, true)
+	return c.processResponse(response, true, name)
 }
 
 func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPayload) error {
@@ -104,7 +104,7 @@ func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPaylo
 		return errors.Wrap(err, "while marshaling tenant metadata payload")
 	}
 
-	return c.post(c.metadataTenantURL(name, env), rawData)
+	return c.post(c.metadataTenantURL(name, env), rawData, name)
 }
 
 func (c *Client) DeleteMetadataTenant(name, env, key string) (err error) {
@@ -124,7 +124,7 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) (err error) {
 		return kebError.AsTemporaryError(err, "while requesting about delete metadata")
 	}
 
-	return c.processResponse(response, true)
+	return c.processResponse(response, true, name)
 }
 
 func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err error) {
@@ -152,7 +152,7 @@ func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err erro
 	return metadata, nil
 }
 
-func (c *Client) post(URL string, data []byte) (err error) {
+func (c *Client) post(URL string, data []byte, id string) (err error) {
 	request, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(data))
 	if err != nil {
 		return errors.Wrapf(err, "while creating POST request for %s", URL)
@@ -169,10 +169,10 @@ func (c *Client) post(URL string, data []byte) (err error) {
 		return kebError.AsTemporaryError(err, "while sending POST request on %s", URL)
 	}
 
-	return c.processResponse(response, false)
+	return c.processResponse(response, false, id)
 }
 
-func (c *Client) processResponse(response *http.Response, allowNotFound bool) error {
+func (c *Client) processResponse(response *http.Response, allowNotFound bool, id string) error {
 	byteBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrapf(err, "while reading response body (status code %d)", response.StatusCode)
@@ -184,8 +184,8 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool) er
 		c.log.Infof("Resource created: %s", responseLog(response))
 		return nil
 	case http.StatusConflict:
-		c.log.Infof("Resource already exist: %s", responseLog(response))
-		return nil
+		c.log.Warnf("Resource already exist: %s", responseLog(response))
+		return NewEDPConflictError(id)
 	case http.StatusNoContent:
 		c.log.Infof("Action executed correctly: %s", responseLog(response))
 		return nil
@@ -225,4 +225,30 @@ func (c *Client) closeResponseBody(response *http.Response) error {
 		return nil
 	}
 	return response.Body.Close()
+}
+
+func NewEDPConflictError(id string) ConflictError {
+	return ConflictError{
+		id: id,
+	}
+}
+
+type ConflictError struct {
+	id string
+}
+
+func (e ConflictError) IsConflict() bool {
+	return true
+}
+
+func (e ConflictError) Error() string {
+	return fmt.Sprintf("Resource %s already exists", e.id)
+}
+
+func IsConflictError(e error) bool {
+	cause := errors.Cause(e)
+	nfe, ok := cause.(interface {
+		IsConflict() bool
+	})
+	return ok && nfe.IsConflict()
 }

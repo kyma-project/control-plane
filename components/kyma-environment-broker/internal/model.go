@@ -259,6 +259,7 @@ type InstanceDetails struct {
 	Ems               EmsData                   `json:"ems"`
 	Connectivity      ConnectivityData          `json:"connectivity"`
 	Monitoring        MonitoringData            `json:"monitoring"`
+	EDPCreated        bool                      `json:"edp_created"`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`

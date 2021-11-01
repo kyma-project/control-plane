@@ -50,7 +50,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
+	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west3")
 	operation.ShootDomain = "kyma.org"
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
@@ -77,8 +77,8 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				KubernetesVersion:                   k8sVersion,
 				DiskType:                            ptr.String("pd-standard"),
 				VolumeSizeGb:                        ptr.Integer(30),
-				MachineType:                         "n1-standard-4",
-				Region:                              "europe-west4-a",
+				MachineType:                         "n2-standard-8",
+				Region:                              "europe-west3",
 				Provider:                            "gcp",
 				Purpose:                             &shootPurpose,
 				LicenceType:                         nil,
@@ -92,7 +92,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				EnableMachineImageVersionAutoUpdate: ptr.Bool(autoUpdateMachineImageVersion),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zones: []string{"europe-west4-b", "europe-west4-c"},
+						Zones: []string{"europe-west3-b", "europe-west3-c"},
 					},
 				},
 				Seed: nil,
@@ -242,7 +242,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String(region),
 			Name:   "dummy",
-			Zones:  []string{"europe-west4-b", "europe-west4-c"},
+			Zones:  []string{"europe-west3-b", "europe-west3-c"},
 		},
 	}
 }

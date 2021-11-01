@@ -1,4 +1,4 @@
 Azure:
   cf-eu: westeurope
 GCP:
-  cf-eu: europe-west4
+  cf-eu: europe-west3
