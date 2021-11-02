@@ -1,4 +1,4 @@
-package upgrade_kyma
+	package upgrade_kyma
 
 import (
 	"fmt"

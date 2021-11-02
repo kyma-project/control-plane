@@ -39,7 +39,8 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 	operation.InputCreator.SetRuntimeID(operation.Runtime.RuntimeID).
 		SetInstanceID(operation.InstanceID).
-		SetKubeconfig(operation.Kubeconfig)
+		SetKubeconfig(operation.Kubeconfig).
+		SetShootName(operation.InstanceDetails.ShootName)
 
 	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {

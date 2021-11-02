@@ -260,6 +260,12 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
 
+	kymaInput, err := f.initProvisionRuntimeInput(provider, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "while initializing RuntimeInput")
+	}
+
+
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
 	if err != nil {
 		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
@@ -267,6 +273,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
 	return &RuntimeInput{
+		provisionRuntimeInput: kymaInput,
 		upgradeRuntimeInput:       upgradeKymaInput,
 		mutex:                     nsync.NewNamedMutex(),
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
@@ -276,6 +283,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		enabledOptionalComponents: map[string]struct{}{},
 		trialNodesNumber:          f.config.TrialNodesNumber,
 		oidcDefaultValues:         f.oidcDefaultValues,
+		hyperscalerInputProvider:  provider,
 	}, nil
 }
 
