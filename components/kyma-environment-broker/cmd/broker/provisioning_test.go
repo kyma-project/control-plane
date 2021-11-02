@@ -183,6 +183,11 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 						Secret: false,
 					},
 					{
+						Key:    "foo",
+						Value:  "bar",
+						Secret: false,
+					},
+					{
 						Key:    "setting-one",
 						Value:  "1234",
 						Secret: false,
