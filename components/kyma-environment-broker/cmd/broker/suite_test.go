@@ -471,6 +471,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			"setting-one": "1234",
 		},
 	}
+
 	for _, version := range additionalKymaVersions {
 		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 		scOverride.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
