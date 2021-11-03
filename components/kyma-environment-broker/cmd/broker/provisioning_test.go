@@ -177,12 +177,12 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMCredentials(opID),
+		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }
 
-func TestProvisioningWithReconcilerWithBtpOperator_HappyPath(t *testing.T) {
+func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
@@ -230,7 +230,7 @@ func TestProvisioningWithReconcilerWithBtpOperator_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMOperatorCredentials(opID),
+		Components:     suite.fixExpectedComponentListWithSMOperator(opID),
 	})
 
 	suite.AssertClusterConfigWithKubeconfig(opID)

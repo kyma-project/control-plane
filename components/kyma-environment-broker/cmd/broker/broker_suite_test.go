@@ -660,8 +660,10 @@ func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
 }
 
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string) []reconciler.Components {
-	return []reconciler.Components{
+// fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 1.x - when `sm_platform_credentials`
+// object is provided: helm-broker, service-catalog, service-catalog-addons and service-manager-proxy components should be installed
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []reconciler.Component {
+	return []reconciler.Component{
 		{
 			URL:       "",
 			Component: "logging",
@@ -670,6 +672,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 			},
@@ -682,6 +689,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 				{
@@ -706,6 +718,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
 					Secret: false,
 				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -716,6 +733,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 			},
@@ -730,6 +752,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
 					Secret: false,
 				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -740,6 +767,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 				{
@@ -762,8 +794,10 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMCredentials(opID string)
 	}
 }
 
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID string) []reconciler.Components {
-	return []reconciler.Components{
+// fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
+// object is provided: btp-opeartor component should be installed
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconciler.Component {
+	return []reconciler.Component{
 		{
 			URL:       "",
 			Component: "logging",
@@ -772,6 +806,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 			},
@@ -784,6 +823,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 				{
@@ -806,6 +850,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperatorCredentials(opID
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
 					Secret: false,
 				},
 				{

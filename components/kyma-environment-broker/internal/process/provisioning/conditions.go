@@ -12,10 +12,10 @@ func ForKyma1(op internal.ProvisioningOperation) bool {
 	return op.RuntimeVersion.MajorVersion == 1
 }
 
-func ForPlatformCredentialsProvided(op internal.ProvisioningOperation) bool {
-	return op.ProvisioningParameters.ErsContext.ServiceManager != nil
+func WhenBTPOperatorCredentialsNotProvided(op internal.ProvisioningOperation) bool {
+	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil
 }
 
-func ForBTPOperatorCredentialsProvided(op internal.ProvisioningOperation) bool {
+func WhenBTPOperatorCredentialsProvided(op internal.ProvisioningOperation) bool {
 	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil
 }
