@@ -161,14 +161,16 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching provisioning operations list for instance")
 	}
-	var firstProvOp *internal.ProvisioningOperation
 	if len(provOprs) != 0 {
-		firstProvOp = &provOprs[len(provOprs)-1]
-		// Set AVS evaluation ID based on the data in the initial provisioning operation
-		dto.AVSInternalEvaluationID = firstProvOp.InstanceDetails.Avs.AvsEvaluationInternalId
+		firstProvOp := &provOprs[len(provOprs)-1]
+		lastProvOp := provOprs[0]
+		// Set AVS evaluation ID based on the data in the last provisioning operation
+		dto.AVSInternalEvaluationID = lastProvOp.InstanceDetails.Avs.AvsEvaluationInternalId
+		h.converter.ApplyProvisioningOperation(dto, firstProvOp)
+		if len(provOprs) > 1 {
+			h.converter.ApplyUnsuspensionOperations(dto, provOprs[:len(provOprs)-1])
+		}
 	}
-	h.converter.ApplyProvisioningOperation(dto, firstProvOp)
-	h.converter.ApplyUnsuspensionOperations(dto, provOprs)
 
 	deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {

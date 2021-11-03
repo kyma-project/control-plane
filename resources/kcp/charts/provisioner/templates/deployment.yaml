@@ -104,9 +104,13 @@ spec:
               value: {{ .Values.installation.timeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
               value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
+            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_AGENT_CONFIGURATION
+              value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
               value: {{ .Values.runtimeAgent.connectionTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION
+              value: {{ .Values.gardener.clusterCreationTimeout | quote }}
+            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_CREATION
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
               value: {{ .Values.upgrade.triggeringTimeout | quote }}
@@ -114,11 +118,17 @@ spec:
               value: {{ .Values.gardener.clusterUpgradeTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_DELETION
               value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
+            - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_DELETION
+              value: {{ .Values.gardener.clusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
+              value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
+            - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
               value: {{ .Values.gardener.waitingForClusterDeletionTimeout | quote }}
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
+              value: {{ .Values.support.bindingsCreationTimeout | quote }}
+            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_BINDINGS_CREATION
               value: {{ .Values.support.bindingsCreationTimeout | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
               value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}

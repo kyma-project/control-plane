@@ -760,6 +760,7 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
+github.com/kennygrant/sanitize v1.2.4/go.mod h1:LGsjYYtgxbetdg5owWB2mpgUL6e2nfw2eObZ0u0qvak=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
@@ -802,8 +803,6 @@ github.com/kyma-incubator/hydroform/install v0.0.0-20200629120139-6648400a8188/g
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb h1:PU13re+51gRHXDMgQcLVfBzPWCw810/2klnyFh8xflc=
 github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb/go.mod h1:PDFrNKcvGvi8T7l15Eh40Gy6+/tzlARJCluVwK8j9bI=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018121130-0215158aec4f h1:s+rVNs1d5SN8a+TxztQ7hyZQf0zxAfchrFavlG/DtxY=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20211018121130-0215158aec4f/go.mod h1:ZCtO5tLlAy6hj7w/RLXS8nzAIPnXI9qd4O97eQses8E=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20200702142454-d5c043eb0dbe/go.mod h1:kej5mA0lXpMuwh8iFu48vqaXyVByulBFZlXUmaFvIgk=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675 h1:+vZWvVqlXSSYAfUgP3NBJJskx/aEIkpnmb7DjKX4mbo=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675/go.mod h1:WeQmbtBLbkjMbg4npPKPqTz2JFij2emvZwalK1fRiMg=

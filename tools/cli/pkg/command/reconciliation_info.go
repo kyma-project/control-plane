@@ -174,7 +174,7 @@ func newReconciliationOperationInfoCmd(mp mothershipClientProvider) *cobra.Comma
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 
-	cobraCmd.Flags().StringVarP(&cmd.schedulingID, "schceduling-id", "i", "", "Scheduling ID of the specific Kyma Reconciliation.")
+	cobraCmd.Flags().StringVarP(&cmd.schedulingID, "scheduling-id", "i", "", "Scheduling ID of the specific Kyma Reconciliation.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()

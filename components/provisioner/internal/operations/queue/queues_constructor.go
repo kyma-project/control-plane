@@ -40,7 +40,7 @@ type ProvisioningNoInstallTimeouts struct {
 	ClusterCreation    time.Duration `envconfig:"default=60m"`
 	ClusterDomains     time.Duration `envconfig:"default=10m"`
 	BindingsCreation   time.Duration `envconfig:"default=5m"`
-	AgentConfiguration time.Duration `envconfig:"default=5m"`
+	AgentConfiguration time.Duration `envconfig:"default=15m"`
 }
 
 type DeprovisioningNoInstallTimeouts struct {
