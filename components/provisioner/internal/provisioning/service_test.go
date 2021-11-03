@@ -62,6 +62,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 				GcpConfig: &gqlschema.GCPProviderConfigInput{},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 
