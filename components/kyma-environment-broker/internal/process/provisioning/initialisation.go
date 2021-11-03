@@ -17,7 +17,10 @@ import (
 
 const (
 	// label key used to send to director
-	grafanaURLLabel = "operator_grafanaUrl"
+	grafanaURLLabel                   = "operator_grafanaUrl"
+	HelmBrokerComponentName           = "helm-broker"
+	ServiceCatalogComponentName       = "service-catalog"
+	ServiceCatalogAddonsComponentName = "service-catalog-addons"
 )
 
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
@@ -84,6 +87,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+		s.disableServiceManagementComponents(&operation)
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
@@ -130,4 +134,21 @@ func (s *InitialisationStep) updateInstance(id string, provider internal.CloudPr
 	}
 
 	return nil
+}
+
+func (s *InitialisationStep) disableServiceManagementComponents(op *internal.ProvisioningOperation) {
+	// Those components are included when `sm_platform_credentials` object is provided and enabled in `sm_overrides.go` step
+	// After migration to btp-operator those will be removed completely
+	op.InputCreator.DisableOptionalComponent(HelmBrokerComponentName)
+	op.InputCreator.DisableOptionalComponent(ServiceCatalogComponentName)
+	op.InputCreator.DisableOptionalComponent(ServiceCatalogAddonsComponentName)
+
+	// service-manager-proxy is also enabled when `sm_platform_credentials` object is provided in `sm_overrides.go` step
+	// After migration to btp-operator it won't be possible to install sm-proxy anymore and it will be removed
+	op.InputCreator.DisableOptionalComponent(ServiceManagerComponentName)
+
+	// btp-operator is only installed when `sm_operator_credentials` object is provided and then enabled in `btp_operator_overrides.go` step
+	// This will also be installed (enabled) when migration is called
+	// After migration, this will be the default component for Service Management and will be installed as long as `sm_operator_credentials` are provided
+	op.InputCreator.DisableOptionalComponent(BTPOperatorComponentName)
 }
