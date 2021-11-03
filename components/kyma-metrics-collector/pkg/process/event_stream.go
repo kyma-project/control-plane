@@ -137,7 +137,7 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 			if err != nil {
 				return nil, err
 			}
-			if infraConfig.Networks.VPC.CloudRouter != nil {
+			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
 				vnets += 1
 			}
 		default:
