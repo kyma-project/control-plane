@@ -437,6 +437,7 @@ func FixTables() map[string]string {
     		created_at TIMESTAMPTZ NOT NULL,
 			kyma_config text,
 			cluster_config text,
+			cluster_setup text,
 			kyma_version text,
 			k8s_version text
 			)`, postsql.RuntimeStateTableName),

@@ -14,15 +14,16 @@ import (
 )
 
 type ApplyClusterConfigurationStep struct {
-	operationManager *process.UpgradeKymaOperationManager
-	reconcilerClient reconciler.Client
+	operationManager    *process.UpgradeKymaOperationManager
+	reconcilerClient    reconciler.Client
+	runtimeStateStorage storage.RuntimeStates
 }
 
-func NewApplyClusterConfigurationStep(os storage.Operations,
-	reconcilerClient reconciler.Client) *ApplyClusterConfigurationStep {
+func NewApplyClusterConfigurationStep(os storage.Operations, rs storage.RuntimeStates, reconcilerClient reconciler.Client) *ApplyClusterConfigurationStep {
 	return &ApplyClusterConfigurationStep{
-		reconcilerClient: reconcilerClient,
-		operationManager: process.NewUpgradeKymaOperationManager(os),
+		operationManager:    process.NewUpgradeKymaOperationManager(os),
+		reconcilerClient:    reconcilerClient,
+		runtimeStateStorage: rs,
 	}
 }
 
@@ -44,6 +45,13 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	if err != nil {
 		log.Errorf("Unable to apply cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
+	}
+
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfigurtation.Cluster, operation.Operation.ID, &clusterConfigurtation))
+	if err != nil {
+		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
+		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
