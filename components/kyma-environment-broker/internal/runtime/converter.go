@@ -142,18 +142,16 @@ func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []intern
 }
 
 func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation) {
-	if len(oprs) <= 1 {
+	if len(oprs) <= 0 {
 		return
 	}
 	dto.Status.Unsuspension = &pkg.OperationsData{}
 	dto.Status.Unsuspension.Data = make([]pkg.Operation, 0)
 
-	unsuspensionOps := oprs[:len(oprs)-1]
+	dto.Status.Unsuspension.TotalCount = len(oprs)
+	dto.Status.Unsuspension.Count = len(oprs)
 
-	dto.Status.Unsuspension.TotalCount = len(unsuspensionOps)
-	dto.Status.Unsuspension.Count = len(unsuspensionOps)
-
-	for _, o := range unsuspensionOps {
+	for _, o := range oprs {
 		op := pkg.Operation{}
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.Unsuspension.Data = append(dto.Status.Unsuspension.Data, op)

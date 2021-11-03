@@ -48,7 +48,9 @@ func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 		if len(pOprs) > 0 {
 			rl.converter.ApplyProvisioningOperation(&dto, &pOprs[len(pOprs)-1])
 		}
-		rl.converter.ApplyUnsuspensionOperations(&dto, pOprs)
+		if len(pOprs) > 1 {
+			rl.converter.ApplyUnsuspensionOperations(&dto, pOprs[:len(pOprs)-1])
+		}
 
 		dOprs, err := rl.operationsDb.ListDeprovisioningOperationsByInstanceID(inst.InstanceID)
 		if err != nil && !dberr.IsNotFound(err) {

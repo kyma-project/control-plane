@@ -294,6 +294,12 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 			// be present in all component configurations.
 			{Key: "global.domainName", Value: r.shootDomain},
 		}
+		for _, globalCfg := range data.KymaConfig.Configuration {
+			configs = append(configs, reconciler.Configuration{
+				Key:    globalCfg.Key,
+				Value:  globalCfg.Value,
+				Secret: falseIfNil(globalCfg.Secret)})
+		}
 
 		for _, c := range cmp.Configuration {
 			// this is a workaround. Finally we have to obtain the type during the reading overrides

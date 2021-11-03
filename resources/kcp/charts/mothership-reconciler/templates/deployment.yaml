@@ -15,6 +15,7 @@ spec:
       labels:
       {{- include "mothership-reconciler.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ .Values.global.mothership_reconciler.serviceAccountName }}
       {{- if .Values.deployment.podSecurityContext }}
       securityContext:
       {{ toYaml .Values.deployment.podSecurityContext | indent 8 }}

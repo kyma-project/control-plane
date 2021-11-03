@@ -806,7 +806,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight: 12,
-			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), reconcilerClient),
+			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}

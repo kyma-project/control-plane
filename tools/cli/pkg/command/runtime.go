@@ -20,13 +20,8 @@ type RuntimeCommand struct {
 	output   string
 	params   runtime.ListParameters
 	states   []string
+	opDetail bool
 }
-
-const (
-	inProgress = "in progress"
-	succeeded  = "succeeded"
-	failed     = "failed"
-)
 
 var tableColumns = []printer.Column{
 	{
@@ -88,7 +83,10 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "R", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Plans, "plan", "p", nil, "Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime state. The possible values are: succeeded, failed, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime state. The possible values are: succeeded, failed, error, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
+	cobraCmd.Flags().BoolVar(&cmd.opDetail, "ops", false, "Get all operations for the runtimes instead of just querying the last operation.")
+	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
+	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
 
 	return cobraCmd
 }
@@ -122,11 +120,16 @@ func (cmd *RuntimeCommand) Validate() error {
 	for _, s := range cmd.states {
 		val := runtime.State(s)
 		switch val {
-		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
+		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateError, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
 			cmd.params.States = append(cmd.params.States, val)
 		default:
 			return fmt.Errorf("invalid value for state: %s", s)
 		}
+	}
+
+	cmd.params.OperationDetail = runtime.LastOperation
+	if cmd.opDetail {
+		cmd.params.OperationDetail = runtime.AllOperation
 	}
 
 	return nil
@@ -161,38 +164,14 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 
 func runtimeStatus(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
-	op := rt.LastOperation()
-	return operationStatusToString(op, op.Type)
-}
-
-func operationStatusToString(op runtime.Operation, t runtime.OperationType) string {
-	switch op.State {
-	case succeeded:
-		switch t {
-		case runtime.Deprovision:
-			return "deprovisioned"
-		case runtime.Suspension:
-			return "suspended"
-		}
-		return "succeeded"
-	case failed:
-		return fmt.Sprintf("%s (%s)", "failed", t)
-	case inProgress:
-		switch t {
-		case runtime.Provision:
-			return "provisioning"
-		case runtime.Unsuspension:
-			return "provisioning (unsuspending)"
-		case runtime.Deprovision:
-			return "deprovisioning"
-		case runtime.Suspension:
-			return "deprovisioning (suspending)"
-		case runtime.UpgradeKyma:
-			return "upgrading"
-		}
+	state := rt.Status.State
+	switch state {
+	case runtime.StateError, runtime.StateFailed:
+		op := rt.LastOperation()
+		state = runtime.State(fmt.Sprintf("%s (%s)", state, op.Type))
 	}
 
-	return "succeeded"
+	return string(state)
 }
 
 func runtimeCreatedAt(obj interface{}) string {

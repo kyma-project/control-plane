@@ -30,7 +30,7 @@ spec:
             # Used for calls for oauth token
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
+      serviceAccountName: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
     {{- with .Values.deployment.securityContext }}
       securityContext:
         {{ toYaml . | indent 8 }}
