@@ -20,7 +20,7 @@ metadata:
   name: kcp-monitoring
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kyma-env-broker.fullname" . }}
+    name: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
