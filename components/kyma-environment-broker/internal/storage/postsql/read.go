@@ -380,6 +380,55 @@ func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.Ru
 	return states, nil
 }
 
+func (r readSession) GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(dbr.Eq("runtime_id", runtimeID)).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get the latest runtime state: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+	}
+	return state, nil
+}
+
+func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	runtimeIDIsEqual := dbr.Eq("runtime_id", runtimeID)
+	reconcilerInputIsNotEmptyString := dbr.Neq("cluster_setup", "")
+	reconcilerInputIsNotNil := dbr.Neq("cluster_setup", nil)
+	innerCondition := dbr.And(reconcilerInputIsNotEmptyString, reconcilerInputIsNotNil)
+	condition := dbr.And(runtimeIDIsEqual, innerCondition)
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get the latest runtime state with reconciler input: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state with reconciler input: %s", err)
+	}
+	return state, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 
