@@ -82,8 +82,7 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 		return nil, errors.Wrapf(err, "failed to marshal GCP info")
 	}
 	gcpMachines := &GCPMachines{}
-	err = json.Unmarshal(gcpMachinesData, gcpMachines)
-	if err != nil {
+	if err = json.Unmarshal(gcpMachinesData, gcpMachines); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal GCP machines data")
 	}
 

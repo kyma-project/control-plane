@@ -133,8 +133,7 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 		case GCP:
 			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
 			infraConfig := &gardenergcpv1alpha1.InfrastructureConfig{}
-			err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig)
-			if err != nil {
+			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
 				return nil, err
 			}
 			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
