@@ -1646,7 +1646,7 @@ func TestUpdateSCMigration(t *testing.T) {
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"logging", "monitoring", "btp-operator"})
 	for _, c := range rsu2.ClusterSetup.KymaConfig.Components {
 		if c.Component == "btp-operator" {
-			exp := reconciler.Components{
+			exp := reconciler.Component{
 				Component: "btp-operator",
 				Namespace: "kyma-system",
 				URL:       "https://btp-operator",
@@ -1717,7 +1717,7 @@ func TestUpdateSCMigrationRejection(t *testing.T) {
 	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
 }
 
-func componentNames(components []reconciler.Components) []string {
+func componentNames(components []reconciler.Component) []string {
 	names := make([]string, 0, len(components))
 	for _, c := range components {
 		names = append(names, c.Component)
