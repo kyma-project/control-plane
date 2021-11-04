@@ -1,14 +1,14 @@
 {{- if .Values.e2e.enabled }}
-apiVersion: "testing.kyma-project.io/v1alpha1"
-kind: TestDefinition
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: e2e-free-aws
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
-  disableConcurrency: false
   template:
     spec:
+      restartPolicy: Never
       serviceAccountName: e2e-provisioning
       volumes:
         - name: gardener-kubeconfig
