@@ -12,11 +12,14 @@ import (
 type Providers struct {
 	Azure AzureMachines
 	AWS   AWSMachines
+	GCP   GCPMachines
 }
 
 type AzureMachines map[string]Feature
 
 type AWSMachines map[string]Feature
+
+type GCPMachines map[string]Feature
 
 type Feature struct {
 	CpuCores int     `json:"cpu_cores"`
@@ -35,6 +38,10 @@ func (p Providers) GetFeature(cloudProvider, vmType string) (f *Feature) {
 		}
 	case Azure:
 		if feature, ok := p.Azure[vmType]; ok {
+			return &feature
+		}
+	case GCP:
+		if feature, ok := p.GCP[vmType]; ok {
 			return &feature
 		}
 	}
@@ -68,12 +75,21 @@ func LoadPublicCloudSpecs(cfg *env.Config) (*Providers, error) {
 	azureMachines := &AzureMachines{}
 	err = json.Unmarshal(azureMachinesData, azureMachines)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to uunmarshal Azure machines data")
+		return nil, errors.Wrapf(err, "failed to unmarshal Azure machines data")
+	}
+	gcpMachinesData, err := machineInfo[GCP].MarshalJSON()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to marshal GCP info")
+	}
+	gcpMachines := &GCPMachines{}
+	if err = json.Unmarshal(gcpMachinesData, gcpMachines); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal GCP machines data")
 	}
 
 	providers := Providers{
 		AWS:   *awsMachines,
 		Azure: *azureMachines,
+		GCP:   *gcpMachines,
 	}
 
 	return &providers, nil
