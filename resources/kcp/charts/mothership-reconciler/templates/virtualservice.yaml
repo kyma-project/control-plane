@@ -1,3 +1,4 @@
+{{ if .Values.global.mothership_reconciler.expose }}
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -38,3 +39,4 @@ spec:
         host: {{ include "mothership-reconciler.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
         port:
           number: 80
+{{- end }}
