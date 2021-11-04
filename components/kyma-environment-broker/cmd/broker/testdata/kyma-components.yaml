@@ -1,0 +1,8 @@
+---
+defaultNamespace: kyma-system
+components:
+  - name: "logging"
+  - name: "monitoring"
+  - name: "service-catalog"
+  - name: "service-catalog-addons"
+  - name: "helm-broker"

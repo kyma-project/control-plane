@@ -163,12 +163,13 @@ func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bo
 }
 
 type ERSContext struct {
-	TenantID        string                  `json:"tenant_id"`
-	SubAccountID    string                  `json:"subaccount_id"`
-	GlobalAccountID string                  `json:"globalaccount_id"`
-	ServiceManager  *ServiceManagerEntryDTO `json:"sm_platform_credentials,omitempty"`
-	Active          *bool                   `json:"active,omitempty"`
-	UserID          string                  `json:"user_id"`
+	TenantID              string                             `json:"tenant_id"`
+	SubAccountID          string                             `json:"subaccount_id"`
+	GlobalAccountID       string                             `json:"globalaccount_id"`
+	ServiceManager        *ServiceManagerEntryDTO            `json:"sm_platform_credentials,omitempty"`
+	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`
+	Active                *bool                              `json:"active,omitempty"`
+	UserID                string                             `json:"user_id"`
 }
 
 type ServiceManagerEntryDTO struct {
@@ -183,4 +184,12 @@ type ServiceManagerCredentials struct {
 type ServiceManagerBasicAuth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type ServiceManagerOperatorCredentials struct {
+	ClientID          string `json:"clientid"`
+	ClientSecret      string `json:"clientsecret"`
+	ServiceManagerURL string `json:"sm_url"`
+	URL               string `json:"url"`
+	XSAppName         string `json:"xsappname"`
 }

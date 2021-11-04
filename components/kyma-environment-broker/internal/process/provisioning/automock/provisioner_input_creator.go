@@ -155,6 +155,22 @@ func (_m *ProvisionerInputCreator) CreateUpgradeShootInput() (gqlschema.UpgradeS
 	return r0, r1
 }
 
+// DisableOptionalComponent provides a mock function with given fields: componentName
+func (_m *ProvisionerInputCreator) DisableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
+	ret := _m.Called(componentName)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(componentName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
 // EnableOptionalComponent provides a mock function with given fields: componentName
 func (_m *ProvisionerInputCreator) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
 	ret := _m.Called(componentName)

@@ -14,14 +14,16 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-//go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ComponentListProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=CreatorForPlan --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ComponentsDisabler --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OptionalComponentService --output=automock --outpkg=automock --case=underscore
 
 type (
 	OptionalComponentService interface {
 		ExecuteDisablers(components internal.ComponentConfigurationInputList, names ...string) (internal.ComponentConfigurationInputList, error)
 		ComputeComponentsToDisable(optComponentsToKeep []string) []string
+		AddComponentToDisable(name string, disabler runtime.ComponentDisabler)
 	}
 
 	ComponentsDisabler interface {
@@ -146,7 +148,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during createing provision input")
+		return nil, errors.Wrap(err, "during creating provision input")
 	}
 
 	initInput, err := f.initProvisionRuntimeInput(provider, version)
@@ -206,6 +208,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	if err != nil {
 		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
+
 	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
@@ -214,6 +217,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err
 	}
+
 	kymaProfile := provider.Profile()
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{

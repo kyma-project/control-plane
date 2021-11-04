@@ -32,6 +32,7 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
+	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
 	CreateClusterConfiguration() (reconciler.Cluster, error)
@@ -574,6 +575,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 
 func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
+
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
 		creds = &servicemanager.Credentials{
@@ -582,6 +584,7 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanage
 			URL:      sm.URL,
 		}
 	}
+
 	return servicemanager.RequestContext{
 		SubaccountID: parameters.ErsContext.SubAccountID,
 		Credentials:  creds,

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
@@ -67,6 +67,15 @@ func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.Pr
 	r.mutex.Lock("enabledOptionalComponents")
 	defer r.mutex.Unlock("enabledOptionalComponents")
 	r.enabledOptionalComponents[componentName] = struct{}{}
+	return r
+}
+
+func (r *RuntimeInput) DisableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+
+	r.optionalComponentsService.AddComponentToDisable(componentName, runtime.NewGenericComponentDisabler(componentName))
+	delete(r.enabledOptionalComponents, componentName)
 	return r
 }
 

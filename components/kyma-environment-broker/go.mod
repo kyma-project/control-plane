@@ -22,7 +22,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20211103174936-687e40a56850
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -60,5 +60,4 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.0
 	k8s.io/client-go => k8s.io/client-go v0.19.12
 	k8s.io/kubectl => k8s.io/kubectl v0.19.0
-    github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20211027040310-c1db48fe4fa5
 )

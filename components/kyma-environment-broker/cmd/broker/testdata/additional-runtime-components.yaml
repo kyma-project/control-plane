@@ -1,0 +1,5 @@
+components:
+  - name: "service-manager-proxy"
+    namespace: "kyma-system"
+  - name: "btp-operator"
+    namespace: "kyma-system"

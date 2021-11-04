@@ -435,6 +435,15 @@ func (c *SimpleInputCreator) EnableOptionalComponent(name string) internal.Provi
 	return c
 }
 
+func (c *SimpleInputCreator) DisableOptionalComponent(name string) internal.ProvisionerInputCreator {
+	for i, cmp := range c.EnabledComponents {
+		if cmp == name {
+			c.EnabledComponents = append(c.EnabledComponents[:i], c.EnabledComponents[i+1:]...)
+		}
+	}
+	return c
+}
+
 func (c *SimpleInputCreator) Provider() internal.CloudProvider {
 	return c.CloudProvider
 }
