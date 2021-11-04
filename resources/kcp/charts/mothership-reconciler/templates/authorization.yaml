@@ -1,3 +1,4 @@
+{{ if .Values.global.mothership_reconciler.authentication }}
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -46,6 +47,4 @@ spec:
 {{- range $component := .Values.global.components }}
         - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component }}"
 {{- end }}
-
-
- 
+{{- end }}
