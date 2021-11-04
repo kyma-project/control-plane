@@ -392,14 +392,13 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 }
 
 func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
-	r := RuntimeState{
+	return RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
 		RuntimeID:    runtimeID,
 		OperationID:  operationID,
 		ClusterSetup: reconcilerInput,
 	}
-	return r
 }
 
 type RuntimeState struct {
