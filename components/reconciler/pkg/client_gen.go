@@ -117,6 +117,11 @@ type ClientInterface interface {
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PostOperationsSchedulingIDCorrelationIDStop request with any body
+	PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostOperationsSchedulingIDCorrelationIDStop(ctx context.Context, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetReconciliations request
 	GetReconciliations(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -234,6 +239,30 @@ func (c *Client) PutClustersRuntimeIDStatus(ctx context.Context, runtimeID strin
 
 func (c *Client) GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClustersRuntimeIDStatusChangesRequest(c.Server, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostOperationsSchedulingIDCorrelationIDStopRequestWithBody(c.Server, schedulingID, correlationID, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostOperationsSchedulingIDCorrelationIDStop(ctx context.Context, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostOperationsSchedulingIDCorrelationIDStopRequest(c.Server, schedulingID, correlationID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -538,6 +567,60 @@ func NewGetClustersRuntimeIDStatusChangesRequest(server string, runtimeID string
 	return req, nil
 }
 
+// NewPostOperationsSchedulingIDCorrelationIDStopRequest calls the generic PostOperationsSchedulingIDCorrelationIDStop builder with application/json body
+func NewPostOperationsSchedulingIDCorrelationIDStopRequest(server string, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostOperationsSchedulingIDCorrelationIDStopRequestWithBody(server, schedulingID, correlationID, "application/json", bodyReader)
+}
+
+// NewPostOperationsSchedulingIDCorrelationIDStopRequestWithBody generates requests for PostOperationsSchedulingIDCorrelationIDStop with any type of body
+func NewPostOperationsSchedulingIDCorrelationIDStopRequestWithBody(server string, schedulingID string, correlationID string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "schedulingID", runtime.ParamLocationPath, schedulingID)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "correlationID", runtime.ParamLocationPath, correlationID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/operations/%s/%s/stop", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetReconciliationsRequest generates requests for GetReconciliations
 func NewGetReconciliationsRequest(server string, params *GetReconciliationsParams) (*http.Request, error) {
 	var err error
@@ -704,6 +787,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChangesWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusChangesResponse, error)
+
+	// PostOperationsSchedulingIDCorrelationIDStop request with any body
+	PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error)
+
+	PostOperationsSchedulingIDCorrelationIDStopWithResponse(ctx context.Context, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error)
 
 	// GetReconciliations request
 	GetReconciliationsWithResponse(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*GetReconciliationsResponse, error)
@@ -885,6 +973,30 @@ func (r GetClustersRuntimeIDStatusChangesResponse) StatusCode() int {
 	return 0
 }
 
+type PostOperationsSchedulingIDCorrelationIDStopResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *HTTPErrorResponse
+	JSON404      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostOperationsSchedulingIDCorrelationIDStopResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostOperationsSchedulingIDCorrelationIDStopResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetReconciliationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1018,6 +1130,23 @@ func (c *ClientWithResponses) GetClustersRuntimeIDStatusChangesWithResponse(ctx 
 		return nil, err
 	}
 	return ParseGetClustersRuntimeIDStatusChangesResponse(rsp)
+}
+
+// PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse request with arbitrary body returning *PostOperationsSchedulingIDCorrelationIDStopResponse
+func (c *ClientWithResponses) PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error) {
+	rsp, err := c.PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx, schedulingID, correlationID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostOperationsSchedulingIDCorrelationIDStopResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostOperationsSchedulingIDCorrelationIDStopWithResponse(ctx context.Context, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error) {
+	rsp, err := c.PostOperationsSchedulingIDCorrelationIDStop(ctx, schedulingID, correlationID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostOperationsSchedulingIDCorrelationIDStopResponse(rsp)
 }
 
 // GetReconciliationsWithResponse request returning *GetReconciliationsResponse
@@ -1327,6 +1456,46 @@ func ParseGetClustersRuntimeIDStatusChangesResponse(rsp *http.Response) (*GetClu
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostOperationsSchedulingIDCorrelationIDStopResponse parses an HTTP response from a PostOperationsSchedulingIDCorrelationIDStopWithResponse call
+func ParsePostOperationsSchedulingIDCorrelationIDStopResponse(rsp *http.Response) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostOperationsSchedulingIDCorrelationIDStopResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest HTTPErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
