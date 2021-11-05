@@ -70,6 +70,22 @@ func TestGetFeature(t *testing.T) {
 			cloudProvider: "aws",
 			vmType:        "m5.2xlarge.foo",
 		},
+		{
+			cloudProvider: "gcp",
+			vmType:        "n2-standard-8",
+			expectedFeature: Feature{
+				CpuCores: 8,
+				Memory:   32,
+			},
+		},
+		{
+			cloudProvider: "gcp",
+			vmType:        "n2-standard-16",
+			expectedFeature: Feature{
+				CpuCores: 16,
+				Memory:   64,
+			},
+		},
 	}
 
 	for _, tc := range testCases {

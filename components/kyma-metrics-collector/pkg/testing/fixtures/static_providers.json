@@ -206,5 +206,23 @@
         "cpu_cores": 2,
         "memory": 0.5
     }
+  },
+  "gcp": {
+    "n2-standard-8": {
+      "cpu_cores": 8,
+      "memory": 32
+    },
+    "n2-standard-16": {
+      "cpu_cores": 16,
+      "memory": 64
+    },
+    "n2-standard-32": {
+      "cpu_cores": 32,
+      "memory": 128
+    },
+    "n2-standard-64": {
+      "cpu_cores": 64,
+      "memory": 256
+    }
   }
 }
