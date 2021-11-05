@@ -43,3 +43,13 @@ Kyma Control Plane, as a part of Kyma, uses [Octopus](https://github.com/kyma-in
 ```
 
 Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
+
+
+## Reconciler
+
+If you want to deploy only Reconciler for testing purposes:
+
+```bash
+cd tools/reconciler
+make deploy-reconciler
+```
