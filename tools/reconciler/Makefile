@@ -10,6 +10,6 @@ deploy-reconciler:
 		--set compass.enabled=false --set mothership-reconciler.db.encryptionKey=5bc19d3a2032fb8795cd86e08b473a351631505d2522991266b1fb85f89bad5f \
 		--set mothership-reconciler.db.serviceHost=reconciler-postgresql --set mothership-reconciler.db.reconcilerUsername=postgres \
 		--set mothership-reconciler.db.reconcilerPassword=test --set postgresql.postgresqlPassword=test --set postgresql.persistence.enabled=false \
-		--set postgresql.initdbScriptsConfigMap=reconciler-postgresql-db-init ../../resources/kcp > reconciler.yaml
+		--set postgresql.initdbScriptsConfigMap=reconciler-postgresql-db-init --set migratorJobs.enabled=false ../../resources/kcp > reconciler.yaml
 	kubectl apply -f reconciler.yaml
 	rm reconciler.yaml
