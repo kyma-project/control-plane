@@ -679,6 +679,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -694,6 +699,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -723,6 +733,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -738,6 +753,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 			},
@@ -757,6 +777,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -772,6 +797,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -813,6 +843,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -828,6 +863,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -855,6 +895,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{

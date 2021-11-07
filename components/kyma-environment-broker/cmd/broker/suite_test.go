@@ -448,7 +448,8 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			},
 		},
 		Data: map[string]string{
-			"foo": "bar",
+			"foo":                            "bar",
+			"global.booleanOverride.enabled": "false",
 		},
 	}
 	scOverride := &coreV1.ConfigMap{
