@@ -153,7 +153,18 @@ global:
     expose: true
     authentication: true
     serviceAccountName: "mothership-reconciler"
-
+    auditlog:
+      enabled: true
+      logPath: "/var/log/auditlog"
+      configMapName: "kcp-auditlog-config"
+      secretName: "kcp-auditlog-secret"
+      image: eu.gcr.io/kyma-project/tpi/fluent-bit
+      tag: 1.8.8-fc8424e7
+      persistence:
+        enabled: true
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        storageClass: "standard"
   component_reconcilers:
     enabled: false
     authentication: true
