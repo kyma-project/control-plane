@@ -46,7 +46,7 @@ Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) documen
 
 ## Reconciler
 
-If you want to deploy only the [Reconciler](https://github.com/kyma-incubator/reconciler) for testing purposes:
+If you want to deploy only the [Reconciler](https://github.com/kyma-incubator/reconciler) for testing purposes, run:
 
 ```bash
 cd tools/reconciler
