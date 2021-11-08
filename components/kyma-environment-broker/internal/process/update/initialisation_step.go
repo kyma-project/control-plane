@@ -84,18 +84,29 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("operation preempted by deprovisioning %s", lastOp.ID), log)
 	}
 
+	var version *internal.RuntimeVersionData
 	if operation.RuntimeVersion.IsEmpty() {
-		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
+		version, err = s.runtimeVerConfigurator.ForUpdating(operation)
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 		}
-		operation.RuntimeVersion = *version
 	}
-	if operation.RuntimeVersion.MajorVersion == 2 {
-		operation.LastRuntimeState, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
+	var lrs internal.RuntimeState
+	if version.MajorVersion == 2 {
+		lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 		}
+	}
+	op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		if version != nil {
+			op.RuntimeVersion = *version
+		}
+		op.LastRuntimeState = lrs
+	}, log)
+	operation = op
+	if delay != 0 {
+		return operation, delay, nil
 	}
 
 	return s.initializeUpgradeShootRequest(operation, log)

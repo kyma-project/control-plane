@@ -731,6 +731,11 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
+			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+			condition: update.ForKyma2,
+		},
+		{
+			stage:     "runtime",
 			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
 			condition: update.ForBTPOperatorCredentialsProvided,
 		},
