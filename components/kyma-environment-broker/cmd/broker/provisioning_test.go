@@ -244,11 +244,11 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		zonesCount       *int
 		region           string
 
-		expectedProfile                    gqlschema.KymaProfile
-		expectedProvider                   string
-		expectedMinimalNumberOfNodes       int
-		expectedMaximumNumberOfNodes       int
-		expectedMachineType                string
+		expectedProfile                     gqlschema.KymaProfile
+		expectedProvider                    string
+		expectedMinimalNumberOfNodes        int
+		expectedMaximumNumberOfNodes        int
+		expectedMachineType                 string
 		expectedSharedSubscription          bool
 		expectedSubscriptionHyperscalerType hyperscaler.Type
 	}{
@@ -443,9 +443,9 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 
@@ -472,9 +472,9 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 }
