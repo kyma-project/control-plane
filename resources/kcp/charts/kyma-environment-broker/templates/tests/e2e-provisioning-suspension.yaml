@@ -82,16 +82,16 @@ spec:
           args: ["-c", "echo 'Starting e2e-suspension test on Azure. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Suspension; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 
 ---
-apiVersion: "testing.kyma-project.io/v1alpha1"
-kind: TestDefinition
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: e2e-trial-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
-  disableConcurrency: false
   template:
     spec:
+      restartPolicy: Never
       serviceAccountName: e2e-provisioning
       volumes:
         - name: gardener-kubeconfig
