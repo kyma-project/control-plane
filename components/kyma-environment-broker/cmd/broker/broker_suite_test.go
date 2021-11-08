@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"sort"
 	"testing"
 	"time"
 
@@ -551,6 +552,18 @@ func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedCluste
 func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKymaConfig reconciler.KymaConfig) {
 	clusterConfig := s.getClusterConfig(operationID)
 
+	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
+	for _, component := range clusterConfig.KymaConfig.Components {
+		sort.Slice(component.Configuration, func(i, j int) bool {
+			return component.Configuration[i].Key < component.Configuration[j].Key
+		})
+	}
+	for _, component := range expectedKymaConfig.Components {
+		sort.Slice(component.Configuration, func(i, j int) bool {
+			return component.Configuration[i].Key < component.Configuration[j].Key
+		})
+	}
+
 	assert.Equal(s.t, expectedKymaConfig, clusterConfig.KymaConfig)
 }
 
@@ -679,6 +692,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -694,6 +712,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -723,6 +746,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -738,6 +766,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 			},
@@ -757,6 +790,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -772,6 +810,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -813,6 +856,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 					Value:  "bar",
 					Secret: false,
 				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
 			},
 		},
 		{
@@ -828,6 +876,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{
@@ -855,6 +908,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				{
 					Key:    "foo",
 					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
 					Secret: false,
 				},
 				{

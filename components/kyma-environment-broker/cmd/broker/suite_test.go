@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -448,7 +449,8 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			},
 		},
 		Data: map[string]string{
-			"foo": "bar",
+			"foo":                            "bar",
+			"global.booleanOverride.enabled": "false",
 		},
 	}
 	scOverride := &coreV1.ConfigMap{
@@ -812,31 +814,38 @@ func (s *ProvisioningSuite) AssertMachineType(machineType string) {
 	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
 }
 
-func (s *ProvisioningSuite) AssertOverrides(overrides gqlschema.ConfigEntryInput) {
+func (s *ProvisioningSuite) AssertOverrides(overrides []*gqlschema.ConfigEntryInput) {
 	input := s.fetchProvisionInput()
 
-	assert.Equal(s.t, overrides.Key, input.KymaConfig.Configuration[0].Key)
-	assert.Equal(s.t, overrides.Value, input.KymaConfig.Configuration[0].Value)
+	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
+	sort.Slice(overrides, func(i, j int) bool {
+		return overrides[i].Key < overrides[j].Key
+	})
+	sort.Slice(input.KymaConfig.Configuration, func(i, j int) bool {
+		return input.KymaConfig.Configuration[i].Key < input.KymaConfig.Configuration[j].Key
+	})
+
+	assert.Equal(s.t, overrides, input.KymaConfig.Configuration)
 }
 
 func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
-	input := s.fetchProvisionInput()
+	provisionInput := s.fetchProvisionInput()
 
 	switch planID {
 	case broker.AzureHAPlanID:
 		if zonesCount != nil {
 			// zonesCount was provided in provisioning request
-			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 			break
 		}
 		// zonesCount was not provided, should use default value
-		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 	case broker.AWSHAPlanID:
 		if zonesCount != nil {
-			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 			break
 		}
-		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 	default:
 	}
 }

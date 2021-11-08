@@ -46,25 +46,25 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		SetShootDomain(operation.ShootDomain).
 		SetProvisioningParameters(operation.ProvisioningParameters)
 
-	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()
+	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to create cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
 	}
 
 	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeStateWithReconcilerInput(clusterConfigurtation.Cluster, operation.ID, &clusterConfigurtation))
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.Cluster, operation.ID, &clusterConfiguration))
 	if err != nil {
 		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
-		clusterConfigurtation.Cluster,
-		clusterConfigurtation.KymaConfig.Version,
-		clusterConfigurtation.KymaConfig.Profile,
-		s.componentList(clusterConfigurtation))
-	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfigurtation)
+		clusterConfiguration.Cluster,
+		clusterConfiguration.KymaConfig.Version,
+		clusterConfiguration.KymaConfig.Profile,
+		s.componentList(clusterConfiguration))
+	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())
