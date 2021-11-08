@@ -2,15 +2,12 @@ package command
 
 import (
 	"context"
-	"io"
 	"net/http"
 
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
-	"gopkg.in/square/go-jose.v2/json"
-
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -72,56 +69,26 @@ func (cmd *operationStopCmd) Run() error {
 	httpClient := oauth2.NewClient(ctx, cmd.auth)
 
 	httpClient = &http.Client{}
-
 	client, err := reconciler.NewClient(cmd.reconcilerURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	reason := mothership.PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody{Reason: "" +
-		"Operation set to DONE manually via KCP CLI"}
+	reason := mothership.PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody{Reason: "Operation set to DONE manually via KCP CLI"}
 
 	response, err := client.PostOperationsSchedulingIDCorrelationIDStop(ctx, cmd.opts.schedulingID, cmd.opts.correlationID, reason)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "while doing POST reques to operation stop endpoint")
 	}
 
 	if response.StatusCode != http.StatusOK {
-		// Error handling here
 		var err error
-		errMsg, err := readErrorResponse(response.Body)
+		mthshipErr, err := mothership.ReadErrResponse(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "while reading response body")
 		}
-		return fetchError(response.StatusCode, errMsg)
+		return mthshipErr.ToError(response.StatusCode)
 	}
 
 	return nil
-}
-
-//TODO: move it to some generic package, maybe in components!
-func readErrorResponse(reader io.Reader) (mothership.HTTPErrorResponse, error) {
-	decoder := json.NewDecoder(reader)
-	response := mothership.HTTPErrorResponse{}
-	err := decoder.Decode(&response)
-
-	return response, err
-}
-
-func fetchError(statusCode int, errMsg mothership.HTTPErrorResponse) error {
-	var err error
-	switch statusCode {
-	case http.StatusForbidden:
-		{
-			err = errors.Errorf("Operation can't be fullfiled, reason: %s", errMsg.Error)
-		}
-	case http.StatusInternalServerError:
-		{
-			err = errors.Errorf("Operation can't be fullfiled by server, reason: %s", errMsg.Error)
-		}
-	default:
-		err = errors.Errorf("Unhandled status code: %d, reason: %s", statusCode, errMsg.Error)
-	}
-
-	return err
 }
