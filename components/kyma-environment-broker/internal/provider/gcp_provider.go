@@ -18,7 +18,7 @@ const (
 
 var europeGcp = "europe-west3"
 var usGcp = "us-central1"
-var asiaGcp = "asia-northeast1"
+var asiaGcp = "asia-south1"
 
 var toGCPSpecific = map[string]*string{
 	string(broker.Europe): &europeGcp,
