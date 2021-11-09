@@ -296,7 +296,7 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 		return reconciler.Cluster{}, errors.New("missing kubeconfig")
 	}
 
-	componentConfigs := []reconciler.Component{}
+	var componentConfigs []reconciler.Component
 	for _, cmp := range data.KymaConfig.Components {
 		configs := []reconciler.Configuration{
 			// because there is no section like global configuration, all "global" settings must
@@ -306,25 +306,14 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 		for _, globalCfg := range data.KymaConfig.Configuration {
 			configs = append(configs, reconciler.Configuration{
 				Key:    globalCfg.Key,
-				Value:  globalCfg.Value,
+				Value:  resolveValueType(globalCfg.Value),
 				Secret: falseIfNil(globalCfg.Secret)})
 		}
 
 		for _, c := range cmp.Configuration {
-			// this is a workaround. Finally we have to obtain the type during the reading overrides
-			var val interface{}
-			switch c.Value {
-			case "true":
-				val = true
-			case "false":
-				val = false
-			default:
-				val = c.Value
-			}
-
 			configuration := reconciler.Configuration{
 				Key:    c.Key,
-				Value:  val,
+				Value:  resolveValueType(c.Value),
 				Secret: falseIfNil(c.Secret),
 			}
 			configs = append(configs, configuration)
@@ -678,4 +667,19 @@ func randomString(n int) string {
 func trimLastCharacters(s string, count int) string {
 	s = s[:len(s)-count]
 	return s
+}
+
+func resolveValueType(v interface{}) interface{} {
+	// this is a workaround. Finally we have to obtain the type during the reading overrides
+	var val interface{}
+	switch v {
+	case "true":
+		val = true
+	case "false":
+		val = false
+	default:
+		val = v
+	}
+
+	return val
 }

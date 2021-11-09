@@ -244,118 +244,118 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		zonesCount       *int
 		region           string
 
-		expectedProfile                    gqlschema.KymaProfile
-		expectedProvider                   string
-		expectedMinimalNumberOfNodes       int
-		expectedMaximumNumberOfNodes       int
-		expectedMachineType                string
-		expectedSharedSubscription         bool
-		expectedSubsciptionHyperscalerType hyperscaler.Type
+		expectedProfile                     gqlschema.KymaProfile
+		expectedProvider                    string
+		expectedMinimalNumberOfNodes        int
+		expectedMaximumNumberOfNodes        int
+		expectedMachineType                 string
+		expectedSharedSubscription          bool
+		expectedSubscriptionHyperscalerType hyperscaler.Type
 	}{
 		"Regular trial": {
 			planID: broker.TrialPlanID,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedMachineType:                "Standard_D4_v3",
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         true,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedMachineType:                 "Standard_D4_v3",
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          true,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Freemium aws": {
 			planID:           broker.FreemiumPlanID,
 			platformProvider: internal.AWS,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedMachineType:                "m5.xlarge",
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedMachineType:                 "m5.xlarge",
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"Freemium azure": {
 			planID:           broker.FreemiumPlanID,
 			platformProvider: internal.Azure,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedMachineType:                "Standard_D4_v3",
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedMachineType:                 "Standard_D4_v3",
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production Azure": {
 			planID: broker.AzurePlanID,
 
-			expectedMinimalNumberOfNodes:       2,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        2,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"HA Azure - provided zonesCount": {
 			planID:     broker.AzureHAPlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"HA Azure - default zonesCount": {
 			planID: broker.AzureHAPlanID,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production AWS": {
 			planID: broker.AWSPlanID,
 
-			expectedMinimalNumberOfNodes:       2,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        2,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m5.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"HA AWS - provided zonesCount": {
 			planID:     broker.AWSHAPlanID,
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m5.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"HA AWS - default zonesCount": {
 			planID: broker.AWSHAPlanID,
 			region: "eu-central-1",
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m5.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -390,7 +390,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			suite.AssertMaximumNumberOfNodes(tc.expectedMaximumNumberOfNodes)
 			suite.AssertMachineType(tc.expectedMachineType)
 			suite.AssertZonesCount(tc.zonesCount, tc.planID)
-			suite.AssertSubscription(tc.expectedSharedSubscription, tc.expectedSubsciptionHyperscalerType)
+			suite.AssertSubscription(tc.expectedSharedSubscription, tc.expectedSubscriptionHyperscalerType)
 		})
 
 	}
@@ -443,9 +443,9 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 
@@ -472,9 +472,9 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 }

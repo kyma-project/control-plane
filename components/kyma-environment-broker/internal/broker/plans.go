@@ -90,7 +90,7 @@ func AzureRegions() []string {
 func GCPRegions() []string {
 	return []string{
 		"europe-west3",
-		"asia-northeast1",
+		"asia-south1",
 		"us-central1"}
 }
 

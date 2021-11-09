@@ -15,7 +15,7 @@
     },
     "region": {
       "type": "string",
-      "enum": ["europe-west3", "asia-northeast1", "us-central1"]
+      "enum": ["europe-west3", "asia-south1", "us-central1"]
     },
     "machineType": {
       "type": "string",

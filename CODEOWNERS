@@ -32,6 +32,7 @@
 # Reconciler
 /resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @rJankowski93 @moelsayed
 /resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @rJankowski93 @moelsayed
+/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @rJankowski93 @moelsayed
 
 
 # e2e-provisioning

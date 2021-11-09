@@ -1,3 +1,4 @@
+{{- if .Values.migratorJobs.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -183,3 +184,4 @@ spec:
                 secret:
                   secretName: cloudsql-instance-credentials
             {{end}}
+{{ end }}
