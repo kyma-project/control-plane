@@ -4,10 +4,10 @@ global:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.25.0-alpine-ef998682
     mothership_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/mothership
-      tag: "2c7e77ec"
+      tag: "4d3d737e"
     component_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/component
-      tag: "2c7e77ec"
+      tag: "4d3d737e"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -59,6 +59,7 @@ global:
     - rafter
     - eventing
     - serverless
+    - cluster-essentials
 
   auditlog:
     configMapName: "kcp-auditlog-config"
