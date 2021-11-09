@@ -128,6 +128,13 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 	}
 
 	if operation.ProvisionerOperationID == "" {
+
+		if operation.ClusterConfigurationVersion != 0 {
+			// upgrade was trigerred in reconciler, no need to call provisioner and create UpgradeRuntimeInput
+			// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade
+			log.Debugf("Cluster configuration already created, skipping")
+			return operation, 0, nil
+		}
 		log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
 		return s.initializeUpgradeRuntimeRequest(operation, log)
 	}

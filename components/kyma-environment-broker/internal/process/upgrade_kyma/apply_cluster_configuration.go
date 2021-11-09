@@ -81,7 +81,8 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return operation, 5 * time.Second, nil
 	}
 
-	return updatedOperation, 0, nil
+	// return some retry value to get back to initialisation step
+	return updatedOperation, 5 * time.Second, nil
 
 }
 
