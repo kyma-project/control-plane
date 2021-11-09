@@ -1,14 +1,14 @@
 {{- if .Values.e2e.enabled }}
-apiVersion: "testing.kyma-project.io/v1alpha1"
-kind: TestDefinition
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: upg-tst-aws-prov
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
-  disableConcurrency: false
   template:
     spec:
+      restartPolicy: Never
       serviceAccountName: e2e-provisioning
       containers:
         - name: tests
@@ -82,16 +82,16 @@ spec:
           args: ["-c", "echo 'Starting e2e upgrade test on AWS. Waiting 20s for api server...'; sleep 20; ./test.test -test.run Test_E2E_Upgrade; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
 
 ---
-apiVersion: "testing.kyma-project.io/v1alpha1"
-kind: TestDefinition
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: upg-tst-aws-prov-cleanup
   labels:
 {{ include "kyma-env-broker.labels" . | indent 4 }}
 spec:
-  disableConcurrency: false
   template:
     spec:
+      restartPolicy: Never
       serviceAccountName: e2e-provisioning
       containers:
         - name: tests
