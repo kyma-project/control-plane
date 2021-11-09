@@ -150,6 +150,8 @@ users:
       - get-token
       - "--oidc-issuer-url=%s"
       - "--oidc-client-id=%s"
+      - "--oidc-extra-scope=email"
+      - "--oidc-extra-scope=openid"
       command: kubectl
 `, issuerURL, clientID,
 	)
