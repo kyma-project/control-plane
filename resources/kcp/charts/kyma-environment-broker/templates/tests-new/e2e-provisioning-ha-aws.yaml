@@ -138,7 +138,7 @@ spec:
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_CONFIG_NAME
-              value: "{{ .Values.e2e.azure.configName }}"
+              value: "{{ .Values.e2e.ha_aws.configName }}"
             - name: APP_DEPLOY_NAMESPACE
               value: "kcp-system"
             - name: APP_DIRECTOR_URL
