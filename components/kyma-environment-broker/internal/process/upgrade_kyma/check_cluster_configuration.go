@@ -43,6 +43,13 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), log)
 	}
 
+	if operation.ClusterConfigurationVersion == 0 {
+		// upgrade was trigerred in reconciler, no need to call provisioner and create UpgradeRuntimeInput
+		// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade
+		log.Debugf("Cluster configuration not yet created, skipping")
+		return operation, 0, nil
+	}
+
 	state, err := s.reconcilerClient.GetCluster(operation.InstanceDetails.RuntimeID, operation.ClusterConfigurationVersion)
 	if kebError.IsTemporaryError(err) {
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %s", err.Error())

@@ -784,6 +784,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		cnd      upgrade_kyma.StepCondition
 	}{
 		{
+			weight: 1,
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
+			cnd:    upgrade_kyma.ForKyma2,
+		},
+		{
 			weight: 2,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
@@ -814,11 +819,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 12,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
-			weight: 13,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}
