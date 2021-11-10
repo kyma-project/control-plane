@@ -116,12 +116,17 @@ spec:
             -e /fluent-bit/lib/flb-out_sequentialhttp.so \
             -e /fluent-bit/lib/out_grafana_loki.so \
             -i tail \
-            -p path={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log \
-            -p DB={{ .Values.global.mothership_reconciler.auditlog.logPath }}/fluentbit.db \
+            -p path=/var/log/auditlog/mothership-audit.log \
+            -p DB=/var/log/auditlog/fluentbit.db \
+            -F lua \
+            -p script=/fluent-bit/etc/filter.lua \
+            -p call=reformat \
+            -m '*' \
             -o sequentialhttp \
+            -p format=json_lines \
             -p host=${HOST} \
             -p port=${PORT} \
-            -p uri=/${URI}security-events \
+            -p uri=${URI}security-events \
             -p http_user=${APP_AUDITLOG_USER} \
             -p http_passwd=${APP_AUDITLOG_PASSWORD} \
             -m '*' \
@@ -152,6 +157,8 @@ spec:
         volumeMounts:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
+        - name: fluentbit-config
+          mountPath: /fluent-bit/etc/    
       {{- end }}
       volumes:
       {{- if eq .Values.global.database.embedded.enabled false }}
@@ -169,10 +176,22 @@ spec:
       - name: audit-log
         persistentVolumeClaim:
           claimName: mothership-auditlog-pvc
+      - name: fluentbit-config
+        configMap:
+          name: mothership-fluentbit-config
+          items:
+            - key: filter.lua
+              path: filter.lua
       {{- else }}
         {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
       - name: audit-log
         emptyDir: {}
+      - name: fluentbit-config
+        configMap:
+          name: mothership-fluentbit-config
+          items:
+            - key: filter.lua
+              path: filter.lua        
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

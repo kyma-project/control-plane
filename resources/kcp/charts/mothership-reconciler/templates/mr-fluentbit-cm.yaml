@@ -1,0 +1,22 @@
+{{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+  {{- include "mothership-reconciler.labels" . | nindent 4 }}
+  name: mothership-fluentbit-config
+  namespace: {{ .Release.Namespace }}
+data:
+  filter.lua: |
+    function reformat(tag, timestamp, record)
+        payload = record["log"]
+        new_record = {}
+        new_record["uuid"] = payload:match("\"uuid\":\"(.*)\"")
+        new_record["time"] = payload:match("\"time\":\"(.-)\"")
+        new_record["data"] = payload:match("\"data\":\"(.*)\"")
+        new_record["user"] = payload:match("\"user\":\"(.*)\"")
+        new_record["description"] = "Mothership-Reconciler Audit logs"
+
+        return 1, 0, new_record
+    end
+{{- end }}
