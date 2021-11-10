@@ -153,7 +153,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(kymaVer, additionalKymaVersions)...)
+	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 
 	reconcilerClient := reconciler.NewFakeClient()
 	gardenerClient := gardenerFake.NewSimpleClientset()
