@@ -94,6 +94,8 @@ users:
       - get-token
       - "--oidc-issuer-url=testIssuerURL"
       - "--oidc-client-id=testClientId"
+      - "--oidc-extra-scope=email"
+      - "--oidc-extra-scope=openid"
       command: kubectl
 `
 )

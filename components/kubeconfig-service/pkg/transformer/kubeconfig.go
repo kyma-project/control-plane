@@ -49,5 +49,7 @@ users:
       - get-token
       - "--oidc-issuer-url={{ .OIDCIssuerURL }}"
       - "--oidc-client-id={{ .OIDCClientID }}"
+      - "--oidc-extra-scope=email"
+      - "--oidc-extra-scope=openid"
       command: kubectl
 `
