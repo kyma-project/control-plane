@@ -176,7 +176,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor orchestration.OperationExecutor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
 	case orchestration.ParallelStrategy:
-		return strategies.NewParallelOrchestrationStrategy(executor, log, 24*time.Hour)
+		return strategies.NewParallelOrchestrationStrategy(executor, log, 0)
 	}
 	return nil
 }
