@@ -723,11 +723,15 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	}{
 		{
 			stage: "cluster",
-			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory, runtimeVerConfigurator, runtimeStatesDb),
+			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
 		},
 		{
 			stage: "cluster",
 			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+		},
+		{
+			stage: "runtime",
+			step:  update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
 		},
 		{
 			stage:     "runtime",

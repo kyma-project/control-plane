@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -81,8 +80,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			rs.Insert(state)
 			builder := &automock.CreatorForPlan{}
 			builder.On("CreateUpgradeShootInput", mock.Anything).Return(&fixture.SimpleInputCreator{}, nil)
-			rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, rs)
-			step := NewInitialisationStep(is, os, builder, rvc, rs)
+			step := NewInitialisationStep(is, os, builder)
 			updatingOperation := fixture.FixUpdatingOperation("up-id", "iid")
 			updatingOperation.State = orchestration.Pending
 			os.InsertUpdatingOperation(updatingOperation)

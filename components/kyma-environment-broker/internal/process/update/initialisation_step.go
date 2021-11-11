@@ -9,7 +9,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -28,22 +27,18 @@ const (
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
 type InitialisationStep struct {
-	operationManager       *process.UpdateOperationManager
-	operationStorage       storage.Operations
-	instanceStorage        storage.Instances
-	inputBuilder           input.CreatorForPlan
-	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator
-	runtimeStatesDb        storage.RuntimeStates
+	operationManager *process.UpdateOperationManager
+	operationStorage storage.Operations
+	instanceStorage  storage.Instances
+	inputBuilder     input.CreatorForPlan
 }
 
-func NewInitialisationStep(is storage.Instances, os storage.Operations, b input.CreatorForPlan, rvc *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates) *InitialisationStep {
+func NewInitialisationStep(is storage.Instances, os storage.Operations, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:       process.NewUpdateOperationManager(os),
-		operationStorage:       os,
-		instanceStorage:        is,
-		inputBuilder:           b,
-		runtimeVerConfigurator: rvc,
-		runtimeStatesDb:        runtimeStatesDb,
+		operationManager: process.NewUpdateOperationManager(os),
+		operationStorage: os,
+		instanceStorage:  is,
+		inputBuilder:     b,
 	}
 }
 
@@ -82,31 +77,6 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 
 	if lastOp.Type == internal.OperationTypeDeprovision {
 		return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("operation preempted by deprovisioning %s", lastOp.ID), log)
-	}
-
-	var version *internal.RuntimeVersionData
-	if operation.RuntimeVersion.IsEmpty() {
-		version, err = s.runtimeVerConfigurator.ForUpdating(operation)
-		if err != nil {
-			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
-		}
-	}
-	var lrs internal.RuntimeState
-	if version.MajorVersion == 2 {
-		lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
-		if err != nil {
-			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
-		}
-	}
-	op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
-		if version != nil {
-			op.RuntimeVersion = *version
-		}
-		op.LastRuntimeState = lrs
-	}, log)
-	operation = op
-	if delay != 0 {
-		return operation, delay, nil
 	}
 
 	return s.initializeUpgradeShootRequest(operation, log)
