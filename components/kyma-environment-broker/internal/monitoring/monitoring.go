@@ -9,6 +9,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/storage/driver"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -81,15 +82,17 @@ func (c *client) IsDeployed(releaseName string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	listAction := action.NewList(cfg)
-	listAction.Deployed = true
-
-	releases, err := listAction.Run()
-	if err != nil {
-		return false, kebError.AsTemporaryError(err, "unable to list releases")
+	histClient := action.NewHistory(cfg)
+	histClient.Max = 1
+	helmHistory, err := histClient.Run(releaseName)
+	if err == driver.ErrReleaseNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, kebError.AsTemporaryError(err, "unable to get helm history")
 	}
-	for _, rel := range releases {
-		if rel.Name == releaseName {
+
+	for _, rel := range helmHistory {
+		if rel.Info.Status == release.StatusDeployed {
 			return true, nil
 		}
 	}
@@ -102,25 +105,14 @@ func (c *client) IsPresent(releaseName string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	listAction := action.NewList(cfg)
-	listAction.Deployed = true
-	listAction.Superseded = true
-	listAction.Uninstalling = true
-	listAction.Deployed = true
-	listAction.Failed = true
-	listAction.Pending = true
-
-	releases, err := listAction.Run()
-	if err != nil {
-		return false, kebError.AsTemporaryError(err, "unable to list releases")
+	histClient := action.NewHistory(cfg)
+	histClient.Max = 1
+	if _, err := histClient.Run(releaseName); err == driver.ErrReleaseNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, kebError.AsTemporaryError(err, "unable to get helm history")
 	}
-	for _, rel := range releases {
-		if rel.Name == releaseName {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return true, nil
 }
 
 func (c *client) InstallRelease(params Parameters) (*release.Release, error) {
