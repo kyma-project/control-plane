@@ -62,7 +62,6 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 				}`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
 
-
 	suite.AssertReconcilerStartedReconcilingWhenUpgrading(iid)
 
 	opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
