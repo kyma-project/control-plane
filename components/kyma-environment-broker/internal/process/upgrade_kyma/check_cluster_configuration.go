@@ -45,7 +45,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 	if operation.ClusterConfigurationVersion == 0 {
 		// upgrade was trigerred in reconciler, no need to call provisioner and create UpgradeRuntimeInput
-		// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade
+		// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade - introduce stages
 		log.Debugf("Cluster configuration not yet created, skipping")
 		return operation, 0, nil
 	}

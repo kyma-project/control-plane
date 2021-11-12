@@ -40,27 +40,35 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	operation.InputCreator.SetRuntimeID(operation.Runtime.RuntimeID).
 		SetInstanceID(operation.InstanceID).
 		SetKubeconfig(operation.Kubeconfig).
-		SetShootName(operation.InstanceDetails.ShootName)
+		SetShootName(operation.InstanceDetails.ShootName).
+		SetShootDomain(operation.ShootDomain)
 
-	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()
+	// enable service management components for upgrade 1.x -> 2.0
+	// needed because CreateClusterConfiguration() uses CreateProvisionRuntimeInput() method inside
+	// which
+	//operation.InputCreator.EnableOptionalComponent(provisioning.HelmBrokerComponentName)
+	//operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogComponentName)
+	//operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogAddonsComponentName)
+
+	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to apply cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
 	}
 
 	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeStateWithReconcilerInput(clusterConfigurtation.Cluster, operation.Operation.ID, &clusterConfigurtation))
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.Cluster, operation.Operation.ID, &clusterConfiguration))
 	if err != nil {
 		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
-		clusterConfigurtation.Cluster,
-		clusterConfigurtation.KymaConfig.Version,
-		clusterConfigurtation.KymaConfig.Profile,
-		s.componentList(clusterConfigurtation))
-	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfigurtation)
+		clusterConfiguration.Cluster,
+		clusterConfiguration.KymaConfig.Version,
+		clusterConfiguration.KymaConfig.Profile,
+		s.componentList(clusterConfiguration))
+	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())

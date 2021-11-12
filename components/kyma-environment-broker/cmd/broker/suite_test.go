@@ -65,7 +65,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "1.21"
+	defaultKymaVer         = "1.24.7"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -902,7 +902,7 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:        "1.21",
+		KymaVersion:        "1.24.7",
 		KymaPreviewVersion: "2.0",
 
 		EnableOnDemandVersion: true,
