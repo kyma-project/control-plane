@@ -71,8 +71,18 @@ spec:
           {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
           - --audit-log
           - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log
+          - audit-log-tenant-id=$(APP_AUDITLOG_TENANT)
           {{- end }}
-
+        env:
+        - name: APP_AUDITLOG_TENANT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
+              key: auditlog-tenant
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         name: mothership-reconciler
         ports:
         - name: http
@@ -123,7 +133,7 @@ spec:
             -p call=reformat \
             -m '*' \
             -o sequentialhttp \
-            -p format=json_lines \
+            -p format=json_stream \
             -p host=${HOST} \
             -p port=${PORT} \
             -p uri=${URI}security-events \
@@ -149,11 +159,6 @@ spec:
             secretKeyRef:
               name: {{ .Values.global.mothership_reconciler.auditlog.secretName }}
               key: auditlog-password
-        - name: APP_AUDITLOG_TENANT
-          valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
-              key: auditlog-tenant
         volumeMounts:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}

@@ -11,12 +11,14 @@ data:
     function reformat(tag, timestamp, record)
         payload = record["log"]
         new_record = {}
-        new_record["uuid"] = payload:match("\"uuid\":\"(.*)\"")
+        new_record["tenant"] = payload:match("\"tenant\":\"(.-)\"")
+        new_record["category"] = payload:match("\"category\":\"(.-)\"")
+        new_record["ip"] = payload:match("\"ip\":\"(.-)\"")
+        new_record["uuid"] = payload:match("\"uuid\":\"(.-)\"")
         new_record["time"] = payload:match("\"time\":\"(.-)\"")
         new_record["data"] = payload:match("\"data\":\"(.*)\"")
-        new_record["user"] = payload:match("\"user\":\"(.*)\"")
+        new_record["user"] = payload:match("\"user\":\"(.-)\"")
         new_record["description"] = "Mothership-Reconciler Audit logs"
-
         return 1, 0, new_record
     end
 {{- end }}
