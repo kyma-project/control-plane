@@ -62,12 +62,15 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 				}`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
 
+
+	suite.AssertReconcilerStartedReconcilingWhenUpgrading(iid)
+
 	opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
 	upgradeKymaOperationID, err := suite.DecodeLastUpgradeKymaOperationIDFromOrchestration(opResponse)
 	require.NoError(t, err)
 
 	fmt.Println(upgradeKymaOperationID)
-	suite.AssertReconcilerStartedReconcilingWhenUpgrading(upgradeKymaOperationID)
+
 	suite.FinishUpgradeKymaOperationByReconciler(upgradeKymaOperationID)
 	suite.Log(fmt.Sprintf("orchestration created with id %q", oID))
 	//TODO: assert no upgrade calls went to provisioner, reconciler got proper configuration

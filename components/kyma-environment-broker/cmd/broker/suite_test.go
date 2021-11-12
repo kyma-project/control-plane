@@ -446,6 +446,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-azure_ha": "true",
 				"overrides-plan-aws_ha":   "true",
 				"overrides-plan-preview":  "true",
+				"overrides-version-2.0.0-rc4": "true",
 			},
 		},
 		Data: map[string]string{
@@ -466,6 +467,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-azure_ha": "true",
 				"overrides-plan-aws_ha":   "true",
 				"overrides-plan-preview":  "true",
+				"overrides-version-2.0.0-rc4": "true",
 				"component":               "service-catalog2",
 			},
 		},
@@ -933,6 +935,7 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "sap.com",
 		},
+		MaxPaginationPage: 100,
 	}
 }
 

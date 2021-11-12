@@ -516,11 +516,11 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.Equal(s.t, reconciler.ReconcilePendingStatus, state.Status)
 }
 
-func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(upgradeOpID string) {
+func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
 	var upgradeKymaOp *internal.UpgradeKymaOperation
 	err := wait.Poll(pollingInterval, 2*time.Minute, func() (bool, error) {
-		op, err := s.db.Operations().GetUpgradeKymaOperationByID(upgradeOpID)
+		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
 		if err != nil {
 			return false, nil
 		}
