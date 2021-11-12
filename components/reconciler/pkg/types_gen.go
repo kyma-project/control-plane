@@ -101,8 +101,10 @@ type KymaConfig struct {
 type Metadata struct {
 	GlobalAccountID string `json:"globalAccountID"`
 	InstanceID      string `json:"instanceID"`
+	Region          string `json:"region"`
 	ServiceID       string `json:"serviceID"`
 	ServicePlanID   string `json:"servicePlanID"`
+	ServicePlanName string `json:"servicePlanName"`
 	ShootName       string `json:"shootName"`
 	SubAccountID    string `json:"subAccountID"`
 }

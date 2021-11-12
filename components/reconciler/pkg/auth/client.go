@@ -8,6 +8,7 @@ import (
 
 func NewClient(url string, httpClient *http.Client) (*mothership.Client, error) {
 	client, err := mothership.NewClient(url)
+	mothership.ParsePostOperationsSchedulingIDCorrelationIDStopResponse()
 	if err != nil {
 		return nil, err
 	}

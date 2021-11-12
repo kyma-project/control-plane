@@ -977,6 +977,7 @@ type PostOperationsSchedulingIDCorrelationIDStopResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *HTTPErrorResponse
+	JSON403      *HTTPErrorResponse
 	JSON404      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
 }
@@ -1502,6 +1503,13 @@ func ParsePostOperationsSchedulingIDCorrelationIDStopResponse(rsp *http.Response
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest HTTPErrorResponse
