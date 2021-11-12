@@ -751,17 +751,22 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.ForKyma2,
+			condition: update.RequiresReconcilerUpdate,
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewCheckSCMigrationDone(reconcilerClient),
-			condition: update.ForKyma2,
+			condition: update.RequiresReconcilerUpdate,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
+			condition: update.ForMigration,
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.ForKyma2,
+			condition: update.RequiresReconcilerUpdate,
 		},
 		{
 			stage: "check",

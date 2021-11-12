@@ -28,23 +28,22 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	add := true
 	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
 		if c.Component == BTPOperatorComponentName {
-			add = false
+			// already exists
+			return operation, 0, nil
 		}
 	}
-	if add {
-		c, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
-		if err != nil {
-			return operation, 0, err
-		}
-		if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
-			logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)
-			return operation, 30 * time.Second, nil
-		}
-		operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
+	c, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
+	if err != nil {
+		return operation, 0, err
 	}
+	if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
+		logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)
+		return operation, 30 * time.Second, nil
+	}
+	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
+	operation.RequiresReconcilerUpdate = true
 	return operation, 0, nil
 }
 

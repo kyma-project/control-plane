@@ -4,6 +4,10 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 
+func RequiresReconcilerUpdate(op internal.UpdatingOperation) bool {
+	return ForKyma2(op) && op.RequiresReconcilerUpdate
+}
+
 func ForKyma2(op internal.UpdatingOperation) bool {
 	return op.RuntimeVersion.MajorVersion == 2
 }
