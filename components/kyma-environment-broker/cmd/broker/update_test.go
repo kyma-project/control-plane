@@ -1548,7 +1548,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 	assert.Len(t, updateOps, 0, "should not create any update operations")
 }
 
-func TestUpdateSCMigration(t *testing.T) {
+func TestUpdateSCMigrationSuccess(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	mockBTPOperatorClusterID()
@@ -1585,6 +1585,12 @@ func TestUpdateSCMigration(t *testing.T) {
 	i, err := suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after provisioning, before update")
 	rs, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	if rs.ClusterSetup == nil {
+		t.Fatal("expected cluster setup post provisioning kyma 2.0 cluster")
+	}
+	if rs.ClusterSetup.KymaConfig.Version != "2.0" {
+		t.Fatalf("expected cluster setup kyma config version to match 2.0, got %v", rs.ClusterSetup.KymaConfig.Version)
+	}
 	assert.Equal(t, opID, rs.OperationID, "runtime state provisioning operation ID")
 	assert.NoError(t, err, "getting runtime state after provisioning, before update")
 	assert.ElementsMatch(t, rs.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})

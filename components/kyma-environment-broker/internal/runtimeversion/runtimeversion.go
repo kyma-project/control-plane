@@ -27,7 +27,7 @@ func NewRuntimeVersionConfigurator(defaultVersion string, previewVersion string,
 }
 
 func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error) {
-	r, err := rvc.runtimeStateDB.GetLatestByRuntimeID(op.RuntimeID)
+	r, err := rvc.runtimeStateDB.GetLatestWithKymaVersionByRuntimeID(op.RuntimeID)
 	if err != nil {
 		return nil, err
 	}

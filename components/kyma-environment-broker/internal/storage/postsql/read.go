@@ -429,6 +429,32 @@ func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtime
 	return state, nil
 }
 
+func (r readSession) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID), dbr.Or(
+		dbr.And(dbr.Neq("cluster_setup", nil), dbr.Neq("cluster_setup", "")),
+		dbr.And(dbr.Neq("kyma_config", nil), dbr.Neq("kyma_config", "")),
+	))
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get the latest runtime state with reconciler input: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state with reconciler input: %s", err)
+	}
+	return state, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 

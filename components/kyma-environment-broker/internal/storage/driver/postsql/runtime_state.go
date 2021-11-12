@@ -146,6 +146,32 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 	return result, nil
 }
 
+func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	sess := s.NewReadSession()
+	var state dbmodel.RuntimeStateDTO
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		state, lastErr = sess.GetLatestWithKymaVersionByRuntimeID(runtimeID)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)
+			}
+			log.Errorf("while getting RuntimeState: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return internal.RuntimeState{}, lastErr
+	}
+	result, err := s.toRuntimeState(&state)
+	if err != nil {
+		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+	}
+
+	return result, nil
+}
+
 func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
 	kymaCfg, err := json.Marshal(state.KymaConfig)
 	if err != nil {
