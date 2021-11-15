@@ -68,8 +68,6 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 		p.createWorker(execID, strategySpec)
 	}
 
-	// p.Wait(execID) // no need as we have waitForCompletion
-
 	return execID, nil
 }
 
