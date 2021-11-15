@@ -46,7 +46,7 @@ func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 func (c *FakeClient) DeleteCluster(clusterName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_ , exists := c.inventoryClusters[clusterName]
+	_, exists := c.inventoryClusters[clusterName]
 	if !exists {
 		return nil
 	}
