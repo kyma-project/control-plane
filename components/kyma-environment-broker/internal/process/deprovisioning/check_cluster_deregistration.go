@@ -6,22 +6,19 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
 type CheckClusterDeregistrationStep struct {
-	operationManager *process.DeprovisionOperationManager
 	reconcilerClient reconciler.Client
 	timeout          time.Duration
 }
 
-func NewCheckClusterDeregistrationStep(os storage.Operations, cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
+func NewCheckClusterDeregistrationStep(cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
 	return &CheckClusterDeregistrationStep{
-		operationManager: process.NewDeprovisionOperationManager(os),
 		reconcilerClient: cli,
+		timeout: timeout,
 	}
 }
 

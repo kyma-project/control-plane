@@ -744,6 +744,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
 		{
+			weight: 6,
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30 * time.Minute),
+		},
+		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
 		},
