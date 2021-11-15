@@ -41,7 +41,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 		}`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByOperationID(opID)
-	time.Sleep(1*time.Second)
+	time.Sleep(1 * time.Second)
 	// when
 	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma",
 		`{

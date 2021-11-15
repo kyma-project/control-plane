@@ -229,7 +229,6 @@ func main() {
 	optionalComponentsDisablers := runtime.ComponentsDisablers{
 		components.Kiali:   runtime.NewGenericComponentDisabler(components.Kiali),
 		components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
-
 	}
 	optComponentsSvc := runtime.NewOptionalComponentsService(optionalComponentsDisablers)
 

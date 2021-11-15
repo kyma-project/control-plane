@@ -59,7 +59,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.UpgradeKymaOpera
 			//	for _, configEntry := range component.Configuration {
 			//		overrides = append(overrides, configEntry)
 			//	}
-				operation.InputCreator.AppendOverrides(component.Component, component.Configuration)
+			operation.InputCreator.AppendOverrides(component.Component, component.Configuration)
 		}
 	}
 
