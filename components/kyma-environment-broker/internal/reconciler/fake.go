@@ -43,10 +43,6 @@ func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 
 // DELETE /v1/clusters/{clusterName}
 func (c *FakeClient) DeleteCluster(clusterName string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	delete(c.inventoryClusters, clusterName)
 	return nil
 }
 

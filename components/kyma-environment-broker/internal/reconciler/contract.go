@@ -12,6 +12,11 @@ const (
 	ClusterStatusReady       string = "ready"
 	ClusterStatusError       string = "error"
 	ClusterStatusReconciling string = "reconciling"
+
+	ClusterStatusDeletePending string = "delete_pending"
+	ClusterStatusDeleted       string = "deleted"
+	ClusterStatusDeleting      string = "deleting"
+	ClusterStatusDeleteError   string = "delete_error"
 )
 
 type Cluster struct {
