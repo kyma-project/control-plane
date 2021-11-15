@@ -24,8 +24,6 @@ require (
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
-replace (
-	k8s.io/api => k8s.io/api v0.20.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.20.2
-	k8s.io/client-go => k8s.io/client-go v0.20.2
-)
+replace k8s.io/client-go => k8s.io/client-go v0.20.2
+
+replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
