@@ -48,7 +48,7 @@ func TestCheckClusterDeregistrationStep(t *testing.T) {
 			})
 			recClient.ChangeClusterState(operation.RuntimeID, 1, tc.State)
 
-			step := NewCheckClusterDeregistrationStep(st.Operations(), recClient, time.Minute)
+			step := NewCheckClusterDeregistrationStep(recClient, time.Minute)
 			st.Operations().InsertDeprovisioningOperation(operation)
 
 			// when
