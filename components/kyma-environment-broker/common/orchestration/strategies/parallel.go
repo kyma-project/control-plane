@@ -75,7 +75,7 @@ func (p *ParallelOrchestrationStrategy) createWorker(execID string, strategy orc
 	p.wg[execID].Add(1)
 
 	go func() {
-		p.scheduleOperationLoop(execID, strategy)
+		p.scheduleOperationsLoop(execID, strategy)
 
 		p.mux.RLock()
 		p.wg[execID].Done()
@@ -83,7 +83,7 @@ func (p *ParallelOrchestrationStrategy) createWorker(execID string, strategy orc
 	}()
 }
 
-func (p *ParallelOrchestrationStrategy) scheduleOperationLoop(execID string, strategy orchestration.StrategySpec) {
+func (p *ParallelOrchestrationStrategy) scheduleOperationsLoop(execID string, strategy orchestration.StrategySpec) {
 	p.mux.RLock()
 	dq := p.dq[execID]
 	p.mux.RUnlock()
