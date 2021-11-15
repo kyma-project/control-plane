@@ -24,6 +24,7 @@ calling ApplyClusterConfig method on already existing cluster results in adding 
 type FakeClient struct {
 	mu                sync.Mutex
 	inventoryClusters map[string]*registeredCluster
+	deleted           map[string]struct{}
 }
 
 type registeredCluster struct {
@@ -33,7 +34,7 @@ type registeredCluster struct {
 }
 
 func NewFakeClient() *FakeClient {
-	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}}
+	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}, deleted: map[string]struct{}{}}
 }
 
 // POST /v1/clusters
@@ -43,6 +44,9 @@ func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 
 // DELETE /v1/clusters/{clusterName}
 func (c *FakeClient) DeleteCluster(clusterName string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.deleted[clusterName] = struct{}{}
 	return nil
 }
 
@@ -154,10 +158,10 @@ func (c *FakeClient) LastClusterConfig(runtimeID string) (*Cluster, error) {
 	return getLastClusterConfig(cluster)
 }
 
-func (c *FakeClient) IsClusterExists(id string) bool {
+func (c *FakeClient) IsBeingDeleted(id string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, exists := c.inventoryClusters[id]
+	_, exists := c.deleted[id]
 	return exists
 }
 
