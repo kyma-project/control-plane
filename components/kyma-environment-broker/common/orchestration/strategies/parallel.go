@@ -101,7 +101,7 @@ func (p *ParallelOrchestrationStrategy) scheduleOperationsLoop(execID string, st
 			break
 		}
 
-		item, shutdown := dq.Get() //other goroutine may hung here
+		item, shutdown := dq.Get()
 		if shutdown {
 			p.log.Infof("schedule delaying queue is shutdown")
 			break
