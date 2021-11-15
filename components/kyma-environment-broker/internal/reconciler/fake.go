@@ -173,6 +173,11 @@ func (c *FakeClient) IsBeingDeleted(id string) bool {
 	return false
 }
 
+func (c *FakeClient) ClusterExists(id string) bool {
+	_, found := c.inventoryClusters[id]
+	return found
+}
+
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
 	clusterConfig, found := cluster.clusterConfigs[int64(1)]
 	if !found {
