@@ -126,6 +126,8 @@ func (h *Handler) handleResponse(w http.ResponseWriter, code int, err error) {
 
 func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWriter) {
 	origin := r.Header.Get("Origin")
+	origin = strings.ReplaceAll(origin, "\r", "")
+	origin = strings.ReplaceAll(origin, "\n", "")
 	if origin == "" {
 		return
 	}

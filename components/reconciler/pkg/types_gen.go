@@ -101,8 +101,10 @@ type KymaConfig struct {
 type Metadata struct {
 	GlobalAccountID string `json:"globalAccountID"`
 	InstanceID      string `json:"instanceID"`
+	Region          string `json:"region"`
 	ServiceID       string `json:"serviceID"`
 	ServicePlanID   string `json:"servicePlanID"`
+	ServicePlanName string `json:"servicePlanName"`
 	ShootName       string `json:"shootName"`
 	SubAccountID    string `json:"subAccountID"`
 }
@@ -118,6 +120,11 @@ type Operation struct {
 	SchedulingID    string    `json:"schedulingID"`
 	State           string    `json:"state"`
 	Updated         time.Time `json:"updated"`
+}
+
+// OperationStop defines model for operationStop.
+type OperationStop struct {
+	Reason string `json:"reason"`
 }
 
 // Reconciliation defines model for reconciliation.
@@ -178,6 +185,9 @@ type PutClustersJSONBody Cluster
 // PutClustersRuntimeIDStatusJSONBody defines parameters for PutClustersRuntimeIDStatus.
 type PutClustersRuntimeIDStatusJSONBody StatusUpdate
 
+// PostOperationsSchedulingIDCorrelationIDStopJSONBody defines parameters for PostOperationsSchedulingIDCorrelationIDStop.
+type PostOperationsSchedulingIDCorrelationIDStopJSONBody OperationStop
+
 // GetReconciliationsParams defines parameters for GetReconciliations.
 type GetReconciliationsParams struct {
 	RuntimeID *[]string `json:"runtimeID,omitempty"`
@@ -192,3 +202,6 @@ type PutClustersJSONRequestBody PutClustersJSONBody
 
 // PutClustersRuntimeIDStatusJSONRequestBody defines body for PutClustersRuntimeIDStatus for application/json ContentType.
 type PutClustersRuntimeIDStatusJSONRequestBody PutClustersRuntimeIDStatusJSONBody
+
+// PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody defines body for PostOperationsSchedulingIDCorrelationIDStop for application/json ContentType.
+type PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody PostOperationsSchedulingIDCorrelationIDStopJSONBody

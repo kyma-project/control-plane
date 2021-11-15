@@ -233,6 +233,7 @@ The command supports filtering Reconciliations based on`,
 		NewReconciliationEnableCmd(),
 		NewReconciliationDisableCmd(),
 		NewReconciliationOperationInfoCmd(),
+		NewOperationCmd(),
 	)
 
 	SetOutputOpt(cobraCmd, &cmd.output)
