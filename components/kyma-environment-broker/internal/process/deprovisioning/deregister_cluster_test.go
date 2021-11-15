@@ -29,7 +29,7 @@ func TestDeregisterClusterStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, d)
-	assert.False(t, cli.IsBeingDeleted(op.RuntimeID))
+	assert.True(t, cli.IsBeingDeleted(op.RuntimeID))
 }
 
 func TestDeregisterClusterStep_RunForNotExistingCluster(t *testing.T) {

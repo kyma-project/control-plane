@@ -46,6 +46,10 @@ func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 func (c *FakeClient) DeleteCluster(clusterName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	_ , exists := c.inventoryClusters[clusterName]
+	if !exists {
+		return nil
+	}
 	c.deleted[clusterName] = struct{}{}
 	return nil
 }
@@ -162,7 +166,11 @@ func (c *FakeClient) IsBeingDeleted(id string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	_, exists := c.deleted[id]
-	return exists
+	if exists {
+		return true
+	}
+
+	return false
 }
 
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
