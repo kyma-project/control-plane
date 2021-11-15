@@ -169,8 +169,10 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ServicePlanName: "preview",
 		ShootName:       suite.ShootName(opID),
 		InstanceID:      iid,
+		Region:          "eu-central-1",
 	})
 
 	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
@@ -222,8 +224,10 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ServicePlanName: "preview",
 		ShootName:       suite.ShootName(opID),
 		InstanceID:      iid,
+		Region:          "eu-central-1",
 	})
 
 	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
