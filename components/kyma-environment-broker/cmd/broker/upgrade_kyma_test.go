@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,13 +22,15 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 					"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 					"context": {
-						"sm_operator_credentials": {
-						  "clientid": "testClientID",
-						  "clientsecret": "testClientSecret",
-						  "sm_url": "https://service-manager.kyma.com",
-						  "url": "https://test.auth.com",
-						  "xsappname": "testXsappname"
-						},
+						"sm_platform_credentials": {
+							"url": "https://sm.url",
+							"credentials": {
+								"basic": {
+									"username":"smUsername",
+									"password":"smPassword"
+							  	}
+						}
+							},
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
@@ -37,7 +41,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 		}`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByOperationID(opID)
-
+	time.Sleep(1*time.Second)
 	// when
 	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma",
 		`{
@@ -68,9 +72,13 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 	upgradeKymaOperationID, err := suite.DecodeLastUpgradeKymaOperationIDFromOrchestration(opResponse)
 	require.NoError(t, err)
 
-	fmt.Println(upgradeKymaOperationID)
-
 	suite.FinishUpgradeKymaOperationByReconciler(upgradeKymaOperationID)
-	suite.Log(fmt.Sprintf("orchestration created with id %q", oID))
+	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+		Version:        "2.0.0-rc4",
+		Profile:        "Production",
+		Administrators: []string{"john.smith@email.com"},
+		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
+	})
+	suite.AssertClusterConfigWithKubeconfig(opID)
 	//TODO: assert no upgrade calls went to provisioner, reconciler got proper configuration
 }

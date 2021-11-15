@@ -32,23 +32,10 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.ClusterConfigurationVersion != 0 {
-		log.Debugf("Cluster configuration already created, skipping")
-		return operation, 0, nil
-	}
-
-	operation.InputCreator.SetRuntimeID(operation.Runtime.RuntimeID).
-		SetInstanceID(operation.InstanceID).
-		SetKubeconfig(operation.Kubeconfig).
-		SetShootName(operation.InstanceDetails.ShootName).
-		SetShootDomain(operation.ShootDomain)
-
-	// enable service management components for upgrade 1.x -> 2.0
-	// needed because CreateClusterConfiguration() uses CreateProvisionRuntimeInput() method inside
-	// which
-	//operation.InputCreator.EnableOptionalComponent(provisioning.HelmBrokerComponentName)
-	//operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogComponentName)
-	//operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogAddonsComponentName)
+	//if operation.ClusterConfigurationVersion != 0 {
+	//	log.Debugf("Cluster configuration already created, skipping")
+	//	return operation, 0, nil
+	//}
 
 	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {

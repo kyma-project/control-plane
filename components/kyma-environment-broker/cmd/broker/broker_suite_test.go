@@ -838,7 +838,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 	return []reconciler.Component{
 		{
 			URL:       "",
-			Component: "logging",
+			Component: "ory",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
 				{
@@ -996,13 +996,13 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 	}
 }
 
-// fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
+// fixExpectedComponentListWithSMOperator provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
 // object is provided: btp-opeartor component should be installed
 func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconciler.Component {
 	return []reconciler.Component{
 		{
 			URL:       "",
-			Component: "logging",
+			Component: "ory",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
 				{

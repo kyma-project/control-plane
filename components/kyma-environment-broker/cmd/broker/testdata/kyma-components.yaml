@@ -1,7 +1,7 @@
 ---
 defaultNamespace: kyma-system
 components:
-  - name: "logging"
+  - name: "ory"
   - name: "monitoring"
   - name: "service-catalog"
   - name: "service-catalog-addons"
