@@ -745,7 +745,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30 * time.Minute),
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30*time.Minute),
 		},
 		{
 			weight: 10,

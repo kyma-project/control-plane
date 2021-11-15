@@ -18,7 +18,7 @@ type CheckClusterDeregistrationStep struct {
 func NewCheckClusterDeregistrationStep(cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
 	return &CheckClusterDeregistrationStep{
 		reconcilerClient: cli,
-		timeout: timeout,
+		timeout:          timeout,
 	}
 }
 
