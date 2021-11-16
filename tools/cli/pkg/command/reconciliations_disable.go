@@ -43,10 +43,9 @@ func NewReconciliationDisableCmd() *cobra.Command {
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()
-	} else {
-		cmd.ctx = context.Background()
 	}
 
+	cmd.ctx = context.Background()
 	return cobraCmd
 }
 

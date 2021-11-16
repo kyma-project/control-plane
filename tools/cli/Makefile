@@ -27,7 +27,7 @@ release: resolve verify build
 resolve:
 	GO111MODULE=on go mod vendor -v
 
-verify: check-imports check-fmt go-mod-verify go-mod-check
+verify: check-imports go-mod-verify go-mod-check
 
 test:
 	go test ./...
@@ -39,12 +39,8 @@ check-imports:
 		exit 1; \
 	fi;
 
-check-fmt:
-	@if [ -n "$$(gofmt -l $$($(FILES_TO_CHECK)))" ]; then \
-		gofmt -l $$($(FILES_TO_CHECK)); \
-		echo "✗ some files are not properly formatted. To repair run make fmt"; \
-		exit 1; \
-	fi;
+imports:
+	goimports -w -l $$($(FILES_TO_CHECK))
 
 go-mod-verify:
 	GO111MODULE=on go mod verify
@@ -55,6 +51,7 @@ go-mod-check:
 	@if [ -n "$$(git status -s go.*)" ]; then \
 		echo -e "${RED}✗ go mod tidy modified go.mod or go.sum files${NC}"; \
 		git status -s go.*; \
+  		git diff ; \
 		exit 1; \
 	fi;
 
