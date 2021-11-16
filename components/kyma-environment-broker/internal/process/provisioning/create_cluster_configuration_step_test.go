@@ -26,5 +26,5 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, d)
-	assert.True(t, reconcilerClient.IsClusterExists(runtimeID))
+	assert.True(t, reconcilerClient.ClusterExists(runtimeID))
 }
