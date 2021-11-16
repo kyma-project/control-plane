@@ -1,14 +1,17 @@
 package upgrade_kyma
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +48,6 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.UpgradeKymaOpera
 		SetProvisioningParameters(operation.ProvisioningParameters)
 
 	// enable service management components for upgrade 1.x -> 2.0
-	// needed because CreateClusterConfiguration() uses CreateProvisionRuntimeInput() method inside
 	operation.InputCreator.EnableOptionalComponent(provisioning.HelmBrokerComponentName)
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogComponentName)
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogAddonsComponentName)
@@ -55,11 +57,24 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.UpgradeKymaOpera
 
 	if runtimeState.ClusterSetup == nil {
 		for _, component := range runtimeState.KymaConfig.Components {
-			//var overrides []*gqlschema.ConfigEntryInput
-			//	for _, configEntry := range component.Configuration {
-			//		overrides = append(overrides, configEntry)
-			//	}
+			// rewrite Component-specific configuration from latest runtimeState
 			operation.InputCreator.AppendOverrides(component.Component, component.Configuration)
+		}
+	}
+
+	if runtimeState.ClusterSetup != nil {
+		for _, component := range runtimeState.ClusterSetup.KymaConfig.Components {
+			var configList []*gqlschema.ConfigEntryInput
+			// rewrite Component-specific configuration from latest runtimeState
+			for _, config := range component.Configuration {
+				configList = append(configList, &gqlschema.ConfigEntryInput{
+					Key:    config.Key,
+					Value:  fmt.Sprintf("%v", config.Value),
+					Secret: ptr.Bool(config.Secret),
+				})
+
+				operation.InputCreator.AppendOverrides(component.Component, configList)
+			}
 		}
 	}
 

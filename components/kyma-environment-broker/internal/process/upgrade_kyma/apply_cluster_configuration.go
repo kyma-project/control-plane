@@ -32,11 +32,6 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	//if operation.ClusterConfigurationVersion != 0 {
-	//	log.Debugf("Cluster configuration already created, skipping")
-	//	return operation, 0, nil
-	//}
-
 	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to apply cluster configuration: %s", err.Error())

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,5 +81,9 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
-	//TODO: assert no upgrade calls went to provisioner, reconciler got proper configuration
+
+	upgradeOp, err := suite.db.Operations().GetUpgradeKymaOperationByID(upgradeKymaOperationID)
+	require.NoError(t, err)
+	_, found := suite.provisionerClient.LastShootUpgrade(upgradeOp.InstanceDetails.RuntimeID)
+	assert.False(t, found)
 }
