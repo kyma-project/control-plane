@@ -48,6 +48,8 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.UpgradeKymaOpera
 		SetProvisioningParameters(operation.ProvisioningParameters)
 
 	// enable service management components for upgrade 1.x -> 2.0
+	// TODO: remove this logic after migration to Service Management 2.0
+	// ticket: https://github.com/kyma-project/control-plane/issues/1098
 	operation.InputCreator.EnableOptionalComponent(provisioning.HelmBrokerComponentName)
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogComponentName)
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogAddonsComponentName)
