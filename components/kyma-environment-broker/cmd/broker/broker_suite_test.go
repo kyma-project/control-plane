@@ -491,7 +491,7 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Minute, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(provisioningOpID)
 		if err != nil {
 			return false, nil
@@ -505,7 +505,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.NoError(s.t, err)
 
 	var state *reconciler.State
-	err = wait.Poll(pollingInterval, 20*time.Minute, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
 			return true, nil
@@ -519,7 +519,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
 	var upgradeKymaOp *internal.UpgradeKymaOperation
-	err := wait.Poll(pollingInterval, 2*time.Minute, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
 		if err != nil {
 			return false, nil
@@ -533,7 +533,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	assert.NoError(s.t, err)
 
 	var state *reconciler.State
-	err = wait.Poll(pollingInterval, 20*time.Minute, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
 		if state.Cluster != "" {
 			return true, nil
