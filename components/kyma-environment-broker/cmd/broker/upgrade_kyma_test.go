@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -42,7 +41,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 		}`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningByOperationID(opID)
-	time.Sleep(1 * time.Second)
+
 	// when
 	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma",
 		`{
@@ -84,6 +83,6 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 
 	upgradeOp, err := suite.db.Operations().GetUpgradeKymaOperationByID(upgradeKymaOperationID)
 	require.NoError(t, err)
-	_, found := suite.provisionerClient.LastShootUpgrade(upgradeOp.InstanceDetails.RuntimeID)
+	found := suite.provisionerClient.IsRuntimeUpgraded(upgradeOp.InstanceDetails.RuntimeID, "2.0.0-rc4")
 	assert.False(t, found)
 }
