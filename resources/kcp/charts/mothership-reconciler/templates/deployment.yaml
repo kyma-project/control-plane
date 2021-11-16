@@ -29,7 +29,7 @@ spec:
       {{- if .Values.global.mothership_reconciler.auditlog.persistence.enabled }}
       initContainers:
       - name: chwon
-        image: busybox
+        image: {{ .Values.global.images.busybox }}
         command:
           - sh
           - -c
@@ -71,7 +71,7 @@ spec:
           {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
           - --audit-log
           - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log
-          - audit-log-tenant-id=$(APP_AUDITLOG_TENANT)
+          - --audit-log-tenant-id=$(APP_AUDITLOG_TENANT)
           {{- end }}
         env:
         - name: APP_AUDITLOG_TENANT
@@ -79,10 +79,6 @@ spec:
             configMapKeyRef:
               name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
               key: auditlog-tenant
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
         name: mothership-reconciler
         ports:
         - name: http
