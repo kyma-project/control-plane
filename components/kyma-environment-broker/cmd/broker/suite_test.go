@@ -65,7 +65,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "1.21"
+	defaultKymaVer         = "1.24.7"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -153,7 +153,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(kymaVer, additionalKymaVersions)...)
+	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 
 	reconcilerClient := reconciler.NewFakeClient()
 	gardenerClient := gardenerFake.NewSimpleClientset()
@@ -439,13 +439,14 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure":    "true",
-				"overrides-plan-trial":    "true",
-				"overrides-plan-aws":      "true",
-				"overrides-plan-free":     "true",
-				"overrides-plan-azure_ha": "true",
-				"overrides-plan-aws_ha":   "true",
-				"overrides-plan-preview":  "true",
+				"overrides-plan-azure":        "true",
+				"overrides-plan-trial":        "true",
+				"overrides-plan-aws":          "true",
+				"overrides-plan-free":         "true",
+				"overrides-plan-azure_ha":     "true",
+				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-preview":      "true",
+				"overrides-version-2.0.0-rc4": "true",
 			},
 		},
 		Data: map[string]string{
@@ -459,14 +460,15 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure":    "true",
-				"overrides-plan-trial":    "true",
-				"overrides-plan-aws":      "true",
-				"overrides-plan-free":     "true",
-				"overrides-plan-azure_ha": "true",
-				"overrides-plan-aws_ha":   "true",
-				"overrides-plan-preview":  "true",
-				"component":               "service-catalog2",
+				"overrides-plan-azure":        "true",
+				"overrides-plan-trial":        "true",
+				"overrides-plan-aws":          "true",
+				"overrides-plan-free":         "true",
+				"overrides-plan-azure_ha":     "true",
+				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-preview":      "true",
+				"overrides-version-2.0.0-rc4": "true",
+				"component":                   "service-catalog2",
 			},
 		},
 		Data: map[string]string{
@@ -903,7 +905,7 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:        "1.21",
+		KymaVersion:        "1.24.7",
 		KymaPreviewVersion: "2.0",
 
 		EnableOnDemandVersion: true,
@@ -934,6 +936,7 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
+		MaxPaginationPage: 100,
 	}
 }
 

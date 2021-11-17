@@ -1,0 +1,19 @@
+# Default values for rma reconciler.
+
+nameOverride: ""
+fullnameOverride: ""
+
+deployment:
+  imagePullPolicy: "IfNotPresent"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+config:
+  workerCount: 16
+  workerTimeout: 10m
+  retriesMax: 10
+  retriesDelay: 60s
+
+resources: {}

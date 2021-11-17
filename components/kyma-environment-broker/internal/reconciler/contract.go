@@ -12,6 +12,11 @@ const (
 	ClusterStatusReady       string = "ready"
 	ClusterStatusError       string = "error"
 	ClusterStatusReconciling string = "reconciling"
+
+	ClusterStatusDeletePending string = "delete_pending"
+	ClusterStatusDeleted       string = "deleted"
+	ClusterStatusDeleting      string = "deleting"
+	ClusterStatusDeleteError   string = "delete_error"
 )
 
 type Cluster struct {
@@ -52,8 +57,10 @@ type Metadata struct {
 	SubAccountID    string `json:"subAccountID"`
 	ServiceID       string `json:"serviceID"`
 	ServicePlanID   string `json:"servicePlanID"`
+	ServicePlanName string `json:"servicePlanName"`
 	ShootName       string `json:"shootName"`
 	InstanceID      string `json:"instanceID"`
+	Region          string `json:"region"`
 }
 
 // reconciling statuses

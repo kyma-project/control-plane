@@ -20,12 +20,13 @@ func TestName(t *testing.T) {
 	correlationID := "13a8754c-edb2-4aaa-9c39-15bce8e1d8cd--f2c44235-9440-44a4-adfe-2f7455bd784c"
 	expectedPath := fmt.Sprintf("/operations/%s/%s/stop", schedulingID, correlationID)
 
-	expectedErrMsg := "Test error message"
+	errMsg := "Test error message"
 
 	testCases := map[string]struct {
-		ctx          context.Context
-		wantErr      bool
-		mockResponse func(t *testing.T) func(http.ResponseWriter, *http.Request)
+		ctx            context.Context
+		wantErr        bool
+		expectedErrMsg string
+		mockResponse   func(t *testing.T) func(http.ResponseWriter, *http.Request)
 	}{
 		"Success": {
 			ctx:     testCtx,
@@ -35,13 +36,26 @@ func TestName(t *testing.T) {
 					assertRequest(t, r, expectedPath)
 				}
 			},
-		}, "Request Failed": {
-			ctx:     testCtx,
-			wantErr: true,
+		},
+		"Operation Not Found": {
+			ctx:            testCtx,
+			wantErr:        true,
+			expectedErrMsg: "Operation not found",
 			mockResponse: func(t *testing.T) func(http.ResponseWriter, *http.Request) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					assertRequest(t, r, expectedPath)
-					writeErrResponse(t, w, expectedErrMsg)
+					w.WriteHeader(http.StatusNotFound)
+				}
+			},
+		}, "Request Failed": {
+			ctx:            testCtx,
+			wantErr:        true,
+			expectedErrMsg: errMsg,
+			mockResponse: func(t *testing.T) func(http.ResponseWriter, *http.Request) {
+				return func(w http.ResponseWriter, r *http.Request) {
+					assertRequest(t, r, expectedPath)
+					w.WriteHeader(http.StatusForbidden)
+					writeErrResponse(t, w, errMsg)
 				}
 			},
 		},
@@ -68,7 +82,7 @@ func TestName(t *testing.T) {
 			//THEN
 			if testCase.wantErr {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), expectedErrMsg)
+				require.Contains(t, err.Error(), testCase.expectedErrMsg)
 			} else {
 				require.NoError(t, err)
 			}
@@ -94,8 +108,6 @@ func unmarshallRequest(t *testing.T, r *http.Request) mothership.PostOperationsS
 }
 
 func writeErrResponse(t *testing.T, w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusForbidden)
-
 	resp := mothership.HTTPErrorResponse{Error: msg}
 	out, err := json.Marshal(&resp)
 	require.NoError(t, err)

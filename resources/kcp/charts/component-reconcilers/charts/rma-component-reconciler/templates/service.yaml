@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rma-reconciler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    kyma-project.io/component-reconciler: ""
+    component: rma
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    kyma-project.io/component-reconciler: ""
+    component: rma

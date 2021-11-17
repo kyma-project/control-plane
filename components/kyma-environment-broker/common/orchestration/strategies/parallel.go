@@ -103,7 +103,7 @@ func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops chan orc
 					p.log.Errorf("while processing operation %s: %v", op.ID, err)
 				}
 			default:
-				p.log.Infof("Idle worker for %s exiting %v", execID)
+				p.log.Infof("Idle worker for %s exiting", execID)
 				moreOperations = false
 			}
 		}

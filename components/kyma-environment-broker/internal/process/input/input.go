@@ -347,8 +347,10 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 			SubAccountID:    r.provisioningParameters.ErsContext.SubAccountID,
 			ServiceID:       r.provisioningParameters.ServiceID,
 			ServicePlanID:   r.provisioningParameters.PlanID,
+			ServicePlanName: broker.PlanNamesMapping[r.provisioningParameters.PlanID],
 			ShootName:       *r.shootName,
 			InstanceID:      r.instanceID,
+			Region:          r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region,
 		},
 		Kubeconfig: r.kubeconfig,
 	}
