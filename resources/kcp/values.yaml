@@ -18,16 +18,16 @@ global:
       version: "PR-1030"
     kyma_environment_broker:
       dir:
-      version: "PR-1100"
+      version: "PR-1103"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1084"
+      version: "PR-1103"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1093 "
+      version: "PR-1103 "
     subscription_cleanup_job:
       dir:
-      version: "PR-925"
+      version: "PR-1093"
     kyma_metrics_collector:
       dir:
       version: "PR-1092"
