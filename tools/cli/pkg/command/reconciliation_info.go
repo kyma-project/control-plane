@@ -145,7 +145,7 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 
-	// We are overwriting the kubeconfig field in order to not display it in log
+	// We are overwriting the kubeconfig field in order to not display it in output
 	result.Cluster.Kubeconfig = "<SENSITIVE_INFORMATION>"
 
 	err = cmd.printReconciliation(result)
