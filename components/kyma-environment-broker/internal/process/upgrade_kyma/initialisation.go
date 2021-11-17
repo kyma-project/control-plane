@@ -230,6 +230,13 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
 	}
 
+	if operation.ClusterConfigurationVersion != 0 {
+		// upgrade was trigerred in reconciler, no need to call provisioner and create UpgradeRuntimeInput
+		// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade
+		log.Debugf("Cluster configuration already created, skipping")
+		return operation, 0, nil
+	}
+
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.RuntimeOperation.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
 		return operation, s.timeSchedule.StatusCheck, nil

@@ -82,6 +82,9 @@ func (cmd *operationStopCmd) Run() error {
 	}
 
 	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusNotFound {
+			return errors.New("Operation not found")
+		}
 		var err error
 		mthshipErr, err := mothership.ReadErrResponse(response.Body)
 		if err != nil {
