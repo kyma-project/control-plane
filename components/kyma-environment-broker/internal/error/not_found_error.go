@@ -1,9 +1,8 @@
 package error
 
-import  "github.com/pkg/errors"
+import "github.com/pkg/errors"
 
 type NotFoundError struct {
-
 }
 
 func (NotFoundError) Error() string {
