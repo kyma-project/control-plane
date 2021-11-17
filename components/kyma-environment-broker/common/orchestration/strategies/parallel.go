@@ -59,7 +59,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
 		if err != nil {
 			//error when read from storage or update to storage during maintenance window reschedule
-			p.handleRescheduleErrorOperation(execID, &op)
+			p.handleRescheduleErrorOperation(execID, &operations[i])
 			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
 		} else {
 			p.dq[execID].AddAfter(&operations[i], duration)
