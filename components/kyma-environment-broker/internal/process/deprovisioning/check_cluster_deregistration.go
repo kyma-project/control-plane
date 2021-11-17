@@ -53,7 +53,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 		log.Warnf(errMsg)
 		return operation, 0, nil
 	default:
-		log.Warnf("Unexpected state: %")
+		log.Warnf("Unexpected state: %s", state.Status)
 		return operation, time.Minute, nil
 	}
 }
