@@ -27,12 +27,20 @@ func (s *CheckClusterDeregistrationStep) Name() string {
 }
 
 func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+	if !operation.ClusterConfigurationDeleted {
+		log.Infof("Cluster deregistration has not be executed, skipping", s.timeout)
+		return operation, 0, nil
+	}
 	if time.Since(operation.UpdatedAt) > s.timeout {
 		log.Infof("Cluster deregistration has reached the time limit: %s", s.timeout)
 		return operation, 0, nil
 	}
 
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
+	if kebError.IsNotFoundError(err) {
+		log.Info("cluster already deleted")
+		return operation, 0, nil
+	}
 	if kebError.IsTemporaryError(err) {
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %s", err.Error())
 		return operation, 1 * time.Minute, nil

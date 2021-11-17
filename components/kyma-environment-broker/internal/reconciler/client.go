@@ -126,6 +126,16 @@ func (c *client) GetCluster(clusterName string, configVersion int64) (*State, er
 		return &State{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
+	switch {
+	case res.StatusCode == http.StatusNotFound:
+		return &State{}, kebError.NotFoundError{}
+	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
+		return &State{}, fmt.Errorf("got status %d", res.StatusCode)
+	case res.StatusCode >= 500:
+		return &State{}, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+	default:
+		return nil
+	}
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
