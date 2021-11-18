@@ -1,0 +1,15 @@
+{{ if .Values.broker.profiler.memory }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kyma-env-broker.fullname" . }}-profiler
+  labels:
+{{ include "kyma-env-broker.labels" . | indent 4 }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+{{ end }}

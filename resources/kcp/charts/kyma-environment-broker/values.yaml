@@ -19,6 +19,8 @@ broker:
   statusPort: "8071"
   defaultRequestRegion: "cf-eu10"
   operationTimeout: "24h"
+  profiler:
+    memory: false
 
 service:
   type: ClusterIP
