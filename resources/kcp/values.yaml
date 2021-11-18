@@ -4,10 +4,10 @@ global:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
     mothership_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/mothership
-      tag: "688fabaa"
+      tag: "0cb385e8"
     component_reconciler:
       path: eu.gcr.io/kyma-project/incubator/reconciler/component
-      tag: "688fabaa"
+      tag: "0cb385e8"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -21,13 +21,13 @@ global:
       version: "PR-970"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1084"
+      version: "PR-1103"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1093 "
+      version: "PR-1103 "
     subscription_cleanup_job:
       dir:
-      version: "PR-925"
+      version: "PR-1093"
     kyma_metrics_collector:
       dir:
       version: "PR-1092"
