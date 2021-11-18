@@ -22,6 +22,11 @@ type ReconciliationOperationInfoCommand struct {
 	provideMshipClient mothershipClientProvider
 }
 
+type ReconcilerInfoResponses struct {
+	mothership.ReconciliationInfoOKResponse
+	mothership.ConfigurationOkResponse
+}
+
 func (cmd *ReconciliationOperationInfoCommand) Validate() error {
 	err := ValidateOutputOpt(cmd.output)
 	if err != nil {
@@ -35,7 +40,7 @@ func (cmd *ReconciliationOperationInfoCommand) Validate() error {
 	return nil
 }
 
-func (cmd *ReconciliationOperationInfoCommand) printReconciliation(data mothership.ReconcilationOperationsOKResponse) error {
+func (cmd *ReconciliationOperationInfoCommand) printReconciliation(data ReconcilerInfoResponses) error {
 	switch {
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
@@ -78,11 +83,7 @@ func (cmd *ReconciliationOperationInfoCommand) printReconciliation(data mothersh
 			return err
 		}
 
-		operations := []mothership.Operation{}
-		if len(*data.Operations) != 0 {
-			operations = *data.Operations
-		}
-		return tp.PrintObj(operations)
+		return tp.PrintObj(data.Operations)
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(data)
@@ -140,8 +141,27 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 		return err
 	}
 
-	var result mothership.ReconcilationOperationsOKResponse
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+	var result ReconcilerInfoResponses
+	if err := json.NewDecoder(response.Body).Decode(&result.ReconciliationInfoOKResponse); err != nil {
+		return errors.WithStack(ErrMothershipResponse)
+	}
+
+	response, err = client.GetClustersRuntimeIDConfigVersion(ctx,
+		result.RuntimeID,
+		"result.Cluster.KymaConfig.Version", // TODO: replace this with right value
+	)
+	if err != nil {
+		return errors.Wrap(err, "wile fetching cluster configuration")
+	}
+
+	defer response.Body.Close()
+
+	if isErrResponse(response.StatusCode) {
+		err := responseErr(response)
+		return err
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&result.ConfigurationOkResponse); err != nil {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 

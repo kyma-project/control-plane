@@ -106,6 +106,9 @@ type ClientInterface interface {
 	// GetClustersRuntimeIDConfigConfigVersionStatus request
 	GetClustersRuntimeIDConfigConfigVersionStatus(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetClustersRuntimeIDConfigVersion request
+	GetClustersRuntimeIDConfigVersion(ctx context.Context, runtimeID string, version string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClustersRuntimeIDStatus request
 	GetClustersRuntimeIDStatus(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -191,6 +194,18 @@ func (c *Client) DeleteClustersRuntimeID(ctx context.Context, runtimeID string, 
 
 func (c *Client) GetClustersRuntimeIDConfigConfigVersionStatus(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClustersRuntimeIDConfigConfigVersionStatusRequest(c.Server, runtimeID, configVersion)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClustersRuntimeIDConfigVersion(ctx context.Context, runtimeID string, version string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClustersRuntimeIDConfigVersionRequest(c.Server, runtimeID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -435,6 +450,47 @@ func NewGetClustersRuntimeIDConfigConfigVersionStatusRequest(server string, runt
 	}
 
 	operationPath := fmt.Sprintf("/clusters/%s/config/%s/status", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetClustersRuntimeIDConfigVersionRequest generates requests for GetClustersRuntimeIDConfigVersion
+func NewGetClustersRuntimeIDConfigVersionRequest(server string, runtimeID string, version string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "version", runtime.ParamLocationPath, version)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s/config/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -777,6 +833,9 @@ type ClientWithResponsesInterface interface {
 	// GetClustersRuntimeIDConfigConfigVersionStatus request
 	GetClustersRuntimeIDConfigConfigVersionStatusWithResponse(ctx context.Context, runtimeID string, configVersion string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDConfigConfigVersionStatusResponse, error)
 
+	// GetClustersRuntimeIDConfigVersion request
+	GetClustersRuntimeIDConfigVersionWithResponse(ctx context.Context, runtimeID string, version string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDConfigVersionResponse, error)
+
 	// GetClustersRuntimeIDStatus request
 	GetClustersRuntimeIDStatusWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusResponse, error)
 
@@ -898,6 +957,28 @@ func (r GetClustersRuntimeIDConfigConfigVersionStatusResponse) StatusCode() int 
 	return 0
 }
 
+type GetClustersRuntimeIDConfigVersionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HTTPClusterConfig
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClustersRuntimeIDConfigVersionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClustersRuntimeIDConfigVersionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetClustersRuntimeIDStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1001,7 +1082,7 @@ func (r PostOperationsSchedulingIDCorrelationIDStopResponse) StatusCode() int {
 type GetReconciliationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HTTPReconcilerStatus
+	JSON200      *HTTPReconciliationInfo
 	JSON400      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
 }
@@ -1025,8 +1106,9 @@ func (r GetReconciliationsResponse) StatusCode() int {
 type GetReconciliationsSchedulingIDInfoResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HTTPReconciliationOperations
+	JSON200      *HTTPReconciliationInfo
 	JSON400      *HTTPErrorResponse
+	JSON404      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
 }
 
@@ -1096,6 +1178,15 @@ func (c *ClientWithResponses) GetClustersRuntimeIDConfigConfigVersionStatusWithR
 		return nil, err
 	}
 	return ParseGetClustersRuntimeIDConfigConfigVersionStatusResponse(rsp)
+}
+
+// GetClustersRuntimeIDConfigVersionWithResponse request returning *GetClustersRuntimeIDConfigVersionResponse
+func (c *ClientWithResponses) GetClustersRuntimeIDConfigVersionWithResponse(ctx context.Context, runtimeID string, version string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDConfigVersionResponse, error) {
+	rsp, err := c.GetClustersRuntimeIDConfigVersion(ctx, runtimeID, version, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClustersRuntimeIDConfigVersionResponse(rsp)
 }
 
 // GetClustersRuntimeIDStatusWithResponse request returning *GetClustersRuntimeIDStatusResponse
@@ -1342,6 +1433,32 @@ func ParseGetClustersRuntimeIDConfigConfigVersionStatusResponse(rsp *http.Respon
 	return response, nil
 }
 
+// ParseGetClustersRuntimeIDConfigVersionResponse parses an HTTP response from a GetClustersRuntimeIDConfigVersionWithResponse call
+func ParseGetClustersRuntimeIDConfigVersionResponse(rsp *http.Response) (*GetClustersRuntimeIDConfigVersionResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClustersRuntimeIDConfigVersionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HTTPClusterConfig
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetClustersRuntimeIDStatusResponse parses an HTTP response from a GetClustersRuntimeIDStatusWithResponse call
 func ParseGetClustersRuntimeIDStatusResponse(rsp *http.Response) (*GetClustersRuntimeIDStatusResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -1545,7 +1662,7 @@ func ParseGetReconciliationsResponse(rsp *http.Response) (*GetReconciliationsRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HTTPReconcilerStatus
+		var dest HTTPReconciliationInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1585,7 +1702,7 @@ func ParseGetReconciliationsSchedulingIDInfoResponse(rsp *http.Response) (*GetRe
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HTTPReconciliationOperations
+		var dest HTTPReconciliationInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1597,6 +1714,13 @@ func ParseGetReconciliationsSchedulingIDInfoResponse(rsp *http.Response) (*GetRe
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest HTTPErrorResponse
