@@ -147,15 +147,15 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 
 	for _, o2 := range overrides {
 		found := false
-		for i, o1 := range r.globalOverrides[component] {
+		for i, o1 := range r.globalOverrides {
 			if o1.Key == o2.Key {
 				found = true
-				r.globalOverrides[component][i].Secret = o2.Secret
-				r.globalOverrides[component][i].Value = o2.Value
+				r.globalOverrides[i].Secret = o2.Secret
+				r.globalOverrides[i].Value = o2.Value
 			}
 		}
 		if !found {
-			r.globalOverrides[component] = append(r.globalOverrides[component], o2)
+			r.globalOverrides = append(r.globalOverrides, o2)
 		}
 	}
 	return r
