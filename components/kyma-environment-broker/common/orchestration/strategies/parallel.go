@@ -14,8 +14,8 @@ import (
 
 type ParallelOrchestrationStrategy struct {
 	executor        orchestration.OperationExecutor
-	dq              map[string]workqueue.DelayingInterface // scheduling queue, delaying queue for all ops
-	pq              map[string]workqueue.DelayingInterface // processing queue, delaying queue for the current proccessing ops
+	dq              map[string]workqueue.DelayingInterface // scheduling queue, delaying queue for all pending & in progress ops
+	pq              map[string]workqueue.DelayingInterface // processing queue, delaying queue for the in progress ops
 	wg              map[string]*sync.WaitGroup
 	mux             sync.RWMutex
 	log             logrus.FieldLogger
@@ -95,16 +95,10 @@ func (p *ParallelOrchestrationStrategy) scheduleOperationsLoop(execID string, st
 	for {
 		p.mux.RLock()
 		if p.scheduleNum[execID] <= 0 {
-			p.mux.RUnlock()
 			dq.ShutDown()
 			pq.ShutDown()
-			break
 		}
 		p.mux.RUnlock()
-
-		if dq.ShuttingDown() || pq.ShuttingDown() {
-			break
-		}
 
 		item, shutdown := dq.Get()
 		if shutdown {

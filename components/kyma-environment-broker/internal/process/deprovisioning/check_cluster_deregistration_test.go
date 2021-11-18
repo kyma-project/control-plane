@@ -38,6 +38,7 @@ func TestCheckClusterDeregistrationStep(t *testing.T) {
 			st := storage.NewMemoryStorage()
 			operation := fixture.FixDeprovisioningOperation("op-id", "inst-id")
 			operation.ClusterConfigurationVersion = 1
+			operation.ClusterConfigurationDeleted = true
 			recClient := reconciler.NewFakeClient()
 			recClient.ApplyClusterConfig(reconciler.Cluster{
 				Cluster:      operation.RuntimeID,
