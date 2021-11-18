@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	gruntime "runtime"
+	"runtime/pprof"
 	"sort"
 	"time"
 
@@ -158,7 +160,17 @@ const (
 	startStageName         = "start"
 )
 
+func periodicProfile() {
+	for {
+		profFile, _ := os.Create(fmt.Sprintf("/var/profiler/mem-%v-.pprof", time.Now().Unix()))
+		pprof.Lookup("allocs").WriteTo(profFile, 0)
+		gruntime.GC()
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 func main() {
+	go periodicProfile()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

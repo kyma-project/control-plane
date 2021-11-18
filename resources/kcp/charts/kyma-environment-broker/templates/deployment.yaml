@@ -417,6 +417,9 @@ spec:
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
           {{ end }}
+            - name: keb-memory-profile
+              mountPath: /var/profiler
+              readOnly: false
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
@@ -451,3 +454,6 @@ spec:
       - name: auditlog-script
         configMap:
           name: {{ .Values.global.auditlog.script.configMapName }}
+      - name: keb-memory-profile
+        persistentVolumeClaim:
+          claimName: keb-memory-profile
