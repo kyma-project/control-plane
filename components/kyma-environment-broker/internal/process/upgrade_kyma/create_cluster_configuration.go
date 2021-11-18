@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 )
@@ -55,7 +56,16 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.UpgradeKymaOpera
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceCatalogAddonsComponentName)
 	operation.InputCreator.EnableOptionalComponent(provisioning.ServiceManagerComponentName)
 
-	runtimeState, _ := s.runtimeStateStorage.GetLatestByRuntimeID(operation.InstanceDetails.RuntimeID)
+	runtimeState, err := s.runtimeStateStorage.GetLatestByRuntimeID(operation.InstanceDetails.RuntimeID)
+	if err != nil {
+		if dberr.IsNotFound(err) {
+			msg := fmt.Sprintf("latest runtime state for runtime id %q not found: %s", operation.InstanceDetails.RuntimeID, err.Error())
+			log.Error(msg)
+			return s.operationManager.OperationFailed(operation, msg, log)
+		}
+		log.Errorf("while getting latest runtime state for runtimeID %s: %v", operation.InstanceDetails.RuntimeID, err)
+		return operation, 5 * time.Second, nil
+	}
 
 	if runtimeState.ClusterSetup == nil {
 		for _, component := range runtimeState.KymaConfig.Components {
