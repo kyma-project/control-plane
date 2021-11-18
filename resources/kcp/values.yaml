@@ -18,7 +18,7 @@ global:
       version: "PR-1030"
     kyma_environment_broker:
       dir:
-      version: "PR-1109"
+      version: "PR-1112"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1103"
