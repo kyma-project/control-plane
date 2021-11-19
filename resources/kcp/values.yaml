@@ -152,6 +152,7 @@ global:
     enabled: false
     expose: true
     authentication: true
+    servicemonitor: true
     serviceAccountName: "mothership-reconciler"
 
   component_reconcilers:

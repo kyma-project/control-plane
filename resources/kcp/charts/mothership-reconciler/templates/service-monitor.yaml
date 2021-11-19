@@ -1,0 +1,18 @@
+{{ if .Values.global.mothership_reconciler.servicemonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+{{ include "mothership-reconciler.labels" . | indent 4 }}
+  name: {{ include "mothership-reconciler.fullname" . }}
+  namespace: kcp-system
+spec:
+  endpoints:
+  - port: http
+  namespaceSelector:
+    matchNames:
+    - kcp-system
+  selector:
+    matchLabels:
+{{ include "mothership-reconciler.labels" . | indent 6 }}
+{{- end }}
