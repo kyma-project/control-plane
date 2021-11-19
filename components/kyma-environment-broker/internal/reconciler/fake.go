@@ -24,6 +24,7 @@ calling ApplyClusterConfig method on already existing cluster results in adding 
 type FakeClient struct {
 	mu                sync.Mutex
 	inventoryClusters map[string]*registeredCluster
+	deleted           map[string]struct{}
 }
 
 type registeredCluster struct {
@@ -33,7 +34,7 @@ type registeredCluster struct {
 }
 
 func NewFakeClient() *FakeClient {
-	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}}
+	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}, deleted: map[string]struct{}{}}
 }
 
 // POST /v1/clusters
@@ -45,8 +46,11 @@ func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
 func (c *FakeClient) DeleteCluster(clusterName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	delete(c.inventoryClusters, clusterName)
+	_, exists := c.inventoryClusters[clusterName]
+	if !exists {
+		return nil
+	}
+	c.deleted[clusterName] = struct{}{}
 	return nil
 }
 
@@ -158,11 +162,20 @@ func (c *FakeClient) LastClusterConfig(runtimeID string) (*Cluster, error) {
 	return getLastClusterConfig(cluster)
 }
 
-func (c *FakeClient) IsClusterExists(id string) bool {
+func (c *FakeClient) IsBeingDeleted(id string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, exists := c.inventoryClusters[id]
-	return exists
+	_, exists := c.deleted[id]
+	if exists {
+		return true
+	}
+
+	return false
+}
+
+func (c *FakeClient) ClusterExists(id string) bool {
+	_, found := c.inventoryClusters[id]
+	return found
 }
 
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {

@@ -347,6 +347,8 @@ func main() {
 		fatalOnError(err)
 		err = processOperationsInProgressByType(internal.OperationTypeDeprovision, db.Operations(), deprovisionQueue, logs)
 		fatalOnError(err)
+		err = processOperationsInProgressByType(internal.OperationTypeUpdate, db.Operations(), updateQueue, logs)
+		fatalOnError(err)
 		err = reprocessOrchestrations(orchestrationExt.UpgradeKymaOrchestration, db.Orchestrations(), db.Operations(), kymaQueue, logs)
 		fatalOnError(err)
 		err = reprocessOrchestrations(orchestrationExt.UpgradeClusterOrchestration, db.Orchestrations(), db.Operations(), clusterQueue, logs)
@@ -744,6 +746,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
 		{
+			weight: 6,
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30*time.Minute),
+		},
+		{
 			weight: 10,
 			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
 		},
@@ -780,35 +786,45 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		cnd      upgrade_kyma.StepCondition
 	}{
 		{
+			weight: 1,
+			step:   upgrade_kyma.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			cnd:    upgrade_kyma.ForKyma2,
+		},
+		{
 			weight: 2,
-			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
+			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{
 			weight: 3,
+			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
+		},
+		{
+			weight: 4,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
-			weight: 3,
+			weight: 5,
 			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			weight:   4,
+			weight:   6,
 			step:     upgrade_kyma.NewMonitoringUpgradeStep(db.Operations(), monitoringClient, cfg.Monitoring),
 			disabled: cfg.Monitoring.Disabled,
 		},
 		{
-			weight: 10,
+			weight: 7,
 			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
 			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
-			weight: 10,
+			weight: 8,
 			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{
-			weight: 12,
+			weight: 9,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			cnd:    upgrade_kyma.ForKyma2,
 		},

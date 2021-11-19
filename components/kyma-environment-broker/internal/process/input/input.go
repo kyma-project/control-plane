@@ -124,7 +124,19 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 	r.mutex.Lock("AppendOverrides")
 	defer r.mutex.Unlock("AppendOverrides")
 
-	r.overrides[component] = append(r.overrides[component], overrides...)
+	for _, o2 := range overrides {
+		found := false
+		for i, o1 := range r.overrides[component] {
+			if o1.Key == o2.Key {
+				found = true
+				r.overrides[component][i].Secret = o2.Secret
+				r.overrides[component][i].Value = o2.Value
+			}
+		}
+		if !found {
+			r.overrides[component] = append(r.overrides[component], o2)
+		}
+	}
 	return r
 }
 
@@ -133,7 +145,19 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 	r.mutex.Lock("AppendGlobalOverrides")
 	defer r.mutex.Unlock("AppendGlobalOverrides")
 
-	r.globalOverrides = append(r.globalOverrides, overrides...)
+	for _, o2 := range overrides {
+		found := false
+		for i, o1 := range r.globalOverrides {
+			if o1.Key == o2.Key {
+				found = true
+				r.globalOverrides[i].Secret = o2.Secret
+				r.globalOverrides[i].Value = o2.Value
+			}
+		}
+		if !found {
+			r.globalOverrides = append(r.globalOverrides, o2)
+		}
+	}
 	return r
 }
 
@@ -336,8 +360,10 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 			SubAccountID:    r.provisioningParameters.ErsContext.SubAccountID,
 			ServiceID:       r.provisioningParameters.ServiceID,
 			ServicePlanID:   r.provisioningParameters.PlanID,
+			ServicePlanName: broker.PlanNamesMapping[r.provisioningParameters.PlanID],
 			ShootName:       *r.shootName,
 			InstanceID:      r.instanceID,
+			Region:          r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region,
 		},
 		Kubeconfig: r.kubeconfig,
 	}

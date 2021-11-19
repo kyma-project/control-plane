@@ -43,13 +43,13 @@
 /components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @themue
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
-/resources/oidc-kubeconfig-service @piotrmsc @kubadz @strekm @jakkab @Tomasz-Smelcerz-SAP @Demonsthere @colunira
+/components/kubeconfig-service @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP
+/resources/oidc-kubeconfig-service  @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
 
 # KCP CLI
 /tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @crabtree @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @rJankowski93 @moelsayed
 
-# reconciler 
+# reconciler
 /components/reconciler @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed
 
 # All .md files
