@@ -23,7 +23,7 @@ data:
         Flush         1
         Grace         5
         Daemon        off
-        Log_Level     deb
+        Log_Level     info
         Parsers_File  parsers.conf
         HTTP_Server  On
         HTTP_Listen  0.0.0.0
@@ -60,6 +60,6 @@ data:
         HTTP_User        ${APP_AUDITLOG_USER}
         HTTP_Passwd      ${APP_AUDITLOG_PASSWORD}
         Format           json_stream
-        tls              off
+        tls              On
 
 {{- end }}

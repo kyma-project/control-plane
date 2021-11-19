@@ -120,7 +120,6 @@ spec:
           export URI=$(echo $APP_AUDITLOG_URL | cut -d/ -f4-)
           /fluent-bit/bin/fluent-bit \
             -e /fluent-bit/lib/flb-out_sequentialhttp.so \
-            -e /fluent-bit/lib/out_grafana_loki.so \
             -c /fluent-bit/etc/fluent-bit.conf
         env:
         - name: APP_AUDITLOG_URL
