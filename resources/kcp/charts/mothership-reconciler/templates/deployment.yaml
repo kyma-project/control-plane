@@ -121,24 +121,7 @@ spec:
           /fluent-bit/bin/fluent-bit \
             -e /fluent-bit/lib/flb-out_sequentialhttp.so \
             -e /fluent-bit/lib/out_grafana_loki.so \
-            -i tail \
-            -p path=/var/log/auditlog/mothership-audit.log \
-            -p DB=/var/log/auditlog/fluentbit.db \
-            -F lua \
-            -p script=/fluent-bit/etc/filter.lua \
-            -p call=reformat \
-            -m '*' \
-            -o sequentialhttp \
-            -p format=json_stream \
-            -p host=${HOST} \
-            -p port=${PORT} \
-            -p uri=${URI}security-events \
-            -p http_user=${APP_AUDITLOG_USER} \
-            -p http_passwd=${APP_AUDITLOG_PASSWORD} \
-            -m '*' \
-            -p retry_limit=false \
-            -p header="Content-Type application/json" \
-            -p tls=on
+            -c /fluent-bit/etc/fluent-bit.conf
         env:
         - name: APP_AUDITLOG_URL
           valueFrom:
@@ -181,8 +164,6 @@ spec:
         configMap:
           name: mothership-fluentbit-config
           items:
-            - key: filter.lua
-              path: filter.lua
       {{- else }}
         {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
       - name: audit-log
@@ -190,9 +171,6 @@ spec:
       - name: fluentbit-config
         configMap:
           name: mothership-fluentbit-config
-          items:
-            - key: filter.lua
-              path: filter.lua        
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

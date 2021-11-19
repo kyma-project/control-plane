@@ -7,18 +7,59 @@ metadata:
   name: mothership-fluentbit-config
   namespace: {{ .Release.Namespace }}
 data:
-  filter.lua: |
-    function reformat(tag, timestamp, record)
-        payload = record["log"]
-        new_record = {}
-        new_record["tenant"] = payload:match("\"tenant\":\"(.-)\"")
-        new_record["category"] = payload:match("\"category\":\"(.-)\"")
-        new_record["ip"] = payload:match("\"ip\":\"(.-)\"")
-        new_record["uuid"] = payload:match("\"uuid\":\"(.-)\"")
-        new_record["time"] = payload:match("\"time\":\"(.-)\"")
-        new_record["data"] = payload:match("\"data\":\"(.*)\"")
-        new_record["user"] = payload:match("\"user\":\"(.-)\"")
-        new_record["description"] = "Mothership-Reconciler Audit logs"
-        return 1, 0, new_record
-    end
+  parsers.conf: |
+    [PARSER]
+        Name         json
+        Format       json
+        Time_Key     time
+        Time_Keep    Off
+        # Command      |  Decoder | Field | Optional Action
+        # =============|==================|=================
+        Decode_Field_As   escaped_utf8    log    do_next
+        Decode_Field_As   json       log
+
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Grace         5
+        Daemon        off
+        Log_Level     deb
+        Parsers_File  parsers.conf
+        HTTP_Server  On
+        HTTP_Listen  0.0.0.0
+        HTTP_PORT    2020
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/auditlog/mothership-audit.log
+        Refresh_Interval  10
+        Rotate_Wait       5
+        Read_from_Head    On
+        DB                /var/log/auditlog/fluentbit.db
+        DB.sync           normal
+        Mem_Buf_Limit     5MB
+        exit_on_eof       false
+        Key               log
+
+    [FILTER]
+        Name         parser
+        Parser       json
+        Match        *
+        Key_Name     log
+        Reserve_Data On
+        Preserve_Key Off
+
+    [OUTPUT]
+        Name             sequentialhttp
+        Match            *
+        Retry_Limit      False
+        Host             ${HOST}
+        Port             ${PORT}
+        URI              ${URI}security-events
+        Header           Content-Type application/json
+        HTTP_User        ${APP_AUDITLOG_USER}
+        HTTP_Passwd      ${APP_AUDITLOG_PASSWORD}
+        Format           json_stream
+        tls              off
+
 {{- end }}
