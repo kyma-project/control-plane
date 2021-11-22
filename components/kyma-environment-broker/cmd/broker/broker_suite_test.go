@@ -1042,16 +1042,6 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 					Value:  false,
 					Secret: false,
 				},
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
-					Value:  "cid",
-					Secret: true,
-				},
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
-					Value:  "csc",
-					Secret: true,
-				},
 			},
 		},
 		{
