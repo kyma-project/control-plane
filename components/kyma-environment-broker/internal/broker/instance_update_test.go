@@ -25,10 +25,10 @@ type handler struct {
 	ersContext internal.ERSContext
 }
 
-func (h *handler) Handle(inst *internal.Instance, ers internal.ERSContext) error {
+func (h *handler) Handle(inst *internal.Instance, ers internal.ERSContext) (bool, error) {
 	h.Instance = *inst
 	h.ersContext = ers
-	return nil
+	return false, nil
 }
 
 func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
