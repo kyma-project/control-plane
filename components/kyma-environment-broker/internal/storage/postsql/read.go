@@ -235,6 +235,7 @@ func (r readSession) GetNotFinishedOperationsByType(operationType internal.Opera
 		From(OperationTableName).
 		Where(stateCondition).
 		Where(typeCondition).
+		Limit(10). // todo: this is a workaround to not see OOM
 		Load(&operations)
 	if err != nil {
 		return nil, dberr.Internal("Failed to get operations: %s", err)
