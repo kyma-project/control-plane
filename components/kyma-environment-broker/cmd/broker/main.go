@@ -336,7 +336,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
+		&cfg, internalEvalAssistant, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner

@@ -178,7 +178,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), reconcilerClient, nil, inMemoryFs, monitoringClient, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, nil, inMemoryFs, monitoringClient, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
