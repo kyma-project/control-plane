@@ -761,7 +761,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client, smcf *servicemanager.ClientFactory,
+	cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client, smcf internal.SMClientFactory,
 	fileSystem afero.Fs, monitoringClient monitoring.Client, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))

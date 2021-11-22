@@ -174,6 +174,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 	}
+	s := smcf.(internal.SMClientFactory)
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
 
@@ -185,7 +186,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, nil, inMemoryFs, monitoringClient, logs, cli)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, s, inMemoryFs, monitoringClient, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -877,16 +878,16 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Value:  false,
 					Secret: false,
 				},
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
-					Value:  "cid",
-					Secret: true,
-				},
-				{
-					Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
-					Value:  "csc",
-					Secret: true,
-				},
+				//{
+				//	Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_ID",
+				//	Value:  "cid",
+				//	Secret: true,
+				//},
+				//{
+				//	Key:    "grafana.env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
+				//	Value:  "csc",
+				//	Secret: true,
+				//},
 			},
 		},
 		{

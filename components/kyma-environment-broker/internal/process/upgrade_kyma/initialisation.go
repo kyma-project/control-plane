@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -45,11 +43,11 @@ type InitialisationStep struct {
 	evaluationManager           *avs.EvaluationManager
 	timeSchedule                TimeSchedule
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
-	serviceManagerClientFactory *servicemanager.ClientFactory
+	serviceManagerClientFactory internal.SMClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf *servicemanager.ClientFactory) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf internal.SMClientFactory) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
