@@ -15,7 +15,7 @@ global:
       version: "PR-1009"
     provisioner:
       dir:
-      version: "PR-1030"
+      version: "PR-1131"
     kyma_environment_broker:
       dir:
       version: "PR-1123"
@@ -27,7 +27,7 @@ global:
       version: "PR-1103"
     subscription_cleanup_job:
       dir:
-      version: "PR-1093"
+      version: "PR-1131"
     kyma_metrics_collector:
       dir:
       version: "PR-1092"
