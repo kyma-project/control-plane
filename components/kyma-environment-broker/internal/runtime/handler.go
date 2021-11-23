@@ -153,6 +153,8 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 		case pkg.Update:
 			dto.Status.State = pkg.StateUpdating
 		}
+	default:
+		dto.Status.State = pkg.StateSucceeded
 	}
 }
 
