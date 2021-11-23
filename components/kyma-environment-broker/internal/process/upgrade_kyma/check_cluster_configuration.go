@@ -65,7 +65,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
 		return operation, 30 * time.Second, nil
 	case reconciler.ClusterStatusReady:
-		return operation, 0, nil
+		return s.operationManager.OperationSucceeded(operation, "Cluster configuration ready", log)
 	case reconciler.ClusterStatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
 		log.Warnf(errMsg)
