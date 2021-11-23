@@ -1,0 +1,16 @@
+{{- if and .Values.global.mothership_reconciler.auditlog.persistence.enabled .Values.global.mothership_reconciler.auditlog.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+  {{- include "mothership-reconciler.labels" . | nindent 4 }}
+  name: mothership-auditlog-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.global.mothership_reconciler.auditlog.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.global.mothership_reconciler.auditlog.persistence.size | quote }}
+  storageClassName: "{{ .Values.global.mothership_reconciler.auditlog.persistence.storageClass }}"
+{{- end }}

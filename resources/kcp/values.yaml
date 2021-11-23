@@ -38,6 +38,7 @@ global:
       e2e_provisioning:
         dir:
         version: "PR-930"
+    busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -153,7 +154,20 @@ global:
     expose: true
     authentication: true
     serviceAccountName: "mothership-reconciler"
-
+    auditlog:
+      enabled: true
+      logPath: "/var/log/auditlog"
+      configMapName: "kcp-auditlog-config"
+      secretName: "kcp-auditlog-secret"
+      # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
+      useTestConfig: false
+      image: eu.gcr.io/kyma-project/tpi/fluent-bit
+      tag: 1.8.9-aef5095d
+      persistence:
+        enabled: true
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        storageClass: "local-path"
   component_reconcilers:
     enabled: false
     authentication: true
