@@ -424,6 +424,19 @@ func (ws writeSession) UpdateUpgradeState(operationID string, upgradeState model
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s upgrade state: %s", operationID, err))
 }
 
+func (ws writeSession) UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error {
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("cluster_id", runtimeID)).
+		Set("kubernetes_version", version).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update Kubernetes version in %s cluster: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update Kubernetes version in %s cluster: %s", runtimeID, err))
+}
+
 func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).

@@ -268,6 +268,7 @@ func main() {
 		dbsFactory,
 		releaseProvider,
 		directorClient,
+		gardener.NewKubernetesVersionProvider(shootClient),
 		provisioningQueue,
 		provisioningNoInstallQueue,
 		deprovisioningQueue,

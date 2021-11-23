@@ -45,10 +45,16 @@ type Provisioner interface {
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
+//go:generate mockery -name=KubernetesVersionProvider
+type KubernetesVersionProvider interface {
+	Get(runtimeID string) (string, apperrors.AppError)
+}
+
 type service struct {
-	inputConverter   InputConverter
-	graphQLConverter GraphQLConverter
-	directorService  director.DirectorClient
+	inputConverter            InputConverter
+	graphQLConverter          GraphQLConverter
+	directorService           director.DirectorClient
+	kubernetesVersionProvider KubernetesVersionProvider
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -70,6 +76,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
+	kubernetesVersionProvider KubernetesVersionProvider,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
@@ -93,6 +100,7 @@ func NewProvisioningService(
 		upgradeQueue:                 upgradeQueue,
 		shootUpgradeQueue:            shootUpgradeQueue,
 		hibernationQueue:             hibernationQueue,
+		kubernetesVersionProvider:    kubernetesVersionProvider,
 	}
 }
 
@@ -223,6 +231,12 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
+	// We need to fetch current Kubernetes version to be able to maintain consistency
+	currentKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID)
+	if err != nil {
+		return nil, err
+	}
+
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
@@ -234,6 +248,8 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", gardError.Error())
 	}
 
+	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
+	gardenerConfig.KubernetesVersion = currentKubernetesVersion
 	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
@@ -328,6 +344,12 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}
 
+	// We need to fetch current Kubernetes version to be able to maintain consistency
+	currentKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId)
+	if err != nil {
+		return nil, err
+	}
+
 	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
@@ -337,6 +359,12 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	operation, dberr := r.setUpgradeStarted(txSession, cluster, kymaConfig)
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
+	}
+
+	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
+	dberr = txSession.UpdateKubernetesVersion(runtimeId, currentKubernetesVersion)
+	if dberr != nil {
+		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
 	}
 
 	dberr = txSession.Commit()
