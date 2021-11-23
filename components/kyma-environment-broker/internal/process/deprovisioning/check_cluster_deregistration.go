@@ -56,7 +56,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 		return operation, 30 * time.Second, nil
 	case reconciler.ClusterStatusDeleted:
 		return operation, 0, nil
-	case reconciler.ClusterStatusDeleteError:
+	case reconciler.ClusterStatusDeleteError, reconciler.ClusterStatusError:
 		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", state.PrettyFailures())
 		log.Warnf(errMsg)
 		return operation, 0, nil
