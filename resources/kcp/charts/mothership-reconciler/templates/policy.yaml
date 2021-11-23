@@ -1,0 +1,12 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "mothership-reconciler.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mothership-reconciler.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  mtls:
+    mode: PERMISSIVE
