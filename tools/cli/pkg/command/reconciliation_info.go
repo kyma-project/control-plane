@@ -120,51 +120,25 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
-	// fetch reconciliations
-	auth := CLICredentialManager(cmd.log)
-	httpClient := oauth2.NewClient(ctx, auth)
-	mothershipURL := GlobalOpts.MothershipAPIURL()
-
-	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
+	client, err := cmd.initClient(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	response, err := client.GetReconciliationsSchedulingIDInfo(ctx, cmd.schedulingID)
+	var result ReconcilerInfoResponses
+
+	recinfo, err := cmd.getReconciliationInfo(ctx, client)
 	if err != nil {
 		return errors.Wrap(err, "wile fetching reconciliation operation info")
 	}
 
-	defer response.Body.Close()
-
-	if isErrResponse(response.StatusCode) {
-		err := responseErr(response)
-		return err
-	}
-
-	var result ReconcilerInfoResponses
-	if err := json.NewDecoder(response.Body).Decode(&result.ReconciliationInfoOKResponse); err != nil {
-		return errors.WithStack(ErrMothershipResponse)
-	}
-
-	response, err = client.GetClustersRuntimeIDConfigVersion(ctx,
-		result.ReconciliationInfoOKResponse.RuntimeID,
-		strconv.FormatInt(result.ReconciliationInfoOKResponse.ConfigVersion, 10),
-	)
+	kymaConfig, err := cmd.getKymaConfigVersion(ctx, client, recinfo)
 	if err != nil {
 		return errors.Wrap(err, "wile fetching cluster configuration")
 	}
 
-	defer response.Body.Close()
-
-	if isErrResponse(response.StatusCode) {
-		err := responseErr(response)
-		return err
-	}
-
-	if err := json.NewDecoder(response.Body).Decode(&result.KymaConfig); err != nil {
-		return errors.WithStack(ErrMothershipResponse)
-	}
+	result.ReconciliationInfoOKResponse = recinfo
+	result.KymaConfig = kymaConfig
 
 	err = cmd.printReconciliation(result)
 	if err != nil {
@@ -204,4 +178,58 @@ func newReconciliationOperationInfoCmd(mp mothershipClientProvider) *cobra.Comma
 
 	cmd.ctx = context.Background()
 	return cobraCmd
+}
+
+func (cmd *ReconciliationOperationInfoCommand) initClient(ctx context.Context) (mothership.ClientInterface, error) {
+	// fetch reconciliations
+	auth := CLICredentialManager(cmd.log)
+	httpClient := oauth2.NewClient(ctx, auth)
+	mothershipURL := GlobalOpts.MothershipAPIURL()
+
+	return cmd.provideMshipClient(mothershipURL, httpClient)
+}
+
+func (cmd *ReconciliationOperationInfoCommand) getReconciliationInfo(ctx context.Context, client mothership.ClientInterface) (mothership.ReconciliationInfoOKResponse, error) {
+	response, err := client.GetReconciliationsSchedulingIDInfo(ctx, cmd.schedulingID)
+	if err != nil {
+		return mothership.ReconciliationInfoOKResponse{}, errors.Wrap(err, "wile fetching reconciliation operation info")
+	}
+
+	defer response.Body.Close()
+
+	if isErrResponse(response.StatusCode) {
+		err := responseErr(response)
+		return mothership.ReconciliationInfoOKResponse{}, err
+	}
+
+	var result mothership.ReconciliationInfoOKResponse
+
+	if err = json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return mothership.ReconciliationInfoOKResponse{}, errors.WithStack(ErrMothershipResponse)
+	}
+	return result, nil
+}
+
+func (cmd *ReconciliationOperationInfoCommand) getKymaConfigVersion(ctx context.Context, client mothership.ClientInterface, recInfo mothership.ReconciliationInfoOKResponse) (mothership.KymaConfig, error) {
+
+	response, err := client.GetClustersRuntimeIDConfigVersion(ctx,
+		recInfo.RuntimeID,
+		strconv.FormatInt(recInfo.ConfigVersion, 10),
+	)
+	if err != nil {
+		return mothership.KymaConfig{}, errors.Wrap(err, "wile fetching cluster configuration")
+	}
+
+	defer response.Body.Close()
+
+	if isErrResponse(response.StatusCode) {
+		err := responseErr(response)
+		return mothership.KymaConfig{}, err
+	}
+
+	var result mothership.KymaConfig
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return mothership.KymaConfig{}, errors.WithStack(ErrMothershipResponse)
+	}
+	return result, nil
 }

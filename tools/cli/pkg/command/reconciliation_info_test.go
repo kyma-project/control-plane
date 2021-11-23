@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	msmock "github.com/kyma-project/control-plane/components/reconciler/pkg/automock"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
@@ -101,28 +101,19 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 				ctx:    testCtx,
 				output: outputJSON,
 				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
-
-					r, err := ioutil.ReadFile("testdata/reconciliationInfoResponse.json")
-					if err != nil {
-						fmt.Print(err)
-					}
-					c, err := ioutil.ReadFile("testdata/configVersionResponse.json")
-					if err != nil {
-						fmt.Print(err)
-					}
 					m := msmock.NewMockClientInterface(ctrl)
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
 						Return(&http.Response{
 							StatusCode: 200,
-							Body:       io.NopCloser(strings.NewReader(string(r))),
+							Body:       io.NopCloser(strings.NewReader(readTestResponseFromFile(t, "testdata/reconciliationInfoResponse.json"))),
 						}, nil).
 						Times(1)
 					m.EXPECT().
 						GetClustersRuntimeIDConfigVersion(gomock.Any(), gomock.Any(), "1").
 						Return(&http.Response{
 							StatusCode: 200,
-							Body:       io.NopCloser(strings.NewReader(string(c))),
+							Body:       io.NopCloser(strings.NewReader(readTestResponseFromFile(t, "testdata/configVersionResponse.json"))),
 						}, nil).
 						Times(1)
 					return m, nil
@@ -145,4 +136,10 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func readTestResponseFromFile(t *testing.T, testFilePath string) string {
+	r, err := ioutil.ReadFile("testdata/reconciliationInfoResponse.json")
+	require.NoError(t, err)
+	return string(r)
 }
