@@ -78,7 +78,7 @@ func (cmd *ReconciliationCommand) Validate() error {
 	return nil
 }
 
-func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconciliation) error {
+func (cmd *ReconciliationCommand) printReconciliation(data []mothership.HTTPReconciliationInfo) error {
 	switch {
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
@@ -133,12 +133,12 @@ func (cmd *ReconciliationCommand) printReconciliation(data []mothership.Reconcil
 }
 
 func reconciliationCreated(obj interface{}) string {
-	sr := obj.(mothership.Reconciliation)
+	sr := obj.(mothership.HTTPReconciliationInfo)
 	return sr.Created.Format("2006/01/02 15:04:05")
 }
 
 func reconciliationUpdated(obj interface{}) string {
-	sr := obj.(mothership.Reconciliation)
+	sr := obj.(mothership.HTTPReconciliationInfo)
 	return sr.Updated.Format("2006/01/02 15:04:05")
 }
 
@@ -200,7 +200,7 @@ func (cmd *ReconciliationCommand) Run() error {
 		return err
 	}
 
-	var result []mothership.Reconciliation
+	var result []mothership.HTTPReconciliationInfo
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return errors.WithStack(ErrMothershipResponse)
 	}

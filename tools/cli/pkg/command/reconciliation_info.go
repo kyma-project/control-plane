@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
@@ -24,7 +25,7 @@ type ReconciliationOperationInfoCommand struct {
 
 type ReconcilerInfoResponses struct {
 	mothership.ReconciliationInfoOKResponse
-	mothership.ConfigurationOkResponse
+	KymaConfig mothership.KymaConfig `json:"kymaConfig"`
 }
 
 func (cmd *ReconciliationOperationInfoCommand) Validate() error {
@@ -147,8 +148,8 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 	}
 
 	response, err = client.GetClustersRuntimeIDConfigVersion(ctx,
-		result.RuntimeID,
-		"result.Cluster.KymaConfig.Version", // TODO: replace this with right value
+		result.ReconciliationInfoOKResponse.RuntimeID,
+		strconv.FormatInt(result.ReconciliationInfoOKResponse.ConfigVersion, 10),
 	)
 	if err != nil {
 		return errors.Wrap(err, "wile fetching cluster configuration")
@@ -161,7 +162,7 @@ func (cmd *ReconciliationOperationInfoCommand) Run() error {
 		return err
 	}
 
-	if err := json.NewDecoder(response.Body).Decode(&result.ConfigurationOkResponse); err != nil {
+	if err := json.NewDecoder(response.Body).Decode(&result.KymaConfig); err != nil {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 

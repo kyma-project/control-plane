@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -30,7 +32,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "reconciliation info: happy path - empty response",
+			name: "reconciliation info: reconciliation not found",
 			fields: fields{
 				ctx:          testCtx,
 				output:       outputJSON,
@@ -40,14 +42,14 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
 						Return(&http.Response{
-							StatusCode: 200,
+							StatusCode: 404,
 							Body:       io.NopCloser(strings.NewReader("{}")),
 						}, nil).
 						Times(1)
 					return m, nil
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "reconciliation info: mothership provider error",
@@ -92,6 +94,41 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 				},
 			},
 			wantErr: true,
+		},
+		{
+			name: "reconciliation info: happy path - reconciliation found",
+			fields: fields{
+				ctx:    testCtx,
+				output: outputJSON,
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
+
+					r, err := ioutil.ReadFile("testdata/reconciliationInfoResponse.json")
+					if err != nil {
+						fmt.Print(err)
+					}
+					c, err := ioutil.ReadFile("testdata/configVersionResponse.json")
+					if err != nil {
+						fmt.Print(err)
+					}
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
+						Return(&http.Response{
+							StatusCode: 200,
+							Body:       io.NopCloser(strings.NewReader(string(r))),
+						}, nil).
+						Times(1)
+					m.EXPECT().
+						GetClustersRuntimeIDConfigVersion(gomock.Any(), gomock.Any(), "1").
+						Return(&http.Response{
+							StatusCode: 200,
+							Body:       io.NopCloser(strings.NewReader(string(c))),
+						}, nil).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
