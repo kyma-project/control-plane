@@ -407,6 +407,38 @@ type RuntimeState struct {
 	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
 }
 
+func (r *RuntimeState) KymaConfigFromClusterSetup() {
+	var components []*gqlschema.ComponentConfigurationInput
+	for _, cmp := range r.ClusterSetup.KymaConfig.Components {
+		var config []*gqlschema.ConfigEntryInput
+		for _, cfg := range cmp.Configuration {
+			configEntryInput := &gqlschema.ConfigEntryInput{
+				Key:    cfg.Key,
+				Value:  fmt.Sprint(cfg.Value),
+				Secret: &cfg.Secret,
+			}
+			config = append(config, configEntryInput)
+		}
+
+		componentConfigurationInput := &gqlschema.ComponentConfigurationInput{
+			Component:     cmp.Component,
+			Namespace:     cmp.Namespace,
+			SourceURL:     &cmp.URL,
+			Configuration: config,
+		}
+		components = append(components, componentConfigurationInput)
+	}
+
+	profile := gqlschema.KymaProfile(r.ClusterSetup.KymaConfig.Profile)
+	kymaConfig := gqlschema.KymaConfigInput{
+		Version:          r.ClusterSetup.KymaConfig.Version,
+		Profile:          &profile,
+		Components:       components,
+	}
+
+	r.KymaConfig = kymaConfig
+}
+
 // OperationStats provide number of operations per type and state
 type OperationStats struct {
 	Provisioning   map[domain.LastOperationState]int

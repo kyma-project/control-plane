@@ -203,6 +203,10 @@ func (h *orchestrationHandler) getOperation(w http.ResponseWriter, r *http.Reque
 		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
 	}
 
+	if upgradeState.ClusterSetup != nil {
+		upgradeState.KymaConfigFromClusterSetup()
+	}
+
 	var response commonOrchestration.OperationDetailResponse
 	switch o.Type {
 	case commonOrchestration.UpgradeKymaOrchestration:
