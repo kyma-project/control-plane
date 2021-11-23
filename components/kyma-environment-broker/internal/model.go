@@ -543,6 +543,10 @@ func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
 }
 
+func (po *UpgradeKymaOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
+}
+
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
 
 func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfigurationInput {

@@ -336,7 +336,7 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, accountProvider, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
+		&cfg, internalEvalAssistant, reconcilerClient, serviceManagerClientFactory, fileSystem, monitoringClient, logs, cli)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, logs, cli, cfg)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
@@ -626,11 +626,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Monitoring.Disabled,
 		},
 		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewIASRegistrationStep(db.Operations(), bundleBuilder),
-			disabled: cfg.IAS.Disabled,
-		},
-		{
 			condition: provisioning.ForKyma1,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
@@ -672,11 +667,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			stage: postActionsStageName,
 			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
-		},
-		{
-			stage:    postActionsStageName,
-			step:     provisioning.NewIASTypeStep(bundleBuilder),
-			disabled: cfg.IAS.Disabled,
 		},
 	}
 	for _, step := range provisioningSteps {
@@ -771,7 +761,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client, smcf *servicemanager.ClientFactory,
+	cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client, smcf internal.SMClientFactory,
 	fileSystem afero.Fs, monitoringClient monitoring.Client, logs logrus.FieldLogger, cli client.Client) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
@@ -786,45 +776,54 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		cnd      upgrade_kyma.StepCondition
 	}{
 		{
-			weight: 1,
-			step:   upgrade_kyma.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
 			weight: 2,
 			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{
 			weight: 3,
+			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
+			step:   upgrade_kyma.NewServiceManagerOverridesStep(db.Operations()),
+		},
+		{
+			weight: 3,
+			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsProvided,
+			step:   upgrade_kyma.NewBTPOperatorOverridesStep(),
+		},
+		{
+			weight: 4,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
 			weight: 4,
+			step:   upgrade_kyma.NewInternalEvaluationStep(internalEvalAssistant),
+		},
+		{
+			weight: 5,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
-			weight: 5,
+			weight: 6,
 			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			weight:   6,
+			weight:   7,
 			step:     upgrade_kyma.NewMonitoringUpgradeStep(db.Operations(), monitoringClient, cfg.Monitoring),
 			disabled: cfg.Monitoring.Disabled,
 		},
 		{
-			weight: 7,
+			weight: 8,
 			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
 			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
-			weight: 8,
+			weight: 9,
 			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{
-			weight: 9,
+			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
