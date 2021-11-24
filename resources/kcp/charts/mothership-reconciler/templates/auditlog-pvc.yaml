@@ -12,5 +12,7 @@ spec:
   resources:
     requests:
       storage: {{ .Values.global.mothership_reconciler.auditlog.persistence.size | quote }}
+  {{- if .Values.global.mothership_reconciler.auditlog.persistence.storageClass }}
   storageClassName: "{{ .Values.global.mothership_reconciler.auditlog.persistence.storageClass }}"
+  {{- end }}
 {{- end }}
