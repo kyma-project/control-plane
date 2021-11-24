@@ -1,3 +1,4 @@
+{{ if .Values.global.mothership_reconciler.servicemonitor }}
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
@@ -10,3 +11,4 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   mtls:
     mode: PERMISSIVE
+{{- end }}

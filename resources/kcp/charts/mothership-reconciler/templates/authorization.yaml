@@ -28,7 +28,12 @@ spec:
       {{- include "mothership-reconciler.labels" . | nindent 6 }}
   action: ALLOW
   rules:
-
+  # Allow /metrics
+  {{ if .Values.global.mothership_reconciler.servicemonitor }}
+  - to:
+    - operation:
+        paths: ["/metrics"]
+  {{- end }}
   # external communication
   - to:
     - operation:
