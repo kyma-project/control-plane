@@ -167,7 +167,7 @@ global:
         enabled: true
         accessMode: ReadWriteOnce
         size: 2Gi
-        storageClass: "default"
+        storageClass: ""
   component_reconcilers:
     enabled: false
     authentication: true
