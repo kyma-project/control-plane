@@ -26,9 +26,7 @@ db:
   resetDatabase: false
 
 preComponents:
-  - cluster-essentials
-  - istio-configuration
-  - certificates
+  - [cluster-essentials, istio-configuration, certificates]
 
 deployment:
   imagePullPolicy: "IfNotPresent"
