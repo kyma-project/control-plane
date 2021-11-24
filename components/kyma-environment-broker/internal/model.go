@@ -415,7 +415,7 @@ func (r *RuntimeState) KymaConfigFromClusterSetup() {
 			configEntryInput := &gqlschema.ConfigEntryInput{
 				Key:    cfg.Key,
 				Value:  fmt.Sprint(cfg.Value),
-				Secret: &cfg.Secret,
+				Secret: ptr.Bool(cfg.Secret),
 			}
 			config = append(config, configEntryInput)
 		}
