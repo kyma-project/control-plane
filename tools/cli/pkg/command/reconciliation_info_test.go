@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	msmock "github.com/kyma-project/control-plane/components/reconciler/pkg/automock"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
@@ -30,7 +32,7 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "reconciliation info: happy path - empty response",
+			name: "reconciliation info: reconciliation not found",
 			fields: fields{
 				ctx:          testCtx,
 				output:       outputJSON,
@@ -40,14 +42,14 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 					m.EXPECT().
 						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
 						Return(&http.Response{
-							StatusCode: 200,
+							StatusCode: 404,
 							Body:       io.NopCloser(strings.NewReader("{}")),
 						}, nil).
 						Times(1)
 					return m, nil
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "reconciliation info: mothership provider error",
@@ -93,6 +95,32 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "reconciliation info: happy path - reconciliation found",
+			fields: fields{
+				ctx:    testCtx,
+				output: outputJSON,
+				provideMshipClient: func(url string, _ *http.Client) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliationsSchedulingIDInfo(gomock.Any(), gomock.Any()).
+						Return(&http.Response{
+							StatusCode: 200,
+							Body:       io.NopCloser(strings.NewReader(readTestResponseFromFile(t, "testdata/reconciliationInfoResponse.json"))),
+						}, nil).
+						Times(1)
+					m.EXPECT().
+						GetClustersRuntimeIDConfigVersion(gomock.Any(), gomock.Any(), "1").
+						Return(&http.Response{
+							StatusCode: 200,
+							Body:       io.NopCloser(strings.NewReader(readTestResponseFromFile(t, "testdata/configVersionResponse.json"))),
+						}, nil).
+						Times(1)
+					return m, nil
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,4 +136,10 @@ func TestReconciliationOperationInfoCommand_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func readTestResponseFromFile(t *testing.T, testFilePath string) string {
+	r, err := ioutil.ReadFile("testdata/reconciliationInfoResponse.json")
+	require.NoError(t, err)
+	return string(r)
 }

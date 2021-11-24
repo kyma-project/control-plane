@@ -1,0 +1,51 @@
+{
+    "configVersion": 1,
+    "created": "2021-11-22T12:38:03.886297Z",
+    "finished": false,
+    "operations": [
+      {
+        "component": "rafter",
+        "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--75e1c7af-e3f6-4668-8a3e-64f885d07e10",
+        "created": "2021-11-22T12:38:03.908391Z",
+        "priority": 2,
+        "reason": "",
+        "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
+        "state": "orphan",
+        "updated": "2021-11-22T12:48:33.504173Z"
+      },
+      {
+        "component": "istio-config",
+        "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--b327c940-5895-417b-ad17-82738066a3f9",
+        "created": "2021-11-22T12:38:03.906083Z",
+        "priority": 2,
+        "reason": "",
+        "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
+        "state": "orphan",
+        "updated": "2021-11-22T12:48:33.510117Z"
+      },
+      {
+        "component": "serverless",
+        "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--daee055a-d0ef-4fee-88b6-4ca0eed9d336",
+        "created": "2021-11-22T12:38:03.903746Z",
+        "priority": 2,
+        "reason": "",
+        "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
+        "state": "orphan",
+        "updated": "2021-11-22T12:48:33.516577Z"
+      },
+      {
+        "component": "CRDs",
+        "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--0b01c9e6-5dec-4c0d-af33-733a05152dc0",
+        "created": "2021-11-22T12:38:03.89567Z",
+        "priority": 1,
+        "reason": "",
+        "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
+        "state": "in_progress",
+        "updated": "2021-11-23T10:24:33.036879Z"
+      }
+    ],
+    "runtimeID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5",
+    "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
+    "status": "reconciling",
+    "updated": "0001-01-01T00:00:00Z"
+  }
