@@ -12,5 +12,9 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    - port: {{ .Values.service.istioPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
   selector:
     {{- include "mothership-reconciler.selectorLabels" . | nindent 4 }}

@@ -80,3 +80,4 @@ service:
   type: ClusterIP
   scheme: http
   port: 80
+  istioPort: 15020
