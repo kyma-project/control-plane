@@ -431,9 +431,9 @@ func (r *RuntimeState) KymaConfigFromClusterSetup() {
 
 	profile := gqlschema.KymaProfile(r.ClusterSetup.KymaConfig.Profile)
 	kymaConfig := gqlschema.KymaConfigInput{
-		Version:          r.ClusterSetup.KymaConfig.Version,
-		Profile:          &profile,
-		Components:       components,
+		Version:    r.ClusterSetup.KymaConfig.Version,
+		Profile:    &profile,
+		Components: components,
 	}
 
 	r.KymaConfig = kymaConfig

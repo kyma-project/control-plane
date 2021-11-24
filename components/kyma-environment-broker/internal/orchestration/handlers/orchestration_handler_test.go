@@ -318,7 +318,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		orchestration1ID := "ochestration1ID"
 		orchestration1 := internal.Orchestration{
 			OrchestrationID: orchestration1ID,
-			Type: orchestration.UpgradeKymaOrchestration,
+			Type:            orchestration.UpgradeKymaOrchestration,
 		}
 
 		err = db.Orchestrations().Insert(orchestration1)
@@ -344,19 +344,19 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 
 		runtimeStateWithClusterSetupID := "runtimeStateWithClusterSetupID"
 		runtimeStateWithClusterSetup := internal.RuntimeState{
-			ID:            runtimeStateWithClusterSetupID,
-			RuntimeID:     uuid.NewString(),
-			OperationID:   upgradeKymaOp1ID,
-			ClusterSetup:  &reconciler.Cluster{
-				Cluster:      uuid.NewString(),
-				KymaConfig:   reconciler.KymaConfig{
-					Version:        "2.0.0",
-					Profile:        string(gqlschema.KymaProfileProduction),
-					Components:     []reconciler.Component{
+			ID:          runtimeStateWithClusterSetupID,
+			RuntimeID:   uuid.NewString(),
+			OperationID: upgradeKymaOp1ID,
+			ClusterSetup: &reconciler.Cluster{
+				Cluster: uuid.NewString(),
+				KymaConfig: reconciler.KymaConfig{
+					Version: "2.0.0",
+					Profile: string(gqlschema.KymaProfileProduction),
+					Components: []reconciler.Component{
 						{
-							URL:           "component1URL.local",
-							Component:     "component1",
-							Namespace:     "test",
+							URL:       "component1URL.local",
+							Component: "component1",
+							Namespace: "test",
 							Configuration: []reconciler.Configuration{
 								{
 									Key:    "key1",
@@ -423,8 +423,8 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedKymaConfig := gqlschema.KymaConfigInput{
-			Version:          "2.0.0",
-			Profile:          (*gqlschema.KymaProfile)(ptr.String("Production")),
+			Version: "2.0.0",
+			Profile: (*gqlschema.KymaProfile)(ptr.String("Production")),
 			Components: []*gqlschema.ComponentConfigurationInput{
 				{
 					Component: "component1",
