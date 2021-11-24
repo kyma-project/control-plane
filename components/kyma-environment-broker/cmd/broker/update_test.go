@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdate(t *testing.T) {
@@ -1370,4 +1371,71 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 
 	// then
 	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+}
+
+func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	// uncomment to see graphql queries
+	//suite.EnableDumpingProvisionerRequests()
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"oidc": {
+							"clientID": "id-ooo",
+							"signingAlgs": ["RSA256"],
+                            "issuerURL": "https://issuer.url.com"
+						}
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	suite.Log("*** Suspension ***")
+
+	// when
+	// Process Suspension
+	// OSB context update (suspension)
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+       "parameters": {
+			"name": "testing-cluster"
+		}
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
+
+	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
+	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
+
+	// THEN
+	lastOp, err := suite.db.Operations().GetLastOperation(iid)
+	require.NoError(t, err)
+	assert.Equal(t, internal.OperationTypeDeprovision, lastOp.Type, "last operation should be type deprovision")
+
+	updateOps, err := suite.db.Operations().ListUpdatingOperationsByInstanceID(iid)
+	require.NoError(t, err)
+	assert.Len(t, updateOps, 0, "should not create any update operations")
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pkg/errors"
@@ -22,14 +21,14 @@ import (
 
 type upgradeKymaFactory struct {
 	operationStorage          storage.Operations
-	smcf                      *servicemanager.ClientFactory
+	smcf                      internal.SMClientFactory
 	defaultKymaVersion        string
 	defaultKymaPreviewVersion string
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf *servicemanager.ClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config) process.Executor {
+	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
