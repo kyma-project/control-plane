@@ -232,9 +232,15 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	}
 
 	// We need to fetch current Kubernetes version to be able to maintain consistency
-	currentKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID)
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID)
 	if err != nil {
 		return nil, err
+	}
+
+	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
+	if shootKubernetesVersion > gardenerConfig.KubernetesVersion {
+		log.Infof("Kubernetes version in shoot was higher than the version provided in UpgradeGardenerShoot. Version fetched from the shoot will be used :%s.", shootKubernetesVersion)
+		gardenerConfig.KubernetesVersion = shootKubernetesVersion
 	}
 
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
@@ -248,9 +254,6 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to set shoot upgrade started: %s", gardError.Error())
 	}
 
-	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	log.Infof("Updating Kubernetes version to %s.", currentKubernetesVersion)
-	gardenerConfig.KubernetesVersion = currentKubernetesVersion
 	err = r.provisioner.UpgradeCluster(cluster.ID, gardenerConfig)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to upgrade Cluster: %s", err.Error())
@@ -346,7 +349,7 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	}
 
 	// We need to fetch current Kubernetes version to be able to maintain consistency
-	currentKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId)
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId)
 	if err != nil {
 		return nil, err
 	}
@@ -363,10 +366,13 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	}
 
 	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	log.Infof("Updating Kubernetes version to %s.", currentKubernetesVersion)
-	dberr = txSession.UpdateKubernetesVersion(runtimeId, currentKubernetesVersion)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
+
+	if shootKubernetesVersion > cluster.ClusterConfig.KubernetesVersion {
+		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shootKubernetesVersion)
+		dberr = txSession.UpdateKubernetesVersion(runtimeId, shootKubernetesVersion)
+		if dberr != nil {
+			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
+		}
 	}
 
 	dberr = txSession.Commit()
