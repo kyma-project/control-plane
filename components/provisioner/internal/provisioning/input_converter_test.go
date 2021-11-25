@@ -945,7 +945,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("version2"),
+			KubernetesVersion:      util.StringPtr("1.19"),
 			Purpose:                &newPurpose,
 			MachineType:            util.StringPtr("new-machine"),
 			DiskType:               util.StringPtr("papyrus"),
@@ -965,7 +965,7 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("version2"),
+			KubernetesVersion:      util.StringPtr("1.19"),
 			Purpose:                &newPurpose,
 			MachineType:            util.StringPtr("new-machine"),
 			AutoScalerMin:          util.IntPtr(2),
