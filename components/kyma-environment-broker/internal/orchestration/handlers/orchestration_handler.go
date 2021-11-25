@@ -203,6 +203,8 @@ func (h *orchestrationHandler) getOperation(w http.ResponseWriter, r *http.Reque
 		h.log.Errorf("while getting runtime state for upgrade operation %s: %v", operationID, err)
 	}
 
+	kymaConfig := upgradeState.GetKymaConfig()
+
 	var response commonOrchestration.OperationDetailResponse
 	switch o.Type {
 	case commonOrchestration.UpgradeKymaOrchestration:
@@ -213,7 +215,7 @@ func (h *orchestrationHandler) getOperation(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		response, err = h.converter.UpgradeKymaOperationToDetailDTO(*operation, &upgradeState.KymaConfig)
+		response, err = h.converter.UpgradeKymaOperationToDetailDTO(*operation, &kymaConfig)
 		if err != nil {
 			h.log.Errorf("while converting operation: %v", err)
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while converting operation"))
