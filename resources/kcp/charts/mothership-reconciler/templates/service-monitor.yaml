@@ -11,7 +11,7 @@ spec:
   - port: http
   namespaceSelector:
     matchNames:
-    - kcp-system
+    - {{ .Release.Namespace }}
   selector:
     matchLabels:
 {{ include "mothership-reconciler.labels" . | indent 6 }}
