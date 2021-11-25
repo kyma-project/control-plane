@@ -1594,7 +1594,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.Equal(t, opID, rs.OperationID, "runtime state provisioning operation ID")
 	assert.NoError(t, err, "getting runtime state after provisioning, before update")
 	assert.ElementsMatch(t, rs.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "logging", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog"})
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1623,7 +1623,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.NoError(t, err, "getting runtime mid update")
 	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "logging", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
 
 	// finish updating, check second call to reconciler and see that sc-migration and svcat related components are gone
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
@@ -1649,7 +1649,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.NoError(t, err, "getting runtime after update")
 	assert.Equal(t, updateOperationID, rsu2.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu2.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"logging", "monitoring", "btp-operator"})
+	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 	for _, c := range rsu2.ClusterSetup.KymaConfig.Components {
 		if c.Component == "btp-operator" {
 			exp := reconciler.Component{

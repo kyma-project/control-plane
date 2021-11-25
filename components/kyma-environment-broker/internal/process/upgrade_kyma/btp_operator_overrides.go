@@ -32,5 +32,6 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, 
 	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	return operation, 0, nil
 }
