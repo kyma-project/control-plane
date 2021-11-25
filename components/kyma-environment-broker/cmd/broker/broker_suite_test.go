@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	monitoringmocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring/mocks"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -48,7 +47,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,17 +133,11 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
-	monitoringClient := &monitoringmocks.Client{}
-	monitoringClient.On("IsDeployed", mock.Anything).Return(false, nil)
-	monitoringClient.On("IsPresent", mock.Anything).Return(false, nil)
-	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
-	monitoringClient.On("UninstallRelease", mock.Anything).Return(nil, nil)
-
 	// TODO put Reconciler client in the queue for steps
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -158,7 +150,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, monitoringClient, accountProvider, reconcilerClient, logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)
@@ -185,7 +177,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, inMemoryFs, monitoringClient, logs, cli)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,

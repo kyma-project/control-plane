@@ -197,13 +197,6 @@ ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
 
-monitoring:
-  namespace: "kcp-system"
-  chartUrl: "TBD"
-  remoteWriteUrl: "TBD"
-  remoteWritePath: "/api/v1/write"
-  disabled: true
-
 cis:
   v1:
     authURL: "TBD"
@@ -271,4 +264,4 @@ e2e:
     timeout: "100m"
   ha_aws:
     configName: "e2e-runtime-config-ha-aws"
-    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"  
+    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"
