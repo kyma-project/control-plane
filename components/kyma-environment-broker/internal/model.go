@@ -407,7 +407,14 @@ type RuntimeState struct {
 	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
 }
 
-func (r *RuntimeState) KymaConfigFromClusterSetup() {
+func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
+	if r.ClusterSetup != nil {
+		return r.buildKymaConfigFromClusterSetup()
+	}
+	return r.KymaConfig
+}
+
+func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
 	var components []*gqlschema.ComponentConfigurationInput
 	for _, cmp := range r.ClusterSetup.KymaConfig.Components {
 		var config []*gqlschema.ConfigEntryInput
@@ -436,7 +443,7 @@ func (r *RuntimeState) KymaConfigFromClusterSetup() {
 		Components: components,
 	}
 
-	r.KymaConfig = kymaConfig
+	return kymaConfig
 }
 
 // OperationStats provide number of operations per type and state
