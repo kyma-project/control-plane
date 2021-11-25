@@ -10,7 +10,7 @@ ifndef ARTIFACTS
 endif
 
 # ENTRYPOINT is the relative path to the main Go file
-ENTRYPOINT = cmd/main/main.go
+ENTRYPOINT = cmd/kcp/main.go
 # VERIFY_IGNORE is a grep pattern to exclude files and directories from verification
 VERIFY_IGNORE := /vendor\|/automock
 # FILES_TO_CHECK is a command used to determine which files should be verified
@@ -22,7 +22,7 @@ CLI_FLAGS = -ldflags '-s -w -X github.com/kyma-project/control-plane/tools/cli/p
 
 .PHONY: release resolve verify test go-mod-verify go-mod-check errcheck build build-windows build-linux build-darwin docs
 
-release: resolve verify build
+release: resolve verify test build 
 
 resolve:
 	GO111MODULE=on go mod vendor -v
