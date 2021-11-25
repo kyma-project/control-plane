@@ -5,7 +5,7 @@ metadata:
   labels:
 {{ include "mothership-reconciler.labels" . | indent 4 }}
   name: {{ include "mothership-reconciler.fullname" . }}
-  namespace: kcp-system
+  namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
   - port: http
