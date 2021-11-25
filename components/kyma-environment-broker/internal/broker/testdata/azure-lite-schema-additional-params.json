@@ -31,8 +31,8 @@
       "type": "integer",
       "description": "Specifies the maximum number of virtual machines to create",
       "minimum": 2,
-      "maximum": 4,
-      "default": 2
+      "maximum": 40,
+      "default": 10
     },
     "oidc": {
       "type": "object",
