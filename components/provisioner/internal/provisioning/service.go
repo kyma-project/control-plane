@@ -47,7 +47,7 @@ type Provisioner interface {
 
 //go:generate mockery -name=KubernetesVersionProvider
 type KubernetesVersionProvider interface {
-	Get(runtimeID string) (string, apperrors.AppError)
+	Get(runtimeID string, tenant string) (string, apperrors.AppError)
 }
 
 type service struct {
@@ -232,7 +232,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	}
 
 	// We need to fetch current Kubernetes version to be able to maintain consistency
-	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID)
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID, cluster.Tenant)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	}
 
 	// We need to fetch current Kubernetes version to be able to maintain consistency
-	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId)
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId, cluster.Tenant)
 	if err != nil {
 		return nil, err
 	}

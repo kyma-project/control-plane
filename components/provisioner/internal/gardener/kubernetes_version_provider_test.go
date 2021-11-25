@@ -15,9 +15,10 @@ import (
 func TestKubernetesVersionProvider(t *testing.T) {
 	t.Run("Get kubernetes version when succeeded to find Runtime", func(t *testing.T) {
 		// given
+		tenant := "tenant"
 		shootClient := &mocks.ShootClient{}
 		//List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ShootList, error)
-		shootClient.On("List", mock.Anything, mock.Anything).Return(&gardener_Types.ShootList{
+		shootClient.On("List", mock.Anything, metav1.ListOptions{LabelSelector: "account=" + tenant}).Return(&gardener_Types.ShootList{
 			Items: []gardener_Types.Shoot{{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{runtimeIDAnnotation: "runtimeID"},
@@ -32,7 +33,7 @@ func TestKubernetesVersionProvider(t *testing.T) {
 
 		// when
 		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID")
+		version, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.NoError(t, err)
@@ -42,9 +43,10 @@ func TestKubernetesVersionProvider(t *testing.T) {
 
 	t.Run("Return error when failed to find Runtime", func(t *testing.T) {
 		// given
+		tenant := "tenant"
 		shootClient := &mocks.ShootClient{}
 		//List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ShootList, error)
-		shootClient.On("List", mock.Anything, mock.Anything).Return(&gardener_Types.ShootList{
+		shootClient.On("List", mock.Anything, metav1.ListOptions{LabelSelector: "account=" + tenant}).Return(&gardener_Types.ShootList{
 			Items: []gardener_Types.Shoot{{
 				Spec: gardener_Types.ShootSpec{
 					Kubernetes: gardener_Types.Kubernetes{
@@ -56,7 +58,7 @@ func TestKubernetesVersionProvider(t *testing.T) {
 
 		// when
 		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID")
+		version, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.Error(t, err)
@@ -65,13 +67,14 @@ func TestKubernetesVersionProvider(t *testing.T) {
 
 	t.Run("Return error when failed to get shoot", func(t *testing.T) {
 		// given
+		tenant := "tenant"
 		shootClient := &mocks.ShootClient{}
 		//List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ShootList, error)
-		shootClient.On("List", mock.Anything, mock.Anything).Return(nil, errors.New("oh, no!"))
+		shootClient.On("List", mock.Anything, metav1.ListOptions{LabelSelector: "account=" + tenant}).Return(nil, errors.New("oh, no!"))
 
 		// when
 		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID")
+		version, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.Error(t, err)

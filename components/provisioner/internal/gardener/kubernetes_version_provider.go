@@ -2,6 +2,9 @@ package gardener
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -23,8 +26,10 @@ func NewKubernetesVersionProvider(shootClient ShootClient) KubernetesVersionProv
 	}
 }
 
-func (k KubernetesVersionProvider) Get(runtimeID string) (string, apperrors.AppError) {
-	shoots, err := k.shootClient.List(context.Background(), metav1.ListOptions{})
+func (k KubernetesVersionProvider) Get(runtimeID string, tenant string) (string, apperrors.AppError) {
+	labelSelector := fmt.Sprintf("%s=%s", model.AccountLabel, tenant)
+
+	shoots, err := k.shootClient.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return "", apperrors.Internal("failed to list shoots: %s", err.Error())
 	}

@@ -12,20 +12,20 @@ type KubernetesVersionProvider struct {
 	mock.Mock
 }
 
-// Get provides a mock function with given fields: runtimeID
-func (_m *KubernetesVersionProvider) Get(runtimeID string) (string, apperrors.AppError) {
-	ret := _m.Called(runtimeID)
+// Get provides a mock function with given fields: runtimeID, tenant
+func (_m *KubernetesVersionProvider) Get(runtimeID string, tenant string) (string, apperrors.AppError) {
+	ret := _m.Called(runtimeID, tenant)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(runtimeID)
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(runtimeID, tenant)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 apperrors.AppError
-	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
-		r1 = rf(runtimeID)
+	if rf, ok := ret.Get(1).(func(string, string) apperrors.AppError); ok {
+		r1 = rf(runtimeID, tenant)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(apperrors.AppError)

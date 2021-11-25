@@ -679,6 +679,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		ClusterConfig: model.GardenerConfig{
 			KubernetesVersion: "1.19",
 		},
+		Tenant: tenant,
 	}
 
 	clusterWithNoKymaConfig := model.Cluster{
@@ -722,7 +723,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.20", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
 			},
 		},
 		{
@@ -740,7 +741,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 	} {
@@ -793,7 +794,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.20", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
 			},
 		},
 		{
@@ -813,7 +814,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 		{
@@ -829,7 +830,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				kubernetesVersionProvider.On("Get", runtimeID).Return("", apperrors.Internal("oh, no!"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
@@ -871,7 +872,8 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	providerConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a"}})
 	cluster := model.Cluster{
-		ID: runtimeID,
+		ID:     runtimeID,
+		Tenant: tenant,
 		ClusterConfig: model.GardenerConfig{
 			ClusterID:              runtimeID,
 			Purpose:                util.StringPtr("evaluation"),
@@ -916,7 +918,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, newUpgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.20", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
 			},
 		},
 		{description: "should start runtime provisioning of Gardener cluster and return operation ID",
@@ -933,7 +935,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 	} {
@@ -983,7 +985,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 		{description: "should fail to upgrade Shoot when failed to upgrade cluster",
@@ -998,7 +1000,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 		{description: "should fail to upgrade Shoot when failed to update gardener cluster config",
@@ -1009,7 +1011,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 		{description: "should fail to upgrade Shoot when failed to create write session",
@@ -1018,7 +1020,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID).Return("1.19", nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 		{description: "should fail to upgrade Shoot when failed to get cluster",
@@ -1046,7 +1048,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				kubernetesVersionProvider.On("Get", runtimeID).Return("", apperrors.Internal("oh, no!"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
