@@ -14,7 +14,7 @@ spec:
       protocol: TCP
       name: http
     - port: {{ .Values.service.istioPort }}
-      targetPort: http
+      targetPort: {{ .Values.service.istioPort }}
       protocol: TCP
       name: istio-http
   selector:
