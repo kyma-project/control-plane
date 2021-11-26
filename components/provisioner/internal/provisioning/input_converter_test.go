@@ -729,7 +729,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		{description: "regular GCP shoot upgrade",
 			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:      "version",
+				KubernetesVersion:      "1.19",
 				VolumeSizeGB:           util.IntPtr(1),
 				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
@@ -743,7 +743,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:      util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion:      "version2",
+				KubernetesVersion:      "1.19",
 				VolumeSizeGB:           util.IntPtr(50),
 				DiskType:               util.StringPtr("papyrus"),
 				MachineType:            "new-machine",
@@ -760,7 +760,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		{description: "regular Azure shoot upgrade",
 			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:      "version",
+				KubernetesVersion:      "1.19",
 				VolumeSizeGB:           util.IntPtr(1),
 				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
@@ -774,7 +774,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:      util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion:      "version2",
+				KubernetesVersion:      "1.19",
 				VolumeSizeGB:           util.IntPtr(50),
 				DiskType:               util.StringPtr("papyrus"),
 				MachineType:            "new-machine",
@@ -791,7 +791,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		{description: "regular AWS shoot upgrade",
 			upgradeInput: newUpgradeShootInputAwsAzureGCP(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion: "version",
+				KubernetesVersion: "1.19",
 				VolumeSizeGB:      util.IntPtr(1),
 				DiskType:          util.StringPtr("ssd"),
 				MachineType:       "1",
@@ -804,7 +804,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName: util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "version2",
+				KubernetesVersion: "1.19",
 				VolumeSizeGB:      util.IntPtr(50),
 				DiskType:          util.StringPtr("papyrus"),
 				MachineType:       "new-machine",
@@ -820,7 +820,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		{description: "regular OpenStack shoot upgrade",
 			upgradeInput: newUpgradeOpenStackShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion: "version",
+				KubernetesVersion: "1.19",
 				MachineType:       "1",
 				Purpose:           &evaluationPurpose,
 				AutoScalerMin:     1,
@@ -831,7 +831,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName: util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "version2",
+				KubernetesVersion: "1.19",
 				MachineType:       "new-machine",
 				Purpose:           &testingPurpose,
 				AutoScalerMin:     2,
@@ -945,7 +945,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("version2"),
+			KubernetesVersion:      util.StringPtr("1.19"),
 			Purpose:                &newPurpose,
 			MachineType:            util.StringPtr("new-machine"),
 			DiskType:               util.StringPtr("papyrus"),
@@ -965,7 +965,7 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("version2"),
+			KubernetesVersion:      util.StringPtr("1.19"),
 			Purpose:                &newPurpose,
 			MachineType:            util.StringPtr("new-machine"),
 			AutoScalerMin:          util.IntPtr(2),
