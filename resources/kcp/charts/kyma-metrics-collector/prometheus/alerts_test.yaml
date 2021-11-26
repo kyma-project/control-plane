@@ -155,9 +155,9 @@ tests:
           values: '1+5x30'
 
       alert_rule_test:
-        - eval_time: 10m
+        - eval_time: 15m
           alertname: GardenerErrors
-        - eval_time: 20m
+        - eval_time: 25m
           alertname: GardenerErrors
           exp_alerts:
             - exp_labels:
