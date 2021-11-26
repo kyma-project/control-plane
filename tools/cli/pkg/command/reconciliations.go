@@ -46,8 +46,6 @@ type ReconciliationCommand struct {
 	provideMshipClient mothershipClientProvider
 }
 
-type timeSlice []mothership.HTTPReconciliationInfo
-
 func toReconciliationStatuses(rawStates []string) ([]mothership.Status, error) {
 	statuses := []mothership.Status{}
 	if rawStates == nil {
