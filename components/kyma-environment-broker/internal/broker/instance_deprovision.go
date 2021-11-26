@@ -65,18 +65,8 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
 
-		// there is an operation and it is not a temporary deprovision
-	case existingOperation != nil && !existingOperation.Temporary && !dberr.IsNotFound(errStorage):
-		logger = logger.WithField("operationID", existingOperation.ID)
-		if existingOperation.State == domain.Failed {
-			err := b.reprocessOperation(existingOperation)
-			if err != nil {
-				return domain.DeprovisionServiceSpec{}, errors.Wrap(err, "while reprocessing operation")
-			}
-			logger.Info("Reprocessing failed deprovisioning of runtime")
-			b.queue.Add(existingOperation.ID)
-		}
-		// return existing operation
+		// there is an ongoing operation and it is not a temporary deprovision (suspension)
+	case existingOperation != nil && !existingOperation.Temporary && existingOperation.State != domain.Failed:
 		return domain.DeprovisionServiceSpec{
 			IsAsync:       true,
 			OperationData: existingOperation.ID,
@@ -103,14 +93,4 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		IsAsync:       true,
 		OperationData: operationID,
 	}, nil
-}
-
-func (b *DeprovisionEndpoint) reprocessOperation(operation *internal.DeprovisioningOperation) error {
-	operation.State = domain.InProgress
-	operation.ProvisionerOperationID = ""
-	_, err := b.operationsStorage.UpdateDeprovisioningOperation(*operation)
-	if err != nil {
-		return errors.New("cannot update existing operation")
-	}
-	return nil
 }
