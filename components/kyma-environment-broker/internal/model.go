@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -40,6 +41,7 @@ type ProvisionerInputCreator interface {
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
+	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -249,15 +251,16 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string           `json:"sub_account_id"`
-	RuntimeID    string           `json:"runtime_id"`
-	ShootName    string           `json:"shoot_name"`
-	ShootDomain  string           `json:"shoot_domain"`
-	XSUAA        XSUAAData        `json:"xsuaa"`
-	Ems          EmsData          `json:"ems"`
-	Connectivity ConnectivityData `json:"connectivity"`
-	Monitoring   MonitoringData   `json:"monitoring"`
-	EDPCreated   bool             `json:"edp_created"`
+	SubAccountID      string                    `json:"sub_account_id"`
+	RuntimeID         string                    `json:"runtime_id"`
+	ShootName         string                    `json:"shoot_name"`
+	ShootDomain       string                    `json:"shoot_domain"`
+	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
+	XSUAA             XSUAAData                 `json:"xsuaa"`
+	Ems               EmsData                   `json:"ems"`
+	Connectivity      ConnectivityData          `json:"connectivity"`
+	Monitoring        MonitoringData            `json:"monitoring"`
+	EDPCreated        bool                      `json:"edp_created"`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
@@ -405,6 +408,45 @@ type RuntimeState struct {
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
+}
+
+func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
+	if r.ClusterSetup != nil {
+		return r.buildKymaConfigFromClusterSetup()
+	}
+	return r.KymaConfig
+}
+
+func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
+	var components []*gqlschema.ComponentConfigurationInput
+	for _, cmp := range r.ClusterSetup.KymaConfig.Components {
+		var config []*gqlschema.ConfigEntryInput
+		for _, cfg := range cmp.Configuration {
+			configEntryInput := &gqlschema.ConfigEntryInput{
+				Key:    cfg.Key,
+				Value:  fmt.Sprint(cfg.Value),
+				Secret: ptr.Bool(cfg.Secret),
+			}
+			config = append(config, configEntryInput)
+		}
+
+		componentConfigurationInput := &gqlschema.ComponentConfigurationInput{
+			Component:     cmp.Component,
+			Namespace:     cmp.Namespace,
+			SourceURL:     &cmp.URL,
+			Configuration: config,
+		}
+		components = append(components, componentConfigurationInput)
+	}
+
+	profile := gqlschema.KymaProfile(r.ClusterSetup.KymaConfig.Profile)
+	kymaConfig := gqlschema.KymaConfigInput{
+		Version:    r.ClusterSetup.KymaConfig.Version,
+		Profile:    &profile,
+		Components: components,
+	}
+
+	return kymaConfig
 }
 
 // OperationStats provide number of operations per type and state

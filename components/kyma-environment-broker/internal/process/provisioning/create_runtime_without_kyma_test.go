@@ -73,6 +73,17 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "kyma.org",
+					Providers: []*gqlschema.DNSProviderInput{
+						&gqlschema.DNSProviderInput{
+							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+							Primary:        true,
+							SecretName:     "aws_dns_domain_secrets_test_intest",
+							Type:           "route53_type_test",
+						},
+					},
+				},
 			},
 			Administrators: []string{administrator},
 		},

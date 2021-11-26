@@ -94,6 +94,9 @@ skrOIDCDefaultValues: |-
   usernamePrefix: "-"
   usernameClaim: "sub"
 
+skrDNSProvidersValues: |-
+  providers: []
+
 kymaVersion: "1.13.0"
 kymaPreviewVersion: "2.0"
 kymaVersionOnDemand: "false"
@@ -108,7 +111,7 @@ osbUpdateProcessingEnabled: "false"
 
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
-  shootDomain: "shoot.canary.k8s-hana.ondemand.com"
+  shootDomain: "kyma-dev.shoot.canary.k8s-hana.ondemand.com"
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   secretName: "gardener-credentials"
   kubernetesVersion: "1.16.9"
@@ -197,13 +200,6 @@ ems:
   disabled: true
   skipDeprovisionAzureEventingAtUpgrade: false
 
-monitoring:
-  namespace: "kcp-system"
-  chartUrl: "TBD"
-  remoteWriteUrl: "TBD"
-  remoteWritePath: "/api/v1/write"
-  disabled: true
-
 cis:
   v1:
     authURL: "TBD"
@@ -271,4 +267,4 @@ e2e:
     timeout: "100m"
   ha_aws:
     configName: "e2e-runtime-config-ha-aws"
-    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"  
+    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"

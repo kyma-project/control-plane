@@ -78,8 +78,8 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  3,
-			AutoScalerMax:  4,
+			AutoScalerMin:  2,
+			AutoScalerMax:  10,
 			MaxSurge:       4,
 			MaxUnavailable: 1,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{

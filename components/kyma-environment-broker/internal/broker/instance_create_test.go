@@ -63,7 +63,7 @@ func TestProvision_Provision(t *testing.T) {
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
 			},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -81,12 +81,13 @@ func TestProvision_Provision(t *testing.T) {
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
 			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
 		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
 
 		// then
 		require.NoError(t, err)
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, response.DashboardURL)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
 		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
 		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
 
@@ -99,12 +100,15 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
 		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
 
+		assert.Equal(t, fixDNSProviders(), operation.ShootDNSProviders)
+
 		instance, err := memoryStorage.Instances().GetByID(instanceID)
 		require.NoError(t, err)
 
 		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.test\.example\.com`, instance.DashboardURL)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
 
 	t.Run("existing operation ID will be return", func(t *testing.T) {
@@ -128,7 +132,7 @@ func TestProvision_Provision(t *testing.T) {
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
 			},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -174,7 +178,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -221,7 +225,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", broker.TrialPlanName}, OnlySingleTrialPerGA: false},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -281,7 +285,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "trial"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -338,7 +342,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			nil,
@@ -377,7 +381,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -417,7 +421,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			nil,
 			nil,
 			nil,
@@ -455,7 +459,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -500,7 +504,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -542,7 +546,7 @@ func TestProvision_Provision(t *testing.T) {
 		}
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{EnablePlans: []string{"gcp", "azure", "azure_lite", "trial"}, OnlySingleTrialPerGA: true},
-			gardener.Config{Project: "test", ShootDomain: "example.com"},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 			memoryStorage.Operations(),
 			memoryStorage.Instances(),
 			queue,
@@ -636,7 +640,7 @@ func TestRegionValidation(t *testing.T) {
 			// #create provisioner endpoint
 			provisionEndpoint := broker.NewProvision(
 				broker.Config{EnablePlans: []string{"gcp", "azure", "free"}, OnlySingleTrialPerGA: true},
-				gardener.Config{Project: "test", ShootDomain: "example.com"},
+				gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
 				memoryStorage.Operations(),
 				memoryStorage.Instances(),
 				queue,
@@ -704,4 +708,17 @@ func fixRequestContextWithProvider(t *testing.T, region string, provider interna
 	ctx = middleware.AddRegionToCtx(ctx, region)
 	ctx = middleware.AddProviderToCtx(ctx, provider)
 	return ctx
+}
+
+func fixDNSProviders() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"dev.example.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_instance",
+				Type:           "route53_type_test",
+			},
+		},
+	}
 }

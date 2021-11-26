@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -590,6 +591,85 @@ func TestShouldSetGlobalConfiguration(t *testing.T) {
 	})
 }
 
+func TestCreateProvisionRuntimeInput_ConfigureDNS(t *testing.T) {
+
+	t.Run("should apply provided DNS Providers values", func(t *testing.T) {
+		// given
+		expectedDnsValues := &gqlschema.DNSConfigInput{
+			Domain: "shoot-name.domain.sap",
+			Providers: []*gqlschema.DNSProviderInput{
+				&gqlschema.DNSProviderInput{
+					DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+					Primary:        true,
+					SecretName:     "aws_dns_domain_secrets_test_incustom",
+					Type:           "route53_type_test",
+				},
+			},
+		}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.4", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedDnsValues, input.ClusterConfig.GardenerConfig.DNSConfig)
+		assert.Equal(t, expectedDnsValues, clusterInput.ClusterConfig.GardenerConfig.DNSConfig)
+	})
+
+	t.Run("should apply the DNS Providers values while DNS providers is empty", func(t *testing.T) {
+		// given
+		expectedDnsValues := &gqlschema.DNSConfigInput{
+			Domain: "shoot-name.domain.sap",
+		}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.4", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+		creator.SetShootDNSProviders(gardener.DNSProvidersData{})
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedDnsValues, input.ClusterConfig.GardenerConfig.DNSConfig)
+		assert.Equal(t, expectedDnsValues, clusterInput.ClusterConfig.GardenerConfig.DNSConfig)
+	})
+
+}
+
 func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 
 	t.Run("should apply default OIDC values when OIDC is nil", func(t *testing.T) {
@@ -757,13 +837,13 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 		require.NoError(t, err)
 
 		// then
-		assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot.domain.sap")
+		assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot-name.domain.sap")
 		assert.Equal(t, reconciler.Component{
 			URL:       "",
 			Component: "dex",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
-				{Key: "global.domainName", Value: "shoot.domain.sap", Secret: false},
+				{Key: "global.domainName", Value: "shoot-name.domain.sap", Secret: false},
 				{Key: "global-key-string", Value: "global-pico", Secret: false},
 				{Key: "global-key-false", Value: false, Secret: false},
 				{Key: "global-key-true", Value: true, Secret: false},
@@ -827,14 +907,16 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 		// then
 		out, err := creator.CreateClusterConfiguration()
 		require.NoError(t, err)
+		t.Logf("out %+v\n", out)
 
 		overriddenComponent, found := findForReconciler(out.KymaConfig.Components, "keb")
 		require.True(t, found)
+		t.Logf("overriddenComponent %+v\n", overriddenComponent)
 
-		assertAllConfigsContainsGlobals(t, []reconciler.Component{overriddenComponent}, "shoot.domain.sap")
+		assertAllConfigsContainsGlobals(t, []reconciler.Component{overriddenComponent}, "shoot-name.domain.sap")
 		// assert component and global overrides
 		assertContainsAllOverridesForReconciler(t, overriddenComponent.Configuration, []*gqlschema.ConfigEntryInput{
-			{Key: "global.domainName", Value: "shoot.domain.sap"},
+			{Key: "global.domainName", Value: "shoot-name.domain.sap"},
 			{Key: "key-1", Value: "new"},
 			{Key: "key-2", Value: "bello"},
 			{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
@@ -929,7 +1011,8 @@ func setRuntimeProperties(creator internal.ProvisionerInputCreator) {
 	creator.SetRuntimeID("runtimeID")
 	creator.SetInstanceID("instanceID")
 	creator.SetShootName("shoot-name")
-	creator.SetShootDomain("shoot.domain.sap")
+	creator.SetShootDomain("shoot-name.domain.sap")
+	creator.SetShootDNSProviders(fixture.FixDNSProvidersConfig())
 }
 
 func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {

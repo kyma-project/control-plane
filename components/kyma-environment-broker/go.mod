@@ -27,7 +27,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20210908123350-912a714ae675
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20211103174936-687e40a56850
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.2
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -52,12 +52,9 @@ require (
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.22.3
 	k8s.io/apimachinery v0.22.3
-	k8s.io/cli-runtime v0.22.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 

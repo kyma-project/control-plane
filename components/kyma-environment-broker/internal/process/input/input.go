@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -54,11 +55,12 @@ type RuntimeInput struct {
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
 
-	trialNodesNumber int
-	instanceID       string
-	runtimeID        string
-	kubeconfig       string
-	shootDomain      string
+	trialNodesNumber  int
+	instanceID        string
+	runtimeID         string
+	kubeconfig        string
+	shootDomain       string
+	shootDnsProviders gardener.DNSProvidersData
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -89,6 +91,11 @@ func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreato
 
 func (r *RuntimeInput) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	r.shootDomain = name
+	return r
+}
+
+func (r *RuntimeInput) SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) internal.ProvisionerInputCreator {
+	r.shootDnsProviders = dnsProviders
 	return r
 }
 
@@ -213,6 +220,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "configure OIDC",
 			execute: r.configureOIDC,
+		},
+		{
+			name:    "configure DNS",
+			execute: r.configureDNS,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -571,6 +582,30 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 	}
 
 	r.provisionRuntimeInput.RuntimeInput.Name = fmt.Sprintf("%s-%s", name, randomString(trialSuffixLength))
+	return nil
+}
+
+func (r *RuntimeInput) configureDNS() error {
+	dnsParamsToSet := gqlschema.DNSConfigInput{}
+
+	//if dns providers is given
+	if len(r.shootDnsProviders.Providers) != 0 {
+		for _, v := range r.shootDnsProviders.Providers {
+			dnsParamsToSet.Providers = append(dnsParamsToSet.Providers, &gqlschema.DNSProviderInput{
+				DomainsInclude: v.DomainsInclude,
+				Primary:        v.Primary,
+				SecretName:     v.SecretName,
+				Type:           v.Type,
+			})
+		}
+	}
+
+	dnsParamsToSet.Domain = r.shootDomain
+
+	if r.provisionRuntimeInput.ClusterConfig != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsParamsToSet
+	}
+
 	return nil
 }
 
