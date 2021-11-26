@@ -67,22 +67,13 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 
 		// there is an operation and it is not a temporary deprovision
 	case existingOperation != nil && !existingOperation.Temporary && !dberr.IsNotFound(errStorage):
-		//logger = logger.WithField("operationID", existingOperation.ID)
-		//if existingOperation.State == domain.Failed {
-		//	err := b.reprocessOperation(existingOperation)
-		//	if err != nil {
-		//		return domain.DeprovisionServiceSpec{}, errors.Wrap(err, "while reprocessing operation")
-		//	}
-		//	logger.Info("Reprocessing failed deprovisioning of runtime")
-		//	b.queue.Add(existingOperation.ID)
-		//}
-
 		if existingOperation.State != domain.Failed {
 			return domain.DeprovisionServiceSpec{
 				IsAsync:       true,
 				OperationData: existingOperation.ID,
 			}, nil
 		}
+		logger.Infof("Creating next deprovisioning operation")
 	}
 	// create and save new operation
 	operationID := uuid.New().String()
