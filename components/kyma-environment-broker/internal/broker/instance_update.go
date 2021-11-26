@@ -23,7 +23,7 @@ import (
 )
 
 type ContextUpdateHandler interface {
-	Handle(instance *internal.Instance, newCtx internal.ERSContext) error
+	Handle(instance *internal.Instance, newCtx internal.ERSContext) (bool, error)
 }
 
 type UpdateEndpoint struct {
@@ -107,12 +107,16 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 
 	if b.processingEnabled {
-		instance, err := b.processContext(instance, details, lastProvisioningOperation, logger)
+		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
 		}
 
-		return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, logger)
+		// NOTE: KEB currently can't process update parameters in one call along with context update
+		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
+		if !suspendStatusChange {
+			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, logger)
+		}
 	}
 
 	return domain.UpdateServiceSpec{
@@ -222,12 +226,12 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	}, nil
 }
 
-func (b *UpdateEndpoint) processContext(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (*internal.Instance, error) {
+func (b *UpdateEndpoint) processContext(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (*internal.Instance, bool, error) {
 	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		logger.Errorf("unable to decode context: %s", err.Error())
-		return nil, errors.New("unable to unmarshal context")
+		return nil, false, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
@@ -236,13 +240,13 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
-		return nil, errors.New("unable to process the update")
+		return nil, false, errors.New("unable to process the update")
 	}
 
-	err = b.contextUpdateHandler.Handle(instance, ersContext)
+	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, errors.New("unable to process the update")
+		return nil, changed, errors.New("unable to process the update")
 	}
 
 	//  copy the Active flag if set
@@ -253,9 +257,9 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	newInstance, err := b.instanceStorage.Update(*instance)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, errors.New("unable to process the update")
+		return nil, changed, errors.New("unable to process the update")
 	}
-	return newInstance, nil
+	return newInstance, changed, nil
 }
 
 func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {

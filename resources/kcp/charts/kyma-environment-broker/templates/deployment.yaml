@@ -358,16 +358,6 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
-            - name: APP_MONITORING_NAMESPACE
-              value: "{{ .Values.monitoring.namespace }}"
-            - name: APP_MONITORING_CHART_URL
-              value: "{{ .Values.monitoring.chartUrl }}"
-            - name: APP_MONITORING_REMOTE_WRITE_URL
-              value: "{{ .Values.monitoring.remoteWriteUrl }}"
-            - name: APP_MONITORING_REMOTE_WRITE_PATH
-              value: "{{ .Values.monitoring.remoteWritePath }}"
-            - name: APP_MONITORING_DISABLED
-              value: "{{ .Values.monitoring.disabled }}"
             - name: APP_VERSION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME

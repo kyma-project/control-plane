@@ -410,6 +410,45 @@ type RuntimeState struct {
 	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
 }
 
+func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
+	if r.ClusterSetup != nil {
+		return r.buildKymaConfigFromClusterSetup()
+	}
+	return r.KymaConfig
+}
+
+func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
+	var components []*gqlschema.ComponentConfigurationInput
+	for _, cmp := range r.ClusterSetup.KymaConfig.Components {
+		var config []*gqlschema.ConfigEntryInput
+		for _, cfg := range cmp.Configuration {
+			configEntryInput := &gqlschema.ConfigEntryInput{
+				Key:    cfg.Key,
+				Value:  fmt.Sprint(cfg.Value),
+				Secret: ptr.Bool(cfg.Secret),
+			}
+			config = append(config, configEntryInput)
+		}
+
+		componentConfigurationInput := &gqlschema.ComponentConfigurationInput{
+			Component:     cmp.Component,
+			Namespace:     cmp.Namespace,
+			SourceURL:     &cmp.URL,
+			Configuration: config,
+		}
+		components = append(components, componentConfigurationInput)
+	}
+
+	profile := gqlschema.KymaProfile(r.ClusterSetup.KymaConfig.Profile)
+	kymaConfig := gqlschema.KymaConfigInput{
+		Version:    r.ClusterSetup.KymaConfig.Version,
+		Profile:    &profile,
+		Components: components,
+	}
+
+	return kymaConfig
+}
+
 // OperationStats provide number of operations per type and state
 type OperationStats struct {
 	Provisioning   map[domain.LastOperationState]int
@@ -544,6 +583,10 @@ func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) 
 
 func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
 	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
+}
+
+func (po *UpgradeKymaOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

@@ -239,7 +239,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		overriddenComponent, found := find(out.KymaConfig.Components, "keb")
 		require.True(t, found)
 
-		assertContainsAllOverrides(t, overriddenComponent.Configuration, overridesA1, overridesA1)
+		assertContainsAllOverrides(t, overriddenComponent.Configuration, overridesA1, overridesA2)
 	})
 
 	t.Run("should append global overrides for ProvisionRuntimeInput", func(t *testing.T) {
@@ -277,7 +277,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		out, err := creator.CreateProvisionRuntimeInput()
 		require.NoError(t, err)
 
-		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
+		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA2)
 	})
 
 	t.Run("should append global overrides for UpgradeRuntimeInput", func(t *testing.T) {
@@ -313,7 +313,69 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 		out, err := creator.CreateUpgradeRuntimeInput()
 		require.NoError(t, err)
 
-		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA1)
+		assertContainsAllOverrides(t, out.KymaConfig.Configuration, overridesA1, overridesA2)
+	})
+
+	t.Run("should overwrite already applied component and global overrides", func(t *testing.T) {
+		// given
+		var (
+			dummyOptComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
+
+			overridesA1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "initial"},
+				{Key: "key-2", Value: "bello"},
+			}
+			overridesA2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "new"},
+				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+			globalOverrides1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-g-1", Value: "initial-g"},
+				{Key: "key-g-2", Value: "hakuna", Secret: ptr.Bool(true)},
+			}
+			globalOverrides2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-g-1", Value: "new"},
+				{Key: "key-g-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+		)
+
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
+		require.NoError(t, err)
+
+		// when
+		creator.
+			AppendOverrides("keb", overridesA1).
+			AppendOverrides("keb", overridesA2).
+			AppendGlobalOverrides(globalOverrides1).
+			AppendGlobalOverrides(globalOverrides2)
+
+		// then
+		out, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+
+		overriddenComponent, found := find(out.KymaConfig.Components, "keb")
+		require.True(t, found)
+
+		// assert component overrides
+		assertContainsAllOverrides(t, overriddenComponent.Configuration, []*gqlschema.ConfigEntryInput{
+			{Key: "key-1", Value: "new"},
+			{Key: "key-2", Value: "bello"},
+			{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+		})
+
+		// assert global overrides
+		assertContainsAllOverrides(t, out.KymaConfig.Configuration, []*gqlschema.ConfigEntryInput{
+			{Key: "key-g-1", Value: "new"},
+			{Key: "key-g-2", Value: "hakuna", Secret: ptr.Bool(true)},
+			{Key: "key-g-4", Value: "matata", Secret: ptr.Bool(true)},
+		})
 	})
 }
 
@@ -800,6 +862,69 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("should overwrite already existing component and global overrides", func(t *testing.T) {
+		// given
+		var (
+			dummyOptComponentsSvc = dummyOptionalComponentServiceMock(fixKymaComponentList())
+
+			overridesA1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "initial"},
+				{Key: "key-2", Value: "bello"},
+			}
+			overridesA2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-1", Value: "new"},
+				{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+			globalOverrides1 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-g-1", Value: "initial-g"},
+				{Key: "key-g-2", Value: "hakuna", Secret: ptr.Bool(true)},
+			}
+			globalOverrides2 = []*gqlschema.ConfigEntryInput{
+				{Key: "key-g-1", Value: "new"},
+				{Key: "key-g-4", Value: "matata", Secret: ptr.Bool(true)},
+			}
+		)
+
+		pp := fixProvisioningParameters(broker.AzurePlanID, "2.0.0-rc6")
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
+			componentsProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+		creator, err := builder.CreateProvisionInput(pp, internal.RuntimeVersionData{Version: "1.10.0", Origin: internal.Defaults})
+		require.NoError(t, err)
+		setRuntimeProperties(creator)
+
+		// when
+		creator.
+			AppendOverrides("keb", overridesA1).
+			AppendOverrides("keb", overridesA2).
+			AppendGlobalOverrides(globalOverrides1).
+			AppendGlobalOverrides(globalOverrides2)
+
+		// then
+		out, err := creator.CreateClusterConfiguration()
+		require.NoError(t, err)
+		t.Logf("out %+v\n", out)
+
+		overriddenComponent, found := findForReconciler(out.KymaConfig.Components, "keb")
+		require.True(t, found)
+		t.Logf("overriddenComponent %+v\n", overriddenComponent)
+
+		assertAllConfigsContainsGlobals(t, []reconciler.Component{overriddenComponent}, "shoot-name.domain.sap")
+		// assert component and global overrides
+		assertContainsAllOverridesForReconciler(t, overriddenComponent.Configuration, []*gqlschema.ConfigEntryInput{
+			{Key: "global.domainName", Value: "shoot-name.domain.sap"},
+			{Key: "key-1", Value: "new"},
+			{Key: "key-2", Value: "bello"},
+			{Key: "key-4", Value: "matata", Secret: ptr.Bool(true)},
+			{Key: "key-g-1", Value: "new"},
+			{Key: "key-g-2", Value: "hakuna", Secret: ptr.Bool(true)},
+			{Key: "key-g-4", Value: "matata", Secret: ptr.Bool(true)},
+		})
+	})
 }
 
 func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
@@ -1044,6 +1169,15 @@ func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.
 	return nil, false
 }
 
+func findForReconciler(in []reconciler.Component, name string) (reconciler.Component, bool) {
+	for _, c := range in {
+		if c.Component == name {
+			return c, true
+		}
+	}
+	return reconciler.Component{}, false
+}
+
 func fixKymaComponentList() []v1alpha1.KymaComponent {
 	return []v1alpha1.KymaComponent{
 		{Name: "dex", Namespace: "kyma-system"},
@@ -1065,6 +1199,22 @@ func assertContainsAllOverrides(t *testing.T, gotOverrides []*gqlschema.ConfigEn
 	var expected []*gqlschema.ConfigEntryInput
 	for _, o := range expOverrides {
 		expected = append(expected, o...)
+	}
+
+	require.Len(t, gotOverrides, len(expected))
+	for _, o := range expected {
+		assert.Contains(t, gotOverrides, o)
+	}
+}
+
+func assertContainsAllOverridesForReconciler(t *testing.T, gotOverrides []reconciler.Configuration, expOverrides []*gqlschema.ConfigEntryInput) {
+	var expected []reconciler.Configuration
+	for _, o := range expOverrides {
+		expected = append(expected, reconciler.Configuration{
+			Key:    o.Key,
+			Value:  o.Value,
+			Secret: falseIfNil(o.Secret),
+		})
 	}
 
 	require.Len(t, gotOverrides, len(expected))

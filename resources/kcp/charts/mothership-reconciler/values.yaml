@@ -26,9 +26,7 @@ db:
   resetDatabase: false
 
 preComponents:
-  - cluster-essentials
-  - istio-configuration
-  - certificates
+  - [cluster-essentials, istio-configuration, certificates]
 
 deployment:
   imagePullPolicy: "IfNotPresent"
@@ -82,3 +80,4 @@ service:
   type: ClusterIP
   scheme: http
   port: 80
+  istioPort: 15020

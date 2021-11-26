@@ -30,8 +30,9 @@ func TestSuspension(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	err := svc.Handle(instance, fixInactiveErsContext())
+	changed, err := svc.Handle(instance, fixInactiveErsContext())
 	require.NoError(t, err)
+	assert.True(t, changed, "handler to change active flag")
 
 	// then
 	op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
@@ -65,8 +66,9 @@ func TestSuspension_Retrigger(t *testing.T) {
 		})
 
 		// when
-		err := svc.Handle(instance, fixInactiveErsContext())
+		changed, err := svc.Handle(instance, fixInactiveErsContext())
 		require.NoError(t, err)
+		assert.False(t, changed, "handler to not change active flag")
 
 		// then
 		op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
@@ -99,8 +101,9 @@ func TestSuspension_Retrigger(t *testing.T) {
 		})
 
 		// when
-		err := svc.Handle(instance, fixInactiveErsContext())
+		changed, err := svc.Handle(instance, fixInactiveErsContext())
 		require.NoError(t, err)
+		assert.True(t, changed, "handler to change active flag")
 
 		// then
 		op, _ := st.Operations().GetDeprovisioningOperationByInstanceID("instance-id")
@@ -140,8 +143,9 @@ func TestUnsuspension(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(deprovisioningOperation)
 
 	// when
-	err := svc.Handle(instance, fixActiveErsContext())
+	changed, err := svc.Handle(instance, fixActiveErsContext())
 	require.NoError(t, err)
+	assert.True(t, changed, "handler to change active flag")
 
 	// then
 	op, err := st.Operations().GetProvisioningOperationByInstanceID("instance-id")
@@ -172,8 +176,9 @@ func TestUnsuspensionForDeprovisioningInstance(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(deprovisioningOperation)
 
 	// when
-	err := svc.Handle(instance, fixActiveErsContext())
+	changed, err := svc.Handle(instance, fixActiveErsContext())
 	require.NoError(t, err)
+	assert.False(t, changed, "handler to not change active flag")
 
 	// then
 	_, err = st.Operations().GetProvisioningOperationByInstanceID("instance-id")
@@ -197,8 +202,9 @@ func TestUnsuspensionWithoutShootname(t *testing.T) {
 	st.Instances().Insert(*instance)
 
 	// when
-	err := svc.Handle(instance, fixActiveErsContext())
+	changed, err := svc.Handle(instance, fixActiveErsContext())
 	require.NoError(t, err)
+	assert.True(t, changed, "handler to change active flag")
 
 	// then
 	op, err := st.Operations().GetProvisioningOperationByInstanceID("instance-id")

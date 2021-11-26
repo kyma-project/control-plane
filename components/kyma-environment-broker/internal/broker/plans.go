@@ -155,8 +155,8 @@ func AzureSchema(machineTypes []string) RootSchema {
 
 func AzureLiteSchema(machineTypes []string) RootSchema {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	properties.AutoScalerMax.Maximum = 4
-	properties.AutoScalerMax.Default = 2
+	properties.AutoScalerMax.Maximum = 40
+	properties.AutoScalerMax.Default = 10
 
 	return NewSchema(properties, DefaultControlsOrder())
 }

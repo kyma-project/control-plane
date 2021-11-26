@@ -115,6 +115,26 @@ func (mr *MockClientInterfaceMockRecorder) GetClustersRuntimeIDConfigConfigVersi
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersRuntimeIDConfigConfigVersionStatus", reflect.TypeOf((*MockClientInterface)(nil).GetClustersRuntimeIDConfigConfigVersionStatus), varargs...)
 }
 
+// GetClustersRuntimeIDConfigVersion mocks base method.
+func (m *MockClientInterface) GetClustersRuntimeIDConfigVersion(ctx context.Context, runtimeID, version string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, runtimeID, version}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetClustersRuntimeIDConfigVersion", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersRuntimeIDConfigVersion indicates an expected call of GetClustersRuntimeIDConfigVersion.
+func (mr *MockClientInterfaceMockRecorder) GetClustersRuntimeIDConfigVersion(ctx, runtimeID, version interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, runtimeID, version}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersRuntimeIDConfigVersion", reflect.TypeOf((*MockClientInterface)(nil).GetClustersRuntimeIDConfigVersion), varargs...)
+}
+
 // GetClustersRuntimeIDStatus mocks base method.
 func (m *MockClientInterface) GetClustersRuntimeIDStatus(ctx context.Context, runtimeID string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -416,6 +436,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClustersRuntimeIDConf
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, runtimeID, configVersion}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersRuntimeIDConfigConfigVersionStatusWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetClustersRuntimeIDConfigConfigVersionStatusWithResponse), varargs...)
+}
+
+// GetClustersRuntimeIDConfigVersionWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) GetClustersRuntimeIDConfigVersionWithResponse(ctx context.Context, runtimeID, version string, reqEditors ...mothership.RequestEditorFn) (*mothership.GetClustersRuntimeIDConfigVersionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, runtimeID, version}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetClustersRuntimeIDConfigVersionWithResponse", varargs...)
+	ret0, _ := ret[0].(*mothership.GetClustersRuntimeIDConfigVersionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersRuntimeIDConfigVersionWithResponse indicates an expected call of GetClustersRuntimeIDConfigVersionWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClustersRuntimeIDConfigVersionWithResponse(ctx, runtimeID, version interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, runtimeID, version}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersRuntimeIDConfigVersionWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetClustersRuntimeIDConfigVersionWithResponse), varargs...)
 }
 
 // GetClustersRuntimeIDStatusChangesWithResponse mocks base method.
