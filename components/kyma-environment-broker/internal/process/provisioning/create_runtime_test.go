@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -103,6 +104,17 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
 				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "kyma.org",
+					Providers: []*gqlschema.DNSProviderInput{
+						&gqlschema.DNSProviderInput{
+							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+							Primary:        true,
+							SecretName:     "aws_dns_domain_secrets_test_intest",
+							Type:           "route53_type_test",
+						},
+					},
+				},
 			},
 			Administrators: []string{administrator},
 		},
@@ -183,6 +195,16 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
 	provisioningOperation.InstanceDetails.ShootName = shootName
+	provisioningOperation.InstanceDetails.ShootDNSProviders = gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_intest",
+				Type:           "route53_type_test",
+			},
+		},
+	}
 	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region)
 	provisioningOperation.RuntimeID = ""
 

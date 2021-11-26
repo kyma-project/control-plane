@@ -1,0 +1,5 @@
+providers:
+- domainsInclude: [ "dev.kyma.ondemand.com" ]
+  primary: true
+  secretName: vv-test-aws-route53-secret
+  type: aws-route53

@@ -366,6 +366,8 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
               value: /config/skrOIDCDefaultValues.yaml
+            - name: APP_SKR_DNS_PROVIDERS_VALUES_YAML_FILE_PATH
+              value: /config/skrDNSProvidersValues.yaml
             - name: APP_ORCHESTRATION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_ORCHESTRATION_CONFIG_NAME

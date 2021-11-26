@@ -23,5 +23,9 @@ data:
 {{- with .Values.skrOIDCDefaultValues }}
 {{ tpl . $ | indent 4 }}
 {{- end }}
+  skrDNSProvidersValues.yaml: |-
+{{- with .Values.skrDNSProvidersValues }}
+{{ tpl . $ | indent 4 }}
+{{- end }}
   catalog.yaml: |-
 {{ .Files.Get "files/catalog.yaml" | indent 4 }}

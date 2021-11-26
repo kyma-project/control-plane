@@ -616,6 +616,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.ShootDNSProviders = gardener.DNSProvidersData{}
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 
@@ -914,7 +915,7 @@ func fixConfig() *Config {
 		UpdateProcessingEnabled: true,
 		Gardener: gardener.Config{
 			Project:     "kyma",
-			ShootDomain: "sap.com",
+			ShootDomain: "kyma.sap.com",
 		},
 		MaxPaginationPage: 100,
 	}

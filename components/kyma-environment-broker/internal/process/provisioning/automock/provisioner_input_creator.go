@@ -3,8 +3,10 @@
 package automock
 
 import (
-	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	gardener "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	gqlschema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
+	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -286,6 +288,22 @@ func (_m *ProvisionerInputCreator) SetRuntimeID(runtimeID string) internal.Provi
 	var r0 internal.ProvisionerInputCreator
 	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
 		r0 = rf(runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
+// SetShootDNSProviders provides a mock function with given fields: dnsProviders
+func (_m *ProvisionerInputCreator) SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) internal.ProvisionerInputCreator {
+	ret := _m.Called(dnsProviders)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(gardener.DNSProvidersData) internal.ProvisionerInputCreator); ok {
+		r0 = rf(dnsProviders)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(internal.ProvisionerInputCreator)

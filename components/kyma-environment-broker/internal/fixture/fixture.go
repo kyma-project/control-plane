@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -36,6 +37,7 @@ type SimpleInputCreator struct {
 	EnabledComponents []string
 	ShootName         *string
 	ShootDomain       string
+	shootDnsProviders gardener.DNSProvidersData
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
 }
@@ -71,6 +73,7 @@ func FixERSContext(id string) internal.ERSContext {
 
 func FixProvisioningParametersDTO() internal.ProvisioningParametersDTO {
 	trialCloudProvider := internal.Azure
+
 	return internal.ProvisioningParametersDTO{
 		Name:         "cluster-test",
 		VolumeSizeGb: ptr.Integer(50),
@@ -136,15 +139,16 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:          internal.AvsLifecycleData{},
-		EventHub:     internal.EventHub{Deleted: false},
-		SubAccountID: subAccountId,
-		RuntimeID:    runtimeId,
-		ShootName:    "ShootName",
-		ShootDomain:  "shoot.domain.com",
-		XSUAA:        xsuaaData,
-		Ems:          emsData,
-		Monitoring:   monitoringData,
+		Avs:               internal.AvsLifecycleData{},
+		EventHub:          internal.EventHub{Deleted: false},
+		SubAccountID:      subAccountId,
+		RuntimeID:         runtimeId,
+		ShootName:         "ShootName",
+		ShootDomain:       "shoot.domain.com",
+		ShootDNSProviders: FixDNSProvidersConfig(),
+		XSUAA:             xsuaaData,
+		Ems:               emsData,
+		Monitoring:        monitoringData,
 	}
 }
 
@@ -327,6 +331,19 @@ func FixOIDCConfigDTO() internal.OIDCConfigDTO {
 	}
 }
 
+func FixDNSProvidersConfig() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_incustom",
+				Type:           "route53_type_test",
+			},
+		},
+	}
+}
+
 func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
 	return internal.RuntimeState{
 		ID:            id,
@@ -351,6 +368,11 @@ func (c *SimpleInputCreator) SetShootName(name string) internal.ProvisionerInput
 
 func (c *SimpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	c.ShootDomain = name
+	return c
+}
+
+func (c *SimpleInputCreator) SetShootDNSProviders(providers gardener.DNSProvidersData) internal.ProvisionerInputCreator {
+	c.shootDnsProviders = providers
 	return c
 }
 

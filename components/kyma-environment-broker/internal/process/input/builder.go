@@ -242,6 +242,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	if f.config.MachineImageVersion != "" {
 		provisionInput.ClusterConfig.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
+
 	return provisionInput, nil
 }
 

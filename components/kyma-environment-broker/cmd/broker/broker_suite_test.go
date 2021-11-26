@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -203,6 +204,19 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RSA256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func defaultDNSValues() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_insuite",
+				Type:           "route53_type_test",
+			},
+		},
 	}
 }
 

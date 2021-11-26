@@ -117,6 +117,7 @@ type Config struct {
 	ManagedRuntimeComponentsYAMLFilePath       string
 	NewAdditionalRuntimeComponentsYAMLFilePath string
 	SkrOidcDefaultValuesYAMLFilePath           string
+	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 
@@ -238,6 +239,8 @@ func main() {
 	fatalOnError(err)
 	gardenerSecretBindings := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 	gardenerShoots, err := gardener.NewGardenerShootInterface(gardenerClusterConfig, cfg.Gardener.Project)
+	fatalOnError(err)
+	cfg.Gardener.DNSProviders, err = gardener.ReadDNSProvidersValuesFromYAML(cfg.SkrDnsProvidersValuesYAMLFilePath)
 	fatalOnError(err)
 
 	gardenerAccountPool := hyperscaler.NewAccountPool(gardenerSecretBindings, gardenerShoots)

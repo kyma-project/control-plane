@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -40,6 +41,7 @@ type ProvisionerInputCreator interface {
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
+	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -249,15 +251,16 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string           `json:"sub_account_id"`
-	RuntimeID    string           `json:"runtime_id"`
-	ShootName    string           `json:"shoot_name"`
-	ShootDomain  string           `json:"shoot_domain"`
-	XSUAA        XSUAAData        `json:"xsuaa"`
-	Ems          EmsData          `json:"ems"`
-	Connectivity ConnectivityData `json:"connectivity"`
-	Monitoring   MonitoringData   `json:"monitoring"`
-	EDPCreated   bool             `json:"edp_created"`
+	SubAccountID      string                    `json:"sub_account_id"`
+	RuntimeID         string                    `json:"runtime_id"`
+	ShootName         string                    `json:"shoot_name"`
+	ShootDomain       string                    `json:"shoot_domain"`
+	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
+	XSUAA             XSUAAData                 `json:"xsuaa"`
+	Ems               EmsData                   `json:"ems"`
+	Connectivity      ConnectivityData          `json:"connectivity"`
+	Monitoring        MonitoringData            `json:"monitoring"`
+	EDPCreated        bool                      `json:"edp_created"`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`

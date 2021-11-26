@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,6 +28,7 @@ type simpleInputCreator struct {
 	shootName         *string
 	provider          internal.CloudProvider
 	shootDomain       string
+	shootDnsProviders gardener.DNSProvidersData
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -63,6 +64,11 @@ func (c *simpleInputCreator) SetShootName(name string) internal.ProvisionerInput
 
 func (c *simpleInputCreator) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	c.shootDomain = name
+	return c
+}
+
+func (c *simpleInputCreator) SetShootDNSProviders(providers gardener.DNSProvidersData) internal.ProvisionerInputCreator {
+	c.shootDnsProviders = providers
 	return c
 }
 
