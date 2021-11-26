@@ -67,20 +67,22 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 
 		// there is an operation and it is not a temporary deprovision
 	case existingOperation != nil && !existingOperation.Temporary && !dberr.IsNotFound(errStorage):
-		logger = logger.WithField("operationID", existingOperation.ID)
-		if existingOperation.State == domain.Failed {
-			err := b.reprocessOperation(existingOperation)
-			if err != nil {
-				return domain.DeprovisionServiceSpec{}, errors.Wrap(err, "while reprocessing operation")
-			}
-			logger.Info("Reprocessing failed deprovisioning of runtime")
-			b.queue.Add(existingOperation.ID)
+		//logger = logger.WithField("operationID", existingOperation.ID)
+		//if existingOperation.State == domain.Failed {
+		//	err := b.reprocessOperation(existingOperation)
+		//	if err != nil {
+		//		return domain.DeprovisionServiceSpec{}, errors.Wrap(err, "while reprocessing operation")
+		//	}
+		//	logger.Info("Reprocessing failed deprovisioning of runtime")
+		//	b.queue.Add(existingOperation.ID)
+		//}
+
+		if existingOperation.State != domain.Failed {
+			return domain.DeprovisionServiceSpec{
+				IsAsync:       true,
+				OperationData: existingOperation.ID,
+			}, nil
 		}
-		// return existing operation
-		return domain.DeprovisionServiceSpec{
-			IsAsync:       true,
-			OperationData: existingOperation.ID,
-		}, nil
 	}
 	// create and save new operation
 	operationID := uuid.New().String()
@@ -103,14 +105,4 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		IsAsync:       true,
 		OperationData: operationID,
 	}, nil
-}
-
-func (b *DeprovisionEndpoint) reprocessOperation(operation *internal.DeprovisioningOperation) error {
-	operation.State = domain.InProgress
-	operation.ProvisionerOperationID = ""
-	_, err := b.operationsStorage.UpdateDeprovisioningOperation(*operation)
-	if err != nil {
-		return errors.New("cannot update existing operation")
-	}
-	return nil
 }
