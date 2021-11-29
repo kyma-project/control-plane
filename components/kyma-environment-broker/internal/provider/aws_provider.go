@@ -205,10 +205,10 @@ func (p *AWSInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsLitelDefaults()
+	return awsLiteDefaults()
 }
 
-func awsLitelDefaults() *gqlschema.ClusterConfigInput {
+func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
@@ -271,7 +271,9 @@ func (p *AWSTrialInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
-	defaults := awsLitelDefaults()
+	defaults := awsLiteDefaults()
+
+	defaults.GardenerConfig.MachineType = "m6i.xlarge"
 	// Lite (freemium) must have the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
 	defaults.GardenerConfig.Region = DefaultAWSRegion
 	return defaults
