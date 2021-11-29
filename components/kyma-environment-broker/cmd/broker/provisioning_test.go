@@ -276,7 +276,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedProfile:                     gqlschema.KymaProfileEvaluation,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
-			expectedMachineType:                 "m5.xlarge",
+			expectedMachineType:                 "m6i.xlarge",
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"Freemium azure": {
