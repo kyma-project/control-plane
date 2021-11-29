@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -148,10 +149,10 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 
 func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
 	sess := s.NewReadSession()
-	var state dbmodel.RuntimeStateDTO
+	var states []dbmodel.RuntimeStateDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		state, lastErr = sess.GetLatestWithKymaVersionByRuntimeID(runtimeID)
+		states, lastErr = sess.GetLatest10ByRuntimeID(runtimeID)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)
@@ -164,12 +165,20 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 	if err != nil {
 		return internal.RuntimeState{}, lastErr
 	}
-	result, err := s.toRuntimeState(&state)
-	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+	for _, state := range states {
+		result, err := s.toRuntimeState(&state)
+		if err != nil {
+			return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+		}
+		if result.ClusterSetup != nil && result.ClusterSetup.KymaConfig.Version != "" {
+			return result, nil
+		}
+		if result.KymaConfig.Version != "" {
+			return result, nil
+		}
 	}
 
-	return result, nil
+	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with kyma version for runtime %s", runtimeID)
 }
 
 func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
