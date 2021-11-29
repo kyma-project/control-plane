@@ -42,6 +42,21 @@ spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
+        {{- if .Values.broker.profiler.memory }}
+        - name: profiler
+          command:
+          - bash
+          - -c
+          - chmod 777 /tmp/profiler && sleep inf
+          securityContext:
+            runAsUser: 0
+          image: ubuntu:20.04
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: keb-memory-profile
+              mountPath: /tmp/profiler
+              readOnly: false
+        {{- end }}
         - name: {{ .Chart.Name }}
           image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
@@ -374,6 +389,8 @@ spec:
               value: "orchestration-config"
             - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/newAdditionalRuntimeComponents.yaml
+            - name: APP_PROFILER_MEMORY
+              value: "{{ .Values.broker.profiler.memory }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -404,11 +421,16 @@ spec:
               name: swagger-volume
             - mountPath: /auditlog-script
               name: auditlog-script
-          {{if eq .Values.global.database.embedded.enabled false}}
+          {{- if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-          {{ end }}
+          {{- end }}
+          {{- if .Values.broker.profiler.memory }}
+            - name: keb-memory-profile
+              mountPath: /tmp/profiler
+              readOnly: false
+          {{- end }}
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
@@ -443,3 +465,8 @@ spec:
       - name: auditlog-script
         configMap:
           name: {{ .Values.global.auditlog.script.configMapName }}
+      {{- if .Values.broker.profiler.memory }}
+      - name: keb-memory-profile
+        persistentVolumeClaim:
+          claimName: {{ include "kyma-env-broker.fullname" . }}-profiler
+      {{- end }}

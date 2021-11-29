@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	gruntime "runtime"
+	"runtime/pprof"
 	"sort"
 	"time"
 
@@ -146,6 +148,17 @@ type Config struct {
 	FreemiumProviders []string `envconfig:"default=aws"`
 
 	DomainName string
+
+	// Enable/disable profiler configuration. The profiler samples will be stored
+	// under /tmp/profiler directory. Based on the deployment strategy, this will be
+	// either ephemeral container filesystem or persistent storage
+	Profiler ProfilerConfig
+}
+
+type ProfilerConfig struct {
+	Path     string        `envconfig:"default=/tmp/profiler"`
+	Sampling time.Duration `envconfig:"default=1s"`
+	Memory   bool
 }
 
 const (
@@ -155,6 +168,27 @@ const (
 	checkKymaStageName     = "check_kyma"
 	startStageName         = "start"
 )
+
+func periodicProfile(logger lager.Logger, profiler ProfilerConfig) {
+	if profiler.Memory == false {
+		return
+	}
+	logger.Info(fmt.Sprintf("Starting periodic profiler %v", profiler))
+	if err := os.MkdirAll(profiler.Path, os.ModePerm); err != nil {
+		logger.Error(fmt.Sprintf("Failed to create dir %v for profile storage", profiler.Path), err)
+	}
+	for {
+		profName := fmt.Sprintf("%v/mem-%v.pprof", profiler.Path, time.Now().Unix())
+		logger.Info(fmt.Sprintf("Creating periodic memory profile %v", profName))
+		profFile, err := os.Create(profName)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Creating periodic memory profile %v failed", profName), err)
+		}
+		pprof.Lookup("allocs").WriteTo(profFile, 0)
+		gruntime.GC()
+		time.Sleep(profiler.Sampling)
+	}
+}
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -189,6 +223,7 @@ func main() {
 
 	logger.Info("Registering healthz endpoint for health probes")
 	health.NewServer(cfg.Host, cfg.StatusPort, logs).ServeAsync()
+	go periodicProfile(logger, cfg.Profiler)
 
 	// create provisioner client
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.DumpProvisionerRequests)
