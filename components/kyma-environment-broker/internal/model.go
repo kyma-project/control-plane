@@ -341,13 +341,18 @@ type DeprovisioningOperation struct {
 type UpdatingOperation struct {
 	Operation
 
-	RuntimeVersion           RuntimeVersionData    `json:"runtime_version"`
-	UpdatingParameters       UpdatingParametersDTO `json:"updating_parameters"`
-	RequiresReconcilerUpdate bool                  `json:"requires_reconciler_update"`
+	RuntimeVersion     RuntimeVersionData    `json:"runtime_version"`
+	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
 
 	// following fields are not stored in the storage
-	InputCreator     ProvisionerInputCreator `json:"-"`
-	LastRuntimeState RuntimeState            `json:"-"`
+	InputCreator ProvisionerInputCreator `json:"-"`
+
+	// Last runtime state payload
+	LastRuntimeState RuntimeState `json:"-"`
+
+	// Flag used by the steps regarding Service Catalog migration
+	// denotes whether the payload to reconciler differs from last runtime state
+	RequiresReconcilerUpdate bool `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
