@@ -5,7 +5,11 @@ import (
 )
 
 func RequiresReconcilerUpdate(op internal.UpdatingOperation) bool {
-	return ForKyma2(op) && op.RequiresReconcilerUpdate
+	return op.RequiresReconcilerUpdate
+}
+
+func RequiresReconcilerUpdateForMigration(op internal.UpdatingOperation) bool {
+	return ForMigration(op) && op.RequiresReconcilerUpdate
 }
 
 func ForKyma2(op internal.UpdatingOperation) bool {
@@ -25,5 +29,6 @@ func ForBTPOperatorCredentialsProvided(op internal.UpdatingOperation) bool {
 }
 
 func ForMigration(op internal.UpdatingOperation) bool {
-	return op.InstanceDetails.SCMigrationTriggered
+	// migrating on kyma1.x is not allowed
+	return op.InstanceDetails.SCMigrationTriggered && op.RuntimeVersion.MajorVersion == 2
 }

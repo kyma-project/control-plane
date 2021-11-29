@@ -756,7 +756,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewCheckSCMigrationDone(reconcilerClient),
-			condition: update.RequiresReconcilerUpdate,
+			condition: update.RequiresReconcilerUpdateForMigration,
 		},
 		{
 			stage:     "runtime",
@@ -766,7 +766,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.RequiresReconcilerUpdate,
+			condition: update.RequiresReconcilerUpdateForMigration,
 		},
 		{
 			stage: "check",
