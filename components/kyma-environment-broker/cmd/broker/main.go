@@ -122,6 +122,7 @@ type Config struct {
 	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
+	EnableBTPOperatorMigration                 bool   `envconfig:"default=true"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -343,7 +344,7 @@ func main() {
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
-		runtimeProvider, reconcilerClient, logs)
+		runtimeProvider, reconcilerClient, cfg, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -713,7 +714,20 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
-	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, logs logrus.FieldLogger) *process.Queue {
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, logs logrus.FieldLogger) *process.Queue {
+
+	ifFeatureEnabled := func(c update.StepCondition) update.StepCondition {
+		if cfg.EnableBTPOperatorMigration {
+			return c
+		}
+		return func(o internal.UpdatingOperation) bool {
+			return false
+		}
+	}
+
+	featureEnabled := func(o internal.UpdatingOperation) bool {
+		return cfg.EnableBTPOperatorMigration
+	}
 
 	manager.DefineStages([]string{"cluster", "runtime", "check"})
 	updateSteps := []struct {
@@ -730,43 +744,44 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
 		},
 		{
-			stage: "runtime",
-			step:  update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			stage:     "runtime",
+			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			condition: featureEnabled,
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
-			condition: update.ForKyma2,
+			condition: ifFeatureEnabled(update.ForKyma2),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
-			condition: update.ForBTPOperatorCredentialsProvided,
+			condition: ifFeatureEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewSCMigrationStep(runtimeProvider),
-			condition: update.ForMigration,
+			condition: ifFeatureEnabled(update.ForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.RequiresReconcilerUpdate,
+			condition: ifFeatureEnabled(update.RequiresReconcilerUpdate),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewCheckSCMigrationDone(reconcilerClient),
-			condition: update.RequiresReconcilerUpdateForMigration,
+			condition: ifFeatureEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
-			condition: update.ForMigration,
+			condition: ifFeatureEnabled(update.ForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.RequiresReconcilerUpdateForMigration,
+			condition: ifFeatureEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
 			stage: "check",

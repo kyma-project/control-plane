@@ -896,7 +896,8 @@ func fixConfig() *Config {
 		KymaVersion:        "1.24.7",
 		KymaPreviewVersion: "2.0",
 
-		EnableOnDemandVersion: true,
+		EnableOnDemandVersion:      true,
+		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "preview"},
 		},

@@ -147,7 +147,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, logs)
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
