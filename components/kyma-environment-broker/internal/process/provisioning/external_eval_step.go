@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -32,7 +33,9 @@ func (s *ExternalEvalStep) Run(operation internal.ProvisioningOperation, log log
 		return operation, 0, nil
 	}
 
-	op, repeat, err := s.externalEvalCreator.createEval(operation, operation.DashboardURL, log)
+	// Below target URL is valid only if kyma runtime has corresponding endpoint exposed to public network
+	targetURL := fmt.Sprintf("https://registry.%s.%s ", operation.ShootName, operation.ShootDomain)
+	op, repeat, err := s.externalEvalCreator.createEval(operation, targetURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, err
 	}
