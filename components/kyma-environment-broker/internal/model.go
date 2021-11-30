@@ -112,14 +112,15 @@ type EventHub struct {
 }
 
 type Instance struct {
-	InstanceID      string
-	RuntimeID       string
-	GlobalAccountID string
-	SubAccountID    string
-	ServiceID       string
-	ServiceName     string
-	ServicePlanID   string
-	ServicePlanName string
+	InstanceID                  string
+	RuntimeID                   string
+	GlobalAccountID             string
+	SubscriptionGlobalAccountID string
+	SubAccountID                string
+	ServiceID                   string
+	ServiceName                 string
+	ServicePlanID               string
+	ServicePlanName             string
 
 	DashboardURL   string
 	Parameters     ProvisioningParameters
@@ -133,6 +134,14 @@ type Instance struct {
 
 	Version  int
 	Provider CloudProvider
+}
+
+func (i *Instance) GetSubscriptionGID() string {
+	if i.SubscriptionGlobalAccountID != "" {
+		return i.SubscriptionGlobalAccountID
+	} else {
+		return i.GlobalAccountID
+	}
 }
 
 func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
@@ -261,6 +270,8 @@ type InstanceDetails struct {
 	Connectivity      ConnectivityData          `json:"connectivity"`
 	Monitoring        MonitoringData            `json:"monitoring"`
 	EDPCreated        bool                      `json:"edp_created"`
+
+	SubscriptionGlobalAccountID string `json:xxx`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
