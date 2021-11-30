@@ -298,6 +298,12 @@ func Test_sorting(t *testing.T) {
 					{
 						Created: time.Now().Add(20 * time.Hour),
 					},
+					{
+						Created: time.Now().Add(-30 * time.Hour),
+					},
+					{
+						Created: time.Now().Add(50 * time.Hour),
+					},
 				},
 			},
 			wantSorted: true,
@@ -323,7 +329,7 @@ func Test_sorting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sorting(tt.args.s)
+			sort(tt.args.s)
 			checkIfSorted := sort.SliceIsSorted(tt.args.s, func(i, j int) bool {
 				return tt.args.s[i].Created.Before(tt.args.s[j].Created)
 			})
