@@ -5,8 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
@@ -269,6 +271,70 @@ func TestReconciliationCommand_Run(t *testing.T) {
 			}
 			if err := cmd.Run(); (err != nil) != tt.wantErr {
 				t.Errorf("ReconciliationCommand.Run() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_sorting(t *testing.T) {
+	type args struct {
+		s []mothership.HTTPReconciliationInfo
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantSorted bool
+	}{
+		{
+			name: "Happy path",
+			args: args{
+				s: []mothership.HTTPReconciliationInfo{
+					{
+						Created: time.Now().Add(10 * time.Hour),
+					},
+					{
+						Created: time.Now(),
+					},
+					{
+						Created: time.Now().Add(20 * time.Hour),
+					},
+					{
+						Created: time.Now().Add(-30 * time.Hour),
+					},
+					{
+						Created: time.Now().Add(50 * time.Hour),
+					},
+				},
+			},
+			wantSorted: true,
+		},
+		{
+			name: "No data",
+			args: args{
+				s: []mothership.HTTPReconciliationInfo{},
+			},
+			wantSorted: true,
+		},
+		{
+			name: "One argument",
+			args: args{
+				s: []mothership.HTTPReconciliationInfo{
+					{
+						Created: time.Now(),
+					},
+				},
+			},
+			wantSorted: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sortSlice(tt.args.s)
+			checkIfSorted := sort.SliceIsSorted(tt.args.s, func(i, j int) bool {
+				return tt.args.s[i].Created.Before(tt.args.s[j].Created)
+			})
+			if checkIfSorted != tt.wantSorted {
+				t.Errorf("sorting() got = %v, wanted %v", checkIfSorted, tt.wantSorted)
 			}
 		})
 	}

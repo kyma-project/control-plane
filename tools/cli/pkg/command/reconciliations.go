@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
@@ -205,12 +206,20 @@ func (cmd *ReconciliationCommand) Run() error {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 
+	sortSlice(result)
+
 	err = cmd.printReconciliation(result)
 	if err != nil {
 		return errors.Wrap(err, "while printing runtimes")
 	}
 
 	return nil
+}
+
+func sortSlice(s []mothership.HTTPReconciliationInfo) {
+	sort.SliceStable(s, func(i, j int) bool {
+		return s[i].Created.Before(s[j].Created)
+	})
 }
 
 func newReconciliationCmd(kp kebClientProvider, mp mothershipClientProvider) *cobra.Command {
