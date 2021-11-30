@@ -206,7 +206,7 @@ func (cmd *ReconciliationCommand) Run() error {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 
-	sort.Slice(result)
+	sortSlice(result)
 
 	err = cmd.printReconciliation(result)
 	if err != nil {
