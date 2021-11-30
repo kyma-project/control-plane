@@ -330,11 +330,7 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 		}
 		return nil, err
 	}
-	// note for migration, instance has more up-to-date version of migration state than a previous operation
-	migrationTriggered := instance.InstanceDetails.SCMigrationTriggered
 	instance.InstanceDetails = lastOp.InstanceDetails
-	instance.InstanceDetails.SCMigrationTriggered = migrationTriggered
-
 	return &instance, nil
 }
 

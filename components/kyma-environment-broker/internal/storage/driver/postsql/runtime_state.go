@@ -152,7 +152,7 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 	var states []dbmodel.RuntimeStateDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		states, lastErr = sess.GetLatest10ByRuntimeID(runtimeID)
+		states, lastErr = sess.GetLatestRuntimeStatesByRuntimeID(runtimeID, 100)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)

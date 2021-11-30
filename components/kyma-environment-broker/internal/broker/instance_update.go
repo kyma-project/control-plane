@@ -91,6 +91,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
+	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
 	if err != nil {
@@ -133,7 +134,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		// NOTE: KEB currently can't process update parameters in one call along with context update
 		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
 		if !suspendStatusChange {
-			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, logger)
+			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
 		}
 	}
 
@@ -154,7 +155,7 @@ func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails) boo
 	return instance.InstanceDetails.SCMigrationTriggered
 }
 
-func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed, isMigration bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
 	if !shouldUpdate(instance, details) {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
@@ -186,6 +187,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
+	operation.InstanceDetails.SCMigrationTriggered = isMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -323,7 +325,7 @@ func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.Pr
 }
 
 func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, error) {
-	s, err := b.runtimeStates.GetLatestByRuntimeID(instance.RuntimeID)
+	s, err := b.runtimeStates.GetLatestWithKymaVersionByRuntimeID(instance.RuntimeID)
 	if err != nil {
 		return false, "", err
 	}

@@ -50,6 +50,6 @@ func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logr
 		}
 		op.LastRuntimeState = lrs
 	}, log)
-	operation = op
-	return operation, delay, nil
+	log.Info("Init runtime version: ", op.RuntimeVersion.MajorVersion, ", last runtime state: ", op.LastRuntimeState.ID, ", service catalog migration triggered: ", operation.InstanceDetails.SCMigrationTriggered)
+	return op, delay, nil
 }

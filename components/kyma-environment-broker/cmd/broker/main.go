@@ -751,7 +751,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
-			condition: ifFeatureEnabled(update.ForKyma2),
+			condition: ifFeatureEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
 			stage:     "runtime",
