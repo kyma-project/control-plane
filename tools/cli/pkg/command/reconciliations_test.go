@@ -329,7 +329,7 @@ func Test_sorting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sort(tt.args.s)
+			sortSlice(tt.args.s)
 			checkIfSorted := sort.SliceIsSorted(tt.args.s, func(i, j int) bool {
 				return tt.args.s[i].Created.Before(tt.args.s[j].Created)
 			})

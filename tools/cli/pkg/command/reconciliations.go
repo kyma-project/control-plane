@@ -206,7 +206,7 @@ func (cmd *ReconciliationCommand) Run() error {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 
-	sort(result)
+	sort.Slice(result)
 
 	err = cmd.printReconciliation(result)
 	if err != nil {
@@ -216,7 +216,7 @@ func (cmd *ReconciliationCommand) Run() error {
 	return nil
 }
 
-func sort(s []mothership.HTTPReconciliationInfo) {
+func sortSlice(s []mothership.HTTPReconciliationInfo) {
 	sort.SliceStable(s, func(i, j int) bool {
 		return s[i].Created.Before(s[j].Created)
 	})
