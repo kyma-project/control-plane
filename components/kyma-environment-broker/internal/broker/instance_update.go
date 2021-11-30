@@ -305,11 +305,20 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 		instance.Parameters.ErsContext.Active = ersContext.Active
 	}
 
+
+	if instance.GlobalAccountID != ersContext.GlobalAccountID {
+		instance.GlobalAccountID = ersContext.GlobalAccountID
+		if instance.SubscriptionGlobalAccountID == "" {
+			instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
+		}
+	}
+
 	newInstance, err := b.instanceStorage.Update(*instance)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
 		return nil, changed, errors.New("unable to process the update")
 	}
+
 	return newInstance, changed, nil
 }
 
