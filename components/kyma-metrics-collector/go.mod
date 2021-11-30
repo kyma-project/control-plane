@@ -8,7 +8,7 @@ require (
 	github.com/gardener/gardener-extension-provider-azure v1.18.1
 	github.com/gardener/gardener-extension-provider-gcp v1.16.0
 	github.com/google/uuid v1.1.2
-	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane v0.0.0-20210131083023-031b4c8683db
 	github.com/onsi/gomega v1.10.5
