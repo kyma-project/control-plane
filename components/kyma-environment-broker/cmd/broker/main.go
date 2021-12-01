@@ -716,7 +716,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
 	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, logs logrus.FieldLogger) *process.Queue {
 
-	ifFeatureEnabled := func(c update.StepCondition) update.StepCondition {
+	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
 		if cfg.EnableBTPOperatorMigration {
 			return c
 		}
@@ -725,7 +725,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		}
 	}
 
-	featureEnabled := func(o internal.UpdatingOperation) bool {
+	btpMigrationEnabled := func(o internal.UpdatingOperation) bool {
 		return cfg.EnableBTPOperatorMigration
 	}
 
@@ -746,42 +746,42 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
-			condition: featureEnabled,
+			condition: btpMigrationEnabled,
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
-			condition: ifFeatureEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
-			condition: ifFeatureEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewSCMigrationStep(runtimeProvider),
-			condition: ifFeatureEnabled(update.ForMigration),
+			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifFeatureEnabled(update.RequiresReconcilerUpdate),
+			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdate),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewCheckSCMigrationDone(reconcilerClient),
-			condition: ifFeatureEnabled(update.RequiresReconcilerUpdateForMigration),
+			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
-			condition: ifFeatureEnabled(update.ForMigration),
+			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
 			stage:     "runtime",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifFeatureEnabled(update.RequiresReconcilerUpdateForMigration),
+			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
 			stage: "check",
