@@ -105,6 +105,9 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("cannot fetch provisioning lastProvisioningOperation for instance with ID: %s : %s", instance.InstanceID, err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 	}
+	if lastProvisioningOperation.State == domain.Failed {
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "awer")
+	}
 
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)

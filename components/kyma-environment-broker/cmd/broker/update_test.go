@@ -84,6 +84,57 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
+func TestUpdateFailedInstance(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+				}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.failProvisioningByOperationID(opID)
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com"
+       },
+		"parameters": {
+			"oidc": {
+				"clientID": "id-ooo",
+				"signingAlgs": ["RSA256"],
+                "issuerURL": "https://issuer.url.com"
+			}
+		}
+   }`)
+	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	errResponse := suite.DecodeErrorResponse(resp)
+
+	assert.Equal(t, "Unable to process an update of a failed instance", errResponse.Description)
+}
+
+
 func TestUpdateWithNoOIDCParams(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
