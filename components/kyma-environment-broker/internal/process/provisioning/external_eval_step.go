@@ -33,8 +33,8 @@ func (s *ExternalEvalStep) Run(operation internal.ProvisioningOperation, log log
 		return operation, 0, nil
 	}
 
-	// Below target URL is valid only if kyma runtime has corresponding endpoint exposed to public network
-	targetURL := fmt.Sprintf("https://registry.%s.%s ", operation.ShootName, operation.ShootDomain)
+	// Set targetURL according to changes in PR  https://github.com/kyma-project/kyma/pull/12754
+	targetURL := fmt.Sprintf("https://healthz.%s.%s ", operation.ShootName, operation.ShootDomain)
 	op, repeat, err := s.externalEvalCreator.createEval(operation, targetURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, err
