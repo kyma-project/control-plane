@@ -64,14 +64,11 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if err != nil {
 			return operation, time.Second, nil
 		}
-		// because below lines would overwrite the trigger taking the instance details from
-		// previous operation while the update is in state Pending, this ensures that we
-		// overwrite the overwritten overwrites...
-		instance.InstanceDetails.SCMigrationTriggered = operation.InstanceDetails.SCMigrationTriggered
 
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
+			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil

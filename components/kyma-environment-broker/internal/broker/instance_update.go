@@ -277,6 +277,9 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	if ersContext.SMOperatorCredentials != nil {
 		instance.Parameters.ErsContext.SMOperatorCredentials = ersContext.SMOperatorCredentials
 	}
+	if ersContext.IsMigration {
+		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
+	}
 
 	if ersContext.IsMigration {
 		if k2, version, err := b.isKyma2(instance); err != nil {
