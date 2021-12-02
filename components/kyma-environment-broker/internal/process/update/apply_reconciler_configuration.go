@@ -54,7 +54,7 @@ func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperat
 
 	log.Infof("Reconciler configuration version %d", state.ConfigurationVersion)
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
-		operation.ClusterConfigurationVersion = state.ConfigurationVersion
+		op.ClusterConfigurationVersion = state.ConfigurationVersion
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")

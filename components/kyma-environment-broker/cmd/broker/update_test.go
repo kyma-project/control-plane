@@ -1647,6 +1647,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
 	rsu2, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime after update")
+	assert.NotEqual(t, rsu1.ID, rsu2.ID, "runtime_state ID from first call should differ runtime_state ID from second call")
 	assert.Equal(t, updateOperationID, rsu2.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu2.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})

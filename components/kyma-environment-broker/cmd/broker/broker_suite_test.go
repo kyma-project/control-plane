@@ -470,12 +470,12 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 
 	var state *reconciler.State
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, 1)
+		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, 1, reconciler.ReadyStatus)
+			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
 			return true, nil
 		}
 		return false, nil
