@@ -39,7 +39,7 @@ func NewFakeClient() *FakeClient {
 
 // POST /v1/clusters
 func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
-	return c.createOrUpdate(cluster)
+	return c.addToInventory(cluster)
 }
 
 // DELETE /v1/clusters/{clusterName}
@@ -97,7 +97,7 @@ func (c *FakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChang
 	return existingCluster.statusChanges, nil
 }
 
-func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
+func (c *FakeClient) addToInventory(cluster Cluster) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -126,19 +126,18 @@ func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 		return c.inventoryClusters[cluster.Cluster].clusterStates[1], nil
 	}
 	// cluster exists in db - add new configuration version
-	//TODO: implement comparision mechanism for configs (new config should not be added if nothing changes in request) - needed for upgrade testing
-	//TODO: implement clusterVersion bumping (happens when Kyma version is updated?)
-	latestConfigVersion := int64(len(c.inventoryClusters[cluster.Cluster].clusterStates))
+	latestConfigVersion := int64(len(c.inventoryClusters[cluster.Cluster].clusterStates)) + 1
 	c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion] = &State{
 		Cluster:              cluster.Cluster,
 		ClusterVersion:       1,
-		ConfigurationVersion: latestConfigVersion + 1,
+		ConfigurationVersion: latestConfigVersion,
 		Status:               "reconcile_pending",
 	}
 	c.inventoryClusters[cluster.Cluster].statusChanges = append(c.inventoryClusters[cluster.Cluster].statusChanges, &StatusChange{
 		Status:   ptr.String("reconcile_pending"),
 		Duration: "10s",
 	})
+	c.inventoryClusters[cluster.Cluster].clusterConfigs[latestConfigVersion] = cluster
 
 	return c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion], nil
 }
@@ -179,7 +178,7 @@ func (c *FakeClient) ClusterExists(id string) bool {
 }
 
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
-	clusterConfig, found := cluster.clusterConfigs[int64(1)]
+	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs))]
 	if !found {
 		return nil, errors.New("cluster config not found in cluster configs inventory")
 	}
