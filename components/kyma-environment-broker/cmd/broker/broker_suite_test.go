@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,8 @@ import (
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
