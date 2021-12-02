@@ -317,7 +317,7 @@ data:
         "m6i.12xlarge": {
             "cpu_cores": 48,
             "memory": 192
-        },
+        }
       },
       "gcp": {
        "n1-standard-4": {
