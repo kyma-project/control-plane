@@ -1625,9 +1625,8 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
 	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
 
-	// finish updating, check second call to reconciler and see that sc-migration and svcat related components are gone
+	// check second call to reconciler and see that sc-migration and svcat related components are gone
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
-	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1668,6 +1667,10 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 			assert.Equal(t, exp, c)
 		}
 	}
+
+	// finalize second call to reconciler and wait for the operation to finish
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }
 
 func TestUpdateSCMigrationRejection(t *testing.T) {
