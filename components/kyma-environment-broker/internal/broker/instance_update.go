@@ -106,7 +106,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 	}
 	if lastProvisioningOperation.State == domain.Failed {
-		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "awer")
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "")
 	}
 
 	lastDeprovisioningOperation, err := b.operationStorage.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
@@ -118,7 +118,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		if !lastDeprovisioningOperation.Temporary {
 			// it is not a suspension, but real deprovisioning
 			logger.Warnf("Cannot process update, the instance has started deprovisioning process (operationID=%s)", lastDeprovisioningOperation.Operation.ID)
-			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a deprovisioned instance"), http.StatusUnprocessableEntity, "awer")
+			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a deprovisioned instance"), http.StatusUnprocessableEntity, "")
 		}
 	}
 
