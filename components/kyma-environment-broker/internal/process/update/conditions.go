@@ -32,3 +32,7 @@ func ForMigration(op internal.UpdatingOperation) bool {
 	// migrating on kyma1.x is not allowed
 	return op.InstanceDetails.SCMigrationTriggered && op.RuntimeVersion.MajorVersion == 2
 }
+
+func ForContainsReconcilerClusterConfigVersion(op internal.UpdatingOperation) bool {
+	return op.ClusterConfigurationVersion != 0
+}

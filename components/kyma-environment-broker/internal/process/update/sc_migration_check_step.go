@@ -21,7 +21,7 @@ func NewCheckReconcilerState(reconcilerClient reconciler.Client) *CheckReconcile
 }
 
 func (s *CheckReconcilerState) Name() string {
-	return "SCMigrationCheck"
+	return "CheckReconcilerState"
 }
 
 func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
@@ -36,6 +36,7 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 	}
 	switch state.Status {
 	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
+		log.Info("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
 	case reconciler.ClusterStatusReady:
 		return operation, 0, nil
