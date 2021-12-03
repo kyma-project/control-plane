@@ -10,21 +10,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type SCMigrationCheckStep struct {
+type CheckReconcilerState struct {
 	reconcilerClient reconciler.Client
 }
 
-func NewCheckSCMigrationDone(reconcilerClient reconciler.Client) *SCMigrationCheckStep {
-	return &SCMigrationCheckStep{
+func NewCheckReconcilerState(reconcilerClient reconciler.Client) *CheckReconcilerState {
+	return &CheckReconcilerState{
 		reconcilerClient: reconcilerClient,
 	}
 }
 
-func (s *SCMigrationCheckStep) Name() string {
+func (s *CheckReconcilerState) Name() string {
 	return "SCMigrationCheck"
 }
 
-func (s *SCMigrationCheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 
 	if kebError.IsTemporaryError(err) {
