@@ -36,6 +36,8 @@ func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logr
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 		}
+	} else {
+		version = &operation.RuntimeVersion
 	}
 	var lrs internal.RuntimeState
 	if version.MajorVersion == 2 {
