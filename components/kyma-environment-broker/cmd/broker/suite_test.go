@@ -383,7 +383,7 @@ func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschem
 	err := wait.Poll(time.Millisecond*100, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil
@@ -753,7 +753,7 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil
