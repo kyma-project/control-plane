@@ -46,12 +46,12 @@ func (c *FakeClient) GetLatestProvisionRuntimeInput() schema.ProvisionRuntimeInp
 	return r.runtimeInput
 }
 
-func (c *FakeClient) FinishProvisionerOperation(id string) {
+func (c *FakeClient) FinishProvisionerOperation(id string, state schema.OperationState) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	op := c.operations[id]
-	op.State = schema.OperationStateSucceeded
+	op.State = state
 	c.operations[id] = op
 }
 

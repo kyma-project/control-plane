@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
+
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -357,7 +359,21 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateSucceeded, op.RuntimeID)
+}
+
+func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
+	var op *internal.ProvisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
@@ -377,7 +393,7 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 	err = s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Delete(context.Background(), op.ShootName, v1.DeleteOptions{})
 	require.NoError(s.t, err)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
@@ -390,14 +406,14 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
-func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
 			return true, nil
 		}
 		return false, nil
@@ -553,6 +569,18 @@ func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
+}
+
+func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
+	m, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	require.NoError(s.t, err)
+
+	r := apiresponses.ErrorResponse{}
+	err = json.Unmarshal(m, &r)
+	require.NoError(s.t, err)
+
+	return r
 }
 
 func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
@@ -773,6 +801,16 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
+func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+	s.AssertProvisionerStartedProvisioning(opID)
+
+	s.FinishProvisioningOperationByProvisioner(opID)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Failed)
 }
 
 func (s *BrokerSuiteTest) fixGardenerShootForOperationID(opID string) *gardenerapi.Shoot {
