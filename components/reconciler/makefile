@@ -1,12 +1,12 @@
 OAPI_GENERATOR=oapi-codegen
 OAPI_FILE=./docs/external_api.yaml
-OAPI_REVISION='main'
+OAPI_REVISION=0fd4d1af88bf9d175a8e3aae70680ade0074d379
 
 CLIENT_FILE=./pkg/client_gen.go
 TYPES_FILE=./pkg/types_gen.go
 
 docs/external_api.yaml:
-	curl -o $(OAPI_FILE) --create-dirs https://raw.githubusercontent.com/kyma-project/reconciler/$(OAPI_REVISION)/openapi/external_api.yaml
+	curl -o $(OAPI_FILE) --create-dirs https://raw.githubusercontent.com/kyma-incubator/reconciler/$(OAPI_REVISION)/openapi/external_api.yaml
 
 .PHONY: generate-oapi-artifacts
 generate-oapi-artifacts: docs/external_api.yaml
