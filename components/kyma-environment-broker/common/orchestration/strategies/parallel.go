@@ -35,9 +35,7 @@ func NewParallelOrchestrationStrategy(executor orchestration.OperationExecutor, 
 		rescheduleDelay: rescheduleDelay,
 		scheduleNum:     map[string]int{},
 	}
-	if strategy.rescheduleDelay <= 0 {
-		strategy.rescheduleDelay = 24 * time.Hour
-	}
+
 	return strategy
 }
 
