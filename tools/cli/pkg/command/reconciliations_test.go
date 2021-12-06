@@ -80,8 +80,8 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 			name: "validate time parameters",
 			fields: fields{
 				output: "json",
-				after:  "2020-02-03 21:37:00",
-				before: "2021-02-02 22:00:00",
+				after:  "2020/02/03 21:37:00",
+				before: "2021/02/02 22:00:00",
 			},
 		},
 		{
