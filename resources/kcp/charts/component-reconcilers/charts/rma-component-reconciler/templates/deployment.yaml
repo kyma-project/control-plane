@@ -20,7 +20,7 @@ spec:
     spec:
       serviceAccountName: component-reconcilers-rma
       containers:
-      - image: "{{ .Values.global.images.component_reconciler.path }}:{{ .Values.global.images.component_reconciler.tag }}"
+      - image: "{{ .Values.global.images.component_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - reconciler
