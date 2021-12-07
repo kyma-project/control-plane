@@ -30,24 +30,25 @@ const (
 )
 
 type RuntimeDTO struct {
-	InstanceID              string                         `json:"instanceID"`
-	RuntimeID               string                         `json:"runtimeID"`
-	GlobalAccountID         string                         `json:"globalAccountID"`
-	SubAccountID            string                         `json:"subAccountID"`
-	ProviderRegion          string                         `json:"region"`
-	SubAccountRegion        string                         `json:"subAccountRegion"`
-	ShootName               string                         `json:"shootName"`
-	ServiceClassID          string                         `json:"serviceClassID"`
-	ServiceClassName        string                         `json:"serviceClassName"`
-	ServicePlanID           string                         `json:"servicePlanID"`
-	ServicePlanName         string                         `json:"servicePlanName"`
-	Provider                string                         `json:"provider"`
-	Status                  RuntimeStatus                  `json:"status"`
-	UserID                  string                         `json:"userID"`
-	AVSInternalEvaluationID int64                          `json:"avsInternalEvaluationID"`
-	KymaVersion             string                         `json:"kymaVersion,omitempty"`
-	KymaConfig              *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
-	ClusterConfig           *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
+	InstanceID                  string                         `json:"instanceID"`
+	RuntimeID                   string                         `json:"runtimeID"`
+	GlobalAccountID             string                         `json:"globalAccountID"`
+	SubscriptionGlobalAccountID string                         `json:"subscriptionGlobalAccountID"`
+	SubAccountID                string                         `json:"subAccountID"`
+	ProviderRegion              string                         `json:"region"`
+	SubAccountRegion            string                         `json:"subAccountRegion"`
+	ShootName                   string                         `json:"shootName"`
+	ServiceClassID              string                         `json:"serviceClassID"`
+	ServiceClassName            string                         `json:"serviceClassName"`
+	ServicePlanID               string                         `json:"servicePlanID"`
+	ServicePlanName             string                         `json:"servicePlanName"`
+	Provider                    string                         `json:"provider"`
+	Status                      RuntimeStatus                  `json:"status"`
+	UserID                      string                         `json:"userID"`
+	AVSInternalEvaluationID     int64                          `json:"avsInternalEvaluationID"`
+	KymaVersion                 string                         `json:"kymaVersion,omitempty"`
+	KymaConfig                  *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
+	ClusterConfig               *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
 }
 
 type RuntimeStatus struct {
