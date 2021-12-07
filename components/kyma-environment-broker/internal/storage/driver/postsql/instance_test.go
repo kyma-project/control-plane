@@ -82,6 +82,8 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstance.InstanceID, inst.InstanceID)
 		assert.Equal(t, fixInstance.RuntimeID, inst.RuntimeID)
 		assert.Equal(t, fixInstance.GlobalAccountID, inst.GlobalAccountID)
+		fmt.Printf("fix: %v - inst: %v", fixInstance.SubscriptionGlobalAccountID, inst.SubscriptionGlobalAccountID)
+		assert.Equal(t, fixInstance.SubscriptionGlobalAccountID, inst.SubscriptionGlobalAccountID)
 		assert.Equal(t, fixInstance.ServiceID, inst.ServiceID)
 		assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)
 		assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
@@ -569,6 +571,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 
 	instance := fixture.FixInstance(testData.val)
 	instance.GlobalAccountID = gaid
+	instance.SubscriptionGlobalAccountID = gaid
 	instance.SubAccountID = suid
 	instance.ServiceID = testData.val
 	instance.ServiceName = testData.val

@@ -23,7 +23,7 @@ type readSession struct {
 func (r readSession) getInstancesJoinedWithOperationStatement() *dbr.SelectStmt {
 	join := fmt.Sprintf("%s.instance_id = %s.instance_id", InstancesTableName, OperationTableName)
 	stmt := r.session.
-		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.service_id,"+
+		Select("instances.instance_id, instances.runtime_id, instances.global_account_id, instances.subscription_global_account_id, instances.service_id,"+
 			" instances.service_plan_id, instances.dashboard_url, instances.provisioning_parameters, instances.created_at,"+
 			" instances.updated_at, instances.deleted_at, instances.sub_account_id, instances.service_name, instances.service_plan_name,"+
 			" instances.provider_region, instances.provider, operations.state, operations.description, operations.type, operations.created_at AS operation_created_at, operations.data").
