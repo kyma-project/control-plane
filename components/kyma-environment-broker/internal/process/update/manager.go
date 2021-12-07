@@ -143,6 +143,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	}
 
 	processedOperation.State = domain.Succeeded
+	processedOperation.Description = "update succeeded"
 	_, err = m.operationStorage.UpdateUpdatingOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
