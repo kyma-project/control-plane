@@ -136,7 +136,7 @@ type Instance struct {
 	Provider CloudProvider
 }
 
-func (i *Instance) GetSubscriptionGID() string {
+func (i *Instance) GetSubscriptionGlobalAccoundID() string {
 	if i.SubscriptionGlobalAccountID != "" {
 		return i.SubscriptionGlobalAccountID
 	} else {
@@ -270,8 +270,6 @@ type InstanceDetails struct {
 	Connectivity      ConnectivityData          `json:"connectivity"`
 	Monitoring        MonitoringData            `json:"monitoring"`
 	EDPCreated        bool                      `json:"edp_created"`
-
-	SubscriptionGlobalAccountID string `json:xxx`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
