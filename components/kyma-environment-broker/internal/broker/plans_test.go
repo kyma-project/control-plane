@@ -26,7 +26,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "AWS schema is correct",
 			generator:      AWSSchema,
-			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			machineTypes:   []string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
 			file:           "aws-schema.json",
 			updateFile:     "update-aws-schema.json",
 			fileOIDC:       "aws-schema-additional-params.json",
@@ -35,7 +35,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "AWS HA schema is correct",
 			generator:      AWSHASchema,
-			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			machineTypes:   []string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
 			file:           "aws-ha-schema.json",
 			updateFile:     "update-aws-ha-schema.json",
 			fileOIDC:       "aws-ha-schema-additional-params.json",

@@ -127,7 +127,7 @@ func (s *DeprovisioningSuite) finishProvisioningOperationByProvisioner(operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil
@@ -204,7 +204,7 @@ func (s *DeprovisioningSuite) finishOperationByProvisioner(operationType gqlsche
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil

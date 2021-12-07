@@ -42,7 +42,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
+			MachineType:    "m6i.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
@@ -168,7 +168,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
+			MachineType:    "m6i.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
@@ -205,15 +205,15 @@ func (p *AWSInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsLitelDefaults()
+	return awsLiteDefaults()
 }
 
-func awsLitelDefaults() *gqlschema.ClusterConfigInput {
+func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.xlarge",
+			MachineType:    "m6i.xlarge",
 			Region:         DefaultAWSTrialRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
@@ -271,8 +271,9 @@ func (p *AWSTrialInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
-	defaults := awsLitelDefaults()
-	// Lite (freemium) must hafve the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
+	defaults := awsLiteDefaults()
+
+	// Lite (freemium) must have the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
 	defaults.GardenerConfig.Region = DefaultAWSRegion
 	return defaults
 }

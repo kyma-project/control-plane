@@ -52,11 +52,22 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			continue
 		}
 		p := plan.PlanDefinition
+
 		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
 		if err != nil {
 			b.log.Errorf("while unmarshal provisioning schema: %s", err)
 			return nil, err
 		}
+
+		if len(plan.catalogRawSchema) > 0 {
+			// overwrite provisioning parameters schema if Plan.catalogRawSchema is provided
+			err := json.Unmarshal(plan.catalogRawSchema, &p.Schemas.Instance.Create.Parameters)
+			if err != nil {
+				b.log.Errorf("while unmarshal provisioning schema: %s", err)
+				return nil, err
+			}
+		}
+
 		if len(plan.updateRawSchema) > 0 {
 			err = json.Unmarshal(plan.updateRawSchema, &p.Schemas.Instance.Update.Parameters)
 			if err != nil {
