@@ -311,7 +311,10 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 		if instance.GlobalAccountID != ersContext.GlobalAccountID {
 			instance.GlobalAccountID = ersContext.GlobalAccountID
 			if instance.SubscriptionGlobalAccountID == "" {
-				instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
+				// TODO: Double check if this is correct
+				instance.SubscriptionGlobalAccountID = instance.GlobalAccountID
+				// instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
+				instance.GlobalAccountID = ersContext.GlobalAccountID
 			}
 		}
 	}
