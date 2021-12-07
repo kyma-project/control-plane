@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -261,7 +260,6 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 		},
 	}
 	newGlobalAccountID := "updated-account-id"
-	fmt.Printf("Before Update: %+v\n", instance.GlobalAccountID)
 	st := storage.NewMemoryStorage()
 	st.Instances().Insert(instance)
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
@@ -288,7 +286,6 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 
 	// then
 	inst, err := st.Instances().GetByID(instanceID)
-	fmt.Printf("After Update: %+v\n", inst.GlobalAccountID)
 	require.NoError(t, err)
 	// Check if SubscriptionGlobalAccountID is not empty
 	assert.NotEmpty(t, inst.SubscriptionGlobalAccountID)
