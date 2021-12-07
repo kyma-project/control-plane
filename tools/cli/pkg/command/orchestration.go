@@ -18,6 +18,7 @@ import (
 
 const (
 	cancelCommand     = "cancel"
+	retryCommand      = "retry"
 	operationsCommand = "operations"
 	opsCommand        = "ops"
 )
@@ -29,7 +30,7 @@ type OrchestrationCommand struct {
 	client     orchestration.Client
 	output     string
 	states     []string
-	operation  string
+	operations []string
 	subCommand string
 	listParams orchestration.ListParameters
 }
@@ -132,7 +133,8 @@ Operations:
 {{- end }}
 `
 
-var operationDetailsTpl = `Operation ID:       {{.OperationID}}
+var operationsDetailsTpl = `{{- range $i, $t := . }}
+Operation ID:       {{.OperationID}}
 Orchestration ID:   {{.OrchestrationID}}
 Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
@@ -142,8 +144,9 @@ Service Plan:       {{.ServicePlanName}}
 Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State:              {{.State}}
 Description:        {{.Description}}
-Kubernetes Version: {{.ClusterConfig.KubernetesVersion}}
-Kyma Version:       {{.KymaConfig.Version}}
+Kubernetes Version: {{with .ClusterConfig}}{{.ClusterConfig.KubernetesVersion}}{{end}}
+Kyma Version:       {{with .KymaConfig}}{{.KymaConfig.Version}}{{end}}
+{{end}}
 `
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
@@ -175,7 +178,7 @@ The command has the following modes:
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "s", nil, fmt.Sprintf("Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: %s.", strings.Join(cliOrchestrationStates(), ", ")))
-	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
+	cobraCmd.Flags().StringSliceVar(&cmd.operations, "operation", nil, "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
 	return cobraCmd
 }
 
@@ -222,15 +225,17 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		return cmd.showOrchestrations()
 	case 1:
 		// Called with orchestration ID but without subcommand
-		if cmd.operation == "" {
+		if len(cmd.operations) == 0 {
 			return cmd.showOneOrchestration(args[0])
 		}
-		return cmd.showOperationDetails(args[0])
+		return cmd.showOperationsDetails(args[0])
 	case 2:
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
 			return cmd.cancelOrchestration(args[0])
+		case retryCommand:
+			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
 		}
@@ -251,17 +256,17 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 		return err
 	}
 
-	if cmd.operation != "" && len(args) == 0 {
+	if len(cmd.operations) != 0 && len(args) == 0 {
 		return errors.New("--operation should only be used when orchestration id is given as an argument")
 	}
-	if cmd.operation != "" && len(cmd.states) > 0 {
+	if len(cmd.operations) != 0 && len(cmd.states) > 0 {
 		return errors.New("--state should not be used together with --operation")
 	}
 
 	if len(args) == 2 {
 		cmd.subCommand = args[1]
 		switch cmd.subCommand {
-		case cancelCommand, operationsCommand, opsCommand:
+		case cancelCommand, retryCommand, operationsCommand, opsCommand:
 		default:
 			return fmt.Errorf("invalid subcommand: %s", cmd.subCommand)
 		}
@@ -355,25 +360,31 @@ func (cmd *OrchestrationCommand) showOperations(orchestrationID string) error {
 	return nil
 }
 
-func (cmd *OrchestrationCommand) showOperationDetails(orchestrationID string) error {
-	odr, err := cmd.client.GetOperation(orchestrationID, cmd.operation)
-	if err != nil {
-		return errors.Wrap(err, "while getting operation details")
+func (cmd *OrchestrationCommand) showOperationsDetails(orchestrationID string) error {
+	odrs := []orchestration.OperationDetailResponse{}
+
+	for _, op := range cmd.operations {
+		odr, err := cmd.client.GetOperation(orchestrationID, op)
+		if err != nil {
+			return errors.Wrap(err, "while getting operation details")
+		}
+
+		odrs = append(odrs, odr)
 	}
 
 	switch cmd.output {
 	case tableOutput:
-		tmpl, err := template.New("operationDetails").Parse(operationDetailsTpl)
+		tmpl, err := template.New("operationDetails").Parse(operationsDetailsTpl)
 		if err != nil {
 			return errors.Wrap(err, "while parsing operation details template")
 		}
-		err = tmpl.Execute(os.Stdout, odr)
+		err = tmpl.Execute(os.Stdout, odrs)
 		if err != nil {
 			return errors.Wrap(err, "while printing operation details")
 		}
 	case jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
-		jp.PrintObj(odr)
+		jp.PrintObj(odrs)
 	}
 
 	return nil
@@ -403,6 +414,10 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 
 	return cmd.client.CancelOrchestration(orchestrationID)
 
+}
+
+func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) error {
+	return nil
 }
 
 // Currently only orchestrations of type "kyma upgrade" are supported,
