@@ -15,20 +15,21 @@ import (
 )
 
 const (
-	ServiceId              = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	ServiceName            = "kymaruntime"
-	PlanId                 = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	PlanName               = "azure"
-	GlobalAccountId        = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
-	Region                 = "westeurope"
-	ServiceManagerUsername = "u"
-	ServiceManagerPassword = "p"
-	ServiceManagerURL      = "https://service-manager.local"
-	InstanceDashboardURL   = "https://dashboard.local"
-	XSUAADataXSAppName     = "XSApp"
-	KymaVersion            = "1.19.0"
-	MonitoringUsername     = "username"
-	MonitoringPassword     = "password"
+	ServiceId                   = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	ServiceName                 = "kymaruntime"
+	PlanId                      = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	PlanName                    = "azure"
+	GlobalAccountId             = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	SubscriptionGlobalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	Region                      = "westeurope"
+	ServiceManagerUsername      = "u"
+	ServiceManagerPassword      = "p"
+	ServiceManagerURL           = "https://service-manager.local"
+	InstanceDashboardURL        = "https://dashboard.local"
+	XSUAADataXSAppName          = "XSApp"
+	KymaVersion                 = "1.19.0"
+	MonitoringUsername          = "username"
+	MonitoringPassword          = "password"
 )
 
 type SimpleInputCreator struct {
@@ -159,23 +160,24 @@ func FixInstance(id string) internal.Instance {
 	)
 
 	return internal.Instance{
-		InstanceID:      id,
-		RuntimeID:       runtimeId,
-		GlobalAccountID: GlobalAccountId,
-		SubAccountID:    subAccountId,
-		ServiceID:       ServiceId,
-		ServiceName:     ServiceName,
-		ServicePlanID:   PlanId,
-		ServicePlanName: PlanName,
-		DashboardURL:    InstanceDashboardURL,
-		Parameters:      FixProvisioningParameters(id),
-		ProviderRegion:  Region,
-		Provider:        internal.Azure,
-		InstanceDetails: FixInstanceDetails(id),
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now().Add(time.Minute * 5),
-		DeletedAt:       time.Now().Add(time.Hour * 1),
-		Version:         0,
+		InstanceID:                  id,
+		RuntimeID:                   runtimeId,
+		GlobalAccountID:             GlobalAccountId,
+		SubscriptionGlobalAccountID: SubscriptionGlobalAccountID,
+		SubAccountID:                subAccountId,
+		ServiceID:                   ServiceId,
+		ServiceName:                 ServiceName,
+		ServicePlanID:               PlanId,
+		ServicePlanName:             PlanName,
+		DashboardURL:                InstanceDashboardURL,
+		Parameters:                  FixProvisioningParameters(id),
+		ProviderRegion:              Region,
+		Provider:                    internal.Azure,
+		InstanceDetails:             FixInstanceDetails(id),
+		CreatedAt:                   time.Now(),
+		UpdatedAt:                   time.Now().Add(time.Minute * 5),
+		DeletedAt:                   time.Now().Add(time.Hour * 1),
+		Version:                     0,
 	}
 }
 
