@@ -30,11 +30,12 @@ type UpdateEndpoint struct {
 	config Config
 	log    logrus.FieldLogger
 
-	instanceStorage      storage.Instances
-	runtimeStates        storage.RuntimeStates
-	contextUpdateHandler ContextUpdateHandler
-	brokerURL            string
-	processingEnabled    bool
+	instanceStorage           storage.Instances
+	runtimeStates             storage.RuntimeStates
+	contextUpdateHandler      ContextUpdateHandler
+	brokerURL                 string
+	processingEnabled         bool
+	subAccountMovementEnabled bool
 
 	operationStorage storage.Operations
 
@@ -305,11 +306,12 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 		instance.Parameters.ErsContext.Active = ersContext.Active
 	}
 
-
-	if instance.GlobalAccountID != ersContext.GlobalAccountID {
-		instance.GlobalAccountID = ersContext.GlobalAccountID
-		if instance.SubscriptionGlobalAccountID == "" {
-			instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
+	if b.subAccountMovementEnabled {
+		if instance.GlobalAccountID != ersContext.GlobalAccountID {
+			instance.GlobalAccountID = ersContext.GlobalAccountID
+			if instance.SubscriptionGlobalAccountID == "" {
+				instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
+			}
 		}
 	}
 
