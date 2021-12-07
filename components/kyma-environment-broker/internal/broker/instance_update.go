@@ -55,15 +55,16 @@ func NewUpdate(cfg Config,
 	log logrus.FieldLogger,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
-		config:               cfg,
-		log:                  log.WithField("service", "UpdateEndpoint"),
-		instanceStorage:      instanceStorage,
-		runtimeStates:        runtimeStates,
-		operationStorage:     operationStorage,
-		contextUpdateHandler: ctxUpdateHandler,
-		processingEnabled:    processingEnabled,
-		updatingQueue:        queue,
-		planDefaults:         planDefaults,
+		config:                    cfg,
+		log:                       log.WithField("service", "UpdateEndpoint"),
+		instanceStorage:           instanceStorage,
+		runtimeStates:             runtimeStates,
+		operationStorage:          operationStorage,
+		contextUpdateHandler:      ctxUpdateHandler,
+		processingEnabled:         processingEnabled,
+		subAccountMovementEnabled: true, // TODO: remove this flag!
+		updatingQueue:             queue,
+		planDefaults:              planDefaults,
 	}
 }
 
