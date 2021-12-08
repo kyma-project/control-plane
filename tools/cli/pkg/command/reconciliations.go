@@ -15,6 +15,7 @@ import (
 	mothershipClient "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/timestamp"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -22,8 +23,6 @@ import (
 
 var (
 	ErrMothershipResponse = errors.New("reconciler error response")
-
-	timeFormat = "2006/01/02 15:04:05"
 )
 
 //go:generate mockgen -destination=automock/keb_client.go -package=automock -source=reconciliations.go kebClient
@@ -81,13 +80,13 @@ func (cmd *ReconciliationCommand) Validate() error {
 	}
 
 	if cmd.after != "" {
-		if cmd.afterTime, err = time.Parse(timeFormat, cmd.after); err != nil {
+		if cmd.afterTime, err = timestamp.Parse(cmd.after, true); err != nil {
 			return err
 		}
 	}
 
 	if cmd.before != "" {
-		if cmd.beforeTime, err = time.Parse(timeFormat, cmd.before); err != nil {
+		if cmd.beforeTime, err = timestamp.Parse(cmd.before, false); err != nil {
 			return err
 		}
 	}
@@ -272,8 +271,8 @@ The command supports filtering Reconciliations based on`,
 	cobraCmd.Flags().StringSliceVarP(&cmd.runtimeIds, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.rawStatuses, "status", "S", nil, "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringVar(&cmd.before, "before", "", "Filter by creation timestamp. Get only reconciliations created after given value. The possible format: \"2006/01/02 15:04:05\".")
-	cobraCmd.Flags().StringVar(&cmd.after, "after", "", "Filter by creation timestamp. Get only reconciliations created before given value. The possible format: \"2006/01/02 15:04:05\".")
+	cobraCmd.Flags().StringVar(&cmd.before, "before", "", "Filter by creation timestamp. Get only reconciliations created after given value. The possible formats: \"yyyy/mm/dd hh:mm:ss\", \"hh:mm:ss yyyy/mm/dd\", \"yyyy/mm/dd\" or \"hh:mm:ss\".")
+	cobraCmd.Flags().StringVar(&cmd.after, "after", "", "Filter by creation timestamp. Get only reconciliations created before given value. The possible formats: \"yyyy/mm/dd hh:mm:ss\", \"hh:mm:ss yyyy/mm/dd\", \"yyyy/mm/dd\" or \"hh:mm:ss\".")
 	cobraCmd.Flags().UintVar(&cmd.last, "last", 0, "Get only the expected number of the latest reconciliations.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
