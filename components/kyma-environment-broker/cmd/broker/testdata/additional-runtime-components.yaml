@@ -1,5 +1,9 @@
 components:
   - name: "service-manager-proxy"
     namespace: "kyma-system"
+    source:
+      url: "https://sm-proxy"
   - name: "btp-operator"
     namespace: "kyma-system"
+    source:
+      url: "https://btp-operator"

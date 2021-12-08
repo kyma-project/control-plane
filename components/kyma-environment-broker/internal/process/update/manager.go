@@ -7,6 +7,9 @@ import (
 	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -36,13 +39,23 @@ type Step interface {
 	Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error)
 }
 
-type stage struct {
-	name  string
-	steps []Step
+type StepCondition func(operation internal.UpdatingOperation) bool
+
+type StepWithCondition struct {
+	Step
+	condition StepCondition
 }
 
-func (s *stage) AddStep(step Step) {
-	s.steps = append(s.steps, step)
+type stage struct {
+	name  string
+	steps []StepWithCondition
+}
+
+func (s *stage) AddStep(step Step, cnd StepCondition) {
+	s.steps = append(s.steps, StepWithCondition{
+		Step:      step,
+		condition: cnd,
+	})
 }
 
 func NewManager(storage storage.Operations, pub event.Publisher, operationTimeout time.Duration, logger logrus.FieldLogger) *Manager {
@@ -64,14 +77,14 @@ func (m *Manager) SpeedUp(speedFactor int64) {
 func (m *Manager) DefineStages(names []string) {
 	m.stages = make([]*stage, len(names))
 	for i, n := range names {
-		m.stages[i] = &stage{name: n, steps: []Step{}}
+		m.stages[i] = &stage{name: n, steps: []StepWithCondition{}}
 	}
 }
 
-func (m *Manager) AddStep(stageName string, step Step) error {
+func (m *Manager) AddStep(stageName string, step Step, cnd StepCondition) error {
 	for _, s := range m.stages {
 		if s.name == stageName {
-			s.AddStep(step)
+			s.AddStep(step, cnd)
 			return nil
 		}
 	}
@@ -118,6 +131,10 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
+			if step.condition != nil && !step.condition(processedOperation) {
+				logStep.Debugf("Skipping")
+				continue
+			}
 			logStep.Infof("Start step")
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
@@ -189,4 +206,29 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
+}
+
+func getComponent(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (*v1alpha1.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range allComponents {
+		if c.Name == component {
+			return &c, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find %v component in all component list", component)
+}
+
+func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconciler.Component, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion)
+	if err != nil {
+		return reconciler.Component{}, err
+	}
+	return reconciler.Component{
+		Component: c.Name,
+		Namespace: c.Namespace,
+		URL:       c.Source.URL,
+	}, nil
 }

@@ -97,6 +97,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	optComponentsSvc := &automock.OptionalComponentService{}
 
 	optComponentsSvc.On("ComputeComponentsToDisable", []string{}).Return([]string{})
+	optComponentsSvc.On("AddComponentToDisable", mock.AnythingOfType("string"), mock.AnythingOfType("*runtime.GenericComponentDisabler")).Return(optComponentsSvc)
 	optComponentsSvc.On("ExecuteDisablers", internal.ComponentConfigurationInputList{
 		{
 			Component:     "to-remove-component",
