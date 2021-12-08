@@ -683,10 +683,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
-		{
-			stage: checkKymaStageName,
-			step:  provisioning.NewCheckDashboardURLStep(db.Operations(), directorClient, cfg.Provisioner.ProvisioningTimeout),
-		},
 		// post actions
 		{
 			stage: postActionsStageName,

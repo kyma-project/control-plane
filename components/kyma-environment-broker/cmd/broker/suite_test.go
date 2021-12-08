@@ -872,12 +872,6 @@ func sharedSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("shared-%s", ht)
 }
 
-func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
-	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	assert.NoError(s.t, err)
-	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
 func fixConfig() *Config {
 	return &Config{
 		DbInMemory:                         true,
