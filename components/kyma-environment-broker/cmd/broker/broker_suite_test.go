@@ -348,7 +348,7 @@ func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOper
 	return op.ID
 }
 
-func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string) {
+func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
@@ -359,7 +359,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateSucceeded, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, operationState, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
@@ -792,7 +792,7 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
@@ -807,7 +807,7 @@ func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateFailed)
 
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Failed)
@@ -845,7 +845,7 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	// Provisioner part
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 
 	// Director part
 	s.MarkDirectorWithConsoleURL(opID)
