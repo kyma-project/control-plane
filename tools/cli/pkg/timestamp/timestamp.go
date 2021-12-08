@@ -2,14 +2,8 @@ package timestamp
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
-)
-
-const (
-	dateLayout = `\d\d\d\d/\d\d/\d\d`
-	timeLayout = `\d\d:\d\d:\d\d`
 )
 
 // Parse recognizes a given timestamp and returns the right Time object or error. Proper formats:
@@ -28,30 +22,28 @@ func Parse(timestamp string, late bool) (time.Time, error) {
 }
 
 func formatTimestamp(timestamp string, late bool) (string, error) {
-	ok, err := regexp.MatchString(fmt.Sprintf("%s$", dateLayout), timestamp)
-	if ok && len(timestamp) == 10 {
+	t := []byte(timestamp)
+	for i := range t {
+		if t[i] != ':' && t[i] != '/' && t[i] != ' ' {
+			t[i] = 'd'
+		}
+	}
+
+	switch string(t) {
+	case "dddd/dd/dd":
 		t := "00:00:00"
 		if late {
 			t = "23:59:59"
 		}
-		return fmt.Sprintf("%s %s", timestamp, t), err
-	}
-
-	ok, err = regexp.MatchString(fmt.Sprintf("%s$", timeLayout), timestamp)
-	if ok && len(timestamp) == 8 {
+		return fmt.Sprintf("%s %s", timestamp, t), nil
+	case "dd:dd:dd":
 		y, m, d := time.Now().Date()
-		return fmt.Sprintf("%04d/%02d/%02d %s", y, m, d, timestamp), err
-	}
-
-	ok, err = regexp.MatchString(fmt.Sprintf("%s %s$", dateLayout, timeLayout), timestamp)
-	if ok && len(timestamp) == 19 {
-		return timestamp, err
-	}
-
-	ok, err = regexp.MatchString(fmt.Sprintf("%s %s$", timeLayout, dateLayout), timestamp)
-	if ok && len(timestamp) == 19 {
+		return fmt.Sprintf("%04d/%02d/%02d %s", y, m, d, timestamp), nil
+	case "dddd/dd/dd dd:dd:dd":
+		return timestamp, nil
+	case "dd:dd:dd dddd/dd/dd":
 		s := strings.Split(timestamp, " ")
-		return fmt.Sprintf("%s %s", s[1], s[0]), err
+		return fmt.Sprintf("%s %s", s[1], s[0]), nil
 	}
 
 	return "", fmt.Errorf("cannot match right pattern for the given timestamp: %s", timestamp)
