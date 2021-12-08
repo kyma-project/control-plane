@@ -59,54 +59,112 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (e *Encrypter) EncryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
+func (e *Encrypter) EncryptSMCreds(pp *internal.ProvisioningParameters) error {
+	if pp.ErsContext.ServiceManager == nil && pp.ErsContext.SMOperatorCredentials == nil {
 		return nil
 	}
-	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
-	if creds.Username == "" || creds.Password == "" {
-		return nil
+	var err error
+	encrypted := internal.ERSContext{}
+	if pp.ErsContext.ServiceManager != nil {
+		creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+		var username, password []byte
+		if creds.Username != "" {
+			username, err = e.Encrypt([]byte(creds.Username))
+			if err != nil {
+				return errors.Wrap(err, "while encrypting username")
+			}
+		}
+		if creds.Password != "" {
+			password, err = e.Encrypt([]byte(creds.Password))
+			if err != nil {
+				return errors.Wrap(err, "while encrypting password")
+			}
+		}
+		encrypted.ServiceManager = &internal.ServiceManagerEntryDTO{
+			URL: pp.ErsContext.ServiceManager.URL,
+			Credentials: internal.ServiceManagerCredentials{
+				BasicAuth: internal.ServiceManagerBasicAuth{
+					Password: string(password),
+					Username: string(username),
+				},
+			},
+		}
 	}
-	username, err := e.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username))
-	if err != nil {
-		return errors.Wrap(err, "while encrypting username")
+	if pp.ErsContext.SMOperatorCredentials != nil {
+		creds := pp.ErsContext.SMOperatorCredentials
+		var clientID, clientSecret []byte
+		if creds.ClientID != "" {
+			clientID, err = e.Encrypt([]byte(creds.ClientID))
+			if err != nil {
+				return errors.Wrap(err, "while encrypting ClientID")
+			}
+		}
+		if creds.ClientSecret != "" {
+			clientSecret, err = e.Encrypt([]byte(creds.ClientSecret))
+			if err != nil {
+				return errors.Wrap(err, "while encrypting ClientSecret")
+			}
+		}
+		encrypted.SMOperatorCredentials = &internal.ServiceManagerOperatorCredentials{
+			ClientID:          string(clientID),
+			ClientSecret:      string(clientSecret),
+			ServiceManagerURL: creds.ServiceManagerURL,
+			URL:               creds.URL,
+			XSAppName:         creds.XSAppName,
+		}
 	}
-	password, err := e.Encrypt([]byte(pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password))
-	if err != nil {
-		return errors.Wrap(err, "while encrypting password")
-	}
-
-	pp.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
-			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: string(username),
-				Password: string(password),
-			}},
-		URL: pp.ErsContext.ServiceManager.URL,
-	}
-
+	pp.ErsContext.ServiceManager = encrypted.ServiceManager
+	pp.ErsContext.SMOperatorCredentials = encrypted.SMOperatorCredentials
 	return nil
 }
 
-func (e *Encrypter) DecryptBasicAuth(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.ServiceManager == nil {
+func (e *Encrypter) DecryptSMCreds(pp *internal.ProvisioningParameters) error {
+	if pp.ErsContext.ServiceManager == nil && pp.ErsContext.SMOperatorCredentials == nil {
 		return nil
 	}
-	creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
-	if creds.Username == "" || creds.Password == "" {
-		return nil
+	var err error
+	var username, password, clientID, clientSecret []byte
+	if pp.ErsContext.ServiceManager != nil {
+		creds := pp.ErsContext.ServiceManager.Credentials.BasicAuth
+		if creds.Username != "" {
+			username, err = e.Decrypt([]byte(creds.Username))
+			if err != nil {
+				return errors.Wrap(err, "while decrypting username")
+			}
+		}
+		if creds.Password != "" {
+			password, err = e.Decrypt([]byte(creds.Password))
+			if err != nil {
+				return errors.Wrap(err, "while decrypting password")
+			}
+		}
 	}
-	username, err := e.Decrypt([]byte(creds.Username))
-	if err != nil {
-		return errors.Wrap(err, "while decrypting username")
+	if pp.ErsContext.SMOperatorCredentials != nil {
+		creds := pp.ErsContext.SMOperatorCredentials
+		if creds.ClientID != "" {
+			clientID, err = e.Decrypt([]byte(creds.ClientID))
+			if err != nil {
+				return errors.Wrap(err, "while decrypting ClientID")
+			}
+		}
+		if creds.ClientSecret != "" {
+			clientSecret, err = e.Decrypt([]byte(creds.ClientSecret))
+			if err != nil {
+				return errors.Wrap(err, "while decrypting ClientSecret")
+			}
+		}
 	}
-	password, err := e.Decrypt([]byte(creds.Password))
-	if err != nil {
-		return errors.Wrap(err, "while decrypting password")
+	if len(password) != 0 {
+		pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
 	}
-
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
-	pp.ErsContext.ServiceManager.Credentials.BasicAuth.Password = string(password)
-
+	if len(username) != 0 {
+		pp.ErsContext.ServiceManager.Credentials.BasicAuth.Username = string(username)
+	}
+	if len(clientID) != 0 {
+		pp.ErsContext.SMOperatorCredentials.ClientID = string(clientID)
+	}
+	if len(clientSecret) != 0 {
+		pp.ErsContext.SMOperatorCredentials.ClientSecret = string(clientSecret)
+	}
 	return nil
 }
