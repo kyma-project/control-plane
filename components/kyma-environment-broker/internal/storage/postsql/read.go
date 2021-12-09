@@ -429,6 +429,35 @@ func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtime
 	return state, nil
 }
 
+func (r readSession) GetLatestRuntimeStatesByRuntimeID(runtimeID string, n int) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
+	var states []dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID), dbr.Or(
+		dbr.And(dbr.Neq("cluster_setup", nil), dbr.Neq("cluster_setup", "")),
+		dbr.And(dbr.Neq("kyma_config", nil), dbr.Neq("kyma_config", "")),
+	))
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		// because both cluster_setup as well as kyma_config are encrypted
+		// we can't easily query the content of the json. This gets the last
+		// N operations for further processing
+		Limit(uint64(n)).
+		Load(&states)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return states, dberr.NotFound("cannot find latest 10 runtime states: %s", err)
+		}
+		return states, dberr.Internal("Failed to get the latest 10 runtime states: %s", err)
+	}
+	if count == 0 {
+		return states, dberr.NotFound("cannot find latest 10 runtime states with reconciler input: %s", err)
+	}
+	return states, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 

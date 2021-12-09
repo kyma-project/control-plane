@@ -37,15 +37,15 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("pd-standard"),
-			VolumeSizeGb:   ptr.Integer(30),
+			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    DefaultGCPMachineType,
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  3,
-			AutoScalerMax:  4,
+			AutoScalerMin:  2,
+			AutoScalerMax:  10,
 			MaxSurge:       4,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zones: ZonesForGCPRegion(DefaultGCPRegion),
@@ -83,7 +83,7 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zones: ZonesForGCPRegion(DefaultGCPRegion),
