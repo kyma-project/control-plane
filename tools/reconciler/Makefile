@@ -19,7 +19,6 @@ deploy-reconciler:
 		--set global.mothership_reconciler.auditlog.useTestConfig=true \
 		--set global.mothership_reconciler.auditlog.persistence.enabled=false \
 		--set postgresql.initdbScriptsConfigMap=reconciler-postgresql-db-init \
-		--set postgresql.psp.enabled=true \
 		--set postgresql.persistence.enabled=true \
 		--set migratorJobs.enabled=false ../../resources/kcp > reconciler.yaml
 	kubectl apply -f reconciler.yaml
