@@ -160,6 +160,9 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			o.State = orchestration.Succeeded
 		}
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
+	} else if o.State == orchestration.Retrying {
+		// look for the ops with retrying state, then convert the op state to pending and orchestration state to in progress
+
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error

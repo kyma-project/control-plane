@@ -485,6 +485,9 @@ func reprocessOrchestrations(orchestrationType orchestrationExt.Type, orchestrat
 	if err := processOrchestration(orchestrationType, orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
 		return errors.Wrapf(err, "while processing pending %s orchestrations", orchestrationType)
 	}
+	if err := processOrchestration(orchestrationType, orchestrationExt.Retrying, orchestrationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing retrying %s orchestrations", orchestrationType)
+	}
 	return nil
 }
 

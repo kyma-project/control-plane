@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -248,6 +250,45 @@ func TestClient_CancelOrchestration(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, 1, called)
+	})
+}
+
+func TestClient_RetryOrchestration(t *testing.T) {
+	t.Run("test_URL_NoError_path", func(t *testing.T) {
+		// given
+		called := 0
+		operations := []string{"operation_id_0", "operation_id_1"}
+		// operations := []string{}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called++
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/retry", orch1.OrchestrationID), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
+			assert.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
+
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+			body := buf.String()
+			assert.Equal(t, strings.Join(operations, "&"), body)
+
+		}))
+		defer ts.Close()
+		client := NewClient(context.TODO(), ts.URL, fixToken)
+
+		// when
+		err := client.RetryOrchestration(orch1.OrchestrationID, operations)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 1, called)
+
+		// when
+		operations = nil
+		err = client.RetryOrchestration(orch1.OrchestrationID, operations)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 2, called)
 	})
 }
 

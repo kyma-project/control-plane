@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -35,7 +36,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
 
 		req, err := http.NewRequest("GET", "/orchestrations?page_size=1", nil)
 		require.NoError(t, err)
@@ -151,7 +152,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
 
 		urlPath := fmt.Sprintf("/orchestrations/%s/operations", fixID)
 		req, err := http.NewRequest("GET", urlPath, nil)
@@ -220,7 +221,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
 
 		urlPath := fmt.Sprintf("/orchestrations/%s/operations", fixID)
 		req, err := http.NewRequest("GET", urlPath, nil)
@@ -272,7 +273,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
 
 		req, err := http.NewRequest("PUT", fmt.Sprintf("/orchestrations/%s/cancel", fixID), nil)
 		require.NoError(t, err)
@@ -296,6 +297,60 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		o, err := db.Orchestrations().GetByID(fixID)
 		require.NoError(t, err)
 		assert.Equal(t, orchestration.Canceling, o.State)
+	})
+
+	t.Run("retry failed orchestration", func(t *testing.T) {
+		// given
+		db := storage.NewMemoryStorage()
+
+		orchestrationID := "orchestration-" + fixID
+		operationIDs := []string{"operation-id-0", "operation-id-1"}
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID, State: orchestration.Failed, Type: orchestration.UpgradeClusterOrchestration})
+		require.NoError(t, err)
+
+		err = db.Operations().InsertUpgradeClusterOperation(internal.UpgradeClusterOperation{
+			Operation: internal.Operation{
+				ID:              operationIDs[0],
+				InstanceID:      "instance-" + fixID,
+				OrchestrationID: orchestrationID,
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+				},
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID: operationIDs[0],
+			},
+		})
+		require.NoError(t, err)
+
+		err = db.RuntimeStates().Insert(internal.RuntimeState{ID: fixID, OperationID: fixID})
+		require.NoError(t, err)
+
+		logs := logrus.New()
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
+
+		req, err := http.NewRequest("POST", fmt.Sprintf("/orchestrations/%s/retry", orchestrationID), strings.NewReader(strings.Join(operationIDs, "&")))
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		kymaHandler.AttachRoutes(router)
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusOK, rr.Code)
+
+		var out orchestration.UpgradeResponse
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+		assert.Equal(t, out.OrchestrationID, fixID)
+
+		o, err := db.Orchestrations().GetByID(fixID)
+		require.NoError(t, err)
+		assert.Equal(t, orchestration.InProgress, o.State)
 	})
 
 	t.Run("Kyma 2.0 upgrade operation", func(t *testing.T) {
@@ -380,7 +435,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 
 		logs := logrus.New()
-		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), 100, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), nil, nil, 100, logs)
 
 		urlPath := fmt.Sprintf("/orchestrations/%s/operations", orchestration1ID)
 		req, err := http.NewRequest("GET", urlPath, nil)

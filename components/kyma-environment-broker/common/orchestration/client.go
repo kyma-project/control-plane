@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/pkg/errors"
@@ -29,6 +30,7 @@ type Client interface {
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
 	UpgradeCluster(params Parameters) (UpgradeResponse, error)
 	CancelOrchestration(orchestrationID string) error
+	RetryOrchestration(orchestrationID string, operations []string) error
 }
 
 type client struct {
@@ -311,6 +313,40 @@ func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse
 	}
 
 	return ur, nil
+}
+
+func (c client) RetryOrchestration(orchestrationID string, operations []string) error {
+	url := fmt.Sprintf("%s/orchestrations/%s/retry", c.url, orchestrationID)
+	body := strings.NewReader(strings.Join(operations, "&"))
+
+	req, err := http.NewRequest(http.MethodPost, url, body)
+	if err != nil {
+		return errors.Wrap(err, "while creating retry request")
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrapf(err, "while calling %s", url)
+	}
+
+	// Drain response body and close, return error to context if there isn't any.
+	defer func() {
+		derr := drainResponseBody(resp.Body)
+		if err == nil {
+			err = derr
+		}
+		cerr := resp.Body.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("calling %s returned %s status", url, resp.Status)
+	}
+
+	return nil
 }
 
 func (c client) CancelOrchestration(orchestrationID string) error {

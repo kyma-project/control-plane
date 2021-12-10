@@ -109,9 +109,9 @@ Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Type "upgradeKyma" }}
-Kyma Version:     {{.Parameters.Kyma.Version }}
+Kyma Version:     {{with .Parameters.Kyma}}{{.Version}}{{end}}
 {{- else if eq .Type "upgradeCluster" }}
-K8s Version:      {{.Parameters.Kubernetes.KubernetesVersion }}
+K8s Version:      {{with .Parameters.Kubernetes}}{{.KubernetesVersion}}{{end}}
 {{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
@@ -141,11 +141,12 @@ Subaccount ID:      {{.SubAccountID}}
 Runtime ID:         {{.RuntimeID}}
 Shoot Name:         {{.ShootName}}
 Service Plan:       {{.ServicePlanName}}
+DryRun:             {{.DryRun}}
 Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State:              {{.State}}
 Description:        {{.Description}}
-Kubernetes Version: {{with .ClusterConfig}}{{.ClusterConfig.KubernetesVersion}}{{end}}
-Kyma Version:       {{with .KymaConfig}}{{.KymaConfig.Version}}{{end}}
+Kubernetes Version: {{with .ClusterConfig}}{{.KubernetesVersion}}{{end}}
+Kyma Version:       {{with .KymaConfig}}{{.Version}}{{end}}
 {{end}}
 `
 
@@ -417,7 +418,20 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 }
 
 func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) error {
-	return nil
+	sr, err := cmd.client.GetOrchestration(orchestrationID)
+	if err != nil {
+		return errors.Wrap(err, "while getting orchestration")
+	}
+	switch sr.State {
+	case orchestration.Canceling, orchestration.Canceled:
+		fmt.Println("Orchestration is already canceled.")
+		return nil
+	case orchestration.Retrying, orchestration.Pending, orchestration.Succeeded:
+		fmt.Printf("Orchestration is already %s.\n", sr.State)
+		return nil
+	}
+
+	return cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
 }
 
 // Currently only orchestrations of type "kyma upgrade" are supported,
