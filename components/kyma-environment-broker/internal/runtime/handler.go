@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
@@ -159,6 +160,8 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 }
 
 func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.RuntimeDTO) error {
+	kymaVersion := ""
+	kymaVersionSetAt := time.Time{}
 	provOprs, err := h.operationsDb.ListProvisioningOperationsByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching provisioning operations list for instance")
@@ -172,6 +175,9 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 		if len(provOprs) > 1 {
 			h.converter.ApplyUnsuspensionOperations(dto, provOprs[:len(provOprs)-1])
 		}
+		// Set kyma version from the last provisioning operation
+		kymaVersion = lastProvOp.RuntimeVersion.Version
+		kymaVersionSetAt = lastProvOp.CreatedAt
 	}
 
 	deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
@@ -196,6 +202,9 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	}
 	ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 	h.converter.ApplyUpgradingKymaOperations(dto, ukOprs, totalCount)
+	if len(ukOprs) > 0 && ukOprs[0].CreatedAt.After(kymaVersionSetAt) {
+		kymaVersion = ukOprs[0].RuntimeVersion.Version
+	}
 
 	ucOprs, err := h.operationsDb.ListUpgradeClusterOperationsByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
@@ -213,6 +222,8 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 		uOprs = uOprs[0:numberOfUpgradeOperationsToReturn]
 	}
 	h.converter.ApplyUpdateOperations(dto, uOprs, totalCount)
+
+	dto.KymaVersion = kymaVersion
 
 	return nil
 }

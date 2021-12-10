@@ -45,6 +45,7 @@ type RuntimeDTO struct {
 	Status                  RuntimeStatus                  `json:"status"`
 	UserID                  string                         `json:"userID"`
 	AVSInternalEvaluationID int64                          `json:"avsInternalEvaluationID"`
+	KymaVersion             string                         `json:"kymaVersion,omitempty"`
 	KymaConfig              *gqlschema.KymaConfigInput     `json:"kymaConfig,omitempty"`
 	ClusterConfig           *gqlschema.GardenerConfigInput `json:"clusterConfig,omitempty"`
 }
