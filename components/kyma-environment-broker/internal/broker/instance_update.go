@@ -309,14 +309,11 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 
 	if b.subAccountMovementEnabled {
-		if instance.GlobalAccountID != ersContext.GlobalAccountID {
-			instance.GlobalAccountID = ersContext.GlobalAccountID
+		if instance.GlobalAccountID != ersContext.GlobalAccountID && ersContext.GlobalAccountID != "" {
 			if instance.SubscriptionGlobalAccountID == "" {
-				// TODO: Double check if this is correct
 				instance.SubscriptionGlobalAccountID = instance.GlobalAccountID
-				// instance.SubscriptionGlobalAccountID = ersContext.GlobalAccountID
-				instance.GlobalAccountID = ersContext.GlobalAccountID
 			}
+			instance.GlobalAccountID = ersContext.GlobalAccountID
 		}
 	}
 
