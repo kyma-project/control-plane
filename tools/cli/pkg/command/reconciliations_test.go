@@ -59,6 +59,8 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 		rawStatuses []string
 		runtimeIds  []string
 		shoots      []string
+		after       string
+		before      string
 	}
 	tests := []struct {
 		name    string
@@ -72,6 +74,28 @@ func TestReconciliationCommand_Validate(t *testing.T) {
 				runtimeIds:  []string{"id1", "id2", "id3"},
 				rawStatuses: []string{"reconcile_pending", "ready"},
 				shoots:      []string{"shoot1"},
+			},
+		},
+		{
+			name: "validate time parameters",
+			fields: fields{
+				output: "json",
+				after:  "2020/02/03 21:37:00",
+				before: "2021/02/02 22:00:00",
+			},
+		},
+		{
+			name: "after time error",
+			fields: fields{
+				output: "json",
+				after:  "2020-02-02",
+			},
+		},
+		{
+			name: "before time error",
+			fields: fields{
+				output: "json",
+				before: "2020-02-02",
 			},
 		},
 		{

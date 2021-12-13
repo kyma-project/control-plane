@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	mothershipClient "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/timestamp"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -41,6 +43,12 @@ type ReconciliationCommand struct {
 	runtimeIds  []string
 	shoots      []string
 	statuses    []mothership.Status
+	before      string
+	after       string
+	last        uint
+
+	beforeTime time.Time
+	afterTime  time.Time
 
 	provideKebClient   kebClientProvider
 	provideMshipClient mothershipClientProvider
@@ -71,6 +79,19 @@ func (cmd *ReconciliationCommand) Validate() error {
 	if err != nil {
 		return err
 	}
+
+	if cmd.after != "" {
+		if cmd.afterTime, err = timestamp.Parse(cmd.after, true); err != nil {
+			return err
+		}
+	}
+
+	if cmd.before != "" {
+		if cmd.beforeTime, err = timestamp.Parse(cmd.before, false); err != nil {
+			return err
+		}
+	}
+
 	// Validate and transform states
 	statuses, err := toReconciliationStatuses(cmd.rawStatuses)
 	if err != nil {
@@ -189,7 +210,7 @@ func (cmd *ReconciliationCommand) Run() error {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	params := newGetReconciliationsParams(runtimes, cmd.statuses)
+	params := newGetReconciliationsParams(runtimes, cmd.statuses, cmd.afterTime, cmd.beforeTime, cmd.last)
 	response, err := client.GetReconciliations(ctx, params)
 	if err != nil {
 		return errors.Wrap(err, "wile listing reconciliations")
@@ -251,6 +272,9 @@ The command supports filtering Reconciliations based on`,
 	cobraCmd.Flags().StringSliceVarP(&cmd.runtimeIds, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.rawStatuses, "status", "S", nil, "Filter by Reconciliation state. The possible values are: ok, err, suspended, all. Suspended Reconciliations are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. ok,err), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringVar(&cmd.before, "before", "", "Filter by creation timestamp. Get only reconciliations created after given value. The possible formats: \"yyyy/mm/dd hh:mm:ss\", \"hh:mm:ss yyyy/mm/dd\", \"yyyy/mm/dd\" or \"hh:mm:ss\".")
+	cobraCmd.Flags().StringVar(&cmd.after, "after", "", "Filter by creation timestamp. Get only reconciliations created before given value. The possible formats: \"yyyy/mm/dd hh:mm:ss\", \"hh:mm:ss yyyy/mm/dd\", \"yyyy/mm/dd\" or \"hh:mm:ss\".")
+	cobraCmd.Flags().UintVar(&cmd.last, "last", 0, "Get only the expected number of the latest reconciliations.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()
@@ -276,20 +300,29 @@ func NewReconciliationCmd() *cobra.Command {
 	return newReconciliationCmd(defaultKebClientProvider, defaultMothershipClientProvider)
 }
 
-func newGetReconciliationsParams(runtimes []string, statuses []mothership.Status) *mothership.GetReconciliationsParams {
-	var runtimeParams *[]string
-	var statusesParams *[]mothership.Status
+func newGetReconciliationsParams(runtimes []string, statuses []mothership.Status, after, before time.Time, last uint) *mothership.GetReconciliationsParams {
+	params := &mothership.GetReconciliationsParams{}
 
 	if len(runtimes) != 0 {
-		runtimeParams = &runtimes
+		params.RuntimeID = &runtimes
 	}
 
 	if len(statuses) != 0 {
-		statusesParams = &statuses
+		params.Status = &statuses
 	}
 
-	return &mothership.GetReconciliationsParams{
-		RuntimeID: runtimeParams,
-		Status:    statusesParams,
+	if !after.IsZero() {
+		params.After = &after
 	}
+
+	if !before.IsZero() {
+		params.Before = &before
+	}
+
+	if last > 0 {
+		i := int(last)
+		params.Last = &i
+	}
+
+	return params
 }
