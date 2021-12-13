@@ -2,8 +2,9 @@ package api_test
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
