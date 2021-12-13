@@ -245,10 +245,10 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
+		ctx := context.Background()
+
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(apperrors.BadRequest("tenant header not passed"))
-
-		ctx := context.Background()
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
