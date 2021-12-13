@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
@@ -186,7 +184,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		ctx := context.Background()
 
-		tenantUpdater.On("GetTenant", ctx).Return("", errors.New("empty tenant header"))
+		tenantUpdater.On("GetTenant", ctx).Return("", apperrors.BadRequest("missing tenant header"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
