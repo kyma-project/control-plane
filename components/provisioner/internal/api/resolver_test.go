@@ -182,7 +182,6 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		ctx := context.Background()
