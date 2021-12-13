@@ -575,11 +575,11 @@ func TestResolver_HibernateCluster(t *testing.T) {
 			Message:   &message,
 		}
 
-		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
+		provisioningService.On("HibernateCluster", runtimeID).Return(operationStatus, nil)
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
-		status, err := provisioner.HibernateRuntime(ctx, operationID)
+		status, err := provisioner.HibernateRuntime(ctx, runtimeID)
 
 		//then
 		require.NoError(t, err)
