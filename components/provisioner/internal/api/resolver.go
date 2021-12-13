@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 
 	log "github.com/sirupsen/logrus"
@@ -14,24 +12,27 @@ import (
 )
 
 type Resolver struct {
-	provisioning provisioning.Service
-	validator    Validator
+	provisioning  provisioning.Service
+	validator     Validator
+	tenantUpdater TenantUpdater
 }
 
 func (r *Resolver) Mutation() gqlschema.MutationResolver {
 	return &Resolver{
-		provisioning: r.provisioning,
-		validator:    r.validator,
+		provisioning:  r.provisioning,
+		validator:     r.validator,
+		tenantUpdater: r.tenantUpdater,
 	}
 }
 func (r *Resolver) Query() gqlschema.QueryResolver {
 	return &Resolver{
-		provisioning: r.provisioning,
-		validator:    r.validator,
+		provisioning:  r.provisioning,
+		validator:     r.validator,
+		tenantUpdater: r.tenantUpdater,
 	}
 }
 
-func NewResolver(provisioningService provisioning.Service, validator Validator) *Resolver {
+func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
 	return &Resolver{
 		provisioning: provisioningService,
 		validator:    validator,
@@ -45,7 +46,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 		return nil, err
 	}
 
-	tenant, err := getTenant(ctx)
+	tenant, err := r.tenantUpdater.GetTenant(ctx)
 	if err != nil {
 		log.Errorf("Failed to provision Runtime %s: %s", config.RuntimeInput.Name, err)
 		return nil, err
@@ -68,7 +69,7 @@ func (r *Resolver) ProvisionRuntime(ctx context.Context, config gqlschema.Provis
 func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, error) {
 	log.Infof("Requested deprovisioning of Runtime %s.", id)
 
-	_, err := r.getAndValidateTenant(ctx, id)
+	err := r.tenantUpdater.GetAndUpdateTenant(id, ctx)
 	if err != nil {
 		log.Errorf("Failed to deprovision Runtime %s: %s", id, err)
 		return "", err
@@ -87,7 +88,7 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
 
-	if _, err := r.getAndValidateTenant(ctx, runtimeId); err != nil {
+	if err := r.tenantUpdater.GetAndUpdateTenant(runtimeId, ctx); err != nil {
 		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
 		return &gqlschema.OperationStatus{}, err
 	}
@@ -107,7 +108,7 @@ func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input g
 }
 
 func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
 	if err != nil {
 		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
 		return nil, err
@@ -129,7 +130,7 @@ func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string
 func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
 	log.Infof("Requested to get status for Runtime %s.", runtimeID)
 
-	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
 	if err != nil {
 		log.Errorf("Failed to get status for Runtime %s: %s", runtimeID, err)
 		return nil, err
@@ -148,15 +149,15 @@ func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlsch
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested to get Runtime operation status for Operation %s.", operationID)
 
-	_, err := r.getAndValidateTenantForOp(ctx, operationID)
-	if err != nil {
-		log.Errorf("Failed to get Runtime operation status: %s, Operation ID: %s", err, operationID)
-		return nil, err
-	}
-
 	status, err := r.provisioning.RuntimeOperationStatus(operationID)
 	if err != nil {
 		log.Errorf("Failed to get Runtime operation status: %s Operation ID: %s", err, operationID)
+		return nil, err
+	}
+
+	err = r.tenantUpdater.GetAndUpdateTenant(*status.RuntimeID, ctx)
+	if err != nil {
+		log.Errorf("Failed to get Runtime operation status: %s, Operation ID: %s", err, operationID)
 		return nil, err
 	}
 
@@ -168,7 +169,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 func (r *Resolver) UpgradeShoot(ctx context.Context, runtimeID string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested to upgrade Gardener Shoot cluster specification for Runtime : %s.", runtimeID)
 
-	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
 	if err != nil {
 		log.Errorf("Failed to upgrade Gardener Shoot cluster specification for Runtime  %s: %s", runtimeID, err)
 		return nil, err
@@ -194,7 +195,7 @@ func (r *Resolver) UpgradeShoot(ctx context.Context, runtimeID string, input gql
 func (r *Resolver) HibernateRuntime(ctx context.Context, runtimeID string) (*gqlschema.OperationStatus, error) {
 	log.Infof("Requested to hibernate runtime : %s.", runtimeID)
 
-	_, err := r.getAndValidateTenant(ctx, runtimeID)
+	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
 	if err != nil {
 		log.Errorf("Failed to hibernate Runtime  %s: %s", runtimeID, err)
 		return nil, err
@@ -207,43 +208,6 @@ func (r *Resolver) HibernateRuntime(ctx context.Context, runtimeID string) (*gql
 	}
 
 	return status, nil
-}
-
-func (r *Resolver) getAndValidateTenant(ctx context.Context, runtimeID string) (string, error) {
-	tenant, err := getTenant(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	err = r.validator.ValidateTenant(runtimeID, tenant)
-	if err != nil {
-		return "", err
-	}
-
-	return tenant, nil
-}
-
-func (r *Resolver) getAndValidateTenantForOp(ctx context.Context, operationID string) (string, error) {
-	tenant, err := getTenant(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	err = r.validator.ValidateTenantForOperation(operationID, tenant)
-	if err != nil {
-		return "", err
-	}
-
-	return tenant, nil
-}
-
-func getTenant(ctx context.Context) (string, apperrors.AppError) {
-	tenant, ok := ctx.Value(middlewares.Tenant).(string)
-	if !ok || tenant == "" {
-		return "", apperrors.BadRequest("tenant header is empty")
-	}
-
-	return tenant, nil
 }
 
 func getSubAccount(ctx context.Context) string {

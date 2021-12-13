@@ -249,9 +249,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
-			validator := api.NewValidator(dbsFactory.NewReadSession())
+			validator := api.NewValidator()
 
-			resolver := api.NewResolver(provisioningService, validator)
+			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
+
+			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
 			require.NoError(t, err)

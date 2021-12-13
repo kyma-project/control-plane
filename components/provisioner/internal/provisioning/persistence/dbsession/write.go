@@ -449,6 +449,18 @@ func (ws writeSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade)
 	return nil
 }
 
+func (ws writeSession) UpdateTenant(runtimeID, tenant string) dberrors.Error {
+	res, err := ws.update("cluster").
+		Where(dbr.Eq("id", runtimeID)).
+		Set("tenant", tenant).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update cluster %s state: %s", runtimeID, err)
+	}
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update tenant %s: %s", tenant, err))
+}
+
 func (ws writeSession) updateSucceeded(result sql.Result, errorMsg string) dberrors.Error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {

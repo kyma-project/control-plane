@@ -56,7 +56,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		resolver := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+
+		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -104,7 +107,8 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -112,6 +116,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
+		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 		validator.On("ValidateProvisioningInput", config).Return(apperrors.BadRequest("Some error"))
 
 		//when
@@ -126,7 +131,8 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -140,6 +146,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		config := gqlschema.ProvisionRuntimeInput{RuntimeInput: runtimeInput, ClusterConfig: clusterConfig, KymaConfig: kymaConfig}
 
+		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 		provisioningService.On("ProvisionRuntime", config, tenant, "").Return(nil, apperrors.Internal("Provisioning failed"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
@@ -156,7 +163,8 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -174,6 +182,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
+		tenantUpdater.On("GetTenant", ctx).Return(tenant, nil)
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		ctx := context.Background()
@@ -194,12 +203,13 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
@@ -213,8 +223,8 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
 		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 
@@ -231,8 +241,8 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
@@ -245,26 +255,6 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		//then
 		require.Error(t, err)
 		require.Empty(t, operationID)
-	})
-
-	t.Run("Should fail deprovisioning when tenant validation fail", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
-		expectedID := "ec781980-0533-4098-aab7-96b535569732"
-
-		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("Very bad error"))
-
-		//when
-		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
-		assert.Empty(t, operationID)
 	})
 }
 
@@ -279,6 +269,7 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		operation := &gqlschema.OperationStatus{
 			ID:        util.StringPtr(operationID),
@@ -290,9 +281,9 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 
 		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(operation, nil)
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		status, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -309,12 +300,13 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		provisioningService.On("UpgradeRuntime", runtimeID, upgradeInput).Return(nil, apperrors.Internal("error"))
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -324,33 +316,16 @@ func TestResolver_UpgradeRuntime(t *testing.T) {
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
 	})
 
-	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-
-		validator.On("ValidateUpgradeInput", upgradeInput).Return(nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
-
-		resolver := api.NewResolver(provisioningService, validator)
-
-		//when
-		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
-	})
-
 	t.Run("Should return error when validation fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		validator.On("ValidateUpgradeInput", upgradeInput).Return(apperrors.BadRequest("error"))
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		_, err := resolver.UpgradeRuntime(ctx, runtimeID, upgradeInput)
@@ -370,11 +345,12 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(&runtimeStatus, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		status, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
@@ -388,11 +364,12 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		provisioningService.On("RollBackLastUpgrade", runtimeID).Return(nil, apperrors.Internal("error"))
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
@@ -400,21 +377,6 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 		//then
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
-	})
-
-	t.Run("Should return error when failed to validate tenant", func(t *testing.T) {
-		//given
-		validator := &validatorMocks.Validator{}
-		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
-
-		resolver := api.NewResolver(nil, validator)
-
-		//when
-		_, err := resolver.RollBackUpgradeOperation(ctx, runtimeID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
 }
 
@@ -427,6 +389,7 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
 		operation := &gqlschema.OperationStatus{
 			ID:        util.StringPtr(operationID),
@@ -436,11 +399,11 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 			RuntimeID: util.StringPtr(runtimeID),
 		}
 
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
 		provisioningService.On("UpgradeGardenerShoot", runtimeID, upgradeShootInput).Return(operation, nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		status, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
@@ -452,32 +415,17 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 		require.NotNil(t, status.RuntimeID)
 		assert.Equal(t, operation, status)
 	})
-	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
 
-		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("error"))
-		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
-
-		resolver := api.NewResolver(provisioningService, validator)
-
-		//when
-		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
-	})
 	t.Run("Should return error when validation fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
 
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
 		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
-		resolver := api.NewResolver(provisioningService, validator)
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		//when
 		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
@@ -496,7 +444,9 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -514,7 +464,7 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(status, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		runtimeStatus, err := provisioner.RuntimeStatus(ctx, runtimeID)
@@ -528,10 +478,12 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, apperrors.Internal("Runtime status fails"))
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeStatus(ctx, runtimeID)
@@ -539,24 +491,6 @@ func TestResolver_RuntimeStatus(t *testing.T) {
 		//then
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
-		require.Empty(t, status)
-	})
-
-	t.Run("Should return error when tenant header does not match tenant provided during provisioning", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
-		provisioningService.On("RuntimeStatus", runtimeID).Return(nil, nil)
-		validator.On("ValidateTenant", runtimeID, tenant).Return(apperrors.BadRequest("Bad error"))
-
-		//when
-		status, err := provisioner.RuntimeStatus(ctx, runtimeID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 }
@@ -569,7 +503,9 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -583,7 +519,7 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		}
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
@@ -593,42 +529,17 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 		assert.Equal(t, operationStatus, status)
 	})
 
-	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
-		message := "some message"
-
-		operationStatus := &gqlschema.OperationStatus{
-			ID:        &operationID,
-			Operation: gqlschema.OperationTypeProvision,
-			State:     gqlschema.OperationStateInProgress,
-			RuntimeID: &runtimeID,
-			Message:   &message,
-		}
-
-		provisioningService.On("RuntimeOperationStatus", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenantForOperation", operationID, tenant).Return(apperrors.BadRequest("oh no"))
-		//when
-		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
-		require.Empty(t, status)
-	})
-
 	t.Run("Should return error when Runtime Operation fails", func(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
 		validator.On("ValidateTenantForOperation", operationID, tenant).Return(nil)
-		provisioner := api.NewResolver(provisioningService, validator)
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		provisioningService.On("RuntimeOperationStatus", operationID).Return(nil, apperrors.Internal("Some error"))
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		status, err := provisioner.RuntimeOperationStatus(ctx, operationID)
@@ -648,7 +559,9 @@ func TestResolver_HibernateCluster(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 		message := "some message"
@@ -676,12 +589,14 @@ func TestResolver_HibernateCluster(t *testing.T) {
 		//given
 		provisioningService := &mocks.Service{}
 		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
 		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
 
 		provisioningService.On("HibernateCluster", operationID).Return(nil, apperrors.Internal("Some error"))
-		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		status, err := provisioner.HibernateRuntime(ctx, operationID)
@@ -689,34 +604,6 @@ func TestResolver_HibernateCluster(t *testing.T) {
 		//then
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
-		require.Empty(t, status)
-	})
-
-	t.Run("Should return error when tenant validation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		provisioner := api.NewResolver(provisioningService, validator)
-
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
-		message := "some message"
-
-		operationStatus := &gqlschema.OperationStatus{
-			ID:        &operationID,
-			Operation: gqlschema.OperationTypeHibernate,
-			State:     gqlschema.OperationStateInProgress,
-			RuntimeID: &runtimeID,
-			Message:   &message,
-		}
-
-		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", operationID, tenant).Return(apperrors.BadRequest("oh no"))
-		//when
-		status, err := provisioner.HibernateRuntime(ctx, operationID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 		require.Empty(t, status)
 	})
 }
