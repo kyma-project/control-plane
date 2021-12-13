@@ -594,13 +594,11 @@ func TestResolver_HibernateCluster(t *testing.T) {
 
 		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
-
-		provisioningService.On("HibernateCluster", operationID).Return(nil, apperrors.Internal("Some error"))
+		provisioningService.On("HibernateCluster", runtimeID).Return(nil, apperrors.Internal("Some error"))
 		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
-		status, err := provisioner.HibernateRuntime(ctx, operationID)
+		status, err := provisioner.HibernateRuntime(ctx, runtimeID)
 
 		//then
 		require.Error(t, err)
