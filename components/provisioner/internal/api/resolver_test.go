@@ -226,7 +226,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		tenantUpdater := &validatorMocks.TenantUpdater{}
 		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return("", apperrors.Internal("Deprovisioning fails because reasons"))
-		validator.On("ValidateTenant", runtimeID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		operationID, err := provisioner.DeprovisionRuntime(ctx, runtimeID)
@@ -246,6 +246,7 @@ func TestResolver_DeprovisionRuntime(t *testing.T) {
 		expectedID := "ec781980-0533-4098-aab7-96b535569732"
 
 		provisioningService.On("DeprovisionRuntime", runtimeID).Return(expectedID, nil, nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(apperrors.BadRequest("tenant header not passed"))
 
 		ctx := context.Background()
 
