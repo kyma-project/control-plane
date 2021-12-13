@@ -253,8 +253,12 @@ func schemaForUpdate(provisioningRoot RootSchema) []byte {
 	return marshalSchema(NewUpdateSchema(up))
 }
 
+// Plan is a wrapper for OSB API ServicePlan
 type Plan struct {
-	PlanDefinition        domain.ServicePlan
+	PlanDefinition domain.ServicePlan
+	// catalogRawSchema is JSONSchema which is exposed on /v2/catalog endpoint - if empty, provisioningRawSchema is used
+	catalogRawSchema []byte
+	// provisioningRawSchema is a JSONSchema which serves as validation source for provisioning input
 	provisioningRawSchema []byte
 	updateRawSchema       []byte
 }
@@ -262,8 +266,8 @@ type Plan struct {
 // Plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]Plan {
-	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
-	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
+	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
+	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
 	gcpSchema := GCPSchema([]string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"})
 	openstackSchema := OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"})
 	azureSchema := AzureSchema([]string{"Standard_D8_v3"})
@@ -272,10 +276,17 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	freemiumSchema := FreemiumSchema(provider)
 	trialSchema := TrialSchema()
 
+	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
+	// when a machine type switch is introduced
+	awsCatalogSchema := AWSSchema([]string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
+	awsHACatalogSchema := AWSHASchema([]string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
+
 	if includeAdditionalParamsInSchema {
 		schemas := []*RootSchema{
 			&awsSchema,
+			&awsCatalogSchema,
 			&awsHASchema,
+			&awsHACatalogSchema,
 			&gcpSchema,
 			&openstackSchema,
 			&azureSchema,
@@ -305,6 +316,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 					},
 				},
 			},
+			catalogRawSchema:      marshalSchema(awsCatalogSchema),
 			provisioningRawSchema: marshalSchema(awsSchema),
 			updateRawSchema:       schemaForUpdate(awsSchema),
 		},
@@ -343,6 +355,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 					},
 				},
 			},
+			catalogRawSchema:      marshalSchema(awsHACatalogSchema),
 			provisioningRawSchema: marshalSchema(awsHASchema),
 			updateRawSchema:       schemaForUpdate(awsHASchema),
 		},

@@ -63,7 +63,8 @@ func toReconciliationStatuses(rawStates []string) ([]mothership.Status, error) {
 		val := mothership.Status(strings.Trim(s, " "))
 		switch val {
 		case mothership.StatusDeleteError, mothership.StatusDeletePending, mothership.StatusDeleted, mothership.StatusDeleting,
-			mothership.StatusError, mothership.StatusReady, mothership.StatusReconcileDisabled, mothership.StatusReconcilePending, mothership.StatusReconciling:
+			mothership.StatusError, mothership.StatusReady, mothership.StatusReconcileDisabled, mothership.StatusReconcilePending,
+			mothership.StatusReconciling, mothership.StatusDeleteErrorRetryable, mothership.StatusReconcileErrorRetryable:
 			statuses = append(statuses, val)
 		default:
 			return nil, fmt.Errorf("invalid value for state: %s", s)

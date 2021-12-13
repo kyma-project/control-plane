@@ -11,6 +11,8 @@ import (
 const (
 	StatusDeleteError Status = "delete_error"
 
+	StatusDeleteErrorRetryable Status = "delete_error_retryable"
+
 	StatusDeletePending Status = "delete_pending"
 
 	StatusDeleted Status = "deleted"
@@ -22,6 +24,8 @@ const (
 	StatusReady Status = "ready"
 
 	StatusReconcileDisabled Status = "reconcile_disabled"
+
+	StatusReconcileErrorRetryable Status = "reconcile_error_retryable"
 
 	StatusReconcilePending Status = "reconcile_pending"
 

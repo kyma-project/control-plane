@@ -331,7 +331,6 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 		return nil, err
 	}
 	instance.InstanceDetails = lastOp.InstanceDetails
-
 	return &instance, nil
 }
 

@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
+
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -120,7 +122,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping, nil)
 
 	directorClient := director.NewFakeClient()
 	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
@@ -144,7 +146,8 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	provisionManager.SpeedUp(10000)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, logs)
+	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
@@ -346,7 +349,7 @@ func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOper
 	return op.ID
 }
 
-func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string) {
+func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
@@ -357,7 +360,21 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, operationState, op.RuntimeID)
+}
+
+func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
+	var op *internal.ProvisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
@@ -377,7 +394,7 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 	err = s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Delete(context.Background(), op.ShootName, v1.DeleteOptions{})
 	require.NoError(s.t, err)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
@@ -390,14 +407,14 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
-func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
 			return true, nil
 		}
 		return false, nil
@@ -429,6 +446,36 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		}
 		if state.Cluster != "" {
 			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
+	var updatingOp *internal.UpdatingOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ProvisionerOperationID != "" {
+			updatingOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
 			return true, nil
 		}
 		return false, nil
@@ -553,6 +600,18 @@ func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
+}
+
+func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
+	m, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	require.NoError(s.t, err)
+
+	r := apiresponses.ErrorResponse{}
+	err = json.Unmarshal(m, &r)
+	require.NoError(s.t, err)
+
+	return r
 }
 
 func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
@@ -764,7 +823,7 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
@@ -773,6 +832,16 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
+func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+	s.AssertProvisionerStartedProvisioning(opID)
+
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateFailed)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Failed)
 }
 
 func (s *BrokerSuiteTest) fixGardenerShootForOperationID(opID string) *gardenerapi.Shoot {
@@ -807,7 +876,7 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	// Provisioner part
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 
 	// Director part
 	s.MarkDirectorWithConsoleURL(opID)
@@ -952,7 +1021,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			},
 		},
 		{
-			URL:       "",
+			URL:       "https://sm-proxy",
 			Component: "service-manager-proxy",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
@@ -1040,7 +1109,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 			},
 		},
 		{
-			URL:       "",
+			URL:       "https://btp-operator",
 			Component: "btp-operator",
 			Namespace: "kyma-system",
 			Configuration: []reconciler.Configuration{
@@ -1081,5 +1150,13 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				},
 			},
 		},
+	}
+}
+
+func mockBTPOperatorClusterID() {
+	update.ConfigMapGetter = func(string) internal.ClusterIDGetter {
+		return func() (string, error) {
+			return "cluster_id", nil
+		}
 	}
 }

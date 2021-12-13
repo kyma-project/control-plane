@@ -20,15 +20,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func always(operation internal.UpdatingOperation) bool {
+	return true
+}
+
 func TestHappyPath(t *testing.T) {
 	// given
 	const opID = "op-0001234"
 	operation := FixUpdatingOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector}, always)
 
 	// when
 	mgr.Execute(operation.ID)
@@ -45,11 +49,11 @@ func TestWithRetry(t *testing.T) {
 	const opID = "op-0001234"
 	operation := FixUpdatingOperation("op-0001234")
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &onceRetryingStep{name: "first-2", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "second-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-2", &onceRetryingStep{name: "first-2", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-2", &testingStep{name: "second-2", eventPublisher: eventCollector}, always)
 
 	// when
 	retry, _ := mgr.Execute(operation.ID)
@@ -68,10 +72,10 @@ func TestSkipFinishedStage(t *testing.T) {
 	operation.FinishStage("stage-1")
 
 	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
-	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector})
-	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector})
-	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector})
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, always)
+	mgr.AddStep("stage-2", &testingStep{name: "first-2", eventPublisher: eventCollector}, always)
 
 	// when
 	retry, _ := mgr.Execute(operation.ID)

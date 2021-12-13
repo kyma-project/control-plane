@@ -138,6 +138,12 @@ func (cmd *RuntimeCommand) Validate() error {
 func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 	switch {
 	case cmd.output == tableOutput:
+		if cmd.opDetail {
+			tableColumns = append(tableColumns, printer.Column{
+				Header:    "KYMA VERSION",
+				FieldSpec: "{.KymaVersion}",
+			})
+		}
 		tp, err := printer.NewTablePrinter(tableColumns, false)
 		if err != nil {
 			return err

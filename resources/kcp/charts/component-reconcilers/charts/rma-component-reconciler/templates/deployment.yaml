@@ -20,7 +20,7 @@ spec:
     spec:
       serviceAccountName: component-reconcilers-rma
       containers:
-      - image: "{{ .Values.global.images.component_reconciler.path }}:{{ .Values.global.images.component_reconciler.tag }}"
+      - image: "{{ .Values.global.images.component_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - reconciler
@@ -37,6 +37,14 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
         resources: {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
