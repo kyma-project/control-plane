@@ -42,7 +42,7 @@ func TestTenantUpdater_GetAndUpdateTenant(t *testing.T) {
 		rwsMock := &mocks.ReadWriteSession{}
 		tenantUpdater := NewTenantUpdater(rwsMock)
 
-		rwsMock.On("GetTenant", ctx).Return(dbTenant, nil)
+		rwsMock.On("GetTenant", runtimeId).Return(dbTenant, nil)
 		rwsMock.On("UpdateTenant", runtimeId, newTenant).Return(nil)
 
 		err := tenantUpdater.GetAndUpdateTenant(runtimeId, ctx)
@@ -58,7 +58,7 @@ func TestTenantUpdater_GetAndUpdateTenant(t *testing.T) {
 		rwsMock := &mocks.ReadWriteSession{}
 		tenantUpdater := NewTenantUpdater(rwsMock)
 
-		rwsMock.On("GetTenant", ctx).Return(dbTenant, nil)
+		rwsMock.On("GetTenant", runtimeId).Return(dbTenant, nil)
 
 		err := tenantUpdater.GetAndUpdateTenant(runtimeId, ctx)
 		require.NoError(t, err)
