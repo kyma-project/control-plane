@@ -82,7 +82,6 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstance.InstanceID, inst.InstanceID)
 		assert.Equal(t, fixInstance.RuntimeID, inst.RuntimeID)
 		assert.Equal(t, fixInstance.GlobalAccountID, inst.GlobalAccountID)
-		fmt.Printf("fix: %v - inst: %v", fixInstance.SubscriptionGlobalAccountID, inst.SubscriptionGlobalAccountID)
 		assert.Equal(t, fixInstance.SubscriptionGlobalAccountID, inst.SubscriptionGlobalAccountID)
 		assert.Equal(t, fixInstance.ServiceID, inst.ServiceID)
 		assert.Equal(t, fixInstance.ServicePlanID, inst.ServicePlanID)

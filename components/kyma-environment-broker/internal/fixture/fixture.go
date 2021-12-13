@@ -20,7 +20,7 @@ const (
 	PlanId                      = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	PlanName                    = "azure"
 	GlobalAccountId             = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
-	SubscriptionGlobalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	SubscriptionGlobalAccountID = ""
 	Region                      = "westeurope"
 	ServiceManagerUsername      = "u"
 	ServiceManagerPassword      = "p"
