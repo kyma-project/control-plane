@@ -186,7 +186,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 
 		ctx := context.Background()
 
-		tenantUpdater.On("GetTenant", ctx).Return(errors.New("empty tenant header"))
+		tenantUpdater.On("GetTenant", ctx).Return("", errors.New("empty tenant header"))
 		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
