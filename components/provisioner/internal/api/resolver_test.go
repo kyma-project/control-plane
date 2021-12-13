@@ -576,7 +576,7 @@ func TestResolver_HibernateCluster(t *testing.T) {
 		}
 
 		provisioningService.On("HibernateCluster", operationID).Return(operationStatus, nil)
-		validator.On("ValidateTenant", operationID, tenant).Return(nil)
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
 
 		//when
 		status, err := provisioner.HibernateRuntime(ctx, operationID)
