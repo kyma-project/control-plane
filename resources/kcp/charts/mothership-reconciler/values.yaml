@@ -33,6 +33,13 @@ deployment:
 
   replicasCount: 1
 
+  # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+
   imagePullSecrets: []
 
   serviceAccount:
