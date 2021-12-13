@@ -34,8 +34,9 @@ func (r *Resolver) Query() gqlschema.QueryResolver {
 
 func NewResolver(provisioningService provisioning.Service, validator Validator, tenantUpdater TenantUpdater) *Resolver {
 	return &Resolver{
-		provisioning: provisioningService,
-		validator:    validator,
+		provisioning:  provisioningService,
+		validator:     validator,
+		tenantUpdater: tenantUpdater,
 	}
 }
 
