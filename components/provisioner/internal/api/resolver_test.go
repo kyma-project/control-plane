@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -182,9 +183,10 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		validator.On("ValidateProvisioningInput", config).Return(nil)
-
 		ctx := context.Background()
+
+		tenantUpdater.On("GetTenant", ctx).Return(errors.New("empty tenant header"))
+		validator.On("ValidateProvisioningInput", config).Return(nil)
 
 		//when
 		status, err := provisioner.ProvisionRuntime(ctx, config)
