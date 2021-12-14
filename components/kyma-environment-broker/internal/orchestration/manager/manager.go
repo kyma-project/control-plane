@@ -22,8 +22,10 @@ import (
 
 type OperationFactory interface {
 	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error)
-	ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
+	ResumeOperations(orchestrationID string, states []string) ([]orchestration.RuntimeOperation, error)
 	CancelOperations(orchestrationID string) error
+	UpdateRetryingOperations(rt orchestration.RuntimeOperation) (orchestration.RuntimeOperation, error)
+	ConvertRetryingToPendingOperations(orchestrationID string) error
 }
 
 type orchestrationManager struct {
@@ -127,12 +129,14 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
+			days := []string{}
 
 			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd = m.resolveMaintenanceWindowTime(r, policy)
+				windowBegin, windowEnd, days = m.resolveMaintenanceWindowTime(r, policy)
 			}
 			r.MaintenanceWindowBegin = windowBegin
 			r.MaintenanceWindowEnd = windowEnd
+			r.MaintenanceDays = days
 
 			inst, err := m.instanceStorage.GetByID(r.InstanceID)
 			if err != nil {
@@ -162,11 +166,42 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
 	} else if o.State == orchestration.Retrying {
 		// look for the ops with retrying state, then convert the op state to pending and orchestration state to in progress
+		ops, err := m.factory.ResumeOperations(o.OrchestrationID, []string{orchestration.Retrying})
+		if err != nil {
+			return result, errors.Wrap(err, "while listing retrying operations")
+		}
 
+		for _, op := range ops {
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			days := []string{}
+
+			// use the latest policy
+			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+				windowBegin, windowEnd, days = m.resolveMaintenanceWindowTime(op.Runtime, policy)
+			}
+			op.MaintenanceWindowBegin = windowBegin
+			op.MaintenanceWindowEnd = windowEnd
+			op.MaintenanceDays = days
+
+			runtimeop, err := m.factory.UpdateRetryingOperations(op)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while updating operation for runtime id %q", runtimeop.RuntimeID)
+			}
+
+			result = append(result, runtimeop)
+		}
+
+		if len(ops) != 0 {
+			o.State = orchestration.InProgress
+		} else {
+			o.State = orchestration.Succeeded
+		}
+		o.Description += fmt.Sprintf(", Retried %d operations", len(ops))
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error
-		result, err = m.factory.ResumeOperations(o.OrchestrationID)
+		result, err = m.factory.ResumeOperations(o.OrchestrationID, []string{orchestration.InProgress, orchestration.Pending, orchestration.Retrying})
 		if err != nil {
 			return result, err
 		}
@@ -221,6 +256,16 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		if found {
 			numberOfNotFinished += numberOfPending
 		}
+		numberOfRetrying, found := stats[orchestration.Retrying]
+		if found {
+			numberOfNotFinished += numberOfRetrying
+			err = m.factory.ConvertRetryingToPendingOperations(o.OrchestrationID)
+			if err != nil {
+				// don't block the polling and cancel signal
+				log.Errorf("while converting state for retrying operations: %v", err)
+			}
+
+		}
 
 		// don't wait for pending operations if orchestration was canceled
 		if canceled {
@@ -254,7 +299,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves the next exact maintenance window time for the runtime
-func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time) {
+func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time, []string) {
 	ruleMatched := false
 
 	for _, p := range policy.Rules {
@@ -335,7 +380,7 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 		end = end.AddDate(0, 0, diff)
 	}
 
-	return start, end
+	return start, end, r.MaintenanceDays
 }
 
 func (m *orchestrationManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {

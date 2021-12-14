@@ -164,9 +164,9 @@ type UpgradeResponse struct {
 
 type RetryResponse struct {
 	OrchestrationID   string   `json:"orchestrationID"`
-	RetryOperations   []string `json:"retryOps"`
-	OldOperations     []string `json:"oldOps"`
-	InvalidOperations []string `json:"invalidOps"`
+	RetryOperations   []string `json:"retryOperations"`
+	OldOperations     []string `json:"oldOperations"`
+	InvalidOperations []string `json:"invalidOperations"`
 	Msg               string   `json:"msg"`
 }
 

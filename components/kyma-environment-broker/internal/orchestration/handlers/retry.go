@@ -46,8 +46,10 @@ func (r *Retryer) stateUpdateForOrchestration(orchestrationID string) (string, e
 	}
 
 	o.UpdatedAt = time.Now()
-	o.Description = "queued for retrying"
-	o.State = commonOrchestration.Retrying
+	if o.State == commonOrchestration.Failed {
+		o.Description = "queued for retrying"
+		o.State = commonOrchestration.Retrying
+	}
 	err = r.orchestrations.Update(*o)
 	if err != nil {
 		r.log.Errorf("while updating orchestration %s: %v", orchestrationID, err)
@@ -69,7 +71,10 @@ func (r *Retryer) kymaUpgradeRetry(o *internal.Orchestration, opsByOrch []intern
 	// as failed orchestration has finished before
 	// only retry the latest failed kyma upgrade operation for the same instance
 	if o.State == commonOrchestration.Failed {
-		ops, oldIDs, err := r.latestUpgradeKymaOperationValidate(o.OrchestrationID, ops)
+		var oldIDs []string
+		var err error
+
+		ops, oldIDs, err = r.latestUpgradeKymaOperationValidate(o.OrchestrationID, ops)
 		if err != nil {
 			return err
 		}
@@ -114,7 +119,10 @@ func (r *Retryer) clusterUpgradeRetry(o *internal.Orchestration, opsByOrch []int
 	}
 
 	if o.State == commonOrchestration.Failed {
-		ops, oldIDs, err := r.latestUpgradeClusterOperationValidate(o.OrchestrationID, ops)
+		var oldIDs []string
+		var err error
+
+		ops, oldIDs, err = r.latestUpgradeClusterOperationValidate(o.OrchestrationID, ops)
 		if err != nil {
 			return err
 		}
@@ -152,12 +160,13 @@ func (r *Retryer) stateUpdateForKymaUpgradeOperations(ops []internal.UpgradeKyma
 	for _, op := range ops {
 		op.State = commonOrchestration.Retrying
 		op.UpdatedAt = time.Now()
+		op.Description = "queued for retrying"
 
 		_, err := r.operations.UpdateUpgradeKymaOperation(op)
 		if err != nil {
 			// one update fail then http return
 			r.log.Errorf("Cannot update operation %s in storage: %s", op.Operation.ID, err)
-			return errors.Wrap(err, "while updating orchestration %s", r.resp.OrchestrationID)
+			return errors.Wrapf(err, "while updating orchestration %s", r.resp.OrchestrationID)
 		}
 	}
 
@@ -168,12 +177,13 @@ func (r *Retryer) stateUpdateForClusterUpgradeOperations(ops []internal.UpgradeC
 	for _, op := range ops {
 		op.State = commonOrchestration.Retrying
 		op.UpdatedAt = time.Now()
+		op.Description = "queued for retrying"
 
 		_, err := r.operations.UpdateUpgradeClusterOperation(op)
 		if err != nil {
 			// one update fail then http return
 			r.log.Errorf("Cannot update operation %s in storage: %s", op.Operation.ID, err)
-			return errors.Wrap(err, "while updating orchestration %s", r.resp.OrchestrationID)
+			return errors.Wrapf(err, "while updating orchestration %s", r.resp.OrchestrationID)
 		}
 	}
 
@@ -188,6 +198,7 @@ func (r *Retryer) latestUpgradeKymaOperationValidate(orchestrationID string, ops
 
 	for _, op := range ops {
 		instanceID := op.InstanceID
+
 		kymaOps, err := r.operations.ListUpgradeKymaOperationsByInstanceID(instanceID)
 		if err != nil {
 			// fail for listing operations of one instance, then http return and report fail
@@ -195,8 +206,36 @@ func (r *Retryer) latestUpgradeKymaOperationValidate(orchestrationID string, ops
 			err = errors.Wrapf(err, "when getting operations by instanceID %s", instanceID)
 			return nil, nil, err
 		}
-		if len(kymaOps) > 0 && op.Operation.ID != kymaOps[0].Operation.ID {
-			oldIDs = append(oldIDs, op.Operation.ID)
+
+		var errFound, newerExist bool
+		num := len(kymaOps)
+
+		for i := num - 1; i >= 0; i-- {
+			if op.Operation.ID != kymaOps[i].Operation.ID {
+				if num == 1 {
+					errFound = true
+					break
+				}
+
+				// not consider 'canceled' newer op as the conflict
+				if kymaOps[i].State == commonOrchestration.Canceled {
+					continue
+				}
+
+				oldIDs = append(oldIDs, op.Operation.ID)
+				newerExist = true
+			}
+
+			break
+		}
+
+		if num == 0 || errFound {
+			r.log.Errorf("when getting operations by instanceID %s: %v", instanceID, err)
+			err = errors.Wrapf(err, "when getting operations by instanceID %s", instanceID)
+			return nil, nil, err
+		}
+
+		if newerExist {
 			continue
 		}
 
@@ -212,6 +251,7 @@ func (r *Retryer) latestUpgradeClusterOperationValidate(orchestrationID string, 
 
 	for _, op := range ops {
 		instanceID := op.InstanceID
+
 		clusterOps, err := r.operations.ListUpgradeClusterOperationsByInstanceID(instanceID)
 		if err != nil {
 			// fail for listing operations of one instance, then http return and report fail
@@ -219,8 +259,36 @@ func (r *Retryer) latestUpgradeClusterOperationValidate(orchestrationID string, 
 			err = errors.Wrapf(err, "when getting operations by instanceID %s", instanceID)
 			return nil, nil, err
 		}
-		if len(clusterOps) > 0 && op.Operation.ID != clusterOps[0].Operation.ID {
-			oldIDs = append(oldIDs, op.Operation.ID)
+
+		var errFound, newerExist bool
+		num := len(clusterOps)
+
+		for i := num - 1; i >= 0; i-- {
+			if op.Operation.ID != clusterOps[i].Operation.ID {
+				if num == 1 {
+					errFound = true
+					break
+				}
+
+				// not consider 'canceled' newer op as the conflict
+				if clusterOps[i].State == commonOrchestration.Canceled {
+					continue
+				}
+
+				oldIDs = append(oldIDs, op.Operation.ID)
+				newerExist = true
+			}
+
+			break
+		}
+
+		if num == 0 || errFound {
+			r.log.Errorf("when getting operations by instanceID %s: %v", instanceID, err)
+			err = errors.Wrapf(err, "when getting operations by instanceID %s", instanceID)
+			return nil, nil, err
+		}
+
+		if newerExist {
 			continue
 		}
 

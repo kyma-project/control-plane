@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -71,24 +72,26 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 	return op.RuntimeOperation, err
 }
 
-func (u *upgradeClusterFactory) ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
-	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.InProgress, orchestration.Pending}})
+func (u *upgradeClusterFactory) ResumeOperations(orchestrationID string, states []string) ([]orchestration.RuntimeOperation, error) {
+	result := []orchestration.RuntimeOperation{}
+
+	ops, _, len, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: states})
 	if err != nil {
 		return nil, err
 	}
 
-	pending := make([]orchestration.RuntimeOperation, 0)
-	inProgress := make([]orchestration.RuntimeOperation, 0)
+	fmt.Printf("---------resume------ %+v\n", len)
+
 	for _, op := range ops {
-		if op.State == orchestration.Pending {
-			pending = append(pending, op.RuntimeOperation)
-		}
-		if op.State == orchestration.InProgress {
-			inProgress = append(inProgress, op.RuntimeOperation)
+		for _, state := range states {
+			if string(op.State) == state {
+				result = append(result, op.RuntimeOperation)
+				break
+			}
 		}
 	}
 
-	return append(inProgress, pending...), nil
+	return result, nil
 }
 
 func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
@@ -101,7 +104,49 @@ func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 		op.Description = "Operation was canceled"
 		_, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
 		if err != nil {
-			return errors.Wrap(err, "while updating upgrade kyma operation")
+			return errors.Wrap(err, "while updating upgrade cluster operation")
+		}
+	}
+
+	return nil
+}
+
+func (u *upgradeClusterFactory) UpdateRetryingOperations(rt orchestration.RuntimeOperation) (orchestration.RuntimeOperation, error) {
+	fmt.Println("------------in UpdateRetryingOperations----------")
+	op, err := u.operationStorage.GetUpgradeClusterOperationByID(rt.ID)
+	if err != nil {
+		return orchestration.RuntimeOperation{}, err
+	}
+
+	op.MaintenanceWindowBegin = rt.MaintenanceWindowBegin
+	op.MaintenanceWindowEnd = rt.MaintenanceWindowEnd
+	op.MaintenanceDays = rt.MaintenanceDays
+	op.UpdatedAt = time.Now()
+	op.Description = "Operation retry triggered"
+	op.State = orchestration.Pending
+
+	opUpdated, err := u.operationStorage.UpdateUpgradeClusterOperation(*op)
+	if err != nil {
+		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) operation %s in storage", rt.ID)
+	}
+
+	return opUpdated.RuntimeOperation, nil
+}
+
+func (u *upgradeClusterFactory) ConvertRetryingToPendingOperations(orchestrationID string) error {
+	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
+	if err != nil {
+		return errors.Wrap(err, "while listing retrying operations")
+	}
+
+	fmt.Printf("---------ConvertRetryingToPendingOperations------ %+v\n", ops)
+
+	for _, op := range ops {
+		op.State = orchestration.Pending
+		op.Description = "Operation retry triggered"
+		_, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
+		if err != nil {
+			return errors.Wrap(err, "while updating upgrade cluster operation")
 		}
 	}
 

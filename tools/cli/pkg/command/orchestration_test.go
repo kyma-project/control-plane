@@ -2,6 +2,7 @@ package command
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -31,6 +32,21 @@ func TestShowOperationDetailsOutput(t *testing.T) {
 
 }
 
+func TestRetryOrchestrationOutput(t *testing.T) {
+	fixID := "orchestration_id_0"
+	rr := fixRetryOrchestrationResponse(fixID)
+
+	funcMap := template.FuncMap{
+		"stringsJoin": strings.Join,
+	}
+	tmpl, err := template.New("retryOrchestration").Funcs(funcMap).Parse(retryOchestrationTpl)
+	require.NoError(t, err)
+
+	err = tmpl.Execute(os.Stdout, rr)
+	require.NoError(t, err)
+
+}
+
 func fixOrchestrationCommand() *OrchestrationCommand {
 	cmd := OrchestrationCommand{}
 	cmd.operations = []string{"operation_id_0", "operation_id_1"}
@@ -57,4 +73,14 @@ func fixOperationDetailResponse(ids []string, orchestrationID string) []orchestr
 		})
 	}
 	return odrs
+}
+
+func fixRetryOrchestrationResponse(orchestrationID string) orchestration.RetryResponse {
+	return orchestration.RetryResponse{
+		OrchestrationID:   orchestrationID,
+		RetryOperations:   []string{"id-2"},
+		OldOperations:     []string{"id-0"},
+		InvalidOperations: []string{"id-1", "id-3", "id-10"},
+		Msg:               "retry operations are queued for processing",
+	}
 }

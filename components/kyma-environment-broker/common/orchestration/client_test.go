@@ -257,8 +257,8 @@ func TestClient_RetryOrchestration(t *testing.T) {
 	t.Run("test_URL_NoError_path", func(t *testing.T) {
 		// given
 		called := 0
-		operations := []string{"operation_id_0", "operation_id_1"}
-		// operations := []string{}
+		operationIDs := []string{"operation_id_0", "operation_id_1"}
+		ids := []string{}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++
 			assert.Equal(t, http.MethodPost, r.Method)
@@ -266,29 +266,44 @@ func TestClient_RetryOrchestration(t *testing.T) {
 			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
 			assert.Equal(t, "application/x-www-form-urlencoded", r.Header.Get("Content-Type"))
 
+			for _, id := range operationIDs {
+				ids = append(ids, "operation-id="+id)
+			}
+
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(r.Body)
 			body := buf.String()
-			assert.Equal(t, strings.Join(operations, "&"), body)
+			assert.Equal(t, strings.Join(operationIDs, "&"), body)
+
+			err := respondRetry(w, orch1.OrchestrationID, operationIDs)
+			require.NoError(t, err)
 
 		}))
 		defer ts.Close()
 		client := NewClient(context.TODO(), ts.URL, fixToken)
+		expectedRr := RetryResponse{
+			OrchestrationID: orch1.OrchestrationID,
+			RetryOperations: operationIDs,
+			Msg:             "retry operations are queued for processing",
+		}
 
 		// when
-		err := client.RetryOrchestration(orch1.OrchestrationID, operations)
+		rr, err := client.RetryOrchestration(orch1.OrchestrationID, operationIDs)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, 1, called)
+		assert.Equal(t, expectedRr, rr)
 
 		// when
-		operations = nil
-		err = client.RetryOrchestration(orch1.OrchestrationID, operations)
+		operationIDs = nil
+		expectedRr.RetryOperations = []string{"operation-ID-3", "operation-ID-4"}
+		rr, err = client.RetryOrchestration(orch1.OrchestrationID, operationIDs)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, 2, called)
+		assert.Equal(t, expectedRr, rr)
 	})
 }
 
@@ -387,6 +402,31 @@ func respondUpgrade(w http.ResponseWriter, orchestrationID string) error {
 		OrchestrationID: orchestrationID,
 	}
 	data, err := json.Marshal(ur)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	_, err = w.Write(data)
+	return err
+}
+
+func respondRetry(w http.ResponseWriter, orchestrationID string, operationIDs []string) error {
+	rr := RetryResponse{
+		OrchestrationID: orchestrationID,
+	}
+
+	if len(operationIDs) == 0 {
+		rr.RetryOperations = []string{"operation-ID-3", "operation-ID-4"}
+		rr.Msg = "retry operations are queued for processing"
+	} else {
+		rr.RetryOperations = operationIDs
+		rr.Msg = "retry operations are queued for processing"
+	}
+
+	data, err := json.Marshal(rr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return err

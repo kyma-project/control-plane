@@ -129,10 +129,8 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		fmt.Println(r.Form)
 		operationIDs = r.Form["operation-id"]
 	}
-	fmt.Println(operationIDs)
 
 	o, err := h.orchestrations.GetByID(orchestrationID)
 	if err != nil {
@@ -164,7 +162,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 
 		if len(h.retryer.resp.RetryOperations) == 0 {
 			h.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
-			httputil.WriteResponse(w, http.StatusNoContent, h.retryer.resp)
+			httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
 			return
 		}
 
@@ -185,7 +183,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 
 		if len(h.retryer.resp.RetryOperations) == 0 {
 			h.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
-			httputil.WriteResponse(w, http.StatusNoContent, h.retryer.resp)
+			httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
 			return
 		}
 
@@ -194,6 +192,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 		return
 	}
 
+	h.retryer.resp.Msg = "retry operations are queued for processing"
 	httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
 
 }

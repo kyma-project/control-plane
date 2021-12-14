@@ -134,7 +134,7 @@ Operations:
 `
 
 var operationsDetailsTpl = `{{- range $i, $t := . }}
-Operation ID:       {{.OperationID}}
+Operation ID:       {{- range $i, $s := .RetryOperations }}
 Orchestration ID:   {{.OrchestrationID}}
 Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
@@ -150,11 +150,18 @@ Kyma Version:       {{with .KymaConfig}}{{.Version}}{{end}}
 {{end}}
 `
 
+var retryOchestrationTpl = `Orchestration ID:   {{.OrchestrationID}}
+Retry Operations:   {{ stringsJoin .RetryOperations ", " }}
+Old Operations:     {{ stringsJoin .OldOperations ", " }}
+Invalid Operations: {{ stringsJoin .InvalidOperations ", " }}
+Message:            {{ .Msg }}
+`
+
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
 func NewOrchestrationCmd() *cobra.Command {
 	cmd := OrchestrationCommand{}
 	cobraCmd := &cobra.Command{
-		Use:     "orchestrations [id] [ops|operations] [cancel]",
+		Use:     "orchestrations [id] [ops|operations] [cancel] [retry]",
 		Aliases: []string{"orchestration", "o"},
 		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
 		Long: `Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
@@ -163,14 +170,18 @@ The command has the following modes:
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
       If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.
   - When specifying an orchestration ID and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
-  - When specifying an orchestration ID and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.`,
-		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
+  - When specifying an orchestration ID and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.
+  - When specifying an orchestration ID and ` + "`retry`" + ` as arguments. In this mode, the command retries all failed Runtime operations of the given orchestration. The ` + "`retry` " + `command only applies to the failed or in progress orchestration.
+      If the optional --operation flag is provided, it retries the specified Runtime operation of the given orchestration.`,
+		Example: `  kcp orchestrations --state inprogress                                              Display all orchestrations which are in progress.
   kcp orchestration -o custom="Orchestration ID:{.OrchestrationID},STATE:{.State},CREATED AT:{.createdAt}"
-                                                                          Display all orchestations with specific custom fields.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel           Cancel the given orchestration.`,
+                                                                                     Display all orchestations with specific custom fields.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                             Display details about a specific orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID1,OID2       Display details of the specified Runtime operation within the orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations                  Display the operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel                      Cancel the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry                       Retry all failed operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration.`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -431,7 +442,23 @@ func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) erro
 		return nil
 	}
 
-	return cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
+	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
+	if err != nil {
+		return errors.Wrap(err, "while triggering retrying orchestration")
+	}
+
+	// Print retry orchestration response via template
+	funcMap := template.FuncMap{"stringsJoin": strings.Join}
+	tmpl, err := template.New("retryOrchestration").Funcs(funcMap).Parse(retryOchestrationTpl)
+	if err != nil {
+		return errors.Wrap(err, "while parsing retry orchestration response template")
+	}
+	err = tmpl.Execute(os.Stdout, rr)
+	if err != nil {
+		return errors.Wrap(err, "while printing retry orchestration response")
+	}
+
+	return nil
 }
 
 // Currently only orchestrations of type "kyma upgrade" are supported,
