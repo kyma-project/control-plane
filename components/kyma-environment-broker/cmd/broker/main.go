@@ -767,7 +767,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
 			stage:     "runtime",
@@ -782,7 +782,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "runtime",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
 			stage: "check",
