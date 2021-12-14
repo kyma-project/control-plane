@@ -319,7 +319,7 @@ func determineKymaVersion(pOprs []internal.ProvisioningOperation, uOprs []intern
 	//   - is not dry-run
 	//   - is created after the last provisioning operation
 	//   - has the kyma version set
-	//   - the has been processed, i.e. not pending, canceling or canceled
+	//   - has been processed, i.e. not pending, canceling or canceled
 	// Use the last provisioning kyma version if no such upgrade operation was found, or the processed upgrade happened before the last provisioning operation.
 	for _, u := range uOprs {
 		if !u.DryRun && u.CreatedAt.After(kymaVersionSetAt) && u.RuntimeVersion.Version != "" && u.State != orchestration.Pending && u.State != orchestration.Canceling && u.State != orchestration.Canceled {
