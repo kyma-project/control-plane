@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,16 +16,18 @@ const (
 )
 
 type SCMigrationStep struct {
-	components input.ComponentListProvider
+	operationManager *process.UpdateOperationManager
+	components       input.ComponentListProvider
 }
 
 type SCMigrationFinalizationStep struct {
 	reconcilerClient reconciler.Client
 }
 
-func NewSCMigrationStep(components input.ComponentListProvider) *SCMigrationStep {
+func NewSCMigrationStep(os storage.Operations, components input.ComponentListProvider) *SCMigrationStep {
 	return &SCMigrationStep{
-		components: components,
+		operationManager: process.NewUpdateOperationManager(os),
+		components:       components,
 	}
 }
 
@@ -46,7 +50,7 @@ func (s *SCMigrationStep) Run(operation internal.UpdatingOperation, logger logru
 	}
 	c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion)
 	if err != nil {
-		return operation, 0, err
+		return s.operationManager.OperationFailed(operation, err.Error(), logger)
 	}
 	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
 	operation.RequiresReconcilerUpdate = true
