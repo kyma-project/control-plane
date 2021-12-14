@@ -30,5 +30,5 @@ spec:
             - name: gardener-kubeconfig
               secret:
                 secretName: {{ .Values.gardener.secretName }}
-  schedule: '*/10 * * * *'
+  schedule: '0 2 * * *'
 status: {}
