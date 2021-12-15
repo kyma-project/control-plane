@@ -33,6 +33,6 @@ func ForMigration(op internal.UpdatingOperation) bool {
 	return op.InstanceDetails.SCMigrationTriggered && op.RuntimeVersion.MajorVersion == 2
 }
 
-func ForContainsReconcilerClusterConfigVersion(op internal.UpdatingOperation) bool {
-	return op.ClusterConfigurationVersion != 0
+func CheckReconcilerStatus(op internal.UpdatingOperation) bool {
+	return op.CheckReconcilerStatus
 }
