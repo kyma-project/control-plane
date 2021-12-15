@@ -140,8 +140,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 	}
 
 	filter := dbmodel.OperationFilter{
-		// For optional filters, zero value (nil) is ok if not supplied
-		States: []string{commonOrchestration.Failed, commonOrchestration.InProgress},
+		States: []string{commonOrchestration.Failed},
 	}
 
 	switch o.Type {

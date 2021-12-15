@@ -744,15 +744,19 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err := db.Operations().GetOperationByID("id-0")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Pending, string(op.State))
+		assert.Equal(t, orchestration.InProgress, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-1")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Succeeded, string(op.State))
+		assert.Equal(t, orchestration.Pending, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
 		assert.Equal(t, orchestration.Retrying, string(op.State))
+
+		op, err = db.Operations().GetOperationByID("id-3")
+		require.NoError(t, err)
+		assert.Equal(t, orchestration.Succeeded, string(op.State))
 	})
 }
 
@@ -822,17 +826,21 @@ func fixFailedOrchestrationOperations(db storage.BrokerStorage, orchestrationID 
 }
 
 func fixInProgressOrchestrationOperations(db storage.BrokerStorage, orchestrationID string) error {
-	operationIDs := []string{"id-0", "id-1", "id-2"} // in order: pending, succeeded, failed
+	operationIDs := []string{"id-0", "id-1", "id-2", "id-3"} // in order: in progress, pending, failed, succeeded
 	operations := []internal.UpgradeClusterOperation{}
 
 	for i, id := range operationIDs {
 		operations = append(operations, fixture.FixUpgradeClusterOperation(id, "instance-"+id))
 		operations[i].OrchestrationID = orchestrationID
-		if i%3 == 0 {
+		if (i+4)%4 == 0 {
+			operations[i].State = orchestration.InProgress
+			continue
+		}
+		if (i+4)%5 == 0 {
 			operations[i].State = orchestration.Pending
 			continue
 		}
-		if i%2 == 0 {
+		if (i+4)%6 == 0 {
 			operations[i].State = orchestration.Failed
 		}
 
