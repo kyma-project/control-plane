@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -75,12 +74,10 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 func (u *upgradeClusterFactory) ResumeOperations(orchestrationID string, states []string) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 
-	ops, _, len, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: states})
+	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: states})
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("---------resume------ %+v\n", len)
 
 	for _, op := range ops {
 		for _, state := range states {
@@ -112,7 +109,6 @@ func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 }
 
 func (u *upgradeClusterFactory) UpdateRetryingOperations(rt orchestration.RuntimeOperation) (orchestration.RuntimeOperation, error) {
-	fmt.Println("------------in UpdateRetryingOperations----------")
 	op, err := u.operationStorage.GetUpgradeClusterOperationByID(rt.ID)
 	if err != nil {
 		return orchestration.RuntimeOperation{}, err
@@ -138,8 +134,6 @@ func (u *upgradeClusterFactory) ConvertRetryingToPendingOperations(orchestration
 	if err != nil {
 		return errors.Wrap(err, "while listing retrying operations")
 	}
-
-	fmt.Printf("---------ConvertRetryingToPendingOperations------ %+v\n", ops)
 
 	for _, op := range ops {
 		op.State = orchestration.Pending
