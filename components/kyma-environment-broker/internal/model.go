@@ -93,11 +93,11 @@ func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeV
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	defaultMajorVerNum := determineMajorVersion(version)
+	defaultMajorVerNum := DetermineMajorVersion(version)
 	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
 }
 
-func determineMajorVersion(version string) int {
+func DetermineMajorVersion(version string) int {
 	splitVer := strings.Split(version, ".")
 	majorVerNum, _ := strconv.Atoi(splitVer[0])
 	return majorVerNum
@@ -265,6 +265,8 @@ type InstanceDetails struct {
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
+
+	SCMigrationTriggered bool `json:"migration_triggered"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -339,10 +341,18 @@ type DeprovisioningOperation struct {
 type UpdatingOperation struct {
 	Operation
 
+	RuntimeVersion     RuntimeVersionData    `json:"runtime_version"`
 	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
+
+	// Last runtime state payload
+	LastRuntimeState RuntimeState `json:"-"`
+
+	// Flag used by the steps regarding Service Catalog migration
+	// denotes whether the payload to reconciler differs from last runtime state
+	RequiresReconcilerUpdate bool `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation

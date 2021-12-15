@@ -9,6 +9,10 @@ spec:
   selector:
     matchLabels:
     {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  {{- with .Values.deployment.strategy }}
+  strategy:
+{{ toYaml . | indent 4 }}
+  {{- end }}
   replicas: {{ .Values.deployment.replicasCount }}
   template:
     metadata:
@@ -141,7 +145,7 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
         - name: fluentbit-config
-          mountPath: /fluent-bit/etc/    
+          mountPath: /fluent-bit/etc/
       {{- end }}
       volumes:
       {{- if eq .Values.global.database.embedded.enabled false }}

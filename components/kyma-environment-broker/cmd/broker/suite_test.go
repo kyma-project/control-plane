@@ -151,7 +151,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
@@ -545,7 +545,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping, nil)
 
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
@@ -872,12 +872,6 @@ func sharedSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("shared-%s", ht)
 }
 
-func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
-	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	assert.NoError(s.t, err)
-	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
 func fixConfig() *Config {
 	return &Config{
 		DbInMemory:                         true,
@@ -896,7 +890,8 @@ func fixConfig() *Config {
 		KymaVersion:        "1.24.7",
 		KymaPreviewVersion: "2.0",
 
-		EnableOnDemandVersion: true,
+		EnableOnDemandVersion:      true,
+		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "preview"},
 		},

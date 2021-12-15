@@ -12,6 +12,7 @@ deploy-reconciler:
 		--set mothership-reconciler.db.reconcilerPassword=test --set postgresql.postgresqlPassword=test --set postgresql.persistence.enabled=false \
 		--set global.mothership_reconciler.auditlog.useTestConfig=true --set global.mothership_reconciler.auditlog.persistence.enabled=false \
 		--set postgresql.initdbScriptsConfigMap=reconciler-postgresql-db-init \
+		--set postgresql.persistence.enabled=true \
 		--set migratorJobs.enabled=false ../../resources/kcp > reconciler.yaml
 	kubectl apply -f reconciler.yaml
 	rm reconciler.yaml

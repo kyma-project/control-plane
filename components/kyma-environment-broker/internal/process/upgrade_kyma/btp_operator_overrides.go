@@ -4,12 +4,11 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+
 	"github.com/sirupsen/logrus"
 )
 
-const BTPOperatorComponentName = "btp-operator"
+var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
 
 type BTPOperatorOverridesStep struct{}
 
@@ -22,29 +21,17 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	sm := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
-	overrides := []*gqlschema.ConfigEntryInput{
-		{
-			Key:    "manager.secret.clientid",
-			Value:  sm.ClientID,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:    "manager.secret.clientsecret",
-			Value:  sm.ClientSecret,
-			Secret: ptr.Bool(true),
-		},
-		{
-			Key:   "manager.secret.url",
-			Value: sm.ServiceManagerURL,
-		},
-		{
-			Key:   "manager.secret.tokenurl",
-			Value: sm.URL,
-		},
+	if operation.InstanceDetails.SCMigrationTriggered {
+		cm := ConfigMapGetter(operation.InstanceDetails.Kubeconfig)
+		internal.CreateBTPOperatorUpdateInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, cm)
+	} else {
+		internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
 	}
-	operation.InputCreator.AppendOverrides(BTPOperatorComponentName, overrides)
-	operation.InputCreator.EnableOptionalComponent(BTPOperatorComponentName)
-
+	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
+	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	return operation, 0, nil
 }

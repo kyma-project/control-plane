@@ -122,6 +122,7 @@ type Config struct {
 	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
+	EnableBTPOperatorMigration                 bool   `envconfig:"default=true"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -327,7 +328,7 @@ func main() {
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping, db.RuntimeStates())
 
 	// run queues
 	const workersAmount = 5
@@ -342,7 +343,8 @@ func main() {
 		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
-	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, logs)
+	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
+		runtimeProvider, reconcilerClient, cfg, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -438,7 +440,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
 		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, planDefaults, logs),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(cfg.Broker, db.Instances(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, updateQueue, planDefaults, logs),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.RuntimeStates(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, updateQueue, planDefaults, logs),
 		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
@@ -684,10 +686,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
-		{
-			stage: checkKymaStageName,
-			step:  provisioning.NewCheckDashboardURLStep(db.Operations(), directorClient, cfg.Provisioner.ProvisioningTimeout),
-		},
 		// post actions
 		{
 			stage: postActionsStageName,
@@ -714,13 +712,93 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 }
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
-	provisionerClient provisioner.Client, publisher event.Publisher, logs logrus.FieldLogger) *process.Queue {
+	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, logs logrus.FieldLogger) *process.Queue {
 
-	manager.DefineStages([]string{"cluster", "check"})
-	manager.AddStep("cluster", update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory))
-	manager.AddStep("cluster", update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient))
-	manager.AddStep("check", update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute))
+	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
+		if cfg.EnableBTPOperatorMigration {
+			return c
+		}
+		return func(o internal.UpdatingOperation) bool {
+			return false
+		}
+	}
 
+	btpMigrationEnabled := func(o internal.UpdatingOperation) bool {
+		return cfg.EnableBTPOperatorMigration
+	}
+
+	manager.DefineStages([]string{"cluster", "runtime", "check"})
+	updateSteps := []struct {
+		stage     string
+		step      update.Step
+		condition update.StepCondition
+	}{
+		{
+			stage: "cluster",
+			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
+		},
+		{
+			stage: "cluster",
+			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			condition: btpMigrationEnabled,
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewSCMigrationStep(runtimeProvider),
+			condition: ifBTPMigrationEnabled(update.ForMigration),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdate),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewCheckReconcilerState(reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.ForMigration),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
+		},
+		{
+			stage:     "runtime",
+			step:      update.NewCheckReconcilerState(reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+		},
+		{
+			stage: "check",
+			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+		},
+	}
+
+	for _, step := range updateSteps {
+		err := manager.AddStep(step.stage, step.step, step.condition)
+		if err != nil {
+			fatalOnError(err)
+		}
+	}
 	queue := process.NewQueue(manager, logs)
 	queue.Run(ctx.Done(), workersAmount)
 

@@ -11,6 +11,8 @@ import (
 const (
 	StatusDeleteError Status = "delete_error"
 
+	StatusDeleteErrorRetryable Status = "delete_error_retryable"
+
 	StatusDeletePending Status = "delete_pending"
 
 	StatusDeleted Status = "deleted"
@@ -22,6 +24,8 @@ const (
 	StatusReady Status = "ready"
 
 	StatusReconcileDisabled Status = "reconcile_disabled"
+
+	StatusReconcileErrorRetryable Status = "reconcile_error_retryable"
 
 	StatusReconcilePending Status = "reconcile_pending"
 
@@ -185,8 +189,11 @@ type PostOperationsSchedulingIDCorrelationIDStopJSONBody OperationStop
 
 // GetReconciliationsParams defines parameters for GetReconciliations.
 type GetReconciliationsParams struct {
-	RuntimeID *[]string `json:"runtimeID,omitempty"`
-	Status    *[]Status `json:"status,omitempty"`
+	RuntimeID *[]string  `json:"runtimeID,omitempty"`
+	Before    *time.Time `json:"before,omitempty"`
+	After     *time.Time `json:"after,omitempty"`
+	Last      *int       `json:"last,omitempty"`
+	Status    *[]Status  `json:"status,omitempty"`
 }
 
 // PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.

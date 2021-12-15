@@ -2,8 +2,10 @@ package runtime
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -194,6 +196,7 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching upgrade kyma operation for instance")
 	}
+	dto.KymaVersion = determineKymaVersion(provOprs, ukOprs)
 	ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 	h.converter.ApplyUpgradingKymaOperations(dto, ukOprs, totalCount)
 
@@ -300,6 +303,34 @@ func (h *Handler) setRuntimeOptionalAttributes(instance internal.Instance, dto *
 	}
 
 	return nil
+}
+
+func determineKymaVersion(pOprs []internal.ProvisioningOperation, uOprs []internal.UpgradeKymaOperation) string {
+	kymaVersion := ""
+	kymaVersionSetAt := time.Time{}
+
+	// Set kyma version from the last provisioning operation
+	if len(pOprs) != 0 {
+		kymaVersion = pOprs[0].RuntimeVersion.Version
+		kymaVersionSetAt = pOprs[0].CreatedAt
+	}
+
+	// Take the last upgrade kyma operation which
+	//   - is not dry-run
+	//   - is created after the last provisioning operation
+	//   - has the kyma version set
+	//   - has been processed, i.e. not pending, canceling or canceled
+	// Use the last provisioning kyma version if no such upgrade operation was found, or the processed upgrade happened before the last provisioning operation.
+	for _, u := range uOprs {
+		if !u.DryRun && u.CreatedAt.After(kymaVersionSetAt) && u.RuntimeVersion.Version != "" && u.State != orchestration.Pending && u.State != orchestration.Canceling && u.State != orchestration.Canceled {
+			kymaVersion = u.RuntimeVersion.Version
+			break
+		} else if u.CreatedAt.Before(kymaVersionSetAt) {
+			break
+		}
+	}
+
+	return kymaVersion
 }
 
 func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {

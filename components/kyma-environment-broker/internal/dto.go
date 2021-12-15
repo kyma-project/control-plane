@@ -170,6 +170,7 @@ type ERSContext struct {
 	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
+	IsMigration           bool                               `json:"isMigration"`
 }
 
 type ServiceManagerEntryDTO struct {
