@@ -7,6 +7,6 @@ type Cipher interface {
 	Decrypt(text []byte) ([]byte, error)
 
 	// methods used to encrypt/decrypt SM credentials
-	EncryptBasicAuth(pp *internal.ProvisioningParameters) error
-	DecryptBasicAuth(pp *internal.ProvisioningParameters) error
+	EncryptSMCreds(pp *internal.ProvisioningParameters) error
+	DecryptSMCreds(pp *internal.ProvisioningParameters) error
 }
