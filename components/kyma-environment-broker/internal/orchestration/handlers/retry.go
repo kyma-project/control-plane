@@ -64,7 +64,7 @@ func (r *Retryer) kymaUpgradeRetry(o *internal.Orchestration, opsByOrch []intern
 	ops, invalidIDs := r.kymaOrchestrationOperationsFilter(opsByOrch, operationIDs)
 	r.resp.InvalidOperations = invalidIDs
 	if len(ops) == 0 {
-		r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", o.OrchestrationID)
+		r.zeroValidOperationInfo(o.OrchestrationID)
 		return nil
 	}
 
@@ -81,7 +81,7 @@ func (r *Retryer) kymaUpgradeRetry(o *internal.Orchestration, opsByOrch []intern
 		r.resp.OldOperations = oldIDs
 
 		if len(ops) == 0 {
-			r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", o.OrchestrationID)
+			r.zeroValidOperationInfo(o.OrchestrationID)
 			return nil
 		}
 	}
@@ -89,6 +89,7 @@ func (r *Retryer) kymaUpgradeRetry(o *internal.Orchestration, opsByOrch []intern
 	for _, op := range ops {
 		r.resp.RetryOperations = append(r.resp.RetryOperations, op.Operation.ID)
 	}
+	r.resp.Msg = "retry operations are queued for processing"
 
 	err := r.stateUpdateForKymaUpgradeOperations(ops)
 	if err != nil {
@@ -114,7 +115,7 @@ func (r *Retryer) clusterUpgradeRetry(o *internal.Orchestration, opsByOrch []int
 	ops, invalidIDs := r.clusterOrchestrationOperationsFilter(opsByOrch, operationIDs)
 	r.resp.InvalidOperations = invalidIDs
 	if len(ops) == 0 {
-		r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", o.OrchestrationID)
+		r.zeroValidOperationInfo(o.OrchestrationID)
 		return nil
 	}
 
@@ -129,7 +130,7 @@ func (r *Retryer) clusterUpgradeRetry(o *internal.Orchestration, opsByOrch []int
 		r.resp.OldOperations = oldIDs
 
 		if len(ops) == 0 {
-			r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", o.OrchestrationID)
+			r.zeroValidOperationInfo(o.OrchestrationID)
 			return nil
 		}
 	}
@@ -137,6 +138,7 @@ func (r *Retryer) clusterUpgradeRetry(o *internal.Orchestration, opsByOrch []int
 	for _, op := range ops {
 		r.resp.RetryOperations = append(r.resp.RetryOperations, op.Operation.ID)
 	}
+	r.resp.Msg = "retry operations are queued for processing"
 
 	err := r.stateUpdateForClusterUpgradeOperations(ops)
 	if err != nil {
@@ -353,4 +355,9 @@ func (r *Retryer) clusterOrchestrationOperationsFilter(opsByOrch []internal.Upgr
 	}
 
 	return retOps, invalidIDs
+}
+
+func (r *Retryer) zeroValidOperationInfo(orchestrationID string) {
+	r.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
+	r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", orchestrationID)
 }

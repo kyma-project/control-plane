@@ -159,12 +159,6 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		if len(h.retryer.resp.RetryOperations) == 0 {
-			h.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
-			httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
-			return
-		}
-
 	case commonOrchestration.UpgradeClusterOrchestration:
 		allOps, _, _, err := h.operations.ListUpgradeClusterOperationsByOrchestrationID(o.OrchestrationID, filter)
 		if err != nil {
@@ -180,20 +174,12 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		if len(h.retryer.resp.RetryOperations) == 0 {
-			h.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
-			httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
-			return
-		}
-
 	default:
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("unsupported orchestration type: %s", o.Type))
 		return
 	}
 
-	h.retryer.resp.Msg = "retry operations are queued for processing"
 	httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
-
 }
 
 func (h *orchestrationHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {
