@@ -6,16 +6,20 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
 type CheckReconcilerState struct {
+	operationManager *process.UpdateOperationManager
 	reconcilerClient reconciler.Client
 }
 
-func NewCheckReconcilerState(reconcilerClient reconciler.Client) *CheckReconcilerState {
+func NewCheckReconcilerState(os storage.Operations, reconcilerClient reconciler.Client) *CheckReconcilerState {
 	return &CheckReconcilerState{
+		operationManager: process.NewUpdateOperationManager(os),
 		reconcilerClient: reconcilerClient,
 	}
 }
@@ -31,8 +35,7 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %v", err)
 		return operation, 1 * time.Minute, nil
 	} else if err != nil {
-		log.Errorf("Reconciler GetCluster method failed: %v", err)
-		return operation, 0, fmt.Errorf("unable to get cluster state: %v", err)
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 	switch state.Status {
 	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
@@ -41,11 +44,10 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 	case reconciler.ClusterStatusReady:
 		return operation, 0, nil
 	case reconciler.ClusterStatusError:
-		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
-		log.Warnf(errMsg)
-		return operation, 0, fmt.Errorf(errMsg)
+		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, state.PrettyFailures())
+		return s.operationManager.OperationFailed(operation, msg, log)
 	default:
-		log.Warnf("Unknown reconciler cluster state: %v", state.Status)
-		return operation, 0, fmt.Errorf("Reconciler error")
+		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, state.PrettyFailures())
+		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }
