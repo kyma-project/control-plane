@@ -59,7 +59,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		svc.ApplyParameters(input, internal.ProvisioningParameters{})
 
 		//then
-		assert.Equal(t, "westeurope", input.GardenerConfig.Region)
+		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
 	})
 
 	// when
@@ -89,7 +89,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Equal(t, "westeurope", input.GardenerConfig.Region)
+		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
 	})
 }
 
