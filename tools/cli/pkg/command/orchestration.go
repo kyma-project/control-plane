@@ -134,7 +134,7 @@ Operations:
 `
 
 var operationsDetailsTpl = `{{- range $i, $t := . }}
-Operation ID:       {{- range $i, $s := .RetryOperations }}
+Operation ID:       {{.OperationID}}
 Orchestration ID:   {{.OrchestrationID}}
 Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
