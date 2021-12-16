@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DefaultAzureRegion       = "westeurope"
+	DefaultAzureRegion       = "eastus"
 	DefaultAzureHAZonesCount = 3
 )
 
