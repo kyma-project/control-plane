@@ -120,7 +120,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
 			}
 			op.State = domain.InProgress
-			op.ClusterConfigurationVersion = 0
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil

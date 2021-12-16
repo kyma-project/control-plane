@@ -508,7 +508,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
 		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
@@ -516,7 +516,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 				return false, err
 			}
 			if state.Cluster != "" {
-				s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, ccv, reconciler.ReadyStatus)
+				s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, ccv, reconcilerApi.StatusReady)
 				return true, nil
 			}
 			return false, nil
@@ -614,8 +614,12 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
 	var upgradeKymaOp *internal.UpgradeKymaOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		upgradeKymaOp, _ = s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
-		if upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion != 0 {
+		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+		if err != nil {
+			return false, nil
+		}
+		if op.InstanceDetails.ClusterConfigurationVersion != 0 {
+			upgradeKymaOp = op
 			return true, nil
 		}
 		return false, nil

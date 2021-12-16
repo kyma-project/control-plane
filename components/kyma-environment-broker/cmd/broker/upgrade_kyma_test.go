@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -151,6 +150,15 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	suite.FinishUpdatingOperationByReconcilerBoth(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
+	// ensure component list after update is correct
+	i, err := suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after update")
+	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
+	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime after update")
+	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
+	assert.ElementsMatch(t, componentNames(rsu1.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
+
 	// run upgrade
 	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma", `
 {
@@ -170,7 +178,7 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 		]
 	},
 	"kyma": {
-		"kymaVersion": "2.0.0"
+		"version": "2.0.0"
 	}
 }`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
@@ -180,26 +188,10 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	require.NoError(t, err)
 
 	suite.FinishUpgradeKymaOperationByReconciler(upgradeKymaOperationID)
-	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
-		Version:        "2.0.0",
-		Profile:        "Production",
-		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
-	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
 
 	_, err = suite.db.Operations().GetUpgradeKymaOperationByID(upgradeKymaOperationID)
 	require.NoError(t, err)
-
-	// ensure component list after update is correct
-	i, err := suite.db.Instances().GetByID(id)
-	assert.NoError(t, err, "getting instance after update")
-	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
-	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
-	assert.NoError(t, err, "getting runtime after update")
-	assert.NotEqual(t, rsu1.ID, rsu1.ID, "runtime_state ID from update should differ runtime_state ID from update")
-	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
-	assert.ElementsMatch(t, componentNames(rsu1.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 
 	// ensure component list after upgrade didn't get changed
 	i, err = suite.db.Instances().GetByID(id)
@@ -208,6 +200,6 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	rsu2, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime after upgrade")
 	assert.NotEqual(t, rsu1.ID, rsu2.ID, "runtime_state ID from update should differ runtime_state ID from upgrade")
-	assert.Equal(t, updateOperationID, rsu2.OperationID, "runtime state upgrade operation ID")
+	assert.Equal(t, upgradeKymaOperationID, rsu2.OperationID, "runtime state upgrade operation ID")
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 }
