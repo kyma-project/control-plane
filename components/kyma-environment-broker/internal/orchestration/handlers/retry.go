@@ -359,5 +359,5 @@ func (r *Retryer) clusterOrchestrationOperationsFilter(opsByOrch []internal.Upgr
 
 func (r *Retryer) zeroValidOperationInfo(orchestrationID string) {
 	r.log.Infof("no valid operations to retry for orchestration %s", orchestrationID)
-	r.resp.Msg = fmt.Sprintf("no valid operations to retry for orchestration %s", orchestrationID)
+	r.resp.Msg = fmt.Sprintf("No valid operations to retry for orchestration %s", orchestrationID)
 }
