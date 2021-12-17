@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,12 +16,14 @@ const BTPOperatorComponentName = "btp-operator"
 var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
 
 type BTPOperatorOverridesStep struct {
-	components input.ComponentListProvider
+	operationManager *process.UpdateOperationManager
+	components       input.ComponentListProvider
 }
 
-func NewBTPOperatorOverridesStep(components input.ComponentListProvider) *BTPOperatorOverridesStep {
+func NewBTPOperatorOverridesStep(os storage.Operations, components input.ComponentListProvider) *BTPOperatorOverridesStep {
 	return &BTPOperatorOverridesStep{
-		components: components,
+		operationManager: process.NewUpdateOperationManager(os),
+		components:       components,
 	}
 }
 
@@ -36,7 +40,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	}
 	c, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
 	if err != nil {
-		return operation, 0, err
+		return s.operationManager.OperationFailed(operation, err.Error(), logger)
 	}
 	if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
 		logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)

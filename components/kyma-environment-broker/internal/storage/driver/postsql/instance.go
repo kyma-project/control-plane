@@ -340,7 +340,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 	if err != nil {
 		return internal.Instance{}, errors.Wrap(err, "while unmarshal parameters")
 	}
-	err = s.cipher.DecryptBasicAuth(&params)
+	err = s.cipher.DecryptSMCreds(&params)
 	if err != nil {
 		return internal.Instance{}, errors.Wrap(err, "while decrypting parameters")
 	}
@@ -424,7 +424,7 @@ func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error
 }
 
 func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDTO, error) {
-	err := s.cipher.EncryptBasicAuth(&instance.Parameters)
+	err := s.cipher.EncryptSMCreds(&instance.Parameters)
 	if err != nil {
 		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting parameters")
 	}

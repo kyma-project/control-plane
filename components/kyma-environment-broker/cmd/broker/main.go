@@ -754,12 +754,12 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewBTPOperatorOverridesStep(runtimeProvider),
+			step:      update.NewBTPOperatorOverridesStep(db.Operations(), runtimeProvider),
 			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewSCMigrationStep(runtimeProvider),
+			step:      update.NewSCMigrationStep(db.Operations(), runtimeProvider),
 			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
@@ -769,8 +769,8 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewCheckReconcilerState(reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
 			stage:     "runtime",
@@ -784,8 +784,8 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewCheckReconcilerState(reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForContainsReconcilerClusterConfigVersion),
+			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
+			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
 			stage: "check",

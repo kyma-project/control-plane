@@ -341,8 +341,9 @@ type DeprovisioningOperation struct {
 type UpdatingOperation struct {
 	Operation
 
-	RuntimeVersion     RuntimeVersionData    `json:"runtime_version"`
-	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
+	RuntimeVersion        RuntimeVersionData    `json:"runtime_version"`
+	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
+	CheckReconcilerStatus bool                  `json:"check_reconciler_status"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
