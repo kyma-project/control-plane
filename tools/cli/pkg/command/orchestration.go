@@ -416,7 +416,7 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending], sr.OperationStats[orchestration.InProgress])
+	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
 	fmt.Print("Do you want to continue? (Y/N) ")
 	scanner.Scan()
 	if scanner.Text() != "Y" {
