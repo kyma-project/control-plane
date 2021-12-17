@@ -234,39 +234,3 @@ environmentsCleanup:
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
-
-e2e:
-  enabled: true
-  provisioning:
-    timeout: "105m"
-  deprovisioning:
-    timeout: "90m"
-  tenant:
-    id: "d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"
-  aws:
-    configName: "e2e-runtime-config-aws"
-    planID: "361c511f-f939-4621-b228-d0fb79a1fe15"
-  azure:
-    configName: "e2e-runtime-config-azure"
-    planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-  free_aws:
-    configName: "e2e-runtime-config-free-aws"
-    planID: "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
-  free_azure:
-    configName: "e2e-runtime-config-free-azure"
-    planID: "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
-  gcp:
-    configName: "e2e-runtime-config-gcp"
-    planID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-  trial:
-    configName: "e2e-runtime-config-suspension"
-    planID: "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
-  skr:
-    configName: "e2e-runtime-config-skr"
-    planID: "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-  upgrade:
-    configName: "e2e-upgrade-runtime-config-azure"
-    timeout: "100m"
-  ha_aws:
-    configName: "e2e-runtime-config-ha-aws"
-    planID: "aecef2e6-49f1-4094-8433-eba0e135eb6a"
