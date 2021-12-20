@@ -381,62 +381,6 @@ func TestResolver_RollBackUpgradeOperation(t *testing.T) {
 	})
 }
 
-func TestResolver_UpgradeShoot(t *testing.T) {
-	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
-
-	upgradeShootInput := NewUpgradeShootInput()
-
-	t.Run("Should start shoot upgrade and return operation id", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		tenantUpdater := &validatorMocks.TenantUpdater{}
-
-		operation := &gqlschema.OperationStatus{
-			ID:        util.StringPtr(operationID),
-			Operation: gqlschema.OperationTypeUpgradeShoot,
-			State:     gqlschema.OperationStateInProgress,
-			Message:   util.StringPtr("Message"),
-			RuntimeID: util.StringPtr(runtimeID),
-		}
-
-		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
-		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
-		provisioningService.On("UpgradeGardenerShoot", runtimeID, upgradeShootInput).Return(operation, nil)
-
-		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
-
-		//when
-		status, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
-
-		//then
-		require.NoError(t, err)
-		require.NotNil(t, status)
-		require.NotNil(t, status.ID)
-		require.NotNil(t, status.RuntimeID)
-		assert.Equal(t, operation, status)
-	})
-
-	t.Run("Should return error when validation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		tenantUpdater := &validatorMocks.TenantUpdater{}
-
-		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
-		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
-
-		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
-
-		//when
-		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
-	})
-}
-
 func TestResolver_RuntimeStatus(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
@@ -552,7 +496,63 @@ func TestResolver_RuntimeOperationStatus(t *testing.T) {
 	})
 }
 
-func TestResolver_HibernateCluster(t *testing.T) {
+func TestResolver_UpgradeShoot(t *testing.T) {
+	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
+
+	upgradeShootInput := NewUpgradeShootInput()
+
+	t.Run("Should start shoot upgrade and return operation id", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		operation := &gqlschema.OperationStatus{
+			ID:        util.StringPtr(operationID),
+			Operation: gqlschema.OperationTypeUpgradeShoot,
+			State:     gqlschema.OperationStateInProgress,
+			Message:   util.StringPtr("Message"),
+			RuntimeID: util.StringPtr(runtimeID),
+		}
+
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
+		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(nil)
+		provisioningService.On("UpgradeGardenerShoot", runtimeID, upgradeShootInput).Return(operation, nil)
+
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+
+		//when
+		status, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
+		//then
+		require.NoError(t, err)
+		require.NotNil(t, status)
+		require.NotNil(t, status.ID)
+		require.NotNil(t, status.RuntimeID)
+		assert.Equal(t, operation, status)
+	})
+
+	t.Run("Should return error when validation fails", func(t *testing.T) {
+		//given
+		provisioningService := &mocks.Service{}
+		validator := &validatorMocks.Validator{}
+		tenantUpdater := &validatorMocks.TenantUpdater{}
+
+		validator.On("ValidateUpgradeShootInput", upgradeShootInput).Return(apperrors.BadRequest("error"))
+		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
+
+		resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
+
+		//when
+		_, err := resolver.UpgradeShoot(ctx, runtimeID, upgradeShootInput)
+
+		//then
+		require.Error(t, err)
+		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
+	})
+}
+
+func TestResolver_HibernateRuntime(t *testing.T) {
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
 
