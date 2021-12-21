@@ -36,7 +36,7 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 		if err != nil {
 			logger.Errorf("cannot get operation from storage: %s", err)
 			statusCode := http.StatusInternalServerError
-			if dberr.IsNotFound(err){
+			if dberr.IsNotFound(err) {
 				statusCode = http.StatusNotFound
 			}
 			return domain.LastOperation{}, apiresponses.NewFailureResponse(err, statusCode,
@@ -52,18 +52,19 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 	if err != nil {
 		logger.Errorf("cannot get operation from storage: %s", err)
 		statusCode := http.StatusInternalServerError
-		if dberr.IsNotFound(err){
+		if dberr.IsNotFound(err) {
 			statusCode = http.StatusNotFound
 		}
 		return domain.LastOperation{}, apiresponses.NewFailureResponse(err, statusCode,
 			fmt.Sprintf("while getting operation from storage"))
-		//return domain.LastOperation{}, errors.Wrapf(err, "while getting operation from storage")
 	}
 
 	if operation.InstanceID != instanceID {
 		err := errors.Errorf("operation does not exist")
-		return domain.LastOperation{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, err.Error())
+		logger.Errorf("%s", err.Error())
+		return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, err.Error())
 	}
+
 	return domain.LastOperation{
 		State:       operation.State,
 		Description: operation.Description,
