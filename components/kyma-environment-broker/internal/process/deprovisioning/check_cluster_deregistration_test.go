@@ -10,27 +10,29 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestCheckClusterDeregistrationStep(t *testing.T) {
 	for tn, tc := range map[string]struct {
-		State                string
+		State                contract.Status
 		ExpectedZeroDuration bool
 	}{
 		"Deleting (pending)": {
-			State:                reconciler.ClusterStatusDeletePending,
+			State:                contract.StatusDeletePending,
 			ExpectedZeroDuration: false,
 		},
 		"Deleting": {
-			State:                reconciler.ClusterStatusDeleting,
+			State:                contract.StatusDeleting,
 			ExpectedZeroDuration: false,
 		},
 		"Deleted": {
-			State:                reconciler.ClusterStatusDeleted,
+			State:                contract.StatusDeleted,
 			ExpectedZeroDuration: true,
 		},
 		"Delete error": {
-			State:                reconciler.ClusterStatusDeleteError,
+			State:                contract.StatusDeleteError,
 			ExpectedZeroDuration: true,
 		},
 	} {
@@ -40,11 +42,11 @@ func TestCheckClusterDeregistrationStep(t *testing.T) {
 			operation.ClusterConfigurationVersion = 1
 			operation.ClusterConfigurationDeleted = true
 			recClient := reconciler.NewFakeClient()
-			recClient.ApplyClusterConfig(reconciler.Cluster{
-				Cluster:      operation.RuntimeID,
-				RuntimeInput: reconciler.RuntimeInput{},
-				KymaConfig:   reconciler.KymaConfig{},
-				Metadata:     reconciler.Metadata{},
+			recClient.ApplyClusterConfig(contract.Cluster{
+				RuntimeID:    operation.RuntimeID,
+				RuntimeInput: contract.RuntimeInput{},
+				KymaConfig:   contract.KymaConfig{},
+				Metadata:     contract.Metadata{},
 				Kubeconfig:   "kubeconfig",
 			})
 			recClient.ChangeClusterState(operation.RuntimeID, 1, tc.State)

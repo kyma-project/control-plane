@@ -8,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestDeregisterClusterStep_Run(t *testing.T) {
@@ -19,8 +21,8 @@ func TestDeregisterClusterStep_Run(t *testing.T) {
 	op.ClusterConfigurationVersion = 1
 	memoryStorage.Operations().InsertDeprovisioningOperation(op)
 	op.RuntimeID = "runtime-id"
-	cli.ApplyClusterConfig(reconciler.Cluster{
-		Cluster: op.RuntimeID,
+	cli.ApplyClusterConfig(contract.Cluster{
+		RuntimeID: op.RuntimeID,
 	})
 
 	// when

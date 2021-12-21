@@ -12,12 +12,13 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ProvisionerInputCreator interface {
@@ -35,7 +36,7 @@ type ProvisionerInputCreator interface {
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
-	CreateClusterConfiguration() (reconciler.Cluster, error)
+	CreateClusterConfiguration() (contract.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
 	SetKubeconfig(kcfg string) ProvisionerInputCreator
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
@@ -398,7 +399,7 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	}
 }
 
-func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
+func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *contract.Cluster) RuntimeState {
 	return RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
@@ -418,7 +419,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
+	ClusterSetup  *contract.Cluster             `json:"clusterSetup,omitempty"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {

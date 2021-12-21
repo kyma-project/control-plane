@@ -10,6 +10,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type CheckReconcilerState struct {
@@ -38,16 +40,16 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 	switch state.Status {
-	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
+	case contract.StatusReconciling, contract.StatusReconcilePending, contract.StatusReconcileErrorRetryable:
 		log.Info("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusReady:
+	case contract.StatusReady:
 		return operation, 0, nil
-	case reconciler.ClusterStatusError:
-		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, state.PrettyFailures())
+	case contract.StatusError:
+		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, reconciler.PrettyFailures(state))
 		return s.operationManager.OperationFailed(operation, msg, log)
 	default:
-		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, state.PrettyFailures())
+		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, reconciler.PrettyFailures(state))
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

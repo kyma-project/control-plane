@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,11 +31,11 @@ func Test_RegisterCluster(t *testing.T) {
 		//then
 		assert.Equal(t, "/v1/clusters", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
-		err := json.NewEncoder(w).Encode(State{
+		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
 			Cluster:              requestedCluster.Cluster,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
+			Status:               contract.StatusReconcilePending,
 			StatusUrl:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.Cluster, strconv.FormatInt(fixConfigVersion, 10)),
 		})
 		require.NoError(t, err)
@@ -150,18 +151,18 @@ func Test_GetStatusChange(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/statusChanges/%s", fixClusterID, fixOffset), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode([]*StatusChange{
+		err := json.NewEncoder(w).Encode([]*contract.StatusChange{
 			{
-				Status:   ptr.String("ready"),
-				Duration: "40s",
+				Status:   contract.StatusReady,
+				Duration: int64(40 * time.Second),
 			},
 			{
-				Status:   ptr.String("reconciling"),
-				Duration: "10s",
+				Status:   contract.StatusReconciling,
+				Duration: int64(10 * time.Second),
 			},
 			{
-				Status:   ptr.String("reconcile_pending"),
-				Duration: "30s",
+				Status:   contract.StatusReconcilePending,
+				Duration: int64(30 * time.Second),
 			},
 		})
 		require.NoError(t, err)

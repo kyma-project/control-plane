@@ -12,6 +12,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 // CheckClusterConfigurationStep checks if the SKR configuration is applied (by reconciler)
@@ -55,12 +57,12 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	log.Debugf("Cluster configuration status %s", state.Status)
 
 	switch state.Status {
-	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
+	case contract.StatusReconciling, contract.StatusReconcilePending, contract.StatusReconcileErrorRetryable:
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusReady:
+	case contract.StatusReady:
 		return operation, 0, nil
-	case reconciler.ClusterStatusError:
-		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
+	case contract.StatusError:
+		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
 		return s.operationManager.OperationFailed(operation, errMsg, log)
 	default:

@@ -8,6 +8,8 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/sirupsen/logrus"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type CheckClusterDeregistrationStep struct {
@@ -52,12 +54,12 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	log.Debugf("Cluster configuration status %s", state.Status)
 
 	switch state.Status {
-	case reconciler.ClusterStatusDeletePending, reconciler.ClusterStatusDeleting:
+	case contract.StatusDeletePending, contract.StatusDeleting, contract.StatusDeleteErrorRetryable:
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusDeleted:
+	case contract.StatusDeleted:
 		return operation, 0, nil
-	case reconciler.ClusterStatusDeleteError, reconciler.ClusterStatusError:
-		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", state.PrettyFailures())
+	case contract.StatusDeleteError, contract.StatusError:
+		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
 		return operation, 0, nil
 	default:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
@@ -62,12 +63,12 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	log.Debugf("Cluster configuration status %s", state.Status)
 
 	switch state.Status {
-	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
+	case contract.StatusReconciling, contract.StatusReconcilePending, contract.StatusReconcileErrorRetryable:
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusReady:
+	case contract.StatusReady:
 		return s.operationManager.OperationSucceeded(operation, "Cluster configuration ready", log)
-	case reconciler.ClusterStatusError:
-		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
+	case contract.StatusError:
+		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
 		return s.operationManager.OperationFailed(operation, errMsg, log)
 	default:

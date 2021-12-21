@@ -11,6 +11,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ApplyClusterConfigurationStep struct {
@@ -46,14 +48,14 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	}
 
 	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.Cluster, operation.Operation.ID, &clusterConfiguration))
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.RuntimeID, operation.Operation.ID, &clusterConfiguration))
 	if err != nil {
 		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
-		clusterConfiguration.Cluster,
+		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
 		s.componentList(clusterConfiguration))
@@ -83,7 +85,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 }
 
-func (s *ApplyClusterConfigurationStep) componentList(cluster reconciler.Cluster) string {
+func (s *ApplyClusterConfigurationStep) componentList(cluster contract.Cluster) string {
 	vals := []string{}
 	for _, c := range cluster.KymaConfig.Components {
 		vals = append(vals, c.Component)
