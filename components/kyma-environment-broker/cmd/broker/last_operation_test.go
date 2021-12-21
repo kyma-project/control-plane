@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLastOperationWithoutOperationIDHappyPath(t *testing.T) {
