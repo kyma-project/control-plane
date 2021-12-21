@@ -278,8 +278,9 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 
 	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
 	// when a machine type switch is introduced
-	awsCatalogSchema := AWSSchema([]string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
-	awsHACatalogSchema := AWSHASchema([]string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
+	// switch to m6 if m6 is available in all regions
+	awsCatalogSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
+	awsHACatalogSchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
 
 	if includeAdditionalParamsInSchema {
 		schemas := []*RootSchema{
