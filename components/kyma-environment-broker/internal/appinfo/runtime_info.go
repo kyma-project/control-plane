@@ -8,7 +8,9 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"github.com/pkg/errors"
 )
 
 //go:generate mockery -name=InstanceFinder -output=automock -outpkg=automock -case=underscore
@@ -18,6 +20,10 @@ type (
 		FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error)
 	}
 
+	LastOperationFinder interface {
+		GetLastOperation(instanceID string) (*internal.Operation, error)
+	}
+
 	ResponseWriter interface {
 		InternalServerError(rw http.ResponseWriter, r *http.Request, err error, context string)
 	}
@@ -25,14 +31,16 @@ type (
 
 type RuntimeInfoHandler struct {
 	instanceFinder          InstanceFinder
+	lastOperationFinder     LastOperationFinder
 	respWriter              ResponseWriter
 	plansConfig             broker.PlansConfig
 	defaultSubaccountRegion string
 }
 
-func NewRuntimeInfoHandler(instanceFinder InstanceFinder, plansConfig broker.PlansConfig, region string, respWriter ResponseWriter) *RuntimeInfoHandler {
+func NewRuntimeInfoHandler(instanceFinder InstanceFinder, lastOpFinder LastOperationFinder, plansConfig broker.PlansConfig, region string, respWriter ResponseWriter) *RuntimeInfoHandler {
 	return &RuntimeInfoHandler{
 		instanceFinder:          instanceFinder,
+		lastOperationFinder:     lastOpFinder,
 		respWriter:              respWriter,
 		plansConfig:             plansConfig,
 		defaultSubaccountRegion: region,
@@ -68,6 +76,15 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 
 		idx, found := indexer[inst.InstanceID]
 		if !found {
+			// Determine runtime modifiedAt timestamp based on the last operation of the runtime
+			lastOp, err := h.lastOperationFinder.GetLastOperation(inst.InstanceID)
+			if err != nil && !dberr.IsNotFound(err) {
+				return nil, errors.Wrapf(err, "while getting last operation for instance %s", inst.InstanceID)
+			}
+			updatedAt := inst.UpdatedAt
+			if lastOp != nil {
+				updatedAt = lastOp.UpdatedAt
+			}
 			items = append(items, &RuntimeDTO{
 				RuntimeID:         inst.RuntimeID,
 				SubAccountID:      inst.SubAccountID,
@@ -80,7 +97,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 				ServicePlanName:   h.planNameOrDefault(inst),
 				Status: StatusDTO{
 					CreatedAt: getIfNotZero(inst.CreatedAt),
-					UpdatedAt: getIfNotZero(inst.UpdatedAt),
+					UpdatedAt: getIfNotZero(updatedAt),
 					DeletedAt: getIfNotZero(inst.DeletedAt),
 				},
 			})

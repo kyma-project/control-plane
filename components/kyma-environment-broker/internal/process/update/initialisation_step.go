@@ -68,6 +68,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
+			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil

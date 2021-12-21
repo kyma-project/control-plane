@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -49,7 +50,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
+	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west3")
 	operation.ShootDomain = "kyma.org"
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
@@ -75,23 +76,23 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				Name:                                shootName,
 				KubernetesVersion:                   k8sVersion,
 				DiskType:                            ptr.String("pd-standard"),
-				VolumeSizeGb:                        ptr.Integer(30),
-				MachineType:                         "n1-standard-4",
-				Region:                              "europe-west4-a",
+				VolumeSizeGb:                        ptr.Integer(50),
+				MachineType:                         "n2-standard-8",
+				Region:                              "europe-west3",
 				Provider:                            "gcp",
 				Purpose:                             &shootPurpose,
 				LicenceType:                         nil,
 				WorkerCidr:                          "10.250.0.0/19",
-				AutoScalerMin:                       3,
-				AutoScalerMax:                       4,
+				AutoScalerMin:                       2,
+				AutoScalerMax:                       10,
 				MaxSurge:                            4,
-				MaxUnavailable:                      1,
+				MaxUnavailable:                      0,
 				TargetSecret:                        "",
 				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),
 				EnableMachineImageVersionAutoUpdate: ptr.Bool(autoUpdateMachineImageVersion),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zones: []string{"europe-west4-b", "europe-west4-c"},
+						Zones: []string{"europe-west3-b", "europe-west3-c"},
 					},
 				},
 				Seed: nil,
@@ -102,6 +103,17 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 					SigningAlgs:    []string{"RS256"},
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
+				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "kyma.org",
+					Providers: []*gqlschema.DNSProviderInput{
+						&gqlschema.DNSProviderInput{
+							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+							Primary:        true,
+							SecretName:     "aws_dns_domain_secrets_test_intest",
+							Type:           "route53_type_test",
+						},
+					},
 				},
 			},
 			Administrators: []string{administrator},
@@ -183,6 +195,16 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Pro
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
 	provisioningOperation.InstanceDetails.ShootName = shootName
+	provisioningOperation.InstanceDetails.ShootDNSProviders = gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_intest",
+				Type:           "route53_type_test",
+			},
+		},
+	}
 	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region)
 	provisioningOperation.RuntimeID = ""
 
@@ -220,7 +242,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String(region),
 			Name:   "dummy",
-			Zones:  []string{"europe-west4-b", "europe-west4-c"},
+			Zones:  []string{"europe-west3-b", "europe-west3-c"},
 		},
 	}
 }

@@ -37,9 +37,10 @@ type ProvisioningTimeouts struct {
 }
 
 type ProvisioningNoInstallTimeouts struct {
-	ClusterCreation  time.Duration `envconfig:"default=60m"`
-	ClusterDomains   time.Duration `envconfig:"default=10m"`
-	BindingsCreation time.Duration `envconfig:"default=5m"`
+	ClusterCreation    time.Duration `envconfig:"default=60m"`
+	ClusterDomains     time.Duration `envconfig:"default=10m"`
+	BindingsCreation   time.Duration `envconfig:"default=5m"`
+	AgentConfiguration time.Duration `envconfig:"default=15m"`
 }
 
 type DeprovisioningNoInstallTimeouts struct {
@@ -105,13 +106,16 @@ func CreateProvisioningNoInstallQueue(
 	shootClient gardener_apis.ShootInterface,
 	secretsClient v1core.SecretInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
-	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
+	k8sClientProvider k8s.K8sClientProvider,
+	configurator runtime.Configurator) OperationQueue {
 
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
+	configureAgentStep := provisioning.NewConnectAgentStep(configurator, model.FinishedStage, timeouts.AgentConfiguration)
+	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, configureAgentStep.Name(), timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
 	provisionNoInstallSteps := map[model.OperationStage]operations.Step{
+		model.ConnectRuntimeAgent:          configureAgentStep,
 		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
 		model.WaitingForClusterDomain:      waitForClusterDomainStep,
 		model.WaitingForClusterCreation:    waitForClusterCreationStep,

@@ -1,7 +1,7 @@
 APP_NAME = kyma-metrics-collector
 APP_PATH = components/kyma-metrics-collector
 ENTRYPOINT = cmd/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20211110-ab51bd20
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 PROMETHEUSRULES_PATH = ../../resources/kcp/charts/kyma-metrics-collector/prometheus
 

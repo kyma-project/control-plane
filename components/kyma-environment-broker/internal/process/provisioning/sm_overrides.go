@@ -13,8 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const ServiceManagerComponentName = "service-manager-proxy"
-
 type ServiceManagerOverridesStep struct {
 	operationManager *process.ProvisionOperationManager
 }
@@ -51,6 +49,13 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 			Secret: ptr.Bool(true),
 		},
 	}
-	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.AppendOverrides(internal.ServiceManagerComponentName, smOverrides)
+
+	operation.InputCreator.EnableOptionalComponent(internal.HelmBrokerComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceCatalogComponentName)
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
+
+	operation.InputCreator.EnableOptionalComponent(internal.ServiceManagerComponentName)
+
 	return operation, 0, nil
 }

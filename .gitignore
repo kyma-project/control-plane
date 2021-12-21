@@ -58,3 +58,6 @@ local/tmp/
 # Changelog temporary directory
 .changelog/
 docs/investigations/storage/postgres/sql/*.csv
+
+# Reconciler oapi
+components/reconciler/docs/external_api.yaml

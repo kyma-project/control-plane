@@ -1,0 +1,13 @@
+components:
+  - name: "service-manager-proxy"
+    namespace: "kyma-system"
+    source:
+      url: "https://sm-proxy"
+  - name: "btp-operator"
+    namespace: "kyma-system"
+    source:
+      url: "https://btp-operator"
+  - name: "uaa-activator"
+    namespace: "kyma-system"
+  - name: "compass-runtime-agent"
+    namespace: "compass-system"

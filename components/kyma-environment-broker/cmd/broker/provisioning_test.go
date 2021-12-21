@@ -3,7 +3,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
@@ -34,13 +37,92 @@ func TestProvisioning_HappyPath(t *testing.T) {
 
 	// when
 	suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-	// simulate the installed fresh Kyma sets the proper label in the Director
-	suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 	suite.AssertAllStagesFinished(provisioningOperationID)
 	suite.AssertProvisioningRequest()
+}
+
+func TestProvisioning_TrialAtEU(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// then
+	suite.AssertAWSRegionAndZone("eu-west-1")
+}
+
+func TestProvisioning_HandleExistingOperation(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	firstResp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+
+	secondResp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+
+	firstBodyBytes, _ := ioutil.ReadAll(firstResp.Body)
+	secondBodyBytes, _ := ioutil.ReadAll(secondResp.Body)
+
+	// then
+	assert.Equal(t, string(firstBodyBytes), string(secondBodyBytes))
 }
 
 func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
@@ -57,7 +139,67 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 					"context": {
 						"sm_platform_credentials": {
 							"url": "https://sm.url",
-							"credentials": {}
+							"credentials": {
+								"basic": {
+									"username":"smUsername",
+									"password":"smPassword"
+							  	}
+						}
+							},
+							"globalaccount_id": "g-account-id",
+							"subaccount_id": "sub-id",
+							"user_id": "john.smith@email.com"
+						},
+						"parameters": {
+							"name": "testing-cluster"
+						}
+			}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+
+	// then
+	suite.AssertProvider("aws")
+	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
+
+	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+		GlobalAccountID: "g-account-id",
+		SubAccountID:    "sub-id",
+		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ServicePlanName: "preview",
+		ShootName:       suite.ShootName(opID),
+		InstanceID:      iid,
+		Region:          "eu-central-1",
+	})
+
+	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+		Version:        "2.0",
+		Profile:        "Production",
+		Administrators: []string{"john.smith@email.com"},
+		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
+	})
+	suite.AssertClusterConfigWithKubeconfig(opID)
+}
+
+func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_operator_credentials": {
+						  "clientid": "testClientID",
+						  "clientsecret": "testClientSecret",
+						  "sm_url": "https://service-manager.kyma.com",
+						  "url": "https://test.auth.com",
+						  "xsappname": "testXsappname"
 						},
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
@@ -80,33 +222,19 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 		ServicePlanID:   "5cb3d976-b85c-42ea-a636-79cadda109a9",
+		ServicePlanName: "preview",
 		ShootName:       suite.ShootName(opID),
 		InstanceID:      iid,
+		Region:          "eu-central-1",
 	})
 
 	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components: []reconciler.Components{
-			{
-				Component: "service-catalog2",
-				Namespace: "kyma-system",
-				Configuration: []reconciler.Configuration{
-					{
-						Key:    "global.domainName",
-						Value:  fmt.Sprintf("%s.kyma.sap.com", suite.ShootName(opID)),
-						Secret: false,
-					},
-					{
-						Key:    "setting-one",
-						Value:  "1234",
-						Secret: false,
-					},
-				},
-			},
-		},
+		Components:     suite.fixExpectedComponentListWithSMOperator(opID),
 	})
+
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }
 
@@ -118,118 +246,118 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		zonesCount       *int
 		region           string
 
-		expectedProfile                    gqlschema.KymaProfile
-		expectedProvider                   string
-		expectedMinimalNumberOfNodes       int
-		expectedMaximumNumberOfNodes       int
-		expectedMachineType                string
-		expectedSharedSubscription         bool
-		expectedSubsciptionHyperscalerType hyperscaler.Type
+		expectedProfile                     gqlschema.KymaProfile
+		expectedProvider                    string
+		expectedMinimalNumberOfNodes        int
+		expectedMaximumNumberOfNodes        int
+		expectedMachineType                 string
+		expectedSharedSubscription          bool
+		expectedSubscriptionHyperscalerType hyperscaler.Type
 	}{
 		"Regular trial": {
 			planID: broker.TrialPlanID,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedMachineType:                "Standard_D4_v3",
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         true,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedMachineType:                 "Standard_D4_v3",
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          true,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Freemium aws": {
 			planID:           broker.FreemiumPlanID,
 			platformProvider: internal.AWS,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedMachineType:                "m5.xlarge",
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedMachineType:                 "m6i.xlarge",
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"Freemium azure": {
 			planID:           broker.FreemiumPlanID,
 			platformProvider: internal.Azure,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       1,
-			expectedProfile:                    gqlschema.KymaProfileEvaluation,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedMachineType:                "Standard_D4_v3",
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        1,
+			expectedProfile:                     gqlschema.KymaProfileEvaluation,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedMachineType:                 "Standard_D4_v3",
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production Azure": {
 			planID: broker.AzurePlanID,
 
-			expectedMinimalNumberOfNodes:       2,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        2,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"HA Azure - provided zonesCount": {
 			planID:     broker.AzureHAPlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"HA Azure - default zonesCount": {
 			planID: broker.AzureHAPlanID,
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "Standard_D8_v3",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "azure",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.Azure,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "Standard_D8_v3",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "azure",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production AWS": {
 			planID: broker.AWSPlanID,
 
-			expectedMinimalNumberOfNodes:       2,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        2,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m6i.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"HA AWS - provided zonesCount": {
 			planID:     broker.AWSHAPlanID,
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m6i.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"HA AWS - default zonesCount": {
 			planID: broker.AWSHAPlanID,
 			region: "eu-central-1",
 
-			expectedMinimalNumberOfNodes:       1,
-			expectedMaximumNumberOfNodes:       10,
-			expectedMachineType:                "m5.2xlarge",
-			expectedProfile:                    gqlschema.KymaProfileProduction,
-			expectedProvider:                   "aws",
-			expectedSharedSubscription:         false,
-			expectedSubsciptionHyperscalerType: hyperscaler.AWS,
+			expectedMinimalNumberOfNodes:        1,
+			expectedMaximumNumberOfNodes:        10,
+			expectedMachineType:                 "m6i.2xlarge",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "aws",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -251,8 +379,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			// when
 			suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-			// simulate the installed fresh Kyma sets the proper label in the Director
-			suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 			// then
 			suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -264,7 +390,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			suite.AssertMaximumNumberOfNodes(tc.expectedMaximumNumberOfNodes)
 			suite.AssertMachineType(tc.expectedMachineType)
 			suite.AssertZonesCount(tc.zonesCount, tc.planID)
-			suite.AssertSubscription(tc.expectedSharedSubscription, tc.expectedSubsciptionHyperscalerType)
+			suite.AssertSubscription(tc.expectedSharedSubscription, tc.expectedSubscriptionHyperscalerType)
 		})
 
 	}
@@ -284,8 +410,6 @@ func TestUnsuspensionWithoutShootName(t *testing.T) {
 
 	// when
 	suite.FinishProvisioningOperationByProvisioner(unsuspensionOperationID)
-	// simulate the installed fresh Kyma sets the proper label in the Director
-	suite.MarkDirectorWithConsoleURL(unsuspensionOperationID)
 
 	// then
 	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
@@ -310,16 +434,14 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		// simulate the installed fresh Kyma sets the proper label in the Director
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 
@@ -339,16 +461,14 @@ func TestProvisioning_RuntimeOverrides(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		// simulate the installed fresh Kyma sets the proper label in the Director
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 		suite.AssertAllStagesFinished(provisioningOperationID)
 		suite.AssertProvisioningRequest()
-		suite.AssertOverrides(gqlschema.ConfigEntryInput{
-			Key:   "foo",
-			Value: "bar",
+		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
+			{Key: "foo", Value: "bar"},
+			{Key: "global.booleanOverride.enabled", Value: "false"},
 		})
 	})
 }
@@ -377,8 +497,6 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		// simulate the installed fresh Kyma sets the proper label in the Director
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -412,8 +530,6 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		// simulate the installed fresh Kyma sets the proper label in the Director
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -452,8 +568,6 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		// simulate the installed fresh Kyma sets the proper label in the Director
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -481,7 +595,6 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -508,7 +621,6 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -535,7 +647,6 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 
 		// when
 		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-		suite.MarkDirectorWithConsoleURL(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)

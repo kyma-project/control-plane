@@ -177,7 +177,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		shootInterface,
 		secretsInterface,
 		testOperatorRoleBinding(),
-		mockK8sClientProvider)
+		mockK8sClientProvider,
+		runtimeConfigurator)
 	provisioningNoInstallQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
@@ -247,7 +248,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewKubernetesVersionProvider(shootInterface), provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator()
 
@@ -377,7 +378,7 @@ func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *
 	assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
 
 	// wait for queue to process operation
-	time.Sleep(8 * waitPeriod)
+	time.Sleep(9 * waitPeriod)
 
 	// assert db content
 	readSession := dbsFactory.NewReadSession()
@@ -438,7 +439,7 @@ func testUpgradeGardenerShoot(t *testing.T, ctx context.Context, resolver *api.R
 	assert.Equal(t, runtimeID, *upgradeShootOp.RuntimeID)
 
 	// wait for queue to process operation
-	time.Sleep(2 * waitPeriod)
+	time.Sleep(3 * waitPeriod)
 
 	// assert db content
 	runtimeAfterUpgrade, err := readSession.GetCluster(runtimeID)

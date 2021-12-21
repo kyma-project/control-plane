@@ -8,13 +8,21 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path"
+	"sort"
 	"testing"
 	"time"
 
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
+
 	"code.cloudfoundry.org/lager"
+	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -22,13 +30,15 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	monitoringmocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring/mocks"
+	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
@@ -36,17 +46,19 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+const fixedGardenerNamespace = "garden-test"
 
 // BrokerSuiteTest is a helper which allows to write simple tests of any KEB processes (provisioning, deprovisioning, update).
 // The starting point of a test could be an HTTP call to Broker API.
@@ -55,6 +67,7 @@ type BrokerSuiteTest struct {
 	provisionerClient *provisioner.FakeClient
 	directorClient    *director.FakeClient
 	reconcilerClient  *reconciler.FakeClient
+	gardenerClient    *gardenerFake.Clientset
 
 	httpServer *httptest.Server
 	router     *mux.Router
@@ -80,15 +93,13 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
-	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{
-		{
-			Name:        "service-catalog2",
-			ReleaseName: "",
-			Namespace:   "kyma-system",
-			Source:      nil,
-		},
-	}, nil)
+	installerYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-installer-cluster.yaml")
+	componentsYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-components.yaml")
+	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
+
+	componentListProvider := kebRuntime.NewComponentsListProvider(
+		path.Join("testdata", "managed-runtime-components.yaml"),
+		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
@@ -96,7 +107,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		MachineImage:                "253",
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
-		DefaultTrialProvider:        internal.Azure,
+		DefaultTrialProvider:        internal.AWS,
 	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
@@ -111,7 +122,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping, nil)
 
 	directorClient := director.NewFakeClient()
 	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
@@ -125,45 +136,65 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
-	monitoringClient := &monitoringmocks.Client{}
-	monitoringClient.On("IsDeployed", mock.Anything).Return(false, nil)
-	monitoringClient.On("IsPresent", mock.Anything).Return(false, nil)
-	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
-	monitoringClient.On("UninstallRelease", mock.Anything).Return(nil, nil)
-
 	// TODO put Reconciler client in the queue for steps
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, logs)
+	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, monitoringClient, accountProvider, reconcilerClient, logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)
 
+	gardenerClient := gardenerFake.NewSimpleClientset()
 	ts := &BrokerSuiteTest{
 		db:                  db,
 		provisionerClient:   provisionerClient,
 		directorClient:      directorClient,
 		reconcilerClient:    reconcilerClient,
+		gardenerClient:      gardenerClient,
 		router:              mux.NewRouter(),
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
+
+	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
+	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), fixedGardenerNamespace, runtimeLister, logs)
+	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
+		Retry:              10 * time.Millisecond,
+		StatusCheck:        100 * time.Millisecond,
+		UpgradeKymaTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, inMemoryFs, logs, cli)
+
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
+		Retry:                 10 * time.Millisecond,
+		StatusCheck:           100 * time.Millisecond,
+		UpgradeClusterTimeout: 4 * time.Second,
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, *cfg)
+
+	kymaQueue.SpeedUp(1000)
+	clusterQueue.SpeedUp(1000)
+
+	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
+	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
+	orchestrationHandler.AttachRoutes(ts.router)
 	ts.httpServer = httptest.NewServer(ts.router)
 	return ts
 }
@@ -176,6 +207,19 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RSA256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
+	}
+}
+
+func defaultDNSValues() gardener.DNSProvidersData {
+	return gardener.DNSProvidersData{
+		Providers: []gardener.DNSProviderData{
+			{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_insuite",
+				Type:           "route53_type_test",
+			},
+		},
 	}
 }
 
@@ -229,6 +273,7 @@ func (s *BrokerSuiteTest) CreateAPI(inputFactory broker.PlanValidator, cfg *Conf
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
 	createAPI(s.router, servicesConfig, inputFactory, cfg, db, provisioningQueue, deprovisionQueue, updateQueue, lager.NewLogger("api"), logs, planDefaults)
+
 	s.httpServer = httptest.NewServer(s.router)
 }
 
@@ -304,7 +349,7 @@ func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOper
 	return op.ID
 }
 
-func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string) {
+func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
@@ -315,7 +360,21 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, operationState, op.RuntimeID)
+}
+
+func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
+	var op *internal.ProvisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
@@ -332,7 +391,10 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+	err = s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Delete(context.Background(), op.ShootName, v1.DeleteOptions{})
+	require.NoError(s.t, err)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
@@ -345,14 +407,14 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, op.RuntimeID)
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
 
-func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
 			return true, nil
 		}
 		return false, nil
@@ -378,12 +440,42 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 
 	var state *reconciler.State
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
+		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, 1, reconciler.ReadyStatus)
+			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
+	var updatingOp *internal.UpdatingOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ProvisionerOperationID != "" {
+			updatingOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
 			return true, nil
 		}
 		return false, nil
@@ -419,10 +511,40 @@ func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID strin
 	assert.Equal(s.t, gqlschema.OperationStateInProgress, status.State)
 }
 
-func (s *BrokerSuiteTest) AssertReconcilerStartedReconciling(operationID string) {
+func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID string) {
+	var upgradeOp *internal.UpgradeKymaOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpgradeKymaOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ClusterConfigurationVersion != 0 {
+			upgradeOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
+		op, err := s.db.Operations().GetProvisioningOperationByID(provisioningOpID)
 		if err != nil {
 			return false, nil
 		}
@@ -446,21 +568,89 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconciling(operationID string)
 	assert.Equal(s.t, reconciler.ReconcilePendingStatus, state.Status)
 }
 
+func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
+	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
+	var upgradeKymaOp *internal.UpgradeKymaOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+		if err != nil {
+			return false, nil
+		}
+		if op.InstanceDetails.ClusterConfigurationVersion != 0 {
+			upgradeKymaOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconciler.State
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
+		if state.Cluster != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, reconciler.ReconcilePendingStatus, state.Status)
+}
+
 func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
 	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
 }
 
+func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
+	m, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	require.NoError(s.t, err)
+
+	r := apiresponses.ErrorResponse{}
+	err = json.Unmarshal(m, &r)
+	require.NoError(s.t, err)
+
+	return r
+}
+
 func (s *BrokerSuiteTest) DecodeOperationID(resp *http.Response) string {
 	m, err := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(m))
+	s.Log(string(m))
 	require.NoError(s.t, err)
 	var provisioningResp struct {
 		Operation string `json:"operation"`
 	}
-	json.Unmarshal(m, &provisioningResp)
+	err = json.Unmarshal(m, &provisioningResp)
+	require.NoError(s.t, err)
+
 	return provisioningResp.Operation
+}
+
+func (s *BrokerSuiteTest) DecodeOrchestrationID(resp *http.Response) string {
+	m, err := ioutil.ReadAll(resp.Body)
+	s.Log(string(m))
+	require.NoError(s.t, err)
+	var upgradeResponse orchestration.UpgradeResponse
+	err = json.Unmarshal(m, &upgradeResponse)
+	require.NoError(s.t, err)
+
+	return upgradeResponse.OrchestrationID
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+	m, err := ioutil.ReadAll(resp.Body)
+	s.Log(string(m))
+	require.NoError(s.t, err)
+	var operationsList orchestration.OperationResponseList
+	err = json.Unmarshal(m, &operationsList)
+	require.NoError(s.t, err)
+
+	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+		return "", errors.New("no operations found for given orchestration")
+	}
+
+	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
 }
 
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
@@ -505,7 +695,7 @@ func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expecte
 }
 
 func (s *BrokerSuiteTest) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
@@ -553,6 +743,18 @@ func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedCluste
 
 func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKymaConfig reconciler.KymaConfig) {
 	clusterConfig := s.getClusterConfig(operationID)
+
+	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
+	for _, component := range clusterConfig.KymaConfig.Components {
+		sort.Slice(component.Configuration, func(i, j int) bool {
+			return component.Configuration[i].Key < component.Configuration[j].Key
+		})
+	}
+	for _, component := range expectedKymaConfig.Components {
+		sort.Slice(component.Configuration, func(i, j int) bool {
+			return component.Configuration[i].Key < component.Configuration[j].Key
+		})
+	}
 
 	assert.Equal(s.t, expectedKymaConfig, clusterConfig.KymaConfig)
 }
@@ -621,7 +823,10 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
+	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
+	require.NoError(s.t, err)
+
 	// simulate the installed fresh Kyma sets the proper label in the Director
 	s.MarkDirectorWithConsoleURL(opID)
 
@@ -629,17 +834,55 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForOperationState(opID, domain.Succeeded)
 }
 
+func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+	s.AssertProvisionerStartedProvisioning(opID)
+
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateFailed)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Failed)
+}
+
+func (s *BrokerSuiteTest) fixGardenerShootForOperationID(opID string) *gardenerapi.Shoot {
+	op, err := s.db.Operations().GetProvisioningOperationByID(opID)
+	require.NoError(s.t, err)
+
+	return &gardenerapi.Shoot{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      op.ShootName,
+			Namespace: fixedGardenerNamespace,
+			Labels: map[string]string{
+				globalAccountLabel: op.ProvisioningParameters.ErsContext.GlobalAccountID,
+				subAccountLabel:    op.ProvisioningParameters.ErsContext.SubAccountID,
+			},
+			Annotations: map[string]string{
+				runtimeIDAnnotation: op.RuntimeID,
+			},
+		},
+		Spec: gardenerapi.ShootSpec{
+			Region: "eu",
+			Maintenance: &gardenerapi.Maintenance{
+				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
+					Begin: "030000+0000",
+					End:   "040000+0000",
+				},
+			},
+		},
+	}
+}
+
 func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	// Provisioner part
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
-	s.FinishProvisioningOperationByProvisioner(opID)
+	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 
 	// Director part
 	s.MarkDirectorWithConsoleURL(opID)
 
 	// Reconciler part
-	s.AssertReconcilerStartedReconciling(opID)
+	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)
 	s.FinishProvisioningOperationByReconciler(opID)
 
 	s.WaitForOperationState(opID, domain.Succeeded)
@@ -658,7 +901,262 @@ func (s *BrokerSuiteTest) ShootName(id string) string {
 }
 
 func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
-	input := s.provisionerClient.GetProvisionRuntimeInput(1)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
+}
+
+// fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 1.x - when `sm_platform_credentials`
+// object is provided: helm-broker, service-catalog, service-catalog-addons and service-manager-proxy components should be installed
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []reconciler.Component {
+	return []reconciler.Component{
+		{
+			URL:       "",
+			Component: "ory",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "monitoring",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "service-catalog",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "service-catalog-addons",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "helm-broker",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "https://sm-proxy",
+			Component: "service-manager-proxy",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+				{
+					Key:    "config.sm.url",
+					Value:  "https://sm.url",
+					Secret: false,
+				},
+				{
+					Key:    "sm.user",
+					Value:  "smUsername",
+					Secret: false,
+				},
+				{
+					Key:    "sm.password",
+					Value:  "smPassword",
+					Secret: true,
+				},
+			},
+		},
+	}
+}
+
+// fixExpectedComponentListWithSMOperator provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
+// object is provided: btp-opeartor component should be installed
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconciler.Component {
+	return []reconciler.Component{
+		{
+			URL:       "",
+			Component: "ory",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "",
+			Component: "monitoring",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+			},
+		},
+		{
+			URL:       "https://btp-operator",
+			Component: "btp-operator",
+			Namespace: "kyma-system",
+			Configuration: []reconciler.Configuration{
+				{
+					Key:    "global.domainName",
+					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
+					Secret: false,
+				},
+				{
+					Key:    "foo",
+					Value:  "bar",
+					Secret: false,
+				},
+				{
+					Key:    "global.booleanOverride.enabled",
+					Value:  false,
+					Secret: false,
+				},
+				{
+					Key:    "manager.secret.clientid",
+					Value:  "testClientID",
+					Secret: true,
+				},
+				{
+					Key:    "manager.secret.clientsecret",
+					Value:  "testClientSecret",
+					Secret: true,
+				},
+				{
+					Key:    "manager.secret.url",
+					Value:  "https://service-manager.kyma.com",
+					Secret: false,
+				},
+				{
+					Key:    "manager.secret.tokenurl",
+					Value:  "https://test.auth.com",
+					Secret: false,
+				},
+			},
+		},
+	}
+}
+
+func mockBTPOperatorClusterID() {
+	update.ConfigMapGetter = func(string) internal.ClusterIDGetter {
+		return func() (string, error) {
+			return "cluster_id", nil
+		}
+	}
 }

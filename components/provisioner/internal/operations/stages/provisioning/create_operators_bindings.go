@@ -20,9 +20,9 @@ const (
 	l3OperatorClusterRoleBindingName            = "l3-operator-admin"
 	administratorOperatorClusterRoleBindingName = "administrator"
 
-	l2OperatorClusterRoleBindingRoleRefName            = "view"
-	l3OperatorClusterRoleBindingRoleRefName            = "cluster-admin"
-	administratorOperatorClusterRoleBindingRoleRefName = "kyma-admin"
+	l2OperatorClusterRoleBindingRoleRefName = "view"
+	l3OperatorClusterRoleBindingRoleRefName = "cluster-admin"
+	ownerClusterRoleBindingRoleRefName      = "cluster-admin"
 
 	groupKindSubject = "Group"
 	userKindSubject  = "User"
@@ -96,7 +96,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 				buildClusterRoleBinding(
 					fmt.Sprintf("%s%d", administratorOperatorClusterRoleBindingName, i),
 					administrator,
-					administratorOperatorClusterRoleBindingRoleRefName,
+					ownerClusterRoleBindingRoleRefName,
 					userKindSubject,
 					map[string]string{"app": "kyma", "type": "admin"}))
 		}

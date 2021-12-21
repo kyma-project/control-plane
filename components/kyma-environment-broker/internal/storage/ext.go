@@ -68,6 +68,9 @@ type RuntimeStates interface {
 	Insert(runtimeState internal.RuntimeState) error
 	GetByOperationID(operationID string) (internal.RuntimeState, error)
 	ListByRuntimeID(runtimeID string) ([]internal.RuntimeState, error)
+	GetLatestByRuntimeID(runtimeID string) (internal.RuntimeState, error)
+	GetLatestWithReconcilerInputByRuntimeID(runtimeID string) (internal.RuntimeState, error)
+	GetLatestWithKymaVersionByRuntimeID(runtimeID string) (internal.RuntimeState, error)
 }
 
 type UpgradeKyma interface {

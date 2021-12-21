@@ -37,6 +37,11 @@ func (f *OptionalComponentsService) GetAllOptionalComponentsNames() []string {
 	return names
 }
 
+// AddComponentToDisable adds a component to the list of registered components disablers names
+func (f *OptionalComponentsService) AddComponentToDisable(name string, disabler ComponentDisabler) {
+	f.registered[name] = disabler
+}
+
 // ExecuteDisablers executes disablers on given input and returns modified list.
 //
 // BE AWARE: in current implementation the input is also modified.

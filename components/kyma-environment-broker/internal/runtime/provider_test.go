@@ -1,12 +1,9 @@
 package runtime_test
 
 import (
-	"bytes"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
-	"strings"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -70,9 +67,9 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			installerYAML := readYAMLFromFile(t, "kyma-installer-cluster.yaml")
-			componentsYAML := readYAMLFromFile(t, "kyma-components.yaml")
-			fakeHTTPClient := newTestClient(t, installerYAML, componentsYAML, http.StatusOK)
+			installerYAML := runtime.ReadYAMLFromFile(t, "kyma-installer-cluster.yaml")
+			componentsYAML := runtime.ReadYAMLFromFile(t, "kyma-components.yaml")
+			fakeHTTPClient := runtime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
 			listProvider := runtime.NewComponentsListProvider(
 				tc.given.managedRuntimeComponentsYAMLPath,
@@ -152,7 +149,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// given
-			fakeHTTPClient := newTestClient(t, tc.given.httpErrMessage, tc.given.httpErrMessage, tc.returnStatusCode)
+			fakeHTTPClient := runtime.NewTestClient(t, tc.given.httpErrMessage, tc.given.httpErrMessage, tc.returnStatusCode)
 
 			listProvider := runtime.NewComponentsListProvider(
 				tc.given.managedRuntimeComponentsYAMLPath,
@@ -170,41 +167,6 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	}
 }
 
-type HTTPFakeClient struct {
-	t                 *testing.T
-	installerContent  string
-	componentsContent string
-	code              int
-
-	RequestURL string
-}
-
-func (f *HTTPFakeClient) Do(req *http.Request) (*http.Response, error) {
-	f.RequestURL = req.URL.String()
-
-	var body io.ReadCloser
-	if strings.Contains(f.RequestURL, "kyma-components.yaml") {
-		body = ioutil.NopCloser(bytes.NewReader([]byte(f.componentsContent)))
-	} else {
-		body = ioutil.NopCloser(bytes.NewReader([]byte(f.installerContent)))
-	}
-
-	return &http.Response{
-		StatusCode: f.code,
-		Body:       body,
-		Request:    req,
-	}, nil
-}
-
-func newTestClient(t *testing.T, installerContent, componentsContent string, code int) *HTTPFakeClient {
-	return &HTTPFakeClient{
-		t:                 t,
-		code:              code,
-		installerContent:  installerContent,
-		componentsContent: componentsContent,
-	}
-}
-
 func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []v1alpha1.KymaComponent) {
 	t.Helper()
 
@@ -214,16 +176,6 @@ func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedC
 
 		assert.Equal(t, endOfList, managedComponents)
 	})
-}
-
-func readYAMLFromFile(t *testing.T, yamlFileName string) string {
-	t.Helper()
-
-	filename := path.Join("testdata", yamlFileName)
-	yamlFile, err := ioutil.ReadFile(filename)
-	require.NoError(t, err)
-
-	return string(yamlFile)
 }
 
 func readManagedComponentsFromFile(t *testing.T, path string) []v1alpha1.KymaComponent {

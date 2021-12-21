@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -45,11 +43,11 @@ type InitialisationStep struct {
 	evaluationManager           *avs.EvaluationManager
 	timeSchedule                TimeSchedule
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
-	serviceManagerClientFactory *servicemanager.ClientFactory
+	serviceManagerClientFactory internal.SMClientFactory
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf *servicemanager.ClientFactory) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf internal.SMClientFactory) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -119,6 +117,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 			op.State = domain.InProgress
+			op.ClusterConfigurationVersion = 0
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil
@@ -227,6 +226,13 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+	}
+
+	if operation.ClusterConfigurationVersion != 0 {
+		// upgrade was trigerred in reconciler, no need to call provisioner and create UpgradeRuntimeInput
+		// TODO: deal with skipping steps in case of calling reconciler for Kyma 2.0 upgrade
+		log.Debugf("Cluster configuration already created, skipping")
+		return operation, 0, nil
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.RuntimeOperation.GlobalAccountID, operation.ProvisionerOperationID)

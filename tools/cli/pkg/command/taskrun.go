@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -204,7 +206,8 @@ func (cmd *TaskRunCommand) resolveOperations() ([]orchestration.RuntimeOperation
 		return nil, errors.Wrap(err, "while getting Gardener client")
 	}
 
-	lister := NewRuntimeLister(runtime.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), cmd.cred))
+	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), cmd.cred)
+	lister := NewRuntimeLister(runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient))
 	resolver := orchestration.NewGardenerRuntimeResolver(gardenClient, GlobalOpts.GardenerNamespace(), lister, cmd.log)
 	runtimes, err := resolver.Resolve(cmd.targets)
 	if err != nil {
@@ -325,7 +328,9 @@ func (mgr *RuntimeTaskMakager) Execute(operationID string) (time.Duration, error
 
 	// Start execution of the command
 	err = command.Start()
-
+	if err != nil {
+		log.Errorf("Error: command started with error: %s\n", err.Error())
+	}
 	// Wait for the command subprocess to finish
 	echoerWg.Wait()
 	err = command.Wait()

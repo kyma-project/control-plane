@@ -15,7 +15,7 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	reconcilerClient := reconciler.NewFakeClient()
-	step := NewCreateClusterConfiguration(st.Operations(), reconcilerClient)
+	step := NewCreateClusterConfiguration(st.Operations(), st.RuntimeStates(), reconcilerClient)
 	operation := fixture.FixProvisioningOperation(operationID, instanceID)
 	operation.RuntimeID = runtimeID
 	st.Operations().InsertProvisioningOperation(operation)
@@ -26,4 +26,5 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Zero(t, d)
+	assert.True(t, reconcilerClient.ClusterExists(runtimeID))
 }

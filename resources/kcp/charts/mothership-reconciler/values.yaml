@@ -6,6 +6,13 @@ encryptionKeySecret: "kcp-reconciler-key"
 configurationSecret: "kcp-mothership-reconciler"
 componentsConfigMap: "kcp-component-reconcilers"
 
+host: "mothership-reconciler"
+oidc:
+  issuer: "https://dex.{{ .Values.global.ingress.domainName }}"
+  keysURL: "http://dex-service.kyma-system.svc.cluster.local:5556/keys"
+  groups:
+    operator: runtimeOperator
+
 db:
   encryptionKey: ""
   reconcilerDbName: "reconciler"
@@ -14,15 +21,24 @@ db:
   serviceHost: "localhost"
   servicePort: "5432"
   useSsl: false
+  file: "reconciler.db"
+  deploySchema: true
+  resetDatabase: false
 
 preComponents:
-  - cluster-essentials
-  - istio-configuration
+  - [cluster-essentials, istio-configuration, certificates]
 
 deployment:
   imagePullPolicy: "IfNotPresent"
 
   replicasCount: 1
+
+  # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
 
   imagePullSecrets: []
 
@@ -71,3 +87,4 @@ service:
   type: ClusterIP
   scheme: http
   port: 80
+  istioPort: 15020

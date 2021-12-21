@@ -31,7 +31,7 @@ metadata:
     release: {{ .Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kyma-env-broker.fullname" . }}
+    name: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
@@ -42,5 +42,5 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "kyma-env-broker.fullname" . }}
+  name: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
   namespace: {{ .Release.Namespace }}

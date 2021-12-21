@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -31,6 +32,7 @@ type ProvisionerInputCreator interface {
 	CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInput, error)
 	CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, error)
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
+	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
 	CreateClusterConfiguration() (reconciler.Cluster, error)
@@ -39,6 +41,7 @@ type ProvisionerInputCreator interface {
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
+	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -90,11 +93,11 @@ func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeV
 }
 
 func NewRuntimeVersionFromDefaults(version string) *RuntimeVersionData {
-	defaultMajorVerNum := determineMajorVersion(version)
+	defaultMajorVerNum := DetermineMajorVersion(version)
 	return &RuntimeVersionData{Version: version, Origin: Defaults, MajorVersion: defaultMajorVerNum}
 }
 
-func determineMajorVersion(version string) int {
+func DetermineMajorVersion(version string) int {
 	splitVer := strings.Split(version, ".")
 	majorVerNum, _ := strconv.Atoi(splitVer[0])
 	return majorVerNum
@@ -248,18 +251,22 @@ type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
 
-	SubAccountID string           `json:"sub_account_id"`
-	RuntimeID    string           `json:"runtime_id"`
-	ShootName    string           `json:"shoot_name"`
-	ShootDomain  string           `json:"shoot_domain"`
-	XSUAA        XSUAAData        `json:"xsuaa"`
-	Ems          EmsData          `json:"ems"`
-	Connectivity ConnectivityData `json:"connectivity"`
-	Monitoring   MonitoringData   `json:"monitoring"`
+	SubAccountID      string                    `json:"sub_account_id"`
+	RuntimeID         string                    `json:"runtime_id"`
+	ShootName         string                    `json:"shoot_name"`
+	ShootDomain       string                    `json:"shoot_domain"`
+	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
+	XSUAA             XSUAAData                 `json:"xsuaa"`
+	Ems               EmsData                   `json:"ems"`
+	Connectivity      ConnectivityData          `json:"connectivity"`
+	Monitoring        MonitoringData            `json:"monitoring"`
+	EDPCreated        bool                      `json:"edp_created"`
 
 	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
+
+	SCMigrationTriggered bool `json:"migration_triggered"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -334,10 +341,19 @@ type DeprovisioningOperation struct {
 type UpdatingOperation struct {
 	Operation
 
-	UpdatingParameters UpdatingParametersDTO `json:"updating_parameters"`
+	RuntimeVersion        RuntimeVersionData    `json:"runtime_version"`
+	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
+	CheckReconcilerStatus bool                  `json:"check_reconciler_status"`
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
+
+	// Last runtime state payload
+	LastRuntimeState RuntimeState `json:"-"`
+
+	// Flag used by the steps regarding Service Catalog migration
+	// denotes whether the payload to reconciler differs from last runtime state
+	RequiresReconcilerUpdate bool `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -382,6 +398,16 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	}
 }
 
+func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
+	return RuntimeState{
+		ID:           uuid.New().String(),
+		CreatedAt:    time.Now(),
+		RuntimeID:    runtimeID,
+		OperationID:  operationID,
+		ClusterSetup: reconcilerInput,
+	}
+}
+
 type RuntimeState struct {
 	ID string `json:"id"`
 
@@ -392,6 +418,46 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
+	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
+}
+
+func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
+	if r.ClusterSetup != nil {
+		return r.buildKymaConfigFromClusterSetup()
+	}
+	return r.KymaConfig
+}
+
+func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
+	var components []*gqlschema.ComponentConfigurationInput
+	for _, cmp := range r.ClusterSetup.KymaConfig.Components {
+		var config []*gqlschema.ConfigEntryInput
+		for _, cfg := range cmp.Configuration {
+			configEntryInput := &gqlschema.ConfigEntryInput{
+				Key:    cfg.Key,
+				Value:  fmt.Sprint(cfg.Value),
+				Secret: ptr.Bool(cfg.Secret),
+			}
+			config = append(config, configEntryInput)
+		}
+
+		componentConfigurationInput := &gqlschema.ComponentConfigurationInput{
+			Component:     cmp.Component,
+			Namespace:     cmp.Namespace,
+			SourceURL:     &cmp.URL,
+			Configuration: config,
+		}
+		components = append(components, componentConfigurationInput)
+	}
+
+	profile := gqlschema.KymaProfile(r.ClusterSetup.KymaConfig.Profile)
+	kymaConfig := gqlschema.KymaConfigInput{
+		Version:    r.ClusterSetup.KymaConfig.Version,
+		Profile:    &profile,
+		Components: components,
+	}
+
+	return kymaConfig
 }
 
 // OperationStats provide number of operations per type and state
@@ -530,6 +596,10 @@ func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (s
 	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
 }
 
+func (po *UpgradeKymaOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
+	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
+}
+
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
 
 func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfigurationInput {
@@ -559,6 +629,7 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 
 func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
 	var creds *servicemanager.Credentials
+
 	sm := parameters.ErsContext.ServiceManager
 	if sm != nil {
 		creds = &servicemanager.Credentials{
@@ -567,6 +638,7 @@ func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanage
 			URL:      sm.URL,
 		}
 	}
+
 	return servicemanager.RequestContext{
 		SubaccountID: parameters.ErsContext.SubAccountID,
 		Credentials:  creds,

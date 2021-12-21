@@ -1,11 +1,22 @@
 package reconciler
 
+import (
+	"fmt"
+	"strings"
+)
+
 // COPIED FROM RECONCILER keb/client.go - may be imported in the future
+// this would require updating KEB kubernetes deps to match reconciler
 const (
 	ClusterStatusPending     string = "reconcile_pending"
 	ClusterStatusReady       string = "ready"
 	ClusterStatusError       string = "error"
 	ClusterStatusReconciling string = "reconciling"
+
+	ClusterStatusDeletePending string = "delete_pending"
+	ClusterStatusDeleted       string = "deleted"
+	ClusterStatusDeleting      string = "deleting"
+	ClusterStatusDeleteError   string = "delete_error"
 )
 
 type Cluster struct {
@@ -22,12 +33,12 @@ type RuntimeInput struct {
 }
 
 type Configuration struct {
-	Key    string `json:"key"`
-	Value  string `json:"value"`
-	Secret bool   `json:"secret"`
+	Key    string      `json:"key"`
+	Value  interface{} `json:"value"`
+	Secret bool        `json:"secret"`
 }
 
-type Components struct {
+type Component struct {
 	URL           string          `json:"URL"`
 	Component     string          `json:"component"`
 	Namespace     string          `json:"namespace"`
@@ -35,10 +46,10 @@ type Components struct {
 }
 
 type KymaConfig struct {
-	Version        string       `json:"version"`
-	Profile        string       `json:"profile"`
-	Components     []Components `json:"components"`
-	Administrators []string     `json:"administrators"`
+	Version        string      `json:"version"`
+	Profile        string      `json:"profile"`
+	Components     []Component `json:"components"`
+	Administrators []string    `json:"administrators"`
 }
 
 type Metadata struct {
@@ -46,8 +57,10 @@ type Metadata struct {
 	SubAccountID    string `json:"subAccountID"`
 	ServiceID       string `json:"serviceID"`
 	ServicePlanID   string `json:"servicePlanID"`
+	ServicePlanName string `json:"servicePlanName"`
 	ShootName       string `json:"shootName"`
 	InstanceID      string `json:"instanceID"`
+	Region          string `json:"region"`
 }
 
 // reconciling statuses
@@ -60,14 +73,28 @@ const (
 )
 
 type State struct {
-	Cluster              string `json:"cluster"`
-	ClusterVersion       int64  `json:"clusterVersion"`
-	ConfigurationVersion int64  `json:"configurationVersion"`
-	Status               string `json:"status"`
-	StatusUrl            string `json:"statusUrl,omitempty"`
+	Cluster              string    `json:"cluster"`
+	ClusterVersion       int64     `json:"clusterVersion"`
+	ConfigurationVersion int64     `json:"configurationVersion"`
+	Failures             []Failure `json:"failures,omitempty"`
+	Status               string    `json:"status"`
+	StatusUrl            string    `json:"statusUrl,omitempty"`
+}
+
+type Failure struct {
+	Component string `json:"component"`
+	Reason    string `json:"reason"`
 }
 
 type StatusChange struct {
 	Status   *string
 	Duration string
+}
+
+func (s State) PrettyFailures() string {
+	var errs []string
+	for _, f := range s.Failures {
+		errs = append(errs, fmt.Sprintf("component %v failed: %v", f.Component, f.Reason))
+	}
+	return strings.Join(errs, ", ")
 }

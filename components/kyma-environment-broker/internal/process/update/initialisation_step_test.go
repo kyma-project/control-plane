@@ -73,8 +73,11 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			db := storage.NewMemoryStorage()
 			os := db.Operations()
 			is := db.Instances()
+			rs := db.RuntimeStates()
 			inst := fixture.FixInstance("iid")
+			state := fixture.FixRuntimeState("op-id", "Runtime-iid", "op-id")
 			is.Insert(inst)
+			rs.Insert(state)
 			builder := &automock.CreatorForPlan{}
 			builder.On("CreateUpgradeShootInput", mock.Anything).Return(&fixture.SimpleInputCreator{}, nil)
 			step := NewInitialisationStep(is, os, builder)

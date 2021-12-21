@@ -19,7 +19,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from ProvisioningParameters when version provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.1.1"
-		rvc := NewRuntimeVersionConfigurator("not-relevant", "", &AccountVersionMapping{})
+		rvc := NewRuntimeVersionConfigurator("not-relevant", "", &AccountVersionMapping{}, nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
@@ -42,7 +42,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 				ProvisioningParameters: internal.ProvisioningParameters{},
 			},
 		}
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{}))
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -65,7 +65,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -90,7 +90,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, "", fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -116,7 +116,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 			},
 		}
 
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}))
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -141,7 +141,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 			},
 		}
 
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}))
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -170,7 +170,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): versionForGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       versionForSA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -195,7 +195,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 			},
 		}
 
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{})
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{}, nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -222,7 +222,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 			},
 		}
 
-		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{})
+		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, &AccountVersionMapping{}, nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -246,7 +246,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): customVerGA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -274,7 +274,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): customVerGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       customVerSA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -301,7 +301,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): customVerGA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)
@@ -332,7 +332,7 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, previewVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): customVerGA,
 			fmt.Sprintf("%s%s", subaccountPrefix, fixSubAccountID):       customVerSA,
-		}))
+		}), nil)
 
 		// when
 		ver, err := rvc.ForProvisioning(operation)

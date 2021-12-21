@@ -1,0 +1,55 @@
+{{ if .Values.global.mothership_reconciler.authentication }}
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mothership-reconciler.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  jwtRules:
+  - issuer: "{{ tpl .Values.oidc.issuer $ }}"
+    jwksUri: "{{ tpl .Values.oidc.keysURL $ }}"
+    outputPayloadToHeader: x-jwt
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mothership-reconciler.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  action: ALLOW
+  rules:
+  # Allow /metrics
+  {{ if .Values.global.mothership_reconciler.servicemonitor }}
+  - to:
+    - operation:
+        paths: ["/metrics"]
+  {{- end }}
+  # external communication
+  - to:
+    - operation:
+        hosts:
+        - "*.{{ .Values.global.ingress.domainName }}"
+    when:
+    - key: request.auth.claims[groups]
+      values: ["{{ .Values.oidc.groups.operator }}"]
+
+  # internal communication
+  - from:
+    - source:
+        principals: 
+        - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.global.kyma_environment_broker.serviceAccountName }}"
+{{- $global := . }}
+{{- range $component := .Values.global.components }}
+        - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component }}"
+{{- end }}
+{{- end }}

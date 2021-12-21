@@ -94,7 +94,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 	require.NoError(t, err)
 
 	queue := &automock.Queue{}
-	queue.On("Add", operationID)
+	queue.On("Add", mock.Anything)
 
 	svc := NewDeprovision(memoryStorage.Instances(), memoryStorage.Operations(), queue, logrus.StandardLogger())
 
@@ -103,7 +103,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, operationID, res.OperationData)
+	assert.NotEqual(t, operationID, res.OperationData)
 
 	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
 	require.NoError(t, err)

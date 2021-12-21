@@ -29,19 +29,21 @@ func TestEDPRegistration_Run(t *testing.T) {
 		Environment: edpEnvironment,
 		Required:    true,
 	})
-
-	// when
-	_, repeat, err := step.Run(internal.ProvisioningOperation{
+	operation := internal.ProvisioningOperation{
 		Operation: internal.Operation{
 			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         broker.AzureLitePlanID,
+				PlanID:         broker.AzureHAPlanID,
 				PlatformRegion: edpRegion,
 				ErsContext: internal.ERSContext{
 					SubAccountID: edpName,
 				},
 			},
 		},
-	}, logger.NewLogDummy())
+	}
+	memoryStorage.Operations().InsertProvisioningOperation(operation)
+
+	// when
+	_, repeat, err := step.Run(operation, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, 0*time.Second, repeat)
@@ -136,7 +138,7 @@ func TestEDPRegistrationStep_selectServicePlan(t *testing.T) {
 		},
 		"Azure Lite": {
 			planID:   broker.AzureLitePlanID,
-			expected: "standard",
+			expected: "tdd",
 		},
 		"Azure-HA": {
 			planID:   broker.AzureHAPlanID,

@@ -895,7 +895,7 @@ func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestration
 }
 
 func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO, error) {
-	err := s.cipher.EncryptBasicAuth(&op.ProvisioningParameters)
+	err := s.cipher.EncryptSMCreds(&op.ProvisioningParameters)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting basic auth")
 	}
@@ -932,7 +932,7 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
 	}
-	err := s.cipher.DecryptBasicAuth(&pp)
+	err := s.cipher.DecryptSMCreds(&pp)
 	if err != nil {
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}

@@ -38,20 +38,20 @@ func (c *FakeClient) EnableRequestDumping() {
 	c.dumpRequest = true
 }
 
-func (c *FakeClient) GetProvisionRuntimeInput(index int) schema.ProvisionRuntimeInput {
+func (c *FakeClient) GetLatestProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	r := c.runtimes[index]
+	r := c.runtimes[len(c.runtimes)-1]
 	return r.runtimeInput
 }
 
-func (c *FakeClient) FinishProvisionerOperation(id string) {
+func (c *FakeClient) FinishProvisionerOperation(id string, state schema.OperationState) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	op := c.operations[id]
-	op.State = schema.OperationStateSucceeded
+	op.State = state
 	c.operations[id] = op
 }
 

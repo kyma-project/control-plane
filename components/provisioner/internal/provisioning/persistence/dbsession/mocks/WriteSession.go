@@ -241,6 +241,22 @@ func (_m *WriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) db
 	return r0
 }
 
+// UpdateKubernetesVersion provides a mock function with given fields: runtimeID, version
+func (_m *WriteSession) UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error {
+	ret := _m.Called(runtimeID, version)
+
+	var r0 dberrors.Error
+	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+		r0 = rf(runtimeID, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dberrors.Error)
+		}
+	}
+
+	return r0
+}
+
 // UpdateOperationState provides a mock function with given fields: operationID, message, state, endTime
 func (_m *WriteSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error {
 	ret := _m.Called(operationID, message, state, endTime)

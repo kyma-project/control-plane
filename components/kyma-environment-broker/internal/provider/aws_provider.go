@@ -14,10 +14,11 @@ import (
 
 const (
 	DefaultAWSRegion       = "eu-central-1"
+	DefaultAWSTrialRegion  = "eu-west-1"
 	DefaultAWSHAZonesCount = 3
 )
 
-var europeAWS = "eu-central-1"
+var europeAWS = "eu-west-1"
 var usAWS = "us-east-1"
 var asiaAWS = "ap-southeast-1"
 
@@ -41,7 +42,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
+			MachineType:    "m6i.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
@@ -167,7 +168,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
+			MachineType:    "m6i.2xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
@@ -204,16 +205,16 @@ func (p *AWSInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsTrialDefaults()
+	return awsLiteDefaults()
 }
 
-func awsTrialDefaults() *gqlschema.ClusterConfigInput {
+func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.xlarge",
-			Region:         DefaultAWSRegion,
+			MachineType:    "m6i.xlarge",
+			Region:         DefaultAWSTrialRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  1,
@@ -270,7 +271,11 @@ func (p *AWSTrialInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsTrialDefaults()
+	defaults := awsLiteDefaults()
+
+	// Lite (freemium) must have the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
+	defaults.GardenerConfig.Region = DefaultAWSRegion
+	return defaults
 }
 
 func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {

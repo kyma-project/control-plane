@@ -31,6 +31,18 @@ type OIDCConfig struct {
 	UsernamePrefix string   `json:"usernamePrefix"`
 }
 
+type DNSConfig struct {
+	Domain    string         `json:"domain"`
+	Providers []*DNSProvider `json:"providers"`
+}
+
+type DNSProvider struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        bool     `json:"primary"`
+	SecretName     string   `json:"secretName"`
+	Type           string   `json:"type"`
+}
+
 type GardenerConfig struct {
 	ID                                  string
 	ClusterID                           string
@@ -58,6 +70,7 @@ type GardenerConfig struct {
 	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
+	DNSConfig                           *DNSConfig
 	ExposureClassName                   *string
 }
 
@@ -98,7 +111,7 @@ func NewCertConfig() *ExtensionProviderConfig {
 	}
 }
 
-func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig) (*gardener_types.Shoot, apperrors.AppError) {
+func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig, dnsInputConfig *DNSConfig) (*gardener_types.Shoot, apperrors.AppError) {
 	enableBasicAuthentication := false
 
 	var seed *string = nil
@@ -168,6 +181,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
+			DNS: gardenerDnsConfig(dnsInputConfig),
 			Extensions: []gardener_types.Extension{
 				{
 					Type:           "shoot-dns-service",
@@ -200,6 +214,33 @@ func gardenerOidcConfig(oidcConfig *OIDCConfig) *gardener_types.OIDCConfig {
 			UsernamePrefix: &oidcConfig.UsernamePrefix,
 		}
 	}
+	return nil
+}
+
+func gardenerDnsConfig(dnsConfig *DNSConfig) *gardener_types.DNS {
+	dns := gardener_types.DNS{}
+
+	if dnsConfig != nil {
+		dns.Domain = &dnsConfig.Domain
+		if len(dnsConfig.Providers) != 0 {
+			for _, v := range dnsConfig.Providers {
+				domainsInclude := &gardener_types.DNSIncludeExclude{
+					Include: v.DomainsInclude,
+				}
+
+				dns.Providers = append(dns.Providers, gardener_types.DNSProvider{
+					Domains:    domainsInclude,
+					Primary:    &v.Primary,
+					SecretName: &v.SecretName,
+					Type:       &v.Type,
+				})
+			}
+
+		}
+
+		return &dns
+	}
+
 	return nil
 }
 

@@ -45,10 +45,16 @@ type Provisioner interface {
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
+//go:generate mockery -name=KubernetesVersionProvider
+type KubernetesVersionProvider interface {
+	Get(runtimeID string, tenant string) (string, apperrors.AppError)
+}
+
 type service struct {
-	inputConverter   InputConverter
-	graphQLConverter GraphQLConverter
-	directorService  director.DirectorClient
+	inputConverter            InputConverter
+	graphQLConverter          GraphQLConverter
+	directorService           director.DirectorClient
+	kubernetesVersionProvider KubernetesVersionProvider
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -70,6 +76,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
+	kubernetesVersionProvider KubernetesVersionProvider,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
@@ -93,6 +100,7 @@ func NewProvisioningService(
 		upgradeQueue:                 upgradeQueue,
 		shootUpgradeQueue:            shootUpgradeQueue,
 		hibernationQueue:             hibernationQueue,
+		kubernetesVersionProvider:    kubernetesVersionProvider,
 	}
 }
 
@@ -223,6 +231,18 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
+	// We need to fetch current Kubernetes version to be able to maintain consistency
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID, cluster.Tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
+	if shootKubernetesVersion > gardenerConfig.KubernetesVersion {
+		log.Infof("Kubernetes version in shoot was higher than the version provided in UpgradeGardenerShoot. Version fetched from the shoot will be used :%s.", shootKubernetesVersion)
+		gardenerConfig.KubernetesVersion = shootKubernetesVersion
+	}
+
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
@@ -328,6 +348,12 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}
 
+	// We need to fetch current Kubernetes version to be able to maintain consistency
+	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId, cluster.Tenant)
+	if err != nil {
+		return nil, err
+	}
+
 	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
@@ -337,6 +363,16 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	operation, dberr := r.setUpgradeStarted(txSession, cluster, kymaConfig)
 	if dberr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
+	}
+
+	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
+
+	if shootKubernetesVersion > cluster.ClusterConfig.KubernetesVersion {
+		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shootKubernetesVersion)
+		dberr = txSession.UpdateKubernetesVersion(runtimeId, shootKubernetesVersion)
+		if dberr != nil {
+			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
+		}
 	}
 
 	dberr = txSession.Commit()

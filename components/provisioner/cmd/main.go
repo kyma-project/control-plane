@@ -233,7 +233,8 @@ func main() {
 		shootClient,
 		secretsInterface,
 		cfg.OperatorRoleBinding,
-		k8sClientProvider)
+		k8sClientProvider,
+		runtimeConfigurator)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
@@ -267,6 +268,7 @@ func main() {
 		dbsFactory,
 		releaseProvider,
 		directorClient,
+		gardener.NewKubernetesVersionProvider(shootClient),
 		provisioningQueue,
 		provisioningNoInstallQueue,
 		deprovisioningQueue,

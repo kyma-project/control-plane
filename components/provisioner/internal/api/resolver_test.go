@@ -44,6 +44,7 @@ func TestResolver_ProvisionRuntime(t *testing.T) {
 			MaxUnavailable:         1,
 			ProviderSpecificConfig: nil,
 			OidcConfig:             oidcInput(),
+			DNSConfig:              dnsInput(),
 		},
 	}
 
@@ -615,5 +616,18 @@ func oidcInput() *gqlschema.OIDCConfigInput {
 		SigningAlgs:    []string{"RS257"},
 		UsernameClaim:  "sup",
 		UsernamePrefix: "-",
+	}
+}
+
+func dnsInput() *gqlschema.DNSConfigInput {
+	return &gqlschema.DNSConfigInput{
+		Providers: []*gqlschema.DNSProviderInput{
+			&gqlschema.DNSProviderInput{
+				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+				Primary:        true,
+				SecretName:     "aws_dns_domain_secrets_test_inresolver",
+				Type:           "route53_type_test",
+			},
+		},
 	}
 }

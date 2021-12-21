@@ -30,7 +30,7 @@ spec:
             # Used for calls for oauth token
             - "{{ .Values.global.oauth2.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}"
       {{ end }}
-      serviceAccountName: {{ include "kyma-env-broker.fullname" . }}
+      serviceAccountName: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
     {{- with .Values.deployment.securityContext }}
       securityContext:
         {{ toYaml . | indent 8 }}
@@ -42,6 +42,21 @@ spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
+        {{- if .Values.broker.profiler.memory }}
+        - name: profiler
+          command:
+          - bash
+          - -c
+          - chmod 777 /tmp/profiler && sleep inf
+          securityContext:
+            runAsUser: 0
+          image: ubuntu:20.04
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: keb-memory-profile
+              mountPath: /tmp/profiler
+              readOnly: false
+        {{- end }}
         - name: {{ .Chart.Name }}
           image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
@@ -102,8 +117,6 @@ spec:
                   optional: true
             - name: APP_DIRECTOR_OAUTH_SCOPE
               value: "{{ .Values.director.scope }}"
-            - name: APP_XSUAA_DISABLED
-              value: "{{ .Values.xsuaa.disabled }}"
             - name: APP_IAS_URL
               value: "{{ .Values.ias.url }}"
             - name: APP_IAS_USER_ID
@@ -141,8 +154,6 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.edp.secretName }}"
                   key: secret
-            - name: APP_CONNECTIVITY_DISABLED
-              value: "{{ .Values.connectivity.disabled }}"
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -362,16 +373,6 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
-            - name: APP_MONITORING_NAMESPACE
-              value: "{{ .Values.monitoring.namespace }}"
-            - name: APP_MONITORING_CHART_URL
-              value: "{{ .Values.monitoring.chartUrl }}"
-            - name: APP_MONITORING_REMOTE_WRITE_URL
-              value: "{{ .Values.monitoring.remoteWriteUrl }}"
-            - name: APP_MONITORING_REMOTE_WRITE_PATH
-              value: "{{ .Values.monitoring.remoteWritePath }}"
-            - name: APP_MONITORING_DISABLED
-              value: "{{ .Values.monitoring.disabled }}"
             - name: APP_VERSION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
@@ -380,12 +381,16 @@ spec:
               value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_SKR_OIDC_DEFAULT_VALUES_YAML_FILE_PATH
               value: /config/skrOIDCDefaultValues.yaml
+            - name: APP_SKR_DNS_PROVIDERS_VALUES_YAML_FILE_PATH
+              value: /config/skrDNSProvidersValues.yaml
             - name: APP_ORCHESTRATION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_ORCHESTRATION_CONFIG_NAME
               value: "orchestration-config"
             - name: APP_NEW_ADDITIONAL_RUNTIME_COMPONENTS_YAML_FILE_PATH
               value: /config/newAdditionalRuntimeComponents.yaml
+            - name: APP_PROFILER_MEMORY
+              value: "{{ .Values.broker.profiler.memory }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -416,11 +421,16 @@ spec:
               name: swagger-volume
             - mountPath: /auditlog-script
               name: auditlog-script
-          {{if eq .Values.global.database.embedded.enabled false}}
+          {{- if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
-          {{ end }}
+          {{- end }}
+          {{- if .Values.broker.profiler.memory }}
+            - name: keb-memory-profile
+              mountPath: /tmp/profiler
+              readOnly: false
+          {{- end }}
 
         {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
@@ -455,3 +465,8 @@ spec:
       - name: auditlog-script
         configMap:
           name: {{ .Values.global.auditlog.script.configMapName }}
+      {{- if .Values.broker.profiler.memory }}
+      - name: keb-memory-profile
+        persistentVolumeClaim:
+          claimName: {{ include "kyma-env-broker.fullname" . }}-profiler
+      {{- end }}

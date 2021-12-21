@@ -53,6 +53,7 @@ type WriteSession interface {
 	//TODO:Remove after schema migration
 	UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error
 	InsertRelease(artifacts model.Release) dberrors.Error
+	UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error
 }
 
 //go:generate mockery -name=ReadWriteSession

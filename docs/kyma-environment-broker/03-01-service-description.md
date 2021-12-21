@@ -87,8 +87,8 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 
@@ -123,7 +123,7 @@ These are the provisioning parameters for AWS that you can configure:
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5.2xlarge` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m6i.2xlarge` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
@@ -140,7 +140,7 @@ These are the provisioning parameters for AWS that you can configure:
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5d.xlarge` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m6i.2xlarge` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
@@ -164,9 +164,9 @@ These are the provisioning parameters for GCP that you can configure:
     
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n1-standard-4` |
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n2-standard-8` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
-| **region** | string | Defines the cluster region. | No | `europe-west4` |
+| **region** | string | Defines the cluster region. | No | `europe-west3` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |

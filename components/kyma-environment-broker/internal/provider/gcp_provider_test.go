@@ -26,7 +26,7 @@ func TestGcpTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Equal(t, "europe-west4", input.GardenerConfig.Region)
+		assert.Equal(t, "europe-west3", input.GardenerConfig.Region)
 	})
 
 	// when
@@ -44,7 +44,7 @@ func TestGcpTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Equal(t, "us-east4", input.GardenerConfig.Region)
+		assert.Equal(t, "us-central1", input.GardenerConfig.Region)
 	})
 
 	// when
@@ -56,7 +56,7 @@ func TestGcpTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		svc.ApplyParameters(input, internal.ProvisioningParameters{})
 
 		//then
-		assert.Equal(t, "europe-west4", input.GardenerConfig.Region)
+		assert.Equal(t, "europe-west3", input.GardenerConfig.Region)
 	})
 
 	// when
@@ -70,6 +70,6 @@ func TestGcpTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Equal(t, "europe-west4", input.GardenerConfig.Region)
+		assert.Equal(t, "europe-west3", input.GardenerConfig.Region)
 	})
 }

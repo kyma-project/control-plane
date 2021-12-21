@@ -17,6 +17,10 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    - port: {{ $global.Values.service.istioPort }}
+      targetPort: {{ $global.Values.service.istioPort }}
+      protocol: TCP
+      name: istio-http
   selector:
     kyma-project.io/component-reconciler: ""
     component: {{ $component }}

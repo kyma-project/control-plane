@@ -82,6 +82,30 @@ type ConfigEntryInput struct {
 	Secret *bool  `json:"secret"`
 }
 
+type DNSConfig struct {
+	Domain    string         `json:"domain"`
+	Providers []*DNSProvider `json:"providers"`
+}
+
+type DNSConfigInput struct {
+	Domain    string              `json:"domain"`
+	Providers []*DNSProviderInput `json:"providers"`
+}
+
+type DNSProvider struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        bool     `json:"primary"`
+	SecretName     string   `json:"secretName"`
+	Type           string   `json:"type"`
+}
+
+type DNSProviderInput struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        bool     `json:"primary"`
+	SecretName     string   `json:"secretName"`
+	Type           string   `json:"type"`
+}
+
 type Error struct {
 	Message *string `json:"message"`
 }
@@ -119,6 +143,7 @@ type GardenerConfig struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              ProviderSpecificConfig `json:"providerSpecificConfig"`
+	DNSConfig                           *DNSConfig             `json:"dnsConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
 }
@@ -145,6 +170,7 @@ type GardenerConfigInput struct {
 	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
 	AllowPrivilegedContainers           *bool                  `json:"allowPrivilegedContainers"`
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
+	DNSConfig                           *DNSConfigInput        `json:"dnsConfig"`
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`

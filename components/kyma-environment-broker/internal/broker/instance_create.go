@@ -45,8 +45,9 @@ type ProvisionEndpoint struct {
 	kymaVerOnDemand   bool
 	planDefaults      PlanDefaults
 
-	shootDomain  string
-	shootProject string
+	shootDomain       string
+	shootProject      string
+	shootDnsProviders gardener.DNSProvidersData
 
 	log logrus.FieldLogger
 }
@@ -80,6 +81,7 @@ func NewProvision(cfg Config,
 		kymaVerOnDemand:   kvod,
 		shootDomain:       gardenerConfig.ShootDomain,
 		shootProject:      gardenerConfig.Project,
+		shootDnsProviders: gardenerConfig.DNSProviders,
 		planDefaults:      planDefaults,
 	}
 }
@@ -133,7 +135,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://console.%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -142,8 +144,10 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, b.shootProject, strings.Trim(b.shootDomain, "."))
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	operation.ShootDNSProviders = b.shootDnsProviders
 	operation.DashboardURL = dashboardURL
+	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
 	if err != nil {
@@ -292,6 +296,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 }
 
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
+
 	if !operation.ProvisioningParameters.IsEqual(input) {
 		err := errors.New("provisioning operation already exist")
 		msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
@@ -307,8 +312,8 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
-		AlreadyExists: true,
 		OperationData: operation.ID,
+		DashboardURL:  operation.DashboardURL,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},

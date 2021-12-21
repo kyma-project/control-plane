@@ -59,8 +59,8 @@ groups:
   - name: kmc.rules.gardener
     rules:
     - alert: GardenerErrors
-      expr: sum by (reason) (increase(kmc_gardener_calls_total{status="failure"}[10m])) > 30
-      for: 10m
+      expr: sum by (reason, shoot) (increase(kmc_gardener_calls_total{status="failure"}[10m])) > 30
+      for: 15m
       labels:
         severity: critical
       annotations:

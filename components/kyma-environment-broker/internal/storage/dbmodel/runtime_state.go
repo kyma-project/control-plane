@@ -14,6 +14,7 @@ type RuntimeStateDTO struct {
 
 	KymaConfig    string `json:"kymaConfig"`
 	ClusterConfig string `json:"clusterConfig"`
+	ClusterSetup  string `json:"clusterSetup"`
 
 	// these fields are also available in above configs
 	// they are set separately to make fetching easier

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kennygrant/sanitize"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
@@ -124,6 +126,8 @@ func (h *Handler) handleResponse(w http.ResponseWriter, code int, err error) {
 
 func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWriter) {
 	origin := r.Header.Get("Origin")
+	origin = strings.ReplaceAll(origin, "\r", "")
+	origin = strings.ReplaceAll(origin, "\n", "")
 	if origin == "" {
 		return
 	}
@@ -135,7 +139,7 @@ func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWrite
 
 	for _, o := range strings.Split(h.allowOrigins, ",") {
 		if o == origin {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Origin", sanitize.HTML(origin))
 			return
 		}
 	}

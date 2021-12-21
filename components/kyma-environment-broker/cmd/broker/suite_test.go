@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -28,8 +29,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring"
-	monitoringmocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/monitoring/mocks"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -64,7 +63,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "1.21"
+	defaultKymaVer         = "1.24.7"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -98,7 +97,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.Connectivity.Disabled = true
 	cfg.AuditLog.Disabled = false
 	cfg.AuditLog = auditlog.Config{
 		URL:           "https://host1:8080/aaa/v2/",
@@ -107,22 +105,14 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Tenant:        "fooTen",
 		EnableSeqHttp: true,
 	}
+	cfg.OrchestrationConfig = kebOrchestration.Config{
+		KymaVersion:       "",
+		KubernetesVersion: "",
+	}
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
-
-	//monitoring config and client
-	cfg.Monitoring = monitoring.Config{
-		Namespace:       "mornitoring",
-		ChartUrl:        "notEmptyChart",
-		RemoteWriteUrl:  "notEmptyUrl",
-		RemoteWritePath: "notEmptyPath",
-		Disabled:        false,
-	}
-	monitoringClient := &monitoringmocks.Client{}
-	monitoringClient.On("IsPresent", mock.Anything).Return(true, nil)
-	monitoringClient.On("UpgradeRelease", mock.Anything).Return(nil, nil)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -149,7 +139,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(kymaVer, additionalKymaVersions)...)
+	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 
 	reconcilerClient := reconciler.NewFakeClient()
 	gardenerClient := gardenerFake.NewSimpleClientset()
@@ -161,7 +151,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs))
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
@@ -174,7 +164,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, hyperscaler.NewAccountProvider(nil, nil), reconcilerClient, nil, inMemoryFs, monitoringClient, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -289,8 +279,15 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID: planID,
 		ErsContext: internal.ERSContext{
-			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
+			GlobalAccountID: globalAccountID,
+			ServiceManager: &internal.ServiceManagerEntryDTO{
+				Credentials: internal.ServiceManagerCredentials{BasicAuth: internal.ServiceManagerBasicAuth{
+					Username: "username321",
+					Password: "password321",
+				}},
+				URL: "https://sm.sap",
+			},
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
@@ -386,7 +383,7 @@ func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschem
 	err := wait.Poll(time.Millisecond*100, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil
@@ -435,17 +432,19 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure":    "true",
-				"overrides-plan-trial":    "true",
-				"overrides-plan-aws":      "true",
-				"overrides-plan-free":     "true",
-				"overrides-plan-azure_ha": "true",
-				"overrides-plan-aws_ha":   "true",
-				"overrides-plan-preview":  "true",
+				"overrides-plan-azure":        "true",
+				"overrides-plan-trial":        "true",
+				"overrides-plan-aws":          "true",
+				"overrides-plan-free":         "true",
+				"overrides-plan-azure_ha":     "true",
+				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-preview":      "true",
+				"overrides-version-2.0.0-rc4": "true",
 			},
 		},
 		Data: map[string]string{
-			"foo": "bar",
+			"foo":                            "bar",
+			"global.booleanOverride.enabled": "false",
 		},
 	}
 	scOverride := &coreV1.ConfigMap{
@@ -454,20 +453,22 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			Namespace: "kcp-system",
 			Labels: map[string]string{
 				fmt.Sprintf("overrides-version-%s", defaultKymaVersion): "true",
-				"overrides-plan-azure":    "true",
-				"overrides-plan-trial":    "true",
-				"overrides-plan-aws":      "true",
-				"overrides-plan-free":     "true",
-				"overrides-plan-azure_ha": "true",
-				"overrides-plan-aws_ha":   "true",
-				"overrides-plan-preview":  "true",
-				"component":               "service-catalog2",
+				"overrides-plan-azure":        "true",
+				"overrides-plan-trial":        "true",
+				"overrides-plan-aws":          "true",
+				"overrides-plan-free":         "true",
+				"overrides-plan-azure_ha":     "true",
+				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-preview":      "true",
+				"overrides-version-2.0.0-rc4": "true",
+				"component":                   "service-catalog2",
 			},
 		},
 		Data: map[string]string{
 			"setting-one": "1234",
 		},
 	}
+
 	for _, version := range additionalKymaVersions {
 		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 		scOverride.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
@@ -544,17 +545,12 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping, nil)
 
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 
 	edpClient := edp.NewFakeClient()
-
-	monitoringClient := &monitoringmocks.Client{}
-	monitoringClient.On("IsDeployed", mock.Anything).Return(false, nil)
-	monitoringClient.On("IsPresent", mock.Anything).Return(false, nil)
-	monitoringClient.On("InstallRelease", mock.Anything).Return(nil, nil)
 
 	accountProvider := fixAccountProvider()
 
@@ -569,7 +565,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, monitoringClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -620,6 +616,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	require.NoError(s.t, err)
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
+	operation.ShootDNSProviders = gardener.DNSProvidersData{}
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 
@@ -756,7 +753,7 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
-			s.provisionerClient.FinishProvisionerOperation(*status.ID)
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
 		}
 		return false, nil
@@ -786,7 +783,7 @@ func (s *ProvisioningSuite) AssertProvider(provider string) {
 }
 
 func (s *ProvisioningSuite) fetchProvisionInput() gqlschema.ProvisionRuntimeInput {
-	input := s.provisionerClient.GetProvisionRuntimeInput(0)
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 	return input
 }
 
@@ -808,31 +805,38 @@ func (s *ProvisioningSuite) AssertMachineType(machineType string) {
 	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
 }
 
-func (s *ProvisioningSuite) AssertOverrides(overrides gqlschema.ConfigEntryInput) {
+func (s *ProvisioningSuite) AssertOverrides(overrides []*gqlschema.ConfigEntryInput) {
 	input := s.fetchProvisionInput()
 
-	assert.Equal(s.t, overrides.Key, input.KymaConfig.Configuration[0].Key)
-	assert.Equal(s.t, overrides.Value, input.KymaConfig.Configuration[0].Value)
+	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
+	sort.Slice(overrides, func(i, j int) bool {
+		return overrides[i].Key < overrides[j].Key
+	})
+	sort.Slice(input.KymaConfig.Configuration, func(i, j int) bool {
+		return input.KymaConfig.Configuration[i].Key < input.KymaConfig.Configuration[j].Key
+	})
+
+	assert.Equal(s.t, overrides, input.KymaConfig.Configuration)
 }
 
 func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
-	input := s.fetchProvisionInput()
+	provisionInput := s.fetchProvisionInput()
 
 	switch planID {
 	case broker.AzureHAPlanID:
 		if zonesCount != nil {
 			// zonesCount was provided in provisioning request
-			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 			break
 		}
 		// zonesCount was not provided, should use default value
-		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
 	case broker.AWSHAPlanID:
 		if zonesCount != nil {
-			assert.Equal(s.t, *zonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 			break
 		}
-		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 	default:
 	}
 }
@@ -868,12 +872,6 @@ func sharedSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("shared-%s", ht)
 }
 
-func (s *ProvisioningSuite) MarkDirectorWithConsoleURL(operationID string) {
-	op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
-	assert.NoError(s.t, err)
-	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
 func fixConfig() *Config {
 	return &Config{
 		DbInMemory:                         true,
@@ -889,10 +887,11 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:        "1.21",
+		KymaVersion:        "1.24.7",
 		KymaPreviewVersion: "2.0",
 
-		EnableOnDemandVersion: true,
+		EnableOnDemandVersion:      true,
+		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "preview"},
 		},
@@ -907,19 +906,13 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		Monitoring: monitoring.Config{
-			Namespace:       "mornitoring",
-			ChartUrl:        "notEmptyChart",
-			RemoteWriteUrl:  "notEmptyUrl",
-			RemoteWritePath: "notEmptyPath",
-			Disabled:        false,
-		},
 		FreemiumProviders:       []string{"aws", "azure"},
 		UpdateProcessingEnabled: true,
 		Gardener: gardener.Config{
 			Project:     "kyma",
-			ShootDomain: "sap.com",
+			ShootDomain: "kyma.sap.com",
 		},
+		MaxPaginationPage: 100,
 	}
 }
 
@@ -946,22 +939,11 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 		CatalogID: "off-cat-id-001",
 		BrokerID:  brokerID,
 	},
-		{
-			ID:        "connectivity-oferring-id",
-			Name:      provisioning.ConnectivityOfferingName,
-			CatalogID: "connectivity-service-id",
-			BrokerID:  brokerID,
-		},
 	}, []types.ServicePlan{{
 		ID:        "xsuaa-plan-id",
 		Name:      "application",
 		CatalogID: "xsuaa",
 	},
-		{
-			ID:        "connectivity-plan-id",
-			Name:      provisioning.ConnectivityPlanName,
-			CatalogID: provisioning.ConnectivityPlanName,
-		},
 	})
 	smcf.SynchronousProvisioning()
 

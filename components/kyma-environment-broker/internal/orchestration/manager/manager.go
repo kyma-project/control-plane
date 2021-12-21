@@ -7,6 +7,10 @@ import (
 	"regexp"
 	"time"
 
+	coreV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -14,9 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	coreV1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type OperationFactory interface {
@@ -37,6 +38,8 @@ type orchestrationManager struct {
 	k8sClient            client.Client
 	configNamespace      string
 	configName           string
+	kymaVersion          string
+	kubernetesVersion    string
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
@@ -144,6 +147,13 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			result = append(result, op)
 		}
 
+		if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
+			o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
+		}
+		if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
+			o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
+		}
+
 		if len(runtimes) != 0 {
 			o.State = orchestration.InProgress
 		} else {
@@ -166,7 +176,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor orchestration.OperationExecutor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
 	case orchestration.ParallelStrategy:
-		return strategies.NewParallelOrchestrationStrategy(executor, log, 24*time.Hour)
+		return strategies.NewParallelOrchestrationStrategy(executor, log, 0)
 	}
 	return nil
 }

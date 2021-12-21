@@ -2,8 +2,10 @@ package runtime
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -79,7 +81,11 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		setRuntimeStateByOperationState(&dto)
+		err = h.setRuntimeStateByOperationState(&dto)
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
 		err = h.setRuntimeOptionalAttributes(instance, &dto, kymaConfig, clusterConfig)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
@@ -127,7 +133,7 @@ func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClus
 	return toReturn, totalCount
 }
 
-func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
+func (h *Handler) setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) error {
 	// Determine runtime state based on the last operation of the runtime
 	lastOp := dto.LastOperation()
 	switch lastOp.State {
@@ -153,7 +159,19 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 		case pkg.Update:
 			dto.Status.State = pkg.StateUpdating
 		}
+	default:
+		dto.Status.State = pkg.StateSucceeded
 	}
+
+	// Determine runtime modifiedAt timestamp based on the last operation of the runtime
+	last, err := h.operationsDb.GetLastOperation(dto.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrapf(err, "while fetching last operation for instance %s", dto.InstanceID)
+	}
+	if last != nil {
+		dto.Status.ModifiedAt = last.UpdatedAt
+	}
+	return nil
 }
 
 func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.RuntimeDTO) error {
@@ -161,14 +179,16 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching provisioning operations list for instance")
 	}
-	var firstProvOp *internal.ProvisioningOperation
 	if len(provOprs) != 0 {
-		firstProvOp = &provOprs[len(provOprs)-1]
-		// Set AVS evaluation ID based on the data in the initial provisioning operation
-		dto.AVSInternalEvaluationID = firstProvOp.InstanceDetails.Avs.AvsEvaluationInternalId
+		firstProvOp := &provOprs[len(provOprs)-1]
+		lastProvOp := provOprs[0]
+		// Set AVS evaluation ID based on the data in the last provisioning operation
+		dto.AVSInternalEvaluationID = lastProvOp.InstanceDetails.Avs.AvsEvaluationInternalId
+		h.converter.ApplyProvisioningOperation(dto, firstProvOp)
+		if len(provOprs) > 1 {
+			h.converter.ApplyUnsuspensionOperations(dto, provOprs[:len(provOprs)-1])
+		}
 	}
-	h.converter.ApplyProvisioningOperation(dto, firstProvOp)
-	h.converter.ApplyUnsuspensionOperations(dto, provOprs)
 
 	deprovOprs, err := h.operationsDb.ListDeprovisioningOperationsByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
@@ -190,6 +210,7 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	if err != nil && !dberr.IsNotFound(err) {
 		return errors.Wrap(err, "while fetching upgrade kyma operation for instance")
 	}
+	dto.KymaVersion = determineKymaVersion(provOprs, ukOprs)
 	ukOprs, totalCount := h.takeLastNonDryRunOperations(ukOprs)
 	h.converter.ApplyUpgradingKymaOperations(dto, ukOprs, totalCount)
 
@@ -296,6 +317,34 @@ func (h *Handler) setRuntimeOptionalAttributes(instance internal.Instance, dto *
 	}
 
 	return nil
+}
+
+func determineKymaVersion(pOprs []internal.ProvisioningOperation, uOprs []internal.UpgradeKymaOperation) string {
+	kymaVersion := ""
+	kymaVersionSetAt := time.Time{}
+
+	// Set kyma version from the last provisioning operation
+	if len(pOprs) != 0 {
+		kymaVersion = pOprs[0].RuntimeVersion.Version
+		kymaVersionSetAt = pOprs[0].CreatedAt
+	}
+
+	// Take the last upgrade kyma operation which
+	//   - is not dry-run
+	//   - is created after the last provisioning operation
+	//   - has the kyma version set
+	//   - has been processed, i.e. not pending, canceling or canceled
+	// Use the last provisioning kyma version if no such upgrade operation was found, or the processed upgrade happened before the last provisioning operation.
+	for _, u := range uOprs {
+		if !u.DryRun && u.CreatedAt.After(kymaVersionSetAt) && u.RuntimeVersion.Version != "" && u.State != orchestration.Pending && u.State != orchestration.Canceling && u.State != orchestration.Canceled {
+			kymaVersion = u.RuntimeVersion.Version
+			break
+		} else if u.CreatedAt.Before(kymaVersionSetAt) {
+			break
+		}
+	}
+
+	return kymaVersion
 }
 
 func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {

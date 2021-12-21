@@ -26,7 +26,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "AWS schema is correct",
 			generator:      AWSSchema,
-			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			machineTypes:   []string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
 			file:           "aws-schema.json",
 			updateFile:     "update-aws-schema.json",
 			fileOIDC:       "aws-schema-additional-params.json",
@@ -35,7 +35,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "AWS HA schema is correct",
 			generator:      AWSHASchema,
-			machineTypes:   []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"},
+			machineTypes:   []string{"m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
 			file:           "aws-ha-schema.json",
 			updateFile:     "update-aws-ha-schema.json",
 			fileOIDC:       "aws-ha-schema-additional-params.json",
@@ -71,7 +71,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "GCP schema is correct",
 			generator:      GCPSchema,
-			machineTypes:   []string{"n1-standard-2", "n1-standard-4", "n1-standard-8", "n1-standard-16", "n1-standard-32", "n1-standard-64"},
+			machineTypes:   []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"},
 			file:           "gcp-schema.json",
 			updateFile:     "update-gcp-schema.json",
 			fileOIDC:       "gcp-schema-additional-params.json",

@@ -1,0 +1,65 @@
+{{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+  {{- include "mothership-reconciler.labels" . | nindent 4 }}
+  name: mothership-fluentbit-config
+  namespace: {{ .Release.Namespace }}
+data:
+  parsers.conf: |
+    [PARSER]
+        Name         json
+        Format       json
+        Time_Key     time
+        Time_Keep    Off
+        # Command      |  Decoder | Field | Optional Action
+        # =============|==================|=================
+        Decode_Field_As   escaped_utf8    log    do_next
+        Decode_Field_As   json       log
+
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Grace         5
+        Daemon        off
+        Log_Level     info
+        Parsers_File  parsers.conf
+        HTTP_Server  On
+        HTTP_Listen  0.0.0.0
+        HTTP_PORT    2020
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/auditlog/mothership-audit.log
+        Refresh_Interval  10
+        Rotate_Wait       5
+        Read_from_Head    On
+        DB                /var/log/auditlog/fluentbit.db
+        DB.sync           normal
+        Mem_Buf_Limit     5MB
+        exit_on_eof       false
+        Key               log
+
+    [FILTER]
+        Name         parser
+        Parser       json
+        Match        *
+        Key_Name     log
+        Reserve_Data On
+        Preserve_Key Off
+
+    [OUTPUT]
+        Name             sequentialhttp
+        Match            *
+        Retry_Limit      False
+        Host             ${HOST}
+        Port             ${PORT}
+        URI              ${URI}security-events
+        Header           Content-Type application/json
+        HTTP_User        ${APP_AUDITLOG_USER}
+        HTTP_Passwd      ${APP_AUDITLOG_PASSWORD}
+        Format           json_stream
+        tls              On
+
+{{- end }}

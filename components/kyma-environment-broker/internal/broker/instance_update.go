@@ -23,7 +23,7 @@ import (
 )
 
 type ContextUpdateHandler interface {
-	Handle(instance *internal.Instance, newCtx internal.ERSContext) error
+	Handle(instance *internal.Instance, newCtx internal.ERSContext) (bool, error)
 }
 
 type UpdateEndpoint struct {
@@ -31,6 +31,7 @@ type UpdateEndpoint struct {
 	log    logrus.FieldLogger
 
 	instanceStorage      storage.Instances
+	runtimeStates        storage.RuntimeStates
 	contextUpdateHandler ContextUpdateHandler
 	brokerURL            string
 	processingEnabled    bool
@@ -44,6 +45,7 @@ type UpdateEndpoint struct {
 
 func NewUpdate(cfg Config,
 	instanceStorage storage.Instances,
+	runtimeStates storage.RuntimeStates,
 	operationStorage storage.Operations,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
@@ -55,6 +57,7 @@ func NewUpdate(cfg Config,
 		config:               cfg,
 		log:                  log.WithField("service", "UpdateEndpoint"),
 		instanceStorage:      instanceStorage,
+		runtimeStates:        runtimeStates,
 		operationStorage:     operationStorage,
 		contextUpdateHandler: ctxUpdateHandler,
 		processingEnabled:    processingEnabled,
@@ -88,7 +91,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
-
+	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	var contextData map[string]interface{}
 	err = json.Unmarshal(details.RawContext, &contextData)
 	if err != nil {
@@ -105,14 +108,34 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("cannot fetch provisioning lastProvisioningOperation for instance with ID: %s : %s", instance.InstanceID, err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
 	}
+	if lastProvisioningOperation.State == domain.Failed {
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "")
+	}
+
+	lastDeprovisioningOperation, err := b.operationStorage.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		logger.Errorf("cannot fetch deprovisioning for instance with ID: %s : %s", instance.InstanceID, err.Error())
+		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+	}
+	if err == nil {
+		if !lastDeprovisioningOperation.Temporary {
+			// it is not a suspension, but real deprovisioning
+			logger.Warnf("Cannot process update, the instance has started deprovisioning process (operationID=%s)", lastDeprovisioningOperation.Operation.ID)
+			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a deprovisioned instance"), http.StatusUnprocessableEntity, "")
+		}
+	}
 
 	if b.processingEnabled {
-		instance, err := b.processContext(instance, details, lastProvisioningOperation, logger)
+		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
 		}
 
-		return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, logger)
+		// NOTE: KEB currently can't process update parameters in one call along with context update
+		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
+		if !suspendStatusChange {
+			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
+		}
 	}
 
 	return domain.UpdateServiceSpec{
@@ -125,8 +148,15 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}, nil
 }
 
-func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
-	if len(details.RawParameters) == 0 {
+func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails) bool {
+	if len(details.RawParameters) != 0 {
+		return true
+	}
+	return instance.InstanceDetails.SCMigrationTriggered
+}
+
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed, isMigration bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+	if !shouldUpdate(instance, details) {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
 			IsAsync:       false,
@@ -143,18 +173,21 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		return domain.UpdateServiceSpec{}, apiresponses.ErrAsyncRequired
 	}
 	var params internal.UpdatingParametersDTO
-	err := json.Unmarshal(details.RawParameters, &params)
-	if err != nil {
-		logger.Errorf("unable to unmarshal parameters: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parametera")
+	if len(details.RawParameters) != 0 {
+		err := json.Unmarshal(details.RawParameters, &params)
+		if err != nil {
+			logger.Errorf("unable to unmarshal parameters: %s", err.Error())
+			return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parameters")
+		}
+		logger.Debugf("Updating with params: %+v", params)
 	}
-	logger.Debugf("Updating with params: %+v", params)
 
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
+	operation.InstanceDetails.SCMigrationTriggered = isMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -222,12 +255,12 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	}, nil
 }
 
-func (b *UpdateEndpoint) processContext(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (*internal.Instance, error) {
+func (b *UpdateEndpoint) processContext(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, logger logrus.FieldLogger) (*internal.Instance, bool, error) {
 	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		logger.Errorf("unable to decode context: %s", err.Error())
-		return nil, errors.New("unable to unmarshal context")
+		return nil, false, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
@@ -236,13 +269,35 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
-		return nil, errors.New("unable to process the update")
+		return nil, false, errors.New("unable to process the update")
+	}
+	if ersContext.ServiceManager != nil {
+		instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
+	}
+	if ersContext.SMOperatorCredentials != nil {
+		instance.Parameters.ErsContext.SMOperatorCredentials = ersContext.SMOperatorCredentials
+	}
+	if ersContext.IsMigration {
+		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
 	}
 
-	err = b.contextUpdateHandler.Handle(instance, ersContext)
+	if ersContext.IsMigration {
+		if k2, version, err := b.isKyma2(instance); err != nil {
+			msg := "failed to determine kyma version"
+			logger.Errorf("%v: %v", msg, err)
+			return nil, false, fmt.Errorf(msg)
+		} else if !k2 {
+			msg := fmt.Sprintf("performing btp-operator migration is supported only for kyma 2.x, current version: %v", version)
+			logger.Errorf(msg)
+			return nil, false, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
+		}
+		instance.InstanceDetails.SCMigrationTriggered = true
+	}
+
+	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, errors.New("unable to process the update")
+		return nil, changed, errors.New("unable to process the update")
 	}
 
 	//  copy the Active flag if set
@@ -253,9 +308,9 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	newInstance, err := b.instanceStorage.Update(*instance)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, errors.New("unable to process the update")
+		return nil, changed, errors.New("unable to process the update")
 	}
-	return newInstance, nil
+	return newInstance, changed, nil
 }
 
 func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {
@@ -270,4 +325,19 @@ func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.Pr
 	}
 
 	return ptr.Bool(deprovisioning.CreatedAt.Before(provisioning.CreatedAt)), nil
+}
+
+func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, error) {
+	s, err := b.runtimeStates.GetLatestWithKymaVersionByRuntimeID(instance.RuntimeID)
+	if err != nil {
+		return false, "", err
+	}
+	kv := ""
+	if s.KymaConfig.Version != "" {
+		kv = s.KymaConfig.Version
+	}
+	if s.ClusterSetup != nil && s.ClusterSetup.KymaConfig.Version != "" {
+		kv = s.ClusterSetup.KymaConfig.Version
+	}
+	return internal.DetermineMajorVersion(kv) == 2, kv, nil
 }

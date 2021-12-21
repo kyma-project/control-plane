@@ -84,6 +84,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+		internal.DisableServiceManagementComponents(operation.InputCreator)
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {

@@ -62,6 +62,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 				GcpConfig: &gqlschema.GCPProviderConfigInput{},
 			},
 			OidcConfig: oidcInput(),
+			DNSConfig:  dnsInput(),
 		},
 	}
 
@@ -117,7 +118,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, provisioningQueue, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningQueue, nil, nil, nil, nil, nil, nil)
 
 		//when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -163,7 +164,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningNoInstallQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningNoInstallQueue, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, provisioningNoInstallQueue, nil, nil, nil, nil, nil)
 
 		//when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInputNoKymaConfig, tenant, subAccountId)
@@ -198,7 +199,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -230,7 +231,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(apperrors.Internal("error"))
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -252,7 +253,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("registering error"))
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -286,7 +287,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, provisioningQueue, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningQueue, nil, nil, nil, nil, nil, nil)
 
 		//when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -346,7 +347,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, deprovisioningQueue, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
 		//when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
@@ -390,7 +391,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
 
 		//when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
@@ -414,7 +415,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -437,7 +438,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -459,7 +460,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(operation, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -479,7 +480,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -513,7 +514,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetOperation", operationID).Return(operation, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		status, err := resolver.RuntimeOperationStatus(operationID)
@@ -536,7 +537,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.RuntimeOperationStatus(operationID)
@@ -582,7 +583,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 			Hibernated:          true,
 		}, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		status, err := resolver.RuntimeStatus(operationID)
@@ -604,7 +605,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		readSession.On("GetLastOperation", operationID).Return(operation, nil)
 		readSession.On("GetCluster", operationID).Return(model.Cluster{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -623,7 +624,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetLastOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -645,7 +646,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		readSession.On("GetCluster", operationID).Return(cluster, nil)
 		provisioner.On("GetHibernationStatus", mock.AnythingOfType("string"), cluster.ClusterConfig).Return(model.HibernationStatus{}, apperrors.Internal("some error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -675,6 +676,10 @@ func TestService_UpgradeRuntime(t *testing.T) {
 			ID: oldKymaConfigId,
 		},
 		ActiveKymaConfigId: &activeKymaConfigId,
+		ClusterConfig: model.GardenerConfig{
+			KubernetesVersion: "1.19",
+		},
+		Tenant: tenant,
 	}
 
 	clusterWithNoKymaConfig := model.Cluster{
@@ -698,51 +703,13 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	operationMatcher := getOperationMatcher(expectedOperation)
 
-	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
-		//given
-		sessionFactory := &sessionMocks.Factory{}
-		writeSession := &sessionMocks.WriteSessionWithinTransaction{}
-		readSession := &sessionMocks.ReadSession{}
-		provisioningQueue := &mocks.OperationQueue{}
-		deprovisioningQueue := &mocks.OperationQueue{}
-		upgradeQueue := &mocks.OperationQueue{}
-		upgradeShootQueue := &mocks.OperationQueue{}
-
-		sessionFactory.On("NewReadSession").Return(readSession, nil)
-		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-		writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
-		writeSession.On("InsertRuntimeUpgrade", mock.MatchedBy(runtimeUpgradeMatcher)).Return(nil)
-		writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
-		writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		writeSession.On("Commit").Return(nil)
-		writeSession.On("RollbackUnlessCommitted").Return()
-		upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
-
-		//when
-		operationStatus, err := service.UpgradeRuntime(runtimeID, upgradeInput)
-		require.NoError(t, err)
-
-		//then
-		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactory.AssertExpectations(t)
-		writeSession.AssertExpectations(t)
-		readSession.AssertExpectations(t)
-		upgradeQueue.AssertExpectations(t)
-		releaseProvider.AssertExpectations(t)
-	})
-
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue)
 	}{
 		{
 			description: "should fail to upgrade Runtime when failed to commit transaction",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -751,34 +718,30 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("InsertRuntimeUpgrade", mock.MatchedBy(runtimeUpgradeMatcher)).Return(nil)
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-				writeSession.On("Commit").Return(dberrors.Internal("error"))
+				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
+				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Runtime without Kyma config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
-				sessionFactory.On("NewReadSession").Return(readSession, nil)
-				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readSession.On("GetCluster", runtimeID).Return(clusterWithNoKymaConfig, nil)
-			},
-		},
-		{
-			description: "should fail to upgrade Runtime when failed to insert new Kyma Config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
+				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+				writeSession.On("InsertRuntimeUpgrade", mock.MatchedBy(runtimeUpgradeMatcher)).Return(nil)
+				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
-			},
-		},
-		{
-			description: "should fail to upgrade Runtime when last operation is in progress",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession) {
-				sessionFactory.On("NewReadSession").Return(readSession, nil)
-				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 	} {
@@ -792,10 +755,100 @@ func TestService_UpgradeRuntime(t *testing.T) {
 			deprovisioningQueue := &mocks.OperationQueue{}
 			upgradeQueue := &mocks.OperationQueue{}
 			upgradeShootQueue := &mocks.OperationQueue{}
+			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
 
-			testCase.mockFunc(sessionFactory, writeSession, readSession)
+			testCase.mockFunc(sessionFactory, writeSession, readSession, kubernetesVersionProvider, upgradeQueue)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, kubernetesVersionProvider, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
+
+			//when
+			operationStatus, err := service.UpgradeRuntime(runtimeID, upgradeInput)
+			require.NoError(t, err)
+
+			//then
+			assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+			assert.NotEmpty(t, operationStatus.ID)
+			sessionFactory.AssertExpectations(t)
+			writeSession.AssertExpectations(t)
+			readSession.AssertExpectations(t)
+			upgradeQueue.AssertExpectations(t)
+			releaseProvider.AssertExpectations(t)
+		})
+	}
+
+	for _, testCase := range []struct {
+		description string
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider)
+	}{
+		{
+			description: "should fail to upgrade Runtime when failed to commit transaction",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
+				writeSession.On("InsertRuntimeUpgrade", mock.MatchedBy(runtimeUpgradeMatcher)).Return(nil)
+				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("Commit").Return(dberrors.Internal("error"))
+				writeSession.On("RollbackUnlessCommitted").Return()
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+			},
+		},
+		{
+			description: "should fail to upgrade Runtime without Kyma config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(clusterWithNoKymaConfig, nil)
+			},
+		},
+		{
+			description: "should fail to upgrade Runtime when failed to insert new Kyma Config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
+				writeSession.On("RollbackUnlessCommitted").Return()
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+			},
+		},
+		{
+			description: "should fail to upgrade Runtime when last operation is in progress",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+			},
+		},
+		{
+			description: "should fail to upgrade Runtime when failed to get Kubernetes version",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession, nil)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			sessionFactory := &sessionMocks.Factory{}
+			writeSession := &sessionMocks.WriteSessionWithinTransaction{}
+			readSession := &sessionMocks.ReadSession{}
+
+			provisioningQueue := &mocks.OperationQueue{}
+			deprovisioningQueue := &mocks.OperationQueue{}
+			upgradeQueue := &mocks.OperationQueue{}
+			upgradeShootQueue := &mocks.OperationQueue{}
+			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+
+			testCase.mockFunc(sessionFactory, writeSession, readSession, kubernetesVersionProvider)
+
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, kubernetesVersionProvider, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
 
 			//when
 			_, err := service.UpgradeRuntime(runtimeID, upgradeInput)
@@ -819,7 +872,8 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	providerConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a"}})
 	cluster := model.Cluster{
-		ID: runtimeID,
+		ID:     runtimeID,
+		Tenant: tenant,
 		ClusterConfig: model.GardenerConfig{
 			ClusterID:              runtimeID,
 			Purpose:                util.StringPtr("evaluation"),
@@ -842,110 +896,46 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	operationMatcher := getOperationMatcher(operation)
 
-	t.Run("Should start runtime provisioning of Gardener cluster and return operation ID", func(t *testing.T) {
-		//given
-		sessionFactory := &sessionMocks.Factory{}
-		readSession := &sessionMocks.ReadSession{}
-		writeSession := &sessionMocks.WriteSessionWithinTransaction{}
-		upgradeShootQueue := &mocks.OperationQueue{}
-		provisioner := &mocks2.Provisioner{}
-
-		sessionFactory.On("NewReadSession").Return(readSession)
-		readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-		writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
-		writeSession.On("RollbackUnlessCommitted").Return()
-		writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
-		provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
-		writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
-		writeSession.On("Commit").Return(nil)
-		upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
-
-		//when
-		operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
-		require.NoError(t, err)
-
-		//then
-		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.NotEmpty(t, operationStatus.ID)
-		sessionFactory.AssertExpectations(t)
-		readSession.AssertExpectations(t)
-		writeSession.AssertExpectations(t)
-		upgradeShootQueue.AssertExpectations(t)
-	})
-
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue)
 	}{
-		{description: "should fail to upgrade Shoot when failed to commit shoot update",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
+		{description: "should start runtime provisioning of Gardener cluster, update Kubernetes version and return operation ID",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+
+				newUpgradedConfig := upgradedConfig
+				newUpgradedConfig.KubernetesVersion = "1.20"
+
+				writeSession.On("UpdateGardenerClusterConfig", newUpgradedConfig).Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
-				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
-				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				provisioner.On("UpgradeCluster", runtimeID, newUpgradedConfig).Return(nil)
+				writeSession.On("Commit").Return(nil)
+				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+			},
+		},
+		{description: "should start runtime provisioning of Gardener cluster and return operation ID",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
+				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
+				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
-				writeSession.On("Commit").Return(dberrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when failed to upgrade cluster",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				writeSession.On("RollbackUnlessCommitted").Return()
-				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
-				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
-				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
-				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when failed to update gardener cluster config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
-				writeSession.On("RollbackUnlessCommitted").Return()
-				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when failed to create write session",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when failed to get cluster",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-				readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when failed to get last operation",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
-			},
-		},
-		{description: "should fail to upgrade Shoot when last operation is in progress",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner) {
-				sessionFactory.On("NewReadSession").Return(readSession)
-				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+				writeSession.On("Commit").Return(nil)
+				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
 			},
 		},
 	} {
@@ -958,9 +948,124 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			provisioner := &mocks2.Provisioner{}
 			upgradeShootQueue := &mocks.OperationQueue{}
 
-			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner)
+			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
+			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, kubernetesVersionProvider, upgradeShootQueue)
+
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, kubernetesVersionProvider, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
+
+			//when
+			operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
+			require.NoError(t, err)
+
+			//then
+			assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
+			assert.NotEmpty(t, operationStatus.ID)
+			sessionFactory.AssertExpectations(t)
+			readSession.AssertExpectations(t)
+			writeSessionWithinTransaction.AssertExpectations(t)
+			upgradeShootQueue.AssertExpectations(t)
+		})
+	}
+
+	for _, testCase := range []struct {
+		description string
+		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider)
+	}{
+		{description: "should fail to upgrade Shoot when failed to commit shoot update",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
+				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
+				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
+				writeSession.On("Commit").Return(dberrors.Internal("error"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to upgrade cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(nil)
+				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
+				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
+				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to update gardener cluster config",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
+				writeSession.On("RollbackUnlessCommitted").Return()
+				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to create write session",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to get cluster",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+			},
+		},
+		{description: "should fail to upgrade Shoot when failed to get last operation",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+			},
+		},
+		{description: "should fail to upgrade Shoot when last operation is in progress",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
+			},
+		},
+		{
+			description: "should fail to upgrade Shoot when failed to get Kubernetes version",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+				sessionFactory.On("NewReadSession").Return(readSession)
+				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
+				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+			},
+		},
+	} {
+		t.Run(testCase.description, func(t *testing.T) {
+			//given
+			sessionFactory := &sessionMocks.Factory{}
+			writeSessionWithinTransaction := &sessionMocks.WriteSessionWithinTransaction{}
+			readSession := &sessionMocks.ReadSession{}
+
+			provisioner := &mocks2.Provisioner{}
+			upgradeShootQueue := &mocks.OperationQueue{}
+
+			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+
+			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, kubernetesVersionProvider)
+
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, kubernetesVersionProvider, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
 
 			//when
 			_, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
@@ -1022,7 +1127,7 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 			Hibernated:          true,
 		}, nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		runtimeStatus, err := service.RollBackLastUpgrade(runtimeID)
@@ -1068,7 +1173,7 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 
 			testCase.mockFunc(sessionFactoryMock, writeSessionWithinTransactionMock, readSessionMock)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//when
 			_, err := service.RollBackLastUpgrade(runtimeID)
@@ -1187,7 +1292,7 @@ func TestService_HibernateShoot(t *testing.T) {
 
 			testCase.mockFunc(sessionFactoryMock, writeSessionWithinTransactionMock, readSessionMock, provisioner)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			//when
 			_, err := service.HibernateCluster(runtimeID)
@@ -1219,7 +1324,7 @@ func TestService_HibernateShoot(t *testing.T) {
 		writeSessionWithinTransactionMock.On("Commit").Return(nil)
 		hibernationQueue.On("Add", mock.AnythingOfType("string")).Return()
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisionerMock, uuidGenerator, nil, nil, nil, nil, nil, nil, hibernationQueue)
+		service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisionerMock, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, hibernationQueue)
 
 		//when
 		runtimeStatus, err := service.HibernateCluster(runtimeID)

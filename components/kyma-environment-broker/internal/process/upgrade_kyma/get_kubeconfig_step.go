@@ -60,5 +60,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 		return operation, time.Second, nil
 	}
 
+	newOperation.InputCreator.SetKubeconfig(newOperation.Kubeconfig)
+
 	return newOperation, 0, nil
 }

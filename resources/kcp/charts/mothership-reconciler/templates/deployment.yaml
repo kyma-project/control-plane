@@ -9,12 +9,17 @@ spec:
   selector:
     matchLabels:
     {{- include "mothership-reconciler.labels" . | nindent 6 }}
+  {{- with .Values.deployment.strategy }}
+  strategy:
+{{ toYaml . | indent 4 }}
+  {{- end }}
   replicas: {{ .Values.deployment.replicasCount }}
   template:
     metadata:
       labels:
       {{- include "mothership-reconciler.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ .Values.global.mothership_reconciler.serviceAccountName }}
       {{- if .Values.deployment.podSecurityContext }}
       securityContext:
       {{ toYaml .Values.deployment.podSecurityContext | indent 8 }}
@@ -24,6 +29,23 @@ spec:
       {{- range .Values.deployment.imagePullSecrets }}
         - name: {{ . }}
       {{- end }}
+      {{- end }}
+      {{- if .Values.global.mothership_reconciler.auditlog.persistence.enabled }}
+      initContainers:
+      - name: chwon
+        image: {{ .Values.global.images.busybox }}
+        command:
+          - sh
+          - -c
+          - "chown -R 2000:2000 {{ .Values.global.mothership_reconciler.auditlog.logPath }}"
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          privileged: false
+        volumeMounts:
+        - name: audit-log
+          mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
       {{- end }}
       containers:
       {{- if eq .Values.global.database.embedded.enabled false}}
@@ -41,7 +63,7 @@ spec:
 {{ toYaml . | indent 10 }}
         {{- end }}
       {{ end }}
-      - image: "{{ .Values.global.images.mothership_reconciler.path }}:{{ .Values.global.images.mothership_reconciler.tag }}"
+      - image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - mothership
@@ -50,11 +72,30 @@ spec:
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
           - --verbose
+          {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+          - --audit-log
+          - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log
+          - --audit-log-tenant-id=$(APP_AUDITLOG_TENANT)
+          {{- end }}
+        env:
+        - name: APP_AUDITLOG_TENANT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
+              key: auditlog-tenant
         name: mothership-reconciler
         ports:
         - name: http
           containerPort: 8080
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
         resources:
         {{ toYaml .Values.resources | indent 10 }}
         {{- if .Values.securityContext }}
@@ -66,6 +107,46 @@ spec:
           mountPath: "/encryption"
         - name: mothership-reconciler-configuration
           mountPath: "/mothership-configuration"
+        {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+        - name: audit-log
+          mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
+        {{- end }}
+        {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+      - name: fluentbit-sidecar
+        image: {{ .Values.global.mothership_reconciler.auditlog.image }}:{{ .Values.global.mothership_reconciler.auditlog.tag }}
+        command:
+        - sh
+        - -c
+        - |
+          # this is safe to be empty, i.e. no port specified in the URL
+          export PORT=$(echo $APP_AUDITLOG_URL | cut -d/ -f 3 | cut -d: -f2)
+          export HOST=$(echo $APP_AUDITLOG_URL | cut -d/ -f 3 | cut -d: -f1)
+          export URI=$(echo $APP_AUDITLOG_URL | cut -d/ -f4-)
+          /fluent-bit/bin/fluent-bit \
+            -e /fluent-bit/lib/flb-out_sequentialhttp.so \
+            -c /fluent-bit/etc/fluent-bit.conf
+        env:
+        - name: APP_AUDITLOG_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
+              key: auditlog-url-basic
+        - name: APP_AUDITLOG_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.mothership_reconciler.auditlog.secretName }}
+              key: auditlog-user
+        - name: APP_AUDITLOG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.global.mothership_reconciler.auditlog.secretName }}
+              key: auditlog-password
+        volumeMounts:
+        - name: audit-log
+          mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
+        - name: fluentbit-config
+          mountPath: /fluent-bit/etc/
+      {{- end }}
       volumes:
       {{- if eq .Values.global.database.embedded.enabled false }}
       - name: cloudsql-instance-credentials
@@ -78,6 +159,23 @@ spec:
       - name: mothership-reconciler-configuration
         secret:
           secretName: {{ .Values.configurationSecret }}
+      {{- if  and .Values.global.mothership_reconciler.auditlog.persistence.enabled .Values.global.mothership_reconciler.auditlog.enabled }}
+      - name: audit-log
+        persistentVolumeClaim:
+          claimName: mothership-auditlog-pvc
+      - name: fluentbit-config
+        configMap:
+          name: mothership-fluentbit-config
+          items:
+      {{- else }}
+        {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
+      - name: audit-log
+        emptyDir: {}
+      - name: fluentbit-config
+        configMap:
+          name: mothership-fluentbit-config
+        {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
       {{ toYaml . | indent 8 }}

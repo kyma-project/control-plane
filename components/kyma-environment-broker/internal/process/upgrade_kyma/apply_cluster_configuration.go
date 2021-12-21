@@ -14,15 +14,16 @@ import (
 )
 
 type ApplyClusterConfigurationStep struct {
-	operationManager *process.UpgradeKymaOperationManager
-	reconcilerClient reconciler.Client
+	operationManager    *process.UpgradeKymaOperationManager
+	reconcilerClient    reconciler.Client
+	runtimeStateStorage storage.RuntimeStates
 }
 
-func NewApplyClusterConfigurationStep(os storage.Operations,
-	reconcilerClient reconciler.Client) *ApplyClusterConfigurationStep {
+func NewApplyClusterConfigurationStep(os storage.Operations, rs storage.RuntimeStates, reconcilerClient reconciler.Client) *ApplyClusterConfigurationStep {
 	return &ApplyClusterConfigurationStep{
-		reconcilerClient: reconcilerClient,
-		operationManager: process.NewUpgradeKymaOperationManager(os),
+		operationManager:    process.NewUpgradeKymaOperationManager(os),
+		reconcilerClient:    reconcilerClient,
+		runtimeStateStorage: rs,
 	}
 }
 
@@ -31,22 +32,32 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation.InputCreator.SetRuntimeID(operation.Runtime.RuntimeID).
+	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
+	operation.InputCreator.SetRuntimeID(operation.InstanceDetails.RuntimeID).
 		SetInstanceID(operation.InstanceID).
-		SetKubeconfig(operation.Kubeconfig)
+		SetShootName(operation.InstanceDetails.ShootName).
+		SetShootDomain(operation.ShootDomain).
+		SetProvisioningParameters(operation.ProvisioningParameters)
 
-	clusterConfigurtation, err := operation.InputCreator.CreateClusterConfiguration()
+	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to apply cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
 	}
 
+	err = s.runtimeStateStorage.Insert(
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.Cluster, operation.Operation.ID, &clusterConfiguration))
+	if err != nil {
+		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
+		return operation, 10 * time.Second, nil
+	}
+
 	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
-		clusterConfigurtation.Cluster,
-		clusterConfigurtation.KymaConfig.Version,
-		clusterConfigurtation.KymaConfig.Profile,
-		s.componentList(clusterConfigurtation))
-	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfigurtation)
+		clusterConfiguration.Cluster,
+		clusterConfiguration.KymaConfig.Version,
+		clusterConfiguration.KymaConfig.Profile,
+		s.componentList(clusterConfiguration))
+	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())
@@ -67,7 +78,8 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return operation, 5 * time.Second, nil
 	}
 
-	return updatedOperation, 0, nil
+	// return some retry value to get back to initialisation step
+	return updatedOperation, 5 * time.Second, nil
 
 }
 

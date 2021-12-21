@@ -380,6 +380,84 @@ func (r readSession) ListRuntimeStateByRuntimeID(runtimeID string) ([]dbmodel.Ru
 	return states, nil
 }
 
+func (r readSession) GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(dbr.Eq("runtime_id", runtimeID)).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get the latest runtime state: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+	}
+	return state, nil
+}
+
+func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	runtimeIDIsEqual := dbr.Eq("runtime_id", runtimeID)
+	reconcilerInputIsNotEmptyString := dbr.Neq("cluster_setup", "")
+	reconcilerInputIsNotNil := dbr.Neq("cluster_setup", nil)
+	innerCondition := dbr.And(reconcilerInputIsNotEmptyString, reconcilerInputIsNotNil)
+	condition := dbr.And(runtimeIDIsEqual, innerCondition)
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state: %s", err)
+		}
+		return dbmodel.RuntimeStateDTO{}, dberr.Internal("Failed to get the latest runtime state with reconciler input: %s", err)
+	}
+	if count == 0 {
+		return dbmodel.RuntimeStateDTO{}, dberr.NotFound("cannot find runtime state with reconciler input: %s", err)
+	}
+	return state, nil
+}
+
+func (r readSession) GetLatestRuntimeStatesByRuntimeID(runtimeID string, n int) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
+	var states []dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID), dbr.Or(
+		dbr.And(dbr.Neq("cluster_setup", nil), dbr.Neq("cluster_setup", "")),
+		dbr.And(dbr.Neq("kyma_config", nil), dbr.Neq("kyma_config", "")),
+	))
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		// because both cluster_setup as well as kyma_config are encrypted
+		// we can't easily query the content of the json. This gets the last
+		// N operations for further processing
+		Limit(uint64(n)).
+		Load(&states)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return states, dberr.NotFound("cannot find latest 10 runtime states: %s", err)
+		}
+		return states, dberr.Internal("Failed to get the latest 10 runtime states: %s", err)
+	}
+	if count == 0 {
+		return states, dberr.NotFound("cannot find latest 10 runtime states with reconciler input: %s", err)
+	}
+	return states, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 

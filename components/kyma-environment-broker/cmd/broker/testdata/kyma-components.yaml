@@ -1,0 +1,12 @@
+---
+defaultNamespace: kyma-system
+components:
+  - name: "ory"
+  - name: "monitoring"
+  - name: "service-catalog"
+  - name: "service-catalog-addons"
+  - name: "helm-broker"
+  - name: "sc-migration"
+    namespace: "kyma-system"
+    source:
+      url: "https://sc-migration"

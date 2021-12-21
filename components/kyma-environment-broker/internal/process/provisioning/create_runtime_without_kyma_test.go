@@ -21,7 +21,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west4-a")
+	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west3")
 	operation.ShootDomain = "kyma.org"
 	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
 	assert.NoError(t, err)
@@ -45,23 +45,23 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 				Name:                                shootName,
 				KubernetesVersion:                   k8sVersion,
 				DiskType:                            ptr.String("pd-standard"),
-				VolumeSizeGb:                        ptr.Integer(30),
-				MachineType:                         "n1-standard-4",
-				Region:                              "europe-west4-a",
+				VolumeSizeGb:                        ptr.Integer(50),
+				MachineType:                         "n2-standard-8",
+				Region:                              "europe-west3",
 				Provider:                            "gcp",
 				Purpose:                             &shootPurpose,
 				LicenceType:                         nil,
 				WorkerCidr:                          "10.250.0.0/19",
-				AutoScalerMin:                       3,
-				AutoScalerMax:                       4,
+				AutoScalerMin:                       2,
+				AutoScalerMax:                       10,
 				MaxSurge:                            4,
-				MaxUnavailable:                      1,
+				MaxUnavailable:                      0,
 				TargetSecret:                        "",
 				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),
 				EnableMachineImageVersionAutoUpdate: ptr.Bool(autoUpdateMachineImageVersion),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: &gqlschema.GCPProviderConfigInput{
-						Zones: []string{"europe-west4-b", "europe-west4-c"},
+						Zones: []string{"europe-west3-b", "europe-west3-c"},
 					},
 				},
 				Seed: nil,
@@ -72,6 +72,17 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 					SigningAlgs:    []string{"RS256"},
 					UsernameClaim:  "sub",
 					UsernamePrefix: "-",
+				},
+				DNSConfig: &gqlschema.DNSConfigInput{
+					Domain: "kyma.org",
+					Providers: []*gqlschema.DNSProviderInput{
+						&gqlschema.DNSProviderInput{
+							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+							Primary:        true,
+							SecretName:     "aws_dns_domain_secrets_test_intest",
+							Type:           "route53_type_test",
+						},
+					},
 				},
 			},
 			Administrators: []string{administrator},

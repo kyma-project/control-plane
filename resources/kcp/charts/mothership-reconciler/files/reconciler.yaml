@@ -11,6 +11,10 @@ db:
     password: {{ .Values.db.reconcilerPassword }}
     useSsl: {{ .Values.db.useSsl }}
     migrationsDir: "./configs/db/postgres"
+  sqlite:
+    file: {{ .Values.db.file }}
+    deploySchema: {{ .Values.db.deploySchema }}
+    resetDatabase: {{ .Values.db.resetDatabase }}
 mothership:
   scheme: {{ .Values.service.scheme }}
   host: {{ include "mothership-reconciler.fullname" . }}
@@ -22,6 +26,6 @@ mothership:
         url: http://{{ $component }}-reconciler:8080/v1/run
 {{- end }}
 {{- if .Values.preComponents }}
-preComponents:
-{{ toYaml .Values.preComponents | indent 2 }}
+    preComponents:
+{{ toYaml .Values.preComponents | indent 6 }}
 {{- end }}

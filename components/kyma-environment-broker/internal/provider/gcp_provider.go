@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	DefaultGCPRegion = "europe-west4"
+	DefaultGCPRegion      = "europe-west3"
+	DefaultGCPMachineType = "n2-standard-8"
 )
 
-var europeGcp = "europe-west4"
-var usGcp = "us-east4"
-var asiaGcp = "asia-southeast1"
+var europeGcp = "europe-west3"
+var usGcp = "us-central1"
+var asiaGcp = "asia-south1"
 
 var toGCPSpecific = map[string]*string{
 	string(broker.Europe): &europeGcp,
@@ -36,15 +37,15 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("pd-standard"),
-			VolumeSizeGb:   ptr.Integer(30),
-			MachineType:    "n1-standard-4",
+			VolumeSizeGb:   ptr.Integer(50),
+			MachineType:    DefaultGCPMachineType,
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  3,
-			AutoScalerMax:  4,
+			AutoScalerMin:  2,
+			AutoScalerMax:  10,
 			MaxSurge:       4,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zones: ZonesForGCPRegion(DefaultGCPRegion),
@@ -82,7 +83,7 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			AutoScalerMin:  1,
 			AutoScalerMax:  1,
 			MaxSurge:       1,
-			MaxUnavailable: 1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
 					Zones: ZonesForGCPRegion(DefaultGCPRegion),

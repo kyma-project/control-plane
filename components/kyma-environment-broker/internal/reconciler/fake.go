@@ -24,6 +24,7 @@ calling ApplyClusterConfig method on already existing cluster results in adding 
 type FakeClient struct {
 	mu                sync.Mutex
 	inventoryClusters map[string]*registeredCluster
+	deleted           map[string]struct{}
 }
 
 type registeredCluster struct {
@@ -33,20 +34,23 @@ type registeredCluster struct {
 }
 
 func NewFakeClient() *FakeClient {
-	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}}
+	return &FakeClient{inventoryClusters: map[string]*registeredCluster{}, deleted: map[string]struct{}{}}
 }
 
 // POST /v1/clusters
 func (c *FakeClient) ApplyClusterConfig(cluster Cluster) (*State, error) {
-	return c.createOrUpdate(cluster)
+	return c.addToInventory(cluster)
 }
 
 // DELETE /v1/clusters/{clusterName}
 func (c *FakeClient) DeleteCluster(clusterName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	delete(c.inventoryClusters, clusterName)
+	_, exists := c.inventoryClusters[clusterName]
+	if !exists {
+		return nil
+	}
+	c.deleted[clusterName] = struct{}{}
 	return nil
 }
 
@@ -93,7 +97,7 @@ func (c *FakeClient) GetStatusChange(clusterName, offset string) ([]*StatusChang
 	return existingCluster.statusChanges, nil
 }
 
-func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
+func (c *FakeClient) addToInventory(cluster Cluster) (*State, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -122,19 +126,18 @@ func (c *FakeClient) createOrUpdate(cluster Cluster) (*State, error) {
 		return c.inventoryClusters[cluster.Cluster].clusterStates[1], nil
 	}
 	// cluster exists in db - add new configuration version
-	//TODO: implement comparision mechanism for configs (new config should not be added if nothing changes in request) - needed for upgrade testing
-	//TODO: implement clusterVersion bumping (happens when Kyma version is updated?)
-	latestConfigVersion := int64(len(c.inventoryClusters[cluster.Cluster].clusterStates))
+	latestConfigVersion := int64(len(c.inventoryClusters[cluster.Cluster].clusterStates)) + 1
 	c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion] = &State{
 		Cluster:              cluster.Cluster,
 		ClusterVersion:       1,
-		ConfigurationVersion: latestConfigVersion + 1,
+		ConfigurationVersion: latestConfigVersion,
 		Status:               "reconcile_pending",
 	}
 	c.inventoryClusters[cluster.Cluster].statusChanges = append(c.inventoryClusters[cluster.Cluster].statusChanges, &StatusChange{
 		Status:   ptr.String("reconcile_pending"),
 		Duration: "10s",
 	})
+	c.inventoryClusters[cluster.Cluster].clusterConfigs[latestConfigVersion] = cluster
 
 	return c.inventoryClusters[cluster.Cluster].clusterStates[latestConfigVersion], nil
 }
@@ -158,15 +161,24 @@ func (c *FakeClient) LastClusterConfig(runtimeID string) (*Cluster, error) {
 	return getLastClusterConfig(cluster)
 }
 
-func (c *FakeClient) IsClusterExists(id string) bool {
+func (c *FakeClient) IsBeingDeleted(id string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, exists := c.inventoryClusters[id]
-	return exists
+	_, exists := c.deleted[id]
+	if exists {
+		return true
+	}
+
+	return false
+}
+
+func (c *FakeClient) ClusterExists(id string) bool {
+	_, found := c.inventoryClusters[id]
+	return found
 }
 
 func getLastClusterConfig(cluster *registeredCluster) (*Cluster, error) {
-	clusterConfig, found := cluster.clusterConfigs[int64(1)]
+	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs))]
 	if !found {
 		return nil, errors.New("cluster config not found in cluster configs inventory")
 	}

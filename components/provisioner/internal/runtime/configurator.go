@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	AgentConfigurationSecretName = "compass-agent-configuration"
-	runtimeAgentComponentName    = "compass-runtime-agent"
+	AgentConfigurationSecretName   = "compass-agent-configuration"
+	runtimeAgentComponentNameSpace = "compass-system"
 )
 
 //go:generate mockery -name=Configurator
@@ -44,12 +44,9 @@ func NewRuntimeConfigurator(builder k8s.K8sClientProvider, directorClient direct
 }
 
 func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError {
-	runtimeAgentComponent, found := cluster.KymaConfig.GetComponentConfig(runtimeAgentComponentName)
-	if found {
-		err := c.configureAgent(cluster, runtimeAgentComponent.Namespace, kubeconfigRaw)
-		if err != nil {
-			return err.Append("error configuring Runtime Agent")
-		}
+	err := c.configureAgent(cluster, runtimeAgentComponentNameSpace, kubeconfigRaw)
+	if err != nil {
+		return err.Append("error configuring Runtime Agent")
 	}
 
 	return nil
@@ -79,6 +76,15 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		"TOKEN":         token.Token,
 	}
 
+	err = util.RetryOnError(3*time.Second, 2, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
+		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), runtimeAgentComponentNameSpace)
+		return
+	})
+
+	if err != nil {
+		return err.Append("error getting or creating namespace")
+	}
+
 	secret := &core.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      AgentConfigurationSecretName,
@@ -89,6 +95,18 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 	return c.upsertSecret(k8sClient.CoreV1().Secrets(namespace), secret)
 }
 
+func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface, namespace string) apperrors.AppError {
+	ns := &core.Namespace{
+		ObjectMeta: meta.ObjectMeta{Name: namespace},
+	}
+	_, err := namespaceInterface.Create(context.Background(), ns, meta.CreateOptions{})
+
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
+		return apperrors.Internal("Failed to create namespace: %s", err.Error())
+	}
+	return nil
+}
+
 func (c *configurator) upsertSecret(secretInterface v1.SecretInterface, secret *core.Secret) apperrors.AppError {
 	_, err := secretInterface.Create(context.Background(), secret, meta.CreateOptions{})
 	if err == nil {
@@ -97,6 +115,7 @@ func (c *configurator) upsertSecret(secretInterface v1.SecretInterface, secret *
 	if !k8serrors.IsAlreadyExists(err) {
 		return util.K8SErrorToAppError(err).Append("error creating Secret on Runtime")
 	}
+
 	_, err = secretInterface.Update(context.Background(), secret, meta.UpdateOptions{})
 	if err != nil {
 		return util.K8SErrorToAppError(err).Append("error updating Secret on Runtime")

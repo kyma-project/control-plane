@@ -1,0 +1,33 @@
+{
+    "components": [
+      {
+        "URL": "",
+        "component": "serverless",
+        "configuration": [],
+        "namespace": "kyma-system",
+        "version": ""
+      },
+      {
+        "URL": "",
+        "component": "istio-config",
+        "configuration": [
+          {
+            "key": "global.istio.gateway.name",
+            "secret": false,
+            "value": "xyz"
+          }
+        ],
+        "namespace": "kyma-system",
+        "version": ""
+      },
+      {
+        "URL": "",
+        "component": "rafter",
+        "configuration": [],
+        "namespace": "kyma-system",
+        "version": ""
+      }
+    ],
+    "profile": "Evaluation",
+    "version": "1.24.0"
+  }

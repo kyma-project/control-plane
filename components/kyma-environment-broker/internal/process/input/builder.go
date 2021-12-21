@@ -14,14 +14,16 @@ import (
 	"github.com/vburenin/nsync"
 )
 
-//go:generate mockery -name=ComponentListProvider -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=CreatorForPlan -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=ComponentsDisabler -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=ComponentListProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=CreatorForPlan --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ComponentsDisabler --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OptionalComponentService --output=automock --outpkg=automock --case=underscore
 
 type (
 	OptionalComponentService interface {
 		ExecuteDisablers(components internal.ComponentConfigurationInputList, names ...string) (internal.ComponentConfigurationInputList, error)
 		ComputeComponentsToDisable(optComponentsToKeep []string) []string
+		AddComponentToDisable(name string, disabler runtime.ComponentDisabler)
 	}
 
 	ComponentsDisabler interface {
@@ -146,7 +148,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during createing provision input")
+		return nil, errors.Wrap(err, "during creating provision input")
 	}
 
 	initInput, err := f.initProvisionRuntimeInput(provider, version)
@@ -206,6 +208,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	if err != nil {
 		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
+
 	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
@@ -214,6 +217,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err
 	}
+
 	kymaProfile := provider.Profile()
 
 	provisionInput := gqlschema.ProvisionRuntimeInput{
@@ -238,6 +242,7 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	if f.config.MachineImageVersion != "" {
 		provisionInput.ClusterConfig.GardenerConfig.MachineImageVersion = &f.config.MachineImageVersion
 	}
+
 	return provisionInput, nil
 }
 
@@ -256,6 +261,11 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
 
+	kymaInput, err := f.initProvisionRuntimeInput(provider, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "while initializing RuntimeInput")
+	}
+
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
 	if err != nil {
 		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
@@ -263,6 +273,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
 	return &RuntimeInput{
+		provisionRuntimeInput:     kymaInput,
 		upgradeRuntimeInput:       upgradeKymaInput,
 		mutex:                     nsync.NewNamedMutex(),
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
@@ -272,6 +283,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		enabledOptionalComponents: map[string]struct{}{},
 		trialNodesNumber:          f.config.TrialNodesNumber,
 		oidcDefaultValues:         f.oidcDefaultValues,
+		hyperscalerInputProvider:  provider,
 	}, nil
 }
 

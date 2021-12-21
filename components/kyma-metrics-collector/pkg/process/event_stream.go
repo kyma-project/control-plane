@@ -15,6 +15,7 @@ import (
 
 	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
+	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ const (
 
 	Azure = "azure"
 	AWS   = "aws"
+	GCP   = "gcp"
 )
 
 type EventStream struct {
@@ -126,6 +128,15 @@ func (inp Input) Parse(providers *Providers) (*edp.ConsumptionMetrics, error) {
 				return nil, err
 			}
 			if infraConfig.Networks.VPC.CIDR != nil {
+				vnets += 1
+			}
+		case GCP:
+			decoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+			infraConfig := &gardenergcpv1alpha1.InfrastructureConfig{}
+			if err := runtime.DecodeInto(decoder, rawExtension.Raw, infraConfig); err != nil {
+				return nil, err
+			}
+			if infraConfig.Networks.VPC != nil && infraConfig.Networks.VPC.CloudRouter != nil {
 				vnets += 1
 			}
 		default:

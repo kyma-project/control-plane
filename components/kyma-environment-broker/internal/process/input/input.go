@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
@@ -54,17 +55,27 @@ type RuntimeInput struct {
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
 
-	trialNodesNumber int
-	instanceID       string
-	runtimeID        string
-	kubeconfig       string
-	shootDomain      string
+	trialNodesNumber  int
+	instanceID        string
+	runtimeID         string
+	kubeconfig        string
+	shootDomain       string
+	shootDnsProviders gardener.DNSProvidersData
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
 	r.mutex.Lock("enabledOptionalComponents")
 	defer r.mutex.Unlock("enabledOptionalComponents")
 	r.enabledOptionalComponents[componentName] = struct{}{}
+	return r
+}
+
+func (r *RuntimeInput) DisableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
+	r.mutex.Lock("enabledOptionalComponents")
+	defer r.mutex.Unlock("enabledOptionalComponents")
+
+	r.optionalComponentsService.AddComponentToDisable(componentName, runtime.NewGenericComponentDisabler(componentName))
+	delete(r.enabledOptionalComponents, componentName)
 	return r
 }
 
@@ -80,6 +91,11 @@ func (r *RuntimeInput) SetShootName(name string) internal.ProvisionerInputCreato
 
 func (r *RuntimeInput) SetShootDomain(name string) internal.ProvisionerInputCreator {
 	r.shootDomain = name
+	return r
+}
+
+func (r *RuntimeInput) SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) internal.ProvisionerInputCreator {
+	r.shootDnsProviders = dnsProviders
 	return r
 }
 
@@ -115,7 +131,19 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 	r.mutex.Lock("AppendOverrides")
 	defer r.mutex.Unlock("AppendOverrides")
 
-	r.overrides[component] = append(r.overrides[component], overrides...)
+	for _, o2 := range overrides {
+		found := false
+		for i, o1 := range r.overrides[component] {
+			if o1.Key == o2.Key {
+				found = true
+				r.overrides[component][i].Secret = o2.Secret
+				r.overrides[component][i].Value = o2.Value
+			}
+		}
+		if !found {
+			r.overrides[component] = append(r.overrides[component], o2)
+		}
+	}
 	return r
 }
 
@@ -124,7 +152,19 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 	r.mutex.Lock("AppendGlobalOverrides")
 	defer r.mutex.Unlock("AppendGlobalOverrides")
 
-	r.globalOverrides = append(r.globalOverrides, overrides...)
+	for _, o2 := range overrides {
+		found := false
+		for i, o1 := range r.globalOverrides {
+			if o1.Key == o2.Key {
+				found = true
+				r.globalOverrides[i].Secret = o2.Secret
+				r.globalOverrides[i].Value = o2.Value
+			}
+		}
+		if !found {
+			r.globalOverrides = append(r.globalOverrides, o2)
+		}
+	}
 	return r
 }
 
@@ -180,6 +220,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		{
 			name:    "configure OIDC",
 			execute: r.configureOIDC,
+		},
+		{
+			name:    "configure DNS",
+			execute: r.configureDNS,
 		},
 	} {
 		if err := step.execute(); err != nil {
@@ -276,24 +320,30 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 		return reconciler.Cluster{}, errors.New("missing kubeconfig")
 	}
 
-	componentConfigs := []reconciler.Components{}
+	var componentConfigs []reconciler.Component
 	for _, cmp := range data.KymaConfig.Components {
 		configs := []reconciler.Configuration{
 			// because there is no section like global configuration, all "global" settings must
 			// be present in all component configurations.
 			{Key: "global.domainName", Value: r.shootDomain},
 		}
+		for _, globalCfg := range data.KymaConfig.Configuration {
+			configs = append(configs, reconciler.Configuration{
+				Key:    globalCfg.Key,
+				Value:  resolveValueType(globalCfg.Value),
+				Secret: falseIfNil(globalCfg.Secret)})
+		}
 
 		for _, c := range cmp.Configuration {
 			configuration := reconciler.Configuration{
 				Key:    c.Key,
-				Value:  c.Value,
+				Value:  resolveValueType(c.Value),
 				Secret: falseIfNil(c.Secret),
 			}
 			configs = append(configs, configuration)
 		}
 
-		componentConfig := reconciler.Components{
+		componentConfig := reconciler.Component{
 			Component:     cmp.Component,
 			Namespace:     cmp.Namespace,
 			Configuration: configs,
@@ -321,8 +371,10 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconciler.Cluster, error) 
 			SubAccountID:    r.provisioningParameters.ErsContext.SubAccountID,
 			ServiceID:       r.provisioningParameters.ServiceID,
 			ServicePlanID:   r.provisioningParameters.PlanID,
+			ServicePlanName: broker.PlanNamesMapping[r.provisioningParameters.PlanID],
 			ShootName:       *r.shootName,
 			InstanceID:      r.instanceID,
+			Region:          r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region,
 		},
 		Kubeconfig: r.kubeconfig,
 	}
@@ -533,6 +585,30 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 	return nil
 }
 
+func (r *RuntimeInput) configureDNS() error {
+	dnsParamsToSet := gqlschema.DNSConfigInput{}
+
+	//if dns providers is given
+	if len(r.shootDnsProviders.Providers) != 0 {
+		for _, v := range r.shootDnsProviders.Providers {
+			dnsParamsToSet.Providers = append(dnsParamsToSet.Providers, &gqlschema.DNSProviderInput{
+				DomainsInclude: v.DomainsInclude,
+				Primary:        v.Primary,
+				SecretName:     v.SecretName,
+				Type:           v.Type,
+			})
+		}
+	}
+
+	dnsParamsToSet.Domain = r.shootDomain
+
+	if r.provisionRuntimeInput.ClusterConfig != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsParamsToSet
+	}
+
+	return nil
+}
+
 func (r *RuntimeInput) configureOIDC() error {
 	// set default or provided params to provisioning/update inpuit (if exists)
 	// This method could be used for:
@@ -617,4 +693,19 @@ func randomString(n int) string {
 func trimLastCharacters(s string, count int) string {
 	s = s[:len(s)-count]
 	return s
+}
+
+func resolveValueType(v interface{}) interface{} {
+	// this is a workaround. Finally we have to obtain the type during the reading overrides
+	var val interface{}
+	switch v {
+	case "true":
+		val = true
+	case "false":
+		val = false
+	default:
+		val = v
+	}
+
+	return val
 }

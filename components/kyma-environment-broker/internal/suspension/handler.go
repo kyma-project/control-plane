@@ -39,7 +39,7 @@ func NewContextUpdateHandler(operations storage.Operations, provisioningQueue Ad
 
 // Handle performs suspension/unsuspension for given instance.
 // Applies only when 'Active' parameter has changes and ServicePlanID is `Trial`
-func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) error {
+func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx internal.ERSContext) (bool, error) {
 	l := h.log.WithFields(logrus.Fields{
 		"instanceID":      instance.InstanceID,
 		"runtimeID":       instance.RuntimeID,
@@ -48,13 +48,13 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
-		return nil
+		return false, nil
 	}
 
 	return h.handleContextChange(newCtx, instance, l)
 }
 
-func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, instance *internal.Instance, l logrus.FieldLogger) error {
+func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, instance *internal.Instance, l logrus.FieldLogger) (bool, error) {
 	isActivated := true
 	if instance.Parameters.ErsContext.Active != nil {
 		isActivated = *instance.Parameters.ErsContext.Active
@@ -63,7 +63,7 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 	lastDeprovisioning, err := h.operations.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
 	// there was an error - fail
 	if err != nil && !dberr.IsNotFound(err) {
-		return err
+		return false, err
 	}
 
 	if newCtx.Active == nil || isActivated == *newCtx.Active {
@@ -71,26 +71,26 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 		if isActivated {
 			// instance is marked as Active and incoming context update is unsuspension
 			// TODO: consider retriggering failed unsuspension here
-			return nil
+			return false, nil
 		}
 		if !isActivated {
 			// instance is inactive and incoming context update is suspension - verify if KEB should retrigger the operation
 			if lastDeprovisioning.Temporary && lastDeprovisioning.State == domain.Failed {
 				l.Infof("Retriggering suspension for instance id %s", instance.InstanceID)
-				return h.suspend(instance, l)
+				return true, h.suspend(instance, l)
 			}
-			return nil
+			return false, nil
 		}
 	}
 
 	if *newCtx.Active {
 		if lastDeprovisioning != nil && !lastDeprovisioning.Temporary {
 			l.Infof("Instance has a deprovisioning operation %s (%s), skipping unsuspension.", lastDeprovisioning.ID, lastDeprovisioning.State)
-			return nil
+			return false, nil
 		}
-		return h.unsuspend(instance, l)
+		return true, h.unsuspend(instance, l)
 	} else {
-		return h.suspend(instance, l)
+		return true, h.suspend(instance, l)
 	}
 }
 

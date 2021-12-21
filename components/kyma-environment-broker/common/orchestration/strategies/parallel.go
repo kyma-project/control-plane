@@ -2,7 +2,6 @@ package strategies
 
 import (
 	"runtime/debug"
-	"sort"
 	"sync"
 	"time"
 
@@ -15,11 +14,13 @@ import (
 
 type ParallelOrchestrationStrategy struct {
 	executor        orchestration.OperationExecutor
-	dq              map[string]workqueue.DelayingInterface
+	dq              map[string]workqueue.DelayingInterface // scheduling queue, delaying queue for all pending & in progress ops
+	pq              map[string]workqueue.DelayingInterface // processing queue, delaying queue for the in progress ops
 	wg              map[string]*sync.WaitGroup
 	mux             sync.RWMutex
 	log             logrus.FieldLogger
 	rescheduleDelay time.Duration
+	scheduleNum     map[string]int
 }
 
 // NewParallelOrchestrationStrategy returns a new parallel orchestration strategy, which
@@ -28,13 +29,13 @@ func NewParallelOrchestrationStrategy(executor orchestration.OperationExecutor, 
 	strategy := &ParallelOrchestrationStrategy{
 		executor:        executor,
 		dq:              map[string]workqueue.DelayingInterface{},
+		pq:              map[string]workqueue.DelayingInterface{},
 		wg:              map[string]*sync.WaitGroup{},
 		log:             log,
 		rescheduleDelay: rescheduleDelay,
+		scheduleNum:     map[string]int{},
 	}
-	if strategy.rescheduleDelay <= 0 {
-		strategy.rescheduleDelay = 24 * time.Hour
-	}
+
 	return strategy
 }
 
@@ -43,80 +44,140 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 	if len(operations) == 0 {
 		return "", nil
 	}
-	ops := make(chan orchestration.RuntimeOperation, len(operations))
+
 	execID := uuid.New().String()
 	p.mux.Lock()
 	defer p.mux.Unlock()
+	p.scheduleNum[execID] = len(operations)
 	p.wg[execID] = &sync.WaitGroup{}
 	p.dq[execID] = workqueue.NewDelayingQueue()
+	p.pq[execID] = workqueue.NewDelayingQueue()
 
-	if strategySpec.Schedule == orchestration.MaintenanceWindow {
-		sort.Slice(operations, func(i, j int) bool {
-			return operations[i].MaintenanceWindowBegin.Before(operations[j].MaintenanceWindowBegin)
-		})
-	}
-
-	// Send operations to workers
-	for _, op := range operations {
-		ops <- op
+	for i, op := range operations {
+		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
+		if err != nil {
+			//error when read from storage or update to storage during maintenance window reschedule
+			p.handleRescheduleErrorOperation(execID, &operations[i])
+			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
+		} else {
+			p.dq[execID].AddAfter(&operations[i], duration)
+		}
 	}
 
 	// Create workers
 	for i := 0; i < strategySpec.Parallel.Workers; i++ {
-		p.createWorker(execID, ops, strategySpec)
+		p.createWorker(execID, strategySpec)
 	}
 
 	return execID, nil
 }
 
-func (p *ParallelOrchestrationStrategy) Wait(executionID string) {
-	p.mux.RLock()
-	wg := p.wg[executionID]
-	p.mux.RUnlock()
-	if wg != nil {
-		wg.Wait()
-	}
-}
-
-func (p *ParallelOrchestrationStrategy) Cancel(executionID string) {
-	if executionID == "" {
-		return
-	}
-	p.log.Infof("Cancelling strategy execution %s", executionID)
-	p.mux.Lock()
-	defer p.mux.Unlock()
-	dq := p.dq[executionID]
-	if dq != nil {
-		dq.ShutDown()
-	}
-}
-
-func (p *ParallelOrchestrationStrategy) createWorker(execID string, ops chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec) {
+func (p *ParallelOrchestrationStrategy) createWorker(execID string, strategy orchestration.StrategySpec) {
 	p.wg[execID].Add(1)
+
 	go func() {
-		moreOperations := true
-		for moreOperations {
-			select {
-			case op := <-ops:
-				err := p.processOperation(op, ops, strategy, execID)
-				if err != nil {
-					p.log.Errorf("while processing operation %s: %v", op.ID, err)
-				}
-			default:
-				p.log.Infof("Idle worker for %s exiting %v", execID)
-				moreOperations = false
-			}
-		}
+		p.scheduleOperationsLoop(execID, strategy)
+
 		p.mux.RLock()
 		p.wg[execID].Done()
 		p.mux.RUnlock()
 	}()
 }
 
-func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.RuntimeOperation, ops chan orchestration.RuntimeOperation, strategy orchestration.StrategySpec, executionID string) error {
+func (p *ParallelOrchestrationStrategy) scheduleOperationsLoop(execID string, strategy orchestration.StrategySpec) {
+	p.mux.RLock()
+	dq := p.dq[execID]
+	pq := p.pq[execID]
+	p.mux.RUnlock()
+
+	for {
+		p.mux.RLock()
+		if p.scheduleNum[execID] <= 0 {
+			dq.ShutDown()
+			pq.ShutDown()
+		}
+		p.mux.RUnlock()
+
+		item, shutdown := dq.Get()
+		if shutdown {
+			p.log.Infof("scheduling queue is shutdown")
+			break
+		}
+
+		op := item.(*orchestration.RuntimeOperation)
+
+		// check the window before process for the case if op Get is not in time
+		duration, err := p.updateMaintenanceWindow(execID, op, strategy)
+		if err != nil {
+			//error when read from storage or update to storage
+			p.handleRescheduleErrorOperation(execID, op)
+			dq.Done(item)
+			continue
+		}
+
+		log := p.log.WithField("operationID", op.ID)
+		if duration <= 0 {
+			log.Infof("operation is scheduled now")
+
+			pq.Add(item)
+			p.processOperation(execID)
+
+			p.mux.Lock()
+			p.scheduleNum[execID]--
+			p.mux.Unlock()
+		} else {
+			log.Infof("operation will be scheduled in %v", duration)
+			dq.AddAfter(item, duration)
+			dq.Done(item)
+		}
+
+	}
+}
+
+func (p *ParallelOrchestrationStrategy) processOperation(execID string) {
 	exit := false
+
+	for !exit {
+		exit = func() bool {
+			item, quit := p.pq[execID].Get()
+			if quit {
+				p.log.Infof("processing queue is shutdown")
+				return true
+			}
+
+			op := item.(*orchestration.RuntimeOperation)
+			id := op.ID
+			log := p.log.WithField("operationID", id)
+
+			defer func() {
+				if err := recover(); err != nil {
+					log.Errorf("panic error from process: %v. Stacktrace: %s", err, debug.Stack())
+				}
+				p.pq[execID].Done(item)
+			}()
+
+			when, err := p.executor.Execute(id)
+			if err == nil && when != 0 {
+				log.Infof("Adding %q item after %v", id, when)
+				p.pq[execID].AddAfter(item, when)
+				return false
+			}
+			if err != nil {
+				log.Errorf("Error from process: %v", err)
+			}
+
+			log.Infof("Finishing processing operation")
+			p.dq[execID].Done(item)
+
+			return true
+		}()
+	}
+
+}
+
+func (p *ParallelOrchestrationStrategy) updateMaintenanceWindow(execID string, op *orchestration.RuntimeOperation, strategy orchestration.StrategySpec) (time.Duration, error) {
+	var duration time.Duration
 	id := op.ID
-	log := p.log.WithField("operationID", id)
 
 	switch strategy.Schedule {
 	case orchestration.MaintenanceWindow:
@@ -133,49 +194,50 @@ func (p *ParallelOrchestrationStrategy) processOperation(op orchestration.Runtim
 			}
 
 			err := p.executor.Reschedule(id, op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
+			//error when read from storage or update to storage
 			if err != nil {
 				errors.Wrap(err, "while rescheduling operation by executor (still continuing with new schedule)")
+				return duration, err
 			}
-			ops <- op
-			log.Infof("operation will be rescheduled starting at %v", op.MaintenanceWindowBegin)
-			return err
 		}
 
-		until := time.Until(op.MaintenanceWindowBegin)
-		log.Infof("operation will be scheduled in %v", until)
-		p.dq[executionID].AddAfter(id, until)
+		duration = time.Until(op.MaintenanceWindowBegin)
+
 	case orchestration.Immediate:
-		log.Infof("operation is scheduled now")
-		p.dq[executionID].Add(id)
 	}
 
-	for !exit {
-		exit = func() bool {
-			key, quit := p.dq[executionID].Get()
-			if quit {
-				return true
-			}
-			id := key.(string)
-			log = log.WithField("operationID", id)
-			defer func() {
-				if err := recover(); err != nil {
-					log.Errorf("panic error from process: %v. Stacktrace: %s", err, debug.Stack())
-				}
-				p.dq[executionID].Done(key)
-			}()
+	return duration, nil
+}
 
-			when, err := p.executor.Execute(id)
-			if err == nil && when != 0 {
-				log.Infof("Adding %q item after %s", id, when)
-				p.dq[executionID].AddAfter(key, when)
-				return false
-			}
-			if err != nil {
-				log.Errorf("Error from process: %v", err)
-			}
-			return true
-		}()
+func (p *ParallelOrchestrationStrategy) Wait(executionID string) {
+	p.mux.RLock()
+	wg := p.wg[executionID]
+	p.mux.RUnlock()
+	if wg != nil {
+		wg.Wait()
 	}
-	log.Info("Finishing processing operation")
-	return nil
+}
+
+func (p *ParallelOrchestrationStrategy) Cancel(executionID string) {
+	if executionID == "" {
+		return
+	}
+	p.log.Infof("Cancelling strategy execution %s", executionID)
+
+	p.mux.Lock()
+	defer p.mux.Unlock()
+	dq := p.dq[executionID]
+	pq := p.pq[executionID]
+
+	if dq != nil {
+		dq.ShutDown()
+	}
+
+	if pq != nil {
+		pq.ShutDown()
+	}
+}
+
+func (p *ParallelOrchestrationStrategy) handleRescheduleErrorOperation(execID string, op *orchestration.RuntimeOperation) {
+	p.dq[execID].AddAfter(op, 24*time.Hour)
 }

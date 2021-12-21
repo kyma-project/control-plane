@@ -73,7 +73,11 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 	if err = ValidateUpgradeKymaVersionFmt(cmd.version); err != nil {
 		return err
 	}
-	cmd.orchestrationParams.Kyma.Version = cmd.version
+	if cmd.orchestrationParams.Kyma == nil {
+		cmd.orchestrationParams.Kyma = &orchestration.KymaParameters{Version: cmd.version}
+	} else {
+		cmd.orchestrationParams.Kyma.Version = cmd.version
+	}
 
 	return nil
 }
