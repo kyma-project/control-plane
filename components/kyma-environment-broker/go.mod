@@ -25,7 +25,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kennygrant/sanitize v1.2.4
-	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
 	github.com/kyma-incubator/reconciler v0.0.0-20211220095539-bb1616d411aa
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20211103174936-687e40a56850
@@ -50,7 +49,6 @@ require (
 	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
-	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
