@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -17,18 +16,13 @@ type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError
 	ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput) apperrors.AppError
-	ValidateTenant(runtimeID, tenant string) apperrors.AppError
-	ValidateTenantForOperation(operationID, tenant string) apperrors.AppError
 }
 
 type validator struct {
-	readSession dbsession.ReadSession
 }
 
-func NewValidator(readSession dbsession.ReadSession) Validator {
-	return &validator{
-		readSession: readSession,
-	}
+func NewValidator() Validator {
+	return &validator{}
 }
 
 func (v *validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError {
@@ -82,30 +76,6 @@ func (v *validator) ValidateUpgradeShootInput(input gqlschema.UpgradeShootInput)
 		return apperrors.BadRequest("empty purpose provided")
 	}
 
-	return nil
-}
-
-func (v *validator) ValidateTenant(runtimeID, tenant string) apperrors.AppError {
-	dbTenant, err := v.readSession.GetTenant(runtimeID)
-	if err != nil {
-		return apperrors.Internal("Failed to get tenant from database: %s", err.Error())
-	}
-
-	if tenant != dbTenant {
-		return apperrors.BadRequest("provided tenant does not match tenant used to provision cluster")
-	}
-	return nil
-}
-
-func (v *validator) ValidateTenantForOperation(operationID, tenant string) apperrors.AppError {
-	dbTenant, err := v.readSession.GetTenantForOperation(operationID)
-	if err != nil {
-		return apperrors.Internal("Failed to get tenant from database: %s", err.Error())
-	}
-
-	if tenant != dbTenant {
-		return apperrors.BadRequest("provided tenant does not match tenant used to provision cluster")
-	}
 	return nil
 }
 
