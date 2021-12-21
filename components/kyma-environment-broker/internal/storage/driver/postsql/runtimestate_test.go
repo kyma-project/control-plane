@@ -7,11 +7,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestRuntimeState(t *testing.T) {
@@ -72,8 +73,8 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeID := "runtimeID"
 		fixOperationID := "operationID"
 		givenRuntimeState := fixture.FixRuntimeState(fixRuntimeStateID, fixRuntimeID, fixOperationID)
-		givenRuntimeState.ClusterSetup = &reconciler.Cluster{
-			Cluster: fixRuntimeID,
+		givenRuntimeState.ClusterSetup = &contract.Cluster{
+			RuntimeID: fixRuntimeID,
 		}
 
 		storage := brokerStorage.RuntimeStates()
@@ -85,12 +86,12 @@ func TestRuntimeState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, runtimeStates, 1)
 		assert.Equal(t, fixRuntimeStateID, runtimeStates[0].ID)
-		assert.Equal(t, fixRuntimeID, runtimeStates[0].ClusterSetup.Cluster)
+		assert.Equal(t, fixRuntimeID, runtimeStates[0].ClusterSetup.RuntimeID)
 
 		state, err := storage.GetByOperationID(fixOperationID)
 		require.NoError(t, err)
 		assert.Equal(t, fixRuntimeStateID, state.ID)
-		assert.Equal(t, fixRuntimeID, state.ClusterSetup.Cluster)
+		assert.Equal(t, fixRuntimeID, state.ClusterSetup.RuntimeID)
 	})
 
 	t.Run("should distinguish between latest RuntimeStates with and without Reconciler input", func(t *testing.T) {
@@ -118,8 +119,8 @@ func TestRuntimeState(t *testing.T) {
 		fixOperationID2 := "operation2"
 		runtimeStateWithReconcilerInput1 := fixture.FixRuntimeState(fixRuntimeStateID2, fixRuntimeID, fixOperationID2)
 		runtimeStateWithReconcilerInput1.CreatedAt = runtimeStateWithReconcilerInput1.CreatedAt.Add(time.Hour * 1)
-		runtimeStateWithReconcilerInput1.ClusterSetup = &reconciler.Cluster{
-			Cluster: fixRuntimeID,
+		runtimeStateWithReconcilerInput1.ClusterSetup = &contract.Cluster{
+			RuntimeID: fixRuntimeID,
 		}
 
 		fixRuntimeStateID3 := "runtimestate3"
@@ -129,8 +130,8 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeStateID4 := "runtimestate4"
 		fixOperationID4 := "operation4"
 		runtimeStateWithReconcilerInput2 := fixture.FixRuntimeState(fixRuntimeStateID4, fixRuntimeID, fixOperationID4)
-		runtimeStateWithReconcilerInput2.ClusterSetup = &reconciler.Cluster{
-			Cluster: fixRuntimeID,
+		runtimeStateWithReconcilerInput2.ClusterSetup = &contract.Cluster{
+			RuntimeID: fixRuntimeID,
 		}
 
 		storage := brokerStorage.RuntimeStates()
@@ -157,6 +158,6 @@ func TestRuntimeState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithReconcilerInput1.ID)
 		assert.NotNil(t, gotRuntimeState.ClusterSetup)
-		assert.Equal(t, gotRuntimeState.ClusterSetup.Cluster, runtimeStateWithReconcilerInput1.ClusterSetup.Cluster)
+		assert.Equal(t, gotRuntimeState.ClusterSetup.RuntimeID, runtimeStateWithReconcilerInput1.ClusterSetup.RuntimeID)
 	})
 }

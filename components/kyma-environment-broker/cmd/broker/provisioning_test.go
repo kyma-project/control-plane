@@ -6,9 +6,8 @@ import (
 	"io/ioutil"
 	"testing"
 
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -162,7 +161,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	suite.AssertProvider("aws")
 	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
 
-	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+	suite.AssertClusterMetadata(opID, contract.Metadata{
 		GlobalAccountID: "g-account-id",
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -173,7 +172,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
-	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+	suite.AssertClusterKymaConfig(opID, contract.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
@@ -217,7 +216,7 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 	suite.AssertProvider("aws")
 	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
 
-	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+	suite.AssertClusterMetadata(opID, contract.Metadata{
 		GlobalAccountID: "g-account-id",
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -228,7 +227,7 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
-	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+	suite.AssertClusterKymaConfig(opID, contract.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},

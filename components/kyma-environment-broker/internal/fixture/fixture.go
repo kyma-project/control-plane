@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+
+	contract "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const (
@@ -407,9 +407,9 @@ func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.Config
 	return c
 }
 
-func (c *SimpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
-	return reconciler.Cluster{
-		Cluster:    c.RuntimeID,
+func (c *SimpleInputCreator) CreateClusterConfiguration() (contract.Cluster, error) {
+	return contract.Cluster{
+		RuntimeID:  c.RuntimeID,
 		Kubeconfig: "sample-kubeconfig",
 	}, nil
 }

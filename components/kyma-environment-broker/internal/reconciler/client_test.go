@@ -32,11 +32,11 @@ func Test_RegisterCluster(t *testing.T) {
 		assert.Equal(t, "/v1/clusters", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
 		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
-			Cluster:              requestedCluster.Cluster,
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
 			Status:               contract.StatusReconcilePending,
-			StatusUrl:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.Cluster, strconv.FormatInt(fixConfigVersion, 10)),
+			StatusURL:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.RuntimeID, strconv.FormatInt(fixConfigVersion, 10)),
 		})
 		require.NoError(t, err)
 	}))
@@ -49,11 +49,11 @@ func Test_RegisterCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
-	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusUrl)
+	assert.Equal(t, contract.StatusReconcilePending, response.Status)
+	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusURL)
 }
 
 func Test_DeleteCluster(t *testing.T) {
@@ -87,11 +87,11 @@ func Test_GetCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/configs/%d/status", fixClusterID, fixConfigVersion), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
+		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
+			Status:               contract.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -104,10 +104,10 @@ func Test_GetCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
+	assert.Equal(t, contract.StatusReconcilePending, response.Status)
 }
 
 func Test_GetLatestCluster(t *testing.T) {
@@ -120,11 +120,11 @@ func Test_GetLatestCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/status", fixClusterID), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
+		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
+			Status:               contract.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -137,10 +137,10 @@ func Test_GetLatestCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
+	assert.Equal(t, contract.StatusReconcilePending, response.Status)
 }
 
 func Test_GetStatusChange(t *testing.T) {
@@ -179,14 +179,14 @@ func Test_GetStatusChange(t *testing.T) {
 	assert.Len(t, response, 3)
 }
 
-func fixCluster(t *testing.T, clusterID string, clusterVersion int64) *Cluster {
-	cluster := &Cluster{}
+func fixCluster(t *testing.T, runtimeID string, clusterVersion int64) *contract.Cluster {
+	cluster := &contract.Cluster{}
 	data, err := ioutil.ReadFile(clusterJSONFile)
 	require.NoError(t, err)
 	err = json.Unmarshal(data, cluster)
 	require.NoError(t, err)
 
-	cluster.Cluster = clusterID
+	cluster.RuntimeID = runtimeID
 	cluster.RuntimeInput.Name = fmt.Sprintf("runtimeName%d", clusterVersion)
 	cluster.Metadata.GlobalAccountID = fmt.Sprintf("globalAccountId%d", clusterVersion)
 	cluster.KymaConfig.Profile = fmt.Sprintf("kymaProfile%d", clusterVersion)
