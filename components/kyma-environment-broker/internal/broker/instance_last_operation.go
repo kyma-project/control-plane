@@ -2,6 +2,8 @@ package broker
 
 import (
 	"context"
+	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"net/http"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -33,7 +35,12 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 		lastOp, err := b.operationStorage.GetLastOperation(instanceID)
 		if err != nil {
 			logger.Errorf("cannot get operation from storage: %s", err)
-			return domain.LastOperation{}, errors.Wrapf(err, "while getting last operation from storage")
+			statusCode := http.StatusInternalServerError
+			if dberr.IsNotFound(err){
+				statusCode = http.StatusNotFound
+			}
+			return domain.LastOperation{}, apiresponses.NewFailureResponse(err, statusCode,
+				fmt.Sprintf("while getting last operation from storage"))
 		}
 		return domain.LastOperation{
 			State:       lastOp.State,
@@ -44,14 +51,19 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 	operation, err := b.operationStorage.GetOperationByID(details.OperationData)
 	if err != nil {
 		logger.Errorf("cannot get operation from storage: %s", err)
-		return domain.LastOperation{}, errors.Wrapf(err, "while getting operation from storage")
+		statusCode := http.StatusInternalServerError
+		if dberr.IsNotFound(err){
+			statusCode = http.StatusNotFound
+		}
+		return domain.LastOperation{}, apiresponses.NewFailureResponse(err, statusCode,
+			fmt.Sprintf("while getting operation from storage"))
+		//return domain.LastOperation{}, errors.Wrapf(err, "while getting operation from storage")
 	}
 
 	if operation.InstanceID != instanceID {
 		err := errors.Errorf("operation does not exist")
 		return domain.LastOperation{}, apiresponses.NewFailureResponseBuilder(err, http.StatusBadRequest, err.Error())
 	}
-
 	return domain.LastOperation{
 		State:       operation.State,
 		Description: operation.Description,
