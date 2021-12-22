@@ -249,6 +249,9 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 		if ok = matchFilter(v.GlobalAccountID, filter.GlobalAccountIDs, equal); !ok {
 			continue
 		}
+		if ok = matchFilter(v.SubscriptionGlobalAccountID, filter.SubscriptionGlobalAccountIDs, equal); !ok {
+			continue
+		}
 		if ok = matchFilter(v.SubAccountID, filter.SubAccountIDs, equal); !ok {
 			continue
 		}

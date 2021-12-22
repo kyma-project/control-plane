@@ -24,6 +24,7 @@ func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Pair("instance_id", instance.InstanceID).
 		Pair("runtime_id", instance.RuntimeID).
 		Pair("global_account_id", instance.GlobalAccountID).
+		Pair("subscription_global_account_id", instance.SubscriptionGlobalAccountID).
 		Pair("sub_account_id", instance.SubAccountID).
 		Pair("service_id", instance.ServiceID).
 		Pair("service_name", instance.ServiceName).
@@ -68,6 +69,7 @@ func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Set("instance_id", instance.InstanceID).
 		Set("runtime_id", instance.RuntimeID).
 		Set("global_account_id", instance.GlobalAccountID).
+		Set("subscription_global_account_id", instance.SubscriptionGlobalAccountID).
 		Set("service_id", instance.ServiceID).
 		Set("service_plan_id", instance.ServicePlanID).
 		Set("dashboard_url", instance.DashboardURL).

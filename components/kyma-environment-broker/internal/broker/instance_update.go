@@ -30,11 +30,12 @@ type UpdateEndpoint struct {
 	config Config
 	log    logrus.FieldLogger
 
-	instanceStorage      storage.Instances
-	runtimeStates        storage.RuntimeStates
-	contextUpdateHandler ContextUpdateHandler
-	brokerURL            string
-	processingEnabled    bool
+	instanceStorage           storage.Instances
+	runtimeStates             storage.RuntimeStates
+	contextUpdateHandler      ContextUpdateHandler
+	brokerURL                 string
+	processingEnabled         bool
+	subAccountMovementEnabled bool
 
 	operationStorage storage.Operations
 
@@ -49,20 +50,22 @@ func NewUpdate(cfg Config,
 	operationStorage storage.Operations,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
+	subAccountMovementEnabled bool,
 	queue *process.Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
-		config:               cfg,
-		log:                  log.WithField("service", "UpdateEndpoint"),
-		instanceStorage:      instanceStorage,
-		runtimeStates:        runtimeStates,
-		operationStorage:     operationStorage,
-		contextUpdateHandler: ctxUpdateHandler,
-		processingEnabled:    processingEnabled,
-		updatingQueue:        queue,
-		planDefaults:         planDefaults,
+		config:                    cfg,
+		log:                       log.WithField("service", "UpdateEndpoint"),
+		instanceStorage:           instanceStorage,
+		runtimeStates:             runtimeStates,
+		operationStorage:          operationStorage,
+		contextUpdateHandler:      ctxUpdateHandler,
+		processingEnabled:         processingEnabled,
+		subAccountMovementEnabled: subAccountMovementEnabled,
+		updatingQueue:             queue,
+		planDefaults:              planDefaults,
 	}
 }
 
@@ -305,11 +308,21 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 		instance.Parameters.ErsContext.Active = ersContext.Active
 	}
 
+	if b.subAccountMovementEnabled {
+		if instance.GlobalAccountID != ersContext.GlobalAccountID && ersContext.GlobalAccountID != "" {
+			if instance.SubscriptionGlobalAccountID == "" {
+				instance.SubscriptionGlobalAccountID = instance.GlobalAccountID
+			}
+			instance.GlobalAccountID = ersContext.GlobalAccountID
+		}
+	}
+
 	newInstance, err := b.instanceStorage.Update(*instance)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
 		return nil, changed, errors.New("unable to process the update")
 	}
+
 	return newInstance, changed, nil
 }
 
