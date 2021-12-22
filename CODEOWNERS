@@ -8,7 +8,7 @@
 * @PK85 @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @rJankowski93 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @pxsalehi
+/resources/kcp/values.yaml @PK85 @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @rJankowski93 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @tgorgol @akgalwas @janmedrek @Szymongib @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @rafalpotempa @voigt @wozniakjan @ebensom
@@ -30,9 +30,9 @@
 /tests/provisioner-tests @janmedrek @akgalwas @Szymongib @franpog859 @ralikio @Maladie @koala7659 @rafalpotempa
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @rJankowski93 @moelsayed
-/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @rJankowski93 @moelsayed
-/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @rJankowski93 @moelsayed
+/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @rJankowski93 @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @rJankowski93 @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @rJankowski93 @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 
 # e2e-provisioning
@@ -50,7 +50,7 @@
 /tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @rJankowski93 @moelsayed
 
 # reconciler
-/components/reconciler @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed
+/components/reconciler @rJankowski93 @m00g3n @dbadura @pPrecel @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl

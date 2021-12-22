@@ -280,8 +280,9 @@ func main() {
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
 		cfg.Gardener.ForceAllowPrivilegedContainers)
 
-	validator := api.NewValidator(dbsFactory.NewReadSession())
-	resolver := api.NewResolver(provisioningSVC, validator)
+	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
+	validator := api.NewValidator()
+	resolver := api.NewResolver(provisioningSVC, validator, tenantUpdater)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -388,6 +388,7 @@ func FixTables() map[string]string {
 			instance_id varchar(255) PRIMARY KEY,
 			runtime_id varchar(255) NOT NULL,
 			global_account_id varchar(255) NOT NULL,
+			subscription_global_account_id varchar(255) NOT NULL,
 			sub_account_id varchar(255) NOT NULL,
 			service_id varchar(255) NOT NULL,
 			service_name varchar(255) NOT NULL,
