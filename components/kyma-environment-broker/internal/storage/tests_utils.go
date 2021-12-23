@@ -237,9 +237,9 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 				log.Printf("Cannot apply file %s", file.Name())
 				return nil, err
 			}
-			log.Printf("File %s applied to database", file.Name())
 		}
 	}
+	log.Printf("Files applied to database")
 
 	return cleanupFunc, nil
 }
@@ -283,9 +283,9 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 				log.Printf("Cannot apply file %s", file.Name())
 				return nil, err
 			}
-			log.Printf("File %s applied to database", file.Name())
 		}
 	}
+	log.Printf("Files applied to database")
 
 	return cleanupFunc, nil
 }

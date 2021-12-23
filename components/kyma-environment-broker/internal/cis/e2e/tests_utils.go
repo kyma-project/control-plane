@@ -42,9 +42,9 @@ func initTestDBInstancesTables(t *testing.T, connectionURL string) error {
 				t.Logf("Cannot apply file %s", file.Name())
 				return err
 			}
-			t.Logf("File %s applied to database", file.Name())
 		}
 	}
+	t.Log("Files applied to database")
 
 	return nil
 }
