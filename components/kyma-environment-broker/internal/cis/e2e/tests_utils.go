@@ -25,13 +25,6 @@ func initTestDBInstancesTables(t *testing.T, connectionURL string) error {
 		return err
 	}
 
-	//tables := storage.FixTables()
-	//if _, err := connection.Exec(tables[postsql.InstancesTableName]); err != nil {
-	//	t.Log("Cannot create table Instances")
-	//	return err
-	//}
-	//t.Log("Table Instances added to database")
-
 	dirPath := "./../../../../schema-migrator/migrations/kyma-environment-broker/"
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {

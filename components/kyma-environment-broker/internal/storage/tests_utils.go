@@ -220,13 +220,6 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 		return cleanupFunc, nil
 	}
 
-	//for name, v := range FixTables() {
-	//	if _, err := connection.Exec(v); err != nil {
-	//		t.Logf("Cannot create table %s", name)
-	//		return nil, err
-	//	}
-	//	t.Logf("Table %s added to database", name)
-	//}
 	dirPath := "./../../../../../schema-migrator/migrations/kyma-environment-broker/"
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
@@ -272,14 +265,6 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	} else if initialized {
 		return cleanupFunc, nil
 	}
-
-	//for name, v := range FixTables() {
-	//	if _, err := connection.Exec(v); err != nil {
-	//		log.Printf("Cannot create table %s", name)
-	//		return nil, err
-	//	}
-	//	log.Printf("Table %s added to database", name)
-	//}
 
 	dirPath := "./../../../../../schema-migrator/migrations/kyma-environment-broker/"
 	files, err := ioutil.ReadDir(dirPath)
@@ -423,70 +408,6 @@ func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Conf
 
 	return false, Config{}, err
 }
-
-//func FixTables() map[string]string {
-//	return map[string]string{
-//		postsql.InstancesTableName: fmt.Sprintf(
-//			`CREATE TABLE IF NOT EXISTS %s (
-//			instance_id varchar(255) PRIMARY KEY,
-//			runtime_id varchar(255) NOT NULL,
-//			global_account_id varchar(255) NOT NULL,
-//			subscription_global_account_id varchar(255) NOT NULL,
-//			sub_account_id varchar(255) NOT NULL,
-//			service_id varchar(255) NOT NULL,
-//			service_name varchar(255) NOT NULL,
-//			service_plan_id varchar(255) NOT NULL,
-//			service_plan_name varchar(255) NOT NULL,
-//			dashboard_url varchar(255) NOT NULL,
-//			provisioning_parameters text NOT NULL,
-//			provider_region varchar(32) NOT NULL,
-//			provider varchar(32) NOT NULL DEFAULT '',
-//           version integer NOT NULL DEFAULT 0,
-//			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-//			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-//			deleted_at TIMESTAMPTZ NOT NULL DEFAULT '0001-01-01 00:00:00+00'
-//		)`, postsql.InstancesTableName),
-//		postsql.OperationTableName: fmt.Sprintf(
-//			`CREATE TABLE IF NOT EXISTS %s (
-//			id varchar(255) PRIMARY KEY,
-//			instance_id varchar(255) NOT NULL,
-//			target_operation_id varchar(255) NOT NULL,
-//			version integer NOT NULL,
-//			state varchar(32) NOT NULL,
-//			description text NOT NULL,
-//			type varchar(32) NOT NULL,
-//			data json NOT NULL,
-//			provisioning_parameters json NOT NULL,
-//			orchestration_id varchar(64),
-//           finished_stages text,
-//			created_at TIMESTAMPTZ NOT NULL,
-//			updated_at TIMESTAMPTZ NOT NULL
-//			)`, postsql.OperationTableName),
-//		postsql.OrchestrationTableName: fmt.Sprintf(
-//			`CREATE TABLE IF NOT EXISTS %s (
-//			orchestration_id varchar(255) PRIMARY KEY,
-//			type varchar(32) NOT NULL,
-//			state varchar(32) NOT NULL,
-//			description text,
-//			parameters text NOT NULL,
-//			runtime_operations text,
-//			created_at TIMESTAMPTZ NOT NULL,
-//			updated_at TIMESTAMPTZ NOT NULL
-//			)`, postsql.OrchestrationTableName),
-//		postsql.RuntimeStateTableName: fmt.Sprintf(
-//			`CREATE TABLE IF NOT EXISTS %s (
-//			id varchar(255) PRIMARY KEY,
-//   		runtime_id varchar(255),
-//   		operation_id varchar(255),
-//   		created_at TIMESTAMPTZ NOT NULL,
-//			kyma_config text,
-//			cluster_config text,
-//			cluster_setup text,
-//			kyma_version text,
-//			k8s_version text
-//			)`, postsql.RuntimeStateTableName),
-//	}
-//}
 
 func clearDBQuery() string {
 	return fmt.Sprintf("TRUNCATE TABLE %s, %s, %s, %s RESTART IDENTITY CASCADE",
