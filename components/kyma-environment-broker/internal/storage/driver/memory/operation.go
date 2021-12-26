@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 
@@ -565,7 +564,7 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	operations := s.filterUpgradeKymaByInstanceID(instanceID, dbmodel.OperationFilter{})
 
 	if len(operations) != 0 {
-		s.sortUpgradeKymaByCreatedAt(operations)
+		s.sortUpgradeKymaByCreatedAtDesc(operations)
 		return operations, nil
 	}
 
@@ -600,7 +599,7 @@ func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string)
 	operations := s.filterUpgradeClusterByInstanceID(instanceID, dbmodel.OperationFilter{})
 
 	if len(operations) != 0 {
-		s.sortUpgradeClusterByCreatedAt(operations)
+		s.sortUpgradeClusterByCreatedAtDesc(operations)
 		return operations, nil
 	}
 
@@ -676,9 +675,21 @@ func (s *operations) sortUpgradeKymaByCreatedAt(operations []internal.UpgradeKym
 	})
 }
 
+func (s *operations) sortUpgradeKymaByCreatedAtDesc(operations []internal.UpgradeKymaOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
 func (s *operations) sortUpgradeClusterByCreatedAt(operations []internal.UpgradeClusterOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortUpgradeClusterByCreatedAtDesc(operations []internal.UpgradeClusterOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
 	})
 }
 
@@ -775,7 +786,6 @@ func (s *operations) filterUpgradeCluster(orchestrationID string, filter dbmodel
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
-			fmt.Println(string(v.State), filter.States)
 			continue
 		}
 

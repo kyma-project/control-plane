@@ -297,6 +297,63 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		assert.Equal(t, orchestration.Succeeded, string(op.State))
 	})
+
+	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		opId := "op-" + id
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+			}},
+		})
+		require.NoError(t, err)
+
+		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              opId,
+				OrchestrationID: id,
+				State:           orchestration.Retrying,
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      opId,
+				Runtime: orchestration.Runtime{},
+				DryRun:  false,
+			},
+			InputCreator: nil,
+		})
+		require.NoError(t, err)
+
+		executor := retryTestExecutor{
+			store:       store,
+			upgradeType: orchestration.UpgradeKymaOrchestration,
+		}
+		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, o.State)
+
+		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, string(op.State))
+	})
 }
 
 type testExecutor struct{}

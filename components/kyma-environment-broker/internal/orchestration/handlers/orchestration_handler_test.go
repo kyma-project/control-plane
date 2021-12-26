@@ -743,9 +743,9 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
-			RetryOperations:   []string{"id-0"},
+			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
-			InvalidOperations: []string{"id-2"},
+			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
 		}
 
@@ -767,7 +767,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Failed, string(op.State))
+		assert.Equal(t, orchestration.Retrying, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -811,9 +811,9 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
-			RetryOperations:   []string{"id-2"},
+			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
-			InvalidOperations: []string{"id-0"},
+			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
 		}
 
@@ -827,7 +827,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err := db.Operations().GetOperationByID("id-0")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Failed, string(op.State))
+		assert.Equal(t, orchestration.Retrying, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-1")
 		require.NoError(t, err)

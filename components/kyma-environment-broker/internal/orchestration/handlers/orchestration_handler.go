@@ -26,14 +26,12 @@ type orchestrationHandler struct {
 	operations     storage.Operations
 	runtimeStates  storage.RuntimeStates
 
-	kymaQueue    *process.Queue
-	clusterQueue *process.Queue
-
 	converter Converter
 	log       logrus.FieldLogger
 
-	canceler *Canceler
-	retryer  *Retryer
+	canceler       *Canceler
+	kymaRetryer    *kymaRetryer
+	clusterRetryer *clusterRetryer
 
 	defaultMaxPage int
 }
@@ -54,9 +52,8 @@ func NewOrchestrationStatusHandler(operations storage.Operations,
 		defaultMaxPage: defaultMaxPage,
 		converter:      Converter{},
 		canceler:       NewCanceler(orchestrations, log),
-		retryer:        NewRetryer(orchestrations, operations, nil, log),
-		kymaQueue:      kymaQueue,
-		clusterQueue:   clusterQueue,
+		kymaRetryer:    NewKymaRetryer(orchestrations, operations, kymaQueue, log),
+		clusterRetryer: NewClusterRetryer(orchestrations, operations, clusterQueue, log),
 	}
 }
 
@@ -143,6 +140,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 		States: []string{commonOrchestration.Failed},
 	}
 
+	var response commonOrchestration.RetryResponse
 	switch o.Type {
 	case commonOrchestration.UpgradeKymaOrchestration:
 		allOps, _, _, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, filter)
@@ -152,8 +150,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		h.retryer.queue = h.kymaQueue
-		err = h.retryer.kymaUpgradeRetry(o, allOps, operationIDs)
+		response, err = h.kymaRetryer.orchestrationRetry(o, allOps, operationIDs)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return
@@ -167,8 +164,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		h.retryer.queue = h.clusterQueue
-		err = h.retryer.clusterUpgradeRetry(o, allOps, operationIDs)
+		response, err = h.clusterRetryer.orchestrationRetry(o, allOps, operationIDs)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return
@@ -179,7 +175,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 		return
 	}
 
-	httputil.WriteResponse(w, http.StatusAccepted, h.retryer.resp)
+	httputil.WriteResponse(w, http.StatusAccepted, response)
 }
 
 func (h *orchestrationHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {

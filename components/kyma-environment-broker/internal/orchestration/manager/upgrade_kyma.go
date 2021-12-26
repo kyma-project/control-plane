@@ -121,24 +121,28 @@ func extractMajorVersionNumberFromVersionString(version string) (int, error) {
 	return majorVerNum, nil
 }
 
-func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string, states []string) ([]orchestration.RuntimeOperation, error) {
-	result := []orchestration.RuntimeOperation{}
-
-	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: states})
+func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
+	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.InProgress, orchestration.Retrying, orchestration.Pending}})
 	if err != nil {
 		return nil, err
 	}
 
+	pending := make([]orchestration.RuntimeOperation, 0)
+	retrying := make([]orchestration.RuntimeOperation, 0)
+	inProgress := make([]orchestration.RuntimeOperation, 0)
 	for _, op := range ops {
-		for _, state := range states {
-			if string(op.State) == state {
-				result = append(result, op.RuntimeOperation)
-				break
-			}
+		if op.State == orchestration.Pending {
+			pending = append(pending, op.RuntimeOperation)
+		}
+		if op.State == orchestration.Retrying {
+			retrying = append(retrying, op.RuntimeOperation)
+		}
+		if op.State == orchestration.InProgress {
+			inProgress = append(inProgress, op.RuntimeOperation)
 		}
 	}
 
-	return result, nil
+	return append(inProgress, append(retrying, pending...)...), nil
 }
 
 func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
@@ -158,41 +162,51 @@ func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 	return nil
 }
 
-func (u *upgradeKymaFactory) UpdateRetryingOperations(rt orchestration.RuntimeOperation) (orchestration.RuntimeOperation, error) {
-	op, err := u.operationStorage.GetUpgradeKymaOperationByID(rt.ID)
+// get current retrying operations, update state to pending and update other required params to storage
+func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+	result := []orchestration.RuntimeOperation{}
+	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
 	if err != nil {
-		return orchestration.RuntimeOperation{}, err
-	}
-
-	op.MaintenanceWindowBegin = rt.MaintenanceWindowBegin
-	op.MaintenanceWindowEnd = rt.MaintenanceWindowEnd
-	op.MaintenanceDays = rt.MaintenanceDays
-	op.UpdatedAt = time.Now()
-	op.Description = "Operation retry triggered"
-	op.State = orchestration.Pending
-
-	opUpdated, err := u.operationStorage.UpdateUpgradeKymaOperation(*op)
-	if err != nil {
-		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) operation %s in storage", rt.ID)
-	}
-
-	return opUpdated.RuntimeOperation, nil
-}
-
-func (u *upgradeKymaFactory) ConvertRetryingToPendingOperations(orchestrationID string) error {
-	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Pending}})
-	if err != nil {
-		return errors.Wrap(err, "while listing retrying operations")
+		return nil, errors.Wrap(err, "while listing retrying operations")
 	}
 
 	for _, op := range ops {
-		op.State = orchestration.Pending
-		op.Description = "Operation retry triggered"
-		_, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
-		if err != nil {
-			return errors.Wrap(err, "while updating upgrade kyma operation")
+		if updateMWindow {
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			days := []string{}
+
+			// use the latest policy
+			if schedule == orchestration.MaintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
+			}
+			op.MaintenanceWindowBegin = windowBegin
+			op.MaintenanceWindowEnd = windowEnd
+			op.MaintenanceDays = days
 		}
+
+		runtimeop, err := u.updateRetryingOperation(op)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, runtimeop)
 	}
 
-	return nil
+	return result, nil
+}
+
+// update storage in corresponding upgrade factory to avoid too many storage read and write
+func (u *upgradeKymaFactory) updateRetryingOperation(op internal.UpgradeKymaOperation) (orchestration.RuntimeOperation, error) {
+	op.UpdatedAt = time.Now()
+	op.State = orchestration.Pending
+	op.Description = "Operation retry triggered"
+	op.ProvisionerOperationID = ""
+
+	opUpdated, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
+	if err != nil {
+		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade kyma operation %s in storage", op.Operation.ID)
+	}
+
+	return opUpdated.RuntimeOperation, nil
 }
