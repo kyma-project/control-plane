@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
