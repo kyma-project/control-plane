@@ -21,11 +21,11 @@ type Retryer struct {
 
 type kymaRetryer Retryer
 
-func NewKymaRetryer(orchestrations storage.Orchestrations, operations storage.Operations, queue *process.Queue, logger logrus.FieldLogger) *kymaRetryer {
+func NewKymaRetryer(orchestrations storage.Orchestrations, operations storage.Operations, q *process.Queue, logger logrus.FieldLogger) *kymaRetryer {
 	return &kymaRetryer{
 		orchestrations: orchestrations,
 		operations:     operations,
-		queue:          queue,
+		queue:          q,
 		log:            logger,
 	}
 }
@@ -75,6 +75,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 		return resp, err
 	}
 
+	r.log.Infof("Converting orchestration %s from state %s to Retrying", o.OrchestrationID, lastState)
 	if lastState == commonOrchestration.Failed {
 		r.queue.Add(o.OrchestrationID)
 	}

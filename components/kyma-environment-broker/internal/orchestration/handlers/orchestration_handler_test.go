@@ -697,7 +697,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		assert.Equal(t, orchestration.Succeeded, string(op.State))
 	})
 
-	t.Run("retry failed cluster orchestration with suspensioned instance", func(t *testing.T) {
+	t.Run("retry failed cluster orchestration with deprovisioned instance", func(t *testing.T) {
 		// given
 		db := storage.NewMemoryStorage()
 
@@ -774,7 +774,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		assert.Equal(t, orchestration.Succeeded, string(op.State))
 	})
 
-	t.Run("retry failed kyma orchestration with suspensioned instance", func(t *testing.T) {
+	t.Run("retry failed kyma orchestration with deprovisioned instance", func(t *testing.T) {
 		// given
 		db := storage.NewMemoryStorage()
 

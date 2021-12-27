@@ -13,11 +13,11 @@ import (
 
 type clusterRetryer Retryer
 
-func NewClusterRetryer(orchestrations storage.Orchestrations, operations storage.Operations, queue *process.Queue, logger logrus.FieldLogger) *clusterRetryer {
+func NewClusterRetryer(orchestrations storage.Orchestrations, operations storage.Operations, q *process.Queue, logger logrus.FieldLogger) *clusterRetryer {
 	return &clusterRetryer{
 		orchestrations: orchestrations,
 		operations:     operations,
-		queue:          queue,
+		queue:          q,
 		log:            logger,
 	}
 }
