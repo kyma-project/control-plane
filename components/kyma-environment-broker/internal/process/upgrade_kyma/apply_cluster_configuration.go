@@ -32,6 +32,7 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	operation.InputCreator.SetRuntimeID(operation.InstanceDetails.RuntimeID).
 		SetInstanceID(operation.InstanceID).
 		SetShootName(operation.InstanceDetails.ShootName).

@@ -81,7 +81,11 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		setRuntimeStateByOperationState(&dto)
+		err = h.setRuntimeStateByOperationState(&dto)
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
 		err = h.setRuntimeOptionalAttributes(instance, &dto, kymaConfig, clusterConfig)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
@@ -129,7 +133,7 @@ func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClus
 	return toReturn, totalCount
 }
 
-func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
+func (h *Handler) setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) error {
 	// Determine runtime state based on the last operation of the runtime
 	lastOp := dto.LastOperation()
 	switch lastOp.State {
@@ -158,6 +162,16 @@ func setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) {
 	default:
 		dto.Status.State = pkg.StateSucceeded
 	}
+
+	// Determine runtime modifiedAt timestamp based on the last operation of the runtime
+	last, err := h.operationsDb.GetLastOperation(dto.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		return errors.Wrapf(err, "while fetching last operation for instance %s", dto.InstanceID)
+	}
+	if last != nil {
+		dto.Status.ModifiedAt = last.UpdatedAt
+	}
+	return nil
 }
 
 func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.RuntimeDTO) error {

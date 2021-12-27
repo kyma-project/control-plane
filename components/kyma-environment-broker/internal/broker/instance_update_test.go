@@ -58,7 +58,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, &q, planDefaults, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New())
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -114,7 +114,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, q, planDefaults, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -176,7 +176,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, q, planDefaults, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New())
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -209,7 +209,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, q, planDefaults, logrus.New())
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New())
 
 	// when
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -240,4 +240,62 @@ func fixSuspensionOperation() internal.DeprovisioningOperation {
 	deprovisioningOperation.Temporary = true
 
 	return deprovisioningOperation
+}
+
+func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		InstanceID:      instanceID,
+		ServicePlanID:   TrialPlanID,
+		GlobalAccountID: "origin-account-id",
+		Parameters: internal.ProvisioningParameters{
+			PlanID: TrialPlanID,
+			ErsContext: internal.ERSContext{
+				TenantID:        "",
+				SubAccountID:    "",
+				GlobalAccountID: "",
+				ServiceManager:  nil,
+				Active:          nil,
+			},
+		},
+	}
+	newGlobalAccountID := "updated-account-id"
+	st := storage.NewMemoryStorage()
+	st.Instances().Insert(instance)
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
+	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
+
+	handler := &handler{}
+	q := process.Queue{}
+	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+		return &gqlschema.ClusterConfigInput{}, nil
+	}
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New())
+
+	// when
+	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+		ServiceID:       "",
+		PlanID:          TrialPlanID,
+		RawParameters:   nil,
+		PreviousValues:  domain.PreviousValues{},
+		RawContext:      json.RawMessage("{\"globalaccount_id\":\"" + newGlobalAccountID + "\", \"active\":true}"),
+		MaintenanceInfo: nil,
+	}, true)
+	require.NoError(t, err)
+
+	// then
+	inst, err := st.Instances().GetByID(instanceID)
+	require.NoError(t, err)
+	// Check if SubscriptionGlobalAccountID is not empty
+	assert.NotEmpty(t, inst.SubscriptionGlobalAccountID)
+	// check if the handler was called
+	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
+
+	// Check if SubscriptionGlobalAccountID is now the same as GlobalAccountID
+	assert.Equal(t, inst.GlobalAccountID, newGlobalAccountID)
+
+	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
+	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+	assert.Len(t, response.Metadata.Labels, 1)
 }

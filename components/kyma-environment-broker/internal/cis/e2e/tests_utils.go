@@ -2,11 +2,12 @@ package e2e
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 
 	"github.com/google/uuid"
@@ -24,12 +25,26 @@ func initTestDBInstancesTables(t *testing.T, connectionURL string) error {
 		return err
 	}
 
-	tables := storage.FixTables()
-	if _, err := connection.Exec(tables[postsql.InstancesTableName]); err != nil {
-		t.Log("Cannot create table Instances")
+	dirPath := "./../../../../schema-migrator/migrations/kyma-environment-broker/"
+	files, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		t.Logf("Cannot read files from directory %s", dirPath)
 		return err
 	}
-	t.Log("Table Instances added to database")
+
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), "up.sql") {
+			v, err := ioutil.ReadFile(dirPath + file.Name())
+			if err != nil {
+				t.Logf("Cannot read file %s", file.Name())
+			}
+			if _, err = connection.Exec(string(v)); err != nil {
+				t.Logf("Cannot apply file %s", file.Name())
+				return err
+			}
+		}
+	}
+	t.Log("Files applied to database")
 
 	return nil
 }

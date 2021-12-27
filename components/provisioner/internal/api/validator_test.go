@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
-	dbMocks "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/require"
@@ -16,7 +14,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return nil when config is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -33,7 +31,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return nil when kyma config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		config := gqlschema.ProvisionRuntimeInput{
 			RuntimeInput:  runtimeInput,
@@ -49,7 +47,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when config is incorrect", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		config := gqlschema.ProvisionRuntimeInput{}
 
@@ -62,7 +60,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("Should return error when Runtime Agent component is not passed in installation config", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -89,7 +87,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 
 	t.Run("should return error when machine image version is set, but machine image is empty", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		testClusterConfig := clusterConfig
 		testClusterConfig.GardenerConfig.MachineImageVersion = util.StringPtr("24.3")
@@ -134,7 +132,7 @@ func TestValidator_ValidateProvisioningInput(t *testing.T) {
 			KymaConfig:    kymaConfig,
 		}
 
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		//when
 		err := validator.ValidateProvisioningInput(config)
@@ -157,7 +155,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 
 	t.Run("Should return nil when input is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -184,7 +182,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 
 	t.Run("Should return error when kyma config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		config := gqlschema.UpgradeRuntimeInput{}
 
@@ -197,7 +195,7 @@ func TestValidator_ValidateUpgradeInput(t *testing.T) {
 
 	t.Run("Should return error when Runtime Agent component is not passed in kyma input", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		kymaConfig := &gqlschema.KymaConfigInput{
 			Version: "1.5",
@@ -223,7 +221,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return nil when input is correct", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -249,7 +247,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input not provided", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		config := gqlschema.UpgradeShootInput{}
 
@@ -263,7 +261,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for machine type", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -290,7 +288,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for disk type", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -317,7 +315,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for purpose", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -344,7 +342,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 	t.Run("Should return error when Gardener config input provide empty value for kubernetes version", func(t *testing.T) {
 		//given
-		validator := NewValidator(nil)
+		validator := NewValidator()
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -368,108 +366,6 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeBadRequest)
 	})
-}
-
-func TestValidator_ValidateTenant(t *testing.T) {
-	tenant := "tenant"
-	runtimeID := "123-123-123"
-	t.Run("Should return nil when tenant matches tenant provided for Runtime", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		expectedTenant := "tenant"
-
-		readSession.On("GetTenant", runtimeID).Return(expectedTenant, nil)
-
-		//when
-		err := validator.ValidateTenant(runtimeID, tenant)
-
-		//then
-		require.NoError(t, err)
-	})
-
-	t.Run("Should return error when tenant does not match tenant provided for Runtime", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		expectedTenant := "otherTenant"
-
-		readSession.On("GetTenant", runtimeID).Return(expectedTenant, nil)
-
-		//when
-		err := validator.ValidateTenant(runtimeID, tenant)
-
-		//then
-		require.Error(t, err)
-	})
-
-	t.Run("Should return error when persistence service returns error", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		readSession.On("GetTenant", runtimeID).Return("", dberrors.Internal("Some db error"))
-
-		//when
-		err := validator.ValidateTenant(runtimeID, tenant)
-
-		//then
-		require.Error(t, err)
-	})
-}
-
-func TestValidator_ValidateTenantForOperation(t *testing.T) {
-	tenant := "tenant"
-	operationId := "123-123-123"
-
-	t.Run("Should return nil when tenant matches tenant provided for Runtime", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		expectedTenant := "tenant"
-
-		readSession.On("GetTenantForOperation", operationId).Return(expectedTenant, nil)
-
-		//when
-		err := validator.ValidateTenantForOperation(operationId, tenant)
-
-		//then
-		require.NoError(t, err)
-	})
-
-	t.Run("Should return error when tenant does not match tenant provided for Runtime", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		expectedTenant := "otherTenant"
-
-		readSession.On("GetTenantForOperation", operationId).Return(expectedTenant, nil)
-
-		//when
-		err := validator.ValidateTenantForOperation(operationId, tenant)
-
-		//then
-		require.Error(t, err)
-	})
-
-	t.Run("Should return error when persistence service returns error", func(t *testing.T) {
-		//given
-		readSession := &dbMocks.ReadSession{}
-		validator := NewValidator(readSession)
-
-		readSession.On("GetTenantForOperation", operationId).Return("", dberrors.Internal("Some db error"))
-
-		//when
-		err := validator.ValidateTenantForOperation(operationId, tenant)
-
-		//then
-		require.Error(t, err)
-	})
-
 }
 
 func initializeConfigs() (*gqlschema.ClusterConfigInput, *gqlschema.RuntimeInput, *gqlschema.KymaConfigInput) {
