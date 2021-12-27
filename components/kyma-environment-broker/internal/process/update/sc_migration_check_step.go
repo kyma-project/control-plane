@@ -40,9 +40,12 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 	switch state.Status {
-	case contract.StatusReconciling, contract.StatusReconcilePending, contract.StatusReconcileErrorRetryable:
+	case contract.StatusReconciling, contract.StatusReconcilePending:
 		log.Info("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
+	case contract.StatusReconcileErrorRetryable:
+		log.Infof("Reconciler failed with retryable")
+		return operation, 10 * time.Minute, nil
 	case contract.StatusReady:
 		return operation, 0, nil
 	case contract.StatusError:

@@ -57,8 +57,11 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	log.Debugf("Cluster configuration status %s", state.Status)
 
 	switch state.Status {
-	case contract.StatusReconciling, contract.StatusReconcilePending, contract.StatusReconcileErrorRetryable:
+	case contract.StatusReconciling, contract.StatusReconcilePending:
 		return operation, 30 * time.Second, nil
+	case contract.StatusReconcileErrorRetryable:
+		log.Infof("Reconciler failed with retryable")
+		return operation, 10 * time.Minute, nil
 	case contract.StatusReady:
 		return operation, 0, nil
 	case contract.StatusError:
