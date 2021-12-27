@@ -883,6 +883,9 @@ func fixConfig() *Config {
 			ProvisioningTimeout:   2 * time.Minute,
 			DeprovisioningTimeout: 2 * time.Minute,
 		},
+		Reconciler: reconciler.Config{
+			ProvisioningTimeout: 5 * time.Second,
+		},
 		Director: director.Config{},
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
