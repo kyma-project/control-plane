@@ -3,6 +3,7 @@ kind: CronJob
 metadata:
   name: subscription-cleanup-job
 spec:
+  suspend: true
   jobTemplate:
     metadata:
       name: subscription-cleanup-job
