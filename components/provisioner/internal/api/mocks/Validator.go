@@ -30,38 +30,6 @@ func (_m *Validator) ValidateProvisioningInput(input gqlschema.ProvisionRuntimeI
 	return r0
 }
 
-// ValidateTenant provides a mock function with given fields: runtimeID, tenant
-func (_m *Validator) ValidateTenant(runtimeID string, tenant string) apperrors.AppError {
-	ret := _m.Called(runtimeID, tenant)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
-		r0 = rf(runtimeID, tenant)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
-// ValidateTenantForOperation provides a mock function with given fields: operationID, tenant
-func (_m *Validator) ValidateTenantForOperation(operationID string, tenant string) apperrors.AppError {
-	ret := _m.Called(operationID, tenant)
-
-	var r0 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
-		r0 = rf(operationID, tenant)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(apperrors.AppError)
-		}
-	}
-
-	return r0
-}
-
 // ValidateUpgradeInput provides a mock function with given fields: input
 func (_m *Validator) ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError {
 	ret := _m.Called(input)

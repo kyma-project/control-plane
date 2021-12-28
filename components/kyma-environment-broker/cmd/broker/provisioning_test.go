@@ -273,7 +273,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedProfile:                     gqlschema.KymaProfileEvaluation,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
-			expectedMachineType:                 "m6i.xlarge",
+			expectedMachineType:                 "m5.xlarge",
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"Freemium azure": {
@@ -327,7 +327,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:        2,
 			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m6i.2xlarge",
+			expectedMachineType:                 "m5.2xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
@@ -340,7 +340,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:        1,
 			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m6i.2xlarge",
+			expectedMachineType:                 "m5.2xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
@@ -352,7 +352,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 
 			expectedMinimalNumberOfNodes:        1,
 			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m6i.2xlarge",
+			expectedMachineType:                 "m5.2xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,

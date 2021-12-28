@@ -77,6 +77,8 @@ spec:
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_RECONCILER_URL
               value: "{{ .Values.reconciler.URL }}"
+            - name: APP_RECONCILER_PROVISIONING_TIMEOUT
+              value: "{{ .Values.reconciler.provisioningTimeout }}"
             - name: APP_PROVISIONER_URL
               value: "{{ .Values.provisioner.URL }}"
             - name: APP_PROVISIONER_PROVISIONING_TIMEOUT
