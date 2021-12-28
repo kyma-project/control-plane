@@ -22,7 +22,6 @@ type Client interface {
 	GetCluster(clusterName string, configVersion int64) (*reconcilerApi.HTTPClusterResponse, error)
 	GetLatestCluster(clusterName string) (*reconcilerApi.HTTPClusterResponse, error)
 	GetStatusChange(clusterName, offset string) ([]*reconcilerApi.StatusChange, error)
-	StopOperation(clusterName, offset string) ([]*reconcilerApi.StatusChange, error)
 }
 
 type Config struct {
