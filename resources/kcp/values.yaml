@@ -33,7 +33,7 @@ global:
         version: "PR-699"
       e2e_provisioning:
         dir:
-        version: "PR-930"
+        version: "PR-1235"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:
