@@ -45,6 +45,8 @@ resources:
 
 reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
+  # Defines how long KEB checks the status of the provisioning reconciliation.
+  provisioningTimeout: "2h"
 
 provisioner:
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
