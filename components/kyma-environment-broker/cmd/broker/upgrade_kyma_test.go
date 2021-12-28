@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,7 +73,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 	require.NoError(t, err)
 
 	suite.FinishUpgradeKymaOperationByReconciler(upgradeKymaOperationID)
-	suite.AssertClusterKymaConfig(opID, contract.KymaConfig{
+	suite.AssertClusterKymaConfig(opID, reconcilerApi.KymaConfig{
 		Version:        "2.0.0-rc4",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},

@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const BTPOperatorComponentName = "btp-operator"
@@ -52,7 +52,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	return operation, 0, nil
 }
 
-func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *contract.Component, operation internal.UpdatingOperation) error {
+func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Component, operation internal.UpdatingOperation) error {
 	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
 	config, err := internal.GetBTPOperatorReconcilerOverrides(creds, ConfigMapGetter(operation.InstanceDetails.Kubeconfig))
 	if err != nil {

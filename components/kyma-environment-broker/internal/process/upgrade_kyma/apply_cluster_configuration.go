@@ -12,7 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ApplyClusterConfigurationStep struct {
@@ -85,7 +85,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 }
 
-func (s *ApplyClusterConfigurationStep) componentList(cluster contract.Cluster) string {
+func (s *ApplyClusterConfigurationStep) componentList(cluster reconcilerApi.Cluster) string {
 	vals := []string{}
 	for _, c := range cluster.KymaConfig.Components {
 		vals = append(vals, c.Component)

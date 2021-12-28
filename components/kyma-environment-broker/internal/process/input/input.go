@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const (
@@ -303,40 +303,40 @@ func (r *RuntimeInput) Provider() internal.CloudProvider {
 	return r.hyperscalerInputProvider.Provider()
 }
 
-func (r *RuntimeInput) CreateClusterConfiguration() (contract.Cluster, error) {
+func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, error) {
 	data, err := r.CreateProvisionRuntimeInput()
 	if err != nil {
-		return contract.Cluster{}, err
+		return reconcilerApi.Cluster{}, err
 	}
 	if r.runtimeID == "" {
-		return contract.Cluster{}, errors.New("missing runtime ID")
+		return reconcilerApi.Cluster{}, errors.New("missing runtime ID")
 	}
 	if r.instanceID == "" {
-		return contract.Cluster{}, errors.New("missing instance ID")
+		return reconcilerApi.Cluster{}, errors.New("missing instance ID")
 	}
 	if r.shootName == nil {
-		return contract.Cluster{}, errors.New("missing shoot name")
+		return reconcilerApi.Cluster{}, errors.New("missing shoot name")
 	}
 	if r.kubeconfig == "" {
-		return contract.Cluster{}, errors.New("missing kubeconfig")
+		return reconcilerApi.Cluster{}, errors.New("missing kubeconfig")
 	}
 
-	var componentConfigs []contract.Component
+	var componentConfigs []reconcilerApi.Component
 	for _, cmp := range data.KymaConfig.Components {
-		configs := []contract.Configuration{
+		configs := []reconcilerApi.Configuration{
 			// because there is no section like global configuration, all "global" settings must
 			// be present in all component configurations.
 			{Key: "global.domainName", Value: r.shootDomain},
 		}
 		for _, globalCfg := range data.KymaConfig.Configuration {
-			configs = append(configs, contract.Configuration{
+			configs = append(configs, reconcilerApi.Configuration{
 				Key:    globalCfg.Key,
 				Value:  resolveValueType(globalCfg.Value),
 				Secret: falseIfNil(globalCfg.Secret)})
 		}
 
 		for _, c := range cmp.Configuration {
-			configuration := contract.Configuration{
+			configuration := reconcilerApi.Configuration{
 				Key:    c.Key,
 				Value:  resolveValueType(c.Value),
 				Secret: falseIfNil(c.Secret),
@@ -344,7 +344,7 @@ func (r *RuntimeInput) CreateClusterConfiguration() (contract.Cluster, error) {
 			configs = append(configs, configuration)
 		}
 
-		componentConfig := contract.Component{
+		componentConfig := reconcilerApi.Component{
 			Component:     cmp.Component,
 			Namespace:     cmp.Namespace,
 			Configuration: configs,
@@ -355,19 +355,19 @@ func (r *RuntimeInput) CreateClusterConfiguration() (contract.Cluster, error) {
 		componentConfigs = append(componentConfigs, componentConfig)
 	}
 
-	result := contract.Cluster{
+	result := reconcilerApi.Cluster{
 		RuntimeID: r.runtimeID,
-		RuntimeInput: contract.RuntimeInput{
+		RuntimeInput: reconcilerApi.RuntimeInput{
 			Name:        r.provisionRuntimeInput.RuntimeInput.Name,
 			Description: emptyIfNil(data.RuntimeInput.Description),
 		},
-		KymaConfig: contract.KymaConfig{
+		KymaConfig: reconcilerApi.KymaConfig{
 			Version:        r.provisionRuntimeInput.KymaConfig.Version,
 			Profile:        string(*data.KymaConfig.Profile),
 			Components:     componentConfigs,
 			Administrators: data.ClusterConfig.Administrators,
 		},
-		Metadata: contract.Metadata{
+		Metadata: reconcilerApi.Metadata{
 			GlobalAccountID: r.provisioningParameters.ErsContext.GlobalAccountID,
 			SubAccountID:    r.provisioningParameters.ErsContext.SubAccountID,
 			ServiceID:       r.provisioningParameters.ServiceID,

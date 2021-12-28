@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ProvisionerInputCreator interface {
@@ -36,7 +36,7 @@ type ProvisionerInputCreator interface {
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
-	CreateClusterConfiguration() (contract.Cluster, error)
+	CreateClusterConfiguration() (reconcilerApi.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
 	SetKubeconfig(kcfg string) ProvisionerInputCreator
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
@@ -408,7 +408,7 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	}
 }
 
-func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *contract.Cluster) RuntimeState {
+func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconcilerApi.Cluster) RuntimeState {
 	return RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
@@ -428,7 +428,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-	ClusterSetup  *contract.Cluster             `json:"clusterSetup,omitempty"`
+	ClusterSetup  *reconcilerApi.Cluster             `json:"clusterSetup,omitempty"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {

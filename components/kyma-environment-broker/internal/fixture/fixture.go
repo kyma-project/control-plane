@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const (
@@ -409,8 +409,8 @@ func (c *SimpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.Config
 	return c
 }
 
-func (c *SimpleInputCreator) CreateClusterConfiguration() (contract.Cluster, error) {
-	return contract.Cluster{
+func (c *SimpleInputCreator) CreateClusterConfiguration() (reconcilerApi.Cluster, error) {
+	return reconcilerApi.Cluster{
 		RuntimeID:  c.RuntimeID,
 		Kubeconfig: "sample-kubeconfig",
 	}, nil

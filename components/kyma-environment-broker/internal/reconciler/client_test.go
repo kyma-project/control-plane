@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,11 +31,11 @@ func Test_RegisterCluster(t *testing.T) {
 		//then
 		assert.Equal(t, "/v1/clusters", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
-		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
 			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               contract.StatusReconcilePending,
+			Status:               reconcilerApi.StatusReconcilePending,
 			StatusURL:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.RuntimeID, strconv.FormatInt(fixConfigVersion, 10)),
 		})
 		require.NoError(t, err)
@@ -52,7 +52,7 @@ func Test_RegisterCluster(t *testing.T) {
 	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, contract.StatusReconcilePending, response.Status)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
 	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusURL)
 }
 
@@ -87,11 +87,11 @@ func Test_GetCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/configs/%d/status", fixClusterID, fixConfigVersion), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
 			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               contract.StatusReconcilePending,
+			Status:               reconcilerApi.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -107,7 +107,7 @@ func Test_GetCluster(t *testing.T) {
 	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, contract.StatusReconcilePending, response.Status)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
 }
 
 func Test_GetLatestCluster(t *testing.T) {
@@ -120,11 +120,11 @@ func Test_GetLatestCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/status", fixClusterID), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(contract.HTTPClusterResponse{
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
 			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               contract.StatusReconcilePending,
+			Status:               reconcilerApi.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -140,7 +140,7 @@ func Test_GetLatestCluster(t *testing.T) {
 	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, contract.StatusReconcilePending, response.Status)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
 }
 
 func Test_GetStatusChange(t *testing.T) {
@@ -151,17 +151,17 @@ func Test_GetStatusChange(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/statusChanges/%s", fixClusterID, fixOffset), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode([]*contract.StatusChange{
+		err := json.NewEncoder(w).Encode([]*reconcilerApi.StatusChange{
 			{
-				Status:   contract.StatusReady,
+				Status:   reconcilerApi.StatusReady,
 				Duration: int64(40 * time.Second),
 			},
 			{
-				Status:   contract.StatusReconciling,
+				Status:   reconcilerApi.StatusReconciling,
 				Duration: int64(10 * time.Second),
 			},
 			{
-				Status:   contract.StatusReconcilePending,
+				Status:   reconcilerApi.StatusReconcilePending,
 				Duration: int64(30 * time.Second),
 			},
 		})
@@ -179,8 +179,8 @@ func Test_GetStatusChange(t *testing.T) {
 	assert.Len(t, response, 3)
 }
 
-func fixCluster(t *testing.T, runtimeID string, clusterVersion int64) *contract.Cluster {
-	cluster := &contract.Cluster{}
+func fixCluster(t *testing.T, runtimeID string, clusterVersion int64) *reconcilerApi.Cluster {
+	cluster := &reconcilerApi.Cluster{}
 	data, err := ioutil.ReadFile(clusterJSONFile)
 	require.NoError(t, err)
 	err = json.Unmarshal(data, cluster)

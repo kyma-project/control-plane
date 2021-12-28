@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type CheckReconcilerState struct {
@@ -40,15 +40,15 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 	switch state.Status {
-	case contract.StatusReconciling, contract.StatusReconcilePending:
+	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
 		log.Info("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
-	case contract.StatusReconcileErrorRetryable:
+	case reconcilerApi.StatusReconcileErrorRetryable:
 		log.Infof("Reconciler failed with retryable")
 		return operation, 10 * time.Minute, nil
-	case contract.StatusReady:
+	case reconcilerApi.StatusReady:
 		return operation, 0, nil
-	case contract.StatusError:
+	case reconcilerApi.StatusError:
 		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, reconciler.PrettyFailures(state))
 		return s.operationManager.OperationFailed(operation, msg, log)
 	default:

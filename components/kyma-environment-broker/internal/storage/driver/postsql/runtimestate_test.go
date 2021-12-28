@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestRuntimeState(t *testing.T) {
@@ -73,7 +73,7 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeID := "runtimeID"
 		fixOperationID := "operationID"
 		givenRuntimeState := fixture.FixRuntimeState(fixRuntimeStateID, fixRuntimeID, fixOperationID)
-		givenRuntimeState.ClusterSetup = &contract.Cluster{
+		givenRuntimeState.ClusterSetup = &reconcilerApi.Cluster{
 			RuntimeID: fixRuntimeID,
 		}
 
@@ -119,7 +119,7 @@ func TestRuntimeState(t *testing.T) {
 		fixOperationID2 := "operation2"
 		runtimeStateWithReconcilerInput1 := fixture.FixRuntimeState(fixRuntimeStateID2, fixRuntimeID, fixOperationID2)
 		runtimeStateWithReconcilerInput1.CreatedAt = runtimeStateWithReconcilerInput1.CreatedAt.Add(time.Hour * 1)
-		runtimeStateWithReconcilerInput1.ClusterSetup = &contract.Cluster{
+		runtimeStateWithReconcilerInput1.ClusterSetup = &reconcilerApi.Cluster{
 			RuntimeID: fixRuntimeID,
 		}
 
@@ -130,7 +130,7 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeStateID4 := "runtimestate4"
 		fixOperationID4 := "operation4"
 		runtimeStateWithReconcilerInput2 := fixture.FixRuntimeState(fixRuntimeStateID4, fixRuntimeID, fixOperationID4)
-		runtimeStateWithReconcilerInput2.ClusterSetup = &contract.Cluster{
+		runtimeStateWithReconcilerInput2.ClusterSetup = &reconcilerApi.Cluster{
 			RuntimeID: fixRuntimeID,
 		}
 

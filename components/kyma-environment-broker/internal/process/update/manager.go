@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
@@ -221,12 +221,12 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 	return nil, fmt.Errorf("failed to find %v component in all component list", component)
 }
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (contract.Component, error) {
+func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconcilerApi.Component, error) {
 	c, err := getComponent(componentProvider, component, kymaVersion)
 	if err != nil {
-		return contract.Component{}, err
+		return reconcilerApi.Component{}, err
 	}
-	return contract.Component{
+	return reconcilerApi.Component{
 		Component: c.Name,
 		Namespace: c.Namespace,
 		URL:       c.Source.URL,

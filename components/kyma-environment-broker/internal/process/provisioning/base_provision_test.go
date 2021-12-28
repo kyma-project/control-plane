@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func newInputCreator() *simpleInputCreator {
@@ -140,8 +140,8 @@ func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName 
 	assert.Contains(t, c.enabledComponents, componentName)
 }
 
-func (c *simpleInputCreator) CreateClusterConfiguration() (contract.Cluster, error) {
-	return contract.Cluster{}, nil
+func (c *simpleInputCreator) CreateClusterConfiguration() (reconcilerApi.Cluster, error) {
+	return reconcilerApi.Cluster{}, nil
 }
 
 func (c *simpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {

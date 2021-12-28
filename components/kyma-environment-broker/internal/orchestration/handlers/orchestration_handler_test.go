@@ -21,7 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestStatusHandler_AttachRoutes(t *testing.T) {
@@ -348,17 +348,17 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 			ID:          runtimeStateWithClusterSetupID,
 			RuntimeID:   uuid.NewString(),
 			OperationID: upgradeKymaOp1ID,
-			ClusterSetup: &contract.Cluster{
+			ClusterSetup: &reconcilerApi.Cluster{
 				RuntimeID: uuid.NewString(),
-				KymaConfig: contract.KymaConfig{
+				KymaConfig: reconcilerApi.KymaConfig{
 					Version: "2.0.0",
 					Profile: string(gqlschema.KymaProfileProduction),
-					Components: []contract.Component{
+					Components: []reconcilerApi.Component{
 						{
 							URL:       "component1URL.local",
 							Component: "component1",
 							Namespace: "test",
-							Configuration: []contract.Configuration{
+							Configuration: []reconcilerApi.Configuration{
 								{
 									Key:    "key1",
 									Value:  "value1",

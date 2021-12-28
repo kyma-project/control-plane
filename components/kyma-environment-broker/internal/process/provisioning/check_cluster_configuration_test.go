@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestCheckClusterConfigurationStep_ClusterReady(t *testing.T) {
@@ -20,14 +20,14 @@ func TestCheckClusterConfigurationStep_ClusterReady(t *testing.T) {
 	operation := fixture.FixProvisioningOperation("op-id", "inst-id")
 	operation.ClusterConfigurationVersion = 1
 	recClient := reconciler.NewFakeClient()
-	recClient.ApplyClusterConfig(contract.Cluster{
+	recClient.ApplyClusterConfig(reconcilerApi.Cluster{
 		RuntimeID:    operation.RuntimeID,
-		RuntimeInput: contract.RuntimeInput{},
-		KymaConfig:   contract.KymaConfig{},
-		Metadata:     contract.Metadata{},
+		RuntimeInput: reconcilerApi.RuntimeInput{},
+		KymaConfig:   reconcilerApi.KymaConfig{},
+		Metadata:     reconcilerApi.Metadata{},
 		Kubeconfig:   "kubeconfig",
 	})
-	recClient.ChangeClusterState(operation.RuntimeID, 1, contract.StatusReady)
+	recClient.ChangeClusterState(operation.RuntimeID, 1, reconcilerApi.StatusReady)
 
 	step := NewCheckClusterConfigurationStep(st.Operations(), recClient, time.Minute)
 	st.Operations().InsertProvisioningOperation(operation)
@@ -41,17 +41,17 @@ func TestCheckClusterConfigurationStep_ClusterReady(t *testing.T) {
 }
 
 func TestCheckClusterConfigurationStep_InProgress(t *testing.T) {
-	for _, state := range []contract.Status{contract.StatusReconciling, contract.StatusReconcilePending} {
+	for _, state := range []reconcilerApi.Status{reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending} {
 		t.Run(fmt.Sprintf("shopuld repeat for state %s", state), func(t *testing.T) {
 			st := storage.NewMemoryStorage()
 			operation := fixture.FixProvisioningOperation("op-id", "inst-id")
 			operation.ClusterConfigurationVersion = 1
 			recClient := reconciler.NewFakeClient()
-			recClient.ApplyClusterConfig(contract.Cluster{
+			recClient.ApplyClusterConfig(reconcilerApi.Cluster{
 				RuntimeID:    operation.RuntimeID,
-				RuntimeInput: contract.RuntimeInput{},
-				KymaConfig:   contract.KymaConfig{},
-				Metadata:     contract.Metadata{},
+				RuntimeInput: reconcilerApi.RuntimeInput{},
+				KymaConfig:   reconcilerApi.KymaConfig{},
+				Metadata:     reconcilerApi.Metadata{},
 				Kubeconfig:   "kubeconfig",
 			})
 			recClient.ChangeClusterState(operation.RuntimeID, 1, state)
@@ -74,14 +74,14 @@ func TestCheckClusterConfigurationStep_ClusterFailed(t *testing.T) {
 	operation := fixture.FixProvisioningOperation("op-id", "inst-id")
 	operation.ClusterConfigurationVersion = 1
 	recClient := reconciler.NewFakeClient()
-	recClient.ApplyClusterConfig(contract.Cluster{
+	recClient.ApplyClusterConfig(reconcilerApi.Cluster{
 		RuntimeID:    operation.RuntimeID,
-		RuntimeInput: contract.RuntimeInput{},
-		KymaConfig:   contract.KymaConfig{},
-		Metadata:     contract.Metadata{},
+		RuntimeInput: reconcilerApi.RuntimeInput{},
+		KymaConfig:   reconcilerApi.KymaConfig{},
+		Metadata:     reconcilerApi.Metadata{},
 		Kubeconfig:   "kubeconfig",
 	})
-	recClient.ChangeClusterState(operation.RuntimeID, 1, contract.StatusError)
+	recClient.ChangeClusterState(operation.RuntimeID, 1, reconcilerApi.StatusError)
 
 	step := NewCheckClusterConfigurationStep(st.Operations(), recClient, time.Minute)
 	st.Operations().InsertProvisioningOperation(operation)

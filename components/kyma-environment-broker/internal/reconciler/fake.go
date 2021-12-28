@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/pkg/errors"
 )
 
@@ -29,9 +29,9 @@ type FakeClient struct {
 }
 
 type registeredCluster struct {
-	clusterConfigs map[int64]contract.Cluster
-	clusterStates  map[int64]*contract.HTTPClusterResponse
-	statusChanges  []*contract.StatusChange
+	clusterConfigs map[int64]reconcilerApi.Cluster
+	clusterStates  map[int64]*reconcilerApi.HTTPClusterResponse
+	statusChanges  []*reconcilerApi.StatusChange
 }
 
 func NewFakeClient() *FakeClient {
@@ -39,7 +39,7 @@ func NewFakeClient() *FakeClient {
 }
 
 // POST /v1/clusters
-func (c *FakeClient) ApplyClusterConfig(cluster contract.Cluster) (*contract.HTTPClusterResponse, error) {
+func (c *FakeClient) ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error) {
 	return c.addToInventory(cluster)
 }
 
@@ -56,29 +56,29 @@ func (c *FakeClient) DeleteCluster(clusterName string) error {
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
-func (c *FakeClient) GetCluster(clusterName string, configVersion int64) (*contract.HTTPClusterResponse, error) {
+func (c *FakeClient) GetCluster(clusterName string, configVersion int64) (*reconcilerApi.HTTPClusterResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
-		return &contract.HTTPClusterResponse{}, errors.New("not found")
+		return &reconcilerApi.HTTPClusterResponse{}, errors.New("not found")
 	}
 	state, exists := existingCluster.clusterStates[configVersion]
 	if !exists {
-		return &contract.HTTPClusterResponse{}, errors.New("not found")
+		return &reconcilerApi.HTTPClusterResponse{}, errors.New("not found")
 	}
 	return state, nil
 }
 
 // GET v1/clusters/{clusterName}/status
-func (c *FakeClient) GetLatestCluster(clusterName string) (*contract.HTTPClusterResponse, error) {
+func (c *FakeClient) GetLatestCluster(clusterName string) (*reconcilerApi.HTTPClusterResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
-		return &contract.HTTPClusterResponse{}, nil
+		return &reconcilerApi.HTTPClusterResponse{}, nil
 	}
 	latestConfigVersion := int64(len(existingCluster.clusterStates))
 
@@ -87,18 +87,18 @@ func (c *FakeClient) GetLatestCluster(clusterName string) (*contract.HTTPCluster
 
 // GET v1/clusters/{clusterName}/statusChanges/{offset}
 // offset is parsed to time.Duration
-func (c *FakeClient) GetStatusChange(clusterName, offset string) ([]*contract.StatusChange, error) {
+func (c *FakeClient) GetStatusChange(clusterName, offset string) ([]*reconcilerApi.StatusChange, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
-		return []*contract.StatusChange{}, nil
+		return []*reconcilerApi.StatusChange{}, nil
 	}
 	return existingCluster.statusChanges, nil
 }
 
-func (c *FakeClient) addToInventory(cluster contract.Cluster) (*contract.HTTPClusterResponse, error) {
+func (c *FakeClient) addToInventory(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -107,10 +107,10 @@ func (c *FakeClient) addToInventory(cluster contract.Cluster) (*contract.HTTPClu
 	// initial creation call - cluster does not exist in db
 	if !exists {
 		c.inventoryClusters[cluster.RuntimeID] = &registeredCluster{
-			clusterConfigs: map[int64]contract.Cluster{
+			clusterConfigs: map[int64]reconcilerApi.Cluster{
 				1: cluster,
 			},
-			clusterStates: map[int64]*contract.HTTPClusterResponse{
+			clusterStates: map[int64]*reconcilerApi.HTTPClusterResponse{
 				1: {
 					Cluster:              cluster.RuntimeID,
 					ClusterVersion:       1,
@@ -118,8 +118,8 @@ func (c *FakeClient) addToInventory(cluster contract.Cluster) (*contract.HTTPClu
 					Status:               "reconcile_pending",
 				},
 			},
-			statusChanges: []*contract.StatusChange{{
-				Status:   contract.StatusReconcilePending,
+			statusChanges: []*reconcilerApi.StatusChange{{
+				Status:   reconcilerApi.StatusReconcilePending,
 				Duration: int64(10 * time.Second),
 			}},
 		}
@@ -128,14 +128,14 @@ func (c *FakeClient) addToInventory(cluster contract.Cluster) (*contract.HTTPClu
 	}
 	// cluster exists in db - add new configuration version
 	latestConfigVersion := int64(len(c.inventoryClusters[cluster.RuntimeID].clusterStates)) + 1
-	c.inventoryClusters[cluster.RuntimeID].clusterStates[latestConfigVersion] = &contract.HTTPClusterResponse{
+	c.inventoryClusters[cluster.RuntimeID].clusterStates[latestConfigVersion] = &reconcilerApi.HTTPClusterResponse{
 		Cluster:              cluster.RuntimeID,
 		ClusterVersion:       1,
 		ConfigurationVersion: latestConfigVersion,
 		Status:               "reconcile_pending",
 	}
-	c.inventoryClusters[cluster.RuntimeID].statusChanges = append(c.inventoryClusters[cluster.RuntimeID].statusChanges, &contract.StatusChange{
-		Status:   contract.StatusReconcilePending,
+	c.inventoryClusters[cluster.RuntimeID].statusChanges = append(c.inventoryClusters[cluster.RuntimeID].statusChanges, &reconcilerApi.StatusChange{
+		Status:   reconcilerApi.StatusReconcilePending,
 		Duration: int64(10 * time.Second),
 	})
 	c.inventoryClusters[cluster.RuntimeID].clusterConfigs[latestConfigVersion] = cluster
@@ -143,18 +143,18 @@ func (c *FakeClient) addToInventory(cluster contract.Cluster) (*contract.HTTPClu
 	return c.inventoryClusters[cluster.RuntimeID].clusterStates[latestConfigVersion], nil
 }
 
-func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64, desiredState contract.Status) {
+func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64, desiredState reconcilerApi.Status) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.inventoryClusters[clusterName].clusterStates[clusterVersion].Status = desiredState
-	c.inventoryClusters[clusterName].statusChanges = append(c.inventoryClusters[clusterName].statusChanges, &contract.StatusChange{
+	c.inventoryClusters[clusterName].statusChanges = append(c.inventoryClusters[clusterName].statusChanges, &reconcilerApi.StatusChange{
 		Status:   desiredState,
 		Duration: int64(10 * time.Second),
 	})
 }
 
-func (c *FakeClient) LastClusterConfig(runtimeID string) (*contract.Cluster, error) {
+func (c *FakeClient) LastClusterConfig(runtimeID string) (*reconcilerApi.Cluster, error) {
 	cluster, found := c.inventoryClusters[runtimeID]
 	if !found {
 		return nil, errors.New("cluster not found in clusters inventory")
@@ -178,7 +178,7 @@ func (c *FakeClient) ClusterExists(id string) bool {
 	return found
 }
 
-func getLastClusterConfig(cluster *registeredCluster) (*contract.Cluster, error) {
+func getLastClusterConfig(cluster *registeredCluster) (*reconcilerApi.Cluster, error) {
 	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs))]
 	if !found {
 		return nil, errors.New("cluster config not found in cluster configs inventory")

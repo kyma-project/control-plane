@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
-func PrettyFailures(response *contract.HTTPClusterResponse) string {
+func PrettyFailures(response *reconcilerApi.HTTPClusterResponse) string {
 	var errs []string
 	failures := response.Failures
 

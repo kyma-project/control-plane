@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	contract "github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type runtimeState struct {
@@ -218,7 +218,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 	var (
 		kymaCfg      gqlschema.KymaConfigInput
 		clusterCfg   gqlschema.GardenerConfigInput
-		clusterSetup *contract.Cluster
+		clusterSetup *reconcilerApi.Cluster
 	)
 	if dto.KymaConfig != "" {
 		cfg, err := s.cipher.Decrypt([]byte(dto.KymaConfig))
@@ -239,7 +239,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 		if err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting cluster setup")
 		}
-		clusterSetup = &contract.Cluster{}
+		clusterSetup = &reconcilerApi.Cluster{}
 		if err := json.Unmarshal(setup, clusterSetup); err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster setup")
 		}
@@ -269,7 +269,7 @@ func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]inte
 	return result, nil
 }
 
-func (s *runtimeState) provideClusterSetup(clusterSetup *contract.Cluster) ([]byte, error) {
+func (s *runtimeState) provideClusterSetup(clusterSetup *reconcilerApi.Cluster) ([]byte, error) {
 	marshalledClusterSetup, err := s.marshalClusterSetup(clusterSetup)
 	if err != nil {
 		return nil, errors.Wrap(err, "while encoding reconciler input")
@@ -281,7 +281,7 @@ func (s *runtimeState) provideClusterSetup(clusterSetup *contract.Cluster) ([]by
 	return encryptedClusterSetup, nil
 }
 
-func (s *runtimeState) marshalClusterSetup(clusterSetup *contract.Cluster) ([]byte, error) {
+func (s *runtimeState) marshalClusterSetup(clusterSetup *reconcilerApi.Cluster) ([]byte, error) {
 	var (
 		result []byte
 		err    error
