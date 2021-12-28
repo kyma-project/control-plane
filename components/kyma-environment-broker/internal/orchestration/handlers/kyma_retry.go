@@ -75,7 +75,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 		return resp, err
 	}
 
-	r.log.Infof("Converting orchestration %s from state %s to Retrying", o.OrchestrationID, lastState)
+	r.log.Infof("Converting orchestration %s from state %s to retrying", o.OrchestrationID, lastState)
 	if lastState == commonOrchestration.Failed {
 		r.queue.Add(o.OrchestrationID)
 	}
@@ -188,25 +188,26 @@ func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrati
 	o, err := orchestrations.GetByID(orchestrationID)
 	if err != nil {
 		log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
-		return o.State, errors.Wrapf(err, "while getting orchestration %s", orchestrationID)
+		return "", errors.Wrapf(err, "while getting orchestration %s", orchestrationID)
 	}
 	// last minute check in case in progress one got canceled.
-	if o.State == commonOrchestration.Canceling || o.State == commonOrchestration.Canceled {
+	state := o.State
+	if state == commonOrchestration.Canceling || state == commonOrchestration.Canceled {
 		log.Infof("orchestration %s was canceled right before retrying", orchestrationID)
-		return o.State, fmt.Errorf("orchestration %s was canceled right before retrying", orchestrationID)
+		return state, fmt.Errorf("orchestration %s was canceled right before retrying", orchestrationID)
 	}
 
 	o.UpdatedAt = time.Now()
-	if o.State == commonOrchestration.Failed {
+	if state == commonOrchestration.Failed {
 		o.Description = "queued for retrying"
 		o.State = commonOrchestration.Retrying
 	}
 	err = orchestrations.Update(*o)
 	if err != nil {
 		log.Errorf("while updating orchestration %s: %v", orchestrationID, err)
-		return o.State, errors.Wrapf(err, "while updating orchestration %s", orchestrationID)
+		return state, errors.Wrapf(err, "while updating orchestration %s", orchestrationID)
 	}
-	return o.State, nil
+	return state, nil
 }
 
 func zeroValidOperationInfo(resp *commonOrchestration.RetryResponse, log logrus.FieldLogger) {
