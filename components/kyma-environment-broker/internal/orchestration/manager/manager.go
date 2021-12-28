@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -176,7 +177,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		} else {
 			o.State = orchestration.Succeeded
 		}
-		o.Description += fmt.Sprintf(", Retried %d operations", len(result))
+		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(result)))
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error
@@ -388,4 +389,12 @@ func (m *orchestrationManager) updateOrchestration(o *internal.Orchestration, st
 		}
 	}
 	return 0
+}
+
+func updateRetryingDescription(desc string, newDesc string) string {
+	if strings.Contains(desc, "retrying") {
+		return strings.Replace(desc, "retrying", newDesc, -1)
+	}
+
+	return desc + ", " + newDesc
 }

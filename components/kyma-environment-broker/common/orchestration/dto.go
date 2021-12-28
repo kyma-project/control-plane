@@ -37,7 +37,7 @@ const (
 	Pending    = "pending"
 	InProgress = "in progress"
 	Canceling  = "canceling"
-	Retrying   = "retrying" // to signal a retry sign before making it to pending
+	Retrying   = "retrying" // to signal a retry sign before marking it to pending
 	Canceled   = "canceled"
 	Succeeded  = "succeeded"
 	Failed     = "failed"
