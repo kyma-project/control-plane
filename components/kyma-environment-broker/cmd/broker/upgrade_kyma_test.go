@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

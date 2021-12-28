@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type runtimeState struct {

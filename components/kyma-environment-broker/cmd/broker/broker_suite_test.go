@@ -20,7 +20,7 @@ import (
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"

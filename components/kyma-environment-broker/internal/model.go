@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ProvisionerInputCreator interface {
@@ -428,7 +428,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-	ClusterSetup  *reconcilerApi.Cluster             `json:"clusterSetup,omitempty"`
+	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {

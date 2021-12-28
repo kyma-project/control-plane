@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"

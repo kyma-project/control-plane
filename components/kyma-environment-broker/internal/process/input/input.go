@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const (

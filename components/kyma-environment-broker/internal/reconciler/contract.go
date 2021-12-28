@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func PrettyFailures(response *reconcilerApi.HTTPClusterResponse) string {

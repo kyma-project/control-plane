@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/pkg/errors"
 )
 

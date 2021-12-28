@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func newInputCreator() *simpleInputCreator {

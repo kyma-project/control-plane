@@ -11,7 +11,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	reconcilerApi " github.com/kyma-incubator/reconciler/pkg/keb"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
