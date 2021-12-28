@@ -71,20 +71,20 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 
 func (s *CheckClusterConfigurationStep) handleTimeout(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Warnf("Operation has reached the time limit (%v): updated operation time: %s", s.provisioningTimeout, operation.UpdatedAt)
-	log.Infof("Deleting cluster configuration %s", operation.RuntimeID)
+	log.Infof("Deleting cluster %s", operation.RuntimeID)
 	/*
-		If the reconciliation timeouted, we have to deregister the cluster configuration.
-		In case of an error, try few retries of deleting cluster config.
+		If the reconciliation timeouted, we have to delete cluster.
+		In case of an error, try few times.
 	*/
 	err := wait.PollImmediate(5*time.Second, 30*time.Second, func() (bool, error) {
 		err := s.reconcilerClient.DeleteCluster(operation.RuntimeID)
 		if err != nil {
-			log.Warnf("Unable to deregister cluster configuration: %s Retrying...", err.Error())
+			log.Warnf("Unable to delete cluster: %s", err.Error())
 		}
 		return err == nil, nil
 	})
 	if err != nil {
-		log.Errorf("Unable to deregister cluster configuration: %s", err.Error())
+		log.Errorf("Unable to delete cluster: %s", err.Error())
 	}
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
 }
