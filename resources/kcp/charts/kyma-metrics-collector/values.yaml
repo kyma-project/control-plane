@@ -21,8 +21,7 @@ nodeSelector: {}
 securityContext:
   runAsUser: 1001
 
-podAnnotations:
-  sidecar.istio.io/inject: "false"
+podAnnotations: {}
 
 serviceAccount:
   enabled: true
