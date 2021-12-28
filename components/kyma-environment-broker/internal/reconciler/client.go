@@ -25,9 +25,8 @@ type Client interface {
 }
 
 type Config struct {
-	URL string
+	URL                 string
 	ProvisioningTimeout time.Duration `json:"default=2h"`
-
 }
 
 type client struct {
