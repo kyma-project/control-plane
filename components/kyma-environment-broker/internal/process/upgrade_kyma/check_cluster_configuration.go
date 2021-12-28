@@ -66,7 +66,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
 		return operation, 30 * time.Second, nil
 	case reconcilerApi.StatusReconcileErrorRetryable:
-		log.Infof("Reconciler failed with retryable")
+		log.Infof("Reconciler failed with retryable, rechecking in 10 minutes.")
 		return operation, 10 * time.Minute, nil
 	case reconcilerApi.StatusReady:
 		return s.operationManager.OperationSucceeded(operation, "Cluster configuration ready", log)
