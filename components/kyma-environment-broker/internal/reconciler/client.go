@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
@@ -23,7 +24,8 @@ type Client interface {
 }
 
 type Config struct {
-	URL string
+	URL                 string
+	ProvisioningTimeout time.Duration `json:"default=2h"`
 }
 
 type client struct {
