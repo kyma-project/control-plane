@@ -42,6 +42,7 @@ var cliStates = map[string]string{
 	"inprogress": orchestration.InProgress,
 	"canceled":   orchestration.Canceled,
 	"canceling":  orchestration.Canceling,
+	"retrying":   orchestration.Retrying,
 }
 
 var orchestrationColumns = []printer.Column{
