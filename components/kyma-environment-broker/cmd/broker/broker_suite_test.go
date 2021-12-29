@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
-
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -48,6 +46,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

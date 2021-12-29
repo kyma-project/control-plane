@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -12,8 +13,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type runtimeState struct {

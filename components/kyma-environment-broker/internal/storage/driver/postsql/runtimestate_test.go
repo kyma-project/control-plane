@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 func TestRuntimeState(t *testing.T) {

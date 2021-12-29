@@ -3,13 +3,12 @@ package update
 import (
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
-
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 const BTPOperatorComponentName = "btp-operator"

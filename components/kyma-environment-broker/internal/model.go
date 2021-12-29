@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -17,8 +18,6 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 )
 
 type ProvisionerInputCreator interface {

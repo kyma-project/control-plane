@@ -5,14 +5,12 @@ import (
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
 )
 
 // CheckClusterConfigurationStep checks if the SKR configuration is applied (by reconciler)

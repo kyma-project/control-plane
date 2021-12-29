@@ -4,18 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // CheckClusterConfigurationStep checks if the SKR configuration is applied (by reconciler)

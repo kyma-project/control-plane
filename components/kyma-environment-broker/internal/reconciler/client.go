@@ -8,11 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
-	"github.com/sirupsen/logrus"
-
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
