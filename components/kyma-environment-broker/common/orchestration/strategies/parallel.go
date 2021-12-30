@@ -48,7 +48,6 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 
 	execID := uuid.New().String()
 	p.mux.Lock()
-	p.scheduleNum[execID] = len(operations)
 	p.wg[execID] = &sync.WaitGroup{}
 	p.dq[execID] = workqueue.NewDelayingQueue()
 	p.pq[execID] = workqueue.NewDelayingQueue()
@@ -84,6 +83,9 @@ func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orche
 
 			dq.AddAfter(&operations[i], duration)
 		}
+		p.mux.Lock()
+		p.scheduleNum[execID] += 1
+		p.mux.Unlock()
 	}
 
 	return nil
