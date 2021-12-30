@@ -1,15 +1,12 @@
----
-title: Provision Kyma Runtime using KEB
-type: Tutorials
----
+# Provision Kyma Runtime using KEB
 
 This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environment Broker.
 
 ## Prerequisites
 
 - Compass with:
-  * Runtime Provisioner [configured](/control-plane/runtime-provisioner/#tutorials-provision-clusters-through-gardener) for Azure provider
-  * Kyma Environment Broker configured and chosen [overrides](#details-set-overrides-for-kyma-runtime) set up
+  * Runtime Provisioner [configured](../provisioner/08-02-provisioning-gardener.md) for Azure provider
+  * Kyma Environment Broker configured and chosen [overrides](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/03-change-kyma-config-values/) set up
 
 ## Steps
 
@@ -25,13 +22,13 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
 
    > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Get the [access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
+2. Get the [access token](03-05-authorization.md). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
    ```
 
-3. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](#details-service-description).
+3. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](03-01-service-description.md).
 
    ```bash
    curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
@@ -59,4 +56,4 @@ A successful call returns the operation ID:
    }
    ```
 
-4. Check the operation status as described [here](#tutorials-check-operation-status).
+4. Check the operation status as described [here](08-03-operation-status.md).
