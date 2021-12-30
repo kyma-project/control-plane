@@ -84,7 +84,7 @@ keb:
   serviceName: "kcp-kyma-environment-broker"
   timeout: "30s"
   retryCount: "5"
-  pollWaitDuration: "3m"
+  pollWaitDuration: "10m"
   runtimesPath: "runtimes"
 
   ## Prometheusrule configurations
