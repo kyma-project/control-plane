@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,12 +31,12 @@ func Test_RegisterCluster(t *testing.T) {
 		//then
 		assert.Equal(t, "/v1/clusters", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
-			StatusUrl:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.Cluster, strconv.FormatInt(fixConfigVersion, 10)),
+			Status:               reconcilerApi.StatusReconcilePending,
+			StatusURL:            fmt.Sprintf("%s/v1/clusters/%s/configs/%s/status", fixReconcilerURL, requestedCluster.RuntimeID, strconv.FormatInt(fixConfigVersion, 10)),
 		})
 		require.NoError(t, err)
 	}))
@@ -48,11 +49,11 @@ func Test_RegisterCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
-	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusUrl)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
+	assert.Equal(t, fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", fixReconcilerURL, fixClusterID, fixConfigVersion), response.StatusURL)
 }
 
 func Test_DeleteCluster(t *testing.T) {
@@ -86,11 +87,11 @@ func Test_GetCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/configs/%d/status", fixClusterID, fixConfigVersion), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
+			Status:               reconcilerApi.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -103,10 +104,10 @@ func Test_GetCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
 }
 
 func Test_GetLatestCluster(t *testing.T) {
@@ -119,11 +120,11 @@ func Test_GetLatestCluster(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/status", fixClusterID), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode(State{
-			Cluster:              requestedCluster.Cluster,
+		err := json.NewEncoder(w).Encode(reconcilerApi.HTTPClusterResponse{
+			Cluster:              requestedCluster.RuntimeID,
 			ClusterVersion:       fixClusterVersion,
 			ConfigurationVersion: fixConfigVersion,
-			Status:               "reconcile_pending",
+			Status:               reconcilerApi.StatusReconcilePending,
 		})
 		require.NoError(t, err)
 	}))
@@ -136,10 +137,10 @@ func Test_GetLatestCluster(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, requestedCluster.Cluster, response.Cluster)
+	assert.Equal(t, requestedCluster.RuntimeID, response.Cluster)
 	assert.Equal(t, fixClusterVersion, response.ClusterVersion)
 	assert.Equal(t, fixConfigVersion, response.ConfigurationVersion)
-	assert.Equal(t, "reconcile_pending", response.Status)
+	assert.Equal(t, reconcilerApi.StatusReconcilePending, response.Status)
 }
 
 func Test_GetStatusChange(t *testing.T) {
@@ -150,18 +151,18 @@ func Test_GetStatusChange(t *testing.T) {
 		//then
 		assert.Equal(t, fmt.Sprintf("/v1/clusters/%s/statusChanges/%s", fixClusterID, fixOffset), r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
-		err := json.NewEncoder(w).Encode([]*StatusChange{
+		err := json.NewEncoder(w).Encode([]*reconcilerApi.StatusChange{
 			{
-				Status:   ptr.String("ready"),
-				Duration: "40s",
+				Status:   reconcilerApi.StatusReady,
+				Duration: int64(40 * time.Second),
 			},
 			{
-				Status:   ptr.String("reconciling"),
-				Duration: "10s",
+				Status:   reconcilerApi.StatusReconciling,
+				Duration: int64(10 * time.Second),
 			},
 			{
-				Status:   ptr.String("reconcile_pending"),
-				Duration: "30s",
+				Status:   reconcilerApi.StatusReconcilePending,
+				Duration: int64(30 * time.Second),
 			},
 		})
 		require.NoError(t, err)
@@ -178,14 +179,14 @@ func Test_GetStatusChange(t *testing.T) {
 	assert.Len(t, response, 3)
 }
 
-func fixCluster(t *testing.T, clusterID string, clusterVersion int64) *Cluster {
-	cluster := &Cluster{}
+func fixCluster(t *testing.T, runtimeID string, clusterVersion int64) *reconcilerApi.Cluster {
+	cluster := &reconcilerApi.Cluster{}
 	data, err := ioutil.ReadFile(clusterJSONFile)
 	require.NoError(t, err)
 	err = json.Unmarshal(data, cluster)
 	require.NoError(t, err)
 
-	cluster.Cluster = clusterID
+	cluster.RuntimeID = runtimeID
 	cluster.RuntimeInput.Name = fmt.Sprintf("runtimeName%d", clusterVersion)
 	cluster.Metadata.GlobalAccountID = fmt.Sprintf("globalAccountId%d", clusterVersion)
 	cluster.KymaConfig.Profile = fmt.Sprintf("kymaProfile%d", clusterVersion)

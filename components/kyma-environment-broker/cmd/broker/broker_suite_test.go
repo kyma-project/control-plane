@@ -13,13 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
-
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -47,6 +46,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -438,14 +438,14 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
 			return true, nil
 		}
 		return false, nil
@@ -468,14 +468,14 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
 			return true, nil
 		}
 		return false, nil
@@ -526,14 +526,14 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion, reconciler.ReadyStatus)
+			s.reconcilerClient.ChangeClusterState(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
 			return true, nil
 		}
 		return false, nil
@@ -556,7 +556,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
@@ -565,7 +565,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-	assert.Equal(s.t, reconciler.ReconcilePendingStatus, state.Status)
+	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
 }
 
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
@@ -584,7 +584,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
 		if state.Cluster != "" {
@@ -593,7 +593,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-	assert.Equal(s.t, reconciler.ReconcilePendingStatus, state.Status)
+	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
 }
 
 func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
@@ -709,7 +709,7 @@ func (s *BrokerSuiteTest) AssertProvisionRuntimeInputWithoutKymaConfig() {
 	assert.Nil(s.t, input.KymaConfig)
 }
 
-func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconciler.State) {
+func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconcilerApi.HTTPClusterResponse) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
@@ -722,7 +722,7 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 	})
 	assert.NoError(s.t, err)
 
-	var state *reconciler.State
+	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetLatestCluster(provisioningOp.RuntimeID)
 		if err == nil {
@@ -735,13 +735,13 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 	assert.Equal(s.t, expectedState, state)
 }
 
-func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedClusterConfig *reconciler.Cluster) {
+func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedClusterConfig *reconcilerApi.Cluster) {
 	clusterConfig := s.getClusterConfig(operationID)
 
 	assert.Equal(s.t, *expectedClusterConfig, clusterConfig)
 }
 
-func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKymaConfig reconciler.KymaConfig) {
+func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKymaConfig reconcilerApi.KymaConfig) {
 	clusterConfig := s.getClusterConfig(operationID)
 
 	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
@@ -765,23 +765,23 @@ func (s *BrokerSuiteTest) AssertClusterConfigWithKubeconfig(id string) {
 	assert.NotEmpty(s.t, clusterConfig.Kubeconfig)
 }
 
-func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconciler.Metadata) {
+func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconcilerApi.Metadata) {
 	clusterConfig := s.getClusterConfig(id)
 
 	assert.Equal(s.t, metadata, clusterConfig.Metadata)
 }
 
-func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconciler.Cluster {
+func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconcilerApi.Cluster {
 	provisioningOp, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 	assert.NoError(s.t, err)
 
-	var clusterConfig *reconciler.Cluster
+	var clusterConfig *reconcilerApi.Cluster
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		clusterConfig, err = s.reconcilerClient.LastClusterConfig(provisioningOp.RuntimeID)
 		if err != nil {
 			return false, err
 		}
-		if clusterConfig.Cluster != "" {
+		if clusterConfig.RuntimeID != "" {
 			return true, nil
 		}
 		return false, nil
@@ -908,13 +908,13 @@ func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
 
 // fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 1.x - when `sm_platform_credentials`
 // object is provided: helm-broker, service-catalog, service-catalog-addons and service-manager-proxy components should be installed
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []reconciler.Component {
-	return []reconciler.Component{
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []reconcilerApi.Component {
+	return []reconcilerApi.Component{
 		{
 			URL:       "",
 			Component: "ory",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -936,7 +936,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			URL:       "",
 			Component: "monitoring",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -958,7 +958,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			URL:       "",
 			Component: "service-catalog",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -980,7 +980,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			URL:       "",
 			Component: "service-catalog-addons",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -1002,7 +1002,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			URL:       "",
 			Component: "helm-broker",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -1024,7 +1024,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 			URL:       "https://sm-proxy",
 			Component: "service-manager-proxy",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -1062,13 +1062,13 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 
 // fixExpectedComponentListWithSMOperator provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
 // object is provided: btp-opeartor component should be installed
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconciler.Component {
-	return []reconciler.Component{
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconcilerApi.Component {
+	return []reconcilerApi.Component{
 		{
 			URL:       "",
 			Component: "ory",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -1090,7 +1090,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 			URL:       "",
 			Component: "monitoring",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
@@ -1112,7 +1112,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 			URL:       "https://btp-operator",
 			Component: "btp-operator",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{
 					Key:    "global.domainName",
 					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),

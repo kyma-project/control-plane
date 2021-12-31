@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -1652,11 +1652,11 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 	for _, c := range rsu2.ClusterSetup.KymaConfig.Components {
 		if c.Component == "btp-operator" {
-			exp := reconciler.Component{
+			exp := reconcilerApi.Component{
 				Component: "btp-operator",
 				Namespace: "kyma-system",
 				URL:       "https://btp-operator",
-				Configuration: []reconciler.Configuration{
+				Configuration: []reconcilerApi.Configuration{
 					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
 					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
 					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
@@ -1727,7 +1727,7 @@ func TestUpdateSCMigrationRejection(t *testing.T) {
 	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
 }
 
-func componentNames(components []reconciler.Component) []string {
+func componentNames(components []reconcilerApi.Component) []string {
 	names := make([]string, 0, len(components))
 	for _, c := range components {
 		names = append(names, c.Component)

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,14 +20,14 @@ func Test_runtimeState_GetLatestByRuntimeID(t *testing.T) {
 	fixRuntimeID := "runtime1"
 
 	olderRuntimeState := fixture.FixRuntimeState(olderRuntimeStateID, fixRuntimeID, uuid.NewString())
-	olderRuntimeState.ClusterSetup = &reconciler.Cluster{Cluster: fixRuntimeID}
+	olderRuntimeState.ClusterSetup = &reconcilerApi.Cluster{RuntimeID: fixRuntimeID}
 
 	newerRuntimeState := fixture.FixRuntimeState(newerRuntimeStateID, fixRuntimeID, uuid.NewString())
-	newerRuntimeState.ClusterSetup = &reconciler.Cluster{Cluster: fixRuntimeID}
+	newerRuntimeState.ClusterSetup = &reconcilerApi.Cluster{RuntimeID: fixRuntimeID}
 	newerRuntimeState.CreatedAt = newerRuntimeState.CreatedAt.Add(time.Hour * 1)
 
 	expectedRuntimeState := fixture.FixRuntimeState(expectedRuntimeStateID, fixRuntimeID, uuid.NewString())
-	expectedRuntimeState.ClusterSetup = &reconciler.Cluster{Cluster: fixRuntimeID}
+	expectedRuntimeState.ClusterSetup = &reconcilerApi.Cluster{RuntimeID: fixRuntimeID}
 	expectedRuntimeState.CreatedAt = expectedRuntimeState.CreatedAt.Add(time.Hour * 2)
 
 	runtimeStates.Insert(olderRuntimeState)
@@ -51,13 +51,13 @@ func Test_runtimeState_GetLatestWithReconcilerInputByRuntimeID(t *testing.T) {
 	fixRuntimeID := "runtime1"
 
 	olderRuntimeState := fixture.FixRuntimeState(olderRuntimeStateID, fixRuntimeID, uuid.NewString())
-	olderRuntimeState.ClusterSetup = &reconciler.Cluster{Cluster: fixRuntimeID}
+	olderRuntimeState.ClusterSetup = &reconcilerApi.Cluster{RuntimeID: fixRuntimeID}
 
 	newestRuntimeStateWithoutReconcilerInput := fixture.FixRuntimeState(newestRuntimeStateID, fixRuntimeID, uuid.NewString())
 	newestRuntimeStateWithoutReconcilerInput.CreatedAt = newestRuntimeStateWithoutReconcilerInput.CreatedAt.Add(time.Hour * 2)
 
 	expectedRuntimeState := fixture.FixRuntimeState(expectedRuntimeStateID, fixRuntimeID, uuid.NewString())
-	expectedRuntimeState.ClusterSetup = &reconciler.Cluster{Cluster: fixRuntimeID}
+	expectedRuntimeState.ClusterSetup = &reconcilerApi.Cluster{RuntimeID: fixRuntimeID}
 	expectedRuntimeState.CreatedAt = expectedRuntimeState.CreatedAt.Add(time.Hour * 1)
 
 	runtimeStates.Insert(olderRuntimeState)

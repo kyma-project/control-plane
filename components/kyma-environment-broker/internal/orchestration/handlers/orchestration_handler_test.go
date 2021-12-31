@@ -8,18 +8,17 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -347,17 +346,17 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 			ID:          runtimeStateWithClusterSetupID,
 			RuntimeID:   uuid.NewString(),
 			OperationID: upgradeKymaOp1ID,
-			ClusterSetup: &reconciler.Cluster{
-				Cluster: uuid.NewString(),
-				KymaConfig: reconciler.KymaConfig{
+			ClusterSetup: &reconcilerApi.Cluster{
+				RuntimeID: uuid.NewString(),
+				KymaConfig: reconcilerApi.KymaConfig{
 					Version: "2.0.0",
 					Profile: string(gqlschema.KymaProfileProduction),
-					Components: []reconciler.Component{
+					Components: []reconcilerApi.Component{
 						{
 							URL:       "component1URL.local",
 							Component: "component1",
 							Namespace: "test",
-							Configuration: []reconciler.Configuration{
+							Configuration: []reconcilerApi.Configuration{
 								{
 									Key:    "key1",
 									Value:  "value1",

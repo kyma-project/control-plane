@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -54,14 +55,14 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	}
 
 	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.Cluster, operation.ID, &clusterConfiguration))
+		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.RuntimeID, operation.ID, &clusterConfiguration))
 	if err != nil {
 		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)
 		return operation, 10 * time.Second, nil
 	}
 
 	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
-		clusterConfiguration.Cluster,
+		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
 		s.componentList(clusterConfiguration))
@@ -89,7 +90,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	return updatedOperation, 0, nil
 }
 
-func (s *CreateClusterConfigurationStep) componentList(cluster reconciler.Cluster) string {
+func (s *CreateClusterConfigurationStep) componentList(cluster reconcilerApi.Cluster) string {
 	vals := []string{}
 	for _, c := range cluster.KymaConfig.Components {
 		vals = append(vals, c.Component)

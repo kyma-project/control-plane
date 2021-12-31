@@ -6,11 +6,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -18,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -162,7 +160,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	suite.AssertProvider("aws")
 	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
 
-	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+	suite.AssertClusterMetadata(opID, reconcilerApi.Metadata{
 		GlobalAccountID: "g-account-id",
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -173,7 +171,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
-	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+	suite.AssertClusterKymaConfig(opID, reconcilerApi.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
@@ -217,7 +215,7 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 	suite.AssertProvider("aws")
 	suite.AssertProvisionRuntimeInputWithoutKymaConfig()
 
-	suite.AssertClusterMetadata(opID, reconciler.Metadata{
+	suite.AssertClusterMetadata(opID, reconcilerApi.Metadata{
 		GlobalAccountID: "g-account-id",
 		SubAccountID:    "sub-id",
 		ServiceID:       "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
@@ -228,7 +226,7 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
-	suite.AssertClusterKymaConfig(opID, reconciler.KymaConfig{
+	suite.AssertClusterKymaConfig(opID, reconcilerApi.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},

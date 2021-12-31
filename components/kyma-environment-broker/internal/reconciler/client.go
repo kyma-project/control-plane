@@ -8,19 +8,19 @@ import (
 	"net/http"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
 	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
 
 type Client interface {
-	ApplyClusterConfig(cluster Cluster) (*State, error)
+	ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error)
 	DeleteCluster(clusterName string) error
-	GetCluster(clusterName string, configVersion int64) (*State, error)
-	GetLatestCluster(clusterName string) (*State, error)
-	GetStatusChange(clusterName, offset string) ([]*StatusChange, error)
+	GetCluster(clusterName string, configVersion int64) (*reconcilerApi.HTTPClusterResponse, error)
+	GetLatestCluster(clusterName string) (*reconcilerApi.HTTPClusterResponse, error)
+	GetStatusChange(clusterName, offset string) ([]*reconcilerApi.StatusChange, error)
 }
 
 type Config struct {
@@ -43,11 +43,11 @@ func NewReconcilerClient(httpClient *http.Client, log logrus.FieldLogger, cfg *C
 }
 
 // POST /v1/clusters
-func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
+func (c *client) ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error) {
 	reqBody, err := json.Marshal(cluster)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 
 	reader := bytes.NewReader(reqBody)
@@ -55,13 +55,13 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	request, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/clusters", c.config.URL), reader)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, kebError.NewTemporaryError(err.Error())
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 
@@ -77,13 +77,13 @@ func (c *client) ApplyClusterConfig(cluster Cluster) (*State, error) {
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
-	var response *State
+	var response *reconcilerApi.HTTPClusterResponse
 	err = json.Unmarshal(registerClusterResponse, &response)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 	return response, nil
 }
@@ -115,97 +115,97 @@ func (c *client) DeleteCluster(clusterName string) error {
 }
 
 // GET /v1/clusters/{clusterName}/configs/{configVersion}/status
-func (c *client) GetCluster(clusterName string, configVersion int64) (*State, error) {
+func (c *client) GetCluster(clusterName string, configVersion int64) (*reconcilerApi.HTTPClusterResponse, error) {
 	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/configs/%d/status", c.config.URL, clusterName, configVersion), nil)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, kebError.NewTemporaryError(err.Error())
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 	switch {
 	case res.StatusCode == http.StatusNotFound:
-		return &State{}, kebError.NotFoundError{}
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NotFoundError{}
 	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
-		return &State{}, fmt.Errorf("got status %d", res.StatusCode)
+		return &reconcilerApi.HTTPClusterResponse{}, fmt.Errorf("got status %d", res.StatusCode)
 	case res.StatusCode >= 500:
-		return &State{}, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError("Got status %d", res.StatusCode)
 	}
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
-	var response *State
+	var response *reconcilerApi.HTTPClusterResponse
 	err = json.Unmarshal(getClusterResponse, &response)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 	return response, nil
 }
 
 // GET v1/clusters/{clusterName}/status
-func (c *client) GetLatestCluster(clusterName string) (*State, error) {
+func (c *client) GetLatestCluster(clusterName string) (*reconcilerApi.HTTPClusterResponse, error) {
 	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/status", c.config.URL, clusterName), nil)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, kebError.NewTemporaryError(err.Error())
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError(err.Error())
 	}
 	defer res.Body.Close()
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
-	var response *State
+	var response *reconcilerApi.HTTPClusterResponse
 	err = json.Unmarshal(getClusterResponse, &response)
 	if err != nil {
 		c.log.Error(err)
-		return &State{}, err
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	}
 	return response, nil
 }
 
 // GET v1/clusters/{clusterName}/statusChanges/{offset}
 // offset is parsed to time.Duration
-func (c *client) GetStatusChange(clusterName, offset string) ([]*StatusChange, error) {
+func (c *client) GetStatusChange(clusterName, offset string) ([]*reconcilerApi.StatusChange, error) {
 	request, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/clusters/%s/statusChanges/%s", c.config.URL, clusterName, offset), nil)
 	if err != nil {
 		c.log.Error(err)
-		return []*StatusChange{}, err
+		return []*reconcilerApi.StatusChange{}, err
 	}
 
 	res, err := c.httpClient.Do(request)
 	if err != nil {
 		c.log.Error(err)
-		return []*StatusChange{}, err
+		return []*reconcilerApi.StatusChange{}, err
 	}
 	defer res.Body.Close()
 
 	getStatusChangeResponse, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.log.Error(err)
-		return []*StatusChange{}, err
+		return []*reconcilerApi.StatusChange{}, err
 	}
-	var response []*StatusChange
+	var response []*reconcilerApi.StatusChange
 	err = json.Unmarshal(getStatusChangeResponse, &response)
 	if err != nil {
 		c.log.Error(err)
-		return []*StatusChange{}, err
+		return []*reconcilerApi.StatusChange{}, err
 	}
 	return response, nil
 }

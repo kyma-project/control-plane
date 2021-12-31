@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -14,23 +15,23 @@ import (
 
 func TestCheckClusterDeregistrationStep(t *testing.T) {
 	for tn, tc := range map[string]struct {
-		State                string
+		State                reconcilerApi.Status
 		ExpectedZeroDuration bool
 	}{
 		"Deleting (pending)": {
-			State:                reconciler.ClusterStatusDeletePending,
+			State:                reconcilerApi.StatusDeletePending,
 			ExpectedZeroDuration: false,
 		},
 		"Deleting": {
-			State:                reconciler.ClusterStatusDeleting,
+			State:                reconcilerApi.StatusDeleting,
 			ExpectedZeroDuration: false,
 		},
 		"Deleted": {
-			State:                reconciler.ClusterStatusDeleted,
+			State:                reconcilerApi.StatusDeleted,
 			ExpectedZeroDuration: true,
 		},
 		"Delete error": {
-			State:                reconciler.ClusterStatusDeleteError,
+			State:                reconcilerApi.StatusDeleteError,
 			ExpectedZeroDuration: true,
 		},
 	} {
@@ -40,11 +41,11 @@ func TestCheckClusterDeregistrationStep(t *testing.T) {
 			operation.ClusterConfigurationVersion = 1
 			operation.ClusterConfigurationDeleted = true
 			recClient := reconciler.NewFakeClient()
-			recClient.ApplyClusterConfig(reconciler.Cluster{
-				Cluster:      operation.RuntimeID,
-				RuntimeInput: reconciler.RuntimeInput{},
-				KymaConfig:   reconciler.KymaConfig{},
-				Metadata:     reconciler.Metadata{},
+			recClient.ApplyClusterConfig(reconcilerApi.Cluster{
+				RuntimeID:    operation.RuntimeID,
+				RuntimeInput: reconcilerApi.RuntimeInput{},
+				KymaConfig:   reconcilerApi.KymaConfig{},
+				Metadata:     reconcilerApi.Metadata{},
 				Kubeconfig:   "kubeconfig",
 			})
 			recClient.ChangeClusterState(operation.RuntimeID, 1, tc.State)

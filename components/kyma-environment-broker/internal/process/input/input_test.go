@@ -3,9 +3,8 @@ package input
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -838,11 +837,11 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 
 		// then
 		assertAllConfigsContainsGlobals(t, inventoryInput.KymaConfig.Components, "shoot-name.domain.sap")
-		assert.Equal(t, reconciler.Component{
+		assert.Equal(t, reconcilerApi.Component{
 			URL:       "",
 			Component: "dex",
 			Namespace: "kyma-system",
-			Configuration: []reconciler.Configuration{
+			Configuration: []reconcilerApi.Configuration{
 				{Key: "global.domainName", Value: "shoot-name.domain.sap", Secret: false},
 				{Key: "global-key-string", Value: "global-pico", Secret: false},
 				{Key: "global-key-false", Value: false, Secret: false},
@@ -913,7 +912,7 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 		require.True(t, found)
 		t.Logf("overriddenComponent %+v\n", overriddenComponent)
 
-		assertAllConfigsContainsGlobals(t, []reconciler.Component{overriddenComponent}, "shoot-name.domain.sap")
+		assertAllConfigsContainsGlobals(t, []reconcilerApi.Component{overriddenComponent}, "shoot-name.domain.sap")
 		// assert component and global overrides
 		assertContainsAllOverridesForReconciler(t, overriddenComponent.Configuration, []*gqlschema.ConfigEntryInput{
 			{Key: "global.domainName", Value: "shoot-name.domain.sap"},
@@ -993,7 +992,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 	})
 }
 
-func assertAllConfigsContainsGlobals(t *testing.T, components []reconciler.Component, domainName string) {
+func assertAllConfigsContainsGlobals(t *testing.T, components []reconcilerApi.Component, domainName string) {
 	for _, cmp := range components {
 		found := false
 		for _, cfg := range cmp.Configuration {
@@ -1169,13 +1168,13 @@ func find(in internal.ComponentConfigurationInputList, name string) (*gqlschema.
 	return nil, false
 }
 
-func findForReconciler(in []reconciler.Component, name string) (reconciler.Component, bool) {
+func findForReconciler(in []reconcilerApi.Component, name string) (reconcilerApi.Component, bool) {
 	for _, c := range in {
 		if c.Component == name {
 			return c, true
 		}
 	}
-	return reconciler.Component{}, false
+	return reconcilerApi.Component{}, false
 }
 
 func fixKymaComponentList() []v1alpha1.KymaComponent {
@@ -1207,10 +1206,10 @@ func assertContainsAllOverrides(t *testing.T, gotOverrides []*gqlschema.ConfigEn
 	}
 }
 
-func assertContainsAllOverridesForReconciler(t *testing.T, gotOverrides []reconciler.Configuration, expOverrides []*gqlschema.ConfigEntryInput) {
-	var expected []reconciler.Configuration
+func assertContainsAllOverridesForReconciler(t *testing.T, gotOverrides []reconcilerApi.Configuration, expOverrides []*gqlschema.ConfigEntryInput) {
+	var expected []reconcilerApi.Configuration
 	for _, o := range expOverrides {
-		expected = append(expected, reconciler.Configuration{
+		expected = append(expected, reconcilerApi.Configuration{
 			Key:    o.Key,
 			Value:  o.Value,
 			Secret: falseIfNil(o.Secret),
