@@ -1,9 +1,6 @@
----
-title: Runtime components
-type: Details
----
+# Runtime components
 
-[Kyma Environment Broker](https://github.com/kyma-project/control-plane/tree/main/components/kyma-environment-broker) (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
+Kyma Environment Broker (KEB) serves the functionality of composing the list of components that are installed in a Runtime. The diagram and steps describe the KEB workflow in terms of calculating and processing Runtime components:
 
 ![runtime-components-architecture](./assets/runtime-components.svg)
 
@@ -20,13 +17,12 @@ There is a defined [list of the component names](https://github.com/kyma-project
 
 ## Disabled components
 
-To disable a component for a [specific plan](#details-service-description-service-plans), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/runtime/disabled_components.go).
+To disable a component for a [specific plan](03-01-service-description.md#service-plans), add it to the [disabled components list](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/runtime/disabled_components.go).
 To disable a component for all plans, add its name under the **AllPlansSelector** parameter.
 
 ## Optional components
 
 An optional component is a component that is disabled by default but can be enabled in the [provisioning request](08-01-provisioning-kyma-environment.md). Currently, the optional components are:
-
 
 * Kiali
 * Tracing

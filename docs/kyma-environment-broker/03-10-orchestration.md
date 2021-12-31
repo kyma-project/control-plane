@@ -1,9 +1,6 @@
----
-title: Orchestration
-type: Details
----
+# Orchestration
 
-Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create an orchestration, [follow this tutorial](#tutorials-orchestrate-kyma-upgrade). After sending the request, the orchestration is processed by `KymaUpgradeManager`. It lists Shoots (Kyma Runtimes) in the Gardener cluster and narrows them to the IDs that you have specified in the request body. Then, `KymaUpgradeManager` performs the [upgrade steps](#details-runtime-operations) logic on the selected Runtimes.
+Orchestration is a mechanism that allows you to upgrade Kyma Runtimes. To create an orchestration, [follow this tutorial](08-05-orchestrate-kyma-upgrade.md). After sending the request, the orchestration is processed by `KymaUpgradeManager`. It lists Shoots (Kyma Runtimes) in the Gardener cluster and narrows them to the IDs that you have specified in the request body. Then, `KymaUpgradeManager` performs the [upgrade steps](03-03-runtime-operations.md#upgrade) logic on the selected Runtimes.
 
 If Kyma Environment Broker is restarted, it reprocesses the orchestrations that are in the `CANCELING`, `IN PROGRESS`, and `PENDING` state.
 
@@ -18,7 +15,7 @@ Orchestration API consist of the following handlers:
 - `GET /orchestrations/{orchestration_id}/operations/{operation_id}` - exposes the detailed data about a single operation with a given ID.
 - `POST /upgrade/kyma` - schedules the orchestration. It requires specifying a request body.
 
-For more details, follow the tutorial on how to [check API using Swagger](#tutorials-check-api-using-swagger).
+For more details, follow the tutorial on how to [check API using Swagger](03-11-swagger.md).
 
 ## Strategies
 
@@ -46,6 +43,6 @@ The example strategy configuration looks as follows:
 
 ## Cancelation
 
-You can cancel any orchestration that is in progress or pending using the `PUT /orchestrations/{orchestration_id}/cancel` endpoint. 
+You can cancel any orchestration that is in progress or pending using the `PUT /orchestrations/{orchestration_id}/cancel` endpoint.
 After you cancel an orchestration, KEB sets its state to `Canceling`. An orchestration with such a state does not schedule any new operations.
 To provide consistency, a canceled orchestration waits for already processed operations to finish. When operations are finished, the processed orchestration's state is set to `Canceled` and the next orchestration from the queue starts being processed.

@@ -1,7 +1,4 @@
----
-title: Check API using Swagger
-type: Details
----
+# Check API using Swagger
 
 Using the Swagger UI, you can visualize Kyma Environment Broker's (KEB's) APIs on a single page.
 

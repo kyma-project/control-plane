@@ -1,7 +1,4 @@
----
-title: Service description
-type: Details
----
+# Service description
 
 Kyma Environment Broker (KEB) is compatible with the [Open Service Broker API](https://www.openservicebrokerapi.org/) (OSBA) specification. It provides a ServiceClass that provisions Kyma Runtime on a cluster.
 
@@ -63,7 +60,7 @@ These are the provisioning parameters for Azure that you can configure:
   <summary label="azure-plan">
   Azure
   </summary>
-     
+
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
@@ -80,7 +77,7 @@ These are the provisioning parameters for Azure that you can configure:
   <summary label="azure-lite-plan">
   Azure Lite
   </summary>
-    
+
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
@@ -155,13 +152,13 @@ These are the provisioning parameters for AWS that you can configure:
  </div>
 
 These are the provisioning parameters for GCP that you can configure:
-  
+
 <div tabs name="gcp-plans" group="gcp-plans">
   <details>
   <summary label="gcp-plan">
   GCP
   </summary>
-    
+
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `n2-standard-8` |
@@ -172,7 +169,7 @@ These are the provisioning parameters for GCP that you can configure:
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
- 
+
  </details>
  </div>
 
@@ -198,7 +195,7 @@ These are the provisioning parameters for Openstack that you can configure:
  </details>
  </div>
 
-     
+
 ## Trial plan
 
 Trial plan allows you to install Kyma on Azure, AWS, or GCP. The trial plan assumptions are as follows:
@@ -212,19 +209,19 @@ To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-
 ### Provisioning parameters
 
 These are the provisioning parameters for the Trial plan that you can configure:
-  
+
 <div tabs name="trial-plan" group="trial-plan">
   <details>
   <summary label="trial-plan">
   Trial plan
   </summary>
-    
+
 | Parameter name | Type | Description | Required | Possible values| Default value |  
 | ---------------|-------|-------------|----------|---------------|---------------|  
 | **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |  
 | **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |  
 | **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `AWS`, `GCP` | `Azure` |
-| **context.active** | string | Specifies if the SKR should be suspended or unsuspended. | `true`, `false` | None | 
+| **context.active** | string | Specifies if the SKR should be suspended or unsuspended. | `true`, `false` | None |
 
 The **region** parameter is optional. If not specified, the region is calculated from platform region specified in this path:
 ```shell
@@ -243,4 +240,3 @@ ___
 
 
 <a name="update"><sup>1</sup> This parameter is available for `PATCH` as well, and can be updated with the same constraints as during provisioning.</a>
-
