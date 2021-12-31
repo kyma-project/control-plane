@@ -14,7 +14,7 @@ This tutorial shows how to check the orchestration status. Using this API, you c
    export ORCHESTRATION_ID={OBTAINED_ORCHESTRATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-10-orchestration.md) to verify that the orchestration succeeded.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-05-authorization.md) to verify that the orchestration succeeded.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID --header "$AUTHORIZATION_HEADER""
@@ -50,7 +50,7 @@ This tutorial shows how to check the orchestration status. Using this API, you c
 
 ## Fetch all orchestrations status
 
-Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-10-orchestration.md) to verify that the orchestration succeeded.
+Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-05-authorization.md) to verify that the orchestration succeeded.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations --header "$AUTHORIZATION_HEADER""
@@ -95,7 +95,7 @@ A successful call returns the list of all orchestrations:
    export ORCHESTRATION_ID={OBTAINED_ORCHESTRATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-10-orchestration.md) to fetch the list of the upgrade operations for a given orchestration.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-05-authorization.md) to fetch the list of the upgrade operations for a given orchestration.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations --header "$AUTHORIZATION_HEADER""
@@ -147,7 +147,7 @@ A successful call returns the list of all orchestrations:
    export OPERATION_ID={SCHEDULED_OPERATION_ID}
    ```
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-10-orchestration.md) to fetch the details for given operation.
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-05-authorization.md) to fetch the details for given operation.
 
    ```bash
    curl --request GET "https://$BROKER_URL/orchestrations/$ORCHESTRATION_ID/operations/$OPERATION_ID --header "$AUTHORIZATION_HEADER""
