@@ -22,7 +22,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
 
    > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Get the [access token](03-05-authorization.md). Export this variable based on the token you got from the OAuth client:
+2. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"

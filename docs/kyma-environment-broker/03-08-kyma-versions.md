@@ -50,4 +50,4 @@ You can also specify a Kyma version using the **kymaVersion** provisioning param
 The **kymaVersion** provisioning parameter overrides the default settings.
 To enable this feature, set the **APP_ENABLE_ON_DEMAND_VERSION** environment variable to `true`.
 
-**NOTE:** The default Kyma version for the preview plan is set separately in the **APP_KYMA_PREVIEW_VERSION** environment variable.
+>**NOTE:** The default Kyma version for the preview plan is set separately in the **APP_KYMA_PREVIEW_VERSION** environment variable.
