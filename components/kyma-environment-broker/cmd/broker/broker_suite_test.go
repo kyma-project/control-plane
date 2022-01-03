@@ -377,6 +377,10 @@ func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID str
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
+func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
+
+}
+
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
 	var op *internal.DeprovisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -396,6 +400,7 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 
 	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
+
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
 	var op *internal.UpdatingOperation
@@ -877,6 +882,8 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
+	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
+	require.NoError(s.t, err)
 
 	// Director part
 	s.MarkDirectorWithConsoleURL(opID)
@@ -892,6 +899,12 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
 	s.processProvisioningByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) processReconciliationByInstanceID(iid string) {
+	opID := s.WaitForLastOperation(iid, domain.InProgress)
+
+	s.processReconcilingByOperationID(opID)
 }
 
 func (s *BrokerSuiteTest) ShootName(id string) string {
