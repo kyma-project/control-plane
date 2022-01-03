@@ -52,7 +52,6 @@ func (c *FakeClient) DeleteCluster(clusterName string) error {
 		return nil
 	}
 	c.deleted[clusterName] = struct{}{}
-	delete(c.inventoryClusters, clusterName)
 	return nil
 }
 
