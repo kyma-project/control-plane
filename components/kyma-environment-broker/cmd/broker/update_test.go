@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -359,7 +358,6 @@ func TestUpdateContext(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-
 func TestUnsuspensionTrialKyma20(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
 	defer suite.TearDown()
@@ -403,10 +401,8 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
-	suite.FinishDeprovisioningByReconciler(suspensionOpID)
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
-	time.Sleep(5 * time.Second)
 
 	// OSB update
 	suite.Log("*** Unsuspension ***")
@@ -425,8 +421,6 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 	suite.processReconciliationByInstanceID(iid)
 
 }
-
-
 
 func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)

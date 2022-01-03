@@ -377,10 +377,6 @@ func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID str
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
-func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
-
-}
-
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
 	var op *internal.DeprovisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -400,7 +396,6 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 
 	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)
 }
-
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
 	var op *internal.UpdatingOperation
