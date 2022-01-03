@@ -877,6 +877,8 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
 	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
+	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
+	require.NoError(s.t, err)
 
 	// Director part
 	s.MarkDirectorWithConsoleURL(opID)
@@ -892,6 +894,12 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
 	s.processProvisioningByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) processReconciliationByInstanceID(iid string) {
+	opID := s.WaitForLastOperation(iid, domain.InProgress)
+
+	s.processReconcilingByOperationID(opID)
 }
 
 func (s *BrokerSuiteTest) ShootName(id string) string {
