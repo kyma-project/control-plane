@@ -39,13 +39,19 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	}
 	if time.Since(operation.UpdatedAt) > s.timeout {
 		log.Infof("Cluster deregistration has reached the time limit: %s", s.timeout)
-		return operation, 0, nil
+		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 	if kebError.IsNotFoundError(err) {
 		log.Info("cluster already deleted")
-		return operation, 0, nil
+		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 	if kebError.IsTemporaryError(err) {
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %s", err.Error())
@@ -53,7 +59,10 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return operation, 0, nil
+		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
@@ -68,7 +77,10 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	case reconcilerApi.StatusDeleteError, reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return operation, 0, nil
+		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	default:
 		log.Warnf("Unexpected state: %s", state.Status)
 		return operation, time.Minute, nil
