@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -14,12 +17,14 @@ import (
 type CheckClusterDeregistrationStep struct {
 	reconcilerClient reconciler.Client
 	timeout          time.Duration
+	operationManager *process.DeprovisionOperationManager
 }
 
-func NewCheckClusterDeregistrationStep(cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
+func NewCheckClusterDeregistrationStep(os storage.Operations, cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
 	return &CheckClusterDeregistrationStep{
 		reconcilerClient: cli,
 		timeout:          timeout,
+		operationManager: process.NewDeprovisionOperationManager(os),
 	}
 }
 
@@ -56,7 +61,10 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	case reconcilerApi.StatusDeletePending, reconcilerApi.StatusDeleting, reconcilerApi.StatusDeleteErrorRetryable:
 		return operation, 30 * time.Second, nil
 	case reconcilerApi.StatusDeleted:
-		return operation, 0, nil
+		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	case reconcilerApi.StatusDeleteError, reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)

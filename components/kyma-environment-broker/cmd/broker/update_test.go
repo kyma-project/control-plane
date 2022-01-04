@@ -401,8 +401,10 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
+	suite.MarkClustertConfigurationDeleted(iid)
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
+	suite.RemoveFromReconcilerByInstanceID(iid)
 
 	// OSB update
 	suite.Log("*** Unsuspension ***")

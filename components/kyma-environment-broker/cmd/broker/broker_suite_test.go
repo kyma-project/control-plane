@@ -422,6 +422,16 @@ func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.O
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
+func (s *BrokerSuiteTest) MarkClustertConfigurationDeleted(iid string) {
+	op, _ := s.db.Operations().GetDeprovisioningOperationByInstanceID(iid)
+	s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleted)
+}
+
+func (s *BrokerSuiteTest) RemoveFromReconcilerByInstanceID(iid string) {
+	op, _ := s.db.Operations().GetDeprovisioningOperationByInstanceID(iid)
+	s.reconcilerClient.DeleteCluster(op.RuntimeID)
+}
+
 func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
