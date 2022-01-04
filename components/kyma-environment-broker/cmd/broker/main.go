@@ -685,7 +685,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			condition: provisioning.ForKyma2,
 			stage:     checkKymaStageName,
-			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Provisioner.ProvisioningTimeout),
+			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 		},
 		// post actions
 		{
@@ -840,7 +840,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30*time.Minute),
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 30*time.Minute),
 		},
 		{
 			weight: 10,

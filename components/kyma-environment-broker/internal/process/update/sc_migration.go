@@ -3,6 +3,7 @@ package update
 import (
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -62,7 +63,7 @@ func (s *SCMigrationFinalizationStep) Name() string {
 }
 
 func (s *SCMigrationFinalizationStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	components := make([]reconciler.Component, 0, len(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components))
+	components := make([]reconcilerApi.Component, 0, len(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components))
 	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
 		if c.Component != internal.ServiceCatalogComponentName &&
 			c.Component != internal.ServiceCatalogAddonsComponentName &&

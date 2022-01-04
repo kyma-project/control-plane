@@ -1,7 +1,4 @@
----
-title: Deprovision Kyma Runtime using KEB
-type: Tutorials
----
+# Deprovision Kyma Runtime using KEB
 
 This tutorial shows how to deprovision Kyma Runtime on Azure using Kyma Environment Broker.
 
@@ -14,7 +11,7 @@ This tutorial shows how to deprovision Kyma Runtime on Azure using Kyma Environm
    export INSTANCE_ID={INSTANCE_ID_FROM_PROVISIONING_CALL}
    ```
 
-2. Get the [access token](#details-authorization). Export this variable based on the token you got from the OAuth client:
+2. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
@@ -36,4 +33,4 @@ A successful call returns the operation ID:
    }
    ```
 
-4. Check the operation status as described [here](#tutorials-check-operation-status).
+4. Check the operation status as described [here](08-03-operation-status.md).

@@ -3,10 +3,9 @@ package internal
 import (
 	"context"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -64,7 +63,7 @@ func getBTPOperatorUpdateOverrides(creds *ServiceManagerOperatorCredentials, clu
 	}
 }
 
-func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) ([]reconciler.Configuration, error) {
+func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) ([]reconcilerApi.Configuration, error) {
 	id, err := clusterIdGetter()
 	if err != nil {
 		return nil, err
@@ -72,13 +71,13 @@ func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials,
 	provisioning := getBTPOperatorProvisioningOverrides(creds)
 	update := getBTPOperatorUpdateOverrides(creds, id)
 	all := append(provisioning, update...)
-	var config []reconciler.Configuration
+	var config []reconcilerApi.Configuration
 	for _, c := range all {
 		secret := false
 		if c.Secret != nil {
 			secret = *c.Secret
 		}
-		rc := reconciler.Configuration{Key: c.Key, Value: c.Value, Secret: secret}
+		rc := reconcilerApi.Configuration{Key: c.Key, Value: c.Value, Secret: secret}
 		config = append(config, rc)
 	}
 	return config, nil

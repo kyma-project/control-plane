@@ -1,7 +1,4 @@
----
-title: Set a custom list of runtime administrators
-type: Details
----
+# Set a custom list of runtime administrators
 
 Kyma Environment Broker allows you to set a custom list of runtime administrators during SKR provisioning and update operations.
 To do so, specify the additional **administrators** parameter in the provisioning or update request.

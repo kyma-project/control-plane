@@ -1,21 +1,18 @@
----
-title: Check SKR instance details
-type: Tutorials
----
+# Check SKR instance details
 
 This tutorial shows how to get the SKR instance details.
 
 ## Steps
 
-1. Export the instance ID that you set during [provisioning](#tutorials-provision-kyma-runtime-using-keb):
+1. Export the instance ID that you set during [provisioning](08-01-provisioning-kyma-environment.md):
 
    ```bash
    export INSTANCE_ID={SET_INSTANCE_ID}
    ```
 
-> **NOTE:** Ensure that the BROKER_URL and INSTANCE_ID environment variables are exported as well before you proceed.
+   > **NOTE:** Ensure that the BROKER_URL and INSTANCE_ID environment variables are exported as well before you proceed.
 
-2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](#details-authorization) to verify that provisioning/deprovisioning succeeded:
+2. Make a call to the Kyma Environment Broker with a proper **Authorization** [request header](03-05-authorization.md) to verify that provisioning/deprovisioning succeeded:
 
    ```bash
    curl --request GET "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID" \
