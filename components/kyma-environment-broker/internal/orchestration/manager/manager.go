@@ -251,7 +251,6 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				if err != nil {
 					return false, errors.Wrap(err, "while inserting operations to queue")
 				}
-				o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(ops)))
 			}
 
 		}
