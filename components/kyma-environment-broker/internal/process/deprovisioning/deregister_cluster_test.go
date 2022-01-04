@@ -3,6 +3,7 @@ package deprovisioning
 import (
 	"testing"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -19,8 +20,8 @@ func TestDeregisterClusterStep_Run(t *testing.T) {
 	op.ClusterConfigurationVersion = 1
 	memoryStorage.Operations().InsertDeprovisioningOperation(op)
 	op.RuntimeID = "runtime-id"
-	cli.ApplyClusterConfig(reconciler.Cluster{
-		Cluster: op.RuntimeID,
+	cli.ApplyClusterConfig(reconcilerApi.Cluster{
+		RuntimeID: op.RuntimeID,
 	})
 
 	// when

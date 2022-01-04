@@ -1,9 +1,6 @@
----
-title: Hyperscaler Account Pool
-type: Details
----
+# Hyperscaler Account Pool
 
-To provision clusters through Gardener using the Runtime Provisioner, the Kyma Environment Broker (KEB) requires a hyperscaler (GCP, Azure, AWS, etc.) account/subscription. Managing the available hyperscaler accounts is not in the scope of the KEB. Instead, the available accounts are handled by the Hyperscaler Account Pool (HAP). 
+To provision clusters through Gardener using the Runtime Provisioner, the Kyma Environment Broker (KEB) requires a hyperscaler (GCP, Azure, AWS, etc.) account/subscription. Managing the available hyperscaler accounts is not in the scope of the KEB. Instead, the available accounts are handled by the Hyperscaler Account Pool (HAP).
 
 The HAP stores credentials for the hyperscaler accounts that have been set up in advance in Kubernetes Secrets. The credentials are stored separately for each provider and tenant. The content of the credentials Secrets may vary for different use cases. The Secrets are labeled with the **hyperscaler-type** and **tenant-name** labels to manage pools of credentials for use by the provisioning process. This way, the in-use credentials and unassigned credentials available for use are tracked. Only the **hyperscaler-type** label is added during Secret creation, and the **tenant-name** label is added when the account respective for a given Secret is claimed. The content of the Secrets is opaque to the HAP.
 
@@ -11,10 +8,10 @@ The Secrets are stored in a Gardener seed cluster pointed to by the HAP. They ar
 
 This diagram shows the HAP workflow:
 
-![hap-workflow](./assets/hap-flow.svg) 
+![hap-workflow](./assets/hap-flow.svg)
 
-Before a new cluster is provisioned, the KEB queries for a Secret based on the **tenant-name** and **hyperscaler-type** labels. 
-If a Secret is found, the KEB uses the credentials stored in this Secret. If a matching Secret is not found, the KEB queries again for an unassigned Secret for a given hyperscaler and adds the **tenant-name** label to claim the account and use the credentials for provisioning. 
+Before a new cluster is provisioned, the KEB queries for a Secret based on the **tenant-name** and **hyperscaler-type** labels.
+If a Secret is found, the KEB uses the credentials stored in this Secret. If a matching Secret is not found, the KEB queries again for an unassigned Secret for a given hyperscaler and adds the **tenant-name** label to claim the account and use the credentials for provisioning.
 
 One tenant can use only one account per given hyperscaler type.
 

@@ -5,19 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
-
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -221,12 +218,12 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 	return nil, fmt.Errorf("failed to find %v component in all component list", component)
 }
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconciler.Component, error) {
+func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconcilerApi.Component, error) {
 	c, err := getComponent(componentProvider, component, kymaVersion)
 	if err != nil {
-		return reconciler.Component{}, err
+		return reconcilerApi.Component{}, err
 	}
-	return reconciler.Component{
+	return reconcilerApi.Component{
 		Component: c.Name,
 		Namespace: c.Namespace,
 		URL:       c.Source.URL,

@@ -3,8 +3,7 @@ package upgrade_kyma
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -122,8 +121,8 @@ func (c *simpleInputCreator) AssertEnabledComponent(t *testing.T, componentName 
 	assert.Contains(t, c.enabledComponents, componentName)
 }
 
-func (c *simpleInputCreator) CreateClusterConfiguration() (reconciler.Cluster, error) {
-	return reconciler.Cluster{}, nil
+func (c *simpleInputCreator) CreateClusterConfiguration() (reconcilerApi.Cluster, error) {
+	return reconcilerApi.Cluster{}, nil
 }
 
 func (c *simpleInputCreator) CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error) {
