@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -28,13 +29,21 @@ type orchestrationHandler struct {
 	converter Converter
 	log       logrus.FieldLogger
 
-	canceler *Canceler
+	canceler       *Canceler
+	kymaRetryer    *kymaRetryer
+	clusterRetryer *clusterRetryer
 
 	defaultMaxPage int
 }
 
 // NewOrchestrationStatusHandler exposes data about orchestrations and allows to manage them
-func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations storage.Orchestrations, runtimeStates storage.RuntimeStates, defaultMaxPage int, log logrus.FieldLogger) *orchestrationHandler {
+func NewOrchestrationStatusHandler(operations storage.Operations,
+	orchestrations storage.Orchestrations,
+	runtimeStates storage.RuntimeStates,
+	kymaQueue *process.Queue,
+	clusterQueue *process.Queue,
+	defaultMaxPage int,
+	log logrus.FieldLogger) *orchestrationHandler {
 	return &orchestrationHandler{
 		operations:     operations,
 		orchestrations: orchestrations,
@@ -43,6 +52,8 @@ func NewOrchestrationStatusHandler(operations storage.Operations, orchestrations
 		defaultMaxPage: defaultMaxPage,
 		converter:      Converter{},
 		canceler:       NewCanceler(orchestrations, log),
+		kymaRetryer:    NewKymaRetryer(orchestrations, operations, kymaQueue, log),
+		clusterRetryer: NewClusterRetryer(orchestrations, operations, clusterQueue, log),
 	}
 }
 
@@ -52,6 +63,7 @@ func (h *orchestrationHandler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/orchestrations/{orchestration_id}/cancel", h.cancelOrchestrationByID).Methods(http.MethodPut)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations", h.listOperations).Methods(http.MethodGet)
 	router.HandleFunc("/orchestrations/{orchestration_id}/operations/{operation_id}", h.getOperation).Methods(http.MethodGet)
+	router.HandleFunc("/orchestrations/{orchestration_id}/retry", h.retryOrchestrationByID).Methods(http.MethodPost)
 }
 
 func (h *orchestrationHandler) getOrchestration(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +106,76 @@ func (h *orchestrationHandler) cancelOrchestrationByID(w http.ResponseWriter, r 
 	response := commonOrchestration.UpgradeResponse{OrchestrationID: orchestrationID}
 
 	httputil.WriteResponse(w, http.StatusOK, response)
+}
+
+func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *http.Request) {
+	contentType := r.Header.Get("Content-type")
+	if contentType != "application/x-www-form-urlencoded" {
+		h.log.Errorf("invalide content type %s for retrying orchestration", contentType)
+		httputil.WriteErrorResponse(w, http.StatusUnsupportedMediaType, errors.Errorf("invalide content type %s", contentType))
+		return
+	}
+
+	orchestrationID := mux.Vars(r)["orchestration_id"]
+	operationIDs := []string{}
+
+	if r.Body != nil {
+		if err := r.ParseForm(); err != nil {
+			h.log.Errorf("cannot parse form while retrying orchestration: %s: %v", orchestrationID, err)
+			httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while retrying orchestration %s", orchestrationID))
+			return
+		}
+
+		operationIDs = r.Form["operation-id"]
+	}
+
+	o, err := h.orchestrations.GetByID(orchestrationID)
+	if err != nil {
+		h.log.Errorf("while retrying orchestration %s: %v", orchestrationID, err)
+		httputil.WriteErrorResponse(w, h.resolveErrorStatus(err), errors.Wrapf(err, "while retrying orchestration %s", orchestrationID))
+		return
+	}
+
+	filter := dbmodel.OperationFilter{
+		States: []string{commonOrchestration.Failed},
+	}
+
+	var response commonOrchestration.RetryResponse
+	switch o.Type {
+	case commonOrchestration.UpgradeKymaOrchestration:
+		allOps, _, _, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(o.OrchestrationID, filter)
+		if err != nil {
+			h.log.Errorf("while getting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
+			return
+		}
+
+		response, err = h.kymaRetryer.orchestrationRetry(o, allOps, operationIDs)
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+	case commonOrchestration.UpgradeClusterOrchestration:
+		allOps, _, _, err := h.operations.ListUpgradeClusterOperationsByOrchestrationID(o.OrchestrationID, filter)
+		if err != nil {
+			h.log.Errorf("while getting operations: %v", err)
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while getting operations"))
+			return
+		}
+
+		response, err = h.clusterRetryer.orchestrationRetry(o, allOps, operationIDs)
+		if err != nil {
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+	default:
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("unsupported orchestration type: %s", o.Type))
+		return
+	}
+
+	httputil.WriteResponse(w, http.StatusAccepted, response)
 }
 
 func (h *orchestrationHandler) listOrchestration(w http.ResponseWriter, r *http.Request) {

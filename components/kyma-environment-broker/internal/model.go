@@ -215,7 +215,7 @@ type Operation struct {
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling && o.State != orchestration.Retrying
 }
 
 // Orchestration holds all information about an orchestration.

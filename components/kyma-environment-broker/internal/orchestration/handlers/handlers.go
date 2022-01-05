@@ -22,7 +22,7 @@ func NewOrchestrationHandler(db storage.BrokerStorage, kymaQueue *process.Queue,
 		handlers: []Handler{
 			NewKymaHandler(db.Orchestrations(), kymaQueue, log),
 			NewClusterHandler(db.Orchestrations(), clusterQueue, log),
-			NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), defaultMaxPage, log),
+			NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), kymaQueue, clusterQueue, defaultMaxPage, log),
 		},
 	}
 }
