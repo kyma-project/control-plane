@@ -135,7 +135,11 @@ func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string) ([]orchest
 			pending = append(pending, op.RuntimeOperation)
 		}
 		if op.State == orchestration.Retrying {
-			retrying = append(retrying, op.RuntimeOperation)
+			runtimeop, err := u.updateRetryingOperation(op)
+			if err != nil {
+				return nil, err
+			}
+			retrying = append(retrying, runtimeop)
 		}
 		if op.State == orchestration.InProgress {
 			inProgress = append(inProgress, op.RuntimeOperation)
@@ -148,7 +152,7 @@ func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string) ([]orchest
 func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Pending}})
 	if err != nil {
-		return errors.Wrap(err, "while listing upgrade operations")
+		return errors.Wrap(err, "while listing upgrade kyma operations")
 	}
 	for _, op := range ops {
 		op.State = orchestration.Canceled

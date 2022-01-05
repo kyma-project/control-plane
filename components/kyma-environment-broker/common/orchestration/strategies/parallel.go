@@ -67,6 +67,9 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 }
 
 func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orchestration.RuntimeOperation, strategySpec orchestration.StrategySpec) error {
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
 	for i, op := range operations {
 		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
 		if err != nil {
@@ -74,18 +77,15 @@ func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orche
 			p.handleRescheduleErrorOperation(execID, &operations[i])
 			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
 		} else {
-			p.mux.RLock()
 			dq, exist := p.dq[execID]
-			p.mux.RUnlock()
 			if !exist {
 				return fmt.Errorf("no queue for the execution ID: %s", execID)
 			}
 
 			dq.AddAfter(&operations[i], duration)
 		}
-		p.mux.Lock()
+
 		p.scheduleNum[execID] += 1
-		p.mux.Unlock()
 	}
 
 	return nil
