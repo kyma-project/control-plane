@@ -64,11 +64,20 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if err != nil {
 			return operation, time.Second, nil
 		}
+		if operation.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
+			instance.Parameters.ErsContext.SMOperatorCredentials = operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
+		}
+		if _, err := s.instanceStorage.Update(*instance); err != nil {
+			return operation, time.Second, err
+		}
 
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
 			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
+			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
+				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
+			}
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil

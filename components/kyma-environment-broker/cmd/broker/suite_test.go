@@ -440,6 +440,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws_ha":       "true",
 				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
+				"overrides-version-2.0.0":     "true",
 			},
 		},
 		Data: map[string]string{
@@ -461,6 +462,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws_ha":       "true",
 				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
+				"overrides-version-2.0.0":     "true",
 				"component":                   "service-catalog2",
 			},
 		},
