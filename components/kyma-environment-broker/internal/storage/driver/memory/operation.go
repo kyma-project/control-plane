@@ -279,7 +279,7 @@ func (s *operations) GetUpgradeClusterOperationByID(operationID string) (*intern
 
 	op, exists := s.upgradeClusterOperations[operationID]
 	if !exists {
-		return nil, dberr.NotFound("instance upgradeKyma operation with id %s not found", operationID)
+		return nil, dberr.NotFound("instance upgradeCluster operation with id %s not found", operationID)
 	}
 	return &op, nil
 }
@@ -564,7 +564,7 @@ func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([
 	operations := s.filterUpgradeKymaByInstanceID(instanceID, dbmodel.OperationFilter{})
 
 	if len(operations) != 0 {
-		s.sortUpgradeKymaByCreatedAt(operations)
+		s.sortUpgradeKymaByCreatedAtDesc(operations)
 		return operations, nil
 	}
 
@@ -596,10 +596,14 @@ func (s *operations) ListUpgradeClusterOperationsByInstanceID(instanceID string)
 	defer s.mu.Unlock()
 
 	// Empty filter means get all
-	operations := s.filterUpgradeCluster("", dbmodel.OperationFilter{})
-	s.sortUpgradeClusterByCreatedAt(operations)
+	operations := s.filterUpgradeClusterByInstanceID(instanceID, dbmodel.OperationFilter{})
 
-	return operations, nil
+	if len(operations) != 0 {
+		s.sortUpgradeClusterByCreatedAtDesc(operations)
+		return operations, nil
+	}
+
+	return nil, dberr.NotFound("instance upgrade operations with instanceID %s not found", instanceID)
 }
 
 func (s *operations) InsertUpdatingOperation(operation internal.UpdatingOperation) error {
@@ -671,9 +675,21 @@ func (s *operations) sortUpgradeKymaByCreatedAt(operations []internal.UpgradeKym
 	})
 }
 
+func (s *operations) sortUpgradeKymaByCreatedAtDesc(operations []internal.UpgradeKymaOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
 func (s *operations) sortUpgradeClusterByCreatedAt(operations []internal.UpgradeClusterOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.Before(operations[j].CreatedAt)
+	})
+}
+
+func (s *operations) sortUpgradeClusterByCreatedAtDesc(operations []internal.UpgradeClusterOperation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
 	})
 }
 
@@ -767,6 +783,22 @@ func (s *operations) filterUpgradeCluster(orchestrationID string, filter dbmodel
 	operations := make([]internal.UpgradeClusterOperation, 0, len(s.upgradeClusterOperations))
 	for _, v := range s.upgradeClusterOperations {
 		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
+			continue
+		}
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
+}
+
+func (s *operations) filterUpgradeClusterByInstanceID(instanceID string, filter dbmodel.OperationFilter) []internal.UpgradeClusterOperation {
+	operations := make([]internal.UpgradeClusterOperation, 0)
+	for _, v := range s.upgradeClusterOperations {
+		if instanceID != "" && instanceID != v.InstanceID {
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {

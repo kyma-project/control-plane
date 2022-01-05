@@ -18,6 +18,7 @@ import (
 
 const (
 	cancelCommand     = "cancel"
+	retryCommand      = "retry"
 	operationsCommand = "operations"
 	opsCommand        = "ops"
 )
@@ -29,7 +30,7 @@ type OrchestrationCommand struct {
 	client     orchestration.Client
 	output     string
 	states     []string
-	operation  string
+	operations []string
 	subCommand string
 	listParams orchestration.ListParameters
 }
@@ -41,6 +42,7 @@ var cliStates = map[string]string{
 	"inprogress": orchestration.InProgress,
 	"canceled":   orchestration.Canceled,
 	"canceling":  orchestration.Canceling,
+	"retrying":   orchestration.Retrying,
 }
 
 var orchestrationColumns = []printer.Column{
@@ -108,9 +110,9 @@ Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Type "upgradeKyma" }}
-Kyma Version:     {{.Parameters.Kyma.Version }}
+Kyma Version:     {{with .Parameters.Kyma}}{{.Version}}{{end}}
 {{- else if eq .Type "upgradeCluster" }}
-K8s Version:      {{.Parameters.Kubernetes.KubernetesVersion }}
+K8s Version:      {{with .Parameters.Kubernetes}}{{.KubernetesVersion}}{{end}}
 {{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
@@ -132,25 +134,35 @@ Operations:
 {{- end }}
 `
 
-var operationDetailsTpl = `Operation ID:       {{.OperationID}}
+var operationsDetailsTpl = `{{- range $i, $t := . }}
+Operation ID:       {{.OperationID}}
 Orchestration ID:   {{.OrchestrationID}}
 Global Account ID:  {{.GlobalAccountID}}
 Subaccount ID:      {{.SubAccountID}}
 Runtime ID:         {{.RuntimeID}}
 Shoot Name:         {{.ShootName}}
 Service Plan:       {{.ServicePlanName}}
+DryRun:             {{.DryRun}}
 Maintenance Window: {{.MaintenanceWindowBegin}} - {{.MaintenanceWindowEnd}}
 State:              {{.State}}
 Description:        {{.Description}}
-Kubernetes Version: {{.ClusterConfig.KubernetesVersion}}
-Kyma Version:       {{.KymaConfig.Version}}
+Kubernetes Version: {{with .ClusterConfig}}{{.KubernetesVersion}}{{end}}
+Kyma Version:       {{with .KymaConfig}}{{.Version}}{{end}}
+{{end}}
+`
+
+var retryOchestrationTpl = `Orchestration ID:   {{.OrchestrationID}}
+Retry Operations:   {{ stringsJoin .RetryOperations ", " }}
+Old Operations:     {{ stringsJoin .OldOperations ", " }}
+Invalid Operations: {{ stringsJoin .InvalidOperations ", " }}
+Message:            {{ .Msg }}
 `
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
 func NewOrchestrationCmd() *cobra.Command {
 	cmd := OrchestrationCommand{}
 	cobraCmd := &cobra.Command{
-		Use:     "orchestrations [id] [ops|operations] [cancel]",
+		Use:     "orchestrations [id] [ops|operations] [cancel] [retry]",
 		Aliases: []string{"orchestration", "o"},
 		Short:   "Displays Kyma Control Plane (KCP) orchestrations.",
 		Long: `Displays KCP orchestrations and their primary attributes, such as identifiers, type, state, parameters, or Runtime operations.
@@ -159,14 +171,18 @@ The command has the following modes:
   - When specifying an orchestration ID as an argument. In this mode, the command displays details about the specific orchestration.
       If the optional --operation flag is provided, it displays details of the specified Runtime operation within the orchestration.
   - When specifying an orchestration ID and ` + "`operations` or `ops`" + ` as arguments. In this mode, the command displays the Runtime operations for the given orchestration.
-  - When specifying an orchestration ID and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.`,
-		Example: `  kcp orchestrations --state inprogress                                   Display all orchestrations which are in progress.
+  - When specifying an orchestration ID and ` + "`cancel`" + ` as arguments. In this mode, the command cancels the orchestration and all pending Runtime operations.
+  - When specifying an orchestration ID and ` + "`retry`" + ` as arguments. In this mode, the command retries all failed Runtime operations of the given orchestration. The ` + "`retry` " + `command only applies to the failed or in progress orchestration.
+      If the optional --operation flag is provided, it retries the specified Runtime operation of the given orchestration.`,
+		Example: `  kcp orchestrations --state inprogress                                              Display all orchestrations which are in progress.
   kcp orchestration -o custom="Orchestration ID:{.OrchestrationID},STATE:{.State},CREATED AT:{.createdAt}"
-                                                                          Display all orchestations with specific custom fields.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                  Display details about a specific orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID  Display details of the specified Runtime operation within the orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations       Display the operations of the given orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel           Cancel the given orchestration.`,
+                                                                                     Display all orchestations with specific custom fields.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00                             Display details about a specific orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 --operation OID1,OID2       Display details of the specified Runtime operation within the orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations                  Display the operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel                      Cancel the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry                       Retry all failed operations of the given orchestration.
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration.`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -175,7 +191,7 @@ The command has the following modes:
 
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "s", nil, fmt.Sprintf("Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: %s.", strings.Join(cliOrchestrationStates(), ", ")))
-	cobraCmd.Flags().StringVar(&cmd.operation, "operation", "", "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
+	cobraCmd.Flags().StringSliceVar(&cmd.operations, "operation", nil, "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
 	return cobraCmd
 }
 
@@ -222,15 +238,17 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		return cmd.showOrchestrations()
 	case 1:
 		// Called with orchestration ID but without subcommand
-		if cmd.operation == "" {
+		if len(cmd.operations) == 0 {
 			return cmd.showOneOrchestration(args[0])
 		}
-		return cmd.showOperationDetails(args[0])
+		return cmd.showOperationsDetails(args[0])
 	case 2:
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
 			return cmd.cancelOrchestration(args[0])
+		case retryCommand:
+			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
 		}
@@ -251,17 +269,17 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 		return err
 	}
 
-	if cmd.operation != "" && len(args) == 0 {
+	if len(cmd.operations) != 0 && len(args) == 0 {
 		return errors.New("--operation should only be used when orchestration id is given as an argument")
 	}
-	if cmd.operation != "" && len(cmd.states) > 0 {
+	if len(cmd.operations) != 0 && len(cmd.states) > 0 {
 		return errors.New("--state should not be used together with --operation")
 	}
 
 	if len(args) == 2 {
 		cmd.subCommand = args[1]
 		switch cmd.subCommand {
-		case cancelCommand, operationsCommand, opsCommand:
+		case cancelCommand, retryCommand, operationsCommand, opsCommand:
 		default:
 			return fmt.Errorf("invalid subcommand: %s", cmd.subCommand)
 		}
@@ -355,25 +373,31 @@ func (cmd *OrchestrationCommand) showOperations(orchestrationID string) error {
 	return nil
 }
 
-func (cmd *OrchestrationCommand) showOperationDetails(orchestrationID string) error {
-	odr, err := cmd.client.GetOperation(orchestrationID, cmd.operation)
-	if err != nil {
-		return errors.Wrap(err, "while getting operation details")
+func (cmd *OrchestrationCommand) showOperationsDetails(orchestrationID string) error {
+	odrs := []orchestration.OperationDetailResponse{}
+
+	for _, op := range cmd.operations {
+		odr, err := cmd.client.GetOperation(orchestrationID, op)
+		if err != nil {
+			return errors.Wrap(err, "while getting operation details")
+		}
+
+		odrs = append(odrs, odr)
 	}
 
 	switch cmd.output {
 	case tableOutput:
-		tmpl, err := template.New("operationDetails").Parse(operationDetailsTpl)
+		tmpl, err := template.New("operationDetails").Parse(operationsDetailsTpl)
 		if err != nil {
 			return errors.Wrap(err, "while parsing operation details template")
 		}
-		err = tmpl.Execute(os.Stdout, odr)
+		err = tmpl.Execute(os.Stdout, odrs)
 		if err != nil {
 			return errors.Wrap(err, "while printing operation details")
 		}
 	case jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
-		jp.PrintObj(odr)
+		jp.PrintObj(odrs)
 	}
 
 	return nil
@@ -393,7 +417,7 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending], sr.OperationStats[orchestration.InProgress])
+	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
 	fmt.Print("Do you want to continue? (Y/N) ")
 	scanner.Scan()
 	if scanner.Text() != "Y" {
@@ -403,6 +427,39 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 
 	return cmd.client.CancelOrchestration(orchestrationID)
 
+}
+
+func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) error {
+	sr, err := cmd.client.GetOrchestration(orchestrationID)
+	if err != nil {
+		return errors.Wrap(err, "while getting orchestration")
+	}
+	switch sr.State {
+	case orchestration.Canceling, orchestration.Canceled:
+		fmt.Println("Orchestration is already canceled.")
+		return nil
+	case orchestration.Retrying, orchestration.Pending, orchestration.Succeeded:
+		fmt.Printf("Orchestration is already %s.\n", sr.State)
+		return nil
+	}
+
+	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
+	if err != nil {
+		return errors.Wrap(err, "while triggering retrying orchestration")
+	}
+
+	// Print retry orchestration response via template
+	funcMap := template.FuncMap{"stringsJoin": strings.Join}
+	tmpl, err := template.New("retryOrchestration").Funcs(funcMap).Parse(retryOchestrationTpl)
+	if err != nil {
+		return errors.Wrap(err, "while parsing retry orchestration response template")
+	}
+	err = tmpl.Execute(os.Stdout, rr)
+	if err != nil {
+		return errors.Wrap(err, "while printing retry orchestration response")
+	}
+
+	return nil
 }
 
 // Currently only orchestrations of type "kyma upgrade" are supported,
