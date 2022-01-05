@@ -40,7 +40,7 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 	}
 	switch state.Status {
 	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
-		log.Info("Reconciler status %v", state.Status)
+		log.Infof("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
 	case reconcilerApi.StatusReconcileErrorRetryable:
 		log.Infof("Reconciler failed with retryable, rechecking in 10 minutes.")
