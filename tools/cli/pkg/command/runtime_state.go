@@ -48,8 +48,8 @@ func newRuntimeStateCommand(mp mothershipClientProvider) *cobra.Command {
 	SetOutputOpt(cobraCmd, &cmd.opts.output)
 	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "Runtime ID of the specific Kyma Runtime.")
 	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "c", "", "Shoot cluster name of the specific Kyma Runtime.")
-	cobraCmd.Flags().StringVarP(&cmd.opts.correlationID, "correlation-id", "c", "", "Correlation ID of the specific Reconciliation Operation.")
-	cobraCmd.Flags().StringVarP(&cmd.opts.schedulingID, "scheduling-id", "s", "", "Scheduling ID of the specific Reconciliation Operation.")
+	cobraCmd.Flags().StringVar(&cmd.opts.correlationID, "correlation-id", "", "Correlation ID of the specific Reconciliation Operation.")
+	cobraCmd.Flags().StringVar(&cmd.opts.schedulingID, "scheduling-id", "", "Scheduling ID of the specific Reconciliation Operation.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()
@@ -96,15 +96,20 @@ func (cmd *RuntimeStateCommand) Run() error {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	runtimeID := cmd.runtimeID
-	if cmd.shootName != "" {
+	runtimeID := cmd.opts.runtimeID
+	if cmd.opts.shootName != "" {
+		kebURL := GlobalOpts.KEBAPIURL()
+		runtimeID, err = getRuntimeID(ctx, kebURL, cmd.opts.shootName, httpClient)
+		if err != nil {
+			return errors.Wrap(err, "while listing runtimes")
+		}
 
 	}
 
 	response, err := client.GetClustersState(ctx, &mothership.GetClustersStateParams{
-		RuntimeID:     &cmd.runtimeID,
-		SchedulingID:  &cmd.schedulingID,
-		CorrelationID: &cmd.correlationID,
+		RuntimeID:     &runtimeID,
+		SchedulingID:  &cmd.opts.schedulingID,
+		CorrelationID: &cmd.opts.correlationID,
 	})
 	if err != nil {
 		return errors.Wrap(err, "wile listing reconciliations")
@@ -122,7 +127,7 @@ func (cmd *RuntimeStateCommand) Run() error {
 		return errors.WithStack(ErrMothershipResponse)
 	}
 
-	return printState(cmd.output, result)
+	return printState(cmd.opts.output, result)
 }
 
 func printState(format string, data mothership.HTTPClusterState) error {
@@ -134,9 +139,25 @@ func printState(format string, data mothership.HTTPClusterState) error {
 				FieldSpec: "{.cluster.runtimeID}",
 			},
 			{
+				Header:    "KYMA VERSION",
+				FieldSpec: "{.configuration.kymaVersion}",
+			},
+			{
+				Header:    "KYMA PROFILE",
+				FieldSpec: "{.configuration.kymaProfile}",
+			},
+			{
+				Header:    "STATUS",
+				FieldSpec: "{.status.status}",
+			},
+			{
+				Header:    "DELETED",
+				FieldSpec: "{.status.deleted}",
+			},
+			{
 				Header:         "CREATED AT",
-				FieldSpec:      "{.cluster.created}",
-				FieldFormatter: reconciliationCreated,
+				FieldSpec:      "{.status.created}",
+				FieldFormatter: stateCreatedFormatted,
 			},
 		}, false)
 		if err != nil {
@@ -162,4 +183,9 @@ func printState(format string, data mothership.HTTPClusterState) error {
 	default:
 		return errors.Errorf("unknown output format: %s", format)
 	}
+}
+
+func stateCreatedFormatted(obj interface{}) string {
+	state := obj.(mothership.HTTPClusterState)
+	return state.Cluster.Created.Format("2006/01/02 15:04:05")
 }
