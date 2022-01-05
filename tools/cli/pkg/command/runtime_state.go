@@ -13,13 +13,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type RuntimeStateCommand struct {
+type RuntimeStateOptions struct {
 	output        string
 	runtimeID     string
+	shootName     string
 	correlationID string
 	schedulingID  string
+}
 
-	ctx context.Context
+type RuntimeStateCommand struct {
+	opts RuntimeStateOptions
+	ctx  context.Context
 
 	provideMshipClient mothershipClientProvider
 }
@@ -37,14 +41,15 @@ func newRuntimeStateCommand(mp mothershipClientProvider) *cobra.Command {
 		Aliases: []string{"s"},
 		Short:   "",
 		Long:    ``,
-		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
+		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.opts.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
 
-	SetOutputOpt(cobraCmd, &cmd.output)
-	cobraCmd.Flags().StringVarP(&cmd.runtimeID, "runtime-id", "r", "", "")
-	cobraCmd.Flags().StringVarP(&cmd.correlationID, "correlation-id", "c", "", "")
-	cobraCmd.Flags().StringVarP(&cmd.schedulingID, "scheduling-id", "s", "", "")
+	SetOutputOpt(cobraCmd, &cmd.opts.output)
+	cobraCmd.Flags().StringVarP(&cmd.opts.runtimeID, "runtime-id", "r", "", "Runtime ID of the specific Kyma Runtime.")
+	cobraCmd.Flags().StringVarP(&cmd.opts.shootName, "shoot", "c", "", "Shoot cluster name of the specific Kyma Runtime.")
+	cobraCmd.Flags().StringVarP(&cmd.opts.correlationID, "correlation-id", "c", "", "Correlation ID of the specific Reconciliation Operation.")
+	cobraCmd.Flags().StringVarP(&cmd.opts.schedulingID, "scheduling-id", "s", "", "Scheduling ID of the specific Reconciliation Operation.")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
 		cmd.ctx = cobraCmd.Parent().Context()
@@ -55,23 +60,26 @@ func newRuntimeStateCommand(mp mothershipClientProvider) *cobra.Command {
 	return cobraCmd
 }
 
-func (cmd *RuntimeStateCommand) Validate() error {
+func (opts *RuntimeStateOptions) Validate() error {
 	count := 0
-	if cmd.correlationID != "" {
+	if opts.correlationID != "" {
 		count++
 	}
-	if cmd.runtimeID != "" {
+	if opts.runtimeID != "" {
 		count++
 	}
-	if cmd.schedulingID != "" {
+	if opts.schedulingID != "" {
+		count++
+	}
+	if opts.shootName != "" {
 		count++
 	}
 
 	if count != 1 {
-		return errors.New("use one of following flags: --runtime-id, --correlation-id or --scheduling-id")
+		return errors.New("use one of following flags: --shoot, --runtime-id, --correlation-id or --scheduling-id")
 	}
 
-	return ValidateOutputOpt(cmd.output)
+	return ValidateOutputOpt(opts.output)
 }
 
 func (cmd *RuntimeStateCommand) Run() error {
@@ -83,10 +91,14 @@ func (cmd *RuntimeStateCommand) Run() error {
 	httpClient := oauth2.NewClient(ctx, auth)
 
 	mothershipURL := GlobalOpts.MothershipAPIURL()
-
 	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")
+	}
+
+	runtimeID := cmd.runtimeID
+	if cmd.shootName != "" {
+
 	}
 
 	response, err := client.GetClustersState(ctx, &mothership.GetClustersStateParams{
