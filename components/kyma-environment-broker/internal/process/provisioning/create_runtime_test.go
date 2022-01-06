@@ -85,7 +85,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				WorkerCidr:                          "10.250.0.0/19",
 				AutoScalerMin:                       2,
 				AutoScalerMax:                       10,
-				MaxSurge:                            4,
+				MaxSurge:                            1,
 				MaxUnavailable:                      0,
 				TargetSecret:                        "",
 				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),
