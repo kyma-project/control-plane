@@ -45,7 +45,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  2,
 			AutoScalerMax:  10,
-			MaxSurge:       4,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
@@ -80,8 +80,8 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  2,
 			AutoScalerMax:  10,
-			MaxSurge:       4,
-			MaxUnavailable: 1,
+			MaxSurge:       1,
+			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
@@ -166,7 +166,7 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  1,
 			AutoScalerMax:  10,
-			MaxSurge:       2,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
