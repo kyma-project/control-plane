@@ -144,7 +144,6 @@ func (cmd *RuntimeCommand) Validate() error {
 func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 	switch {
 	case cmd.output == tableOutput:
-
 		if cmd.display.SubscriptionGlobalAccountID {
 			tableColumns = append(tableColumns[:1+1], tableColumns[1:]...)
 			tableColumns[1] = printer.Column{
