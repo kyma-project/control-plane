@@ -25,15 +25,17 @@ type RuntimeStateCommand struct {
 	opts RuntimeStateOptions
 	ctx  context.Context
 
+	provideKebClient   kebClientProvider
 	provideMshipClient mothershipClientProvider
 }
 
 func NewReconciliationStateCommand() *cobra.Command {
-	return newRuntimeStateCommand(defaultMothershipClientProvider)
+	return newRuntimeStateCommand(defaultMothershipClientProvider, defaultKebClientProvider)
 }
 
-func newRuntimeStateCommand(mp mothershipClientProvider) *cobra.Command {
+func newRuntimeStateCommand(mp mothershipClientProvider, kp kebClientProvider) *cobra.Command {
 	cmd := RuntimeStateCommand{
+		provideKebClient:   kp,
 		provideMshipClient: mp,
 	}
 	cobraCmd := &cobra.Command{
@@ -99,11 +101,11 @@ func (cmd *RuntimeStateCommand) Run() error {
 	runtimeID := cmd.opts.runtimeID
 	if cmd.opts.shootName != "" {
 		kebURL := GlobalOpts.KEBAPIURL()
-		runtimeID, err = getRuntimeID(ctx, kebURL, cmd.opts.shootName, httpClient)
+		kebClient := cmd.provideKebClient(kebURL, httpClient)
+		cmd.opts.runtimeID, err = getRuntimeID(kebClient, cmd.opts.shootName)
 		if err != nil {
-			return errors.Wrap(err, "while getting runtime ID")
+			return errors.Wrap(err, "while listing runtimes")
 		}
-
 	}
 
 	response, err := client.GetClustersState(ctx, &mothership.GetClustersStateParams{
