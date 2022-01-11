@@ -878,7 +878,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		step     upgrade_kyma.Step
 		cnd      upgrade_kyma.StepCondition
 	}{
-		// check cluster configuration is the first step - to not exeute other steps, when cluster configuration was applied
+		// check cluster configuration is the first step - to not execute other steps, when cluster configuration was applied
 		// this should be moved to the end when we introduce stages like in the provisioning process
 		// (also return operation, 0, nil at the end of apply_cluster_configuration)
 		{
