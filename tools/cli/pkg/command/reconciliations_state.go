@@ -28,7 +28,7 @@ type RuntimeStateCommand struct {
 	provideMshipClient mothershipClientProvider
 }
 
-func NewRuntimeStateCommand() *cobra.Command {
+func NewReconciliationStateCommand() *cobra.Command {
 	return newRuntimeStateCommand(defaultMothershipClientProvider)
 }
 
@@ -39,8 +39,8 @@ func newRuntimeStateCommand(mp mothershipClientProvider) *cobra.Command {
 	cobraCmd := &cobra.Command{
 		Use:     "state",
 		Aliases: []string{"s"},
-		Short:   "",
-		Long:    ``,
+		Short:   "Display Cluster State.",
+		Long:    `Use this command to display Cluster State based on one of a few possible flags.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.opts.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
@@ -122,7 +122,7 @@ func (cmd *RuntimeStateCommand) Run() error {
 		return err
 	}
 
-	var result mothership.HTTPClusterState
+	var result mothership.HTTPClusterStateResponse
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		return errors.WithStack(ErrMothershipResponse)
 	}
@@ -130,7 +130,7 @@ func (cmd *RuntimeStateCommand) Run() error {
 	return printState(cmd.opts.output, result)
 }
 
-func printState(format string, data mothership.HTTPClusterState) error {
+func printState(format string, data mothership.HTTPClusterStateResponse) error {
 	switch {
 	case format == tableOutput:
 		tp, err := printer.NewTablePrinter([]printer.Column{
@@ -186,6 +186,6 @@ func printState(format string, data mothership.HTTPClusterState) error {
 }
 
 func stateCreatedFormatted(obj interface{}) string {
-	state := obj.(mothership.HTTPClusterState)
+	state := obj.(mothership.HTTPClusterStateResponse)
 	return state.Cluster.Created.Format("2006/01/02 15:04:05")
 }
