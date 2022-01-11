@@ -878,6 +878,14 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		step     upgrade_kyma.Step
 		cnd      upgrade_kyma.StepCondition
 	}{
+		// check cluster configuration is the first step - to not exeute other steps, when cluster configuration was applied
+		// this should be moved to the end when we introduce stages like in the provisioning process
+		// (also return operation, 0, nil at the end of apply_cluster_configuration)
+		{
+			weight: 1,
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
+			cnd:    upgrade_kyma.ForKyma2,
+		},
 		{
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
@@ -918,11 +926,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
-			weight: 11,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}

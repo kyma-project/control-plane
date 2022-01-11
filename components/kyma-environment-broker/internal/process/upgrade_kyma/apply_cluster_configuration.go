@@ -33,6 +33,10 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 }
 
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if operation.ClusterConfigurationApplied {
+		log.Infof("Cluster configuration already applied")
+		return operation, 0, nil
+	}
 	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	operation.InputCreator.SetRuntimeID(operation.InstanceDetails.RuntimeID).
 		SetInstanceID(operation.InstanceID).
@@ -73,13 +77,13 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
+		operation.ClusterConfigurationApplied = true
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")
 		return operation, 5 * time.Second, nil
 	}
 
-	// return some retry value to get back to initialisation step
 	return updatedOperation, 5 * time.Second, nil
 
 }
