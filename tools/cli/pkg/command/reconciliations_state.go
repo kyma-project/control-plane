@@ -92,20 +92,21 @@ func (cmd *RuntimeStateCommand) Run() error {
 	auth := CLICredentialManager(l)
 	httpClient := oauth2.NewClient(ctx, auth)
 
-	mothershipURL := GlobalOpts.MothershipAPIURL()
-	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
-	if err != nil {
-		return errors.Wrap(err, "while creating mothership client")
-	}
-
 	runtimeID := cmd.opts.runtimeID
 	if cmd.opts.shootName != "" {
 		kebURL := GlobalOpts.KEBAPIURL()
 		kebClient := cmd.provideKebClient(kebURL, httpClient)
-		cmd.opts.runtimeID, err = getRuntimeID(kebClient, cmd.opts.shootName)
+		runtimeID, err := getRuntimeID(kebClient, cmd.opts.shootName)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}
+		cmd.opts.runtimeID = runtimeID
+	}
+
+	mothershipURL := GlobalOpts.MothershipAPIURL()
+	client, err := cmd.provideMshipClient(mothershipURL, httpClient)
+	if err != nil {
+		return errors.Wrap(err, "while creating mothership client")
 	}
 
 	response, err := client.GetClustersState(ctx, &mothership.GetClustersStateParams{
@@ -189,5 +190,5 @@ func printState(format string, data mothership.HTTPClusterStateResponse) error {
 
 func stateCreatedFormatted(obj interface{}) string {
 	state := obj.(mothership.HTTPClusterStateResponse)
-	return state.Cluster.Created.Format("2006/01/02 15:04:05")
+	return state.Status.Created.Format("2006/01/02 15:04:05")
 }
