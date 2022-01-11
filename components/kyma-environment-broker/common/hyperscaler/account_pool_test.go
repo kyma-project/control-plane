@@ -43,6 +43,9 @@ func TestCredentialsSecretBinding(t *testing.T) {
 		{"Available credential for tenant4, GCP labels and returns existing secret",
 			"tenant4", AWS, "secretBinding5", ""},
 
+		{"There is only dirty Secret for tenant9, Azure labels and returns a new existing secret",
+			"tenant9", Azure, "secretBinding9", ""},
+
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
 			"failed to find unassigned secret binding for hyperscalerType: azure"},
@@ -277,8 +280,36 @@ func newTestAccountPool() AccountPool {
 			Namespace: "anothernamespace",
 		},
 	}
+	secretBinding8 := &gardener_types.SecretBinding{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "secretBinding8",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"tenantName":      "tenant9",
+				"hyperscalerType": "azure",
+				"dirty":           "true",
+			},
+		},
+		SecretRef: corev1.SecretReference{
+			Name:      "secret8",
+			Namespace: testNamespace,
+		},
+	}
+	secretBinding9 := &gardener_types.SecretBinding{
+		ObjectMeta: machineryv1.ObjectMeta{
+			Name:      "secretBinding9",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"hyperscalerType": "azure",
+			},
+		},
+		SecretRef: corev1.SecretReference{
+			Name:      "secret9",
+			Namespace: testNamespace,
+		},
+	}
 
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7).
+	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7, secretBinding8, secretBinding9).
 		CoreV1beta1().SecretBindings(testNamespace)
 
 	return NewAccountPool(gardenerFake, nil)
