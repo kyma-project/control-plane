@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -35,7 +35,7 @@ type ProvisionerInputCreator interface {
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
 
-	CreateClusterConfiguration() (reconciler.Cluster, error)
+	CreateClusterConfiguration() (reconcilerApi.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
 	SetKubeconfig(kcfg string) ProvisionerInputCreator
 	SetRuntimeID(runtimeID string) ProvisionerInputCreator
@@ -215,7 +215,7 @@ type Operation struct {
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling && o.State != orchestration.Retrying
 }
 
 // Orchestration holds all information about an orchestration.
@@ -407,7 +407,7 @@ func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaCo
 	}
 }
 
-func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconciler.Cluster) RuntimeState {
+func NewRuntimeStateWithReconcilerInput(runtimeID, operationID string, reconcilerInput *reconcilerApi.Cluster) RuntimeState {
 	return RuntimeState{
 		ID:           uuid.New().String(),
 		CreatedAt:    time.Now(),
@@ -427,7 +427,7 @@ type RuntimeState struct {
 
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
-	ClusterSetup  *reconciler.Cluster           `json:"clusterSetup,omitempty"`
+	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {

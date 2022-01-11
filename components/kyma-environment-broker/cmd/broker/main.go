@@ -488,6 +488,9 @@ func reprocessOrchestrations(orchestrationType orchestrationExt.Type, orchestrat
 	if err := processOrchestration(orchestrationType, orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
 		return errors.Wrapf(err, "while processing pending %s orchestrations", orchestrationType)
 	}
+	if err := processOrchestration(orchestrationType, orchestrationExt.Retrying, orchestrationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing retrying %s orchestrations", orchestrationType)
+	}
 	return nil
 }
 
@@ -837,7 +840,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(reconcilerClient, 30*time.Minute),
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 30*time.Minute),
 		},
 		{
 			weight: 10,
@@ -875,11 +878,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		step     upgrade_kyma.Step
 		cnd      upgrade_kyma.StepCondition
 	}{
-		{
-			weight: 2,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
 		{
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
@@ -920,6 +918,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			cnd:    upgrade_kyma.ForKyma2,
+		},
+		{
+			weight: 11,
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}

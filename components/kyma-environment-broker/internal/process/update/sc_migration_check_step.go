@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -38,16 +39,19 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 	switch state.Status {
-	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
-		log.Info("Reconciler status %v", state.Status)
+	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
+		log.Infof("Reconciler status %v", state.Status)
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusReady:
+	case reconcilerApi.StatusReconcileErrorRetryable:
+		log.Infof("Reconciler failed with retryable, rechecking in 10 minutes.")
+		return operation, 10 * time.Minute, nil
+	case reconcilerApi.StatusReady:
 		return operation, 0, nil
-	case reconciler.ClusterStatusError:
-		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, state.PrettyFailures())
+	case reconcilerApi.StatusError:
+		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, reconciler.PrettyFailures(state))
 		return s.operationManager.OperationFailed(operation, msg, log)
 	default:
-		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, state.PrettyFailures())
+		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, reconciler.PrettyFailures(state))
 		return s.operationManager.OperationFailed(operation, msg, log)
 	}
 }

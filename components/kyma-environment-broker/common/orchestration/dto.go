@@ -37,6 +37,7 @@ const (
 	Pending    = "pending"
 	InProgress = "in progress"
 	Canceling  = "canceling"
+	Retrying   = "retrying" // to signal a retry sign before marking it to pending
 	Canceled   = "canceled"
 	Succeeded  = "succeeded"
 	Failed     = "failed"
@@ -159,6 +160,14 @@ type StatusResponseList struct {
 
 type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestrationID"`
+}
+
+type RetryResponse struct {
+	OrchestrationID   string   `json:"orchestrationID"`
+	RetryOperations   []string `json:"retryOperations"`
+	OldOperations     []string `json:"oldOperations"`
+	InvalidOperations []string `json:"invalidOperations"`
+	Msg               string   `json:"msg"`
 }
 
 type MaintenancePolicyMatch struct {

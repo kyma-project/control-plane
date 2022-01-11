@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
@@ -217,7 +217,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 	var (
 		kymaCfg      gqlschema.KymaConfigInput
 		clusterCfg   gqlschema.GardenerConfigInput
-		clusterSetup *reconciler.Cluster
+		clusterSetup *reconcilerApi.Cluster
 	)
 	if dto.KymaConfig != "" {
 		cfg, err := s.cipher.Decrypt([]byte(dto.KymaConfig))
@@ -238,7 +238,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 		if err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting cluster setup")
 		}
-		clusterSetup = &reconciler.Cluster{}
+		clusterSetup = &reconcilerApi.Cluster{}
 		if err := json.Unmarshal(setup, clusterSetup); err != nil {
 			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster setup")
 		}
@@ -268,7 +268,7 @@ func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]inte
 	return result, nil
 }
 
-func (s *runtimeState) provideClusterSetup(clusterSetup *reconciler.Cluster) ([]byte, error) {
+func (s *runtimeState) provideClusterSetup(clusterSetup *reconcilerApi.Cluster) ([]byte, error) {
 	marshalledClusterSetup, err := s.marshalClusterSetup(clusterSetup)
 	if err != nil {
 		return nil, errors.Wrap(err, "while encoding reconciler input")
@@ -280,7 +280,7 @@ func (s *runtimeState) provideClusterSetup(clusterSetup *reconciler.Cluster) ([]
 	return encryptedClusterSetup, nil
 }
 
-func (s *runtimeState) marshalClusterSetup(clusterSetup *reconciler.Cluster) ([]byte, error) {
+func (s *runtimeState) marshalClusterSetup(clusterSetup *reconcilerApi.Cluster) ([]byte, error) {
 	var (
 		result []byte
 		err    error

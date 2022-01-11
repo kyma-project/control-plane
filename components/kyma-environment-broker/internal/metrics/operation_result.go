@@ -19,6 +19,7 @@ const (
 	resultPending    float64 = 3
 	resultCanceling  float64 = 4
 	resultCanceled   float64 = 5
+	resultRetrying   float64 = 6
 )
 
 type LastOperationState = domain.LastOperationState
@@ -27,6 +28,7 @@ const (
 	Pending   LastOperationState = "pending"
 	Canceling LastOperationState = "canceling"
 	Canceled  LastOperationState = "canceled"
+	Retrying  LastOperationState = "retrying"
 )
 
 // OperationResultCollector provides the following metrics:
@@ -111,6 +113,8 @@ func (c *OperationResultCollector) OnUpgradeKymaStepProcessed(ctx context.Contex
 		resultValue = resultCanceling
 	case Canceled:
 		resultValue = resultCanceled
+	case Retrying:
+		resultValue = resultRetrying
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
@@ -141,6 +145,8 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 		resultValue = resultCanceling
 	case Canceled:
 		resultValue = resultCanceled
+	case Retrying:
+		resultValue = resultRetrying
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters

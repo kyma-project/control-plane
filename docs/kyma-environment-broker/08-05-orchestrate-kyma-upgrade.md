@@ -1,19 +1,16 @@
----
-title: Orchestrate Kyma upgrade
-type: Tutorials
----
+# Orchestrate Kyma upgrade
 
 This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 ## Prerequisites
 
 - Compass with:
-  * Runtime Provisioner [configured](/control-plane/runtime-provisioner/#tutorials-provision-clusters-through-gardener) for Azure
-  * Kyma Environment Broker configured and chosen [overrides](#details-set-overrides-for-kyma-runtime) set up
+  * Runtime Provisioner [configured](../provisioner/08-02-provisioning-gardener.md) for Azure
+  * Kyma Environment Broker configured and chosen [overrides](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/03-change-kyma-config-values/) set up
 
 ## Steps
 
-1. [Get the OIDC ID token in the JWT format](#details-orchestration). Export this variable based on the token you got from the OIDC client:
+1. [Get the OIDC ID token in the JWT format](03-10-orchestration.md). Export this variable based on the token you got from the OIDC client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ID_TOKEN"
@@ -48,7 +45,7 @@ This tutorial shows how to upgrade Kyma Runtime using Kyma Environment Broker.
 
 >**NOTE:** If the **dryRun** parameter specified in the request body is set to `true`, the upgrade is executed but the upgrade request is not sent to Runtime Provisioner.
 
-3. If you want to configure [the strategy of your orchestration](#details-orchestration-strategies), use the following request example:
+3. If you want to configure [the strategy of your orchestration](03-10-orchestration.md#strategies), use the following request example:
 
 ```bash
 curl --request POST "https://$BROKER_URL/upgrade/kyma" \
@@ -85,6 +82,6 @@ A successful call returns the orchestration ID:
    }
    ```
 
-4. [Check the orchestration status](#tutorials-check-orchestration-status).
+4. [Check the orchestration status](08-06-orchestration-status.md).
 
 >**NOTE:** Only one orchestration request can be processed at the same time. If KEB is already processing an orchestration, the newly created request waits for processing with the `PENDING` state.

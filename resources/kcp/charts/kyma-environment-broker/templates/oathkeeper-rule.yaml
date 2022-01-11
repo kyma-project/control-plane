@@ -73,6 +73,7 @@ spec:
     methods:
     - GET
     - PUT
+    - POST
     url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></orchestrations.*>
   upstream:
     url: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80

@@ -1,7 +1,4 @@
----
-title: Custom OIDC configuration
-type: Details
----
+# Custom OIDC configuration
 
 To create an SKR with a custom OIDC (Open ID Connect) configuration, specify the additional `oidc` provisioning parameters. See the example:
 
@@ -122,8 +119,8 @@ The update operation overwrites the OIDC configuration values provided in JSON. 
    ```
    ClientID: new-client-id
    IssuerURL: https://new-issuer-url.local.com
-   GroupsClaim: 
-   UsernameClaim: 
-   UsernamePrefix: 
-   SigningAlgs: 
+   GroupsClaim:
+   UsernameClaim:
+   UsernamePrefix:
+   SigningAlgs:
    ```

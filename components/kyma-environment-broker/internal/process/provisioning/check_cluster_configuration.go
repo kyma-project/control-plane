@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
-
-	"github.com/sirupsen/logrus"
-
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // CheckClusterConfigurationStep checks if the SKR configuration is applied (by reconciler)
@@ -56,12 +54,15 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	log.Debugf("Cluster configuration status %s", state.Status)
 
 	switch state.Status {
-	case reconciler.ClusterStatusReconciling, reconciler.ClusterStatusPending:
+	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
 		return operation, 30 * time.Second, nil
-	case reconciler.ClusterStatusReady:
+	case reconcilerApi.StatusReconcileErrorRetryable:
+		log.Infof("Reconciler failed with retryable, rechecking in 10 minutes.")
+		return operation, 10 * time.Minute, nil
+	case reconcilerApi.StatusReady:
 		return operation, 0, nil
-	case reconciler.ClusterStatusError:
-		errMsg := fmt.Sprintf("Reconciler failed. %v", state.PrettyFailures())
+	case reconcilerApi.StatusError:
+		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
 		return s.operationManager.OperationFailed(operation, errMsg, log)
 	default:
