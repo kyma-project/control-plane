@@ -375,6 +375,8 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
 
 // UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
