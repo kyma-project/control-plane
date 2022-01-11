@@ -101,7 +101,7 @@ func (cmd *RuntimeStateCommand) Run() error {
 		kebURL := GlobalOpts.KEBAPIURL()
 		runtimeID, err = getRuntimeID(ctx, kebURL, cmd.opts.shootName, httpClient)
 		if err != nil {
-			return errors.Wrap(err, "while listing runtimes")
+			return errors.Wrap(err, "while getting runtime ID")
 		}
 
 	}
@@ -112,7 +112,7 @@ func (cmd *RuntimeStateCommand) Run() error {
 		CorrelationID: &cmd.opts.correlationID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "wile listing reconciliations")
+		return errors.Wrap(err, "wile getting cluster state")
 	}
 
 	defer response.Body.Close()
