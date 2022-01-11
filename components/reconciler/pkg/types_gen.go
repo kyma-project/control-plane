@@ -45,8 +45,8 @@ type HTTPClusterResponse struct {
 	StatusURL            string     `json:"statusURL"`
 }
 
-// HTTPClusterState defines model for HTTPClusterState.
-type HTTPClusterState struct {
+// HTTPClusterStateResponse defines model for HTTPClusterStateResponse.
+type HTTPClusterStateResponse struct {
 	Cluster       ClusterState              `json:"cluster"`
 	Configuration ClusterStateConfiguration `json:"configuration"`
 	Status        ClusterStateStatus        `json:"status"`
@@ -61,6 +61,9 @@ type HTTPClusterStatusResponse struct {
 type HTTPErrorResponse struct {
 	Error string `json:"error"`
 }
+
+// HTTPReconcilerStatus defines model for HTTPReconcilerStatus.
+type HTTPReconcilerStatus []Reconciliation
 
 // HTTPReconciliationInfo defines model for HTTPReconciliationInfo.
 type HTTPReconciliationInfo struct {
@@ -178,6 +181,16 @@ type OperationStop struct {
 	Reason string `json:"reason"`
 }
 
+// Reconciliation defines model for reconciliation.
+type Reconciliation struct {
+	Created      time.Time `json:"created"`
+	Lock         string    `json:"lock"`
+	RuntimeID    string    `json:"runtimeID"`
+	SchedulingID string    `json:"schedulingID"`
+	Status       Status    `json:"status"`
+	Updated      time.Time `json:"updated"`
+}
+
 // RuntimeInput defines model for runtimeInput.
 type RuntimeInput struct {
 	Description string `json:"description"`
@@ -210,6 +223,9 @@ type NotFoundResponse HTTPErrorResponse
 
 // Ok defines model for Ok.
 type Ok HTTPClusterResponse
+
+// ReconcilationsOKResponse defines model for ReconcilationsOKResponse.
+type ReconcilationsOKResponse HTTPReconcilerStatus
 
 // ReconciliationInfoOKResponse defines model for ReconciliationInfoOKResponse.
 type ReconciliationInfoOKResponse HTTPReconciliationInfo

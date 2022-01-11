@@ -1055,7 +1055,7 @@ func (r PutClustersResponse) StatusCode() int {
 type GetClustersStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HTTPClusterState
+	JSON200      *HTTPClusterStateResponse
 	JSON400      *HTTPErrorResponse
 	JSON404      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
@@ -1252,7 +1252,7 @@ func (r PostOperationsSchedulingIDCorrelationIDStopResponse) StatusCode() int {
 type GetReconciliationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HTTPReconciliationInfo
+	JSON200      *HTTPReconcilerStatus
 	JSON400      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
 }
@@ -1533,7 +1533,7 @@ func ParseGetClustersStateResponse(rsp *http.Response) (*GetClustersStateRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HTTPClusterState
+		var dest HTTPClusterStateResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1888,7 +1888,7 @@ func ParseGetReconciliationsResponse(rsp *http.Response) (*GetReconciliationsRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HTTPReconciliationInfo
+		var dest HTTPReconcilerStatus
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
