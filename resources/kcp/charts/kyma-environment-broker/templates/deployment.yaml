@@ -393,6 +393,8 @@ spec:
               value: /config/newAdditionalRuntimeComponents.yaml
             - name: APP_PROFILER_MEMORY
               value: "{{ .Values.broker.profiler.memory }}"
+            - name: APP_BUSOLA_URL
+              value: "{{ .Values.busolaUrl }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

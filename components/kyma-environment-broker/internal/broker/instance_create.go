@@ -135,7 +135,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	shootURL := fmt.Sprintf("https://%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -146,7 +146,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 	operation.ShootDNSProviders = b.shootDnsProviders
-	operation.DashboardURL = dashboardURL
+	operation.DashboardURL = shootURL
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertProvisioningOperation(operation)
@@ -163,7 +163,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
 		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].PlanDefinition.Name,
-		DashboardURL:    dashboardURL,
+		ShootURL:        shootURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
 	err = b.instanceStorage.Insert(instance)
@@ -178,7 +178,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: operation.ID,
-		DashboardURL:  dashboardURL,
+		DashboardURL:  shootURL,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(operation, instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
@@ -313,7 +313,7 @@ func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.Provisio
 	return domain.ProvisionedServiceSpec{
 		IsAsync:       true,
 		OperationData: operation.ID,
-		DashboardURL:  operation.DashboardURL,
+		DashboardURL:  operation.ShootURL,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*operation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},

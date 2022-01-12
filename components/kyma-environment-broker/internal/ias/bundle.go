@@ -165,12 +165,12 @@ func (b *ServiceProviderBundle) configureServiceProviderSAMLType(serviceProvider
 }
 
 // ConfigureServiceProviderType sets SSO type, name and URLs based on provided URL for ServiceProvider
-func (b *ServiceProviderBundle) ConfigureServiceProviderType(consolePath string) error {
-	u, err := url.ParseRequestURI(consolePath)
+func (b *ServiceProviderBundle) ConfigureServiceProviderType(shootUrl string) error {
+	u, err := url.ParseRequestURI(shootUrl)
 	if err != nil {
 		return errors.Wrap(err, "while parsing path for IAS Type")
 	}
-	serviceProviderDNS := strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.domain), 1)
+	serviceProviderDNS := fmt.Sprintf("%s.%s", b.serviceProviderParams.domain, u.Host)
 	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, serviceProviderDNS, b.serviceProviderParams.redirectPath)
 
 	switch b.serviceProviderParams.ssoType {

@@ -155,6 +155,8 @@ type Config struct {
 	// under /tmp/profiler directory. Based on the deployment strategy, this will be
 	// either ephemeral container filesystem or persistent storage
 	Profiler ProfilerConfig
+
+	BusolaURL string
 }
 
 type ProfilerConfig struct {

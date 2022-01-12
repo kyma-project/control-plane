@@ -606,12 +606,6 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
 }
 
-func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
-	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
-	assert.NoError(s.t, err)
-	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
 func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
 	m, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()

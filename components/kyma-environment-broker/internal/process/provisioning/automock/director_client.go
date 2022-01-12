@@ -9,27 +9,6 @@ type DirectorClient struct {
 	mock.Mock
 }
 
-// GetConsoleURL provides a mock function with given fields: accountID, runtimeID
-func (_m *DirectorClient) GetConsoleURL(accountID string, runtimeID string) (string, error) {
-	ret := _m.Called(accountID, runtimeID)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(accountID, runtimeID)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(accountID, runtimeID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // SetLabel provides a mock function with given fields: accountID, runtimeID, key, value
 func (_m *DirectorClient) SetLabel(accountID string, runtimeID string, key string, value string) error {
 	ret := _m.Called(accountID, runtimeID, key, value)

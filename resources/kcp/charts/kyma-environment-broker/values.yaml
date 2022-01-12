@@ -113,6 +113,8 @@ includeAdditionalParamsInSchema: "false"
 
 osbUpdateProcessingEnabled: "false"
 
+busolaUrl: ""
+
 gardener:
   project: "kyma-dev" # Gardener project connected to SA for HAP credentials lookup
   shootDomain: "kyma-dev.shoot.canary.k8s-hana.ondemand.com"

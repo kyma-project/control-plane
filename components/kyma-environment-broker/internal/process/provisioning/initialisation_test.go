@@ -25,7 +25,7 @@ const (
 	statusGlobalAccountID        = "abf73c71-a653-4951-b9c2-a26d6c2cccbd"
 	statusProvisionerOperationID = "e04de524-53b3-4890-b05a-296be393e4ba"
 
-	dashboardURL               = "http://runtime.com"
+	shootURL                   = "http://runtime.com"
 	fixAvsEvaluationInternalId = int64(1234)
 )
 
@@ -89,7 +89,7 @@ func fixOperationRuntimeStatusWithProvider(planId string, provider internal.Clou
 func fixInstanceRuntimeStatus() internal.Instance {
 	instance := fixture.FixInstance(statusInstanceID)
 	instance.RuntimeID = statusRuntimeID
-	instance.DashboardURL = dashboardURL
+	instance.DashboardURL = shootURL
 	instance.GlobalAccountID = statusGlobalAccountID
 
 	return instance

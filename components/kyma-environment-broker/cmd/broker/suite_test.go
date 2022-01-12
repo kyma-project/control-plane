@@ -67,7 +67,7 @@ const (
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
-	dashboardURL           = "http://console.garden-dummy.kyma.io"
+	shootURL               = "http://garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
@@ -617,7 +617,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s.%s", shootName, "garden-dummy", strings.Trim("kyma.io", "."))
 	operation.ShootDNSProviders = gardener.DNSProvidersData{}
-	operation.DashboardURL = dashboardURL
+	operation.DashboardURL = shootURL
 	operation.State = orchestration.Pending
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
@@ -631,7 +631,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		ServiceName:     broker.KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
 		ServicePlanName: broker.AzurePlanName,
-		DashboardURL:    dashboardURL,
+		DashboardURL:    shootURL,
 		Parameters:      operation.ProvisioningParameters,
 	})
 
@@ -664,7 +664,7 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	operation.State = orchestration.Pending
 	// in the real processing the URL is set in the handler
-	operation.DashboardURL = dashboardURL
+	operation.DashboardURL = shootURL
 	require.NoError(s.t, err)
 
 	err = s.storage.Operations().InsertProvisioningOperation(operation)
@@ -678,7 +678,7 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 		ServiceName:     broker.KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
 		ServicePlanName: broker.AzurePlanName,
-		DashboardURL:    dashboardURL,
+		DashboardURL:    shootURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
 	err = s.storage.Instances().Insert(*instance)
