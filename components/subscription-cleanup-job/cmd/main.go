@@ -37,9 +37,13 @@ func main() {
 
 	gardenerClient, err := gardener.NewClient(clusterConfig)
 	exitOnError(err, "Failed to create kubernetes client")
+
+	shootInterface, err := gardener.NewGardenerShootInterface(clusterConfig, cfg.Gardener.Project)
+	exitOnError(err, "Failed to create shoot client")
+
 	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
 
-	err = job.NewCleaner(context.Background(), kubernetesInterface, secretBindingsInterface, cloudprovider.NewProviderFactory()).Do()
+	err = job.NewCleaner(context.Background(), kubernetesInterface, secretBindingsInterface, shootInterface, cloudprovider.NewProviderFactory()).Do()
 	exitOnError(err, "Job execution failed")
 
 	log.Info("Cleanup job finished successfully!")
