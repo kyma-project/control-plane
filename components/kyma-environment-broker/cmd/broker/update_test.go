@@ -1684,14 +1684,14 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	updateOperationID := suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
 
-	// check first call to reconciler installing BTP-Operator and sc-migration
+	// check first call to reconciler installing BTP-Operator and sc-migration, disabling SVCAT
 	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime mid update")
 	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
 
-	// check second call to reconciler and see that sc-migration and svcat related components are gone
+	// check second call to reconciler and see that sc-migration is no longer present and svcat related components are gone as well
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
