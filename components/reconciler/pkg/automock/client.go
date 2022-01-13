@@ -154,6 +154,26 @@ func (mr *MockClientInterfaceMockRecorder) PutClusters(ctx, body interface{}, re
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutClusters", reflect.TypeOf((*MockClientInterface)(nil).PutClusters), varargs...)
 }
 
+// GetClustersState mocks base method
+func (m *MockClientInterface) GetClustersState(ctx context.Context, params *mothership.GetClustersStateParams, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetClustersState", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersState indicates an expected call of GetClustersState
+func (mr *MockClientInterfaceMockRecorder) GetClustersState(ctx, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersState", reflect.TypeOf((*MockClientInterface)(nil).GetClustersState), varargs...)
+}
+
 // DeleteClustersRuntimeID mocks base method
 func (m *MockClientInterface) DeleteClustersRuntimeID(ctx context.Context, runtimeID string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -475,6 +495,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) PutClustersWithResponse(
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutClustersWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).PutClustersWithResponse), varargs...)
+}
+
+// GetClustersStateWithResponse mocks base method
+func (m *MockClientWithResponsesInterface) GetClustersStateWithResponse(ctx context.Context, params *mothership.GetClustersStateParams, reqEditors ...mothership.RequestEditorFn) (*mothership.GetClustersStateResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetClustersStateWithResponse", varargs...)
+	ret0, _ := ret[0].(*mothership.GetClustersStateResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersStateWithResponse indicates an expected call of GetClustersStateWithResponse
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClustersStateWithResponse(ctx, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersStateWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetClustersStateWithResponse), varargs...)
 }
 
 // DeleteClustersRuntimeIDWithResponse mocks base method
