@@ -15,6 +15,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const fieldSelectorFmt = "spec.secretBindingName=%s"
+
 type Type string
 
 type Cleaner interface {
@@ -24,12 +26,14 @@ type Cleaner interface {
 func NewCleaner(context context.Context,
 	kubernetesInterface kubernetes.Interface,
 	secretBindingsClient gardener_apis.SecretBindingInterface,
+	shootClient gardener_apis.ShootInterface,
 	providerFactory cloudprovider.ProviderFactory) Cleaner {
 
 	return &cleaner{
 		kubernetesInterface:  kubernetesInterface,
 		secretBindingsClient: secretBindingsClient,
 		providerFactory:      providerFactory,
+		shootClient:          shootClient,
 		context:              context,
 	}
 }
@@ -38,6 +42,7 @@ type cleaner struct {
 	kubernetesInterface  kubernetes.Interface
 	secretBindingsClient gardener_apis.SecretBindingInterface
 	providerFactory      cloudprovider.ProviderFactory
+	shootClient          gardener_apis.ShootInterface
 	context              context.Context
 }
 
@@ -47,9 +52,19 @@ func (p *cleaner) Do() error {
 	if err != nil {
 		return err
 	}
-
 	for _, secretBinding := range secretBindings {
-		err := p.releaseResources(secretBinding)
+		canRelease, err := p.checkIfSecretCanBeReleased(secretBinding)
+		if err != nil {
+			logrus.Errorf("Failed to list shoots for '%s' secret binding: %s", secretBinding.Name, err.Error())
+			continue
+		}
+
+		if !canRelease {
+			logrus.Warnf("Cannot release secret binding: %s. Still in use", secretBinding.Name)
+			continue
+		}
+
+		err = p.releaseResources(secretBinding)
 		if err != nil {
 			logrus.Errorf("Failed to release resources for '%s' secret binding: %s", secretBinding.Name, err.Error())
 			continue
@@ -117,6 +132,20 @@ func (p *cleaner) getSecretBindingsToRelease() ([]v1beta1.SecretBinding, error) 
 	labelSelector := fmt.Sprintf("dirty=true")
 
 	return getSecretBindings(p.context, p.secretBindingsClient, labelSelector)
+}
+
+// Checks if there are no clusters tied to the secret binding
+func (p *cleaner) checkIfSecretCanBeReleased(binding v1beta1.SecretBinding) (bool, error) {
+	fieldSelector := fmt.Sprintf(fieldSelectorFmt, binding.Name)
+	list, err := p.shootClient.List(p.context, metav1.ListOptions{FieldSelector: fieldSelector})
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list shoots")
+	}
+
+	if list.Items != nil && len(list.Items) != 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func getSecretBindings(ctx context.Context, secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) ([]v1beta1.SecretBinding, error) {

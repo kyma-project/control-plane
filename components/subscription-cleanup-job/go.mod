@@ -13,7 +13,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.11.0 // indirect
 	github.com/vrischmann/envconfig v1.3.0
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
