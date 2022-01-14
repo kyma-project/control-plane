@@ -208,7 +208,7 @@ func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.Ru
 		KymaConfig:    string(encKymaCfg),
 		ClusterConfig: string(clusterCfg),
 		ClusterSetup:  string(clusterSetup),
-		KymaVersion:   state.KymaConfig.Version,
+		KymaVersion:   state.GetKymaVersion(),
 		K8SVersion:    state.ClusterConfig.KubernetesVersion,
 	}, nil
 }
