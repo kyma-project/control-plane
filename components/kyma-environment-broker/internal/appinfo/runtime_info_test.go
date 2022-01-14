@@ -518,7 +518,7 @@ func fixInstance(idx int) internal.Instance {
 		ServiceName:     fmt.Sprintf("ServiceName field. IDX: %d", idx),
 		ServicePlanID:   fmt.Sprintf("ServicePlanID field. IDX: %d", idx),
 		ServicePlanName: fmt.Sprintf("ServicePlanName field. IDX: %d", idx),
-		DashboardURL:    fmt.Sprintf("ShootURL field. IDX: %d", idx),
+		DashboardURL:    fmt.Sprintf("DashboardURL field. IDX: %d", idx),
 		Parameters: internal.ProvisioningParameters{
 			PlatformRegion: fmt.Sprintf("region-value-idx-%d", idx),
 		},

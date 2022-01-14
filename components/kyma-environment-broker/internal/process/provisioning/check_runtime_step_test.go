@@ -45,7 +45,7 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 			st := storage.NewMemoryStorage()
 			operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 			operation.RuntimeID = statusRuntimeID
-			operation.DashboardURL = shootURL
+			operation.DashboardURL = dashboardURL
 			err := st.Operations().InsertProvisioningOperation(operation)
 			assert.NoError(t, err)
 
