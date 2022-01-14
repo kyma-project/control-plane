@@ -1,6 +1,10 @@
 package dberr
 
-import "fmt"
+import (
+	"fmt"
+
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+)
 
 const (
 	CodeInternal      = 1
@@ -9,9 +13,20 @@ const (
 	CodeConflict      = 4
 )
 
+type DBErrorReason = kebError.ErrorReason
+
+const (
+	ErrorDBInternal      DBErrorReason = "ERR_DB_INTERNAL"
+	ErrorDBNotFound      DBErrorReason = "ERR_DB_NOT_FOUND"
+	ErrorDBAlreadyExists DBErrorReason = "ERR_DB_ALREADY_EXISTS"
+	ErrorDBConflict      DBErrorReason = "ERR_DB_CONFLICT"
+	ErrorDBUnknown       DBErrorReason = "ERR_DB_UNKNOWN"
+)
+
 type Error interface {
 	Append(string, ...interface{}) Error
 	Code() int
+	Reason() DBErrorReason
 	Error() string
 }
 
@@ -56,6 +71,23 @@ func (e dbError) Code() int {
 	return e.code
 }
 
+func (e dbError) Reason() DBErrorReason {
+	reason := ErrorDBUnknown
+
+	switch e.code {
+	case CodeInternal:
+		reason = ErrorDBInternal
+	case CodeNotFound:
+		reason = ErrorDBNotFound
+	case CodeAlreadyExists:
+		reason = ErrorDBAlreadyExists
+	case CodeConflict:
+		reason = ErrorDBConflict
+	}
+
+	return reason
+}
+
 func (e dbError) Error() string {
 	return e.message
 }
@@ -67,3 +99,19 @@ func IsConflict(err error) bool {
 	}
 	return dbe.Code() == CodeConflict
 }
+
+// func IsInternal(err error) bool {
+// 	dbe, ok := err.(Error)
+// 	if !ok {
+// 		return false
+// 	}
+// 	return dbe.Code() == CodeInternal
+// }
+
+// func IsAlreadyExists(err error) bool {
+// 	dbe, ok := err.(Error)
+// 	if !ok {
+// 		return false
+// 	}
+// 	return dbe.Code() == CodeAlreadyExists
+// }

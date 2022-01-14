@@ -1,6 +1,7 @@
 package dberr
 
 import (
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
