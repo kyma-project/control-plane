@@ -357,6 +357,21 @@ func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
 	}
 }
 
+func FixClusterSetup(runtimeID string) reconcilerApi.Cluster {
+	return reconcilerApi.Cluster{
+		Kubeconfig: "sample-kubeconfig",
+		KymaConfig: reconcilerApi.KymaConfig{
+			Administrators: nil,
+			Components:     nil,
+			Profile:        "",
+			Version:        "2.0.0",
+		},
+		Metadata:     reconcilerApi.Metadata{},
+		RuntimeID:    runtimeID,
+		RuntimeInput: reconcilerApi.RuntimeInput{},
+	}
+}
+
 // SimpleInputCreator implements ProvisionerInputCreator interface
 func (c *SimpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
