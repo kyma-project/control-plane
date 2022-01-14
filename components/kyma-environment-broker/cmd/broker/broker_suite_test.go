@@ -831,9 +831,6 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
-	// simulate the installed fresh Kyma sets the proper label in the Director
-	s.MarkDirectorWithConsoleURL(opID)
-
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
 }
@@ -883,9 +880,6 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
-
-	// Director part
-	s.MarkDirectorWithConsoleURL(opID)
 
 	// Reconciler part
 	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)
