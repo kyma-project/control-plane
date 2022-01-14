@@ -48,11 +48,11 @@ func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperat
 		log.Error(msg)
 		return operation, 5 * time.Second, nil
 	case err != nil:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
 	}
 
 	log.Infof("Reconciler configuration version %d", state.ConfigurationVersion)
-	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 		op.ClusterConfigurationVersion = state.ConfigurationVersion
 		op.CheckReconcilerStatus = true
 	}, log)

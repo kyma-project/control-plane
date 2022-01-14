@@ -114,7 +114,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 			log.Errorf("while getting provisioning operation from storage")
 			return operation, s.timeSchedule.Retry, nil
 		}
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
 			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
@@ -139,7 +139,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if err := s.configureKymaVersion(&operation, log); err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters.PlanID)
@@ -150,10 +150,10 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }
 
@@ -175,10 +175,10 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 
 	// update operation version
 	var repeat time.Duration
-	if *operation, repeat = s.operationManager.UpdateOperation(*operation, func(operation *internal.UpgradeKymaOperation) {
+	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
-		return errors.New("unable to update operation with RuntimeVersion property")
+		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")
 	}
 
 	return nil
@@ -201,13 +201,13 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 		if hasMonitors && !inMaintenance {
 			log.Infof("executing init upgrade steps")
 			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	case UpgradeFinishSteps:
 		if hasMonitors && inMaintenance {
 			log.Infof("executing finish upgrade steps")
 			err = s.evaluationManager.RestoreStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	}
 
@@ -215,9 +215,9 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	case err == nil:
 		return operation, delay, nil
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 10*time.Second, 10*time.Minute, log)
 	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
 	}
 }
 
@@ -227,7 +227,7 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), errors.New(""), log)
 	}
 
 	if operation.ClusterConfigurationVersion != 0 {
@@ -261,7 +261,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
 		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
 		if operation.Description != postUpgradeDescription {
-			operation, delay = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 				operation.Description = postUpgradeDescription
 			}, log)
 			if delay != 0 {
@@ -281,8 +281,8 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg, log)
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), errors.New(""), log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), errors.New(""), log)
 }

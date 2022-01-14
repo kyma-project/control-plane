@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -36,7 +37,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 	}
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", errors.New(""), log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
@@ -51,7 +52,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 
-	newOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpdatingOperation) {
+	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.UpdatingOperation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}, log)
 	if retry > 0 {

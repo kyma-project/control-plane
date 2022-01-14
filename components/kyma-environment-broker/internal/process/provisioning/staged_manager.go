@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -105,14 +106,20 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
+		operation.LastError = kebError.ReasonForError(err)
+		defer m.callPubSubOutsideSteps(&operation, err)
+
 		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		operation.State = domain.Failed
 		_, err = m.operationStorage.UpdateProvisioningOperation(*operation)
 		if err != nil {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
+			operation.LastError = kebError.ReasonForError(err)
 			return time.Second, err
 		}
-		return 0, errors.New("operation has reached the time limit")
+
+		err = errors.New("operation has reached the time limit")
+		return 0, err
 	}
 
 	var when time.Duration
@@ -159,9 +166,14 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
 		Operation: processedOperation,
 	})
+
+	defer m.callPubSubOutsideSteps(processedOperation, err)
+
+	processedOperation.LastError = kebError.ReasonForError(err)
 	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
+		processedOperation.LastError = kebError.ReasonForError(err)
 		return time.Second, err
 	}
 
@@ -185,9 +197,19 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		start := time.Now()
 		logger.Infof("Start step")
 		processedOperation, when, err := step.Run(operation, logger)
+
+		if err != nil {
+			processedOperation.LastError = kebError.ReasonForError(err)
+			// only save to storage, skip for alerting if error
+			_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
+			if err != nil {
+				logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.Operation.ID, "error_component": processedOperation.LastError.Component, "error_reason": processedOperation.LastError.Reason})
+				logOperation.Infof("Unable to save operation with resolved last error from step: %s", step.Name())
+			}
+		}
+
 		m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
-			OldOperation: operation,
-			Operation:    processedOperation,
+			Operation: processedOperation,
 			StepProcessed: process.StepProcessed{
 				StepName: step.Name(),
 				Duration: time.Since(start),
@@ -205,4 +227,14 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
+}
+
+func (m *StagedManager) callPubSubOutsideSteps(operation *internal.ProvisioningOperation, err error) {
+	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
+		Operation: operation,
+		StepProcessed: process.StepProcessed{
+			Duration: time.Since(operation.CreatedAt),
+			Error:    err,
+		},
+	})
 }

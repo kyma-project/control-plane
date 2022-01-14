@@ -51,7 +51,7 @@ func (s *SCMigrationStep) Run(operation internal.UpdatingOperation, logger logru
 	}
 	c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, err.Error(), logger)
+		return s.operationManager.OperationFailed(operation, err.Error(), err, logger)
 	}
 	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
 	operation.RequiresReconcilerUpdate = true

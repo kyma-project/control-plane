@@ -52,7 +52,7 @@ func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.Fie
 		if err != nil {
 			if dberr.IsNotFound(err) {
 				log.Errorf("Instance does not exists.")
-				return s.operationManager.OperationFailed(operation, "The instance does not exists", log)
+				return s.operationManager.OperationFailed(operation, "The instance does not exists", err, log)
 			}
 			log.Errorf("Unable to get the instance: %s", err.Error())
 			return operation, time.Second, nil
@@ -61,11 +61,11 @@ func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.Fie
 		operation.InstanceDetails, err = inst.GetInstanceDetails()
 		if err != nil {
 			log.Errorf("Unable to provide Instance details: %s", err.Error())
-			return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", log)
+			return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", err, log)
 		}
 	}
 	log.Infof("Setting the operation to 'InProgress'")
-	newOp, retry := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+	newOp, retry, _ := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
 		op.State = domain.InProgress
 	}, log)
 	operation = newOp

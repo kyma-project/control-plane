@@ -40,7 +40,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	}
 	c, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, err.Error(), logger)
+		return s.operationManager.OperationFailed(operation, err.Error(), err, logger)
 	}
 	if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
 		logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)

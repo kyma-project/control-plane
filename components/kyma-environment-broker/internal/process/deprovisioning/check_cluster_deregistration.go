@@ -39,7 +39,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	}
 	if time.Since(operation.UpdatedAt) > s.timeout {
 		log.Infof("Cluster deregistration has reached the time limit: %s", s.timeout)
-		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)
 		return modifiedOp, d, nil
@@ -48,7 +48,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 	if kebError.IsNotFoundError(err) {
 		log.Info("cluster already deleted")
-		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)
 		return modifiedOp, d, nil
@@ -59,7 +59,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)
 		return modifiedOp, d, nil
@@ -70,14 +70,14 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	case reconcilerApi.StatusDeletePending, reconcilerApi.StatusDeleting, reconcilerApi.StatusDeleteErrorRetryable:
 		return operation, 30 * time.Second, nil
 	case reconcilerApi.StatusDeleted:
-		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)
 		return modifiedOp, d, nil
 	case reconcilerApi.StatusDeleteError, reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)
 		return modifiedOp, d, nil

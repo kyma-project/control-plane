@@ -57,7 +57,7 @@ func NewOperationResultCollector() *OperationResultCollector {
 			Subsystem: prometheusSubsystem,
 			Name:      "provisioning_result",
 			Help:      "Result of the provisioning",
-		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
+		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id", "error_component", "error_reason", "error_msg"}),
 		deprovisioningResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
@@ -174,8 +174,9 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
+	err := op.LastError
 	c.provisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID, err.Component, err.Reason, stepProcessed.Error.Error()).
 		Set(resultValue)
 
 	return nil

@@ -71,7 +71,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
 			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
@@ -103,9 +103,9 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade shoot input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }

@@ -15,8 +15,7 @@ type StepProcessed struct {
 
 type ProvisioningStepProcessed struct {
 	StepProcessed
-	OldOperation internal.ProvisioningOperation
-	Operation    internal.ProvisioningOperation
+	Operation internal.ProvisioningOperation
 }
 
 type UpdatingStepProcessed struct {

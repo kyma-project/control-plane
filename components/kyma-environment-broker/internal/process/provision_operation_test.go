@@ -27,7 +27,7 @@ func Test_Provision_RetryOperationOnce(t *testing.T) {
 	require.NoError(t, err)
 
 	// then - first call
-	op, when, err := opManager.RetryOperationOnce(op, errorMessage, retryInterval, fixLogger())
+	op, when, err := opManager.RetryOperationOnce(op, errorMessage, err, retryInterval, fixLogger())
 
 	// when - first retry
 	assert.True(t, when > 0)
@@ -37,7 +37,7 @@ func Test_Provision_RetryOperationOnce(t *testing.T) {
 	t.Log(op.UpdatedAt.String())
 	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
 	t.Log(op.UpdatedAt.String())
-	op, when, err = opManager.RetryOperationOnce(op, errorMessage, retryInterval, fixLogger())
+	op, when, err = opManager.RetryOperationOnce(op, errorMessage, err, retryInterval, fixLogger())
 
 	// when - second call => no retry
 	assert.True(t, when == 0)
@@ -60,7 +60,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	require.NoError(t, err)
 
 	// then - first call
-	op, when, err := opManager.RetryOperation(op, errorMessage, retryInterval, maxtime, fixLogger())
+	op, when, err := opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
 
 	// when - first retry
 	assert.True(t, when > 0)
@@ -70,7 +70,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	t.Log(op.UpdatedAt.String())
 	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
 	t.Log(op.UpdatedAt.String())
-	op, when, err = opManager.RetryOperation(op, errorMessage, retryInterval, maxtime, fixLogger())
+	op, when, err = opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
 
 	// when - second call => retry
 	assert.True(t, when > 0)

@@ -74,7 +74,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	// configure the Kyma version to use
 	err := s.configureKymaVersion(&operation, log)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	// create Provisioner InputCreator
@@ -88,16 +88,19 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
-			return s.operationManager.RetryOperation(operation, err.Error(), 1*time.Second, 5*time.Second, log)
+			kebError.SetLastError(&operation.LastError, kebError.ErrorDB, "", nil, log)
+			return s.operationManager.RetryOperation(operation, err.Error(), err, 1*time.Second, 5*time.Second, log)
 		}
 
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }
 
@@ -111,10 +114,10 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 	}
 
 	var repeat time.Duration
-	if *operation, repeat = s.operationManager.UpdateOperation(*operation, func(operation *internal.ProvisioningOperation) {
+	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.ProvisioningOperation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
-		return errors.New("unable to update operation with RuntimeVersion property")
+		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")
 	}
 	return nil
 }

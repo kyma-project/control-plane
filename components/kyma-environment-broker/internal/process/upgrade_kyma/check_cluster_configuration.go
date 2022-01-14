@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,7 +40,7 @@ func (s *CheckClusterConfigurationStep) Name() string {
 func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.reconciliationTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), errors.New(""), log)
 	}
 
 	if operation.ClusterConfigurationVersion == 0 {
@@ -56,7 +57,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), err, log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
@@ -71,8 +72,8 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return s.operationManager.OperationFailed(operation, errMsg, log)
+		return s.operationManager.OperationFailed(operation, errMsg, errors.New(""), log)
 	default:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), errors.New(""), log)
 	}
 }

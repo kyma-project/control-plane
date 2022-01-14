@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,21 +40,23 @@ func (s *CheckStep) Name() string {
 func (s *CheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", errors.New(""), log)
 	}
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeID))
 }
 
 func (s *CheckStep) checkRuntimeStatus(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+	emptyErr := errors.New("")
+
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), emptyErr, log)
 	}
 
 	if operation.ProvisionerOperationID == "" {
 		msg := "Operation dos not contain Provisioner Operation ID"
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, msg, emptyErr, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
@@ -76,8 +79,8 @@ func (s *CheckStep) checkRuntimeStatus(operation internal.UpdatingOperation, log
 	case gqlschema.OperationStatePending:
 		return operation, time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), emptyErr, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), emptyErr, log)
 }

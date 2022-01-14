@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -46,7 +47,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", errors.New(""), log)
 	}
 
 	overridesVersion := s.getOverridesVersion(operation)
@@ -56,7 +57,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 		if err != nil {
 			errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
 			log.Error(errMsg)
-			return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
+			return s.operationManager.RetryOperation(operation, errMsg, err, 10*time.Second, 30*time.Minute, log)
 		}
 
 		overridesVersion = runtimeVersion.Version
@@ -67,7 +68,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s: %s", operation.ID, err.Error())
 		log.Error(errMsg)
-		return s.operationManager.RetryOperation(operation, errMsg, 10*time.Second, 30*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, errMsg, err, 10*time.Second, 30*time.Minute, log)
 	}
 
 	return operation, 0, nil

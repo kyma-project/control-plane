@@ -42,7 +42,7 @@ func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, 
 		return s.handleError(operation, err, log, "cannot remove DataTenant")
 	}
 
-	modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+	modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 		op.ClusterConfigurationDeleted = true
 	}, log)
 

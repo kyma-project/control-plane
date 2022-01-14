@@ -25,7 +25,7 @@ func NewProvisionOperationManager(storage storage.Operations) *ProvisionOperatio
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
 func (om *ProvisionOperationManager) OperationSucceeded(operation internal.ProvisioningOperation, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Succeeded, description, log)
+	updatedOperation, repeat, _ := om.update(operation, domain.Succeeded, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
@@ -35,18 +35,18 @@ func (om *ProvisionOperationManager) OperationSucceeded(operation internal.Provi
 }
 
 // OperationFailed marks the operation as failed and only repeats it if there is a storage error
-func (om *ProvisionOperationManager) OperationFailed(operation internal.ProvisioningOperation, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	updatedOperation, repeat := om.update(operation, domain.Failed, description, log)
+func (om *ProvisionOperationManager) OperationFailed(operation internal.ProvisioningOperation, description string, err error, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	updatedOperation, repeat, _ := om.update(operation, domain.Failed, description, log)
 	// repeat in case of storage error
 	if repeat != 0 {
 		return updatedOperation, repeat, nil
 	}
 
-	return updatedOperation, 0, errors.New(description)
+	return updatedOperation, 0, errors.Wrap(err, description)
 }
 
 // UpdateOperation updates a given operation and handles conflict situation
-func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, update func(operation *internal.ProvisioningOperation), log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration) {
+func (om *ProvisionOperationManager) UpdateOperation(operation internal.ProvisioningOperation, update func(operation *internal.ProvisioningOperation), log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	update(&operation)
 	updatedOperation, err := om.storage.UpdateProvisioningOperation(operation)
 	switch {
@@ -55,20 +55,20 @@ func (om *ProvisionOperationManager) UpdateOperation(operation internal.Provisio
 			op, err := om.storage.GetProvisioningOperationByID(operation.ID)
 			if err != nil {
 				log.Errorf("while getting operation: %v", err)
-				return operation, 1 * time.Minute
+				return operation, 1 * time.Minute, err
 			}
 			update(op)
 			updatedOperation, err = om.storage.UpdateProvisioningOperation(*op)
 			if err != nil {
 				log.Errorf("while updating operation after conflict: %v", err)
-				return operation, 1 * time.Minute
+				return operation, 1 * time.Minute, err
 			}
 		}
 	case err != nil:
 		log.Errorf("while updating operation: %v", err)
-		return operation, 1 * time.Minute
+		return operation, 1 * time.Minute, err
 	}
-	return *updatedOperation, 0
+	return *updatedOperation, 0, nil
 }
 
 // Deprecated: SimpleUpdateOperation updates a given operation without handling conflicts. Should be used when operation's data mutations are not clear
@@ -84,12 +84,12 @@ func (om *ProvisionOperationManager) SimpleUpdateOperation(operation internal.Pr
 }
 
 // RetryOperationOnce retries the operation once and fails the operation when call second time
-func (om *ProvisionOperationManager) RetryOperationOnce(operation internal.ProvisioningOperation, errorMessage string, wait time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	return om.RetryOperation(operation, errorMessage, wait, wait+1, log)
+func (om *ProvisionOperationManager) RetryOperationOnce(operation internal.ProvisioningOperation, errorMessage string, err error, wait time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	return om.RetryOperation(operation, errorMessage, err, wait, wait+1, log)
 }
 
 // RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed
-func (om *ProvisionOperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (om *ProvisionOperationManager) RetryOperation(operation internal.ProvisioningOperation, errorMessage string, err error, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	since := time.Since(operation.UpdatedAt)
 
 	log.Infof("Retry Operation was triggered with message: %s", errorMessage)
@@ -98,15 +98,15 @@ func (om *ProvisionOperationManager) RetryOperation(operation internal.Provision
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage, log)
+	return om.OperationFailed(operation, errorMessage, err, log)
 }
 
 func (om *ProvisionOperationManager) HandleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
-	return om.OperationFailed(operation, msg, log)
+	return om.OperationFailed(operation, msg, err, log)
 }
 
-func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration) {
+func (om *ProvisionOperationManager) update(operation internal.ProvisioningOperation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	return om.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.State = state
 		operation.Description = fmt.Sprintf("%s : %s", operation.Description, description)

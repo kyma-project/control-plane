@@ -52,12 +52,12 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeKymaTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout), errors.New(""), log)
 	}
 
 	requestInput, err := s.createUpgradeKymaInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeKyma input", err, log)
 	}
 
 	if operation.DryRun {
@@ -80,7 +80,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 			return operation, s.timeSchedule.Retry, nil
 		}
 		repeat := time.Duration(0)
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 			operation.ProvisionerOperationID = *provisionerResponse.ID
 			operation.Description = "kyma upgrade in progress"
 		}, log)

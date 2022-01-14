@@ -42,13 +42,13 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.ProvisioningOperat
 	}
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), errors.New(""), log)
 	}
 
 	requestInput, err := s.createProvisionInput(operation)
 	if err != nil {
 		log.Errorf("Unable to create provisioning input: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", err, log)
 	}
 
 	log.Infof("call ProvisionRuntime: kubernetesVersion=%s, region=%s, provider=%s, name=%s",
@@ -64,12 +64,12 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.ProvisioningOperat
 		return operation, 5 * time.Second, nil
 	case err != nil:
 		log.Errorf("call to Provisioner failed: %s", err)
-		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", log)
+		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", err, log)
 	}
 	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s", *provisionerResponse.RuntimeID)
 
 	repeat := time.Duration(0)
-	operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		if provisionerResponse.RuntimeID != nil {
 			operation.RuntimeID = *provisionerResponse.RuntimeID

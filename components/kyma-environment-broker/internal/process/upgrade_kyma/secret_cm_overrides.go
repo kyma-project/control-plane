@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"errors"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -45,17 +46,17 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", errors.New(""), log)
 	}
 
 	version, err := s.getRuntimeVersion(operation)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version); err != nil {
 		log.Errorf(err.Error())
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 30*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 10*time.Second, 30*time.Minute, log)
 	}
 
 	return operation, 0, nil

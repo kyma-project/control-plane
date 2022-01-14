@@ -46,7 +46,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
@@ -59,7 +59,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 		}
 
 		repeat := time.Duration(0)
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.ProvisionerOperationID = *provisionerResponse.ID
 			op.Description = "update in progress"
 		}, log)
