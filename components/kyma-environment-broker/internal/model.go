@@ -439,6 +439,13 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 	return r.KymaConfig
 }
 
+func (r *RuntimeState) GetKymaVersion() string {
+	if r.ClusterSetup != nil {
+		return r.ClusterSetup.KymaConfig.Version
+	}
+	return r.KymaConfig.Version
+}
+
 func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
 	var components []*gqlschema.ComponentConfigurationInput
 	for _, cmp := range r.ClusterSetup.KymaConfig.Components {

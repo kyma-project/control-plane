@@ -72,9 +72,8 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeID := "runtimeID"
 		fixOperationID := "operationID"
 		givenRuntimeState := fixture.FixRuntimeState(fixRuntimeStateID, fixRuntimeID, fixOperationID)
-		givenRuntimeState.ClusterSetup = &reconcilerApi.Cluster{
-			RuntimeID: fixRuntimeID,
-		}
+		fixClusterSetup := fixture.FixClusterSetup(fixRuntimeID)
+		givenRuntimeState.ClusterSetup = &fixClusterSetup
 
 		storage := brokerStorage.RuntimeStates()
 
@@ -86,6 +85,9 @@ func TestRuntimeState(t *testing.T) {
 		assert.Len(t, runtimeStates, 1)
 		assert.Equal(t, fixRuntimeStateID, runtimeStates[0].ID)
 		assert.Equal(t, fixRuntimeID, runtimeStates[0].ClusterSetup.RuntimeID)
+
+		const kymaVersion = "2.0.0"
+		assert.Equal(t, kymaVersion, runtimeStates[0].ClusterSetup.KymaConfig.Version)
 
 		state, err := storage.GetByOperationID(fixOperationID)
 		require.NoError(t, err)
