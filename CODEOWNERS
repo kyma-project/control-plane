@@ -53,7 +53,7 @@
 /components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All .md files
-*.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
+*.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl @grego952
 
 # Owners of the .kyma-project-io folder
 /.kyma-project-io/ @m00g3n @pPrecel @dbadura
