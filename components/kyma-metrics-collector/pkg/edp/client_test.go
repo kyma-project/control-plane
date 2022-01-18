@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/sirupsen/logrus"
 
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
 	"github.com/onsi/gomega"
@@ -55,7 +55,7 @@ func TestClient(t *testing.T) {
 	edpURL, err := url.ParseRequestURI(srv.URL)
 	g.Expect(err).Should(gomega.BeNil())
 
-	edpClient := NewClient(config, logrus.New())
+	edpClient := NewClient(config, logger.NewLogger(true))
 	testData := []byte("foodata")
 	gotReq, err := edpClient.NewRequest(dataTenant)
 	g.Expect(err).Should(gomega.BeNil())
@@ -98,7 +98,7 @@ func TestClientRetry(t *testing.T) {
 	edpURL, err := url.ParseRequestURI(srv.URL)
 	g.Expect(err).Should(gomega.BeNil())
 
-	edpClient := NewClient(config, logrus.New())
+	edpClient := NewClient(config, logger.NewLogger(true))
 	testData := []byte("foodata")
 	gotReq, err := edpClient.NewRequest(dataTenant)
 	g.Expect(err).Should(gomega.BeNil())
