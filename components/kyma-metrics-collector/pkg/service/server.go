@@ -1,6 +1,7 @@
 package service
 
 import (
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,8 +11,6 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 type Server struct {
 	Addr   string
 	Router *mux.Router
-	Logger *logrus.Logger
+	Logger *zap.SugaredLogger
 }
 
 // Start starts the HTTP server and shut it down when stop channel is closed.

@@ -3,6 +3,7 @@ package keb
 import (
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -13,13 +14,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/retry"
 )
 
 type Client struct {
 	HTTPClient *http.Client
-	Logger     *logrus.Logger
+	Logger     *zap.SugaredLogger
 	Config     *Config
 }
 
@@ -28,7 +28,7 @@ const (
 	backOffFactor = 5.0
 )
 
-func NewClient(config *Config, logger *logrus.Logger) *Client {
+func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	kebHTTPClient := &http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   config.Timeout,

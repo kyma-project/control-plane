@@ -3,6 +3,7 @@ package edp
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 
@@ -11,14 +12,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Client struct {
 	HttpClient *http.Client
 	Config     *Config
-	Logger     *logrus.Logger
+	Logger     *zap.SugaredLogger
 }
 
 const (
@@ -30,7 +29,7 @@ const (
 	authorizationKeyHeader = "Authorization"
 )
 
-func NewClient(config *Config, logger *logrus.Logger) *Client {
+func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	httpClient := &http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   config.Timeout,

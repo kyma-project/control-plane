@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/pprof"
 
@@ -20,6 +21,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/service"
 
 	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
@@ -30,7 +32,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/env"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -41,40 +42,41 @@ const (
 func main() {
 
 	opts := options.ParseArgs()
-	log := logrus.New()
-	log.Level = opts.LogLevel
-	log.Print("Starting application with options: ", opts.String())
+	//log := logrus.New()
+	logger := log.NewLogger(false)
+	//log.Level = opts.LogLevel
+	//log.Print("Starting application with options: ", opts.String())
+	logger.Infof("Starting application with options: %v", opts.String())
 
 	cfg := new(env.Config)
 	if err := envconfig.Process("", cfg); err != nil {
-		log.Fatalf("failed to load env config: %s", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load env config")
 	}
-	log.Debugf("log level: %s", log.Level.String())
 
 	// Load public cloud specs
 	publicCloudSpecs, err := kmcprocess.LoadPublicCloudSpecs(cfg)
 	if err != nil {
-		log.Fatalf("failed to load public cloud specs: %v", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load public cloud spec")
 	}
-	log.Debugf("public cloud spec: %v", publicCloudSpecs)
+	logger.Debugf("public cloud spec: %v", publicCloudSpecs)
 
 	secretClient, err := gardenersecret.NewClient(opts)
 	if err != nil {
-		log.Fatalf("failed to generate client for gardener secrets: %v", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Generate client for gardener secrets")
 	}
 
 	shootClient, err := gardenershoot.NewClient(opts)
 	if err != nil {
-		log.Fatalf("failed to generate client for gardener shoots: %v", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Generate client for gardener shoots")
 	}
 
 	// Create a client for KEB communication
 	kebConfig := new(keb.Config)
 	if err := envconfig.Process("", kebConfig); err != nil {
-		log.Fatalf("failed to load KEB config: %s", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load KEB config")
 	}
-	kebClient := keb.NewClient(kebConfig, log)
-	log.Debugf("keb config: %v", kebConfig)
+	kebClient := keb.NewClient(kebConfig, logger)
+	logger.Debugf("keb config: %v", kebConfig)
 
 	// Creating cache with no expiration and the data will never be cleaned up
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
@@ -82,9 +84,9 @@ func main() {
 	// Creating EDP client
 	edpConfig := new(edp.Config)
 	if err := envconfig.Process("", edpConfig); err != nil {
-		log.Fatalf("failed to load EDP config: %s", err)
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load EDP config")
 	}
-	edpClient := edp.NewClient(edpConfig, log)
+	edpClient := edp.NewClient(edpConfig, logger)
 
 	queue := workqueue.NewDelayingQueue()
 
@@ -93,7 +95,7 @@ func main() {
 		ShootClient:     shootClient,
 		SecretClient:    secretClient,
 		EDPClient:       edpClient,
-		Logger:          log,
+		Logger:          logger,
 		Providers:       publicCloudSpecs,
 		Cache:           cache,
 		ScrapeInterval:  opts.ScrapeInterval,
@@ -109,7 +111,7 @@ func main() {
 
 	// add debug service.
 	if opts.DebugPort > 0 {
-		enableDebugging(opts.DebugPort, log)
+		enableDebugging(opts.DebugPort, logger)
 	}
 	router := mux.NewRouter()
 	router.Path(healthzPath).HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -119,7 +121,7 @@ func main() {
 
 	kmcSvr := service.Server{
 		Addr:   fmt.Sprintf(":%d", opts.ListenAddr),
-		Logger: log,
+		Logger: logger,
 		Router: router,
 	}
 
@@ -127,7 +129,7 @@ func main() {
 	kmcSvr.Start()
 }
 
-func enableDebugging(debugPort int, log *logrus.Logger) {
+func enableDebugging(debugPort int, log *zap.SugaredLogger) {
 	debugRouter := mux.NewRouter()
 	// for security reason we always listen on localhost
 	debugSvc := service.Server{

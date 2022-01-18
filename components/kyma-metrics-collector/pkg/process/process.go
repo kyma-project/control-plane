@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 )
 
 type Process struct {
@@ -44,7 +44,7 @@ type Process struct {
 	NodeConfig      skrnode.ConfigInf
 	PVCConfig       skrpvc.ConfigInf
 	SvcConfig       skrsvc.ConfigInf
-	Logger          *logrus.Logger
+	Logger          *zap.SugaredLogger
 }
 
 const (
