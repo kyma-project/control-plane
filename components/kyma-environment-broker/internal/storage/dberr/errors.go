@@ -26,7 +26,6 @@ const (
 type Error interface {
 	Append(string, ...interface{}) Error
 	Code() int
-	Reason() DBErrorReason
 	Error() string
 }
 
@@ -71,6 +70,14 @@ func (e dbError) Code() int {
 	return e.code
 }
 
+func (e dbError) Error() string {
+	return e.message
+}
+
+func (e dbError) Component() string {
+	return kebError.ErrorDB
+}
+
 func (e dbError) Reason() DBErrorReason {
 	reason := ErrorDBUnknown
 
@@ -88,10 +95,6 @@ func (e dbError) Reason() DBErrorReason {
 	return reason
 }
 
-func (e dbError) Error() string {
-	return e.message
-}
-
 func IsConflict(err error) bool {
 	dbe, ok := err.(Error)
 	if !ok {
@@ -99,19 +102,3 @@ func IsConflict(err error) bool {
 	}
 	return dbe.Code() == CodeConflict
 }
-
-// func IsInternal(err error) bool {
-// 	dbe, ok := err.(Error)
-// 	if !ok {
-// 		return false
-// 	}
-// 	return dbe.Code() == CodeInternal
-// }
-
-// func IsAlreadyExists(err error) bool {
-// 	dbe, ok := err.(Error)
-// 	if !ok {
-// 		return false
-// 	}
-// 	return dbe.Code() == CodeAlreadyExists
-// }

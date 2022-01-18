@@ -88,18 +88,15 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
-			kebError.SetLastError(&operation.LastError, kebError.ErrorDB, "", nil, log)
 			return s.operationManager.RetryOperation(operation, err.Error(), err, 1*time.Second, 5*time.Second, log)
 		}
 
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
-		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
 		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }

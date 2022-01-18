@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -40,7 +39,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	hypType, err := hyperscaler.FromCloudProvider(operation.InputCreator.Provider())
 	if err != nil {
 		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
-		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
 		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
 	}
 
@@ -66,7 +64,6 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning secret binding for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
-		kebError.SetLastError(&operation.LastError, kebError.ErrorKEB, kebError.ErrorKEBInternal, nil, log)
 		return s.operationManager.OperationFailed(operation, errMsg, err, log)
 	}
 	operation.ProvisioningParameters.Parameters.TargetSecret = &secretName
