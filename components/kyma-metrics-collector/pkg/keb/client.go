@@ -3,10 +3,11 @@ package keb
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

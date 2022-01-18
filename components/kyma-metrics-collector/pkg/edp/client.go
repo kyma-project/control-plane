@@ -3,9 +3,10 @@ package edp
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"

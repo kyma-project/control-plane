@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/pprof"
+
+	"go.uber.org/zap"
 
 	skrsvc "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/skr/svc"
 
