@@ -24,6 +24,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 type Config struct {
@@ -44,6 +46,8 @@ type Config struct {
 	UpgradeTest  bool `envconfig:"default=false"`
 	DummyTest    bool `default:"false"`
 	CleanupPhase bool `default:"false"`
+
+	BusolaURL string
 }
 
 // Suite provides set of clients able to provision and test Kyma runtime
@@ -74,6 +78,8 @@ type Suite struct {
 	IsUpgradeTest  bool
 	IsDummyTest    bool
 	IsCleanupPhase bool
+
+	BusolaURL string
 }
 
 const (
@@ -152,6 +158,8 @@ func newTestSuite(t *testing.T) *Suite {
 		IsUpgradeTest:  cfg.UpgradeTest,
 		IsDummyTest:    cfg.DummyTest,
 		IsCleanupPhase: cfg.CleanupPhase,
+
+		BusolaURL: cfg.BusolaURL,
 	}
 
 	if suite.IsUpgradeTest {
