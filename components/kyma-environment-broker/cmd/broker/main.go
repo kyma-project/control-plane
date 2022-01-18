@@ -755,7 +755,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewBTPOperatorCheckStep(db.Operations(), runtimeProvider),
+			step:      update.NewBTPOperatorCheckStep(db.Operations()),
 			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
