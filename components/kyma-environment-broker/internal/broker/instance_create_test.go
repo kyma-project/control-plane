@@ -106,7 +106,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
+		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, instance.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
