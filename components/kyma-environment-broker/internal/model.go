@@ -215,7 +215,7 @@ type Operation struct {
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling && o.State != orchestration.Retrying
 }
 
 // Orchestration holds all information about an orchestration.
@@ -375,6 +375,8 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
 
 // UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
@@ -435,6 +437,13 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 		return r.buildKymaConfigFromClusterSetup()
 	}
 	return r.KymaConfig
+}
+
+func (r *RuntimeState) GetKymaVersion() string {
+	if r.ClusterSetup != nil {
+		return r.ClusterSetup.KymaConfig.Version
+	}
+	return r.KymaConfig.Version
 }
 
 func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {

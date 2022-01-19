@@ -493,6 +493,38 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 	assert.NoError(s.t, err)
 }
 
+func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID string) {
+	var updatingOp *internal.UpdatingOperation
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		if op.ProvisionerOperationID != "" {
+			updatingOp = op
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+
+	var state *reconcilerApi.HTTPClusterResponse
+	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
+		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
+			if err != nil {
+				return false, err
+			}
+			if state.Cluster != "" {
+				s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, ccv, reconcilerApi.StatusReady)
+				return true, nil
+			}
+			return false, nil
+		})
+		assert.NoError(s.t, err)
+	}
+}
+
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
@@ -593,10 +625,13 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-
+	assert.NotNil(s.t, upgradeKymaOp)
 	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
 		if state.Cluster != "" {
 			return true, nil
 		}

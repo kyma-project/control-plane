@@ -72,38 +72,95 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 }
 
 func (u *upgradeClusterFactory) ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
-	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.InProgress, orchestration.Pending}})
+	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.InProgress, orchestration.Retrying, orchestration.Pending}})
 	if err != nil {
 		return nil, err
 	}
 
 	pending := make([]orchestration.RuntimeOperation, 0)
+	retrying := make([]orchestration.RuntimeOperation, 0)
 	inProgress := make([]orchestration.RuntimeOperation, 0)
 	for _, op := range ops {
 		if op.State == orchestration.Pending {
 			pending = append(pending, op.RuntimeOperation)
+		}
+		if op.State == orchestration.Retrying {
+			runtimeop, err := u.updateRetryingOperation(op)
+			if err != nil {
+				return nil, err
+			}
+			retrying = append(retrying, runtimeop)
 		}
 		if op.State == orchestration.InProgress {
 			inProgress = append(inProgress, op.RuntimeOperation)
 		}
 	}
 
-	return append(inProgress, pending...), nil
+	return append(inProgress, append(retrying, pending...)...), nil
 }
 
 func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Pending}})
 	if err != nil {
-		return errors.Wrap(err, "while listing upgrade operations")
+		return errors.Wrap(err, "while listing upgrade cluster operations")
 	}
 	for _, op := range ops {
 		op.State = orchestration.Canceled
 		op.Description = "Operation was canceled"
 		_, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
 		if err != nil {
-			return errors.Wrap(err, "while updating upgrade kyma operation")
+			return errors.Wrap(err, "while updating upgrade cluster operation")
 		}
 	}
 
 	return nil
+}
+
+// get current retrying operations, update state to pending and update other required params to storage
+func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+	result := []orchestration.RuntimeOperation{}
+	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing retrying operations")
+	}
+
+	for _, op := range ops {
+		if updateMWindow {
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			days := []string{}
+
+			// use the latest policy
+			if schedule == orchestration.MaintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
+			}
+			op.MaintenanceWindowBegin = windowBegin
+			op.MaintenanceWindowEnd = windowEnd
+			op.MaintenanceDays = days
+		}
+
+		runtimeop, err := u.updateRetryingOperation(op)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, runtimeop)
+	}
+
+	return result, nil
+}
+
+// update storage in corresponding upgrade factory to avoid too many storage read and write
+func (u *upgradeClusterFactory) updateRetryingOperation(op internal.UpgradeClusterOperation) (orchestration.RuntimeOperation, error) {
+	op.UpdatedAt = time.Now()
+	op.State = orchestration.Pending
+	op.Description = "Operation retry triggered"
+	op.ProvisionerOperationID = ""
+
+	opUpdated, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
+	if err != nil {
+		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
+	}
+
+	return opUpdated.RuntimeOperation, nil
 }

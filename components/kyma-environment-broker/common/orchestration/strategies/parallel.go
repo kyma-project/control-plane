@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -47,21 +48,14 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 
 	execID := uuid.New().String()
 	p.mux.Lock()
-	defer p.mux.Unlock()
-	p.scheduleNum[execID] = len(operations)
 	p.wg[execID] = &sync.WaitGroup{}
 	p.dq[execID] = workqueue.NewDelayingQueue()
 	p.pq[execID] = workqueue.NewDelayingQueue()
+	p.mux.Unlock()
 
-	for i, op := range operations {
-		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
-		if err != nil {
-			//error when read from storage or update to storage during maintenance window reschedule
-			p.handleRescheduleErrorOperation(execID, &operations[i])
-			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
-		} else {
-			p.dq[execID].AddAfter(&operations[i], duration)
-		}
+	err := p.Insert(execID, operations, strategySpec)
+	if err != nil {
+		return execID, errors.Wrap(err, "while inserting operations to queue")
 	}
 
 	// Create workers
@@ -70,6 +64,31 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 	}
 
 	return execID, nil
+}
+
+func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orchestration.RuntimeOperation, strategySpec orchestration.StrategySpec) error {
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
+	for i, op := range operations {
+		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
+		if err != nil {
+			//error when read from storage or update to storage during maintenance window reschedule
+			p.handleRescheduleErrorOperation(execID, &operations[i])
+			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
+		} else {
+			dq, exist := p.dq[execID]
+			if !exist {
+				return fmt.Errorf("no queue for the execution ID: %s", execID)
+			}
+
+			dq.AddAfter(&operations[i], duration)
+		}
+
+		p.scheduleNum[execID] += 1
+	}
+
+	return nil
 }
 
 func (p *ParallelOrchestrationStrategy) createWorker(execID string, strategy orchestration.StrategySpec) {

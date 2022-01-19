@@ -29,7 +29,7 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:        "10.250.0.0/19",
 			AutoScalerMin:     2,
 			AutoScalerMax:     4,
-			MaxSurge:          4,
+			MaxSurge:          1,
 			MaxUnavailable:    0,
 			ExposureClassName: ptr.String(DefaultExposureClass),
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{

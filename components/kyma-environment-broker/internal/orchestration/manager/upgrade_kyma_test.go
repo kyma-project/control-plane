@@ -1,6 +1,7 @@
 package manager_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -239,6 +240,120 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		assert.Equal(t, orchestration.Canceled, string(op.State))
 	})
+
+	t.Run("Retrying failed orchestration", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		opId := "op-" + id
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Retrying,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+			}},
+		})
+		require.NoError(t, err)
+
+		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              opId,
+				OrchestrationID: id,
+				State:           orchestration.Retrying,
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      opId,
+				Runtime: orchestration.Runtime{},
+				DryRun:  false,
+			},
+			InputCreator: nil,
+		})
+		require.NoError(t, err)
+
+		executor := retryTestExecutor{
+			store:       store,
+			upgradeType: orchestration.UpgradeKymaOrchestration,
+		}
+		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, o.State)
+
+		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, string(op.State))
+	})
+
+	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		opId := "op-" + id
+		err := store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+			}},
+		})
+		require.NoError(t, err)
+
+		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              opId,
+				OrchestrationID: id,
+				State:           orchestration.Retrying,
+			},
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      opId,
+				Runtime: orchestration.Runtime{},
+				DryRun:  false,
+			},
+			InputCreator: nil,
+		})
+		require.NoError(t, err)
+
+		executor := retryTestExecutor{
+			store:       store,
+			upgradeType: orchestration.UpgradeKymaOrchestration,
+		}
+		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, o.State)
+
+		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, string(op.State))
+	})
 }
 
 type testExecutor struct{}
@@ -248,5 +363,39 @@ func (t *testExecutor) Execute(opID string) (time.Duration, error) {
 }
 
 func (t *testExecutor) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
+	return nil
+}
+
+type retryTestExecutor struct {
+	store       storage.BrokerStorage
+	upgradeType orchestration.Type
+}
+
+func (t *retryTestExecutor) Execute(opID string) (time.Duration, error) {
+	switch t.upgradeType {
+	case orchestration.UpgradeKymaOrchestration:
+		op, err := t.store.Operations().GetUpgradeKymaOperationByID(opID)
+		if err != nil {
+			return 0, err
+		}
+		op.State = orchestration.Succeeded
+		_, err = t.store.Operations().UpdateUpgradeKymaOperation(*op)
+
+		return 0, err
+	case orchestration.UpgradeClusterOrchestration:
+		op, err := t.store.Operations().GetUpgradeClusterOperationByID(opID)
+		if err != nil {
+			return 0, err
+		}
+		op.State = orchestration.Succeeded
+		_, err = t.store.Operations().UpdateUpgradeClusterOperation(*op)
+
+		return 0, err
+	}
+
+	return 0, errors.New("unknown upgrade type")
+}
+
+func (t *retryTestExecutor) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {
 	return nil
 }

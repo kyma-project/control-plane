@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -24,6 +25,7 @@ type OperationFactory interface {
 	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error)
 	ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
 	CancelOperations(orchestrationID string) error
+	RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error)
 }
 
 type orchestrationManager struct {
@@ -127,12 +129,14 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		for _, r := range runtimes {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
+			days := []string{}
 
 			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd = m.resolveMaintenanceWindowTime(r, policy)
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
 			}
 			r.MaintenanceWindowBegin = windowBegin
 			r.MaintenanceWindowEnd = windowEnd
+			r.MaintenanceDays = days
 
 			inst, err := m.instanceStorage.GetByID(r.InstanceID)
 			if err != nil {
@@ -160,6 +164,20 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			o.State = orchestration.Succeeded
 		}
 		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
+	} else if o.State == orchestration.Retrying {
+		// look for the ops with retrying state, then convert the op state to pending and orchestration state to in progress
+		var err error
+		result, err = m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, policy, true)
+		if err != nil {
+			return result, errors.Wrap(err, "while resolving retrying orchestration")
+		}
+
+		if len(result) != 0 {
+			o.State = orchestration.InProgress
+		} else {
+			o.State = orchestration.Succeeded
+		}
+		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(result)))
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error
@@ -167,6 +185,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		if err != nil {
 			return result, err
 		}
+
 		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	}
 
@@ -218,6 +237,23 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		if found {
 			numberOfNotFinished += numberOfPending
 		}
+		numberOfRetrying, found := stats[orchestration.Retrying]
+		if found {
+			// handle the retrying ops during in progress orchestration
+			// use the existing resolved policy in op
+			numberOfNotFinished += numberOfRetrying
+			ops, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, orchestration.MaintenancePolicy{}, false)
+			if err != nil {
+				// don't block the polling and cancel signal
+				log.Errorf("while handling retrying operations: %v", err)
+			} else {
+				err := strategy.Insert(execID, ops, o.Parameters.Strategy)
+				if err != nil {
+					return false, errors.Wrap(err, "while inserting operations to queue")
+				}
+			}
+
+		}
 
 		// don't wait for pending operations if orchestration was canceled
 		if canceled {
@@ -232,6 +268,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 
 	return m.resolveOrchestration(o, strategy, execID, stats)
 }
+
 func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execID string, stats map[string]int) (*internal.Orchestration, error) {
 	if o.State == orchestration.Canceling {
 		err := m.factory.CancelOperations(o.OrchestrationID)
@@ -251,7 +288,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves the next exact maintenance window time for the runtime
-func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time) {
+func resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time, []string) {
 	ruleMatched := false
 
 	for _, p := range policy.Rules {
@@ -332,7 +369,7 @@ func (m *orchestrationManager) resolveMaintenanceWindowTime(r orchestration.Runt
 		end = end.AddDate(0, 0, diff)
 	}
 
-	return start, end
+	return start, end, r.MaintenanceDays
 }
 
 func (m *orchestrationManager) failOrchestration(o *internal.Orchestration, err error) (time.Duration, error) {
@@ -352,4 +389,12 @@ func (m *orchestrationManager) updateOrchestration(o *internal.Orchestration, st
 		}
 	}
 	return 0
+}
+
+func updateRetryingDescription(desc string, newDesc string) string {
+	if strings.Contains(desc, "retrying") {
+		return strings.Replace(desc, "retrying", newDesc, -1)
+	}
+
+	return desc + ", " + newDesc
 }

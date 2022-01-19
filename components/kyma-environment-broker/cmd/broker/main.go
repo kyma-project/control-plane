@@ -488,6 +488,9 @@ func reprocessOrchestrations(orchestrationType orchestrationExt.Type, orchestrat
 	if err := processOrchestration(orchestrationType, orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
 		return errors.Wrapf(err, "while processing pending %s orchestrations", orchestrationType)
 	}
+	if err := processOrchestration(orchestrationType, orchestrationExt.Retrying, orchestrationsStorage, queue, log); err != nil {
+		return errors.Wrapf(err, "while processing retrying %s orchestrations", orchestrationType)
+	}
 	return nil
 }
 
@@ -875,9 +878,12 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		step     upgrade_kyma.Step
 		cnd      upgrade_kyma.StepCondition
 	}{
+		// check cluster configuration is the first step - to not execute other steps, when cluster configuration was applied
+		// this should be moved to the end when we introduce stages like in the provisioning process
+		// (also return operation, 0, nil at the end of apply_cluster_configuration)
 		{
-			weight: 2,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
+			weight: 1,
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{

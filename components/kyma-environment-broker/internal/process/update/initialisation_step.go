@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -43,7 +45,7 @@ func NewInitialisationStep(is storage.Instances, os storage.Operations, b input.
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Upgrade_Kyma_Initialisation"
+	return "Update_Kyma_Initialisation"
 }
 
 func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
@@ -56,21 +58,37 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 
 	if operation.State == orchestration.Pending {
 		if !lastOp.IsFinished() {
+			log.Infof("waiting for %s operation (%s) to be finished", lastOp.Type, lastOp.ID)
 			return operation, time.Minute, nil
 		}
 
 		// read the instsance details (it could happen that created updating operation has outdated one)
 		instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 		if err != nil {
+			if dberr.IsNotFound(err) {
+				log.Warnf("the instance already deprovisioned")
+				return s.operationManager.OperationFailed(operation, "the instance was already deprovisioned", log)
+			}
 			return operation, time.Second, nil
+		}
+		if operation.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
+			instance.Parameters.ErsContext.SMOperatorCredentials = operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
+		}
+		if _, err := s.instanceStorage.Update(*instance); err != nil {
+			log.Errorf("unable to update the instance, retrying")
+			return operation, time.Second, err
 		}
 
 		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
 			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
+			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
+				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
+			}
 		}, log)
 		if delay != 0 {
+			log.Errorf("unable to update the operation (move to 'in progress'), retrying")
 			return operation, delay, nil
 		}
 		operation = op
