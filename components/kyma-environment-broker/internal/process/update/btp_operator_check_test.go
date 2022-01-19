@@ -28,6 +28,23 @@ spec:
   scope: Namespaced
 `)
 
+var sbByReconciler = []byte(`
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: servicebindings.services.cloud.sap.com
+  labels:
+    reconciler.kyma-project.io/managed-by: reconciler
+spec:
+  group: services.cloud.sap.com
+  names:
+    kind: ServiceBinding
+    listKind: ServiceBindingList
+    plural: servicebindings
+    singular: servicebinding
+  scope: Namespaced
+`)
+
 var dummy = []byte(`
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -55,7 +72,7 @@ func TestNewBTPOperatorCheckStep_CRDExists(t *testing.T) {
 	cli := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj).Build()
 
 	// when
-	exists, err := svc.CRDsExists(cli)
+	exists, err := svc.CRDsInstalledByUser(cli)
 	require.NoError(t, err)
 
 	// then
@@ -74,7 +91,26 @@ func TestNewBTPOperatorCheckStep_CRDNotExists(t *testing.T) {
 	cli := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj).Build()
 
 	// when
-	exists, err := svc.CRDsExists(cli)
+	exists, err := svc.CRDsInstalledByUser(cli)
+	require.NoError(t, err)
+
+	// then
+	assert.False(t, exists)
+}
+
+func TestNewBTPOperatorCheckStep_CRDManagedByREconciler(t *testing.T) {
+	st := storage.NewMemoryStorage()
+	svc := NewBTPOperatorCheckStep(st.Operations())
+	scheme := runtime.NewScheme()
+	err := apiextensionsv1.AddToScheme(scheme)
+	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
+	obj, gvk, err := decoder.Decode(sbByReconciler, nil, nil)
+	fmt.Println(gvk)
+	require.NoError(t, err)
+	cli := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj).Build()
+
+	// when
+	exists, err := svc.CRDsInstalledByUser(cli)
 	require.NoError(t, err)
 
 	// then

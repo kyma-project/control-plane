@@ -50,24 +50,26 @@ func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log log
 		Scheme: scheme.Scheme,
 	})
 
-	btpOperatorCRDsExists, err := s.CRDsExists(k8sCli)
+	processMustBeBlocked, err := s.CRDsInstalledByUser(k8sCli)
 	if err != nil {
 		log.Warnf("Unable to check, if BTP operator CRDs exists: %s", err.Error())
 		return operation, time.Minute, nil
 	}
-	if btpOperatorCRDsExists {
+	if processMustBeBlocked {
 		return s.operationManager.OperationFailed(operation, "BTP Operator already exists", log)
 	}
 
 	return operation, 0, nil
 }
 
-func (s *BTPOperatorCheckStep) CRDsExists(c client.Client) (bool, error) {
+func (s *BTPOperatorCheckStep) CRDsInstalledByUser(c client.Client) (bool, error) {
 	crd := &apiextensions.CustomResourceDefinition{}
 
 	err := c.Get(context.Background(), client.ObjectKey{Name: "servicebindings.services.cloud.sap.com"}, crd)
 	if err == nil {
-		return true, nil
+		if !s.managedByReconciler(crd) {
+			return true, nil
+		}
 	}
 	if !errors.IsNotFound(err) {
 		return false, err
@@ -75,11 +77,18 @@ func (s *BTPOperatorCheckStep) CRDsExists(c client.Client) (bool, error) {
 
 	err = c.Get(context.Background(), client.ObjectKey{Name: "serviceinstances.services.cloud.sap.com"}, crd)
 	if err == nil {
-		return true, nil
+		if !s.managedByReconciler(crd) {
+			return true, nil
+		}
 	}
 	if !errors.IsNotFound(err) {
 		return false, err
 	}
 
 	return false, nil
+}
+
+func (s *BTPOperatorCheckStep) managedByReconciler(crd *apiextensions.CustomResourceDefinition) bool {
+	_, found := crd.Labels["reconciler.kyma-project.io/managed-by"]
+	return found
 }
