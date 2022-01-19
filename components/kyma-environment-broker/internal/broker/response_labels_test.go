@@ -14,7 +14,7 @@ func TestResponseLabels(t *testing.T) {
 		operation := internal.ProvisioningOperation{}
 		operation.ProvisioningParameters.Parameters.Name = "test"
 
-		instance := internal.Instance{InstanceID: "inst1234", DashboardURL: "https://dashbord.test"}
+		instance := internal.Instance{InstanceID: "inst1234", DashboardURL: "https://console.dashbord.test"}
 
 		// when
 		labels := ResponseLabels(operation, instance, "https://example.com", true)
@@ -32,7 +32,7 @@ func TestResponseLabels(t *testing.T) {
 		instance := internal.Instance{}
 
 		// when
-		labels := ResponseLabels(operation, instance, "https://example.com", false)
+		labels := ResponseLabels(operation, instance, "https://console.example.com", false)
 
 		// then
 		require.Len(t, labels, 1)

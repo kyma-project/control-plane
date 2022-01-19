@@ -170,7 +170,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProviderType(dashboardURL string
 	if err != nil {
 		return errors.Wrap(err, "while parsing path for IAS Type")
 	}
-	serviceProviderDNS := fmt.Sprintf("%s.%s", b.serviceProviderParams.domain, u.Host)
+	serviceProviderDNS := strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.domain), 1)
 	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, serviceProviderDNS, b.serviceProviderParams.redirectPath)
 
 	switch b.serviceProviderParams.ssoType {

@@ -135,7 +135,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)

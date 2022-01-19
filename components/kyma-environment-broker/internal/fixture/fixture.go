@@ -222,7 +222,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 		},
 		InputCreator:    FixInputCreator(internal.Azure),
 		SMClientFactory: nil,
-		DashboardURL:    "https://kyma.org",
+		DashboardURL:    "https://console.kyma.org",
 	}
 }
 
@@ -252,7 +252,7 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 		},
 		InputCreator:    FixInputCreator(provider),
 		SMClientFactory: nil,
-		DashboardURL:    "https://kyma.org",
+		DashboardURL:    "https://console.kyma.org",
 	}
 }
 

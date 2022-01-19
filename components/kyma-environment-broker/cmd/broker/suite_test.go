@@ -67,7 +67,7 @@ const (
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
-	dashboardURL           = "http://garden-dummy.kyma.io"
+	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	brokerID               = "fake-broker-id"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"

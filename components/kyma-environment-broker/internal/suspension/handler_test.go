@@ -197,7 +197,7 @@ func TestUnsuspensionWithoutShootname(t *testing.T) {
 	instance := fixInstance(fixInactiveErsContext())
 	instance.InstanceDetails.ShootName = ""
 	instance.InstanceDetails.ShootDomain = ""
-	instance.DashboardURL = "https://c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
+	instance.DashboardURL = "https://console.c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
 
 	st.Instances().Insert(*instance)
 

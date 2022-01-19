@@ -681,7 +681,7 @@ func fixInstance(id string, t time.Time) internal.Instance {
 		ServiceName:     id,
 		ServicePlanID:   id,
 		ServicePlanName: id,
-		DashboardURL:    fmt.Sprintf("https://%s.kyma.local", id),
+		DashboardURL:    fmt.Sprintf("https://console.%s.kyma.local", id),
 		ProviderRegion:  id,
 		Parameters:      internal.ProvisioningParameters{},
 	}

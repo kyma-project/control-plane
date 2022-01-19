@@ -172,7 +172,7 @@ func (i *Instance) extractShootNameAndDomain() (string, string, error) {
 	if len(parts) <= 1 {
 		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
 	}
-	return parts[0], parsed.Host, nil
+	return parts[1], parsed.Host[len(parts[0])+1:], nil
 }
 
 // OperationType defines the possible types of an asynchronous operation to a broker.

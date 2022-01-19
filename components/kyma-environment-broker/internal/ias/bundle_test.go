@@ -58,7 +58,7 @@ func TestServiceProviderBundle_ConfigureServiceProviderType_OIDC(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	err = bundle.ConfigureServiceProviderType("https://example.com")
+	err = bundle.ConfigureServiceProviderType("https://console.example.com")
 
 	// then
 	assert.NoError(t, err)

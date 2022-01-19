@@ -576,7 +576,7 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.ServiceName = testData.val
 	instance.ServicePlanID = testData.val
 	instance.ServicePlanName = testData.val
-	instance.DashboardURL = fmt.Sprintf("https://%s.kyma.local", testData.val)
+	instance.DashboardURL = fmt.Sprintf("https://console.%s.kyma.local", testData.val)
 	instance.ProviderRegion = testData.val
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
