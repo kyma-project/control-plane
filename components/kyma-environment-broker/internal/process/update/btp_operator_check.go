@@ -2,8 +2,9 @@ package update
 
 import (
 	"context"
-	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -55,26 +56,30 @@ func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log log
 		return operation, time.Minute, nil
 	}
 	if btpOperatorCRDsExists {
-		return s.operationManager.OperationFailed(operation, "BTP Operartor already exists", log)
+		return s.operationManager.OperationFailed(operation, "BTP Operator already exists", log)
 	}
 
 	return operation, 0, nil
 }
 
 func (s *BTPOperatorCheckStep) CRDsExists(c client.Client) (bool, error) {
-	crdsList := &apiextensions.CustomResourceDefinitionList{}
+	crd := &apiextensions.CustomResourceDefinition{}
 
-	err := c.List(context.Background(), crdsList)
-	if err != nil {
+	err := c.Get(context.Background(), client.ObjectKey{Name: "servicebindings.services.cloud.sap.com"}, crd)
+	if err == nil {
+		return true, nil
+	}
+	if !errors.IsNotFound(err) {
 		return false, err
 	}
 
-	for _, crd := range crdsList.Items {
-		if strings.Contains(crd.Spec.Group, "services.cloud.sap.com") {
-			if crd.Spec.Names.Kind == "ServiceBinding" || crd.Spec.Names.Kind == "ServiceInstance" {
-				return true, nil
-			}
-		}
+	err = c.Get(context.Background(), client.ObjectKey{Name: "serviceinstances.services.cloud.sap.com"}, crd)
+	if err == nil {
+		return true, nil
 	}
+	if !errors.IsNotFound(err) {
+		return false, err
+	}
+
 	return false, nil
 }

@@ -32,7 +32,7 @@ var dummy = []byte(`
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: servicebindings.services.cloud.sap.com
+  name: some-other-crd
 spec:
   group: my.crd..group.sap.com
   names:
