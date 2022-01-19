@@ -10,12 +10,12 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.9.14
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Microsoft/go-winio v0.5.1 // indirect
-	github.com/Microsoft/hcsshim v0.9.0 // indirect
+	github.com/Microsoft/hcsshim v0.9.2 // indirect
 	github.com/Peripli/service-manager v0.19.4
 	github.com/Peripli/service-manager-cli v1.11.8
 	github.com/containerd/cgroups v1.0.2 // indirect
-	github.com/containerd/continuity v0.2.1 // indirect
+	github.com/containerd/containerd v1.5.9 // indirect
+	github.com/containerd/continuity v0.2.2 // indirect
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gardener/gardener v1.24.0
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
@@ -46,10 +46,10 @@ require (
 	github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/mod v0.4.2
-	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
+	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
-	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
-	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.4
