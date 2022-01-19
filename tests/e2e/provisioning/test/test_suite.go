@@ -24,8 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 type Config struct {
