@@ -43,8 +43,7 @@ const (
 func main() {
 
 	opts := options.ParseArgs()
-	//log := logrus.New()
-	logger := log.NewLogger(false)
+	logger := log.NewLogger(opts.LogLevel)
 	logger.Infof("Starting application with options: %v", opts.String())
 
 	cfg := new(env.Config)

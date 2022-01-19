@@ -23,11 +23,8 @@ const (
 	// KeyReason is used as a named key for a log message with reason.
 	KeyReason = "reason"
 
-	// KeyStep is used as a named key for a log message with step.
-	KeyStep = "step"
-
-	// keyAction is used as a named key for a log message with action.
-	keyAction = "action"
+	// KeyRetry is used as named key for a log message which indicates the step will be retried
+	KeyRetry = "willRetry"
 
 	// keyVersion is used as a named key for a log message with version.
 	keyVersion = "version"
@@ -37,17 +34,19 @@ const (
 
 	// ValueSuccess is used as a value for a log message with success.
 	ValueSuccess = "success"
+
+	// ValueTrue is used as a value for a message with true status
+	ValueTrue = "true"
+
+	// ValueFalse is used as a value for a message with true status
+	ValueFalse = "false"
 )
 
 var outputFormat = OutputFormatJSON
 
 type OutputFormat string
 
-func NewLogger(debug bool) *zap.SugaredLogger {
-	logLevel := zapcore.InfoLevel
-	if debug {
-		logLevel = zapcore.DebugLevel
-	}
+func NewLogger(logLevel zapcore.Level) *zap.SugaredLogger {
 	return newLogger(logLevel).Sugar()
 }
 
@@ -61,6 +60,14 @@ func newLogger(logLevel zapcore.Level) *zap.Logger {
 		CallerKey:    "caller",
 		EncodeCaller: zapcore.ShortCallerEncoder,
 	}
+
+	encoderConfig = zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.MessageKey = "message"
+	encoderConfig.CallerKey = "caller"
 
 	var encoder zapcore.Encoder
 	switch outputFormat {
@@ -76,20 +83,8 @@ func newLogger(logLevel zapcore.Level) *zap.Logger {
 			zapcore.Lock(os.Stderr),
 			zap.NewAtomicLevelAt(logLevel),
 		),
+		zap.AddCaller(),
 		zap.ErrorOutput(os.Stderr))
-}
-
-// pair represents a log key/value pair.
-type pair [2]string
-
-// LoggerOpt represents a function that returns a log pair instance when executed.
-type LoggerOpt func() pair
-
-// WithAction returns a LoggerOpt for the given action.
-func WithAction(action string) LoggerOpt {
-	return func() pair {
-		return pair{keyAction, action}
-	}
 }
 
 // SetOutputFormat sets the log output format

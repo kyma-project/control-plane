@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
@@ -231,7 +232,7 @@ func getKEBClient(url string) *Client {
 	}
 	return &Client{
 		HTTPClient: http.DefaultClient,
-		Logger:     logger.NewLogger(false),
+		Logger:     logger.NewLogger(zapcore.DebugLevel),
 		Config:     config,
 	}
 }
