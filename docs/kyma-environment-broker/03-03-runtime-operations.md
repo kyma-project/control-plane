@@ -34,6 +34,9 @@ The provisioning process contains the following steps:
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
+Provisioning steps of Kyma 2.0 delegate resource creation to the Reconciler. At the time the Reconciler does not constrain a number of 
+retries in case of failed reconciliation. In order to limit infinite invocation loop KEB introduces provisioning timeout. Timeout's value can be found [here](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49).
+
 ## Deprovisioning
 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
