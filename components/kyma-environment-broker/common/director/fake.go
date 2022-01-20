@@ -3,23 +3,13 @@ package director
 import "fmt"
 
 type FakeClient struct {
-	labels      map[string]string
-	consoleURLs map[string]string
+	labels map[string]string
 }
 
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		consoleURLs: make(map[string]string),
-		labels:      make(map[string]string),
+		labels: make(map[string]string),
 	}
-}
-
-func (f *FakeClient) GetConsoleURL(accountID, runtimeID string) (string, error) {
-	return f.consoleURLs[runtimeID], nil
-}
-
-func (f *FakeClient) SetConsoleURL(runtimeID, url string) {
-	f.consoleURLs[runtimeID] = url
 }
 
 func (f *FakeClient) SetLabel(accountID, runtimeID, key, value string) error {
