@@ -6,15 +6,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,21 +30,11 @@ func (s *BTPOperatorCheckStep) Name() string {
 }
 
 func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	if operation.Kubeconfig == "" {
-		log.Errorf("Kubeconfig must not be empty")
-		return s.operationManager.OperationFailed(operation, "Kubeconfig is not present", log)
+	if operation.K8sClient == nil {
+		log.Errorf("k8s client must be provided")
+		return s.operationManager.OperationFailed(operation, "k8s client must be provided", log)
 	}
-	restCfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(operation.Kubeconfig))
-	if err != nil {
-		log.Errorf("Unable to create rest config: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "Unable to create rest config", log)
-	}
-
-	k8sCli, err := client.New(restCfg, client.Options{
-		Scheme: scheme.Scheme,
-	})
-
-	processMustBeBlocked, err := s.CRDsInstalledByUser(k8sCli)
+	processMustBeBlocked, err := s.CRDsInstalledByUser(operation.K8sClient)
 	if err != nil {
 		log.Warnf("Unable to check, if BTP operator CRDs exists: %s", err.Error())
 		return operation, time.Minute, nil

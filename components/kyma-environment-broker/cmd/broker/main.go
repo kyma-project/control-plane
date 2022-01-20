@@ -14,8 +14,11 @@ import (
 	"sort"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	"code.cloudfoundry.org/lager"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -345,7 +348,7 @@ func main() {
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
-		runtimeProvider, reconcilerClient, cfg, logs)
+		runtimeProvider, reconcilerClient, cfg, k8sClientProvider, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -411,6 +414,18 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+}
+
+func k8sClientProvider(kcfg string) (client.Client, error) {
+	restCfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kcfg))
+	if err != nil {
+		return nil, err
+	}
+
+	k8sCli, err := client.New(restCfg, client.Options{
+		Scheme: scheme.Scheme,
+	})
+	return k8sCli, err
 }
 
 func checkDefaultVersions(versions ...string) error {
@@ -714,7 +729,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
-	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, logs logrus.FieldLogger) *process.Queue {
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
 	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
 		if cfg.EnableBTPOperatorMigration {
@@ -750,7 +765,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "runtime",
-			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
 			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
