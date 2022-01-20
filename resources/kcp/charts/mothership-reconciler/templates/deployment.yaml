@@ -71,7 +71,10 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
+          {{- if .Values.options.verbose }}
           - --verbose
+          {{- end }}
+          - --worker-count={{ .Values.options.workerCount }}
           {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
           - --audit-log
           - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log

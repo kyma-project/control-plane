@@ -149,7 +149,6 @@ global:
     enabled: false
     expose: true
     authentication: true
-    servicemonitor: false
     serviceAccountName: "mothership-reconciler"
     auditlog:
       enabled: true
