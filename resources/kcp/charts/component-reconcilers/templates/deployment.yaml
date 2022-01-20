@@ -31,10 +31,10 @@ spec:
           - start
           - {{ $component }}
           - --workspace=/tmp/reconciler
-          {{- if .Values.options.verbose }}
+          {{- if $global.Values.options.verbose }}
           - --verbose
           {{- end }}
-          - --worker-count={{ .Values.options.workerCount }}
+          - --worker-count={{ $global.Values.options.workerCount }}
         name: reconciler
         ports:
         - name: http
