@@ -33,9 +33,6 @@ func (s *BTPOperatorCheckStep) Name() string {
 }
 
 func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	if operation.InstanceDetails.SCMigrationTriggered {
-		return operation, 0, nil
-	}
 	if operation.Kubeconfig == "" {
 		log.Errorf("Kubeconfig must not be empty")
 		return s.operationManager.OperationFailed(operation, "Kubeconfig is not present", log)
