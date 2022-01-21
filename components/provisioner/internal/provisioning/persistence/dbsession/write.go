@@ -167,26 +167,6 @@ func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Er
 	return nil
 }
 
-/*
-type GardenerUpgradeInput struct {
-	KubernetesVersion                   *string                `json:"kubernetesVersion"`
-	MachineType                         *string                `json:"machineType"`
-	DiskType                            *string                `json:"diskType"`
-	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
-	AutoScalerMin                       *int                   `json:"autoScalerMin"`
-	AutoScalerMax                       *int                   `json:"autoScalerMax"`
-	MachineImage                        *string                `json:"machineImage"`
-	MachineImageVersion                 *string                `json:"machineImageVersion"`
-	MaxSurge                            *int                   `json:"maxSurge"`
-	MaxUnavailable                      *int                   `json:"maxUnavailable"`
-	Purpose                             *string                `json:"purpose"`
-	EnableKubernetesVersionAutoUpdate   *bool                  `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate *bool                  `json:"enableMachineImageVersionAutoUpdate"`
-	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
-	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
-	ExposureClassName                   *string                `json:"exposureClassName"`
-}*/
-
 func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
 	res, err := ws.update("gardener_config").
 		Where(dbr.Eq("cluster_id", config.ClusterID)).
