@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	runtime2 "k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"math/rand"
 	"net/http"
@@ -18,7 +20,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -422,8 +423,11 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 		return nil, err
 	}
 
+	sch := runtime2.NewScheme()
+	apiextensionsv1.AddToScheme(sch)
+
 	k8sCli, err := client.New(restCfg, client.Options{
-		Scheme: scheme.Scheme,
+		Scheme: sch,
 	})
 	return k8sCli, err
 }
