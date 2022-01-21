@@ -189,6 +189,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Region:                    config.Region,
 		LicenceType:               config.LicenceType,
 		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
+		WorkerCidr:                config.WorkerCidr,
 
 		Purpose:                             util.DefaultStrIfNil(input.Purpose, config.Purpose),
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
