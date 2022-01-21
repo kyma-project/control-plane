@@ -6,6 +6,7 @@ fullnameOverride: ""
 deployment:
   imagePullPolicy: "IfNotPresent"
   nodeSelector: {}
+  resources: {}
 
 service:
   type: ClusterIP
