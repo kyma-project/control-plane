@@ -2,8 +2,6 @@ package director
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -62,22 +60,6 @@ func NewDirectorClient(ctx context.Context, config Config, log logrus.FieldLogge
 		queryProvider: queryProvider{},
 		log:           log,
 	}
-}
-
-// GetConsoleURL fetches, validates and returns console URL from director component based on runtime ID
-func (dc *Client) GetConsoleURL(accountID, runtimeID string) (string, error) {
-	query := dc.queryProvider.Runtime(runtimeID)
-	req := machineGraph.NewRequest(query)
-	req.Header.Add(accountIDKey, accountID)
-
-	dc.log.Info("Send request to director")
-	response, err := dc.fetchURLFromDirector(req)
-	if err != nil {
-		return "", errors.Wrap(err, "while making call to director")
-	}
-
-	dc.log.Info("Extract the URL from the response")
-	return dc.getURLFromRuntime(&response.Result)
 }
 
 // SetLabel adds key-value label to a Runtime
@@ -150,35 +132,6 @@ func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRunti
 	}
 
 	return &response, nil
-}
-
-func (dc *Client) getURLFromRuntime(response *graphql.RuntimeExt) (string, error) {
-	if response.Status == nil {
-		return "", kebError.NewTemporaryError("response status from director is nil")
-	}
-	if response.Status.Condition == graphql.RuntimeStatusConditionFailed {
-		return "", fmt.Errorf("response status condition from director is %s", graphql.RuntimeStatusConditionFailed)
-	}
-
-	value, ok := response.Labels[consoleURLLabelKey]
-	if !ok {
-		return "", kebError.NewTemporaryError("response label key is not equal to %q", consoleURLLabelKey)
-	}
-
-	var URL string
-	switch value.(type) {
-	case string:
-		URL = value.(string)
-	default:
-		return "", errors.New("response label value is not string")
-	}
-
-	_, err := url.ParseRequestURI(URL)
-	if err != nil {
-		return "", errors.Wrap(err, "while parsing raw URL")
-	}
-
-	return URL, nil
 }
 
 func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) (string, error) {

@@ -641,12 +641,6 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
 }
 
-func (s *BrokerSuiteTest) MarkDirectorWithConsoleURL(operationID string) {
-	op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
-	assert.NoError(s.t, err)
-	s.directorClient.SetConsoleURL(op.RuntimeID, op.DashboardURL)
-}
-
 func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
 	m, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
@@ -872,9 +866,6 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
-	// simulate the installed fresh Kyma sets the proper label in the Director
-	s.MarkDirectorWithConsoleURL(opID)
-
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
 }
@@ -924,9 +915,6 @@ func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
-
-	// Director part
-	s.MarkDirectorWithConsoleURL(opID)
 
 	// Reconciler part
 	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)

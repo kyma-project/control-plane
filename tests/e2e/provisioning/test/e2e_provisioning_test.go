@@ -3,6 +3,7 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,6 +47,6 @@ func Test_E2E_Provisioning(t *testing.T) {
 	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
 
-	// err = ts.dashboardChecker.AssertRedirectedToUAA(dashboardURL)
-	// assert.NoError(t, err)
+	err = ts.dashboardChecker.AssertRedirectedToBusola(dashboardURL, ts.BusolaURL)
+	assert.NoError(t, err)
 }
