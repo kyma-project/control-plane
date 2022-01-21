@@ -9,6 +9,7 @@ metadata:
 spec:
   endpoints:
   - port: http
+    interval: {{ .Values.serviceMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
   namespaceSelector:
     matchNames:
