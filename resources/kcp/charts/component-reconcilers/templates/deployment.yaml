@@ -15,7 +15,7 @@ spec:
     matchLabels:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
-  replicas: 1
+  replicas: {{ $global.Values.deployment.replicasCount }}
   template:
     metadata:
       labels:
@@ -23,6 +23,8 @@ spec:
         component: {{ $component }}
     spec:
       serviceAccountName: component-reconcilers-{{ $component }}
+      nodeSelector:
+        {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
       containers:
       - image: "{{ $global.Values.global.images.component_reconciler }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
@@ -45,7 +47,8 @@ spec:
           httpGet:
             path: /health/ready
             port: http
-        resources: {}
+        resources:
+          {{- toYaml $global.Values.deployment.resources | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
           name: workspace
