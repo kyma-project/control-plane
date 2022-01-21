@@ -205,7 +205,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
-		ExposureClassName:                   input.ExposureClassName,
+		ExposureClassName:                   util.DefaultStrIfNil(input.ExposureClassName, config.ExposureClassName),
 	}, nil
 }
 
