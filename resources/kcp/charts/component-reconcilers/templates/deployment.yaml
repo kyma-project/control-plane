@@ -1,6 +1,7 @@
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
 {{ $subchart := printf "%s-component-reconciler" $component }}
+{{ $values := index $global.Values $component }}
 {{ if not (hasKey $global.Subcharts $subchart) }}
 apiVersion: apps/v1
 kind: Deployment
@@ -15,7 +16,7 @@ spec:
     matchLabels:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
-  replicas: {{ $global.Values.deployment.replicasCount }}
+  replicas: {{ default $global.Values.deployment.replicasCount (($values).deployment).replicasCount }}
   template:
     metadata:
       labels:
@@ -36,7 +37,7 @@ spec:
           {{- if $global.Values.options.verbose }}
           - --verbose
           {{- end }}
-          - --worker-count={{ $global.Values.options.workerCount }}
+          - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
         name: reconciler
         ports:
         - name: http
@@ -51,7 +52,7 @@ spec:
             path: /health/ready
             port: http
         resources:
-          {{- toYaml $global.Values.deployment.resources | nindent 10 }}
+          {{- toYaml (default $global.Values.deployment.resources (($values).deployment).resources) | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
           name: workspace
