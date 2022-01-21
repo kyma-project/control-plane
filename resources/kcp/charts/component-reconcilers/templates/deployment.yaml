@@ -15,7 +15,7 @@ spec:
     matchLabels:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
-  replicas: 1
+  replicas: {{ $global.Values.deployment.replicasCount }}
   template:
     metadata:
       labels:
