@@ -39,6 +39,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/pkg/errors"
 )
 
@@ -265,6 +266,16 @@ func (e graphErr) Error() string {
 
 func (e graphErr) Extensions() map[string]interface{} {
 	return e.ErrorExtensions
+}
+
+const ErrorGRAPHQLClient kebError.ErrorReason = "ERR_GRAPHQL_CLIENT"
+
+func (e graphErr) Reason() kebError.ErrorReason {
+	return ErrorGRAPHQLClient
+}
+
+func (e graphErr) Component() kebError.ErrorComponent {
+	return kebError.ErrorGrapQLClient
 }
 
 type graphResponse struct {

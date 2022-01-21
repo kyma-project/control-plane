@@ -22,23 +22,23 @@ const (
 	ErrorEDPOther      EDPErrorReason = "ERR_EDP_OTHER"
 )
 
-func errorf(id string, code int, format string, args ...interface{}) kebError.ErrorCollector {
+func errorf(id string, code int, format string, args ...interface{}) kebError.ErrorReporter {
 	return edpError{id: id, code: code, message: fmt.Sprintf(format, args...)}
 }
 
-func NewEDPConflictError(id string, format string, args ...interface{}) kebError.ErrorCollector {
+func NewEDPConflictError(id string, format string, args ...interface{}) kebError.ErrorReporter {
 	return errorf(id, http.StatusConflict, format, args...)
 }
 
-func NewEDPNotFoundError(id string, format string, args ...interface{}) kebError.ErrorCollector {
+func NewEDPNotFoundError(id string, format string, args ...interface{}) kebError.ErrorReporter {
 	return errorf(id, http.StatusNotFound, format, args...)
 }
 
-func NewEDPBadRequestError(id string, format string, args ...interface{}) kebError.ErrorCollector {
+func NewEDPBadRequestError(id string, format string, args ...interface{}) kebError.ErrorReporter {
 	return errorf(id, http.StatusBadRequest, format, args...)
 }
 
-func NewEDPOtherError(id string, code int, format string, args ...interface{}) kebError.ErrorCollector {
+func NewEDPOtherError(id string, code int, format string, args ...interface{}) kebError.ErrorReporter {
 	return errorf(id, code, format, args...)
 }
 
@@ -54,7 +54,7 @@ func (e edpError) Component() string {
 	return kebError.ErrorEDP
 }
 
-func (e edpError) Reason() string {
+func (e edpError) Reason() EDPErrorReason {
 	reason := ErrorEDPOther
 
 	switch e.code {
@@ -70,7 +70,7 @@ func (e edpError) Reason() string {
 }
 
 func IsConflictError(err error) bool {
-	e, ok := err.(kebError.ErrorCollector)
+	e, ok := err.(kebError.ErrorReporter)
 	if !ok {
 		return false
 	}

@@ -1,9 +1,10 @@
 package dberr
 
 import (
-	"github.com/pkg/errors"
+	// "github.com/pkg/errors"
 	"testing"
 
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,6 +32,9 @@ func TestAppError(t *testing.T) {
 		createdInternalErr := Internal("Some Internal apperror, %s", "Some pkg err")
 		createdNotFoundErr := NotFound("Some NotFound apperror, %s", "Some pkg err")
 		createdAlreadyExistsErr := AlreadyExists("Some AlreadyExists apperror, %s", "Some pkg err")
+
+		lastErr := kebError.ReasonForError(createdInternalErr)
+		t.Logf("----****-------%+v\n", lastErr.Component)
 
 		//when
 		appendedInternalErr := createdInternalErr.Append("Some additional message")

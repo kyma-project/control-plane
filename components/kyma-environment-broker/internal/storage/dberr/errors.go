@@ -74,7 +74,7 @@ func (e dbError) Error() string {
 	return e.message
 }
 
-func (e dbError) Component() string {
+func (e dbError) Component() kebError.ErrorComponent {
 	return kebError.ErrorDB
 }
 
