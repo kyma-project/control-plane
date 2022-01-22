@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type orchestrations struct {
@@ -35,6 +36,11 @@ func (s *orchestrations) Insert(orchestration internal.Orchestration) error {
 func (s *orchestrations) GetByID(orchestrationID string) (*internal.Orchestration, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// cover the case in postsql when wait.PollImmediate reaches timeout
+	if orchestrationID == "timeout" {
+		return nil, wait.ErrWaitTimeout
+	}
 
 	inst, ok := s.orchestrations[orchestrationID]
 	if !ok {

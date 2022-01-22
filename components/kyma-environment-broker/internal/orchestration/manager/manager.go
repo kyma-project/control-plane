@@ -52,6 +52,10 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	m.log.Infof("Processing orchestration %s", orchestrationID)
 	o, err := m.orchestrationStorage.GetByID(orchestrationID)
 	if err != nil {
+		if o == nil {
+			m.log.Errorf("orchestration %s failed: %s", orchestrationID, err)
+			return time.Minute, nil
+		}
 		return m.failOrchestration(o, errors.Wrap(err, "while getting orchestration"))
 	}
 
@@ -202,12 +206,13 @@ func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType,
 
 // waitForCompletion waits until processing of given orchestration ends or if it's canceled
 func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, strategy orchestration.Strategy, execID string, log logrus.FieldLogger) (*internal.Orchestration, error) {
+	orchestrationID := o.OrchestrationID
 	canceled := false
 	var err error
 	var stats map[string]int
 	err = wait.PollImmediateInfinite(m.pollingInterval, func() (bool, error) {
 		// check if orchestration wasn't canceled
-		o, err = m.orchestrationStorage.GetByID(o.OrchestrationID)
+		o, err = m.orchestrationStorage.GetByID(orchestrationID)
 		switch {
 		case err == nil:
 			if o.State == orchestration.Canceling {
