@@ -885,7 +885,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:            1,
 				MaxUnavailable:      1,
 				OIDCConfig:          oidcConfig(),
-				ExposureClassName:   nil,
+				ExposureClassName:   util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
 				KubernetesVersion:   "version",
@@ -900,7 +900,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				MaxSurge:            1,
 				MaxUnavailable:      1,
 				OIDCConfig:          upgradedOidcConfig(),
-				ExposureClassName:   nil,
+				ExposureClassName:   util.StringPtr("internet"),
 			},
 		},
 	}
