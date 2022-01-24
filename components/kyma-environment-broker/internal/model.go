@@ -343,8 +343,16 @@ type DeprovisioningOperation struct {
 	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool `json:"temporary"`
-	ClusterConfigurationDeleted bool `json:"clusterConfigurationDeleted"`
+	Temporary                   bool      `json:"temporary"`
+	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
+	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
+}
+
+func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+	if op.ReconcilerDeregistrationAt.IsZero() {
+		return time.Since(op.CreatedAt)
+	}
+	return time.Since(op.ReconcilerDeregistrationAt)
 }
 
 type UpdatingOperation struct {
