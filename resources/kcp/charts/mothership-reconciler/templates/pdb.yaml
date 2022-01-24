@@ -1,0 +1,16 @@
+{{- if and .Values.deployment.podDisruptionBudget (gt ($.Values.deployment.replicasCount | int) 1) -}}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+  {{- include "mothership-reconciler.labels" . | nindent 4 }}
+  name: mothership-reconciler
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mothership-reconciler
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{ .Values.deployment.podDisruptionBudget | nindent 2 }}
+---
+{{- end -}}

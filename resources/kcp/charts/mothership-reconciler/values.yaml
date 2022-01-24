@@ -32,6 +32,8 @@ deployment:
   imagePullPolicy: "IfNotPresent"
 
   replicasCount: 1
+  podDisruptionBudget: |
+    maxUnavailable: 1
 
   # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
   strategy:
