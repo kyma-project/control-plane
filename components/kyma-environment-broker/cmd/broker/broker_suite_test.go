@@ -510,7 +510,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 
 	var state *reconcilerApi.HTTPClusterResponse
 	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
-		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		err = wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {
 			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
 			if err != nil {
 				return false, err
