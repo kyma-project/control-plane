@@ -26,8 +26,8 @@ const (
 	// KeyRetry is used as named key for a log message which indicates the step will be retried
 	KeyRetry = "willRetry"
 
-	// keyVersion is used as a named key for a log message with version.
-	keyVersion = "version"
+	// KeyRequeue is used as named key for a log message which indicates that it will be requeued
+	KeyRequeue = "requeue"
 
 	// ValueFail is used as a value for a log message with failure.
 	ValueFail = "fail"
