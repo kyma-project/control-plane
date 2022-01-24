@@ -18,6 +18,12 @@ const (
 	ServiceCatalogComponentName       = "service-catalog"
 	ServiceCatalogAddonsComponentName = "service-catalog-addons"
 	ServiceManagerComponentName       = "service-manager-proxy"
+
+	// BTP Operator overrides keys
+	BTPOperatorClientID     = "manager.secret.clientid"
+	BTPOperatorClientSecret = "manager.secret.clientsecret"
+	BTPOperatorURL          = "manager.secret.url"
+	BTPOperatorTokenURL     = "manager.secret.tokenurl"
 )
 
 type ClusterIDGetter func() (string, error)
@@ -34,21 +40,21 @@ func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "manager.secret.clientid",
+			Key:    BTPOperatorClientID,
 			Value:  creds.ClientID,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:    "manager.secret.clientsecret",
+			Key:    BTPOperatorClientSecret,
 			Value:  creds.ClientSecret,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "manager.secret.url",
+			Key:   BTPOperatorURL,
 			Value: creds.ServiceManagerURL,
 		},
 		{
-			Key:   "manager.secret.tokenurl",
+			Key:   BTPOperatorTokenURL,
 			Value: creds.URL,
 		},
 	}

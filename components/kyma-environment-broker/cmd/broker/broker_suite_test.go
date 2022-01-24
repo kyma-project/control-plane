@@ -1195,9 +1195,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 }
 
 func mockBTPOperatorClusterID() {
-	update.ConfigMapGetter = func(string) internal.ClusterIDGetter {
+	mock := func(string) internal.ClusterIDGetter {
 		return func() (string, error) {
 			return "cluster_id", nil
 		}
 	}
+	update.ConfigMapGetter = mock
+	upgrade_kyma.ConfigMapGetter = mock
 }
