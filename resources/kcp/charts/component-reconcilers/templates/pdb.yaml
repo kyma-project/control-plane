@@ -1,6 +1,7 @@
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
 {{- if and $global.Values.deployment.podDisruptionBudget (gt ($global.Values.deployment.replicasCount | int) 1) -}}
+{{ $values := index $global.Values $component }}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
@@ -14,7 +15,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ $component }}-reconciler
       app.kubernetes.io/instance: {{ $global.Release.Name }}
-{{ $global.Values.deployment.podDisruptionBudget | indent 2 }}
+{{ default $global.Values.deployment.podDisruptionBudget (($values).deployment).podDisruptionBudget | indent 2 }}
 ---
 {{- end -}}
 {{- end }}
