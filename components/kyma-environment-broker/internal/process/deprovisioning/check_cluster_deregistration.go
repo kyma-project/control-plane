@@ -37,8 +37,12 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 		log.Infof("Cluster deregistration has not be executed, skipping", s.timeout)
 		return operation, 0, nil
 	}
-	if time.Since(operation.UpdatedAt) > s.timeout {
-		log.Infof("Cluster deregistration has reached the time limit: %s", s.timeout)
+	if operation.ClusterConfigurationVersion == 0 {
+		log.Info("ClusterConfigurationVersion is zero, skipping")
+		return operation, 0, nil
+	}
+	if operation.TimeSinceReconcilerDeregistrationTriggered() > s.timeout {
+		log.Errorf("Cluster deregistration has reached the time limit: %s", s.timeout)
 		modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 			op.ClusterConfigurationVersion = 0
 		}, log)

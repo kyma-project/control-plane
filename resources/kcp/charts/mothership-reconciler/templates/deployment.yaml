@@ -47,6 +47,8 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
       {{- end }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
       {{- if eq .Values.global.database.embedded.enabled false}}
       - name: cloudsql-proxy
@@ -97,7 +99,7 @@ spec:
             path: /health/ready
             port: http
         resources:
-        {{ toYaml .Values.resources | indent 10 }}
+          {{- toYaml .Values.deployment.resources | nindent 10 }}
         {{- if .Values.securityContext }}
         securityContext:
 {{ toYaml .Values.securityContext | indent 10 }}
