@@ -78,6 +78,8 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 				Return(nil).Once()
 			inputCreatorMock.On("EnableOptionalComponent", mock.Anything).
 				Return(nil)
+			inputCreatorMock.On("DisableOptionalComponent", mock.Anything).
+				Return(nil)
 
 			factory := servicemanager.NewClientFactory(tC.overrideParams)
 			operation := internal.UpgradeKymaOperation{
