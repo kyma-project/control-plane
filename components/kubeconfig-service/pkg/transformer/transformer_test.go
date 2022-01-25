@@ -90,12 +90,21 @@ users:
     exec:
       apiVersion: client.authentication.k8s.io/v1beta1
       args:
-      - oidc-login
       - get-token
       - "--oidc-issuer-url=testIssuerURL"
       - "--oidc-client-id=testClientId"
       - "--oidc-extra-scope=email"
       - "--oidc-extra-scope=openid"
-      command: kubectl
+      command: kubectl-oidc_login
+      installHint: |
+        kubelogin plugin is required to proceed with authentication
+        # Homebrew (macOS and Linux)
+        brew install int128/kubelogin/kubelogin
+
+        # Krew (macOS, Linux, Windows and ARM)
+        kubectl krew install oidc-login
+
+        # Chocolatey (Windows)
+        choco install kubelogin
 `
 )
