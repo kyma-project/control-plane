@@ -28,6 +28,10 @@ db:
 preComponents:
   - [cluster-essentials, istio-configuration, certificates]
 
+options:
+   verbose: false
+   workerCount: 50
+
 deployment:
   imagePullPolicy: "IfNotPresent"
 
@@ -88,3 +92,8 @@ service:
   scheme: http
   port: 80
   istioPort: 15020
+
+serviceMonitor:
+  enabled: false
+  scrapeTimeout: 30s
+  interval: 60s

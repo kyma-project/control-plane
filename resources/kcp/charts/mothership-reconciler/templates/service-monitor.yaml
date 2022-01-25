@@ -1,4 +1,4 @@
-{{ if .Values.global.mothership_reconciler.servicemonitor }}
+{{ if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -9,6 +9,8 @@ metadata:
 spec:
   endpoints:
   - port: http
+    interval: {{ .Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
