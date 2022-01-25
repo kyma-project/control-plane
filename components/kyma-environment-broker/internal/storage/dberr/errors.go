@@ -13,14 +13,14 @@ const (
 	CodeConflict      = 4
 )
 
-type DBErrorReason = kebError.ErrorReason
+type DBErrReason = kebError.ErrorReason
 
 const (
-	ErrorDBInternal      DBErrorReason = "ERR_DB_INTERNAL"
-	ErrorDBNotFound      DBErrorReason = "ERR_DB_NOT_FOUND"
-	ErrorDBAlreadyExists DBErrorReason = "ERR_DB_ALREADY_EXISTS"
-	ErrorDBConflict      DBErrorReason = "ERR_DB_CONFLICT"
-	ErrorDBUnknown       DBErrorReason = "ERR_DB_UNKNOWN"
+	ErrDBInternal      DBErrReason = "ERR_DB_INTERNAL"
+	ErrDBNotFound      DBErrReason = "ERR_DB_NOT_FOUND"
+	ErrDBAlreadyExists DBErrReason = "ERR_DB_ALREADY_EXISTS"
+	ErrDBConflict      DBErrReason = "ERR_DB_CONFLICT"
+	ErrDBUnknown       DBErrReason = "ERR_DB_UNKNOWN"
 )
 
 type Error interface {
@@ -78,18 +78,18 @@ func (e dbError) Component() kebError.ErrorComponent {
 	return kebError.ErrorDB
 }
 
-func (e dbError) Reason() DBErrorReason {
-	reason := ErrorDBUnknown
+func (e dbError) Reason() DBErrReason {
+	reason := ErrDBUnknown
 
 	switch e.code {
 	case CodeInternal:
-		reason = ErrorDBInternal
+		reason = ErrDBInternal
 	case CodeNotFound:
-		reason = ErrorDBNotFound
+		reason = ErrDBNotFound
 	case CodeAlreadyExists:
-		reason = ErrorDBAlreadyExists
+		reason = ErrDBAlreadyExists
 	case CodeConflict:
-		reason = ErrorDBConflict
+		reason = ErrDBConflict
 	}
 
 	return reason

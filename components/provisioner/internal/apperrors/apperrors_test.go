@@ -1,6 +1,7 @@
 package apperrors
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,5 +60,21 @@ func TestAppError(t *testing.T) {
 		assert.Equal(t, "Some additional message: error, Some Internal apperror, Some pkg err", appendedInternalErr.Error())
 		assert.Equal(t, "Some additional message: error, Some Forbidden apperror, Some pkg err", appendedForbiddenErr.Error())
 		assert.Equal(t, "Some additional message: error, Some BadRequest apperror, Some pkg err", appendedBadRequestErr.Error())
+	})
+
+	t.Run("should convert to app error", func(t *testing.T) {
+		//given
+		err1 := fmt.Errorf("err1")
+		err2 := Internal("err3")
+
+		expectErr1 := Internal("err1")
+
+		//when
+		apperr1 := ConvertToAppError(err1)
+		apperr2 := ConvertToAppError(err2)
+
+		//then
+		assert.Equal(t, expectErr1, apperr1)
+		assert.Equal(t, err2, apperr2)
 	})
 }

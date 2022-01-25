@@ -84,7 +84,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return "", apperrors.Internal("Failed to register runtime in Director: Received nil response.")
+		return "", apperrors.Internal("Failed to register runtime in Director: Received nil response.").SetComponent(apperrors.ErrDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 
 	log.Infof("Successfully registered Runtime %s in Director for tenant %s", config.Name, tenant)
@@ -270,17 +270,23 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 	if !ok {
 		return apperrors.Internal("Failed to cast the error code from the error response. Original error: %v", egErr)
 	}
+
+	var err apperrors.AppError
+	reason := apperrors.ErrReason(directorApperrors.ErrorType(errorCode).String())
+
 	switch directorApperrors.ErrorType(errorCode) {
 	case directorApperrors.InternalError, directorApperrors.UnknownError:
-		return apperrors.Internal(egErr.Error())
+		err = apperrors.Internal(egErr.Error())
 	case directorApperrors.InsufficientScopes, directorApperrors.Unauthorized:
-		return apperrors.BadGateway(egErr.Error())
+		err = apperrors.BadGateway(egErr.Error())
 	case directorApperrors.NotFound, directorApperrors.NotUnique, directorApperrors.InvalidData,
 		directorApperrors.InvalidOperation:
-		return apperrors.BadRequest(egErr.Error())
+		err = apperrors.BadRequest(egErr.Error())
 	case directorApperrors.TenantRequired, directorApperrors.TenantNotFound:
-		return apperrors.InvalidTenant(egErr.Error())
+		err = apperrors.InvalidTenant(egErr.Error())
 	default:
-		return apperrors.Internal("Did not recognize the error code from the error response. Original error: %v", egErr)
+		err = apperrors.Internal("Did not recognize the error code from the error response. Original error: %v", egErr)
 	}
+
+	return err.SetComponent(apperrors.ErrDirector).SetReason(reason)
 }

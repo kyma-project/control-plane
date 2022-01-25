@@ -10,13 +10,33 @@ import (
 )
 
 func K8SErrorToAppError(err error) apperrors.AppError {
-	if k8serrors.IsBadRequest(err) {
-		return apperrors.BadRequest(err.Error())
+	var apperr apperrors.AppError
+
+	switch {
+	case k8serrors.IsBadRequest(err):
+		apperr = apperrors.BadRequest(err.Error())
+	case k8serrors.IsForbidden(err):
+		apperr = apperrors.Forbidden(err.Error())
+	default:
+		apperr = apperrors.Internal(err.Error())
 	}
-	if k8serrors.IsForbidden(err) {
-		return apperrors.Forbidden(err.Error())
+
+	return apperr.SetComponent(apperrors.ErrorK8SClient).SetReason(apperrors.ErrReason(k8serrors.ReasonForError(err)))
+}
+
+func DBErrorToAppError(err error) apperrors.AppError {
+	var apperr apperrors.AppError
+
+	switch {
+	case k8serrors.IsBadRequest(err):
+		apperr = apperrors.BadRequest(err.Error())
+	case k8serrors.IsForbidden(err):
+		apperr = apperrors.Forbidden(err.Error())
+	default:
+		apperr = apperrors.Internal(err.Error())
 	}
-	return apperrors.Internal(err.Error())
+
+	return apperr.SetComponent(apperrors.ErrorK8SClient).SetReason(apperrors.ErrReason(k8serrors.ReasonForError(err)))
 }
 
 func CheckErrorType(t *testing.T, err error, errCode apperrors.ErrCode) {

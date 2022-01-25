@@ -233,7 +233,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
 	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
 	if err != nil {
-		return model.KymaConfig{}, apperrors.Internal("failed to get Kyma Release with version %s: %s", input.Version, err.Error())
+		return model.KymaConfig{}, apperrors.ConvertToAppError(err)
 	}
 
 	var components []model.KymaComponentConfig

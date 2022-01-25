@@ -12,7 +12,7 @@ type Error interface {
 	GetComponent() ErrorComponent
 }
 
-// component and error to confirm an error alert
+// error component and reason
 type LastError struct {
 	error
 	Reason    ErrorReason

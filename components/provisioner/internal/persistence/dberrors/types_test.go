@@ -3,6 +3,7 @@ package dberrors
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,5 +59,17 @@ func TestAppError(t *testing.T) {
 		assert.Equal(t, "Some additional message: error, Some Internal apperror, Some pkg err", appendedInternalErr.Error())
 		assert.Equal(t, "Some additional message: error, Some NotFound apperror, Some pkg err", appendedNotFoundErr.Error())
 		assert.Equal(t, "Some additional message: error, Some AlreadyExists apperror, Some pkg err", appendedAlreadyExistsErr.Error())
+	})
+
+	t.Run("should convert to app error", func(t *testing.T) {
+		//given
+		err := Internal("err3")
+
+		//when
+		apperr := apperrors.ConvertToAppError(err)
+
+		t.Logf("-----%T, %+v\n", err, err)
+		//then
+		assert.Equal(t, err, apperr)
 	})
 }

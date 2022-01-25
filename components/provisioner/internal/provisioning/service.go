@@ -126,7 +126,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	dbSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
-		return nil, apperrors.Internal("Failed to start database transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
@@ -136,7 +136,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal(dberr.Error())
+		return nil, dberr
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)

@@ -1,8 +1,6 @@
 package release
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -59,7 +57,7 @@ func (rp *ReleaseProvider) downloadRelease(version string) (model.Release, error
 			log.Warnf("Artifacts for %s version already exist: %s. Fetching artifacts from database.", version, dberr.Error())
 			return rp.repository.GetReleaseByVersion(version)
 		}
-		return model.Release{}, fmt.Errorf("failed to save Kyma release artifacts for version %s: %s", version, dberr.Error())
+		return model.Release{}, dberr
 	}
 	return release, nil
 }
