@@ -34,7 +34,7 @@
         ]
       },
       {
-        "component": "istio-resources",
+        "component": "certificates",
         "namespace": "istio-system",
         "configuration": [
           {
@@ -44,7 +44,7 @@
         ]
       },
       {
-        "component": "certificates",
+        "component": "istio-resources",
         "namespace": "istio-system",
         "configuration": [
           {
