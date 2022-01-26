@@ -50,7 +50,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -130,7 +130,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			RuntimeInput: &gqlschema.RuntimeInput{
 				Name:        "runtimeName",
 				Description: nil,
-				Labels:      &gqlschema.Labels{},
+				Labels:      gqlschema.Labels{},
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -240,7 +240,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -326,7 +326,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{

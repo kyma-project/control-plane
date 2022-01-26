@@ -105,7 +105,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	runtimeInput := &gqlschema.RuntimeInput{
 		Name:        runtimeName,
 		Description: new(string),
-		Labels:      &gqlschema.Labels{},
+		Labels:      gqlschema.Labels{},
 	}
 
 	provisionRuntimeInput := gqlschema.ProvisionRuntimeInput{

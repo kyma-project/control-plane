@@ -636,15 +636,15 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("should update Runtime", func(t *testing.T) {
-		//given
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		// given
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		expectedResponse := &graphql.Runtime{
@@ -683,14 +683,14 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 			Expiration:  futureExpirationTime,
 		}
 
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		mockedOAuthClient := &oauthmocks.Client{}
@@ -706,15 +706,15 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	})
 
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
-		//given
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		// given
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
