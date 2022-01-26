@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -370,7 +372,8 @@ type UpdatingOperation struct {
 
 	// Flag used by the steps regarding Service Catalog migration
 	// denotes whether the payload to reconciler differs from last runtime state
-	RequiresReconcilerUpdate bool `json:"-"`
+	RequiresReconcilerUpdate bool          `json:"-"`
+	K8sClient                client.Client `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation

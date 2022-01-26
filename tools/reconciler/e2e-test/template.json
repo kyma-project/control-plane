@@ -44,6 +44,16 @@
         ]
       },
       {
+        "component": "istio-resources",
+        "namespace": "istio-system",
+        "configuration": [
+          {
+              "key": "global.domainName",
+              "value": "example.com"
+          }
+        ]
+      },
+      {
         "component": "logging",
         "namespace": "kyma-system",
         "configuration": [

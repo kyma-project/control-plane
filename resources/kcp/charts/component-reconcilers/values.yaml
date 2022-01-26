@@ -3,11 +3,17 @@
 nameOverride: ""
 fullnameOverride: ""
 
+options:
+   verbose: false
+   workerCount: 50
+
 deployment:
   imagePullPolicy: "IfNotPresent"
   nodeSelector: {}
   resources: {}
   replicasCount: 1
+  podDisruptionBudget: |
+    maxUnavailable: 1
 
 service:
   type: ClusterIP

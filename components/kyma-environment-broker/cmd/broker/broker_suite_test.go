@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"code.cloudfoundry.org/lager"
 	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
@@ -145,9 +148,14 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
+	scheme := runtime.NewScheme()
+	apiextensionsv1.AddToScheme(scheme)
+	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
-	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient, eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, logs)
+	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
+		eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
@@ -197,6 +205,12 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	orchestrationHandler.AttachRoutes(ts.router)
 	ts.httpServer = httptest.NewServer(ts.router)
 	return ts
+}
+
+func fakeK8sClientProvider(k8sCli client.Client) func(s string) (client.Client, error) {
+	return func(s string) (client.Client, error) {
+		return k8sCli, nil
+	}
 }
 
 func defaultOIDCValues() internal.OIDCConfigDTO {
@@ -1195,9 +1209,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 }
 
 func mockBTPOperatorClusterID() {
-	update.ConfigMapGetter = func(string) internal.ClusterIDGetter {
+	mock := func(string) internal.ClusterIDGetter {
 		return func() (string, error) {
 			return "cluster_id", nil
 		}
 	}
+	update.ConfigMapGetter = mock
+	upgrade_kyma.ConfigMapGetter = mock
 }
