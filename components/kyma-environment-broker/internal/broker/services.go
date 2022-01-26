@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const controlsOrderKey = "_controlsOrder"
+const ControlsOrderKey = "_controlsOrder"
 
 type ServicesEndpoint struct {
 	log            logrus.FieldLogger
@@ -70,7 +70,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 				b.log.Errorf("while unmarshal provisioning schema: %s", err)
 				return nil, err
 			}
-			controlsOrder = p.Schemas.Instance.Create.Parameters[controlsOrderKey]
+			controlsOrder = p.Schemas.Instance.Create.Parameters[ControlsOrderKey]
 		}
 
 		if len(plan.updateRawSchema) > 0 {
@@ -79,7 +79,10 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 				b.log.Errorf("while unmarshal update schema: %s", err)
 				return nil, err
 			}
-			p.Schemas.Instance.Update.Parameters[controlsOrderKey] = controlsOrder
+
+			if controlsOrder != nil {
+				p.Schemas.Instance.Update.Parameters[ControlsOrderKey] = controlsOrder
+			}
 		}
 		availableServicePlans = append(availableServicePlans, p)
 	}
