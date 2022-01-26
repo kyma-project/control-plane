@@ -25,7 +25,7 @@ spec:
     spec:
       serviceAccountName: component-reconcilers-{{ $component }}
       nodeSelector:
-        {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
+        {{- toYaml (default $global.Values.deployment.nodeSelector (($values).deployment).nodeSelector) | nindent 8 }}
       containers:
       - image: "{{ $global.Values.global.images.component_reconciler }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
