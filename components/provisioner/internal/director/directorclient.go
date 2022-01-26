@@ -56,10 +56,10 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 		return "", apperrors.BadRequest("Cannot register runtime in Director: missing Runtime config")
 	}
 
-	var labels *graphql.Labels
+	var labels graphql.Labels
 	if config.Labels != nil {
-		l := graphql.Labels(*config.Labels)
-		labels = &l
+		l := graphql.Labels(config.Labels)
+		labels = l
 	}
 
 	directorInput := graphql.RuntimeInput{
@@ -197,7 +197,7 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 		Name:            runtime.Name,
 		Description:     runtime.Description,
 		StatusCondition: &statusCondition,
-		Labels:          &runtime.Labels,
+		Labels:          runtime.Labels,
 	}
 	err = cc.UpdateRuntime(id, runtimeInput, tenant)
 	if err != nil {

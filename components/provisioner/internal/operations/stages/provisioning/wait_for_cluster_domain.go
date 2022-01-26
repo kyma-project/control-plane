@@ -102,7 +102,7 @@ func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtime
 	runtimeInput := &graphql.RuntimeInput{
 		Name:            runtime.Name,
 		Description:     runtime.Description,
-		Labels:          &runtime.Labels,
+		Labels:          runtime.Labels,
 		StatusCondition: &statusCondition,
 	}
 	return runtimeInput, nil

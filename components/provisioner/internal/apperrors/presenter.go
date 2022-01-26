@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/vektah/gqlparser/gqlerror"
 )
 
 type presenter struct {
@@ -36,7 +36,7 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 func newGraphqlErrorResponse(ctx context.Context, errCode ErrCode, msg string, args ...interface{}) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message:    fmt.Sprintf(msg, args...),
-		Path:       graphql.GetResolverContext(ctx).Path(),
+		Path:       graphql.GetFieldContext(ctx).Path(),
 		Extensions: map[string]interface{}{"error_code": errCode},
 	}
 }
