@@ -543,7 +543,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
