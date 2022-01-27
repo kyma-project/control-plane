@@ -32,10 +32,7 @@ The provisioning process contains the following steps:
 | post_actions | AVS_Tags | AvS | Sets up proper tags in the internal monitoring system. | Team Gopher |
 | post_actions | IAS_Type | Identity Authentication Service | Configures OpenID Connect (OIDC) authentication. | Team Gopher |
 
-The timeout for processing the whole provisioning operation is set to `24h`. The provisioning steps delegate resource creation to Reconciler. Since Reconciler does not constrain a number of retries in case of a failed reconciliation, KEB sets a [provisioning timeout for Reconciler](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49) to `2h`.
-
-Provisioning steps of Kyma 2.0 delegate resource creation to the Reconciler. At the time the Reconciler does not constrain a number of 
-retries in case of failed reconciliation. In order to limit infinite invocation loop KEB introduces provisioning timeout. Timeout's value can be found [here](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49).
+The timeout for processing the whole provisioning operation is set to `24h`. In Kyma 2.0 provisioning steps delegate resource creation to Reconciler. Since Reconciler does not constrain a number of retries in case of a failed reconciliation, KEB sets [provisioning timeout for Reconciler](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49) to `2h`.
 
 ## Deprovisioning
 
