@@ -50,6 +50,7 @@ global:
   components:
     - base
     - busola-migrator
+    - cleaner
     - connectivity-proxy
     - istio-configuration
     - ory
