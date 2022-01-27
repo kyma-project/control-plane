@@ -3,9 +3,8 @@ package dbsession
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"sort"
 
 	"github.com/gocraft/dbr/v2"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -130,6 +129,12 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
 	}
 	cluster.ClusterConfig.OIDCConfig = &oidcConfig
+
+	dnsConfig, dberr := r.getDNSConfig(providerConfig.ID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig.DNSConfig = &dnsConfig
 
 	if cluster.ActiveKymaConfigId != nil {
 		kymaConfig, dberr := r.getKymaConfig(runtimeID, *cluster.ActiveKymaConfigId)
@@ -510,4 +515,79 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 	oidc.SigningAlgs = algorithms
 
 	return oidc, nil
+}
+
+/*
+/*type DNSConfig struct {
+	Domain    string         `json:"domain"`
+	Providers []*DNSProvider `json:"providers"`
+}
+
+type DNSProvider struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        bool     `json:"primary"`
+	SecretName     string   `json:"secretName"`
+	Type           string   `json:"type"`
+}
+
+func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Error {
+	_, err := ws.insertInto("dns_config").
+		Pair("id", config.ID).
+		Pair("domain", config.DNSConfig.Domain).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to dns_config table: %s", err)
+	}
+
+	for _, provider := range config.DNSConfig.Providers {
+		_, err = ws.insertInto("dns_providers").
+			Pair("id", uuid.New().String()).
+			Pair("dns_config_id", config.ID).
+			Pair("domains_include", strings.Join(provider.DomainsInclude, ",")).
+			Pair("is_primary", provider.Primary).
+			Pair("secret_name", provider.SecretName).
+			Pair("type", provider.Type).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to dns_providers table: %s", err)
+		}
+	}
+	return nil
+}
+
+*/
+
+func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dberrors.Error) {
+	var dnsConfig model.DNSConfig
+	var dnsProviders []model.DNSProvider
+
+	_, err := r.session.
+		Select("*").
+		From("dns_config").
+		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
+		Load(&dnsConfig)
+
+	if err != nil {
+		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS config: %s", err)
+	}
+
+	_, err = r.session.
+		Select("*").
+		From("dns_providers").
+		Where(dbr.Eq("dns_config_id", gardenerConfigID)).
+		Load(&dnsProviders)
+
+	for _, provider := range dnsProviders {
+		provider.DomainsInclude
+	}
+
+	if err != nil {
+		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS provider: %s", err)
+	}
+
+	dnsConfig.Providers = dnsProviders
+
+	return dnsConfig, nil
 }

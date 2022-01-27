@@ -182,3 +182,37 @@ CREATE TABLE signing_algorithms
     algorithm text NOT NULL,
     foreign key (oidc_config_id) REFERENCES oidc_config (id) ON DELETE CASCADE
 );
+
+/*type DNSConfig struct {
+	Domain    string         `json:"domain"`
+	Providers []*DNSProvider `json:"providers"`
+}
+
+type DNSProvider struct {
+	DomainsInclude []string `json:"domainsInclude"`
+	Primary        bool     `json:"primary"`
+	SecretName     string   `json:"secretName"`
+	Type           string   `json:"type"`
+}
+*/
+
+-- DNS config
+CREATE TABLE dns_config
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    gardener_config_id uuid NOT NULL,
+    domain text NOT NULL,
+    foreign key (gardener_config_id) REFERENCES gardener_config (id) ON DELETE CASCADE
+);
+
+-- DNS config
+CREATE TABLE dns_providers
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    dns_config_id uuid NOT NULL,
+    domains_include text NOT NULL,
+    is_primary boolean NOT NULL,
+    secret_name text NOT NULL,
+    type text NOT NULL,
+    foreign key (dns_config_id) REFERENCES dns_config (id) ON DELETE CASCADE
+);
