@@ -105,9 +105,9 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
-		MachineImageVersion:         "coreos",
+		MachineImageVersion:         "253",
 		KubernetesVersion:           "1.18",
-		MachineImage:                "253",
+		MachineImage:                "coreos",
 		URL:                         "http://localhost",
 		DefaultGardenerShootPurpose: "testing",
 		DefaultTrialProvider:        internal.AWS,
@@ -120,7 +120,9 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	logs := logrus.New()
 	logs.SetLevel(logrus.DebugLevel)
 
-	provisionerClient := provisioner.NewFakeClient()
+	gardenerClient := gardenerFake.NewSimpleClientset()
+
+	provisionerClient := provisioner.NewFakeClientWithGardener(gardenerClient.CoreV1beta1(), "kcp-system")
 	eventBroker := event.NewPubSub(logs)
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
@@ -167,7 +169,6 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	deprovisioningQueue.SpeedUp(10000)
 
-	gardenerClient := gardenerFake.NewSimpleClientset()
 	ts := &BrokerSuiteTest{
 		db:                  db,
 		provisionerClient:   provisionerClient,
@@ -542,7 +543,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -708,9 +709,9 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
-	var provisioningOp *internal.UpdatingOperation
+	var provisioningOp *internal.Operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
 			provisioningOp = op

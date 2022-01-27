@@ -475,7 +475,71 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 		scOverride.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 	}
-	resources = append(resources, override, scOverride)
+
+	/**
+	maintenancePolicy: |
+	   {
+	     "rules": [
+	       {
+	         "match": {
+	           "plan": "trial|free"
+	         },
+	         "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+	         "timeBegin": "010000+0000",
+	         "timeEnd": "010000+0000"
+	       },
+	       {
+	         "match": {
+	           "region": "europe|eu-"
+	         },
+	         "days": ["Sat"],
+	         "timeBegin": "220000+0000",
+	         "timeEnd": "020000+0000"
+	       },
+	       {
+	         "match": {
+	           "region": "asia|japan|australia|ap-"
+	         },
+	         "days": ["Sat"],
+	         "timeBegin": "150000+0000",
+	         "timeEnd": "180000+0000"
+	       },
+	       {
+	         "match": {
+	           "region": "centralus|eastus|westus|northamerica|southamerica|us-"
+	         },
+	         "days": ["Sun"],
+	         "timeBegin": "040000+0000",
+	         "timeEnd": "080000+0000"
+	       }
+	     ],
+	     "default": {
+	       "days": ["Sat"],
+	       "timeBegin": "220000+0000",
+	       "timeEnd": "020000+0000"
+	     }
+	   }
+	*/
+	orchestrationConfig := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "orchestration-config",
+			Namespace: "kcp-system",
+			Labels:    map[string]string{},
+		},
+		Data: map[string]string{
+			"maintenancePolicy": `{
+	      "rules": [
+	        
+	      ],
+	      "default": {
+	        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+	          "timeBegin": "010000+0000",
+	          "timeEnd": "010000+0000"
+	      }
+	    }`,
+		},
+	}
+	resources = append(resources, override, scOverride, orchestrationConfig)
 
 	return resources
 }
@@ -892,10 +956,14 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:        "1.24.7",
-		KymaPreviewVersion: "2.0",
-
+		Gardener: gardener.Config{
+			Project:     "kyma",
+			ShootDomain: "kyma.sap.com",
+		},
+		KymaVersion:                "1.24.7",
+		KymaPreviewVersion:         "2.0",
 		EnableOnDemandVersion:      true,
+		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "preview"},
@@ -911,13 +979,12 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		FreemiumProviders:       []string{"aws", "azure"},
-		UpdateProcessingEnabled: true,
-		Gardener: gardener.Config{
-			Project:     "kyma",
-			ShootDomain: "kyma.sap.com",
+		OrchestrationConfig: kebOrchestration.Config{
+			Name:      "orchestration-config",
+			Namespace: "kcp-system",
 		},
 		MaxPaginationPage: 100,
+		FreemiumProviders: []string{"aws", "azure"},
 	}
 }
 
