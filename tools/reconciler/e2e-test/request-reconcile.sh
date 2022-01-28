@@ -17,6 +17,8 @@ readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json"
 ## ---------------------------------------------------------------------------------------
 # Sends HTTP POST request to mothership-reconciler to trigger reconciliation of Kyma
 function send_reconciliation_request() {
+  echo "Request body:"
+  cat ${RECONCILE_PAYLOAD_FILE}
   echo "sending reconciliation request to mothership-reconciler at: ${RECONCILE_API}"
   statusURL=$(curl --request POST -sL \
        --url "${RECONCILE_API}"\
