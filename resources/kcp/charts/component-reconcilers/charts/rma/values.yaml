@@ -5,6 +5,8 @@ fullnameOverride: ""
 
 deployment:
   imagePullPolicy: "IfNotPresent"
+  replicasCount: 1
+  resources: {}
 
 service:
   type: ClusterIP
@@ -17,5 +19,3 @@ config:
   workerTimeout: 10m
   retriesMax: 10
   retriesDelay: 60s
-
-resources: {}

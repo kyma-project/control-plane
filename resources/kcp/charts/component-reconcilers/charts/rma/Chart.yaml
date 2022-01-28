@@ -1,5 +1,5 @@
 apiVersion: v2
-name: rma-component-reconciler
+name: rma
 description: A Helm chart for runtime-monitoring-agent (rma) component reconciler
 type: application
 version: 0.1.0
