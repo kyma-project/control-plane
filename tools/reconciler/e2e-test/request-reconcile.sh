@@ -36,7 +36,9 @@ function check_reconcile_status_url() {
 }
 
 function check_kyma_upgrade_version() {
-  if [ -z "${KYMA_UPGRADE_VERSION}" ] ; then
+  printenv
+  echo "KYMA_UPGRADE_SOURCE: ${KYMA_UPGRADE_SOURCE}"
+  if [ -z "${KYMA_UPGRADE_SOURCE}" ] ; then
     echo "ERROR: KYMA_UPGRADE_VERSION is not set"
     exit 1
   fi
