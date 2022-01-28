@@ -3,11 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 

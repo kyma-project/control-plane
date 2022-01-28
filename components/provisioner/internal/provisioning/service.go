@@ -1,10 +1,11 @@
 package provisioning
 
 import (
+	"time"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
