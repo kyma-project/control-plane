@@ -250,7 +250,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	t.Run("Should return error when failed to register Runtime", func(t *testing.T) {
 		//given
 		directorServiceMock := &directormock.DirectorClient{}
-
+		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("registering error"))
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("registering error"))
 
 		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil, nil, nil, nil, nil, nil)
@@ -358,6 +358,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
+		deprovisioningQueue.AssertExpectations(t)
 	})
 
 	t.Run("Should start Runtime deprovisioning without installation and return operation ID", func(t *testing.T) {
@@ -402,6 +403,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
+		deprovisioningNoInstallQueue.AssertExpectations(t)
 	})
 
 	t.Run("Should return error when failed to start deprovisioning", func(t *testing.T) {
