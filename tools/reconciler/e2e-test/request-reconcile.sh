@@ -10,7 +10,8 @@ set -e
 readonly RECONCILER_HOST="http://reconciler-mothership-reconciler.reconciler"
 
 readonly RECONCILE_API="${RECONCILER_HOST}/v1/clusters"
-readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json"
+readonly RECONCILE_PAYLOAD_TEMPLATE="/tmp/body.json"
+readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json.tmp"
 
 ## ---------------------------------------------------------------------------------------
 ## Functions
@@ -34,12 +35,33 @@ function check_reconcile_status_url() {
   fi
 }
 
+function check_kyma_upgrade_version() {
+  if [ -z "${KYMA_UPGRADE_VERSION}" ] ; then
+    echo "ERROR: KYMA_UPGRADE_VERSION is not set"
+    exit 1
+  fi
+  echo "KYMA_UPGRADE_VERSION is set to: ${KYMA_UPGRADE_VERSION}"
+}
+
+function render_template() {
+  echo "Render body.json template"
+  envsubst < ${RECONCILE_PAYLOAD_TEMPLATE} > ${RECONCILE_PAYLOAD_FILE}
+  echo "Rendered template:"
+  cat ${RECONCILE_PAYLOAD_FILE}
+}
+
 ## ---------------------------------------------------------------------------------------
 ## Execution steps
 ## ---------------------------------------------------------------------------------------
 # Install curl and jq
 echo "Installing curl and jq to the environment"
 apk --no-cache add curl jq
+
+# Check if upgrade version has been set
+check_kyma_upgrade_version
+
+# Renders body template with environment variables
+render_template
 
 # Send reconciliation http request to mothership-reconciler
 send_reconciliation_request

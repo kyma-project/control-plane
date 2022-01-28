@@ -10,7 +10,7 @@
     }
   },
   "kymaConfig": {
-    "version": "2.0.2",
+    "version": "${KYMA_UPGRADE_VERSION}",
     "profile": "Evaluation",
     "components": [
       {
