@@ -368,7 +368,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	clusterMatcher := getClusterMatcher(cluster)
 	operationMatcher := getOperationMatcher(operation)
 
-	t.Run("Should start Runtime deprovisioning when both activeKymaConfigID exists AND Kyma cluster is in installed state and return operation ID", func(t *testing.T) {
+	t.Run("Should start Runtime deprovisioning and return operation ID when activeKymaConfigID exists AND Kyma cluster is in installed state", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
@@ -401,8 +401,51 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		deprovisioningQueue.AssertExpectations(t)
 	})
 
-	// 2.0 prov/deprov
-	t.Run("Should start Runtime deprovisioning without installation when activeKymaConfigID is missing AND Kyma cluster is in nonInstalled state and return operation ID", func(t *testing.T) {
+	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID exists after upgrade from 1.x to 2.x BUT Kyma cluster is not reported as installed", func(t *testing.T) {
+		//given
+		operation := model.Operation{
+			ID:             operationID,
+			Type:           model.DeprovisionNoInstall,
+			State:          model.InProgress,
+			StartTimestamp: time.Now(),
+			Message:        "Deprovisioning without installation started",
+			ClusterID:      runtimeID,
+		}
+		operationMatcher := getOperationMatcher(operation)
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
+		installationClient := &installationMocks.Service{}
+
+		deprovisioningNoInstallQueue := &mocks.OperationQueue{}
+
+		deprovisioningNoInstallQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+
+		installationClient.On("CheckInstallationState", mock.Anything).Return(notInstalledState, nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
+
+		//when
+		opID, err := resolver.DeprovisionRuntime(runtimeID)
+		require.NoError(t, err)
+
+		//then
+		assert.Equal(t, operationID, opID)
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+		installationClient.AssertExpectations(t)
+		deprovisioningNoInstallQueue.AssertExpectations(t)
+	})
+
+	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID is missing AND Kyma cluster is in nonInstalled state ", func(t *testing.T) {
 		//given
 		operation := model.Operation{
 			ID:             operationID,
@@ -451,8 +494,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		installationClient.AssertExpectations(t)
 		deprovisioningNoInstallQueue.AssertExpectations(t)
 	})
-	// 2.0 prov/deprov
-	t.Run("Should start Runtime deprovisioning without installation when failed to check installation state and return operation ID", func(t *testing.T) {
+
+	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID exists but check installation state returns error", func(t *testing.T) {
 		//given
 		operation := model.Operation{
 			ID:             operationID,
@@ -480,51 +523,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installationSDK.InstallationState{}, errors.New("Failed while checking installation state"))
-
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
-
-		//when
-		opID, err := resolver.DeprovisionRuntime(runtimeID)
-		require.NoError(t, err)
-
-		//then
-		assert.Equal(t, operationID, opID)
-		sessionFactoryMock.AssertExpectations(t)
-		readWriteSession.AssertExpectations(t)
-		provisioner.AssertExpectations(t)
-		installationClient.AssertExpectations(t)
-		deprovisioningNoInstallQueue.AssertExpectations(t)
-	})
-
-	t.Run("Should start Runtime deprovisioning without installation when activeKymaConfigID still exists after upgrade from 1.x to 2.x BUT Kyma cluster is not reported as installed and return operation ID", func(t *testing.T) {
-		//given
-		operation := model.Operation{
-			ID:             operationID,
-			Type:           model.DeprovisionNoInstall,
-			State:          model.InProgress,
-			StartTimestamp: time.Now(),
-			Message:        "Deprovisioning without installation started",
-			ClusterID:      runtimeID,
-		}
-		operationMatcher := getOperationMatcher(operation)
-
-		sessionFactoryMock := &sessionMocks.Factory{}
-		readWriteSession := &sessionMocks.ReadWriteSession{}
-		provisioner := &mocks2.Provisioner{}
-		installationClient := &installationMocks.Service{}
-
-		deprovisioningNoInstallQueue := &mocks.OperationQueue{}
-
-		deprovisioningNoInstallQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-
-		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
-		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-
-		installationClient.On("CheckInstallationState", mock.Anything).Return(notInstalledState, nil)
+		installationClient.On("CheckInstallationState", mock.Anything).Return(installationSDK.InstallationState{}, errors.New("failed while checking installation state"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
 

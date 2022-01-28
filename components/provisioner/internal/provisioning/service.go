@@ -214,20 +214,10 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 
 	installationState, err := r.installationClient.CheckInstallationState(k8sConfig)
 
-	// TODO remove this log message!!!
-	// This is only only for debug
-	if err != nil {
-		log.Infof("Error while checking installation state :%s.", err.Error())
-	}
-
-	log.Infof("Installation state is :%s.", installationState.State)
-
 	if err == nil && util.NotNilOrEmpty(cluster.ActiveKymaConfigId) && installationState.State == string(v1alpha1.StateInstalled) {
-		// "Kyma classic" mode
 		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
 		r.deprovisioningQueue.Add(operation.ID)
 	} else {
-		// Kyma 2.0 mode
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	}
