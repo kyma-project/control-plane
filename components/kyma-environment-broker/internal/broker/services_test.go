@@ -116,7 +116,6 @@ func TestServices_Services(t *testing.T) {
 		assertPlansContainPropertyInSchemas(t, services[0], "administrators")
 		assertAllServicesEqualControlOrders(t, services, "administrators")
 	})
-
 }
 
 func assertPlansContainPropertyInSchemas(t *testing.T, service domain.Service, property string) {
