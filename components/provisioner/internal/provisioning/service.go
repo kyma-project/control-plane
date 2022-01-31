@@ -212,9 +212,9 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("error: failed to create kubernetes config from raw: %s", err.Error())
 	}
 
-	installationState, err := r.installationClient.CheckInstallationState(k8sConfig)
+	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
 
-	if err != nil || util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
