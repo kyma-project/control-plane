@@ -1,13 +1,12 @@
 package provisioning
 
 import (
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
@@ -214,7 +213,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 
 	installationState, err := r.installationClient.CheckInstallationState(k8sConfig)
 
-	if err == nil && util.NotNilOrEmpty(cluster.ActiveKymaConfigId) && installationState.State == string(v1alpha1.StateInstalled) {
+	if err == nil && util.NotNilOrEmpty(cluster.ActiveKymaConfigId) && installationState.State != installationSDK.NoInstallationState {
 		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
 		r.deprovisioningQueue.Add(operation.ID)
 	} else {
