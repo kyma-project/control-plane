@@ -47,7 +47,7 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
       {{- end }}
-      - name: mothership-reconciler
+      - name: mothership-reconciler-migrate
         image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
