@@ -214,12 +214,12 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 
 	installationState, err := r.installationClient.CheckInstallationState(k8sConfig)
 
-	if err == nil && util.NotNilOrEmpty(cluster.ActiveKymaConfigId) && installationState.State != installationSDK.NoInstallationState {
-		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
-		r.deprovisioningQueue.Add(operation.ID)
-	} else {
+	if err != nil || util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
+	} else {
+		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
+		r.deprovisioningQueue.Add(operation.ID)
 	}
 
 	return operation.ID, nil
