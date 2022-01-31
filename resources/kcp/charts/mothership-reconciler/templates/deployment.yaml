@@ -84,21 +84,6 @@ spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      {{- if eq .Values.global.database.embedded.enabled false}}
-      - name: cloudsql-proxy
-        image: {{ .Values.global.images.cloudsql_proxy_image }}
-        command: ["/cloud_sql_proxy",
-                  "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                  "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-        volumeMounts:
-        - name: cloudsql-instance-credentials
-          mountPath: /secrets/cloudsql-instance-credentials
-          readOnly: true
-        {{- with .Values.deployment.securityContext }}
-        securityContext:
-{{ toYaml . | indent 10 }}
-        {{- end }}
-      {{ end }}
       - image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
@@ -186,11 +171,6 @@ spec:
           mountPath: /fluent-bit/etc/
       {{- end }}
       volumes:
-      {{- if eq .Values.global.database.embedded.enabled false }}
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
-      {{- end }}
       - name: encryption-key
         secret:
           secretName: {{ .Values.encryptionKeySecret }}
