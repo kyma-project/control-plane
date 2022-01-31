@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"time"
+
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
