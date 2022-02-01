@@ -5,7 +5,7 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @koala7659 @piotrmiskiewicz @sputo @szwedm @voigt @wozniakjan
+* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @koala7659 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan
 
 # All developers working on this repository are able to edit main values.yaml file.
 /resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
