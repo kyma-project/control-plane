@@ -131,10 +131,6 @@ spec:
                       "query":"mutation registerIntegrationSystem {\n  result: registerIntegrationSystem(\n    in: { name: \"'"$NAME"'\", description: \"'"$DESCRIPTION"'\" }\n  ) {\n    id\n  }\n}\n"
                     }')
                   echo $RESPONSE_BODY
-                  echo "Checking response body"
-                  BODY=$(echo $RESPONSE_BODY | jq)
-                  echo $BODY
-                  echo "Registering Integration System"
                   INTEGRATION_SYSTEM_ID=$(echo $RESPONSE_BODY | jq -er '.data .result .id')
                 fi
 
@@ -145,9 +141,6 @@ spec:
                   -H "authorization: Bearer ${INTERNAL_TOKEN}" \
                   --data-binary '{"query":"mutation requestCredentials {\n\trequestClientCredentialsForIntegrationSystem (id : \"'"$INTEGRATION_SYSTEM_ID"'\") {\n    id\n    auth {\n      credential {\n        ... on BasicCredentialData {\n            username\n            password\n        }\n        ...  on OAuthCredentialData {\n            clientId\n            clientSecret\n            url\n        }\n      }\n    }\n  }\n}\n"
                  }')
-                echo "Checking credential response body"
-                CBODY=$(echo $CREDENTIAL_RESPONSE_BODY | jq)
-                echo $CBODY
 
                 CLIENT_ID=$(echo $CREDENTIAL_RESPONSE_BODY | jq -er '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientId')
                 CLIENT_SECRET=$(echo $CREDENTIAL_RESPONSE_BODY | jq -er '.data .requestClientCredentialsForIntegrationSystem .auth .credential .clientSecret')
