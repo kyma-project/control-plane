@@ -3,7 +3,11 @@ package provisioning
 import (
 	"time"
 
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
@@ -55,6 +59,7 @@ type service struct {
 	graphQLConverter          GraphQLConverter
 	directorService           director.DirectorClient
 	kubernetesVersionProvider KubernetesVersionProvider
+	installationClient        installation.Service
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -77,6 +82,7 @@ func NewProvisioningService(
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
 	kubernetesVersionProvider KubernetesVersionProvider,
+	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
@@ -101,6 +107,7 @@ func NewProvisioningService(
 		shootUpgradeQueue:            shootUpgradeQueue,
 		hibernationQueue:             hibernationQueue,
 		kubernetesVersionProvider:    kubernetesVersionProvider,
+		installationClient:           installationClient,
 	}
 }
 
@@ -176,9 +183,9 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
-	err := r.verifyLastOperationFinished(session, id)
-	if err != nil {
-		return "", err
+	appErr := r.verifyLastOperationFinished(session, id)
+	if appErr != nil {
+		return "", appErr
 	}
 
 	cluster, dberr := session.GetCluster(id)
@@ -186,9 +193,9 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
-	operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
-	if err != nil {
-		return "", apperrors.Internal("Failed to start deprovisioning: %s", err.Error())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
+	if appErr != nil {
+		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
 	}
 
 	dberr = session.InsertOperation(operation)
@@ -196,7 +203,18 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+	if cluster.Kubeconfig == nil {
+		return "", apperrors.Internal("error: kubeconfig is nil")
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	if err != nil {
+		return "", apperrors.Internal("error: failed to create kubernetes config from raw: %s", err.Error())
+	}
+
+	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
+
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
