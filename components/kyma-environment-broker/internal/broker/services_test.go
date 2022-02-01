@@ -114,7 +114,7 @@ func TestServices_Services(t *testing.T) {
 
 		assertPlansContainPropertyInSchemas(t, services[0], "oidc")
 		assertPlansContainPropertyInSchemas(t, services[0], "administrators")
-		assertAllServicesEqualControlOrders(t, services, "administrators")
+		assertAllServiceControlsOrder(t, services)
 	})
 }
 
@@ -126,7 +126,7 @@ func assertPlansContainPropertyInSchemas(t *testing.T, service domain.Service, p
 }
 
 func assertPlanContainsPropertyInCreateSchema(t *testing.T, plan domain.ServicePlan, property string) {
-	properties := plan.Schemas.Instance.Create.Parameters["properties"]
+	properties := plan.Schemas.Instance.Create.Parameters[broker.PropertiesKey]
 	propertiesMap := properties.(map[string]interface{})
 	if _, exists := propertiesMap[property]; !exists {
 		t.Errorf("plan %s does not contain %s property in Create schema", plan.Name, property)
@@ -134,20 +134,35 @@ func assertPlanContainsPropertyInCreateSchema(t *testing.T, plan domain.ServiceP
 }
 
 func assertPlanContainsPropertyInUpdateSchema(t *testing.T, plan domain.ServicePlan, property string) {
-	properties := plan.Schemas.Instance.Update.Parameters["properties"]
+	properties := plan.Schemas.Instance.Update.Parameters[broker.PropertiesKey]
 	propertiesMap := properties.(map[string]interface{})
 	if _, exists := propertiesMap[property]; !exists {
 		t.Errorf("plan %s does not contain %s property in Update schema", plan.Name, property)
 	}
 }
 
-func assertAllServicesEqualControlOrders(t *testing.T, services []domain.Service, s string) {
+func assertAllServiceControlsOrder(t *testing.T, services []domain.Service) {
 	for _, service := range services {
 		for _, plan := range service.Plans {
-			createOrder := plan.Schemas.Instance.Create.Parameters[broker.ControlsOrderKey]
-			updateOrder := plan.Schemas.Instance.Create.Parameters[broker.ControlsOrderKey]
+			createProperties := plan.Schemas.Instance.Create.Parameters[broker.PropertiesKey].(map[string]interface{})
+			createOrder := plan.Schemas.Instance.Create.Parameters[broker.ControlsOrderKey].([]interface{})
+			assertPropertiesInOrder(t, createProperties, createOrder)
 
-			assert.Equal(t, createOrder, updateOrder)
+			updateProperties := plan.Schemas.Instance.Update.Parameters[broker.PropertiesKey].(map[string]interface{})
+			updateOrder := plan.Schemas.Instance.Update.Parameters[broker.ControlsOrderKey].([]interface{})
+			assertPropertiesInOrder(t, updateProperties, updateOrder)
 		}
+	}
+}
+
+func assertPropertiesInOrder(t *testing.T, properties map[string]interface{}, order []interface{}) {
+	mappedOrder := make(map[string]interface{})
+	for _, v := range order {
+		mappedOrder[v.(string)] = v
+	}
+
+	for i, _ := range properties {
+		_, exists := mappedOrder[i]
+		assert.True(t, exists)
 	}
 }

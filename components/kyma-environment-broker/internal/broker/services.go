@@ -14,7 +14,7 @@ import (
 
 const (
 	ControlsOrderKey = "_controlsOrder"
-	properties       = "properties"
+	PropertiesKey    = "properties"
 )
 
 type ServicesEndpoint struct {
@@ -111,7 +111,6 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 }
 
 func (b *ServicesEndpoint) updateControlsOrder(schema *domain.ServiceInstanceSchema) error {
-
 	casted, ok := schema.Create.Parameters[ControlsOrderKey].([]interface{})
 	if !ok {
 		return errors.New("Invalid type of Create _controlsOrder param")
@@ -134,14 +133,14 @@ func (b *ServicesEndpoint) updateControlsOrder(schema *domain.ServiceInstanceSch
 
 	inverted := invert(targetControls)
 
-	createProps := schema.Create.Parameters[properties].(map[string]interface{})
+	createProps := schema.Create.Parameters[PropertiesKey].(map[string]interface{})
 	schema.Create.Parameters[ControlsOrderKey], err =
 		filterAndOrder(inverted, createProps)
 	if err != nil {
 		return errors.New("Error while updating Create controlOrder")
 	}
 
-	updateProps := schema.Update.Parameters[properties].(map[string]interface{})
+	updateProps := schema.Update.Parameters[PropertiesKey].(map[string]interface{})
 	schema.Update.Parameters[ControlsOrderKey], err =
 		filterAndOrder(inverted, updateProps)
 	if err != nil {
