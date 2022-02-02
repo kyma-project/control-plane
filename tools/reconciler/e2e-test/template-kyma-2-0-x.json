@@ -10,7 +10,7 @@
     }
   },
   "kymaConfig": {
-    "version": "2.0.2",
+    "version": "2.0.4",
     "profile": "Evaluation",
     "components": [
       {
@@ -35,16 +35,6 @@
       },
       {
         "component": "certificates",
-        "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "istio-resources",
         "namespace": "istio-system",
         "configuration": [
           {
