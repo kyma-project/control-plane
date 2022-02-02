@@ -627,9 +627,9 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
-	var upgradeKymaOp *internal.UpgradeKymaOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpgradeKymaOperationByInstanceID(instanceID)
+	var upgradeKymaOp *internal.Operation
+	err := wait.Poll(pollingInterval, time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetLastOperation(instanceID)
 		if err != nil {
 			return false, nil
 		}
@@ -642,7 +642,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 	assert.NoError(s.t, err)
 	assert.NotNil(s.t, upgradeKymaOp)
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = wait.Poll(pollingInterval, time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
