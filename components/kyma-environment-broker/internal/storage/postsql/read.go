@@ -446,10 +446,10 @@ func (r readSession) GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID s
 		if err == dbr.ErrNotFound {
 			return state, dberr.NotFound("cannot find latest runtime state with kyma version: %s", err)
 		}
-		return state, dberr.Internal("Failed to get the latest runtime states with kyma version: %s", err)
+		return state, dberr.Internal("Failed to get the latest runtime state with kyma version: %s", err)
 	}
 	if count == 0 {
-		return state, dberr.NotFound("cannot find latest runtime states with kyma version: %s", err)
+		return state, dberr.NotFound("found 0 latest runtime states with kyma version: %s", err)
 	}
 	return state, nil
 }
