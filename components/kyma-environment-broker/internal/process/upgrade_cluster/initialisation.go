@@ -115,20 +115,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 }
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
-	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
-	provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
-	if err != nil {
-		log.Errorf("while getting provisioning operation from storage")
-		return operation, s.timeSchedule.Retry, nil
-	}
-
-	operation, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
-		op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
-	}, log)
-	if delay != 0 {
-		return operation, delay, nil
-	}
-
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
 	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
 	switch {
