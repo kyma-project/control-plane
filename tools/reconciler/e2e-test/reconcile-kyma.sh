@@ -43,6 +43,7 @@ function wait_until_kyma_installed() {
     sleep $RECONCILER_DELAY
     echo "Waiting for reconciliation to finish, current status: ${status} ...."
     iterationsLeft=$(( iterationsLeft-1 ))
+    echo "Iterations left:  ${iterationsLeft}"
   done
 }
 
