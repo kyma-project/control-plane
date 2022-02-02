@@ -92,7 +92,7 @@ type config struct {
 
 	LogLevel string `envconfig:"default=info"`
 
-	//TODO: Remove after data migration
+	// TODO: Remove after data migration
 	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
@@ -162,7 +162,7 @@ func main() {
 
 	dbsFactory := dbsession.NewFactory(connection)
 
-	//TODO: Remove after data migration
+	// TODO: Remove after data migration
 	if cfg.RunAwsConfigMigration {
 		log.Infof("Starting AWS Config Migration")
 

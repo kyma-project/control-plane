@@ -3,16 +3,16 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
 	directorApperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
