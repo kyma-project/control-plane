@@ -42,21 +42,21 @@ function wait_until_kyma_installed() {
     fi
 
     sleep $RECONCILER_DELAY
-    echo "Waiting for reconciliation to finish, current status: ${status} ...."
     iterationsLeft=$(( iterationsLeft-1 ))
-    echo "Iterations left:  ${iterationsLeft}"
+    echo "Waiting for reconciliation to finish, current status: ${status} .... Iterations left:  ${iterationsLeft}"
   done
 }
 
 # Sends HTTP POST request to mothership-reconciler to trigger reconciliation of Kyma
 function send_reconciliation_request() {
   echo "sending reconciliation request to mothership-reconciler at: ${RECONCILE_API}"
-  echo "Request body:"
-  cat ${RECONCILE_PAYLOAD_FILE}
 
   reconciliationResponse=$(curl --request POST -sL \
        --url "${RECONCILE_API}"\
        --data @"${RECONCILE_PAYLOAD_FILE}")
+  echo "Request body:"
+  jq '.kubeconfig = "" | .metadata = ""' ${RECONCILE_PAYLOAD_FILE} > temp_body.json
+  cat temp_body.json
   statusURL=$(echo "${reconciliationResponse}" | jq -r .statusURL)
   echo "reconciliationResponse: ${reconciliationResponse}"
 
