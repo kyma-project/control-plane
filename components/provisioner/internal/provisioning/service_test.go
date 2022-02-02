@@ -381,7 +381,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 		installationClient.On("CheckInstallationState", mock.Anything).Return(installedState, nil)
 
@@ -424,7 +424,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), true, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		installationClient.On("CheckInstallationState", mock.Anything).Return(notInstalledState, nil)
@@ -474,7 +474,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), true, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
 		installationClient.On("CheckInstallationState", mock.Anything).Return(notInstalledState, nil)
@@ -499,13 +499,15 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
+		installationClient := &installationMocks.Service{}
 
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
+		installationClient.On("CheckInstallationState", mock.Anything).Return(installedState, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, nil, nil, nil, nil)
 
 		//when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
