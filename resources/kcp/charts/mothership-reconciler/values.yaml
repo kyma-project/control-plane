@@ -18,7 +18,7 @@ db:
   reconcilerDbName: "reconciler"
   reconcilerPassword: ""
   reconcilerUsername: ""
-  serviceHost: "cloudsql-proxy.{{ .Release.Name }}"
+  serviceHost: "localhost"
   servicePort: "5432"
   useSsl: false
   file: "reconciler.db"
