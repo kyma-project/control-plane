@@ -101,7 +101,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("unable to unmarshal context: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
-	logger.Infof("Context with keys:")
+	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromContext(contextData)))
 	for k, _ := range contextData {
 		logger.Info(k)
 	}
