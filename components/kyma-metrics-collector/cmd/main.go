@@ -48,30 +48,30 @@ func main() {
 
 	cfg := new(env.Config)
 	if err := envconfig.Process("", cfg); err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load env config")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load env config")
 	}
 
 	// Load public cloud specs
 	publicCloudSpecs, err := kmcprocess.LoadPublicCloudSpecs(cfg)
 	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load public cloud spec")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load public cloud spec")
 	}
 	logger.Debugf("public cloud spec: %v", publicCloudSpecs)
 
 	secretClient, err := gardenersecret.NewClient(opts)
 	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Generate client for gardener secrets")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener secrets")
 	}
 
 	shootClient, err := gardenershoot.NewClient(opts)
 	if err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Generate client for gardener shoots")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Generate client for gardener shoots")
 	}
 
 	// Create a client for KEB communication
 	kebConfig := new(keb.Config)
 	if err := envconfig.Process("", kebConfig); err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load KEB config")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load KEB config")
 	}
 	kebClient := keb.NewClient(kebConfig, logger)
 	logger.Debugf("keb config: %v", kebConfig)
@@ -82,7 +82,7 @@ func main() {
 	// Creating EDP client
 	edpConfig := new(edp.Config)
 	if err := envconfig.Process("", edpConfig); err != nil {
-		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("Load EDP config")
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load EDP config")
 	}
 	edpClient := edp.NewClient(edpConfig, logger)
 

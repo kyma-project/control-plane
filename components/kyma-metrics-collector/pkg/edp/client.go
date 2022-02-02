@@ -88,14 +88,14 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		metricTimer.ObserveDuration()
 		if err != nil {
 			eClient.namedLogger().Debugf("req: %v", req)
-			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).
+			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
 			return
 		}
 
 		if resp.StatusCode != http.StatusCreated {
 			non2xxErr := fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
-			eClient.namedLogger().With(log.KeyError, non2xxErr).With(log.KeyRetry, log.ValueTrue).
+			eClient.namedLogger().With(log.KeyError, non2xxErr.Error()).With(log.KeyRetry, log.ValueTrue).
 				Warn("send event stream as EDP")
 			err = non2xxErr
 		}

@@ -104,7 +104,7 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 		resp, err = c.HTTPClient.Do(req)
 		metricTimer.ObserveDuration()
 		if err != nil {
-			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).
+			c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 				With(log.KeyRetry, log.ValueTrue).Warn("getting runtimes from KEB")
 		}
 		return
@@ -114,25 +114,25 @@ func (c Client) getRuntimesPerPage(req *http.Request, pageNum int) (*kebruntime.
 	}
 
 	if err != nil {
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Warnw("getting runtimes from KEB")
+		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Warnw("getting runtimes from KEB")
 		return nil, errors.Wrapf(err, "failed to get runtimes from KEB")
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		failedErr := fmt.Errorf("KEB returned status code: %d", resp.StatusCode)
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, failedErr).Error("get runtimes from KEB")
+		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, failedErr.Error()).Error("get runtimes from KEB")
 		return nil, failedErr
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Error("read response body")
+		c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Error("read response body")
 		return nil, err
 	}
 	defer func() {
 		if resp.Body != nil {
 			if err = resp.Body.Close(); err != nil {
-				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).
+				c.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 					Error("close body for KEB runtime request")
 			}
 		}

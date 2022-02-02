@@ -44,7 +44,7 @@ func (s *Server) Start() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).Fatal("start server")
+			s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("start server")
 		}
 		s.namedLogger().Info("HTTP server stopped")
 	}()
@@ -55,12 +55,12 @@ func (s *Server) Start() {
 	defer cancelShutdown()
 
 	if err := server.Shutdown(gracefulCtx); err != nil {
-		s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err).
+		s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 			Fatal("server is shutting down")
 	}
 	s.namedLogger().Infof("server gracefully stopped")
 }
 
 func (s *Server) namedLogger() *zap.SugaredLogger {
-	return s.Logger.With("component", "kmc-server")
+	return s.Logger.With("component", "kmc")
 }

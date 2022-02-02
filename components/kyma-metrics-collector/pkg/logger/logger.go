@@ -20,8 +20,11 @@ const (
 	// KeyResult is used as a named key for a log message with result.
 	KeyResult = "result"
 
-	// KeyReason is used as a named key for a log message with reason.
-	KeyReason = "reason"
+	// KeySubAccountID is used as a named key for a log message with subaccount ID.
+	KeySubAccountID = "SubAccountID"
+
+	// KeyWorkerID is used as a named key for a log message with worker ID.
+	KeyWorkerID = "WorkerID"
 
 	// KeyRetry is used as named key for a log message which indicates the step will be retried
 	KeyRetry = "willRetry"
