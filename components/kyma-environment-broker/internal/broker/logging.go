@@ -15,7 +15,10 @@ var openKeys = map[string]struct{}{
 
 func hideSensitiveDataFromRawContext(d []byte) map[string]interface{} {
 	var data map[string]interface{}
-	_ = json.Unmarshal(d, &data)
+	err := json.Unmarshal(d, &data)
+	if err != nil {
+		return map[string]interface{}{}
+	}
 	return hideSensitiveDataFromContext(data)
 }
 
