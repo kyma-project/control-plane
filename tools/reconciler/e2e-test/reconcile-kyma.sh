@@ -24,6 +24,8 @@ function wait_until_kyma_installed() {
   while : ; do
     reconcileStatusResponse=$(curl -sL "${RECONCILE_STATUS_URL}")
     status=$(echo "${reconcileStatusResponse}" | jq -r .status)
+    echo "status: ${status}"
+
     if [ "${status}" = "ready" ]; then
       echo "Kyma is reconciled"
       exit 0
