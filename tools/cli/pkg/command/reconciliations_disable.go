@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	client "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -76,7 +77,8 @@ func (cmd *reconciliationDisableCmd) Run() error {
 
 	if cmd.opts.shootName != "" {
 		var err error
-		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, httpClient)
+		kebClient := runtime.NewClient(cmd.kebURL, httpClient)
+		cmd.opts.runtimeID, err = getRuntimeID(kebClient, cmd.opts.shootName)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}

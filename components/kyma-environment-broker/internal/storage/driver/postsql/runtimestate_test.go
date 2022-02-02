@@ -72,9 +72,8 @@ func TestRuntimeState(t *testing.T) {
 		fixRuntimeID := "runtimeID"
 		fixOperationID := "operationID"
 		givenRuntimeState := fixture.FixRuntimeState(fixRuntimeStateID, fixRuntimeID, fixOperationID)
-		givenRuntimeState.ClusterSetup = &reconcilerApi.Cluster{
-			RuntimeID: fixRuntimeID,
-		}
+		fixClusterSetup := fixture.FixClusterSetup(fixRuntimeID)
+		givenRuntimeState.ClusterSetup = &fixClusterSetup
 
 		storage := brokerStorage.RuntimeStates()
 
@@ -86,6 +85,9 @@ func TestRuntimeState(t *testing.T) {
 		assert.Len(t, runtimeStates, 1)
 		assert.Equal(t, fixRuntimeStateID, runtimeStates[0].ID)
 		assert.Equal(t, fixRuntimeID, runtimeStates[0].ClusterSetup.RuntimeID)
+
+		const kymaVersion = "2.0.0"
+		assert.Equal(t, kymaVersion, runtimeStates[0].ClusterSetup.KymaConfig.Version)
 
 		state, err := storage.GetByOperationID(fixOperationID)
 		require.NoError(t, err)
@@ -158,5 +160,61 @@ func TestRuntimeState(t *testing.T) {
 		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithReconcilerInput1.ID)
 		assert.NotNil(t, gotRuntimeState.ClusterSetup)
 		assert.Equal(t, gotRuntimeState.ClusterSetup.RuntimeID, runtimeStateWithReconcilerInput1.ClusterSetup.RuntimeID)
+	})
+
+	t.Run("should fetch latest RuntimeState with Kyma version", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		fixRuntimeID := "runtimeID"
+		fixKymaVersion := "2.0.3"
+
+		fixRuntimeStateID1 := "runtimestate1"
+		fixOperationID1 := "operation1"
+		runtimeStateWithoutReconcilerInput := fixture.FixRuntimeState(fixRuntimeStateID1, fixRuntimeID, fixOperationID1)
+		runtimeStateWithoutReconcilerInput.CreatedAt = runtimeStateWithoutReconcilerInput.CreatedAt.Add(time.Hour * 2)
+
+		fixRuntimeStateID2 := "runtimestate2"
+		fixOperationID2 := "operation2"
+		runtimeStateWithReconcilerInput := fixture.FixRuntimeState(fixRuntimeStateID2, fixRuntimeID, fixOperationID2)
+		runtimeStateWithReconcilerInput.CreatedAt = runtimeStateWithReconcilerInput.CreatedAt.Add(time.Hour * 1)
+		runtimeStateWithReconcilerInput.ClusterSetup = &reconcilerApi.Cluster{
+			KymaConfig: reconcilerApi.KymaConfig{
+				Version: fixKymaVersion,
+			},
+			RuntimeID: fixRuntimeID,
+		}
+
+		storage := brokerStorage.RuntimeStates()
+
+		err = storage.Insert(runtimeStateWithoutReconcilerInput)
+		require.NoError(t, err)
+		err = storage.Insert(runtimeStateWithReconcilerInput)
+		require.NoError(t, err)
+
+		gotRuntimeStates, err := storage.ListByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Len(t, gotRuntimeStates, 2)
+
+		gotRuntimeState, err := storage.GetLatestByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithoutReconcilerInput.ID)
+		assert.Nil(t, gotRuntimeState.ClusterSetup)
+
+		gotRuntimeState, err = storage.GetLatestWithKymaVersionByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithReconcilerInput.ID)
+		assert.NotNil(t, gotRuntimeState.ClusterSetup)
+		assert.Equal(t, fixKymaVersion, gotRuntimeState.ClusterSetup.KymaConfig.Version)
 	})
 }

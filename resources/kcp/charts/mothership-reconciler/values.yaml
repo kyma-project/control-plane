@@ -28,10 +28,16 @@ db:
 preComponents:
   - [cluster-essentials, istio-configuration, certificates]
 
+options:
+   verbose: false
+   workerCount: 50
+
 deployment:
   imagePullPolicy: "IfNotPresent"
 
   replicasCount: 1
+  podDisruptionBudget: |
+    maxUnavailable: 1
 
   # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
   strategy:
@@ -88,3 +94,8 @@ service:
   scheme: http
   port: 80
   istioPort: 15020
+
+serviceMonitor:
+  enabled: false
+  scrapeTimeout: 30s
+  interval: 60s

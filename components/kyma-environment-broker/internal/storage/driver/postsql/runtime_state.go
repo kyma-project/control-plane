@@ -149,10 +149,10 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 
 func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
 	sess := s.NewReadSession()
-	var states []dbmodel.RuntimeStateDTO
+	var state dbmodel.RuntimeStateDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		states, lastErr = sess.GetLatestRuntimeStatesByRuntimeID(runtimeID, 100)
+		state, lastErr = sess.GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)
@@ -165,17 +165,16 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 	if err != nil {
 		return internal.RuntimeState{}, lastErr
 	}
-	for _, state := range states {
-		result, err := s.toRuntimeState(&state)
-		if err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
-		}
-		if result.ClusterSetup != nil && result.ClusterSetup.KymaConfig.Version != "" {
-			return result, nil
-		}
-		if result.KymaConfig.Version != "" {
-			return result, nil
-		}
+
+	result, err := s.toRuntimeState(&state)
+	if err != nil {
+		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+	}
+	if result.ClusterSetup != nil && result.ClusterSetup.KymaConfig.Version != "" {
+		return result, nil
+	}
+	if result.KymaConfig.Version != "" {
+		return result, nil
 	}
 
 	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with kyma version for runtime %s", runtimeID)
@@ -208,7 +207,7 @@ func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.Ru
 		KymaConfig:    string(encKymaCfg),
 		ClusterConfig: string(clusterCfg),
 		ClusterSetup:  string(clusterSetup),
-		KymaVersion:   state.KymaConfig.Version,
+		KymaVersion:   state.GetKymaVersion(),
 		K8SVersion:    state.ClusterConfig.KubernetesVersion,
 	}, nil
 }

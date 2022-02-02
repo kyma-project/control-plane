@@ -67,8 +67,6 @@ func (cmd *operationStopCmd) Run() error {
 	defer cancel()
 
 	httpClient := oauth2.NewClient(ctx, cmd.auth)
-
-	httpClient = &http.Client{}
 	client, err := reconciler.NewClient(cmd.reconcilerURL, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "while creating mothership client")

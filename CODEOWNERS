@@ -17,17 +17,17 @@
 /resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @voigt @wozniakjan
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom
-/components/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom
-/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom
+/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio
+/components/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio
+/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio
 
 # Runtime Provisioner
-/resources/kcp/charts/provisioner @janmedrek @akgalwas @franpog859 @ralikio @Maladie @koala7659
-/components/provisioner @janmedrek @akgalwas @franpog859 @ralikio @Maladie @koala7659
-/docs/provisioner @janmedrek @akgalwas @franpog859 @ralikio @Maladie @koala7659
-/components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @franpog859 @ralikio @Maladie @koala7659
-/tests/provisioner-tests @janmedrek @akgalwas @franpog859 @ralikio @Maladie @koala7659
+/resources/kcp/charts/provisioner @janmedrek @akgalwas @franpog859 @Maladie @koala7659
+/components/provisioner @janmedrek @akgalwas @franpog859 @Maladie @koala7659
+/docs/provisioner @janmedrek @akgalwas @franpog859 @Maladie @koala7659
+/components/schema-migrator/migrations/provisioner @janmedrek @akgalwas @franpog859 @Maladie @koala7659
+/tests/provisioner-tests @janmedrek @akgalwas @franpog859 @Maladie @koala7659
 
 # Reconciler
 /resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
@@ -36,7 +36,7 @@
 
 
 # e2e-provisioning
-/tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom
+/tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio
 
 # Kyma metrics collector
 /resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @pxsalehi
@@ -47,13 +47,13 @@
 /resources/oidc-kubeconfig-service  @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
 
 # KCP CLI
-/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed
+/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @ralikio
 
 # reconciler
 /components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All .md files
-*.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl
+*.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl @grego952
 
 # Owners of the .kyma-project-io folder
 /.kyma-project-io/ @m00g3n @pPrecel @dbadura

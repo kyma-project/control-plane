@@ -2,28 +2,28 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:ca3498eb"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:ca3498eb"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:0c29fec2"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:0c29fec2"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1250"
+      version: "PR-1276"
     provisioner:
       dir:
-      version: "PR-1198"
+      version: "PR-1312"
     kyma_environment_broker:
       dir:
-      version: "PR-1253"
+      version: "PR-1310"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1187"
+      version: "PR-1285"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1187"
+      version: "PR-1279"
     subscription_cleanup_job:
       dir:
-      version: "PR-1131"
+      version: "PR-1268"
     kyma_metrics_collector:
       dir:
       version: "PR-1158"
@@ -50,6 +50,7 @@ global:
   components:
     - base
     - busola-migrator
+    - cleaner
     - connectivity-proxy
     - istio-configuration
     - ory
@@ -149,7 +150,6 @@ global:
     enabled: false
     expose: true
     authentication: true
-    servicemonitor: false
     serviceAccountName: "mothership-reconciler"
     auditlog:
       enabled: true

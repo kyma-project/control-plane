@@ -10,7 +10,7 @@
     }
   },
   "kymaConfig": {
-    "version": "main",
+    "version": "2.0.4",
     "profile": "Evaluation",
     "components": [
       {

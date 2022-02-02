@@ -9,7 +9,7 @@ import (
 
 const (
 	DefinitionType   = "BASIC"
-	interval         = 180
+	interval         = 60
 	timeout          = 30000
 	contentCheck     = "error"
 	contentCheckType = "NOT_CONTAINS"

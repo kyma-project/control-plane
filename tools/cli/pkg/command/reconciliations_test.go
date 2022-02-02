@@ -138,9 +138,28 @@ var (
 			m := automock.NewMockkebClient(ctrl)
 			m.EXPECT().
 				ListRuntimes(gomock.Any()).
-				Return(&runtime.RuntimesPage{
+				Return(runtime.RuntimesPage{
 					Data:       []runtime.RuntimeDTO{},
 					Count:      0,
+					TotalCount: 0,
+				}, nil).
+				Times(1)
+			return m
+		}
+	}
+
+	buildProvideKebResponse = func(ctrl *gomock.Controller, runtimeID string) kebClientProvider {
+		return func(_ string, _ *http.Client) kebClient {
+			m := automock.NewMockkebClient(ctrl)
+			m.EXPECT().
+				ListRuntimes(gomock.Any()).
+				Return(runtime.RuntimesPage{
+					Data: []runtime.RuntimeDTO{
+						{
+							RuntimeID: runtimeID,
+						},
+					},
+					Count:      1,
 					TotalCount: 0,
 				}, nil).
 				Times(1)

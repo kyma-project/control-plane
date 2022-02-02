@@ -3,7 +3,6 @@ package director
 import "fmt"
 
 const (
-	consoleURLLabelKey = "runtime_consoleUrl"
 	instanceIDLabelKey = "broker_instance_id"
 )
 
@@ -36,11 +35,10 @@ func (qp queryProvider) RuntimeForInstanceId(instanceID string) string {
 }
 
 func runtimeStatusData() string {
-	return fmt.Sprintf(`id
-			labels(key: "%s") 
+	return `id
 			status{
 				condition
-			}`, consoleURLLabelKey)
+			}`
 }
 
 func labelData() string {

@@ -44,6 +44,7 @@ func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, 
 
 	modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 		op.ClusterConfigurationDeleted = true
+		op.ReconcilerDeregistrationAt = time.Now()
 	}, log)
 
 	return modifiedOp, d, nil

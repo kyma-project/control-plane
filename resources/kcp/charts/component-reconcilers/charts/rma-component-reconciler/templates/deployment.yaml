@@ -27,7 +27,9 @@ spec:
           - start
           - rma
           - --workspace=/tmp/reconciler
+          {{- if .Values.config.verbose }}
           - --verbose
+          {{- end }}
           - --worker-count={{ .Values.config.workerCount }}
           - --worker-timeout={{ .Values.config.workerTimeout }}
           - --retries-max={{ .Values.config.retriesMax }}
