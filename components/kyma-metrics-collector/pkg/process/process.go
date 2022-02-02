@@ -164,7 +164,7 @@ func (p Process) getOldRecordIfMetricExists(subAccountID string) (*kmccache.Reco
 		}
 	}
 	notFoundErr := fmt.Errorf("old metrics for subAccountID: %s not found", subAccountID)
-	p.Logger.Error(notFoundErr)
+	p.Logger.With(log.KeySubAccountID, subAccountID).Error("old metrics for subAccount not found")
 	return nil, notFoundErr
 }
 
@@ -247,7 +247,7 @@ func (p Process) processSubAccountID(subAccountID string, identifier int) {
 	record, isOldMetricValid, err := p.getRecordWithOldOrNewMetric(identifier, subAccountID)
 	if err != nil {
 		p.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).With(log.KeyWorkerID, identifier).
-			Error("no metric found/generated for subaccount id")
+			With(log.KeySubAccountID, subAccountID).Error("no metric found/generated for subaccount")
 		// SubAccountID is not trackable anymore as there is no runtime
 		if errors.Is(err, errorSubAccountIDNotTrackable) {
 			p.namedLogger().With(log.KeyRequeue, log.ValueFalse).With(log.KeySubAccountID, subAccountID).
