@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 
@@ -210,7 +211,7 @@ func TrialSchema() RootSchema {
 	return NewSchema(
 		ProvisioningProperties{
 			Name: NameProperty(),
-		}, []string{"name"})
+		}, DefaultControlsOrder())
 }
 
 func marshalSchema(schema RootSchema) []byte {
@@ -300,207 +301,67 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		includeAdminsSchema(schemas...)
 	}
 
-	return map[string]Plan{
+	outputPlans := map[string]Plan{
 		AWSPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          AWSPlanID,
-				Name:        AWSPlanName,
-				Description: defaultDescription(AWSPlanName, plans),
-				Metadata:    defaultMetadata(AWSPlanName, plans), Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(AWSPlanID, AWSHAPlanName, plans),
 			catalogRawSchema:      marshalSchema(awsCatalogSchema),
 			provisioningRawSchema: marshalSchema(awsSchema),
 			updateRawSchema:       schemaForUpdate(awsSchema),
 		},
 		PreviewPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          PreviewPlanID,
-				Name:        PreviewPlanName,
-				Description: defaultDescription(PreviewPlanName, plans),
-				Metadata:    defaultMetadata(PreviewPlanName, plans), Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(PreviewPlanID, PreviewPlanName, plans),
 			provisioningRawSchema: marshalSchema(awsSchema),
 			updateRawSchema:       schemaForUpdate(awsSchema),
 		},
 		AWSHAPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          AWSHAPlanID,
-				Name:        AWSHAPlanName,
-				Description: defaultDescription(AWSHAPlanName, plans),
-				Metadata:    defaultMetadata(AWSHAPlanName, plans), Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans),
 			catalogRawSchema:      marshalSchema(awsHACatalogSchema),
 			provisioningRawSchema: marshalSchema(awsHASchema),
 			updateRawSchema:       schemaForUpdate(awsHASchema),
 		},
 		GCPPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          GCPPlanID,
-				Name:        GCPPlanName,
-				Description: defaultDescription(GCPPlanName, plans),
-				Metadata:    defaultMetadata(GCPPlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(GCPPlanID, GCPPlanName, plans),
 			provisioningRawSchema: marshalSchema(gcpSchema),
 			updateRawSchema:       schemaForUpdate(gcpSchema),
 		},
 		OpenStackPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          OpenStackPlanID,
-				Name:        OpenStackPlanName,
-				Description: defaultDescription(OpenStackPlanName, plans),
-				Metadata:    defaultMetadata(OpenStackPlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans),
 			provisioningRawSchema: marshalSchema(openstackSchema),
 			updateRawSchema:       schemaForUpdate(openstackSchema),
 		},
 		AzurePlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          AzurePlanID,
-				Name:        AzurePlanName,
-				Description: defaultDescription(AzurePlanName, plans),
-				Metadata:    defaultMetadata(AzurePlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(AzurePlanID, AzurePlanName, plans),
 			provisioningRawSchema: marshalSchema(azureSchema),
 			updateRawSchema:       schemaForUpdate(azureSchema),
 		},
 		AzureLitePlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          AzureLitePlanID,
-				Name:        AzureLitePlanName,
-				Description: defaultDescription(AzureLitePlanName, plans),
-				Metadata:    defaultMetadata(AzureLitePlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(AzureLitePlanID, AzureHAPlanID, plans),
 			provisioningRawSchema: marshalSchema(azureLiteSchema),
 			updateRawSchema:       schemaForUpdate(azureLiteSchema),
 		},
 		FreemiumPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          FreemiumPlanID,
-				Name:        FreemiumPlanName,
-				Description: defaultDescription(FreemiumPlanName, plans),
-				Metadata:    defaultMetadata(FreemiumPlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans),
 			provisioningRawSchema: marshalSchema(freemiumSchema),
 			updateRawSchema:       schemaForUpdate(freemiumSchema),
 		},
 		AzureHAPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          AzureHAPlanID,
-				Name:        AzureHAPlanName,
-				Description: defaultDescription(AzureHAPlanName, plans),
-				Metadata:    defaultMetadata(AzureHAPlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(AzureHAPlanID, AzureHAPlanName, plans),
 			provisioningRawSchema: marshalSchema(azureHASchema),
 			updateRawSchema:       schemaForUpdate(azureHASchema),
 		},
 		TrialPlanID: {
-			PlanDefinition: domain.ServicePlan{
-				ID:          TrialPlanID,
-				Name:        TrialPlanName,
-				Description: defaultDescription(TrialPlanName, plans),
-				Metadata:    defaultMetadata(TrialPlanName, plans),
-				Schemas: &domain.ServiceSchemas{
-					Instance: domain.ServiceInstanceSchema{
-						Create: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-						Update: domain.Schema{
-							Parameters: make(map[string]interface{}),
-						},
-					},
-				},
-			},
+			PlanDefinition:        defaultServicePlan(TrialPlanID, TrialPlanName, plans),
 			provisioningRawSchema: marshalSchema(trialSchema),
 			updateRawSchema:       schemaForUpdate(trialSchema),
 		},
 	}
+
+	// for _, plan := range outputPlans {
+	// 	plan.
+	// }
+	// b.updateControlsOrder(&p.Schemas.Instance)
+
+	return outputPlans
 }
 
 func includeOIDCSchema(schemas ...*RootSchema) {
@@ -522,6 +383,24 @@ func includeAdminsSchema(schemas ...*RootSchema) {
 		pp.Administrators = adminsProperty
 		schema.Properties = pp
 		schema.ControlsOrder = append(schema.ControlsOrder, "administrators")
+	}
+}
+
+func defaultServicePlan(id, name string, plans PlansConfig) domain.ServicePlan {
+	return domain.ServicePlan{
+		ID:          id,
+		Name:        name,
+		Description: defaultDescription(name, plans),
+		Metadata:    defaultMetadata(name, plans), Schemas: &domain.ServiceSchemas{
+			Instance: domain.ServiceInstanceSchema{
+				Create: domain.Schema{
+					Parameters: make(map[string]interface{}),
+				},
+				Update: domain.Schema{
+					Parameters: make(map[string]interface{}),
+				},
+			},
+		},
 	}
 }
 
@@ -579,4 +458,84 @@ func IsPreviewPlan(planID string) bool {
 	default:
 		return false
 	}
+}
+
+func updateControlsOrder(schema *domain.ServiceInstanceSchema) error {
+	casted, ok := schema.Create.Parameters[ControlsOrderKey].([]interface{})
+	if !ok {
+		return errors.New("Invalid type of Create _controlsOrder param")
+	}
+
+	targetControls, err := appendNonExisting(make(map[string]int), casted)
+	if err != nil {
+		return errors.Wrap(err, "Error while creating _controlsOrder")
+	}
+
+	casted, ok = schema.Update.Parameters[ControlsOrderKey].([]interface{})
+	if !ok {
+		return errors.New("Invalid type of Update _controlsOrder param")
+	}
+
+	targetControls, err = appendNonExisting(targetControls, casted)
+	if err != nil {
+		return errors.Wrap(err, "Error while creating _controlsOrder")
+	}
+
+	inverted := invert(targetControls)
+
+	createProps := schema.Create.Parameters[PropertiesKey].(map[string]interface{})
+	schema.Create.Parameters[ControlsOrderKey], err =
+		filterAndOrder(inverted, createProps)
+	if err != nil {
+		return errors.New("Error while updating Create controlOrder")
+	}
+
+	updateProps := schema.Update.Parameters[PropertiesKey].(map[string]interface{})
+	schema.Update.Parameters[ControlsOrderKey], err =
+		filterAndOrder(inverted, updateProps)
+	if err != nil {
+		return errors.New("Error while updating Update controlOrder")
+	}
+
+	return nil
+}
+
+func appendNonExisting(to map[string]int, from []interface{}) (map[string]int, error) {
+	size := len(to)
+	for i, v := range from {
+		key, ok := v.(string)
+
+		if !ok {
+			return nil, errors.Errorf("Invalid value type")
+		}
+
+		if _, ok = to[key]; !ok {
+			to[key] = size + i
+		}
+	}
+
+	return to, nil
+}
+
+func invert(targetControls map[string]int) []string {
+	inverted := make([]string, len(targetControls))
+
+	for key, value := range targetControls {
+		inverted[value] = key
+	}
+
+	return inverted
+}
+
+func filterAndOrder(items []string, included map[string]interface{}) ([]interface{}, error) {
+	output := make([]interface{}, 0)
+	for i := 0; i < len(items); i++ {
+		value := items[i]
+
+		if _, ok := included[value]; ok {
+			output = append(output, value)
+		}
+	}
+
+	return output, nil
 }

@@ -81,7 +81,6 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			}
 		}
 
-		b.updateControlsOrder(&p.Schemas.Instance)
 		availableServicePlans = append(availableServicePlans, p)
 	}
 
@@ -108,84 +107,4 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 			AllowContextUpdates: true,
 		},
 	}, nil
-}
-
-func (b *ServicesEndpoint) updateControlsOrder(schema *domain.ServiceInstanceSchema) error {
-	casted, ok := schema.Create.Parameters[ControlsOrderKey].([]interface{})
-	if !ok {
-		return errors.New("Invalid type of Create _controlsOrder param")
-	}
-
-	targetControls, err := appendNonExisting(make(map[string]int), casted)
-	if err != nil {
-		return errors.Wrap(err, "Error while creating _controlsOrder")
-	}
-
-	casted, ok = schema.Update.Parameters[ControlsOrderKey].([]interface{})
-	if !ok {
-		return errors.New("Invalid type of Update _controlsOrder param")
-	}
-
-	targetControls, err = appendNonExisting(targetControls, casted)
-	if err != nil {
-		return errors.Wrap(err, "Error while creating _controlsOrder")
-	}
-
-	inverted := invert(targetControls)
-
-	createProps := schema.Create.Parameters[PropertiesKey].(map[string]interface{})
-	schema.Create.Parameters[ControlsOrderKey], err =
-		filterAndOrder(inverted, createProps)
-	if err != nil {
-		return errors.New("Error while updating Create controlOrder")
-	}
-
-	updateProps := schema.Update.Parameters[PropertiesKey].(map[string]interface{})
-	schema.Update.Parameters[ControlsOrderKey], err =
-		filterAndOrder(inverted, updateProps)
-	if err != nil {
-		return errors.New("Error while updating Update controlOrder")
-	}
-
-	return nil
-}
-
-func appendNonExisting(to map[string]int, from []interface{}) (map[string]int, error) {
-	size := len(to)
-	for i, v := range from {
-		key, ok := v.(string)
-
-		if !ok {
-			return nil, errors.Errorf("Invalid value type")
-		}
-
-		if _, ok = to[key]; !ok {
-			to[key] = size + i
-		}
-	}
-
-	return to, nil
-}
-
-func invert(targetControls map[string]int) []string {
-	inverted := make([]string, len(targetControls))
-
-	for key, value := range targetControls {
-		inverted[value] = key
-	}
-
-	return inverted
-}
-
-func filterAndOrder(items []string, included map[string]interface{}) ([]interface{}, error) {
-	output := make([]interface{}, 0)
-	for i := 0; i < len(items); i++ {
-		value := items[i]
-
-		if _, ok := included[value]; ok {
-			output = append(output, value)
-		}
-	}
-
-	return output, nil
 }
