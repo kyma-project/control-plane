@@ -2,7 +2,8 @@ package broker
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func TestHideSensitiveDataFromContext(t *testing.T) {
 		"username": "johnsmith",
 		"subobject": map[string]interface{}{
 			"secret": "val",
-			"sm_url": "http://sm.url.com",
+			"sm_url": "https://sm.url.com",
 		},
 		"isValid": true,
 	}
@@ -21,9 +22,7 @@ func TestHideSensitiveDataFromContext(t *testing.T) {
 	// when
 	out := hideSensitiveDataFromContext(in)
 
-	// then
-	fmt.Println(out)
-
-	d, _ := json.Marshal(out)
-	fmt.Println(string(d))
+	d, err := json.Marshal(out)
+	require.NoError(t, err)
+	assert.Equal(t, `{"isValid":true,"password":"*****","subobject":{"secret":"*****","sm_url":"https://sm.url.com"},"username":"*****"}`, string(d))
 }
