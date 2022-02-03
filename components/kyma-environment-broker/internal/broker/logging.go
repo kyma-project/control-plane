@@ -19,30 +19,37 @@ func hideSensitiveDataFromRawContext(d []byte) map[string]interface{} {
 	if err != nil {
 		return map[string]interface{}{}
 	}
-	return hideSensitiveDataFromContext(data)
-}
-
-func hideSensitiveDataFromContext(input map[string]interface{}) map[string]interface{} {
-	copy := input
-
-	for k, v := range copy {
-		if reflect.TypeOf(v).Kind() == reflect.String {
-			if _, exists := openKeys[k]; !exists {
-				copy[k] = "*****"
-			}
-		}
-		if reflect.TypeOf(v).Kind() == reflect.Map {
-			copy[k] = hideSensitiveDataFromContext(v.(map[string]interface{}))
+	for k, v := range data {
+		switch reflect.TypeOf(v).Kind() {
+		case reflect.String:
+			data[k] = "*****"
+		case reflect.Map:
+			data[k] = hideSensitiveDataFromContext(v.(map[string]interface{}))
 		}
 	}
 
-	return copy
+	return data
+}
+
+func hideSensitiveDataFromContext(input map[string]interface{}) map[string]interface{} {
+	for k, v := range input {
+		if reflect.TypeOf(v).Kind() == reflect.String {
+			if _, exists := openKeys[k]; !exists {
+				input[k] = "*****"
+			}
+		}
+		if reflect.TypeOf(v).Kind() == reflect.Map {
+			input[k] = hideSensitiveDataFromContext(v.(map[string]interface{}))
+		}
+	}
+
+	return input
 }
 
 func marshallRawContext(d map[string]interface{}) string {
 	b, err := json.Marshal(d)
 	if err != nil {
-		return fmt.Sprintf("unable to marshall context data")
+		return fmt.Sprintf("unable to marshal context data")
 	}
 	return string(b)
 }

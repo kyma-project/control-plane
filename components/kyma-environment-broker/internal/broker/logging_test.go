@@ -13,6 +13,7 @@ func TestHideSensitiveDataFromContext(t *testing.T) {
 		"username": "johnsmith",
 		"subobject": map[string]interface{}{
 			"secret": "val",
+			"sm_url": "http://sm.url.com",
 		},
 		"isValid": true,
 	}
