@@ -3,13 +3,13 @@ package provisioning
 import (
 	"time"
 
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
-//go:generate mockery -name=Service
+//go:generate mockery --name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
@@ -40,16 +40,16 @@ type Service interface {
 	HibernateCluster(clusterID string) (*gqlschema.OperationStatus, apperrors.AppError)
 }
 
-//go:generate mockery -name=Provisioner
+//go:generate mockery --name=Provisioner
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
-	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
+	DeprovisionCluster(cluster model.Cluster, withoutInstallation bool, operationId string) (model.Operation, apperrors.AppError)
 	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	HibernateCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
-//go:generate mockery -name=KubernetesVersionProvider
+//go:generate mockery --name=KubernetesVersionProvider
 type KubernetesVersionProvider interface {
 	Get(runtimeID string, tenant string) (string, apperrors.AppError)
 }
@@ -193,16 +193,6 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
-	if appErr != nil {
-		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
-	}
-
-	dberr = session.InsertOperation(operation)
-	if dberr != nil {
-		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
-	}
-
 	if cluster.Kubeconfig == nil {
 		return "", apperrors.Internal("error: kubeconfig is nil")
 	}
@@ -214,7 +204,23 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 
 	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
 
+	deprovisionWithoutUninstall := false
+
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
+		deprovisionWithoutUninstall = true
+	}
+
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, deprovisionWithoutUninstall, r.uuidGenerator.New())
+	if appErr != nil {
+		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
+	}
+
+	dberr = session.InsertOperation(operation)
+	if dberr != nil {
+		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
+	}
+
+	if deprovisionWithoutUninstall {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
