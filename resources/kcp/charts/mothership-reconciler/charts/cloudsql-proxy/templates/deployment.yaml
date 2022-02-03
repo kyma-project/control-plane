@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         {{- include "cloudsql-proxy.selectorLabels" . | nindent 8 }}
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -34,6 +36,7 @@ spec:
           image: {{ .Values.global.images.cloudsql_proxy_image }}
           command: [ "/cloud_sql_proxy",
                      "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                     "-use_http_health_check",
                      "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
           volumeMounts:
             - name: cloudsql-instance-credentials
@@ -43,6 +46,30 @@ spec:
             - name: postgres
               containerPort: 5432
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8090
+            periodSeconds: 1
+            timeoutSeconds: 5
+            failureThreshold: 20
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

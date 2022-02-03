@@ -10,9 +10,9 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+      targetPort: postgres
       protocol: TCP
-      name: postgresql
+      name: postgres
   selector:
     {{- include "cloudsql-proxy.selectorLabels" . | nindent 4 }}
 ---

@@ -25,7 +25,6 @@ securityContext:
 service:
   type: ClusterIP
   port: 5432
-  targetPort: 5432
 
 strategy:
   type: RollingUpdate
