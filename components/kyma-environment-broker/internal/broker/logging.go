@@ -22,7 +22,9 @@ func hideSensitiveDataFromRawContext(d []byte) map[string]interface{} {
 	for k, v := range data {
 		switch reflect.TypeOf(v).Kind() {
 		case reflect.String:
-			data[k] = "*****"
+			if _, exists := openKeys[k]; !exists {
+				data[k] = "*****"
+			}
 		case reflect.Map:
 			data[k] = hideSensitiveDataFromContext(v.(map[string]interface{}))
 		}
