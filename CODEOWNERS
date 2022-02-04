@@ -8,7 +8,7 @@
 * @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @koala7659 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @voigt @wozniakjan @ebensom
@@ -30,9 +30,9 @@
 /tests/provisioner-tests @janmedrek @akgalwas @franpog859 @Maladie @koala7659
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
-/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
-/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 
 # e2e-provisioning
@@ -47,13 +47,13 @@
 /resources/oidc-kubeconfig-service  @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
 
 # KCP CLI
-/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @ralikio
+/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio 
 
 # reconciler
-/components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl @grego952
 
 # Owners of the .kyma-project-io folder
-/.kyma-project-io/ @m00g3n @pPrecel @dbadura
+/.kyma-project-io/ @m00g3n @pPrecel @dbadura @kwiatekus @cortey
