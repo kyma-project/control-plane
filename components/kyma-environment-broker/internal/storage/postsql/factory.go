@@ -42,7 +42,7 @@ type ReadSession interface {
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
-	GetLatestRuntimeStatesByRuntimeID(runtimeID string, count int) ([]dbmodel.RuntimeStateDTO, dberr.Error)
+	GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 }
 
 //go:generate mockery -name=WriteSession

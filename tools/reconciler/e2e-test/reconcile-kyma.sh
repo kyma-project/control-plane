@@ -8,9 +8,8 @@
 set -e
 
 readonly RECONCILER_HOST="http://reconciler-mothership-reconciler.reconciler"
-readonly RECONCILER_TIMEOUT=1200 # in secs
 readonly RECONCILER_DELAY=15 # in secs
-
+readonly RECONCILER_STATUS_RETRY=80
 readonly RECONCILE_API="${RECONCILER_HOST}/v1/clusters"
 readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json"
 
@@ -20,10 +19,12 @@ readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json"
 
 # Waits until Kyma reconciliation is in ready state
 function wait_until_kyma_installed() {
-  iterationsLeft=$(( RECONCILER_TIMEOUT/RECONCILER_DELAY ))
+  iterationsLeft=${RECONCILER_STATUS_RETRY}
   while : ; do
     reconcileStatusResponse=$(curl -sL "${RECONCILE_STATUS_URL}")
     status=$(echo "${reconcileStatusResponse}" | jq -r .status)
+    echo "status: ${status}"
+
     if [ "${status}" = "ready" ]; then
       echo "Kyma is reconciled"
       exit 0
@@ -34,24 +35,28 @@ function wait_until_kyma_installed() {
       exit 1
     fi
 
-    if [ "$RECONCILER_TIMEOUT" -ne 0 ] && [ "$iterationsLeft" -le 0 ]; then
+    if [ "$iterationsLeft" -le 0 ]; then
       echo "reconcileStatusResponse: ${reconcileStatusResponse}"
       echo "Timeout reached on Kyma reconciliation. Exiting"
       exit 1
     fi
 
     sleep $RECONCILER_DELAY
-    echo "Waiting for reconciliation to finish, current status: ${status} ...."
     iterationsLeft=$(( iterationsLeft-1 ))
+    echo "Waiting for reconciliation to finish, current status: ${status} .... Iterations left:  ${iterationsLeft}"
   done
 }
 
 # Sends HTTP POST request to mothership-reconciler to trigger reconciliation of Kyma
 function send_reconciliation_request() {
   echo "sending reconciliation request to mothership-reconciler at: ${RECONCILE_API}"
+
   reconciliationResponse=$(curl --request POST -sL \
        --url "${RECONCILE_API}"\
        --data @"${RECONCILE_PAYLOAD_FILE}")
+  echo "Request body:"
+  jq '.kubeconfig = "" | .metadata = ""' ${RECONCILE_PAYLOAD_FILE} > temp_body.json
+  cat temp_body.json
   statusURL=$(echo "${reconciliationResponse}" | jq -r .statusURL)
   echo "reconciliationResponse: ${reconciliationResponse}"
 

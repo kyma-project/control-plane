@@ -1,8 +1,7 @@
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
-{{ $subchart := printf "%s-component-reconciler" $component }}
 {{ $values := index $global.Values $component }}
-{{ if not (hasKey $global.Subcharts $subchart) }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

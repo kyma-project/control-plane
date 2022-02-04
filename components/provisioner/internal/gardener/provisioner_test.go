@@ -113,7 +113,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
 
-		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, false, operationId)
 		require.NoError(t, apperr)
 
 		// then
@@ -128,18 +128,6 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 
 	t.Run("should start deprovisioning without uninstallation", func(t *testing.T) {
 		// given
-		cluster := model.Cluster{
-			ID: runtimeId,
-			ClusterConfig: model.GardenerConfig{
-				ID:                     "id",
-				ClusterID:              runtimeId,
-				Name:                   clusterName,
-				ProjectName:            "project-name",
-				GardenerProviderConfig: gcpGardenerConfig,
-			},
-			ActiveKymaConfigId: nil,
-		}
-
 		clientset := fake.NewSimpleClientset(
 			&gardener_types.Shoot{
 				ObjectMeta: v1.ObjectMeta{Name: clusterName, Namespace: gardenerNamespace, Finalizers: []string{"test"}},
@@ -155,7 +143,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		// when
 		sessionFactoryMock.On("NewWriteSession").Return(session)
 
-		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, true, operationId)
 		require.NoError(t, apperr)
 
 		// then
@@ -183,7 +171,7 @@ func TestGardenerProvisioner_DeprovisionCluster(t *testing.T) {
 		sessionFactoryMock.On("NewWriteSession").Return(session)
 		session.On("MarkClusterAsDeleted", cluster.ID).Return(nil)
 
-		operation, apperr := provisionerClient.DeprovisionCluster(cluster, operationId)
+		operation, apperr := provisionerClient.DeprovisionCluster(cluster, false, operationId)
 		require.NoError(t, apperr)
 
 		// then
