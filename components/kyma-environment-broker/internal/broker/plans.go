@@ -1,11 +1,9 @@
 package broker
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 
@@ -111,23 +109,21 @@ func OpenStackRegions() []string {
 	return []string{"eu-de-1", "ap-sa-1"}
 }
 
-func OpenStackSchema(machineTypes []string) RootSchema {
-	properties := NewProvisioningProperties(machineTypes, OpenStackRegions())
-	return NewSchema(properties, DefaultControlsOrder())
+func OpenStackSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
+	return createSchema(machineTypes, OpenStackRegions(), additionalParams, update)
 }
 
-func GCPSchema(machineTypes []string) RootSchema {
-	properties := NewProvisioningProperties(machineTypes, GCPRegions())
-	return NewSchema(properties, DefaultControlsOrder())
+func GCPSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
+	return createSchema(machineTypes, GCPRegions(), additionalParams, update)
 }
 
-func AWSSchema(machineTypes []string) RootSchema {
-	properties := NewProvisioningProperties(machineTypes, AWSRegions())
-	return NewSchema(properties, DefaultControlsOrder())
+func AWSSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
+	return createSchema(machineTypes, AWSRegions(), additionalParams, update)
 }
 
-func AWSHASchema(machineTypes []string) RootSchema {
+func AWSHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypes, AWSHARegions())
+
 	properties.ZonesCount = &Type{
 		Type:        "integer",
 		Minimum:     3,
@@ -135,9 +131,6 @@ func AWSHASchema(machineTypes []string) RootSchema {
 		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
-	awsHaControlsOrder := DefaultControlsOrder()
-	awsHaControlsOrder = append(awsHaControlsOrder, "zonesCount")
-	schema := NewSchema(properties, awsHaControlsOrder)
 
 	properties.AutoScalerMin.Default = 1
 	properties.AutoScalerMin.Minimum = 1
@@ -146,23 +139,22 @@ func AWSHASchema(machineTypes []string) RootSchema {
 	properties.AutoScalerMax.Minimum = 1
 	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
-	return schema
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func AzureSchema(machineTypes []string) RootSchema {
-	properties := NewProvisioningProperties(machineTypes, AzureRegions())
-	return NewSchema(properties, DefaultControlsOrder())
+func AzureSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
+	return createSchema(machineTypes, AzureRegions(), additionalParams, update)
 }
 
-func AzureLiteSchema(machineTypes []string) RootSchema {
+func AzureLiteSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.AutoScalerMax.Maximum = 40
 	properties.AutoScalerMax.Default = 10
 
-	return NewSchema(properties, DefaultControlsOrder())
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func FreemiumSchema(provider internal.CloudProvider) RootSchema {
+func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bool) *map[string]interface{} {
 	var regions []string
 	switch provider {
 	case internal.AWS:
@@ -172,19 +164,18 @@ func FreemiumSchema(provider internal.CloudProvider) RootSchema {
 	default:
 		regions = AWSRegions()
 	}
-	schema := NewSchema(
-		ProvisioningProperties{
-			Name: NameProperty(),
-			Region: &Type{
-				Type: "string",
-				Enum: ToInterfaceSlice(regions),
-			},
-		}, []string{"name", "region"})
+	properties := ProvisioningProperties{
+		Name: NameProperty(),
+		Region: &Type{
+			Type: "string",
+			Enum: ToInterfaceSlice(regions),
+		},
+	}
 
-	return schema
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func AzureHASchema(machineTypes []string) RootSchema {
+func AzureHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions())
 	properties.ZonesCount = &Type{
 		Type:        "integer",
@@ -193,9 +184,6 @@ func AzureHASchema(machineTypes []string) RootSchema {
 		Default:     3,
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
-	azureHaControlsOrder := DefaultControlsOrder()
-	azureHaControlsOrder = append(azureHaControlsOrder, "zonesCount")
-	schema := NewSchema(properties, azureHaControlsOrder)
 
 	properties.AutoScalerMin.Default = 1
 	properties.AutoScalerMin.Minimum = 1
@@ -204,204 +192,113 @@ func AzureHASchema(machineTypes []string) RootSchema {
 	properties.AutoScalerMax.Minimum = 1
 	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
-	return schema
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func TrialSchema() RootSchema {
-	return NewSchema(
-		ProvisioningProperties{
-			Name: NameProperty(),
-		}, DefaultControlsOrder())
+func TrialSchema(additionalParams, update bool) *map[string]interface{} {
+	properties := ProvisioningProperties{
+		Name: NameProperty(),
+	}
+
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func marshalSchema(schema RootSchema) []byte {
-	bytes, err := json.Marshal(schema)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
+func createSchema(machineTypes, regions []string, additionalParams, update bool) *map[string]interface{} {
+	properties := NewProvisioningProperties(machineTypes, regions)
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func schemaForUpdate(provisioningRoot RootSchema) []byte {
-	pp := provisioningRoot.Properties.(ProvisioningProperties)
-	if pp.AutoScalerMax == nil && pp.AutoScalerMin == nil && pp.OIDC == nil && pp.Administrators == nil {
-		return []byte{}
-	}
-	up := UpdateProperties{}
-	if pp.AutoScalerMax != nil {
-		up.AutoScalerMax = &Type{
-			Minimum:     pp.AutoScalerMax.Minimum,
-			Maximum:     pp.AutoScalerMax.Maximum,
-			Description: pp.AutoScalerMax.Description,
-			Type:        pp.AutoScalerMax.Type,
-		}
-	}
-	if pp.AutoScalerMin != nil {
-		up.AutoScalerMin = &Type{
-			Minimum:     pp.AutoScalerMin.Minimum,
-			Maximum:     pp.AutoScalerMin.Maximum,
-			Description: pp.AutoScalerMin.Description,
-			Type:        pp.AutoScalerMin.Type,
-		}
-	}
-	if pp.OIDC != nil {
-		up.OIDC = pp.OIDC
-	}
-	if pp.Administrators != nil {
-		up.Administrators = pp.Administrators
+func createSchemaWithProperties(properties ProvisioningProperties, additionalParams, update bool) *map[string]interface{} {
+	if additionalParams {
+		properties.IncludeAdditional()
 	}
 
-	return marshalSchema(NewUpdateSchema(up))
+	if update {
+		return createSchemaWith(properties.UpdateProperties)
+	} else {
+		return createSchemaWith(properties)
+	}
 }
 
-// Plan is a wrapper for OSB API ServicePlan
-type Plan struct {
-	PlanDefinition domain.ServicePlan
-	// catalogRawSchema is JSONSchema which is exposed on /v2/catalog endpoint - if empty, provisioningRawSchema is used
-	catalogRawSchema []byte
-	// provisioningRawSchema is a JSONSchema which serves as validation source for provisioning input
-	provisioningRawSchema []byte
-	updateRawSchema       []byte
+func createSchemaWith(properties interface{}) *map[string]interface{} {
+	schema := NewSchema(properties)
+
+	target := make(map[string]interface{})
+	schema.ControlsOrder = DefaultControlsOrder()
+
+	unmarshaled := unmarshalOrPanic(schema, &target).(*map[string]interface{})
+
+	// update controls order
+	props := (*unmarshaled)[PropertiesKey].(map[string]interface{})
+	controlsOrder := (*unmarshaled)[ControlsOrderKey].([]interface{})
+	(*unmarshaled)[ControlsOrderKey] = filter(&controlsOrder, props)
+
+	return unmarshaled
 }
 
 // Plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]Plan {
-	awsSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
-	awsHASchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"})
-	gcpSchema := GCPSchema([]string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"})
-	openstackSchema := OpenStackSchema([]string{"m2.xlarge", "m1.2xlarge"})
-	azureSchema := AzureSchema([]string{"Standard_D8_v3"})
-	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"})
-	azureHASchema := AzureHASchema([]string{"Standard_D8_v3"})
-	freemiumSchema := FreemiumSchema(provider)
-	trialSchema := TrialSchema()
+func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]domain.ServicePlan {
+	awsMachines := []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"}
+
+	awsSchema := AWSSchema(awsMachines, includeAdditionalParamsInSchema, false)
+	// awsHASchema := AWSHASchema(awsMachines, includeAdditionalParamsInSchema, false)
+
+	gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
+	gcpSchema := GCPSchema(gcpMachines, includeAdditionalParamsInSchema, false)
+
+	openStackMachines := []string{"m2.xlarge", "m1.2xlarge"}
+	openstackSchema := OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, false)
+
+	azureMachines := []string{"Standard_D8_v3"}
+	azureSchema := AzureSchema(azureMachines, includeAdditionalParamsInSchema, false)
+	azureHASchema := AzureHASchema(azureMachines, includeAdditionalParamsInSchema, false)
+
+	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, false)
+	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false)
+	trialSchema := TrialSchema(includeAdditionalParamsInSchema, false)
 
 	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
 	// when a machine type switch is introduced
 	// switch to m6 if m6 is available in all regions
-	awsCatalogSchema := AWSSchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
-	awsHACatalogSchema := AWSHASchema([]string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"})
+	awsCatalogMachines := []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}
+	awsCatalogSchema := AWSSchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
+	awsHACatalogSchema := AWSHASchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
 
-	if includeAdditionalParamsInSchema {
-		schemas := []*RootSchema{
-			&awsSchema,
-			&awsCatalogSchema,
-			&awsHASchema,
-			&awsHACatalogSchema,
-			&gcpSchema,
-			&openstackSchema,
-			&azureSchema,
-			&azureLiteSchema,
-			&azureHASchema,
-			&freemiumSchema,
-			&trialSchema,
-		}
-		includeOIDCSchema(schemas...)
-		includeAdminsSchema(schemas...)
+	outputPlans := map[string]domain.ServicePlan{
+		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSHAPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
+		PreviewPlanID:   defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
+		AWSHAPlanID:     defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans, awsHACatalogSchema, AWSHASchema(awsMachines, includeAdditionalParamsInSchema, true)),
+		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
+		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
+		AzurePlanID:     defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachines, includeAdditionalParamsInSchema, true)),
+		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureHAPlanID, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
+		FreemiumPlanID:  defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
+		AzureHAPlanID:   defaultServicePlan(AzureHAPlanID, AzureHAPlanName, plans, azureHASchema, AzureHASchema(azureMachines, includeAdditionalParamsInSchema, true)),
+		TrialPlanID:     defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 	}
-
-	outputPlans := map[string]Plan{
-		AWSPlanID: {
-			PlanDefinition:        defaultServicePlan(AWSPlanID, AWSHAPlanName, plans),
-			catalogRawSchema:      marshalSchema(awsCatalogSchema),
-			provisioningRawSchema: marshalSchema(awsSchema),
-			updateRawSchema:       schemaForUpdate(awsSchema),
-		},
-		PreviewPlanID: {
-			PlanDefinition:        defaultServicePlan(PreviewPlanID, PreviewPlanName, plans),
-			provisioningRawSchema: marshalSchema(awsSchema),
-			updateRawSchema:       schemaForUpdate(awsSchema),
-		},
-		AWSHAPlanID: {
-			PlanDefinition:        defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans),
-			catalogRawSchema:      marshalSchema(awsHACatalogSchema),
-			provisioningRawSchema: marshalSchema(awsHASchema),
-			updateRawSchema:       schemaForUpdate(awsHASchema),
-		},
-		GCPPlanID: {
-			PlanDefinition:        defaultServicePlan(GCPPlanID, GCPPlanName, plans),
-			provisioningRawSchema: marshalSchema(gcpSchema),
-			updateRawSchema:       schemaForUpdate(gcpSchema),
-		},
-		OpenStackPlanID: {
-			PlanDefinition:        defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans),
-			provisioningRawSchema: marshalSchema(openstackSchema),
-			updateRawSchema:       schemaForUpdate(openstackSchema),
-		},
-		AzurePlanID: {
-			PlanDefinition:        defaultServicePlan(AzurePlanID, AzurePlanName, plans),
-			provisioningRawSchema: marshalSchema(azureSchema),
-			updateRawSchema:       schemaForUpdate(azureSchema),
-		},
-		AzureLitePlanID: {
-			PlanDefinition:        defaultServicePlan(AzureLitePlanID, AzureHAPlanID, plans),
-			provisioningRawSchema: marshalSchema(azureLiteSchema),
-			updateRawSchema:       schemaForUpdate(azureLiteSchema),
-		},
-		FreemiumPlanID: {
-			PlanDefinition:        defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans),
-			provisioningRawSchema: marshalSchema(freemiumSchema),
-			updateRawSchema:       schemaForUpdate(freemiumSchema),
-		},
-		AzureHAPlanID: {
-			PlanDefinition:        defaultServicePlan(AzureHAPlanID, AzureHAPlanName, plans),
-			provisioningRawSchema: marshalSchema(azureHASchema),
-			updateRawSchema:       schemaForUpdate(azureHASchema),
-		},
-		TrialPlanID: {
-			PlanDefinition:        defaultServicePlan(TrialPlanID, TrialPlanName, plans),
-			provisioningRawSchema: marshalSchema(trialSchema),
-			updateRawSchema:       schemaForUpdate(trialSchema),
-		},
-	}
-
-	// for _, plan := range outputPlans {
-	// 	plan.
-	// }
-	// b.updateControlsOrder(&p.Schemas.Instance)
 
 	return outputPlans
 }
 
-func includeOIDCSchema(schemas ...*RootSchema) {
-	oidcSchema := NewOIDCSchema()
-
-	for _, schema := range schemas {
-		pp := schema.Properties.(ProvisioningProperties)
-		pp.OIDC = &oidcSchema
-		schema.Properties = pp
-		schema.ControlsOrder = append(schema.ControlsOrder, "oidc")
-	}
-}
-
-func includeAdminsSchema(schemas ...*RootSchema) {
-	adminsProperty := AdministratorsProperty()
-
-	for _, schema := range schemas {
-		pp := schema.Properties.(ProvisioningProperties)
-		pp.Administrators = adminsProperty
-		schema.Properties = pp
-		schema.ControlsOrder = append(schema.ControlsOrder, "administrators")
-	}
-}
-
-func defaultServicePlan(id, name string, plans PlansConfig) domain.ServicePlan {
-	return domain.ServicePlan{
+func defaultServicePlan(id, name string, plans PlansConfig, createParams, updateParams *map[string]interface{}) domain.ServicePlan {
+	servicePlan := domain.ServicePlan{
 		ID:          id,
 		Name:        name,
 		Description: defaultDescription(name, plans),
 		Metadata:    defaultMetadata(name, plans), Schemas: &domain.ServiceSchemas{
 			Instance: domain.ServiceInstanceSchema{
 				Create: domain.Schema{
-					Parameters: make(map[string]interface{}),
+					Parameters: *createParams,
 				},
 				Update: domain.Schema{
-					Parameters: make(map[string]interface{}),
+					Parameters: *updateParams,
 				},
 			},
 		},
 	}
+
+	return servicePlan
 }
 
 func defaultDescription(planName string, plans PlansConfig) string {
@@ -460,82 +357,15 @@ func IsPreviewPlan(planID string) bool {
 	}
 }
 
-func updateControlsOrder(schema *domain.ServiceInstanceSchema) error {
-	casted, ok := schema.Create.Parameters[ControlsOrderKey].([]interface{})
-	if !ok {
-		return errors.New("Invalid type of Create _controlsOrder param")
-	}
-
-	targetControls, err := appendNonExisting(make(map[string]int), casted)
-	if err != nil {
-		return errors.Wrap(err, "Error while creating _controlsOrder")
-	}
-
-	casted, ok = schema.Update.Parameters[ControlsOrderKey].([]interface{})
-	if !ok {
-		return errors.New("Invalid type of Update _controlsOrder param")
-	}
-
-	targetControls, err = appendNonExisting(targetControls, casted)
-	if err != nil {
-		return errors.Wrap(err, "Error while creating _controlsOrder")
-	}
-
-	inverted := invert(targetControls)
-
-	createProps := schema.Create.Parameters[PropertiesKey].(map[string]interface{})
-	schema.Create.Parameters[ControlsOrderKey], err =
-		filterAndOrder(inverted, createProps)
-	if err != nil {
-		return errors.New("Error while updating Create controlOrder")
-	}
-
-	updateProps := schema.Update.Parameters[PropertiesKey].(map[string]interface{})
-	schema.Update.Parameters[ControlsOrderKey], err =
-		filterAndOrder(inverted, updateProps)
-	if err != nil {
-		return errors.New("Error while updating Update controlOrder")
-	}
-
-	return nil
-}
-
-func appendNonExisting(to map[string]int, from []interface{}) (map[string]int, error) {
-	size := len(to)
-	for i, v := range from {
-		key, ok := v.(string)
-
-		if !ok {
-			return nil, errors.Errorf("Invalid value type")
-		}
-
-		if _, ok = to[key]; !ok {
-			to[key] = size + i
-		}
-	}
-
-	return to, nil
-}
-
-func invert(targetControls map[string]int) []string {
-	inverted := make([]string, len(targetControls))
-
-	for key, value := range targetControls {
-		inverted[value] = key
-	}
-
-	return inverted
-}
-
-func filterAndOrder(items []string, included map[string]interface{}) ([]interface{}, error) {
+func filter(items *[]interface{}, included map[string]interface{}) interface{} {
 	output := make([]interface{}, 0)
-	for i := 0; i < len(items); i++ {
-		value := items[i]
+	for i := 0; i < len(*items); i++ {
+		value := (*items)[i]
 
-		if _, ok := included[value]; ok {
+		if _, ok := included[value.(string)]; ok {
 			output = append(output, value)
 		}
 	}
 
-	return output, nil
+	return output
 }

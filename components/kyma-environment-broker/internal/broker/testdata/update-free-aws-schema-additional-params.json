@@ -54,5 +54,8 @@
   },
   "required": [],
   "_show_form_view": true,
-  "_controlsOrder": []
+  "_controlsOrder": [
+    "oidc",
+    "administrators"
+  ]
 }

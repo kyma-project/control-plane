@@ -1,5 +1,7 @@
 package broker
 
+import "encoding/json"
+
 type RootSchema struct {
 	Schema string `json:"$schema"`
 	Type
@@ -13,14 +15,12 @@ type RootSchema struct {
 }
 
 type ProvisioningProperties struct {
-	Name           NameType  `json:"name"`
-	Region         *Type     `json:"region,omitempty"`
-	MachineType    *Type     `json:"machineType,omitempty"`
-	AutoScalerMin  *Type     `json:"autoScalerMin,omitempty"`
-	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
-	ZonesCount     *Type     `json:"zonesCount,omitempty"`
-	OIDC           *OIDCType `json:"oidc,omitempty"`
-	Administrators *Type     `json:"administrators,omitempty"`
+	UpdateProperties
+
+	Name        NameType `json:"name"`
+	Region      *Type    `json:"region,omitempty"`
+	MachineType *Type    `json:"machineType,omitempty"`
+	ZonesCount  *Type    `json:"zonesCount,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -28,6 +28,11 @@ type UpdateProperties struct {
 	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
 	OIDC           *OIDCType `json:"oidc,omitempty"`
 	Administrators *Type     `json:"administrators,omitempty"`
+}
+
+func (up *UpdateProperties) IncludeAdditional() {
+	up.OIDC = NewOIDCSchema()
+	up.Administrators = AdministratorsProperty()
 }
 
 type OIDCProperties struct {
@@ -94,6 +99,21 @@ func NameProperty() NameType {
 // Note that the order of properties will be the same in the form on the website
 func NewProvisioningProperties(machineTypes []string, regions []string) ProvisioningProperties {
 	return ProvisioningProperties{
+		UpdateProperties: UpdateProperties{
+			AutoScalerMin: &Type{
+				Type:        "integer",
+				Minimum:     2,
+				Default:     2,
+				Description: "Specifies the minimum number of virtual machines to create",
+			},
+			AutoScalerMax: &Type{
+				Type:        "integer",
+				Minimum:     2,
+				Maximum:     40,
+				Default:     10,
+				Description: "Specifies the maximum number of virtual machines to create",
+			},
+		},
 		Name: NameProperty(),
 		Region: &Type{
 			Type: "string",
@@ -103,24 +123,11 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 			Type: "string",
 			Enum: ToInterfaceSlice(machineTypes),
 		},
-		AutoScalerMin: &Type{
-			Type:        "integer",
-			Minimum:     2,
-			Default:     2,
-			Description: "Specifies the minimum number of virtual machines to create",
-		},
-		AutoScalerMax: &Type{
-			Type:        "integer",
-			Minimum:     2,
-			Maximum:     40,
-			Default:     10,
-			Description: "Specifies the maximum number of virtual machines to create",
-		},
 	}
 }
 
-func NewOIDCSchema() OIDCType {
-	return OIDCType{
+func NewOIDCSchema() *OIDCType {
+	return &OIDCType{
 		Type: Type{Type: "object", Description: "OIDC configuration"},
 		Properties: OIDCProperties{
 			ClientID:       Type{Type: "string", Description: "The client ID for the OpenID Connect client."},
@@ -140,34 +147,31 @@ func NewOIDCSchema() OIDCType {
 	}
 }
 
-func NewSchema(properties ProvisioningProperties, controlsOrder []string) RootSchema {
-	return RootSchema{
+func NewSchema(properties interface{}) *RootSchema {
+	return &RootSchema{
 		Schema: "http://json-schema.org/draft-04/schema#",
 		Type: Type{
 			Type: "object",
 		},
-		Properties:    properties,
-		ShowFormView:  true,
-		Required:      []string{"name"},
-		ControlsOrder: controlsOrder,
+		Properties:   properties,
+		ShowFormView: true,
+		Required:     []string{"name"},
 	}
 }
 
-func NewUpdateSchema(properties UpdateProperties) RootSchema {
-	return RootSchema{
-		Schema: "http://json-schema.org/draft-04/schema#",
-		Type: Type{
-			Type: "object",
-		},
-		Properties:    properties,
-		ShowFormView:  true,
-		Required:      []string{},
-		ControlsOrder: []string{},
+func unmarshalOrPanic(from, to interface{}) interface{} {
+	if from != nil {
+		marshaled := Marshal(from)
+		err := json.Unmarshal(marshaled, to)
+		if err != nil {
+			panic(err)
+		}
 	}
+	return to
 }
 
 func DefaultControlsOrder() []string {
-	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax"}
+	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
 }
 
 func ToInterfaceSlice(input []string) []interface{} {

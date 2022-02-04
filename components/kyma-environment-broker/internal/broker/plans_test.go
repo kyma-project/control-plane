@@ -16,7 +16,7 @@ import (
 func TestSchemaGenerator(t *testing.T) {
 	tests := []struct {
 		name           string
-		generator      func([]string) RootSchema
+		generator      func([]string, bool, bool) *map[string]interface{}
 		machineTypes   []string
 		file           string
 		updateFile     string
@@ -86,48 +86,56 @@ func TestSchemaGenerator(t *testing.T) {
 			fileOIDC:       "openstack-schema-additional-params.json",
 			updateFileOIDC: "update-openstack-schema-additional-params.json",
 		},
+		{
+			name: "Trial schema is correct",
+			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+				return TrialSchema(additionalParams, update)
+			},
+			machineTypes:   []string{},
+			file:           "azure-trial-schema.json",
+			updateFile:     "update-azure-trial-schema.json",
+			fileOIDC:       "azure-trial-schema-additional-params.json",
+			updateFileOIDC: "update-azure-trial-schema-additional-params.json",
+		},
+		{
+			name: "Freemium schema is correct",
+			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.Azure, additionalParams, update)
+			},
+			machineTypes:   []string{},
+			file:           "free-azure-schema.json",
+			updateFile:     "update-free-azure-schema.json",
+			fileOIDC:       "free-azure-schema-additional-params.json",
+			updateFileOIDC: "update-free-azure-schema-additional-params.json",
+		},
+
+		{
+			name: " schema is correct",
+			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.AWS, additionalParams, update)
+			},
+			machineTypes:   []string{},
+			file:           "free-aws-schema.json",
+			updateFile:     "update-free-aws-schema.json",
+			fileOIDC:       "free-aws-schema-additional-params.json",
+			updateFileOIDC: "update-free-aws-schema-additional-params.json",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.generator(tt.machineTypes)
-			validateSchema(t, marshalSchema(got), tt.file)
-			validateSchema(t, schemaForUpdate(got), tt.updateFile)
-			includeOIDCSchema(&got)
-			includeAdminsSchema(&got)
-			validateSchema(t, marshalSchema(got), tt.fileOIDC)
-			validateSchema(t, schemaForUpdate(got), tt.updateFileOIDC)
+			got := tt.generator(tt.machineTypes, false, false)
+			validateSchema(t, Marshal(got), tt.file)
+
+			got = tt.generator(tt.machineTypes, false, true)
+			validateSchema(t, Marshal(got), tt.updateFile)
+
+			got = tt.generator(tt.machineTypes, true, false)
+			validateSchema(t, Marshal(got), tt.fileOIDC)
+
+			got = tt.generator(tt.machineTypes, true, true)
+			validateSchema(t, Marshal(got), tt.updateFileOIDC)
 		})
 	}
-}
-
-func TestTrialSchemaGenerator(t *testing.T) {
-	schema := TrialSchema()
-	validateSchema(t, marshalSchema(schema), "azure-trial-schema.json")
-	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema.json")
-	includeOIDCSchema(&schema)
-	includeAdminsSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "azure-trial-schema-additional-params.json")
-	validateSchema(t, schemaForUpdate(schema), "update-azure-trial-schema-additional-params.json")
-}
-
-func TestFreemiumAzureSchemaGenerator(t *testing.T) {
-	schema := FreemiumSchema(internal.Azure)
-	validateSchema(t, marshalSchema(schema), "free-azure-schema.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema.json")
-	includeOIDCSchema(&schema)
-	includeAdminsSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "free-azure-schema-additional-params.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-azure-schema-additional-params.json")
-}
-
-func TestFreemiumAWSSchemaGenerator(t *testing.T) {
-	schema := FreemiumSchema(internal.AWS)
-	validateSchema(t, marshalSchema(schema), "free-aws-schema.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema.json")
-	includeOIDCSchema(&schema)
-	includeAdminsSchema(&schema)
-	validateSchema(t, marshalSchema(schema), "free-aws-schema-additional-params.json")
-	validateSchema(t, schemaForUpdate(schema), "update-free-aws-schema-additional-params.json")
 }
 
 func validateSchema(t *testing.T, got []byte, file string) {

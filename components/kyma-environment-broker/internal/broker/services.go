@@ -2,7 +2,6 @@ package broker
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 
@@ -53,35 +52,12 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 	provider, ok := middleware.ProviderFromContext(ctx)
 	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema) {
 		// filter out not enabled plans
-		if _, exists := b.enabledPlanIDs[plan.PlanDefinition.ID]; !exists {
+		if _, exists := b.enabledPlanIDs[plan.ID]; !exists {
 			continue
 		}
-		p := plan.PlanDefinition
+		// p := plan.PlanDefinition
 
-		err := json.Unmarshal(plan.provisioningRawSchema, &p.Schemas.Instance.Create.Parameters)
-		if err != nil {
-			b.log.Errorf("while unmarshal provisioning schema: %s", err)
-			return nil, err
-		}
-
-		if len(plan.catalogRawSchema) > 0 {
-			// overwrite provisioning parameters schema if Plan.catalogRawSchema is provided
-			err := json.Unmarshal(plan.catalogRawSchema, &p.Schemas.Instance.Create.Parameters)
-			if err != nil {
-				b.log.Errorf("while unmarshal provisioning schema: %s", err)
-				return nil, err
-			}
-		}
-
-		if len(plan.updateRawSchema) > 0 {
-			err = json.Unmarshal(plan.updateRawSchema, &p.Schemas.Instance.Update.Parameters)
-			if err != nil {
-				b.log.Errorf("while unmarshal update schema: %s", err)
-				return nil, err
-			}
-		}
-
-		availableServicePlans = append(availableServicePlans, p)
+		availableServicePlans = append(availableServicePlans, plan)
 	}
 
 	return []domain.Service{

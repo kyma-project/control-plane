@@ -162,7 +162,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].PlanDefinition.Name,
+		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
@@ -331,6 +331,7 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
 	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
 	plan := plans[details.PlanID]
-	schema := string(plan.provisioningRawSchema)
+	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
+
 	return jsonschema.NewValidatorFromStringSchema(schema)
 }
