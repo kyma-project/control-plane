@@ -1,5 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "autoScalerMin",
+    "autoScalerMax"
+  ],
+  "_show_form_view": true,
   "type": "object",
   "properties": {
     "autoScalerMin": {
@@ -14,10 +19,5 @@
       "maximum": 40
     }
   },
-  "required": [],
-  "_show_form_view": true,
-  "_controlsOrder": [
-    "autoScalerMin",
-    "autoScalerMax"
-  ]
+  "required": []
 }

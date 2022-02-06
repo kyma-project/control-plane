@@ -1,5 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "name",
+    "region"
+  ],
+  "_show_form_view": true,
   "type": "object",
   "properties": {
     "name": {
@@ -19,10 +24,5 @@
     }},
   "required": [
     "name"
-  ],
-  "_show_form_view": true,
-  "_controlsOrder": [
-    "name",
-    "region"
   ]
 }

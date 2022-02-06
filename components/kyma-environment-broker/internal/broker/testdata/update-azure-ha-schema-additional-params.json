@@ -1,5 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "autoScalerMin",
+    "autoScalerMax",
+    "oidc",
+    "administrators"
+  ],
+  "_show_form_view": true,
   "type": "object",
   "properties": {
     "autoScalerMin": {
@@ -63,12 +70,5 @@
       ]
     }
   },
-  "required": [],
-  "_show_form_view": true,
-  "_controlsOrder": [
-    "autoScalerMin",
-    "autoScalerMax",
-    "oidc",
-    "administrators"
-  ]
+  "required": []
 }

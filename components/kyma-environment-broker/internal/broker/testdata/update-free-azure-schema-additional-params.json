@@ -1,5 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "oidc",
+    "administrators"
+  ],
+  "_show_form_view": true,
   "type": "object",
   "properties": {
     "oidc": {
@@ -52,10 +57,5 @@
       ]
     }
   },
-  "required": [],
-  "_show_form_view": true,
-  "_controlsOrder": [
-    "oidc",
-    "administrators"
-  ]
+  "required": []
 }
