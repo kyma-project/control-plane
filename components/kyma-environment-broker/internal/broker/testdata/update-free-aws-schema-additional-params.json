@@ -5,7 +5,6 @@
     "administrators"
   ],
   "_show_form_view": true,
-  "type": "object",
   "properties": {
     "oidc": {
       "type": "object",
@@ -57,5 +56,6 @@
       ]
     }
   },
-  "required": []
+  "required": [],
+  "type": "object"
 }

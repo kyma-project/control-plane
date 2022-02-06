@@ -10,7 +10,6 @@
     "administrators"
   ],
   "_show_form_view": true,
-  "type": "object",
   "properties": {
     "name": {
       "type": "string",
@@ -96,5 +95,6 @@
   },
   "required": [
     "name"
-  ]
+  ],
+  "type": "object"
 }

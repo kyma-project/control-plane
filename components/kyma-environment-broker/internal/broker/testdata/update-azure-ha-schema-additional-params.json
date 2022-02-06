@@ -7,7 +7,6 @@
     "administrators"
   ],
   "_show_form_view": true,
-  "type": "object",
   "properties": {
     "autoScalerMin": {
       "type": "integer",
@@ -70,5 +69,6 @@
       ]
     }
   },
-  "required": []
+  "required": [],
+  "type": "object"
 }

@@ -9,7 +9,6 @@
     "autoScalerMax",
     "zonesCount"
   ],
-  "type": "object",
   "properties": {
     "name": {
       "type": "string",
@@ -53,5 +52,6 @@
     }},
   "required": [
     "name"
-  ]
+  ],
+  "type": "object"
 }
