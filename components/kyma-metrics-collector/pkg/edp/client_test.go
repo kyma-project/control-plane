@@ -56,7 +56,7 @@ func TestClient(t *testing.T) {
 	edpURL, err := url.ParseRequestURI(srv.URL)
 	g.Expect(err).Should(gomega.BeNil())
 
-	edpClient := NewClient(config, logger.NewLogger(zapcore.DebugLevel))
+	edpClient := NewClient(config, logger.NewLogger(zapcore.InfoLevel))
 	testData := []byte("foodata")
 	gotReq, err := edpClient.NewRequest(dataTenant)
 	g.Expect(err).Should(gomega.BeNil())
@@ -99,7 +99,7 @@ func TestClientRetry(t *testing.T) {
 	edpURL, err := url.ParseRequestURI(srv.URL)
 	g.Expect(err).Should(gomega.BeNil())
 
-	edpClient := NewClient(config, logger.NewLogger(zapcore.DebugLevel))
+	edpClient := NewClient(config, logger.NewLogger(zapcore.InfoLevel))
 	testData := []byte("foodata")
 	gotReq, err := edpClient.NewRequest(dataTenant)
 	g.Expect(err).Should(gomega.BeNil())

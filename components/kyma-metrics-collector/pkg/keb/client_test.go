@@ -232,7 +232,7 @@ func getKEBClient(url string) *Client {
 	}
 	return &Client{
 		HTTPClient: http.DefaultClient,
-		Logger:     logger.NewLogger(zapcore.DebugLevel),
+		Logger:     logger.NewLogger(zapcore.InfoLevel),
 		Config:     config,
 	}
 }

@@ -97,7 +97,7 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 
 	p := Process{
 		Cache:  cache,
-		Logger: logger.NewLogger(zapcore.DebugLevel),
+		Logger: logger.NewLogger(zapcore.InfoLevel),
 	}
 
 	t.Run("old metric found for a subAccountID", func(t *testing.T) {
@@ -165,7 +165,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		}
 		kebClient := &kmckeb.Client{
 			HTTPClient: http.DefaultClient,
-			Logger:     logger.NewLogger(zapcore.DebugLevel),
+			Logger:     logger.NewLogger(zapcore.InfoLevel),
 			Config:     config,
 		}
 
@@ -176,7 +176,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 			Queue:          queue,
 			Cache:          cache,
 			ScrapeInterval: 0,
-			Logger:         logger.NewLogger(zapcore.DebugLevel),
+			Logger:         logger.NewLogger(zapcore.InfoLevel),
 		}
 
 		go func() {
@@ -209,7 +209,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.DebugLevel),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		runtimesPage := new(kebruntime.RuntimesPage)
 
@@ -238,7 +238,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.DebugLevel),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		runtimesPage := new(kebruntime.RuntimesPage)
 
@@ -268,7 +268,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.DebugLevel),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 		newRecord := NewRecord(subAccID, newShootName, "")
@@ -299,7 +299,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.DebugLevel),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 
@@ -327,7 +327,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logger.NewLogger(zapcore.DebugLevel),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 
@@ -371,7 +371,7 @@ func TestExecute(t *testing.T) {
 	tenant := subAccID
 	expectedKubeconfig := "eyJmb28iOiAiYmFyIn0="
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStream, testDataStreamVersion, tenant, testEnv)
-	log := logger.NewLogger(zapcore.DebugLevel)
+	log := logger.NewLogger(zapcore.InfoLevel)
 
 	timesVisited := 0
 	// Set up EDP Test Server handler
