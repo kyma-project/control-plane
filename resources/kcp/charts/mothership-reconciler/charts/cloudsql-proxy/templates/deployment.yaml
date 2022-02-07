@@ -19,14 +19,12 @@ spec:
     metadata:
       labels:
         {{- include "cloudsql-proxy.selectorLabels" . | nindent 8 }}
-      annotations:
-        sidecar.istio.io/inject: "false"
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ .Values.global.mothership_reconciler.serviceAccountName }}
+      serviceAccountName: cloudsql-proxy
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

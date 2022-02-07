@@ -25,6 +25,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 5432
+  istioPort: 15020
 
 strategy:
   type: RollingUpdate
