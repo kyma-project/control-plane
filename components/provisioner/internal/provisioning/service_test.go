@@ -367,7 +367,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	clusterMatcher := getClusterMatcher(cluster)
 	operationMatcher := getOperationMatcher(operation)
 
-	t.Run("Should start Runtime deprovisioning and return operation ID when activeKymaConfigID exists AND Kyma cluster is in installed state", func(t *testing.T) {
+	t.Run("Should start Runtime deprovisioning with uninstall and return operation ID when activeKymaConfigID exists AND Kyma cluster is in installed state", func(t *testing.T) {
 		//given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
@@ -397,6 +397,43 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 		installationClient.AssertExpectations(t)
+		deprovisioningQueue.AssertExpectations(t)
+	})
+
+	t.Run("Should start Runtime deprovisioning with uninstall and return operation ID when activeKymaConfigID exists AND cluster kubeconfig is missing", func(t *testing.T) {
+		//given
+		cluster := model.Cluster{
+			ID: runtimeID,
+			KymaConfig: &model.KymaConfig{
+				ID: "id",
+			},
+			ActiveKymaConfigId: util.StringPtr("activekymaconfigid"),
+		}
+
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
+		deprovisioningQueue := &mocks.OperationQueue{}
+
+		deprovisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
+
+		//when
+		opID, err := resolver.DeprovisionRuntime(runtimeID)
+		require.NoError(t, err)
+
+		//then
+		assert.Equal(t, operationID, opID)
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
 		deprovisioningQueue.AssertExpectations(t)
 	})
 
@@ -444,7 +481,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		deprovisioningNoInstallQueue.AssertExpectations(t)
 	})
 
-	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID is missing AND Kyma cluster is in nonInstalled state ", func(t *testing.T) {
+	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID is missing", func(t *testing.T) {
 		//given
 		operation := model.Operation{
 			ID:             operationID,
@@ -465,7 +502,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
-		installationClient := &installationMocks.Service{}
 
 		deprovisioningNoInstallQueue := &mocks.OperationQueue{}
 
@@ -477,9 +513,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), true, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		installationClient.On("CheckInstallationState", mock.Anything).Return(notInstalledState, nil)
-
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, deprovisioningNoInstallQueue, nil, nil, nil)
 
 		//when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
@@ -490,7 +524,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
-		installationClient.AssertExpectations(t)
 		deprovisioningNoInstallQueue.AssertExpectations(t)
 	})
 

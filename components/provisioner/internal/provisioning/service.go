@@ -192,65 +192,9 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
-	// old code
+	kyma2Installed := r.isKyma2Installed(cluster)
 
-	//if cluster.Kubeconfig == nil {
-	//	return "", apperrors.Internal("error: kubeconfig is nil")
-	//}
-	//
-	//k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-	//if err != nil {
-	//	return "", apperrors.Internal("error: failed to create kubernetes config from raw: %s", err.Error())
-	//}
-	//
-	//installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
-	//
-	//deprovisionWithoutUninstall := false
-	//
-	//if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
-	//	deprovisionWithoutUninstall = true
-	//}
-
-	// brak kk failed installation
-	// kyma - 1.x - present akcid - we can run uninstall no problem because step will be skipped  in components/provisioner/internal/operations/stages/deprovisioning/trigger_kyma_uninstall.go w linia 45
-	//    - cluster uninstall
-	// kyma  2.x - missing akcid
-	//   -  cluster delete
-
-	// Kubeconfig. Normal flow
-	// Missing akcid or present akcid (k2) but missing installation CR (k2->k2) --> Missing akcid or missing installation CR
-	//  - cluster delete
-	// Present akicd
-	// - cluster Uninstall
-
-	// WARUNKI NA DEPROVISIONING BEZ DEINSTALACJI - Brak ActiveKymaConfigID (k2) albo dodakowo stwierdzamy jeszcze brak installation resource (czyli k1-> k2)
-
-	// Z brakiem kubeconfig -> Brak ActiveKymaConfigID - deprovisioning bez DEINSTALACJI Drugi case nie ma sensu bo nie było co upgradeować
-	//
-
-	// Missing ActiveKymaConfigId means this was installed Kyma 2.x
-	deprovisionWithoutUninstall := util.IsNilOrEmpty(cluster.ActiveKymaConfigId)
-
-	if deprovisionWithoutUninstall == false {
-		// second check - verify what is on the cluster
-		if cluster.Kubeconfig != nil {
-			k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-			if err == nil {
-				// Still Kyma 2.x but upgraded from Kyma 1.x ActiveKymaConfigID but there is no installation CR
-				installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
-				if installationState.State == installationSDK.NoInstallationState {
-					deprovisionWithoutUninstall = true
-				}
-			} else {
-				// Kyma 1.x with broken kubeconfig. Don't fail. Just warn
-				log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
-			}
-		} else {
-			log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
-		}
-	}
-
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, deprovisionWithoutUninstall, r.uuidGenerator.New())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, kyma2Installed, r.uuidGenerator.New())
 	if appErr != nil {
 		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
 	}
@@ -260,7 +204,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
-	if deprovisionWithoutUninstall {
+	if kyma2Installed {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
@@ -513,6 +457,28 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	}
 
 	return r.RuntimeStatus(runtimeID)
+}
+
+func (r *service) isKyma2Installed(cluster model.Cluster) bool {
+
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		return true
+	}
+
+	if cluster.Kubeconfig == nil {
+		log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
+		return false
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	if err != nil {
+		log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
+		return false
+	}
+
+	//  When missing installation CR this is Kyma 2 upgraded from Kyma 1
+	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
+	return installationState.State == installationSDK.NoInstallationState
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
