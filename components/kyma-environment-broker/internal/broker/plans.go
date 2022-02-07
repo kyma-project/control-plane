@@ -155,6 +155,10 @@ func AzureLiteSchema(machineTypes []string, additionalParams, update bool) *map[
 }
 
 func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bool) *map[string]interface{} {
+	if update && !additionalParams {
+		return empty()
+	}
+
 	var regions []string
 	switch provider {
 	case internal.AWS:
@@ -200,7 +204,16 @@ func TrialSchema(additionalParams, update bool) *map[string]interface{} {
 		Name: NameProperty(),
 	}
 
+	if update && !additionalParams {
+		return empty()
+	}
+
 	return createSchemaWithProperties(properties, additionalParams, update)
+}
+
+func empty() *map[string]interface{} {
+	empty := make(map[string]interface{}, 0)
+	return &empty
 }
 
 func createSchema(machineTypes, regions []string, additionalParams, update bool) *map[string]interface{} {
