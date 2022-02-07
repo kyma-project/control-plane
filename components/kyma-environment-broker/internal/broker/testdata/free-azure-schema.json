@@ -7,20 +7,30 @@
   "_show_form_view": true,
   "properties": {
     "name": {
-      "type": "string",
-      "title": "Cluster Name",
-      "minLength": 1,
-      "pattern": "^[a-zA-Z0-9-]*$",
       "_BTPdefaultTemplate": {
         "elements": [
           "saSubdomain"
         ]
-      }
+      },
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "title": "Cluster Name",
+      "type": "string"
     },
     "region": {
-      "type": "string",
-      "enum": [ "eastus", "centralus", "westus2", "uksouth", "northeurope", "westeurope", "japaneast", "southeastasia" ]
-    }},
+      "enum": [
+        "eastus",
+        "centralus",
+        "westus2",
+        "uksouth",
+        "northeurope",
+        "westeurope",
+        "japaneast",
+        "southeastasia"
+      ],
+      "type": "string"
+    }
+  },
   "required": [
     "name"
   ],

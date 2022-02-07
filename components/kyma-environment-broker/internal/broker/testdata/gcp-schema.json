@@ -9,38 +9,48 @@
   ],
   "_show_form_view": true,
   "properties": {
+    "autoScalerMax": {
+      "default": 10,
+      "description": "Specifies the maximum number of virtual machines to create",
+      "maximum": 40,
+      "minimum": 2,
+      "type": "integer"
+    },
+    "autoScalerMin": {
+      "default": 2,
+      "description": "Specifies the minimum number of virtual machines to create",
+      "minimum": 2,
+      "type": "integer"
+    },
+    "machineType": {
+      "enum": [
+        "n2-standard-8",
+        "n2-standard-16",
+        "n2-standard-32",
+        "n2-standard-48"
+      ],
+      "type": "string"
+    },
     "name": {
-      "type": "string",
-      "title": "Cluster Name",
-      "minLength": 1,
-      "pattern": "^[a-zA-Z0-9-]*$",
       "_BTPdefaultTemplate": {
         "elements": [
           "saSubdomain"
         ]
-      }
+      },
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "title": "Cluster Name",
+      "type": "string"
     },
     "region": {
-      "type": "string",
-      "enum": ["europe-west3", "asia-south1", "us-central1"]
-    },
-    "machineType": {
-      "type": "string",
-      "enum": ["n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"]
-    },
-    "autoScalerMin": {
-      "type": "integer",
-      "description": "Specifies the minimum number of virtual machines to create",
-      "minimum": 2,
-      "default": 2
-    },
-    "autoScalerMax": {
-      "type": "integer",
-      "description": "Specifies the maximum number of virtual machines to create",
-      "minimum": 2,
-      "maximum": 40,
-      "default": 10
-    }},
+      "enum": [
+        "europe-west3",
+        "asia-south1",
+        "us-central1"
+      ],
+      "type": "string"
+    }
+  },
   "required": [
     "name"
   ],
