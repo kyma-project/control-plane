@@ -1,8 +1,7 @@
 {{ if .Values.global.component_reconcilers.authentication }}
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
-{{ $subchart := printf "%s-component-reconciler" $component }}
-{{ if not (hasKey $global.Subcharts $subchart) }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:

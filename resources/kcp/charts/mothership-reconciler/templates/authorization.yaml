@@ -29,7 +29,7 @@ spec:
   action: ALLOW
   rules:
   # Allow /metrics
-  {{ if .Values.global.mothership_reconciler.servicemonitor }}
+  {{ if .Values.serviceMonitor.enabled }}
   - to:
     - operation:
         paths: ["/metrics"]
@@ -46,7 +46,7 @@ spec:
   # internal communication
   - from:
     - source:
-        principals: 
+        principals:
         - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.global.kyma_environment_broker.serviceAccountName }}"
         - "cluster.local/ns/{{ .Release.Namespace }}/sa/cloudsql-proxy"
 {{- $global := . }}
