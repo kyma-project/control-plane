@@ -1,6 +1,7 @@
 package runtimeversion
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -103,7 +104,7 @@ func extractMajorVersionNumberFromVersionString(version string) (int, error) {
 	splitVer := strings.Split(version, ".")
 	majorVerNum, err := strconv.Atoi(splitVer[0])
 	if err != nil {
-		return 0, errors.New("cannot convert major version to int")
+		return 0, fmt.Errorf("cannot convert major version (version: \"%s\") to int", version)
 	}
 	return majorVerNum, nil
 }

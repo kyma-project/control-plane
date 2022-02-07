@@ -441,6 +441,8 @@ type RuntimeState struct {
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
+
+	KymaVersion string
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
@@ -451,6 +453,9 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 }
 
 func (r *RuntimeState) GetKymaVersion() string {
+	if r.KymaVersion != "" {
+		return r.KymaVersion
+	}
 	if r.ClusterSetup != nil {
 		return r.ClusterSetup.KymaConfig.Version
 	}
