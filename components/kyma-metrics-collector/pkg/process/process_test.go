@@ -29,6 +29,7 @@ import (
 	gardenersecret "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/secret"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 
 	"github.com/google/uuid"
 
@@ -38,8 +39,9 @@ import (
 
 	"github.com/onsi/gomega"
 
+	"go.uber.org/zap/zapcore"
+
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/workqueue"
 
 	kebruntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
@@ -95,7 +97,7 @@ func TestGetOldRecordIfMetricExists(t *testing.T) {
 
 	p := Process{
 		Cache:  cache,
-		Logger: logrus.New(),
+		Logger: logger.NewLogger(zapcore.InfoLevel),
 	}
 
 	t.Run("old metric found for a subAccountID", func(t *testing.T) {
@@ -163,7 +165,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 		}
 		kebClient := &kmckeb.Client{
 			HTTPClient: http.DefaultClient,
-			Logger:     &logrus.Logger{},
+			Logger:     logger.NewLogger(zapcore.InfoLevel),
 			Config:     config,
 		}
 
@@ -174,7 +176,7 @@ func TestPollKEBForRuntimes(t *testing.T) {
 			Queue:          queue,
 			Cache:          cache,
 			ScrapeInterval: 0,
-			Logger:         logrus.New(),
+			Logger:         logger.NewLogger(zapcore.InfoLevel),
 		}
 
 		go func() {
@@ -207,7 +209,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logrus.New(),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		runtimesPage := new(kebruntime.RuntimesPage)
 
@@ -236,7 +238,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logrus.New(),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		runtimesPage := new(kebruntime.RuntimesPage)
 
@@ -266,7 +268,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logrus.New(),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 		newRecord := NewRecord(subAccID, newShootName, "")
@@ -297,7 +299,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logrus.New(),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 
@@ -325,7 +327,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 		p := Process{
 			Queue:  queue,
 			Cache:  cache,
-			Logger: logrus.New(),
+			Logger: logger.NewLogger(zapcore.InfoLevel),
 		}
 		oldRecord := NewRecord(subAccID, oldShootName, "foo")
 
@@ -369,7 +371,7 @@ func TestExecute(t *testing.T) {
 	tenant := subAccID
 	expectedKubeconfig := "eyJmb28iOiAiYmFyIn0="
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStream, testDataStreamVersion, tenant, testEnv)
-	log := logrus.New()
+	log := logger.NewLogger(zapcore.InfoLevel)
 
 	timesVisited := 0
 	// Set up EDP Test Server handler

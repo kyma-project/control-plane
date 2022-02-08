@@ -6,19 +6,21 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 type Client struct {
 	HttpClient *http.Client
 	Config     *Config
-	Logger     *logrus.Logger
+	Logger     *zap.SugaredLogger
 }
 
 const (
@@ -28,9 +30,10 @@ const (
 	userAgentKeyHeader     = "User-Agent"
 	contentTypeKeyHeader   = "Content-Type"
 	authorizationKeyHeader = "Authorization"
+	clientName             = "edp-client"
 )
 
-func NewClient(config *Config, logger *logrus.Logger) *Client {
+func NewClient(config *Config, logger *zap.SugaredLogger) *Client {
 	httpClient := &http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   config.Timeout,
@@ -84,14 +87,16 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 		resp, err = eClient.HttpClient.Do(req)
 		metricTimer.ObserveDuration()
 		if err != nil {
-			eClient.Logger.Debugf("req: %v", req)
-			eClient.Logger.Warnf("will be retried: failed to send event stream to EDP: %v", err)
+			eClient.namedLogger().Debugf("req: %v", req)
+			eClient.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+				With(log.KeyRetry, log.ValueTrue).Warn("send event stream to EDP")
 			return
 		}
 
 		if resp.StatusCode != http.StatusCreated {
 			non2xxErr := fmt.Errorf("failed to send event stream as EDP returned HTTP: %d", resp.StatusCode)
-			eClient.Logger.Warnf("will be retried: %v", non2xxErr)
+			eClient.namedLogger().With(log.KeyError, non2xxErr.Error()).With(log.KeyRetry, log.ValueTrue).
+				Warn("send event stream as EDP")
 			err = non2xxErr
 		}
 		return
@@ -107,10 +112,14 @@ func (eClient Client) Send(req *http.Request, payload []byte) (*http.Response, e
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			eClient.Logger.Warn(err)
+			eClient.namedLogger().Warn(err)
 		}
 	}()
 
-	eClient.Logger.Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
+	eClient.namedLogger().Debugf("sent an event to '%s' with eventstream: '%s'", req.URL.String(), string(payload))
 	return resp, nil
+}
+
+func (c *Client) namedLogger() *zap.SugaredLogger {
+	return c.Logger.Named(clientName).With("component", "EDP")
 }
