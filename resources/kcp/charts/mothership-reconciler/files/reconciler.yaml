@@ -1,7 +1,8 @@
-{{- $pgHost:=.Values.db.serviceHost}}
+{{- $pgHost := .Values.db.serviceHost}}
 {{- if eq .Values.global.database.embedded.enabled false }}
-  {{- $relName:=.Release.Name }}
-  {{- $pgHost = (printf "%s-%s.%s" $relName "cloudsql-proxy" $relName) }}
+  {{- $relName := .Release.Name }}
+  {{- $relNS := .Release.Namespace }}
+  {{- $pgHost = (printf "%s-%s.%s" $relName "cloudsql-proxy" $relNS) }}
 {{- end }}
 db:
   driver: postgres
