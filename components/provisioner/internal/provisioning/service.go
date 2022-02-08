@@ -192,9 +192,9 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
-	kyma2Installed := r.isKyma2Installed(cluster)
+	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
 
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, kyma2Installed, r.uuidGenerator.New())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
 	if appErr != nil {
 		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
 	}
@@ -204,7 +204,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
-	if kyma2Installed {
+	if withoutUninstall {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
@@ -459,7 +459,7 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	return r.RuntimeStatus(runtimeID)
 }
 
-func (r *service) isKyma2Installed(cluster model.Cluster) bool {
+func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool {
 
 	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
 		return true

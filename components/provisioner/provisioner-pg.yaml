@@ -1,0 +1,242 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kcp
+    meta.helm.sh/release-namespace: kcp-system
+  labels:
+    app: provisioner-pg
+    app.kubernetes.io/instance: kcp
+    app.kubernetes.io/name: provisioner-pg
+    helm.sh/chart: provisioner-0.1.0
+    release: kcp
+  name: kcp-provisioner-pg
+  namespace: kcp-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: provisioner-pg
+      release: kcp
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 0%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: provisioner-pg
+        app.kubernetes.io/instance: kcp
+        app.kubernetes.io/name: provisioner-pg
+        helm.sh/chart: provisioner-0.1.0
+        release: kcp
+    spec:
+      containers:
+      - env:
+        - name: APP_ADDRESS
+          value: 0.0.0.0:3000
+        - name: APP_METRICS_ADDRESS
+          value: 0.0.0.0:9000
+        - name: APP_API_ENDPOINT
+          value: /graphql
+        - name: APP_OAUTH_CREDENTIALS_NAMESPACE
+          value: kcp-system
+        - name: APP_DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-provisioner-username
+              name: kcp-postgresql
+        - name: APP_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-provisioner-password
+              name: kcp-postgresql
+        - name: APP_DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-serviceName
+              name: kcp-postgresql
+        - name: APP_DATABASE_PORT
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-servicePort
+              name: kcp-postgresql
+        - name: APP_DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-provisioner-db-name
+              name: kcp-postgresql
+        - name: APP_DATABASE_SSL
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-sslMode
+              name: kcp-postgresql
+        - name: APP_DIRECTOR_URL
+          value: https://compass-gateway-auth-oauth.mps.dev.kyma.cloud.sap/director/graphql
+        - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
+          value: kcp-provisioner-credentials
+        - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
+          value: "false"
+        - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
+          value: 2h
+        - name: APP_PROVISIONING_TIMEOUT_UPGRADE
+          value: 2h
+        - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
+          value: 30m
+        - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_AGENT_CONFIGURATION
+          value: 30m
+        - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
+          value: 30m
+        - name: APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION
+          value: 2h
+        - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_CREATION
+          value: 2h
+        - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
+          value: 20m
+        - name: APP_PROVISIONING_TIMEOUT_SHOOT_UPGRADE
+          value: 150m
+        - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_DELETION
+          value: 30m
+        - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_DELETION
+          value: 30m
+        - name: APP_DEPROVISIONING_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
+          value: 4h
+        - name: APP_DEPROVISIONING_NO_INSTALL_TIMEOUT_WAITING_FOR_CLUSTER_DELETION
+          value: 4h
+        - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
+          value: 20m
+        - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
+          value: 5m
+        - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_BINDINGS_CREATION
+          value: 5m
+        - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
+          value: runtimeOperator
+        - name: APP_OPERATOR_ROLE_BINDING_L3SUBJECT_NAME
+          value: runtimeAdmin
+        - name: APP_OPERATOR_ROLE_BINDING_CREATING_FOR_ADMIN
+          value: "true"
+        - name: APP_GARDENER_PROJECT
+          value: kyma-dev
+        - name: APP_GARDENER_KUBECONFIG_PATH
+          value: /gardener/kubeconfig/kubeconfig
+        - name: APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP
+          value: audit-policy
+        - name: APP_GARDENER_AUDIT_LOGS_TENANT_CONFIG_PATH
+          value: /gardener/tenant/config
+        - name: APP_GARDENER_MAINTENANCE_WINDOW_CONFIG_PATH
+          value: /gardener/maintenance/config
+        - name: APP_GARDENER_CLUSTER_CLEANUP_RESOURCE_SELECTOR
+          value: https://service-manager.
+        - name: APP_GARDENER_DEFAULT_ENABLE_KUBERNETES_VERSION_AUTO_UPDATE
+          value: "true"
+        - name: APP_GARDENER_DEFAULT_ENABLE_MACHINE_IMAGE_VERSION_AUTO_UPDATE
+          value: "true"
+        - name: APP_GARDENER_FORCE_ALLOW_PRIVILEGED_CONTAINERS
+          value: "true"
+        - name: APP_LATEST_DOWNLOADED_RELEASES
+          value: "10"
+        - name: APP_DOWNLOAD_PRE_RELEASES
+          value: "true"
+        - name: APP_LOG_LEVEL
+          value: info
+        - name: APP_ENQUEUE_IN_PROGRESS_OPERATIONS
+          value: "true"
+        - name: APP_RUN_AWS_CONFIG_MIGRATION
+          value: "true"
+        image: eu.gcr.io/kyma-project/control-plane/provisioner:PR-1312
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: provisioner
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        - containerPort: 9000
+          name: http-metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 400m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 2000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /gardener/tenant
+          name: gardener-audit-log-tenant-config
+          readOnly: true
+        - mountPath: /gardener/maintenance
+          name: gardener-maintenance-config
+          readOnly: true
+        - mountPath: /gardener/kubeconfig
+          name: gardener-kubeconfig
+          readOnly: true
+      - command:
+        - /cloud_sql_proxy
+        - -instances=sap-ti-dx-kyma-mps-dev:europe-west1:kyma-mps-dev-f720=tcp:5432
+        - -credential_file=/secrets/cloudsql-instance-credentials/credentials.json
+        image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
+        imagePullPolicy: IfNotPresent
+        name: cloudsql-proxy
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 2000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /secrets/cloudsql-instance-credentials
+          name: cloudsql-instance-credentials
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        pool-type: app
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kcp-provisioner
+      serviceAccountName: kcp-provisioner
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: cloudsql-instance-credentials
+        secret:
+          defaultMode: 420
+          secretName: cloudsql-instance-credentials
+      - name: gardener-kubeconfig
+        secret:
+          defaultMode: 420
+          secretName: gardener-credentials
+      - configMap:
+          defaultMode: 420
+          name: audit-tenant-config
+        name: gardener-audit-log-tenant-config
+      - configMap:
+          defaultMode: 420
+          name: maintenance-window-config
+          optional: true
+        name: gardener-maintenance-config

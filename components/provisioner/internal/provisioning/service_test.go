@@ -27,6 +27,7 @@ import (
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -359,6 +360,8 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		Description: "Kyma 1.x is installed on the cluster",
 	}
 
+	errorEmptyState := installationSDK.InstallationState{}
+
 	notInstalledState := installationSDK.InstallationState{
 		State:       installationSDK.NoInstallationState,
 		Description: "Kyma Installation CR not found on the cluster",
@@ -384,6 +387,39 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 		installationClient.On("CheckInstallationState", mock.Anything).Return(installedState, nil)
+
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
+
+		//when
+		opID, err := resolver.DeprovisionRuntime(runtimeID)
+		require.NoError(t, err)
+
+		//then
+		assert.Equal(t, operationID, opID)
+		sessionFactoryMock.AssertExpectations(t)
+		readWriteSession.AssertExpectations(t)
+		provisioner.AssertExpectations(t)
+		installationClient.AssertExpectations(t)
+		deprovisioningQueue.AssertExpectations(t)
+	})
+
+	t.Run("Should start Runtime deprovisioning with uninstall and return operation ID when activeKymaConfigID exists AND Kyma cluster is in error state", func(t *testing.T) {
+		//given
+		sessionFactoryMock := &sessionMocks.Factory{}
+		readWriteSession := &sessionMocks.ReadWriteSession{}
+		provisioner := &mocks2.Provisioner{}
+		installationClient := &installationMocks.Service{}
+
+		deprovisioningQueue := &mocks.OperationQueue{}
+
+		deprovisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
+
+		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
+		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
+		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
+		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
+		installationClient.On("CheckInstallationState", mock.Anything).Return(errorEmptyState, errors.New("Installation error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
