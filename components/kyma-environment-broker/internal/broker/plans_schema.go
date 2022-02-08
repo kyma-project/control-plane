@@ -97,8 +97,9 @@ func NameProperty() NameType {
 
 // NewProvisioningProperties creates a new properties for different plans
 // Note that the order of properties will be the same in the form on the website
-func NewProvisioningProperties(machineTypes []string, regions []string) ProvisioningProperties {
-	return ProvisioningProperties{
+func NewProvisioningProperties(machineTypes []string, regions []string, update bool) ProvisioningProperties {
+
+	properties := ProvisioningProperties{
 		UpdateProperties: UpdateProperties{
 			AutoScalerMin: &Type{
 				Type:        "integer",
@@ -124,6 +125,13 @@ func NewProvisioningProperties(machineTypes []string, regions []string) Provisio
 			Enum: ToInterfaceSlice(machineTypes),
 		},
 	}
+
+	if update {
+		properties.AutoScalerMax.Default = nil
+		properties.AutoScalerMin.Default = nil
+	}
+
+	return properties
 }
 
 func NewOIDCSchema() *OIDCType {
@@ -147,8 +155,8 @@ func NewOIDCSchema() *OIDCType {
 	}
 }
 
-func NewSchema(properties interface{}) *RootSchema {
-	return &RootSchema{
+func NewSchema(properties interface{}, update bool) *RootSchema {
+	schema := &RootSchema{
 		Schema: "http://json-schema.org/draft-04/schema#",
 		Type: Type{
 			Type: "object",
@@ -157,6 +165,12 @@ func NewSchema(properties interface{}) *RootSchema {
 		ShowFormView: true,
 		Required:     []string{"name"},
 	}
+
+	if update {
+		schema.Required = []string{}
+	}
+
+	return schema
 }
 
 func unmarshalOrPanic(from, to interface{}) interface{} {

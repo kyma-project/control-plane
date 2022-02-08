@@ -7,14 +7,12 @@
   "_show_form_view": true,
   "properties": {
     "autoScalerMax": {
-      "default": 10,
       "description": "Specifies the maximum number of virtual machines to create per zone",
       "maximum": 40,
       "minimum": 1,
       "type": "integer"
     },
     "autoScalerMin": {
-      "default": 1,
       "description": "Specifies the minimum number of virtual machines to create per zone",
       "minimum": 1,
       "type": "integer"

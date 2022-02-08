@@ -7,14 +7,12 @@
   "_show_form_view": true,
   "properties": {
     "autoScalerMax": {
-      "default": 10,
       "description": "Specifies the maximum number of virtual machines to create",
       "maximum": 40,
       "minimum": 2,
       "type": "integer"
     },
     "autoScalerMin": {
-      "default": 2,
       "description": "Specifies the minimum number of virtual machines to create",
       "minimum": 2,
       "type": "integer"

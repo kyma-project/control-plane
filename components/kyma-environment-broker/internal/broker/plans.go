@@ -122,7 +122,7 @@ func AWSSchema(machineTypes []string, additionalParams, update bool) *map[string
 }
 
 func AWSHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, AWSHARegions())
+	properties := NewProvisioningProperties(machineTypes, AWSHARegions(), update)
 
 	properties.ZonesCount = &Type{
 		Type:        "integer",
@@ -132,7 +132,10 @@ func AWSHASchema(machineTypes []string, additionalParams, update bool) *map[stri
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 
-	properties.AutoScalerMin.Default = 1
+	if !update {
+		properties.AutoScalerMin.Default = 1
+	}
+
 	properties.AutoScalerMin.Minimum = 1
 	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
@@ -147,9 +150,12 @@ func AzureSchema(machineTypes []string, additionalParams, update bool) *map[stri
 }
 
 func AzureLiteSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	properties := NewProvisioningProperties(machineTypes, AzureRegions(), update)
 	properties.AutoScalerMax.Maximum = 40
-	properties.AutoScalerMax.Default = 10
+
+	if !update {
+		properties.AutoScalerMax.Default = 10
+	}
 
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
@@ -180,7 +186,7 @@ func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bo
 }
 
 func AzureHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, AzureRegions())
+	properties := NewProvisioningProperties(machineTypes, AzureRegions(), update)
 	properties.ZonesCount = &Type{
 		Type:        "integer",
 		Minimum:     3,
@@ -189,7 +195,10 @@ func AzureHASchema(machineTypes []string, additionalParams, update bool) *map[st
 		Description: "Specifies the number of availability zones for HA cluster",
 	}
 
-	properties.AutoScalerMin.Default = 1
+	if !update {
+		properties.AutoScalerMin.Default = 1
+	}
+
 	properties.AutoScalerMin.Minimum = 1
 	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
 
@@ -217,7 +226,7 @@ func empty() *map[string]interface{} {
 }
 
 func createSchema(machineTypes, regions []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, regions)
+	properties := NewProvisioningProperties(machineTypes, regions, update)
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
@@ -227,14 +236,14 @@ func createSchemaWithProperties(properties ProvisioningProperties, additionalPar
 	}
 
 	if update {
-		return createSchemaWith(properties.UpdateProperties)
+		return createSchemaWith(properties.UpdateProperties, update)
 	} else {
-		return createSchemaWith(properties)
+		return createSchemaWith(properties, update)
 	}
 }
 
-func createSchemaWith(properties interface{}) *map[string]interface{} {
-	schema := NewSchema(properties)
+func createSchemaWith(properties interface{}, update bool) *map[string]interface{} {
+	schema := NewSchema(properties, update)
 
 	target := make(map[string]interface{})
 	schema.ControlsOrder = DefaultControlsOrder()
@@ -279,7 +288,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	awsHACatalogSchema := AWSHASchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
 
 	outputPlans := map[string]domain.ServicePlan{
-		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSHAPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
+		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		PreviewPlanID:   defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		AWSHAPlanID:     defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans, awsHACatalogSchema, AWSHASchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
