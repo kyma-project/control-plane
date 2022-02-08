@@ -104,7 +104,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
-	err := s.runtimeStateStorage.Insert(rs)
+	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
