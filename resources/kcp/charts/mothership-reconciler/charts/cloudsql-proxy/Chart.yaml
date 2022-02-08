@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cloudsql-proxy
+description: A Helm chart for GCP cloudsql proxy
+type: application
+version: 0.1.0
