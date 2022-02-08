@@ -442,7 +442,7 @@ type RuntimeState struct {
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
 
-	KymaVersion string
+	KymaVersion string `json:"kyma_version"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {

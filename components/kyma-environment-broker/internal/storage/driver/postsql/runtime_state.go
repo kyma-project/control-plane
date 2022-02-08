@@ -176,9 +176,9 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 	if result.KymaConfig.Version != "" {
 		return result, nil
 	}
-	//if result.KymaVersion != "" {
-	//	return result, nil
-	//}
+	if result.KymaVersion != "" {
+		return result, nil
+	}
 
 	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with kyma version for runtime %s ", runtimeID)
 }

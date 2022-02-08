@@ -2,10 +2,11 @@ package postsql_test
 
 import (
 	"context"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -202,7 +203,6 @@ func TestRuntimeState(t *testing.T) {
 		runtimeStateWithoutVersion.ID = "fixRuntimeStateID3"
 		runtimeStateWithoutVersion.CreatedAt = runtimeStateWithReconcilerInput.CreatedAt.Add(time.Hour * 3)
 
-
 		storage := brokerStorage.RuntimeStates()
 
 		err = storage.Insert(runtimeStateWithoutReconcilerInput)
@@ -226,5 +226,62 @@ func TestRuntimeState(t *testing.T) {
 		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithReconcilerInput.ID)
 		assert.NotNil(t, gotRuntimeState.ClusterSetup)
 		assert.Equal(t, fixKymaVersion, gotRuntimeState.ClusterSetup.KymaConfig.Version)
+	})
+
+	t.Run("should fetch latest RuntimeState with Kyma version stored only in the kyma_version field", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_2")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		fixRuntimeID := "runtimeID"
+		fixKymaVersion := "2.0.3"
+
+		fixRuntimeStateID1 := "runtimestate1"
+		fixOperationID1 := "operation1"
+		runtimeStateWithoutReconcilerInput := fixture.FixRuntimeState(fixRuntimeStateID1, fixRuntimeID, fixOperationID1)
+		runtimeStateWithoutReconcilerInput.CreatedAt = runtimeStateWithoutReconcilerInput.CreatedAt.Add(time.Hour * 2)
+
+		fixRuntimeStateID2 := "runtimestate2"
+		fixOperationID2 := "operation2"
+		runtimeStateWithReconcilerInput := fixture.FixRuntimeState(fixRuntimeStateID2, fixRuntimeID, fixOperationID2)
+		runtimeStateWithReconcilerInput.CreatedAt = runtimeStateWithReconcilerInput.CreatedAt.Add(time.Hour * 1)
+		runtimeStateWithReconcilerInput.ClusterSetup = &reconcilerApi.Cluster{
+			KymaConfig: reconcilerApi.KymaConfig{
+				Version: fixKymaVersion,
+			},
+			RuntimeID: fixRuntimeID,
+		}
+
+		runtimeStatePlainVersion := internal.NewRuntimeState(fixRuntimeID, fixOperationID2, nil, &gqlschema.GardenerConfigInput{})
+		runtimeStatePlainVersion.ID = "fixRuntimeStateID3"
+		runtimeStatePlainVersion.CreatedAt = runtimeStateWithReconcilerInput.CreatedAt.Add(time.Hour * 3)
+		runtimeStatePlainVersion.KymaVersion = "2.1.55"
+
+		storage := brokerStorage.RuntimeStates()
+
+		err = storage.Insert(runtimeStateWithoutReconcilerInput)
+		require.NoError(t, err)
+		err = storage.Insert(runtimeStateWithReconcilerInput)
+		require.NoError(t, err)
+		err = storage.Insert(runtimeStatePlainVersion)
+		require.NoError(t, err)
+
+		gotRuntimeStates, err := storage.ListByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Len(t, gotRuntimeStates, 3)
+
+		gotRuntimeState, err := storage.GetLatestWithKymaVersionByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Equal(t, runtimeStatePlainVersion.ID, gotRuntimeState.ID)
+		assert.Equal(t, "2.1.55", gotRuntimeState.GetKymaVersion())
 	})
 }
