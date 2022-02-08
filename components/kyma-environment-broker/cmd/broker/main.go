@@ -799,17 +799,17 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-miogration",
 			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-miogration",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-miogration",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
