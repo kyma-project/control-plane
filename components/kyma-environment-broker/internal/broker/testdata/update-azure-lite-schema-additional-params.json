@@ -69,8 +69,6 @@
       "type": "object"
     }
   },
-  "required": [
-    "name"
-  ],
+  "required": [],
   "type": "object"
 }

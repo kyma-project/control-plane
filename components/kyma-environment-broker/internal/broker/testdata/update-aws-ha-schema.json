@@ -18,8 +18,6 @@
       "type": "integer"
     }
   },
-  "required": [
-    "name"
-  ],
+  "required": [],
   "type": "object"
 }
