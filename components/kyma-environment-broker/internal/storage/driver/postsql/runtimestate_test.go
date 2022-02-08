@@ -2,6 +2,8 @@ package postsql_test
 
 import (
 	"context"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"testing"
 	"time"
 
@@ -195,20 +197,28 @@ func TestRuntimeState(t *testing.T) {
 			RuntimeID: fixRuntimeID,
 		}
 
+		//runtimeStateWithoutVersion := fixture.FixRuntimeState("fixRuntimeStateID3", fixRuntimeID, fixOperationID2)
+		runtimeStateWithoutVersion := internal.NewRuntimeState(fixRuntimeID, fixOperationID2, nil, &gqlschema.GardenerConfigInput{})
+		runtimeStateWithoutVersion.ID = "fixRuntimeStateID3"
+		runtimeStateWithoutVersion.CreatedAt = runtimeStateWithReconcilerInput.CreatedAt.Add(time.Hour * 3)
+
+
 		storage := brokerStorage.RuntimeStates()
 
 		err = storage.Insert(runtimeStateWithoutReconcilerInput)
 		require.NoError(t, err)
 		err = storage.Insert(runtimeStateWithReconcilerInput)
 		require.NoError(t, err)
+		err = storage.Insert(runtimeStateWithoutVersion)
+		require.NoError(t, err)
 
 		gotRuntimeStates, err := storage.ListByRuntimeID(fixRuntimeID)
 		require.NoError(t, err)
-		assert.Len(t, gotRuntimeStates, 2)
+		assert.Len(t, gotRuntimeStates, 3)
 
 		gotRuntimeState, err := storage.GetLatestByRuntimeID(fixRuntimeID)
 		require.NoError(t, err)
-		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithoutReconcilerInput.ID)
+		assert.Equal(t, runtimeStateWithoutVersion.ID, gotRuntimeState.ID)
 		assert.Nil(t, gotRuntimeState.ClusterSetup)
 
 		gotRuntimeState, err = storage.GetLatestWithKymaVersionByRuntimeID(fixRuntimeID)
