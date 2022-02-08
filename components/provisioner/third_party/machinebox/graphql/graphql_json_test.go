@@ -1,11 +1,13 @@
 package graphql
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -191,4 +193,41 @@ func TestHeader(t *testing.T) {
 	is.Equal(calls, 1)
 
 	is.Equal(resp.Value, "some data")
+}
+
+func TestHideAuthInJSON(t *testing.T) {
+	is := is.New(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{
+			"data": {
+				"something": "yes"
+			}
+		}`)
+	}))
+	defer srv.Close()
+
+	ctx := context.Background()
+	client := NewClient(srv.URL)
+
+	var cout bytes.Buffer
+	client.Log = func(s string) {
+		_, err := cout.WriteString(s)
+		is.NoErr(err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+	var responseData map[string]interface{}
+
+	header := make(http.Header)
+	header["Authorization"] = []string{"some secret key", "another secret key"}
+	req := Request{
+		q:      "query {}",
+		Header: header,
+	}
+
+	err := client.Run(ctx, &req, &responseData)
+	is.NoErr(err)
+	is.Equal(responseData["something"], "yes")
+	is.True(!strings.Contains(cout.String(), "secret key"))
 }

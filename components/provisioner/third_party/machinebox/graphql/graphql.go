@@ -38,6 +38,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 )
@@ -125,7 +127,7 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 			r.Header.Add(key, value)
 		}
 	}
-	c.logf(">> headers: %v", r.Header)
+	c.logf(">> headers: %v", hideHeaders(r.Header))
 	r = r.WithContext(ctx)
 	res, err := c.httpClient.Do(r)
 	if err != nil {
@@ -196,7 +198,7 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 			r.Header.Add(key, value)
 		}
 	}
-	c.logf(">> headers: %v", r.Header)
+	c.logf(">> headers: %v", hideHeaders(r.Header))
 	r = r.WithContext(ctx)
 	res, err := c.httpClient.Do(r)
 	if err != nil {
@@ -238,7 +240,7 @@ func UseMultipartForm() ClientOption {
 	}
 }
 
-//ImmediatelyCloseReqBody will close the req body immediately after each request body is ready
+// ImmediatelyCloseReqBody will close the req body immediately after each request body is ready
 func ImmediatelyCloseReqBody() ClientOption {
 	return func(client *Client) {
 		client.closeReq = true
@@ -331,4 +333,22 @@ type File struct {
 	Field string
 	Name  string
 	R     io.Reader
+}
+
+// hideHeaders creates a copy of headers
+// with specified fields censored (eg 'password' -> '********')
+// Additionally by default censors:
+// - Authorization
+func hideHeaders(headers http.Header, toHide ...string) http.Header {
+	toHide = append(toHide, "Authorization")
+	hs := headers.Clone()
+	for _, h := range toHide {
+		v, ok := hs[h]
+		if ok {
+			for i := range v {
+				hs[h][i] = strings.Repeat("*", utf8.RuneCountInString(v[i]))
+			}
+		}
+	}
+	return hs
 }
