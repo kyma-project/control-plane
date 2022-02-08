@@ -285,7 +285,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
 		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
 		AzurePlanID:     defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachines, includeAdditionalParamsInSchema, true)),
-		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureHAPlanID, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
+		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
 		FreemiumPlanID:  defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
 		AzureHAPlanID:   defaultServicePlan(AzureHAPlanID, AzureHAPlanName, plans, azureHASchema, AzureHASchema(azureMachines, includeAdditionalParamsInSchema, true)),
 		TrialPlanID:     defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
