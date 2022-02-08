@@ -3,9 +3,8 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
@@ -193,24 +192,9 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
 	}
 
-	if cluster.Kubeconfig == nil {
-		return "", apperrors.Internal("error: kubeconfig is nil")
-	}
+	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
 
-	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-	if err != nil {
-		return "", apperrors.Internal("error: failed to create kubernetes config from raw: %s", err.Error())
-	}
-
-	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
-
-	deprovisionWithoutUninstall := false
-
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) || installationState.State == installationSDK.NoInstallationState {
-		deprovisionWithoutUninstall = true
-	}
-
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, deprovisionWithoutUninstall, r.uuidGenerator.New())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
 	if appErr != nil {
 		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
 	}
@@ -220,7 +204,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
 	}
 
-	if deprovisionWithoutUninstall {
+	if withoutUninstall {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
@@ -473,6 +457,28 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	}
 
 	return r.RuntimeStatus(runtimeID)
+}
+
+func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool {
+
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		return true
+	}
+
+	if cluster.Kubeconfig == nil {
+		log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
+		return false
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	if err != nil {
+		log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
+		return false
+	}
+
+	//  When missing installation CR this is Kyma 2 upgraded from Kyma 1
+	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
+	return installationState.State == installationSDK.NoInstallationState
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
