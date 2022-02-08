@@ -749,7 +749,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		return cfg.EnableBTPOperatorMigration
 	}
 
-	manager.DefineStages([]string{"cluster", "runtime", "check"})
+	manager.DefineStages([]string{"cluster", "migration", "migration-check", "remove-sc-migration", "remove-sc-migration-check", "check"})
 	updateSteps := []struct {
 		stage     string
 		step      update.Step
@@ -764,7 +764,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration",
 			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
 			condition: btpMigrationEnabled,
 		},
@@ -797,6 +797,11 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			stage:     "migration-check",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
+		},
+		{
+			stage:     "remove-sc-migration",
+			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			condition: btpMigrationEnabled,
 		},
 		{
 			stage:     "remove-sc-migration",
