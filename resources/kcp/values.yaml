@@ -1,7 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.28.1-alpine-877b295c
     mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:e635ce55"
     component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:e635ce55"
     containerRegistry:
