@@ -48,7 +48,6 @@ spec:
     - source:
         principals:
         - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.global.kyma_environment_broker.serviceAccountName }}"
-        - "cluster.local/ns/{{ .Release.Namespace }}/sa/cloudsql-proxy"
 {{- $global := . }}
 {{- range $component := .Values.global.components }}
         - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component }}"
