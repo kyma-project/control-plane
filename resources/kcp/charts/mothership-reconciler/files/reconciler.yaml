@@ -1,16 +1,10 @@
-{{- $pgHost := .Values.db.serviceHost}}
-{{- if eq .Values.global.database.embedded.enabled false }}
-  {{- $relName := .Release.Name }}
-  {{- $relNS := .Release.Namespace }}
-  {{- $pgHost = (printf "%s-%s.%s" $relName "cloudsql-proxy" $relNS) }}
-{{- end }}
 db:
   driver: postgres
   encryption:
     keyFile: "/encryption/reconciler.key"
   blockQueries: true
   postgres:
-    host: {{ $pgHost }}
+    host: {{ .Values.db.serviceHost }}
     database: {{ .Values.db.reconcilerDbName }}
     port: {{ .Values.db.servicePort }}
     user: {{ .Values.db.reconcilerUsername }}
