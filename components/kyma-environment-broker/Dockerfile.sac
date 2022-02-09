@@ -20,6 +20,7 @@ RUN apk --update add ca-certificates
 FROM alpine:3.14.3
 LABEL source = git@github.com:kyma-project/control-plane.git
 
+RUN apk --no-cache add --update openssl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 RUN apk --no-cache add --update curl --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
