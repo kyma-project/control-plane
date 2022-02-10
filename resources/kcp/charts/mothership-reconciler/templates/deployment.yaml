@@ -94,13 +94,9 @@ spec:
           containerPort: 8080
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: /health/live
-            port: http
+          {{- toYaml .Values.deployment.livenessProbe | nindent 10 }}
         readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: http
+          {{- toYaml .Values.deployment.readinessProbe | nindent 10 }}
         resources:
           {{- toYaml .Values.deployment.resources | nindent 10 }}
         {{- if .Values.securityContext }}
