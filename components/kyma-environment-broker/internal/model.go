@@ -544,7 +544,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			Version:         0,
 			Description:     "Operation created",
 			InstanceID:      instance.InstanceID,
-			State:           domain.InProgress,
+			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
