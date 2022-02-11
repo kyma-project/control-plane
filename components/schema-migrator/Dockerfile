@@ -7,9 +7,9 @@ WORKDIR /migrate
 
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
-RUN apk --no-cache add --update openssl openssl-dev bash --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+RUN apk --no-cache add --update openssl openssl-dev bash --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 RUN apk --no-cache add postgresql-client
-RUN apk --no-cache add --update curl --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
+RUN apk --no-cache add --update curl --repository=https://dl-cdn.alpinelinux.org/alpine/v3.14/main
 RUN wget -q "https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-amd64.tar.gz" -O - | tar -xz
 RUN mv migrate /usr/local/bin/migrate
 
