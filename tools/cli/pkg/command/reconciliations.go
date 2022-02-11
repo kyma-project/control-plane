@@ -200,6 +200,13 @@ func (cmd *ReconciliationCommand) Run() error {
 		for _, dto := range listRtResp.Data {
 			runtimes = append(runtimes, dto.RuntimeID)
 		}
+		if len(runtimes) == 0 {
+			err = cmd.printReconciliation([]mothership.HTTPReconciliationInfo{})
+			if err != nil {
+				return errors.Wrap(err, "while printing runtimes")
+			}
+			return nil
+		}
 	}
 
 	// fetch reconciliations
