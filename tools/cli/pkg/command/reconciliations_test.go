@@ -282,6 +282,28 @@ func TestReconciliationCommand_Run(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Do not fetch reconciliations when shoot id unknown and runtime not provided",
+			fields: fields{
+				ctx:              testCtx,
+				output:           outputJSON,
+				shoots:           []string{"hakunamatata"},
+				provideKebClient: buildProvideEmptyKebResponse(ctrl),
+				provideMshipClient: func(_ string, _ *http.Client) (mothership.ClientInterface, error) {
+					m := msmock.NewMockClientInterface(ctrl)
+					m.EXPECT().
+						GetReconciliations(gomock.Any(), gomock.Any()).
+						Return(
+							&http.Response{
+								StatusCode: 200,
+								Body:       io.NopCloser(strings.NewReader("[]")),
+							}, nil).
+						Times(0)
+					return m, nil
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "Mothership internal error",
 			fields: fields{
 				ctx:              testCtx,
