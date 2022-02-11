@@ -9,12 +9,11 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/command"
 )
 
-
 /*
 
 Run:
 go run cmd/ers/main.go
- */
+*/
 func main() {
 	setupCloseHandler()
 	cmd := command.New()

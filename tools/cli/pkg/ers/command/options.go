@@ -28,8 +28,8 @@ var ErsHttpClient *http.Client
 type GlobalOptionsKey struct {
 	clientId     string
 	clientSecret string
-	oauthUrl string
-	ersUrl   string
+	oauthUrl     string
+	ersUrl       string
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys

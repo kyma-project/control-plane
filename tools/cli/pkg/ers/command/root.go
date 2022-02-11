@@ -3,25 +3,26 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2/clientcredentials"
-	"os"
-	"strings"
 )
 
 func New() *cobra.Command {
 	cobra.OnInitialize(initConfig)
-	cmd :=  &cobra.Command{
-		Use:     "ers",
-		Short:   "ERS operations tool for Kyma Runtimes.",
-		Long:    "The ers tool provides commands to play with ERS API for Service Catalog migration.",
-		Version: "N/A",
+	cmd := &cobra.Command{
+		Use:          "ers",
+		Short:        "ERS operations tool for Kyma Runtimes.",
+		Long:         "The ers tool provides commands to play with ERS API for Service Catalog migration.",
+		Version:      "N/A",
 		SilenceUsage: true,
 	}
 
-	cmd.AddCommand(NewInstancesCommand(),NewMigrationCommand())
+	cmd.AddCommand(NewInstancesCommand(), NewMigrationCommand())
 
 	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .")
 	SetGlobalOpts(cmd)
@@ -60,9 +61,9 @@ func initConfig() {
 	}
 
 	config := clientcredentials.Config{
-		ClientID: GlobalOpts.ClientID(),
+		ClientID:     GlobalOpts.ClientID(),
 		ClientSecret: GlobalOpts.ClientSecret(),
-		TokenURL: GlobalOpts.OauthUrl(),
+		TokenURL:     GlobalOpts.OauthUrl(),
 	}
 
 	// create a shared ERS HTTP client which does the oauth flow

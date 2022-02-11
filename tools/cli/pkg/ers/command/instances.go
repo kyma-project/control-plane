@@ -2,16 +2,17 @@ package command
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"io/ioutil"
+
+	"github.com/spf13/cobra"
 )
 
 func NewInstancesCommand() *cobra.Command {
 
-	cmd := &cobra.Command {
-		Use: "instances",
-		Short:   "Displays ERS instances.",
-		Long: `Displays most important information about ERS instances.`,
+	cmd := &cobra.Command{
+		Use:   "instances",
+		Short: "Displays ERS instances.",
+		Long:  `Displays most important information about ERS instances.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// TODO: this is an example of a call to ERS
 
