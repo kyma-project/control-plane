@@ -30,11 +30,11 @@ func (s *DeregisterClusterStep) Name() string {
 
 func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if operation.ClusterConfigurationVersion == 0 {
-		log.Debug("Cluster configuration was not created, skipping")
+		log.Info("Cluster configuration was not created, skipping")
 		return operation, 0, nil
 	}
 	if operation.ClusterConfigurationDeleted {
-		log.Debug("Cluster configuration was deleted, skipping")
+		log.Info("Cluster configuration was deleted, skipping")
 		return operation, 0, nil
 	}
 	err := s.reconcilerClient.DeleteCluster(operation.RuntimeID)
