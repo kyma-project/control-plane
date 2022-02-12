@@ -2,31 +2,35 @@ package apperrors
 
 import (
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 type ErrReason string
 type ErrComponent string
 
-type ErrorReporter interface {
-	error
-	Component() ErrComponent
-	Reason() ErrReason
-	Code() ErrCode
-}
-
 const (
-	ErrDB ErrComponent = "db"
-	// ErrGrapQLClient ErrComponent = "graphql client"
-	ErrK8SClient   ErrComponent = "k8s client"
-	ErrProvisioner ErrComponent = "provisioner"
-	ErrDirector    ErrComponent = "director"
+	ErrDB                      ErrComponent = "db - provisioner"
+	ErrProvisionerK8SClient    ErrComponent = "k8s client - provisioner"
+	ErrProvisioner             ErrComponent = "provisioner"
+	ErrCompassDirectorClient   ErrComponent = "compass director client"
+	ErrCompassDirector         ErrComponent = "compass director"
+	ErrMpsOAuth2               ErrComponent = "mps oauth2"
+	ErrCompassConnectionClient ErrComponent = "compass connection client"
+	ErrCompassConnection       ErrComponent = "compass connection"
+	ErrGardenerClient          ErrComponent = "k8s client - gardener"
+	ErrGardener                ErrComponent = "gardener"
+	ErrClusterK8SClient        ErrComponent = "k8s client - cluster"
+	ErrKymaInstaller           ErrComponent = "kyma installer"
 )
 
 const (
 	ErrProvisionerInternal ErrReason = "err_provisioner_internal"
-	ErrDirectorNilResponse ErrReason = "err_director_nil_response"
+
+	ErrDirectorNilResponse       ErrReason = "err_director_nil_response"
+	ErrDirectorRuntimeIDMismatch ErrReason = "err_director_runtime_id_mismatch"
+	ErrDirectorClientGraphqlizer ErrReason = "err_director_client_graphqlizer"
+
+	ErrCheckKymaInstallationState ErrReason = "err_check_kyma_installation_state"
+	ErrTriggerKymaInstallation    ErrReason = "err_trigger_kyma_installation"
 )
 
 type ErrCode int
@@ -35,6 +39,7 @@ type CauseCode int
 const (
 	CodeBadGateway ErrCode = 502
 	CodeInternal   ErrCode = 500
+	CodeExternal   ErrCode = 501
 	CodeForbidden  ErrCode = 403
 	CodeBadRequest ErrCode = 400
 )
@@ -76,6 +81,10 @@ func Internal(format string, a ...interface{}) AppError {
 	return errorf(CodeInternal, Unknown, format, a...)
 }
 
+func External(format string, a ...interface{}) AppError {
+	return errorf(CodeExternal, Unknown, format, a...)
+}
+
 func Forbidden(format string, a ...interface{}) AppError {
 	return errorf(CodeForbidden, Unknown, format, a...)
 }
@@ -88,17 +97,11 @@ func InvalidTenant(format string, a ...interface{}) AppError {
 	return errorf(CodeBadRequest, TenantNotFound, format, a...)
 }
 
-func ConvertToAppError(err error) AppError {
-	if customErr := AppError(nil); errors.As(err, &customErr) {
-		return customErr
-	}
-	return Internal(err.Error())
-}
-
 func (ae appError) Append(additionalFormat string, a ...interface{}) AppError {
 	format := additionalFormat + ", " + ae.message
-	return errorf(ae.code, ae.internalCode, format, a...)
+	ae.message = fmt.Sprintf(format, a...)
 
+	return ae
 }
 
 func (ae appError) SetReason(reason ErrReason) AppError {

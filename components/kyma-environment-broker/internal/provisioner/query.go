@@ -136,5 +136,6 @@ func operationStatusData() string {
 			operation
 			state
 			message
-			runtimeID`
+			runtimeID
+			lastError { errMessage reason component }`
 }

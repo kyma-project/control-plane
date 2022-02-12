@@ -1,8 +1,11 @@
 package k8s
 
 import (
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
 //go:generate mockery -name=K8sClientProvider
@@ -20,12 +23,12 @@ func (c *k8sClientBuilder) CreateK8SClient(kubeconfigRaw string) (kubernetes.Int
 	k8sConfig, err := ParseToK8sConfig([]byte(kubeconfigRaw))
 
 	if err != nil {
-		return nil, apperrors.Internal("failed to parse kubeconfig: %s", err.Error())
+		return nil, util.K8SErrorToAppError(errors.Wrap(err, "failed to parse kubeconfig"))
 	}
 
 	coreClientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
-		return nil, apperrors.Internal("failed to create k8s core client: %s", err.Error())
+		return nil, util.K8SErrorToAppError(errors.Wrap(err, "failed to create k8s core client"))
 	}
 
 	return coreClientset, nil

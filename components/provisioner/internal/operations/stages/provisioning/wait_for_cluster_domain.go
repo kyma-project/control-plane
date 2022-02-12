@@ -51,7 +51,7 @@ func (s *WaitForClusterDomainStep) TimeLimit() time.Duration {
 func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation, _ logrus.FieldLogger) (operations.StageResult, error) {
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
-		return operations.StageResult{}, err
+		return operations.StageResult{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 	}
 
 	if shoot.Spec.DNS == nil || shoot.Spec.DNS.Domain == nil {

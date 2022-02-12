@@ -186,7 +186,7 @@ func isClientError(err error) bool {
 		code, found := ee.Extensions()["error_code"]
 		if found {
 			errCode := code.(float64)
-			if errCode >= 400 && errCode < 500 {
+			if (errCode >= 1 && errCode <= 3) || (errCode >= 400 && errCode <= 502) {
 				return true
 			}
 		}

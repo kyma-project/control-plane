@@ -268,14 +268,20 @@ func (e graphErr) Extensions() map[string]interface{} {
 	return e.ErrorExtensions
 }
 
-const ErrorGRAPHQLClient kebError.ErrorReason = "ERR_GRAPHQL_CLIENT"
-
-func (e graphErr) Reason() kebError.ErrorReason {
-	return ErrorGRAPHQLClient
+func (e graphErr) Reason() kebError.ErrReason {
+	reason, found := e.Extensions()["error_reason"]
+	if found {
+		return reason.(kebError.ErrReason)
+	}
+	return ""
 }
 
-func (e graphErr) Component() kebError.ErrorComponent {
-	return kebError.ErrorGrapQLClient
+func (e graphErr) Component() kebError.ErrComponent {
+	component, found := e.Extensions()["error_component"]
+	if found {
+		return component.(kebError.ErrComponent)
+	}
+	return ""
 }
 
 type graphResponse struct {

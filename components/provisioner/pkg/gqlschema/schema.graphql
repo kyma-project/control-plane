@@ -105,12 +105,19 @@ type KymaConfig {
     configuration: [ConfigEntry]
 }
 
+type LastError {
+    errMessage: String!
+    reason: String!
+    component: String!
+}
+
 type OperationStatus {
     id: String
     operation: OperationType!
     state: OperationState!
     message: String
     runtimeID: String
+    lastError: LastError
 }
 
 enum OperationType {

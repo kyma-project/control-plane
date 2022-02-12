@@ -350,6 +350,21 @@ func (ws writeSession) UpdateOperationState(operationID string, message string, 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
 }
 
+func (ws writeSession) UpdateOperationLastError(operationID, msg, reason, component string) dberrors.Error {
+	res, err := ws.update("operation").
+		Where(dbr.Eq("id", operationID)).
+		Set("error_msg", msg).
+		Set("error_reason", reason).
+		Set("error_component", component).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update operation %s last error: %s", operationID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s last error: %s", operationID, err))
+}
+
 func (ws writeSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).

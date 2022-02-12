@@ -2,16 +2,17 @@ package provisioning
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +52,7 @@ func (s *WaitForClusterCreationStep) TimeLimit() time.Duration {
 func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operation, logger log.FieldLogger) (operations.StageResult, error) {
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
-		return operations.StageResult{}, err
+		return operations.StageResult{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 	}
 
 	lastOperation := shoot.Status.LastOperation
@@ -62,17 +63,23 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 		}
 
 		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+			var reason apperrors.ErrReason
+
+			if len(shoot.Status.LastErrors) > 0 {
+				reason = util.GardenerErrCodesToErrReason(shoot.Status.LastErrors...)
+			}
+
 			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
-				return operations.StageResult{}, errors.New("error during cluster provisioning: rate limits exceeded")
+				return operations.StageResult{}, apperrors.External("error during cluster provisioning: rate limits exceeded").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
 			if lastOperation.Type == gardencorev1beta1.LastOperationTypeReconcile {
-				return operations.StageResult{}, errors.New("error during cluster provisioning: reconcilation error")
+				return operations.StageResult{}, apperrors.External("error during cluster provisioning: reconcilation error").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
 			logger.Warningf("Provisioning failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
-			err := errors.New(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
+			err := apperrors.External(fmt.Sprintf("cluster provisioning failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description)).SetComponent(apperrors.ErrGardener).SetReason(reason)
 
 			return operations.StageResult{}, operations.NewNonRecoverableError(err)
 		}

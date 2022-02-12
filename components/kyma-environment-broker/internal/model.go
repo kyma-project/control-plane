@@ -213,7 +213,7 @@ type Operation struct {
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
 	OrchestrationID string              `json:"-"`
 	FinishedStages  map[string]struct{} `json:"-"`
-	LastError       error.Error         `json:"-"`
+	LastError       error.ErrorReporter `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {

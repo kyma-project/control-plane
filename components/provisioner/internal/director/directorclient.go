@@ -71,7 +71,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
-		return "", apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error())
+		return "", apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error()).SetComponent(apperrors.ErrCompassDirectorClient).SetReason(apperrors.ErrDirectorClientGraphqlizer)
 	}
 
 	runtimeQuery := cc.queryProvider.createRuntimeMutation(runtimeInput)
@@ -84,7 +84,7 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return "", apperrors.Internal("Failed to register runtime in Director: Received nil response.").SetComponent(apperrors.ErrDirector).SetReason(apperrors.ErrDirectorNilResponse)
+		return "", apperrors.Internal("Failed to register runtime in Director: Received nil response.").SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 
 	log.Infof("Successfully registered Runtime %s in Director for tenant %s", config.Name, tenant)
@@ -103,10 +103,10 @@ func (cc *directorClient) GetRuntime(id, tenant string) (graphql.RuntimeExt, app
 		return graphql.RuntimeExt{}, err.Append("Failed to get runtime %s from Director", id)
 	}
 	if response.Result == nil {
-		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received nil response.", id)
+		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received nil response.", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 	if response.Result.ID != id {
-		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received unexpected RuntimeID", id)
+		return graphql.RuntimeExt{}, apperrors.Internal("Failed to get runtime %s from Director: received unexpected RuntimeID", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorRuntimeIDMismatch)
 	}
 
 	log.Infof("Successfully got Runtime %s from Director for tenant %s", id, tenant)
@@ -123,7 +123,7 @@ func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.Runtim
 	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(*directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
-		return apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error())
+		return apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error()).SetComponent(apperrors.ErrCompassDirectorClient).SetReason(apperrors.ErrDirectorClientGraphqlizer)
 	}
 	runtimeQuery := cc.queryProvider.updateRuntimeMutation(id, runtimeInput)
 
@@ -133,10 +133,10 @@ func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.Runtim
 		return appErr.Append("Failed to update runtime %s in Director", id)
 	}
 	if response.Result == nil {
-		return apperrors.Internal("Failed to update runtime %s in Director: received nil response.", id)
+		return apperrors.Internal("Failed to update runtime %s in Director: received nil response.", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 	if response.Result.ID != id {
-		return apperrors.Internal("Failed to update runtime %s in Director: received unexpected RuntimeID", id)
+		return apperrors.Internal("Failed to update runtime %s in Director: received unexpected RuntimeID", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorRuntimeIDMismatch)
 	}
 
 	log.Infof("Successfully updated Runtime %s in Director for tenant %s", id, tenant)
@@ -217,7 +217,7 @@ func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTime
 	}
 
 	if response.Result == nil {
-		return graphql.OneTimeTokenForRuntimeExt{}, apperrors.Internal("Failed to get OneTimeToken for Runtime %s in Director: received nil response.", id)
+		return graphql.OneTimeTokenForRuntimeExt{}, apperrors.Internal("Failed to get OneTimeToken for Runtime %s in Director: received nil response.", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 
 	log.Infof("Received OneTimeToken for Runtime %s in Director for tenant %s", id, tenant)
@@ -288,5 +288,5 @@ func mapDirectorErrorToProvisionerError(egErr gcli.ExtendedError) apperrors.AppE
 		err = apperrors.Internal("Did not recognize the error code from the error response. Original error: %v", egErr)
 	}
 
-	return err.SetComponent(apperrors.ErrDirector).SetReason(reason)
+	return err.SetComponent(apperrors.ErrCompassDirector).SetReason(reason)
 }

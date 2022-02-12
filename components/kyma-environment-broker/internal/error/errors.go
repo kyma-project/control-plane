@@ -5,53 +5,46 @@ import (
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 )
 
-type Error interface {
-	error
-
-	GetReason() ErrorReason
-	GetComponent() ErrorComponent
-}
-
-// error component and reason
+// error reporter
 type LastError struct {
-	error
-	Reason    ErrorReason
-	Component ErrorComponent
+	message   string
+	reason    ErrReason
+	component ErrComponent
 }
 
 type ErrorReporter interface {
 	error
-	Reason() ErrorReason
-	Component() ErrorComponent
+	Reason() ErrReason
+	Component() ErrComponent
 }
 
-type ErrorReason string
+type ErrReason string
 
 const (
-	ErrorKEBInternal ErrorReason = "ERR_KEB_INTERNAL"
-	ErrorKEBTimeOut  ErrorReason = "ERR_KEB_TIMEOUT"
+	ErrorKEBInternal ErrReason = "ERR_KEB_INTERNAL"
+	ErrorKEBTimeOut  ErrReason = "ERR_KEB_TIMEOUT"
 )
 
-type ErrorComponent string
+type ErrComponent string
 
 const (
-	ErrorDB           ErrorComponent = "db"
-	ErrorK8SClient    ErrorComponent = "k8s client"
-	ErrorKEB          ErrorComponent = "keb"
-	ErrorEDP          ErrorComponent = "edp"
-	ErrorGrapQLClient ErrorComponent = "graphql client"
+	ErrorDB           ErrComponent = "db - keb"
+	ErrorK8SClient    ErrComponent = "k8s client"
+	ErrorKEB          ErrComponent = "keb"
+	ErrorEDP          ErrComponent = "edp"
+	ErrorGrapQLClient ErrComponent = "graphql client"
 )
 
-func (err LastError) GetReason() ErrorReason {
-	return err.Reason
+func (err LastError) Reason() ErrReason {
+	return err.reason
 }
 
-func (err LastError) GetComponent() ErrorComponent {
-	return err.Component
+func (err LastError) Component() ErrComponent {
+	return err.component
 }
 
 func (err LastError) Error() string {
-	return err.error.Error()
+	return err.message
 }
 
 func ReasonForError(err error) LastError {
@@ -59,33 +52,27 @@ func ReasonForError(err error) LastError {
 		return LastError{}
 	}
 
-	// if status := dberr.Error(nil); errors.As(err, &status) {
-	// 	return LastError{
-	// 		error:     err,
-	// 		Reason:    status.Reason(),
-	// 		Component: ErrorDB,
-	// 	}
-	// }
+	cause := errors.Cause(err)
 
-	if status := apierr.APIStatus(nil); errors.As(err, &status) {
+	if status := apierr.APIStatus(nil); errors.As(cause, &status) {
 		return LastError{
-			error:     err,
-			Reason:    ErrorReason(apierr.ReasonForError(err)),
-			Component: ErrorK8SClient,
+			message:   err.Error(),
+			reason:    ErrReason(apierr.ReasonForError(cause)),
+			component: ErrorK8SClient,
 		}
 	}
 
-	if status := ErrorReporter(nil); errors.As(err, &status) {
+	if status := ErrorReporter(nil); errors.As(cause, &status) {
 		return LastError{
-			error:     err,
-			Reason:    status.Reason(),
-			Component: status.Component(),
+			message:   err.Error(),
+			reason:    status.Reason(),
+			component: status.Component(),
 		}
 	}
 
 	return LastError{
-		error:     err,
-		Reason:    ErrorKEBInternal,
-		Component: ErrorKEB,
+		message:   err.Error(),
+		reason:    ErrorKEBInternal,
+		component: ErrorKEB,
 	}
 }

@@ -29,6 +29,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 			State:     model.InProgress,
 			Message:   "Some message",
 			ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+			LastError: model.LastError{},
 		}
 
 		operationID := "5f6e3ab6-d803-430a-8fac-29c9c9b4485a"
@@ -41,6 +42,7 @@ func TestOperationStatusToGQLOperationStatus(t *testing.T) {
 			State:     gqlschema.OperationStateInProgress,
 			Message:   &message,
 			RuntimeID: &runtimeID,
+			LastError: &gqlschema.LastError{},
 		}
 
 		//when
@@ -93,6 +95,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     model.Failed,
 				Message:   "Some message",
 				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+				LastError: model.LastError{},
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
@@ -146,6 +149,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     gqlschema.OperationStateFailed,
 				Message:   &message,
 				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -240,6 +244,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     model.Failed,
 				Message:   "Some message",
 				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+				LastError: model.LastError{},
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
@@ -292,6 +297,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     gqlschema.OperationStateFailed,
 				Message:   &message,
 				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,
@@ -386,6 +392,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     model.Failed,
 				Message:   "Some message",
 				ClusterID: "6af76034-272a-42be-ac39-30e075f515a3",
+				LastError: model.LastError{},
 			},
 			RuntimeConnectionStatus: model.RuntimeAgentConnectionStatusDisconnected,
 			RuntimeConfiguration: model.Cluster{
@@ -436,6 +443,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 				State:     gqlschema.OperationStateFailed,
 				Message:   &message,
 				RuntimeID: &runtimeID,
+				LastError: &gqlschema.LastError{},
 			},
 			RuntimeConnectionStatus: &gqlschema.RuntimeConnectionStatus{
 				Status: gqlschema.RuntimeAgentConnectionStatusDisconnected,

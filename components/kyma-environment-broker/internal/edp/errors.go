@@ -13,13 +13,13 @@ type edpError struct {
 	message string
 }
 
-type EDPErrorReason = kebError.ErrorReason
+type EDPErrReason = kebError.ErrReason
 
 const (
-	ErrorEDPconflict   EDPErrorReason = "ERR_EDP_INTERNAL"
-	ErrorEDPNotFound   EDPErrorReason = "ERR_EDP_NOT_FOUND"
-	ErrorEDPBadRequest EDPErrorReason = "ERR_EDP_BAD_REQUEST"
-	ErrorEDPOther      EDPErrorReason = "ERR_EDP_OTHER"
+	ErrEDPconflict   EDPErrReason = "ERR_EDP_INTERNAL"
+	ErrEDPNotFound   EDPErrReason = "ERR_EDP_NOT_FOUND"
+	ErrEDPBadRequest EDPErrReason = "ERR_EDP_BAD_REQUEST"
+	ErrEDPOther      EDPErrReason = "ERR_EDP_OTHER"
 )
 
 func errorf(id string, code int, format string, args ...interface{}) kebError.ErrorReporter {
@@ -54,16 +54,16 @@ func (e edpError) Component() string {
 	return kebError.ErrorEDP
 }
 
-func (e edpError) Reason() EDPErrorReason {
-	reason := ErrorEDPOther
+func (e edpError) Reason() EDPErrReason {
+	reason := ErrEDPOther
 
 	switch e.code {
 	case http.StatusConflict:
-		reason = ErrorEDPconflict
+		reason = ErrEDPconflict
 	case http.StatusNotFound:
-		reason = ErrorEDPNotFound
+		reason = ErrEDPNotFound
 	case http.StatusBadRequest:
-		reason = ErrorEDPBadRequest
+		reason = ErrEDPBadRequest
 	}
 
 	return reason

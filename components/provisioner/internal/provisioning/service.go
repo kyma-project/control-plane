@@ -148,7 +148,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	dberr = dbSession.Commit()
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 
 	if withKymaConfig {
@@ -403,7 +403,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 
 	operation, dberr := readSession.GetOperation(operationID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Operation Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil

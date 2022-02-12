@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -233,7 +234,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
 	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
 	if err != nil {
-		return model.KymaConfig{}, apperrors.ConvertToAppError(err)
+		return model.KymaConfig{}, operations.ConvertToAppError(err)
 	}
 
 	var components []model.KymaComponentConfig
