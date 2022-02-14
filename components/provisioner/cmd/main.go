@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/avast/retry-go"
 	"github.com/gorilla/mux"
@@ -304,6 +305,8 @@ func main() {
 	router.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
 	gqlHandler := handler.New(executableSchema)
+	gqlHandler.AddTransport(transport.POST{})
+	gqlHandler.AddTransport(transport.GET{})
 	gqlHandler.SetErrorPresenter(presenter.Do)
 	router.Handle(cfg.APIEndpoint, gqlHandler)
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
