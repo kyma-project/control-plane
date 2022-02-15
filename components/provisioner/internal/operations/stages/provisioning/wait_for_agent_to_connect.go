@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
-	"github.com/prometheus/common/log"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -98,7 +97,7 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 	}
 
 	if compassConnCR.Status.State == v1alpha1.ConnectionFailed {
-		log.Warn("Compass Connection is in Failed state, trying to reconfigure runtime")
+		logger.Warn("Compass Connection is in Failed state, trying to reconfigure runtime")
 		err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
 		if err != nil {
 			return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state: reconfigure runtime faiure: %s", err.Error())
