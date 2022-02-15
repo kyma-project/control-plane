@@ -98,6 +98,13 @@ deployment:
     successThreshold: 1
     timeoutSeconds: 2
 
+  startupProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    failureThreshold: 180
+    periodSeconds: 10
+
   livenessProbe:
     httpGet:
       path: /health/live
