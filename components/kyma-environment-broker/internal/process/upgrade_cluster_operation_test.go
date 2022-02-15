@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 	"time"
 
@@ -42,13 +43,14 @@ func TestUpgradeClusterOperationManager_OperationFailed(t *testing.T) {
 	require.NoError(t, err)
 
 	errMsg := "task failed miserably"
+	errOut := errors.New("error occurred")
 
 	// when
-	op, when, err := opManager.OperationFailed(op, errMsg, err, logrus.New())
+	op, when, err := opManager.OperationFailed(op, errMsg, errOut, logrus.New())
 
 	// then
 	assert.Error(t, err)
-	assert.EqualError(t, err, errMsg)
+	assert.Equal(t, err, errors.Wrap(errOut, errMsg))
 	assert.Equal(t, domain.Failed, op.State)
 	assert.Equal(t, time.Duration(0), when)
 }

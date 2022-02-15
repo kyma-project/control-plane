@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -21,14 +22,14 @@ func Test_Deprovision_RetryOperationOnce(t *testing.T) {
 	op := internal.DeprovisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
-	errorMessage := fmt.Sprintf("ups ... ")
+	errMsg := errors.New("ups ... ")
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := operations.InsertDeprovisioningOperation(op)
 	require.NoError(t, err)
 
 	// then - first call
-	op, when, err := opManager.RetryOperationOnce(op, errorMessage, err, retryInterval, fixLogger())
+	op, when, err := opManager.RetryOperationOnce(op, errMsg.Error(), errMsg, retryInterval, fixLogger())
 
 	// when - first retry
 	assert.True(t, when > 0)
@@ -38,7 +39,7 @@ func Test_Deprovision_RetryOperationOnce(t *testing.T) {
 	t.Log(op.UpdatedAt.String())
 	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
 	t.Log(op.UpdatedAt.String())
-	op, when, err = opManager.RetryOperationOnce(op, errorMessage, err, retryInterval, fixLogger())
+	op, when, err = opManager.RetryOperationOnce(op, errMsg.Error(), errMsg, retryInterval, fixLogger())
 
 	// when - second call => no retry
 	assert.True(t, when == 0)

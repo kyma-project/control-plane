@@ -16,11 +16,11 @@ const (
 type DBErrReason = kebError.ErrReason
 
 const (
-	ErrDBInternal      DBErrReason = "ERR_DB_INTERNAL"
-	ErrDBNotFound      DBErrReason = "ERR_DB_NOT_FOUND"
-	ErrDBAlreadyExists DBErrReason = "ERR_DB_ALREADY_EXISTS"
-	ErrDBConflict      DBErrReason = "ERR_DB_CONFLICT"
-	ErrDBUnknown       DBErrReason = "ERR_DB_UNKNOWN"
+	ErrDBInternal      DBErrReason = "err_db_internal"
+	ErrDBNotFound      DBErrReason = "err_db_not_found"
+	ErrDBAlreadyExists DBErrReason = "err_db_already_exists"
+	ErrDBConflict      DBErrReason = "err_db_conflict"
+	ErrDBUnknown       DBErrReason = "err_db_unknown"
 )
 
 type Error interface {
@@ -75,7 +75,7 @@ func (e dbError) Error() string {
 }
 
 func (e dbError) Component() kebError.ErrComponent {
-	return kebError.ErrorDB
+	return kebError.ErrDB
 }
 
 func (e dbError) Reason() DBErrReason {

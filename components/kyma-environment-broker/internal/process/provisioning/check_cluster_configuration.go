@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -65,9 +64,10 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return s.operationManager.OperationFailed(operation, errMsg, errors.New(state.Status), log) // to be refactored
+		return s.operationManager.OperationFailed(operation, errMsg, reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	default:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), errors.New(state.Status), log) // to be refactored
+		errMsg := fmt.Sprintf("unknown cluster status: %s", state.Status)
+		return s.operationManager.OperationFailed(operation, reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	}
 }
 

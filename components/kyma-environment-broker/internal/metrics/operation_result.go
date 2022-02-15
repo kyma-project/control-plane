@@ -176,8 +176,15 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 	pp := op.ProvisioningParameters
 	err := op.LastError
 	c.provisioningResultGauge.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID, err.Component, err.Reason, stepProcessed.Error.Error()).
-		Set(resultValue)
+		WithLabelValues(
+			op.ID,
+			op.RuntimeID,
+			op.InstanceID,
+			pp.ErsContext.GlobalAccountID,
+			pp.PlanID,
+			string(err.Component()),
+			string(err.Reason()),
+			err.Error()).Set(resultValue)
 
 	return nil
 }

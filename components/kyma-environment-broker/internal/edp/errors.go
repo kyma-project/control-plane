@@ -16,10 +16,10 @@ type edpError struct {
 type EDPErrReason = kebError.ErrReason
 
 const (
-	ErrEDPconflict   EDPErrReason = "ERR_EDP_INTERNAL"
-	ErrEDPNotFound   EDPErrReason = "ERR_EDP_NOT_FOUND"
-	ErrEDPBadRequest EDPErrReason = "ERR_EDP_BAD_REQUEST"
-	ErrEDPOther      EDPErrReason = "ERR_EDP_OTHER"
+	ErrEDPConflict   EDPErrReason = "err_edp_internal"
+	ErrEDPNotFound   EDPErrReason = "err_edp_not_found"
+	ErrEDPBadRequest EDPErrReason = "err_edp_bad_request"
+	ErrEDPOther      EDPErrReason = "err_edp_other"
 )
 
 func errorf(id string, code int, format string, args ...interface{}) kebError.ErrorReporter {
@@ -50,8 +50,8 @@ func (e edpError) Code() int {
 	return e.code
 }
 
-func (e edpError) Component() string {
-	return kebError.ErrorEDP
+func (e edpError) Component() kebError.ErrComponent {
+	return kebError.ErrEDP
 }
 
 func (e edpError) Reason() EDPErrReason {
@@ -59,7 +59,7 @@ func (e edpError) Reason() EDPErrReason {
 
 	switch e.code {
 	case http.StatusConflict:
-		reason = ErrEDPconflict
+		reason = ErrEDPConflict
 	case http.StatusNotFound:
 		reason = ErrEDPNotFound
 	case http.StatusBadRequest:
@@ -70,7 +70,7 @@ func (e edpError) Reason() EDPErrReason {
 }
 
 func IsConflictError(err error) bool {
-	e, ok := err.(kebError.ErrorReporter)
+	e, ok := err.(edpError)
 	if !ok {
 		return false
 	}

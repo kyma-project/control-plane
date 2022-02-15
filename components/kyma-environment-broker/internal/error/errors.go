@@ -1,6 +1,11 @@
 package error
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	"github.com/pkg/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -21,18 +26,26 @@ type ErrorReporter interface {
 type ErrReason string
 
 const (
-	ErrorKEBInternal ErrReason = "ERR_KEB_INTERNAL"
-	ErrorKEBTimeOut  ErrReason = "ERR_KEB_TIMEOUT"
+	ErrKEBInternal ErrReason = "err_keb_internal"
+	ErrKEBTimeOut  ErrReason = "err_keb_timeout"
+
+	ErrProvisionerNilLastError ErrReason = "err_provisioner_nil_last_error"
+
+	ErrHttpStatusCode ErrReason = "err_http_status_code"
+
+	ErrReconcilerNilFailures ErrReason = "err_reconciler_nil_failures"
 )
 
 type ErrComponent string
 
 const (
-	ErrorDB           ErrComponent = "db - keb"
-	ErrorK8SClient    ErrComponent = "k8s client"
-	ErrorKEB          ErrComponent = "keb"
-	ErrorEDP          ErrComponent = "edp"
-	ErrorGrapQLClient ErrComponent = "graphql client"
+	ErrDB          ErrComponent = "db - keb"
+	ErrK8SClient   ErrComponent = "k8s client - keb"
+	ErrKEB         ErrComponent = "keb"
+	ErrEDP         ErrComponent = "edp"
+	ErrProvisioner ErrComponent = "provisioner"
+	ErrReconciler  ErrComponent = "reconciler"
+	ErrAVS         ErrComponent = "avs"
 )
 
 func (err LastError) Reason() ErrReason {
@@ -47,6 +60,22 @@ func (err LastError) Error() string {
 	return err.message
 }
 
+func (err LastError) SetComponent(component ErrComponent) LastError {
+	err.component = component
+	return err
+}
+
+func (err LastError) SetReason(reason ErrReason) LastError {
+	err.reason = reason
+	return err
+}
+
+func (err LastError) SetMessage(msg string) LastError {
+	err.message = msg
+	return err
+}
+
+// resolve error component and reason
 func ReasonForError(err error) LastError {
 	if err == nil {
 		return LastError{}
@@ -58,7 +87,7 @@ func ReasonForError(err error) LastError {
 		return LastError{
 			message:   err.Error(),
 			reason:    ErrReason(apierr.ReasonForError(cause)),
-			component: ErrorK8SClient,
+			component: ErrK8SClient,
 		}
 	}
 
@@ -70,9 +99,62 @@ func ReasonForError(err error) LastError {
 		}
 	}
 
+	if ee, ok := cause.(gcli.ExtendedError); ok {
+		var errReason ErrReason
+		var errComponent ErrComponent
+
+		reason, found := ee.Extensions()["error_reason"]
+		if found {
+			errReason = reason.(ErrReason)
+		}
+		component, found := ee.Extensions()["error_component"]
+		if found {
+			errComponent = component.(ErrComponent)
+		}
+
+		return LastError{
+			message:   err.Error(),
+			reason:    errReason,
+			component: errComponent,
+		}
+	}
+
+	if IsTemporaryError(cause) {
+		reason := ErrReason(valueFromTextKey(cause.Error(), "reason"))
+		component := ErrComponent(valueFromTextKey(cause.Error(), "component"))
+
+		if component == "" {
+			component = ErrKEB
+			if reason == "" {
+				reason = ErrKEBInternal
+			}
+		}
+
+		return LastError{
+			message:   err.Error(),
+			reason:    reason,
+			component: component,
+		}
+	}
+
 	return LastError{
 		message:   err.Error(),
-		reason:    ErrorKEBInternal,
-		component: ErrorKEB,
+		reason:    ErrKEBInternal,
+		component: ErrKEB,
 	}
+}
+
+//extract the value in text from key: value(\w+)
+func valueFromTextKey(msg string, key string) string {
+	exp, err := regexp.Compile(fmt.Sprintf(`%s: ([\w ]+)`, key))
+	if err != nil {
+		return ""
+	}
+
+	vals := exp.FindStringSubmatch(msg)
+	if len(vals) >= 2 {
+		return strings.Trim(vals[1], " ")
+	}
+
+	return ""
 }

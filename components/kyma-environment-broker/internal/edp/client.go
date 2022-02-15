@@ -201,7 +201,7 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool, id
 		return kebError.NewTemporaryError("Request timeout: %s", responseLog(response))
 	case http.StatusBadRequest:
 		c.log.Errorf("Bad request %s: %s", responseLog(response), body)
-		return NewEDPBadRequestError(id, fmt.Sprintf("Bad request: %s", responseLog(response))
+		return NewEDPBadRequestError(id, fmt.Sprintf("Bad request: %s", responseLog(response)))
 	}
 
 	if response.StatusCode >= 500 {
@@ -210,7 +210,7 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool, id
 	}
 
 	c.log.Errorf("EDP server not supported response %s: %s", responseLog(response), body)
-	return NewEDPOtherError(id, response.StatusCode, fmt.Sprintf("Undefined/empty/notsupported status code response %s", responseLog(response))
+	return NewEDPOtherError(id, response.StatusCode, fmt.Sprintf("Undefined/empty/notsupported status code response %s", responseLog(response)))
 }
 
 func responseLog(r *http.Response) string {

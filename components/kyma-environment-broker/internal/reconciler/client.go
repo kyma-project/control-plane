@@ -69,9 +69,13 @@ func (c *client) ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerA
 	switch {
 	case res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated:
 	case res.StatusCode >= 400 && res.StatusCode < 500:
-		return nil, fmt.Errorf("got status %d", res.StatusCode)
+		err = kebError.LastError{}.
+			SetMessage(fmt.Sprintf("got status %d", res.StatusCode)).
+			SetReason(kebError.ErrHttpStatusCode).
+			SetComponent(kebError.ErrReconciler)
+		return nil, err
 	case res.StatusCode >= 500:
-		return nil, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return nil, kebError.NewTemporaryError("Got status %d, component: %s, reason: %s", res.StatusCode, string(kebError.ErrReconciler), string(kebError.ErrHttpStatusCode))
 	}
 
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
@@ -105,9 +109,13 @@ func (c *client) DeleteCluster(clusterName string) error {
 	case res.StatusCode == http.StatusNotFound:
 		return nil
 	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
-		return fmt.Errorf("got status %d", res.StatusCode)
+		err = kebError.LastError{}.
+			SetMessage(fmt.Sprintf("got status %d", res.StatusCode)).
+			SetReason(kebError.ErrHttpStatusCode).
+			SetComponent(kebError.ErrReconciler)
+		return err
 	case res.StatusCode >= 500:
-		return kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return kebError.NewTemporaryError("Got status %d, component: %s, reason: %s", res.StatusCode, string(kebError.ErrReconciler), string(kebError.ErrHttpStatusCode))
 	default:
 		return nil
 	}
@@ -132,9 +140,13 @@ func (c *client) GetCluster(clusterName string, configVersion int64) (*reconcile
 	case res.StatusCode == http.StatusNotFound:
 		return &reconcilerApi.HTTPClusterResponse{}, kebError.NotFoundError{}
 	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
-		return &reconcilerApi.HTTPClusterResponse{}, fmt.Errorf("got status %d", res.StatusCode)
+		err = kebError.LastError{}.
+			SetMessage(fmt.Sprintf("got status %d", res.StatusCode)).
+			SetReason(kebError.ErrHttpStatusCode).
+			SetComponent(kebError.ErrReconciler)
+		return &reconcilerApi.HTTPClusterResponse{}, err
 	case res.StatusCode >= 500:
-		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError("Got status %d, component: %s, reason: %s", res.StatusCode, string(kebError.ErrReconciler), string(kebError.ErrHttpStatusCode))
 	}
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)

@@ -39,7 +39,6 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/pkg/errors"
 )
 
@@ -266,22 +265,6 @@ func (e graphErr) Error() string {
 
 func (e graphErr) Extensions() map[string]interface{} {
 	return e.ErrorExtensions
-}
-
-func (e graphErr) Reason() kebError.ErrReason {
-	reason, found := e.Extensions()["error_reason"]
-	if found {
-		return reason.(kebError.ErrReason)
-	}
-	return ""
-}
-
-func (e graphErr) Component() kebError.ErrComponent {
-	component, found := e.Extensions()["error_component"]
-	if found {
-		return component.(kebError.ErrComponent)
-	}
-	return ""
 }
 
 type graphResponse struct {
