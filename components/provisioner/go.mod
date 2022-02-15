@@ -141,5 +141,7 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.23.3
 	k8s.io/apiserver => k8s.io/apiserver v0.23.3
 	k8s.io/client-go => k8s.io/client-go v0.23.3
+	k8s.io/metrics => k8s.io/metrics v0.23.3
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.11.0
+	sigs.k8s.io/json => sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2
 )
