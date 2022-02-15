@@ -97,7 +97,7 @@ func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp
 }
 
 func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
-	return gqlschema.KymaProfileEvaluation
+	return gqlschema.KymaProfileProduction
 }
 
 func (p *AzureLiteInput) Provider() internal.CloudProvider {
