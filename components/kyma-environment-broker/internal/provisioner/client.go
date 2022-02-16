@@ -194,7 +194,7 @@ func isClientError(err error) bool {
 	return false
 }
 
-func OperationStatusLastError(lastErr schema.LastError) kebError.ErrorReporter {
+func OperationStatusLastError(lastErr *schema.LastError) kebError.ErrorReporter {
 	var err kebError.LastError
 
 	if lastErr == nil {

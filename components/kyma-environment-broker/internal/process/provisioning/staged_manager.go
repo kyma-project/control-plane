@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -106,20 +105,22 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
-		operation.LastError = kebError.ReasonForError(err)
-		defer m.callPubSubOutsideSteps(&operation, err)
+		fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&1")
+		timeoutErr := kebError.TimeoutError("operation has reached the time limit")
+		operation.LastError = timeoutErr
+		defer m.callPubSubOutsideSteps(operation, timeoutErr)
 
 		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		operation.State = domain.Failed
 		_, err = m.operationStorage.UpdateProvisioningOperation(*operation)
 		if err != nil {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
-			operation.LastError = kebError.ReasonForError(err)
-			return time.Second, err
+			timeoutErr = timeoutErr.SetMessage(fmt.Sprintf("%s and %s", timeoutErr.Error(), err.Error()))
+			operation.LastError = timeoutErr
+			return time.Second, timeoutErr
 		}
 
-		err = errors.New("operation has reached the time limit")
-		return 0, err
+		return 0, timeoutErr
 	}
 
 	var when time.Duration
@@ -167,13 +168,9 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 		Operation: processedOperation,
 	})
 
-	defer m.callPubSubOutsideSteps(processedOperation, err)
-
-	processedOperation.LastError = kebError.ReasonForError(err)
 	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
-		processedOperation.LastError = kebError.ReasonForError(err)
 		return time.Second, err
 	}
 
@@ -231,7 +228,7 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 
 func (m *StagedManager) callPubSubOutsideSteps(operation *internal.ProvisioningOperation, err error) {
 	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
-		Operation: operation,
+		Operation: *operation,
 		StepProcessed: process.StepProcessed{
 			Duration: time.Since(operation.CreatedAt),
 			Error:    err,

@@ -75,6 +75,14 @@ func (err LastError) SetMessage(msg string) LastError {
 	return err
 }
 
+func TimeoutError(msg string) LastError {
+	return LastError{
+		message:   msg,
+		reason:    ErrKEBTimeOut,
+		component: ErrKEB,
+	}
+}
+
 // resolve error component and reason
 func ReasonForError(err error) LastError {
 	if err == nil {
