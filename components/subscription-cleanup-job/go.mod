@@ -48,7 +48,7 @@ require (
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -64,9 +64,9 @@ require (
 
 replace (
 	github.com/dgrijalva/jwt-go => github.com/dgrijalva/jwt-go v1.0.2
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
-	golang.org/x/text => golang.org/x/text v0.3.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.21.2
-	k8s.io/apiserver => k8s.io/apiserver v0.21.2
-	k8s.io/client-go => k8s.io/client-go v0.21.2
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/text => golang.org/x/text v0.3.7
+	k8s.io/apimachinery => k8s.io/apimachinery v0.22.3
+	k8s.io/apiserver => k8s.io/apiserver v0.22.3
+	k8s.io/client-go => k8s.io/client-go v0.22.3
 )
