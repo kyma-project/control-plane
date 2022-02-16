@@ -16,172 +16,87 @@
       {
         "component": "cluster-essentials",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "istio-configuration",
         "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "certificates",
         "namespace": "istio-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "logging",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "tracing",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "kiali",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "monitoring",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "eventing",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "c-18cb528.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "ory",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "api-gateway",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "service-catalog",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "service-catalog-addons",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "rafter",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "helm-broker",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "cluster-users",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "serverless",
         "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       },
       {
         "component": "application-connector",
         "namespace": "kyma-integration",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": ""
-          }
-        ]
+        "configuration": []
       }
     ],
     "administrators": [
