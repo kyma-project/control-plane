@@ -3,7 +3,7 @@ global:
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.28.1-alpine-877b295c
     mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:1ce659b0"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:1ce659b0"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:bff6b243"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
