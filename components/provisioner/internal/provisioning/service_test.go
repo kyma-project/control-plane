@@ -4,16 +4,16 @@ import (
 	"testing"
 	"time"
 
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
+	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	releaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/mocks"
@@ -24,10 +24,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	uuidMocks "github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -383,11 +379,11 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
-		//when
+		// when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
-		//then
+		// then
 		assert.Equal(t, operationID, opID)
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
@@ -397,7 +393,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	})
 
 	t.Run("Should start Runtime deprovisioning with uninstall and return operation ID when activeKymaConfigID exists AND Kyma cluster is in error state", func(t *testing.T) {
-		//given
+		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
@@ -416,11 +412,11 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
-		//when
+		// when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
-		//then
+		// then
 		assert.Equal(t, operationID, opID)
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
@@ -430,7 +426,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	})
 
 	t.Run("Should start Runtime deprovisioning with uninstall and return operation ID when activeKymaConfigID exists AND cluster kubeconfig is missing", func(t *testing.T) {
-		//given
+		// given
 		cluster := model.Cluster{
 			ID: runtimeID,
 			KymaConfig: &model.KymaConfig{
@@ -454,11 +450,11 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil, deprovisioningQueue, nil, nil, nil, nil)
 
-		//when
+		// when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
 		require.NoError(t, err)
 
-		//then
+		// then
 		assert.Equal(t, operationID, opID)
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
@@ -467,7 +463,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 	})
 
 	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID exists after upgrade from 1.x to 2.x BUT Kyma cluster is not reported as installed", func(t *testing.T) {
-		//given
+		// given
 		operation := model.Operation{
 			ID:             operationID,
 			Type:           model.DeprovisionNoInstall,

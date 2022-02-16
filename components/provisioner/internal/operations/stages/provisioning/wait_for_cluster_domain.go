@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
 type WaitForClusterDomainStep struct {
@@ -80,14 +80,12 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 }
 
 func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
-
 	var runtime graphql.RuntimeExt
 
 	err := util.RetryOnError(5*time.Second, 3, "Error while getting runtime from Director: %s", func() (err apperrors.AppError) {
 		runtime, err = s.directorClient.GetRuntime(runtimeId, tenant)
 		return
 	})
-
 	if err != nil {
 		return &graphql.RuntimeInput{}, errors.Wrap(err, fmt.Sprintf("failed to get Runtime by ID: %s", runtimeId))
 	}
