@@ -17,7 +17,7 @@ global:
       version: "PR-1352"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1285"
+      version: "PR-1361"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-1348"
