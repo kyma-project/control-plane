@@ -139,7 +139,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if err := s.configureKymaVersion(&operation, log); err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "while configuring kyma version", err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters.PlanID)
@@ -150,7 +150,7 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "while creating runtime input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
@@ -215,9 +215,9 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	case err == nil:
 		return operation, delay, nil
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), err, 10*time.Second, 10*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "while performing runtime tasks", err, 10*time.Second, 10*time.Minute, log)
 	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
+		return s.operationManager.OperationFailed(operation, "while performing runtime tasks", err, log)
 	}
 }
 

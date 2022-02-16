@@ -138,7 +138,7 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade shoot input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "while creating upgrade shoot input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
@@ -176,9 +176,9 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	case err == nil:
 		return operation, delay, nil
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), err, 10*time.Second, 10*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "while performing runtime tasks", err, 10*time.Second, 10*time.Minute, log)
 	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
+		return s.operationManager.OperationFailed(operation, "while performing runtime tasks", err, log)
 	}
 }
 

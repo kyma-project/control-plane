@@ -1,7 +1,6 @@
 package process
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"testing"
 	"time"
@@ -50,7 +49,7 @@ func TestUpgradeClusterOperationManager_OperationFailed(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.Equal(t, err, errors.Wrap(errOut, errMsg))
+	assert.EqualError(t, err, errors.Wrap(errOut, errMsg).Error())
 	assert.Equal(t, domain.Failed, op.State)
 	assert.Equal(t, time.Duration(0), when)
 }
@@ -63,7 +62,8 @@ func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {
 	op := internal.UpgradeClusterOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
-	errorMessage := fmt.Sprintf("task failed")
+	errorMessage := "task failed"
+	errOut := errors.New("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
@@ -71,7 +71,7 @@ func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {
 	require.NoError(t, err)
 
 	// then - first call
-	op, when, err := opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
+	op, when, err := opManager.RetryOperation(op, errorMessage, errOut, retryInterval, maxtime, fixLogger())
 
 	// when - first retry
 	assert.True(t, when > 0)
@@ -81,7 +81,7 @@ func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {
 	t.Log(op.UpdatedAt.String())
 	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
 	t.Log(op.UpdatedAt.String())
-	op, when, err = opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
+	op, when, err = opManager.RetryOperation(op, errorMessage, errOut, retryInterval, maxtime, fixLogger())
 
 	// when - second call => retry
 	assert.True(t, when > 0)

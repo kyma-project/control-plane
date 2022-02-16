@@ -54,6 +54,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := fmt.Sprintf("ups ... ")
+	errOut := errors.New("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
@@ -61,7 +62,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	require.NoError(t, err)
 
 	// then - first call
-	op, when, err := opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
+	op, when, err := opManager.RetryOperation(op, errorMessage, errOut, retryInterval, maxtime, fixLogger())
 
 	// when - first retry
 	assert.True(t, when > 0)
@@ -71,7 +72,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	t.Log(op.UpdatedAt.String())
 	op.UpdatedAt = op.UpdatedAt.Add(-retryInterval - time.Second) // simulate wait of first retry
 	t.Log(op.UpdatedAt.String())
-	op, when, err = opManager.RetryOperation(op, errorMessage, err, retryInterval, maxtime, fixLogger())
+	op, when, err = opManager.RetryOperation(op, errorMessage, errOut, retryInterval, maxtime, fixLogger())
 
 	// when - second call => retry
 	assert.True(t, when > 0)

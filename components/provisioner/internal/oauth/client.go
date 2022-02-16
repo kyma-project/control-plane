@@ -90,7 +90,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, app
 		if err != nil {
 			dump = []byte("failed to dump response body")
 		}
-		return Token{}, apperrors.Internal("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump)).SetComponent(apperrors.ErrMpsOAuth2)
+		return Token{}, apperrors.External("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump)).SetComponent(apperrors.ErrMpsOAuth2)
 	}
 
 	body, err := ioutil.ReadAll(response.Body)

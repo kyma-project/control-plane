@@ -392,7 +392,7 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 	runtimeStatus, dberr := r.getRuntimeStatus(runtimeID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
 	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
@@ -451,7 +451,7 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	return r.RuntimeStatus(runtimeID)
 }
 
-func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
+func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
 	operation, err := session.GetLastOperation(runtimeID)

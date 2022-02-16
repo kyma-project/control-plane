@@ -49,7 +49,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), err, log)
+		return s.operationManager.OperationFailed(operation, "unable to get cluster state", err, log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
@@ -64,10 +64,10 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return s.operationManager.OperationFailed(operation, errMsg, reconciler.NewReconcilerError(state.Failures, errMsg), log)
+		return s.operationManager.OperationFailed(operation, "Reconciler failed", reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	default:
 		errMsg := fmt.Sprintf("unknown cluster status: %s", state.Status)
-		return s.operationManager.OperationFailed(operation, reconciler.NewReconcilerError(state.Failures, errMsg), log)
+		return s.operationManager.OperationFailed(operation, "Reconciler failed", reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	}
 }
 

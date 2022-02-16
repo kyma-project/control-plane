@@ -61,7 +61,7 @@ func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.Fie
 		operation.InstanceDetails, err = inst.GetInstanceDetails()
 		if err != nil {
 			log.Errorf("Unable to provide Instance details: %s", err.Error())
-			return s.operationManager.OperationFailed(operation, "Unable to provide Instance details.", err, log)
+			return s.operationManager.OperationFailed(operation, "Unable to provide Instance details", err, log)
 		}
 	}
 	log.Infof("Setting the operation to 'InProgress'")

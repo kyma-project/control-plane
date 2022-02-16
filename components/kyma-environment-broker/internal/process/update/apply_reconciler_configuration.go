@@ -48,7 +48,7 @@ func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperat
 		log.Error(msg)
 		return operation, 5 * time.Second, nil
 	case err != nil:
-		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
+		return s.operationManager.OperationFailed(operation, "Request to Reconciler failed", err, log)
 	}
 
 	log.Infof("Reconciler configuration version %d", state.ConfigurationVersion)

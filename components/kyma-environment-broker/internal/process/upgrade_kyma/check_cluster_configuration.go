@@ -57,7 +57,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), err, log)
+		return s.operationManager.OperationFailed(operation, "unable to get cluster state", err, log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 

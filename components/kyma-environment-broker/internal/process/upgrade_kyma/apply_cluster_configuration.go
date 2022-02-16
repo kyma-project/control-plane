@@ -67,7 +67,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case err != nil:
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, err, log)
+		return s.operationManager.OperationFailed(operation, "Request to Reconciler failed", err, log)
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
 

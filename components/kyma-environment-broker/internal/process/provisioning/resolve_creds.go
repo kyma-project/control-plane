@@ -39,7 +39,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	hypType, err := hyperscaler.FromCloudProvider(operation.InputCreator.Provider())
 	if err != nil {
 		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
+		return s.operationManager.OperationFailed(operation, "failed to determine the type of Hyperscaler", err, log)
 	}
 
 	log.Infof("HAP lookup for credentials secret binding to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
@@ -52,7 +52,8 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 		secretName, err = s.accountProvider.GardenerSharedSecretName(hypType)
 	}
 	if err != nil {
-		errMsg := fmt.Sprintf("HAP lookup for secret binding to provision cluster for global account ID %s on Hyperscaler %s has failed: %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, err)
+		msg := fmt.Sprintf("HAP lookup for secret binding to provision cluster for global account ID %s on Hyperscaler %s has failed", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
+		errMsg := fmt.Sprintf("%s: %s", msg, err)
 		log.Info(errMsg)
 
 		// if failed retry step every 10s by next 10min
@@ -64,7 +65,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 		log.Errorf("Aborting after 10 minutes of failing to resolve provisioning secret binding for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
 
-		return s.operationManager.OperationFailed(operation, errMsg, err, log)
+		return s.operationManager.OperationFailed(operation, msg, err, log)
 	}
 	operation.ProvisioningParameters.Parameters.TargetSecret = &secretName
 

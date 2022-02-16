@@ -31,7 +31,7 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.ProvisioningOperati
 	creds, err := operation.ProvideServiceManagerCredentials(log)
 	if err != nil {
 		log.Errorf("unable to obtain SM credentials: %s", err)
-		return s.operationManager.OperationFailed(operation, err.Error(), err, log)
+		return s.operationManager.OperationFailed(operation, "unable to obtain SM credentials", err, log)
 	}
 
 	smOverrides := []*gqlschema.ConfigEntryInput{
