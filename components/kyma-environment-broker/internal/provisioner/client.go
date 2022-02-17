@@ -175,7 +175,7 @@ func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) 
 	case isClientError(err):
 		return err
 	case err != nil:
-		return kebError.AsTemporaryError(err, "failed to execute the request")
+		return kebError.WrapAsTemporaryError(err, "failed to execute the request")
 	}
 
 	return nil
@@ -186,7 +186,7 @@ func isClientError(err error) bool {
 		code, found := ee.Extensions()["error_code"]
 		if found {
 			errCode := code.(float64)
-			if (errCode >= 1 && errCode <= 3) || (errCode >= 400 && errCode <= 502) {
+			if errCode >= 400 && errCode < 500 {
 				return true
 			}
 		}

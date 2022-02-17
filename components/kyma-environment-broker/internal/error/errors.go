@@ -1,10 +1,6 @@
 package error
 
 import (
-	"fmt"
-	"regexp"
-	"strings"
-
 	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	"github.com/pkg/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
@@ -113,35 +109,21 @@ func ReasonForError(err error) LastError {
 
 		reason, found := ee.Extensions()["error_reason"]
 		if found {
-			errReason = reason.(ErrReason)
+			if r, ok := reason.(string); ok {
+				errReason = ErrReason(r)
+			}
 		}
 		component, found := ee.Extensions()["error_component"]
 		if found {
-			errComponent = component.(ErrComponent)
+			if c, ok := component.(string); ok {
+				errComponent = ErrComponent(c)
+			}
 		}
 
 		return LastError{
 			message:   err.Error(),
 			reason:    errReason,
 			component: errComponent,
-		}
-	}
-
-	if IsTemporaryError(cause) {
-		reason := ErrReason(valueFromTextKey(cause.Error(), "reason"))
-		component := ErrComponent(valueFromTextKey(cause.Error(), "component"))
-
-		if component == "" {
-			component = ErrKEB
-			if reason == "" {
-				reason = ErrKEBInternal
-			}
-		}
-
-		return LastError{
-			message:   err.Error(),
-			reason:    reason,
-			component: component,
 		}
 	}
 
@@ -153,16 +135,16 @@ func ReasonForError(err error) LastError {
 }
 
 //extract the value in text from key: value(\w+)
-func valueFromTextKey(msg string, key string) string {
-	exp, err := regexp.Compile(fmt.Sprintf(`%s: ([\w ]+)`, key))
-	if err != nil {
-		return ""
-	}
+// func valueFromTextKey(msg string, key string) string {
+// 	exp, err := regexp.Compile(fmt.Sprintf(`%s: ([\w ]+)`, key))
+// 	if err != nil {
+// 		return ""
+// 	}
 
-	vals := exp.FindStringSubmatch(msg)
-	if len(vals) >= 2 {
-		return strings.Trim(vals[1], " ")
-	}
+// 	vals := exp.FindStringSubmatch(msg)
+// 	if len(vals) >= 2 {
+// 		return strings.Trim(vals[1], " ")
+// 	}
 
-	return ""
-}
+// 	return ""
+// }

@@ -88,7 +88,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 
 	if err := checkBTPCredsValid(clusterConfiguration); err != nil {
 		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", log)
+		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
 	}
 
 	err = s.runtimeStateStorage.Insert(

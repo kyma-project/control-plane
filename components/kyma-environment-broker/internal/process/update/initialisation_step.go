@@ -67,7 +67,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if err != nil {
 			if dberr.IsNotFound(err) {
 				log.Warnf("the instance already deprovisioned")
-				return s.operationManager.OperationFailed(operation, "the instance was already deprovisioned", log)
+				return s.operationManager.OperationFailed(operation, "the instance was already deprovisioned", err, log)
 			}
 			return operation, time.Second, nil
 		}

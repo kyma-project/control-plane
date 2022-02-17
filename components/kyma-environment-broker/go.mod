@@ -41,14 +41,13 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0
 	github.com/stretchr/testify v1.7.0
-	github.com/testcontainers/testcontainers-go v0.11.0
+	github.com/testcontainers/testcontainers-go v0.12.0
 	github.com/tidwall/gjson v1.11.0 // indirect
 	github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/mod v0.4.2
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -60,7 +59,7 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220216051127-25408623ed03
+	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220217021200-1c5b043c850c
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 

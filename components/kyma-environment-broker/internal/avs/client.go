@@ -234,7 +234,7 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 	}
 
 	if response.StatusCode >= http.StatusInternalServerError {
-		return response, kebError.NewTemporaryError("avs server returned %d status code, component: %s, reason: %s", response.StatusCode, string(kebError.ErrAVS), string(kebError.ErrHttpStatusCode))
+		return response, kebError.WrapNewTemporaryError(NewAvsError("avs server returned %d status code", response.StatusCode))
 	}
 
 	switch response.StatusCode {

@@ -63,3 +63,49 @@ func TestLastError(t *testing.T) {
 		assert.Equal(t, expectDbErr, dbLastErr.Error())
 	})
 }
+
+func TestTemporaryErrorToLastError(t *testing.T) {
+	t.Run("wrapped temporary error", func(t *testing.T) {
+		// given
+		err := kebError.LastError{}.
+			SetMessage(fmt.Sprintf("Got status %d", 502)).
+			SetReason(kebError.ErrHttpStatusCode).
+			SetComponent(kebError.ErrReconciler)
+		tempErr := errors.Wrap(kebError.WrapNewTemporaryError(errors.Wrap(err, "something")), "something else")
+		expectMsg := fmt.Sprintf("something else: something: Got status %d", 502)
+
+		avsTempErr := kebError.WrapNewTemporaryError(avs.NewAvsError("avs server returned %d status code", 503))
+		expectAvsMsg := fmt.Sprintf("avs server returned %d status code", 503)
+
+		// when
+		lastErr := kebError.ReasonForError(tempErr)
+		avsLastErr := kebError.ReasonForError(avsTempErr)
+
+		// then
+		assert.Equal(t, kebError.ErrHttpStatusCode, lastErr.Reason())
+		assert.Equal(t, kebError.ErrReconciler, lastErr.Component())
+		assert.Equal(t, expectMsg, lastErr.Error())
+		assert.True(t, kebError.IsTemporaryError(tempErr))
+
+		assert.Equal(t, kebError.ErrHttpStatusCode, avsLastErr.Reason())
+		assert.Equal(t, kebError.ErrAVS, avsLastErr.Component())
+		assert.Equal(t, expectAvsMsg, avsLastErr.Error())
+		assert.True(t, kebError.IsTemporaryError(avsTempErr))
+	})
+
+	t.Run("new temporary error", func(t *testing.T) {
+		// given
+
+		tempErr := errors.Wrap(kebError.NewTemporaryError("temporary error..."), "something")
+		expectMsg := "something: temporary error..."
+
+		// when
+		lastErr := kebError.ReasonForError(tempErr)
+
+		// then
+		assert.Equal(t, kebError.ErrKEBInternal, lastErr.Reason())
+		assert.Equal(t, kebError.ErrKEB, lastErr.Component())
+		assert.Equal(t, expectMsg, lastErr.Error())
+		assert.True(t, kebError.IsTemporaryError(tempErr))
+	})
+}
