@@ -1,8 +1,6 @@
 package command
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
@@ -17,6 +15,10 @@ var tableColumns = []printer.Column{
 	{
 		Header:    "GLOBALACCOUNT ID",
 		FieldSpec: "{.GlobalAccountId}",
+	},
+	{
+		Header:    "BROKER ID",
+		FieldSpec: "{.BrokerId}",
 	},
 	{
 		Header:    "MIGRATED",
@@ -46,7 +48,6 @@ type InstancesCommand struct {
 }
 
 func (c *InstancesCommand) Run() error {
-	// TODO: this is a dummy implementation
 	if c.source != "" {
 		c.instanceFetcher = client.NewFileClient(c.source)
 	} else {
@@ -54,14 +55,15 @@ func (c *InstancesCommand) Run() error {
 		c.instanceFetcher = &emptyFetcher{}
 	}
 
+	tp, _ := printer.NewTablePrinter(tableColumns, false)
+
 	if c.filters.InstanceID != "" {
-		instance, _ := c.instanceFetcher.GetInstanceById(c.filters.InstanceID)
-		b, _ := json.Marshal(instance)
-		fmt.Println(string(b))
-		return nil
+		instance, err := c.instanceFetcher.GetInstanceById(c.filters.InstanceID)
+		tp.PrintObj(instance)
+		return err
 	}
 	var result []ers.Instance
-	instances, _ := c.instanceFetcher.GetAllInstances()
+	instances, err := c.instanceFetcher.GetAllInstances()
 	for _, item := range instances {
 		if c.filters.Migrated && !item.Migrated {
 			continue
@@ -75,19 +77,13 @@ func (c *InstancesCommand) Run() error {
 		result = append(result, item)
 	}
 
-	//b, _ := json.Marshal(instances)
-
-	tp, _ := printer.NewTablePrinter(tableColumns, false)
 	tp.PrintObj(result)
-
-	return nil
+	return err
 }
 
 func NewInstancesCommand() *cobra.Command {
 	cmd := &InstancesCommand{}
-
 	corbaCmd := &cobra.Command{
-
 		Use:   "instances",
 		Short: "Displays ERS instances.",
 		Long:  `Displays information about ERS instances.`,
@@ -127,6 +123,7 @@ func NewInstancesCommand() *cobra.Command {
 	corbaCmd.Flags().BoolVar(&cmd.filters.Migrated, "migrated", false, "Get migrated instances")
 	corbaCmd.Flags().BoolVar(&cmd.filters.NotMigrated, "not-migrated", false, "Get not migrated instances")
 	corbaCmd.Flags().StringVarP(&cmd.filters.InstanceID, "instance-id", "i", "", "Get not migrated instances")
+	corbaCmd.Flags().StringVarP(&cmd.filters.GlobalAccountID, "global-account-id", "g", "", "Filter by global account ID.")
 	corbaCmd.Flags().StringVar(&cmd.source, "source", "", "File containing instances data")
 
 	return corbaCmd
