@@ -47,22 +47,24 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
       {{- end }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
       {{- if eq .Values.global.database.embedded.enabled false}}
       - name: cloudsql-proxy
         image: {{ .Values.global.images.cloudsql_proxy_image }}
-        command: ["/cloud_sql_proxy",
-                  "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
-                  "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
+        command: [ "/cloud_sql_proxy",
+                   "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                   "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
         volumeMounts:
-        - name: cloudsql-instance-credentials
-          mountPath: /secrets/cloudsql-instance-credentials
-          readOnly: true
-        {{- with .Values.deployment.securityContext }}
+          - name: cloudsql-instance-credentials
+            mountPath: /secrets/cloudsql-instance-credentials
+            readOnly: true
+            {{- with .Values.deployment.securityContext }}
         securityContext:
 {{ toYaml . | indent 10 }}
-        {{- end }}
-      {{ end }}
+            {{- end }}
+          {{ end }}
       - image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
@@ -71,7 +73,10 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
+          {{- if .Values.options.verbose }}
           - --verbose
+          {{- end }}
+          - --worker-count={{ .Values.options.workerCount }}
           {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
           - --audit-log
           - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log
@@ -89,15 +94,11 @@ spec:
           containerPort: 8080
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: /health/live
-            port: http
+          {{- toYaml .Values.deployment.livenessProbe | nindent 10 }}
         readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: http
+          {{- toYaml .Values.deployment.readinessProbe | nindent 10 }}
         resources:
-        {{ toYaml .Values.resources | indent 10 }}
+          {{- toYaml .Values.deployment.resources | nindent 10 }}
         {{- if .Values.securityContext }}
         securityContext:
 {{ toYaml .Values.securityContext | indent 10 }}

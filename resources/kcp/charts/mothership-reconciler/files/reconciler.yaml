@@ -20,6 +20,7 @@ mothership:
   host: {{ include "mothership-reconciler.fullname" . }}
   port: {{ .Values.service.port }}
   scheduler:
+    deleteStrategy: all
     reconcilers:
 {{- range $component := .Values.global.components }}
       {{ $component }}:

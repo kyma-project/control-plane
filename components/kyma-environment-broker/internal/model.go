@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -345,8 +347,16 @@ type DeprovisioningOperation struct {
 	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool `json:"temporary"`
-	ClusterConfigurationDeleted bool `json:"clusterConfigurationDeleted"`
+	Temporary                   bool      `json:"temporary"`
+	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
+	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
+}
+
+func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+	if op.ReconcilerDeregistrationAt.IsZero() {
+		return time.Since(op.CreatedAt)
+	}
+	return time.Since(op.ReconcilerDeregistrationAt)
 }
 
 type UpdatingOperation struct {
@@ -364,7 +374,8 @@ type UpdatingOperation struct {
 
 	// Flag used by the steps regarding Service Catalog migration
 	// denotes whether the payload to reconciler differs from last runtime state
-	RequiresReconcilerUpdate bool `json:"-"`
+	RequiresReconcilerUpdate bool          `json:"-"`
+	K8sClient                client.Client `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -377,6 +388,8 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
 
 // UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
@@ -430,6 +443,8 @@ type RuntimeState struct {
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
+
+	KymaVersion string `json:"kyma_version"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
@@ -437,6 +452,16 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 		return r.buildKymaConfigFromClusterSetup()
 	}
 	return r.KymaConfig
+}
+
+func (r *RuntimeState) GetKymaVersion() string {
+	if r.KymaVersion != "" {
+		return r.KymaVersion
+	}
+	if r.ClusterSetup != nil {
+		return r.ClusterSetup.KymaConfig.Version
+	}
+	return r.KymaConfig.Version
 }
 
 func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
@@ -522,7 +547,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			Version:         0,
 			Description:     "Operation created",
 			InstanceID:      instance.InstanceID,
-			State:           domain.InProgress,
+			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,

@@ -57,7 +57,7 @@ spec:
               DIRECTOR_URL=http://compass-director.compass-system.svc.cluster.local:3000/graphql
               DIRECTOR_HEALTHZ_URL=http://compass-director.compass-system.svc.cluster.local:3000/healthz
 
-              SCOPES="runtime:write runtime:read integration_system:read integration_system:write"
+              SCOPES="runtime:write runtime:read integration_system:read integration_system:write integration_system.auths:read"
               TOKEN_PAYLOAD='{"scopes": "'${SCOPES}'","tenant":"{{ .Values.global.defaultTenant }}"}'
               ENCODED_TOKEN_PAYLOAD=$(echo -e ${TOKEN_PAYLOAD} | base64 | tr -d \\n)
               INTERNAL_TOKEN="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD//=}."

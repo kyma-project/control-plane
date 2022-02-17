@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/external/golang:1.17.3-alpine as builder
+FROM eu.gcr.io/kyma-project/external/golang:1.17.6-alpine3.15 as builder
 
 ARG DOCK_PKG_DIR=/go/src/github.com/kyma-project/control-plane/components/subscription-cleanup-job
 
@@ -14,8 +14,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o subscriptionclean
 FROM scratch
 LABEL source=git@github.com:kyma-project/kyma.git
 
+WORKDIR /app
+
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/src/github.com/kyma-project/control-plane/components/subscription-cleanup-job/subscriptioncleanupjob .
 COPY --from=builder /go/src/github.com/kyma-project/control-plane/components/subscription-cleanup-job/licenses ./licenses
 
-CMD ["/subscriptioncleanupjob"]
+CMD ["/app/subscriptioncleanupjob"]

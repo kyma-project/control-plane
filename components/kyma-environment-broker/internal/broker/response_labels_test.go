@@ -32,7 +32,7 @@ func TestResponseLabels(t *testing.T) {
 		instance := internal.Instance{}
 
 		// when
-		labels := ResponseLabels(operation, instance, "https://example.com", false)
+		labels := ResponseLabels(operation, instance, "https://console.example.com", false)
 
 		// then
 		require.Len(t, labels, 1)

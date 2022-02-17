@@ -43,18 +43,32 @@ func (s *SCMigrationStep) Name() string {
 }
 
 func (s *SCMigrationStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+	containsSCMigrationComponent := false
+	var components []reconcilerApi.Component
 	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
+		if c.Component != internal.ServiceCatalogComponentName &&
+			c.Component != internal.ServiceCatalogAddonsComponentName &&
+			c.Component != internal.HelmBrokerComponentName &&
+			c.Component != internal.ServiceManagerComponentName {
+			components = append(components, c)
+		} else {
+			// disable reconciler on SVCAT related components so sc-migration can migrate them
+			operation.RequiresReconcilerUpdate = true
+		}
 		if c.Component == SCMigrationComponentName {
-			// already exists
-			return operation, 0, nil
+			containsSCMigrationComponent = true
 		}
 	}
-	c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion)
-	if err != nil {
-		return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
+
+	if !containsSCMigrationComponent {
+		c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion)
+		if err != nil {
+			return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
+		}
+		components = append(components, c)
+		operation.RequiresReconcilerUpdate = true
 	}
-	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
-	operation.RequiresReconcilerUpdate = true
+	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = components
 	return operation, 0, nil
 }
 

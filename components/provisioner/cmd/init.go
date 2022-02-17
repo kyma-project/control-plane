@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -41,6 +43,7 @@ func newProvisioningService(
 	dbsFactory dbsession.Factory,
 	releaseProvider release.Provider,
 	directorService director.DirectorClient,
+	installationClient installation.Service,
 	kubernetesVersionProvider gardener.KubernetesVersionProvider,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
@@ -58,7 +61,7 @@ func newProvisioningService(
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, kubernetesVersionProvider, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, kubernetesVersionProvider, installationClient, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

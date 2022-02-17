@@ -57,11 +57,11 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.UpgradeKymaOperatio
 		},
 	}
 	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.DisableOptionalComponent(internal.BTPOperatorComponentName)
 
 	operation.InputCreator.EnableOptionalComponent(HelmBrokerComponentName)
 	operation.InputCreator.EnableOptionalComponent(ServiceCatalogComponentName)
 	operation.InputCreator.EnableOptionalComponent(ServiceCatalogAddonsComponentName)
-
 	operation.InputCreator.EnableOptionalComponent(ServiceManagerComponentName)
 
 	return operation, 0, nil

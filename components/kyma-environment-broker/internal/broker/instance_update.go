@@ -95,16 +95,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
-	var contextData map[string]interface{}
-	err = json.Unmarshal(details.RawContext, &contextData)
-	if err != nil {
-		logger.Errorf("unable to unmarshal context: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
-	}
-	logger.Infof("Context with keys:")
-	for k, _ := range contextData {
-		logger.Info(k)
-	}
+	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
@@ -345,12 +336,6 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 	if err != nil {
 		return false, "", err
 	}
-	kv := ""
-	if s.KymaConfig.Version != "" {
-		kv = s.KymaConfig.Version
-	}
-	if s.ClusterSetup != nil && s.ClusterSetup.KymaConfig.Version != "" {
-		kv = s.ClusterSetup.KymaConfig.Version
-	}
+	kv := s.GetKymaVersion()
 	return internal.DetermineMajorVersion(kv) == 2, kv, nil
 }

@@ -11,7 +11,7 @@ spec:
     matchLabels:
       kyma-project.io/component-reconciler: ""
       component: rma
-  replicas: 1
+  replicas: {{ .Values.deployment.replicasCount }}
   template:
     metadata:
       labels:
@@ -27,7 +27,9 @@ spec:
           - start
           - rma
           - --workspace=/tmp/reconciler
+          {{- if .Values.config.verbose }}
           - --verbose
+          {{- end }}
           - --worker-count={{ .Values.config.workerCount }}
           - --worker-timeout={{ .Values.config.workerTimeout }}
           - --retries-max={{ .Values.config.retriesMax }}
@@ -45,7 +47,7 @@ spec:
           httpGet:
             path: /health/ready
             port: http
-        resources: {{- toYaml .Values.resources | nindent 10 }}
+        resources: {{- toYaml .Values.deployment.resources | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
           name: workspace

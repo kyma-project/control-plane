@@ -54,7 +54,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingInstance(t *testing.T) {
 	require.NoError(t, err)
 	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
 	require.NoError(t, err)
-	assert.Equal(t, domain.InProgress, operation.State)
+	assert.Equal(t, domain.LastOperationState("pending"), operation.State)
 }
 
 func TestDeprovisionEndpoint_DeprovisionExistingOperationInProgress(t *testing.T) {
@@ -107,7 +107,7 @@ func TestDeprovisionEndpoint_DeprovisionExistingOperationFailed(t *testing.T) {
 
 	operation, err := memoryStorage.Operations().GetDeprovisioningOperationByInstanceID(instanceID)
 	require.NoError(t, err)
-	assert.Equal(t, domain.InProgress, operation.State)
+	assert.Equal(t, domain.LastOperationState("pending"), operation.State)
 }
 
 func fixDeprovisioningOperation(state domain.LastOperationState) internal.DeprovisioningOperation {

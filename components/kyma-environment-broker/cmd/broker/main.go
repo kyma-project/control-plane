@@ -14,6 +14,11 @@ import (
 	"sort"
 	"time"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	runtime2 "k8s.io/apimachinery/pkg/runtime"
+
+	"k8s.io/client-go/tools/clientcmd"
+
 	"code.cloudfoundry.org/lager"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
@@ -345,7 +350,7 @@ func main() {
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
-		runtimeProvider, reconcilerClient, cfg, logs)
+		runtimeProvider, reconcilerClient, cfg, k8sClientProvider, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -411,6 +416,21 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+}
+
+func k8sClientProvider(kcfg string) (client.Client, error) {
+	restCfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kcfg))
+	if err != nil {
+		return nil, err
+	}
+
+	sch := runtime2.NewScheme()
+	apiextensionsv1.AddToScheme(sch)
+
+	k8sCli, err := client.New(restCfg, client.Options{
+		Scheme: sch,
+	})
+	return k8sCli, err
 }
 
 func checkDefaultVersions(versions ...string) error {
@@ -714,7 +734,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
-	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, logs logrus.FieldLogger) *process.Queue {
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
 	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
 		if cfg.EnableBTPOperatorMigration {
@@ -729,7 +749,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		return cfg.EnableBTPOperatorMigration
 	}
 
-	manager.DefineStages([]string{"cluster", "runtime", "check"})
+	manager.DefineStages([]string{"cluster", "migration", "migration-check", "remove-sc-migration", "remove-sc-migration-check", "check"})
 	updateSteps := []struct {
 		stage     string
 		step      update.Step
@@ -744,47 +764,62 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration",
 			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
 			condition: btpMigrationEnabled,
 		},
 		{
-			stage:     "runtime",
-			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+			stage:     "migration",
+			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
 			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration",
+			step:      update.NewBTPOperatorCheckStep(db.Operations()),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+		},
+		{
+			stage:     "migration",
 			step:      update.NewBTPOperatorOverridesStep(db.Operations(), runtimeProvider),
 			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration",
 			step:      update.NewSCMigrationStep(db.Operations(), runtimeProvider),
 			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdate),
 		},
 		{
-			stage:     "runtime",
+			stage:     "migration-check",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-migration",
+			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			condition: btpMigrationEnabled,
+		},
+		{
+			stage:     "remove-sc-migration",
+			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
+			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+		},
+		{
+			stage:     "remove-sc-migration",
 			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.ForMigration),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-migration",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
 		},
 		{
-			stage:     "runtime",
+			stage:     "remove-sc-migration-check",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
@@ -840,7 +875,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 30*time.Minute),
+			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
 		},
 		{
 			weight: 10,
@@ -878,6 +913,14 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		step     upgrade_kyma.Step
 		cnd      upgrade_kyma.StepCondition
 	}{
+		// check cluster configuration is the first step - to not execute other steps, when cluster configuration was applied
+		// this should be moved to the end when we introduce stages like in the provisioning process
+		// (also return operation, 0, nil at the end of apply_cluster_configuration)
+		{
+			weight: 1,
+			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
+			cnd:    upgrade_kyma.ForKyma2,
+		},
 		{
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
@@ -918,11 +961,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
-			weight: 11,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, 15*time.Minute),
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}

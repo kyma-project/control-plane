@@ -23,7 +23,6 @@ const (
 //go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
 
 type DirectorClient interface {
-	GetConsoleURL(accountID, runtimeID string) (string, error)
 	SetLabel(accountID, runtimeID, key, value string) error
 }
 

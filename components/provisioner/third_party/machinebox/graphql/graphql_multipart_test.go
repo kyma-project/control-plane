@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"io/ioutil"
@@ -62,6 +63,7 @@ func TestDoUseMultipartForm(t *testing.T) {
 	is.Equal(calls, 1) // calls
 	is.Equal(responseData["something"], "yes")
 }
+
 func TestImmediatelyCloseReqBody(t *testing.T) {
 	is := is.New(t)
 	var calls int
@@ -226,7 +228,6 @@ func TestQuery(t *testing.T) {
 	is.Equal(calls, 1)
 
 	is.Equal(resp.Value, "some data")
-
 }
 
 func TestFile(t *testing.T) {
@@ -262,4 +263,40 @@ type roundTripperFunc func(req *http.Request) (*http.Response, error)
 
 func (fn roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return fn(req)
+}
+
+func TestHideAuthInMultipartForm(t *testing.T) {
+	is := is.New(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{
+			"data": {
+				"something": "yes"
+			}
+		}`)
+	}))
+	defer srv.Close()
+
+	ctx := context.Background()
+	client := NewClient(srv.URL, UseMultipartForm())
+
+	var cout bytes.Buffer
+	client.Log = func(s string) {
+		_, err := cout.WriteString(s)
+		is.NoErr(err)
+	}
+
+	header := make(http.Header)
+	header["Authorization"] = []string{"some secret key", "another secret key"}
+	req := Request{
+		q:      "query {}",
+		Header: header,
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+	var responseData map[string]interface{}
+	err := client.Run(ctx, &req, &responseData)
+	is.NoErr(err)
+	is.Equal(responseData["something"], "yes")
+	is.True(!strings.Contains(cout.String(), "secret key"))
 }

@@ -173,12 +173,11 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("kubernetes_version", config.KubernetesVersion).
 		Set("purpose", config.Purpose).
 		Set("seed", config.Seed).
-		Set("region", config.Region).
-		Set("provider", config.Provider).
 		Set("machine_type", config.MachineType).
+		Set("machine_image", config.MachineImage).
+		Set("machine_image_version", config.MachineImageVersion).
 		Set("disk_type", config.DiskType).
 		Set("volume_size_gb", config.VolumeSizeGB).
-		Set("worker_cidr", config.WorkerCidr).
 		Set("auto_scaler_min", config.AutoScalerMin).
 		Set("auto_scaler_max", config.AutoScalerMax).
 		Set("max_surge", config.MaxSurge).

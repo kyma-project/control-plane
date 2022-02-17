@@ -1,12 +1,17 @@
 package provisioner
 
 import (
+	"context"
 	"fmt"
 	"sync"
+
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type runtime struct {
@@ -22,15 +27,23 @@ type FakeClient struct {
 	shootUpgrades map[string]schema.UpgradeShootInput
 	operations    map[string]schema.OperationStatus
 	dumpRequest   bool
+
+	gardenerClient    gardenerclient.CoreV1beta1Interface
+	gardenerNamespace string
 }
 
 func NewFakeClient() *FakeClient {
+	return NewFakeClientWithGardener(nil, "")
+}
+
+func NewFakeClientWithGardener(gc gardenerclient.CoreV1beta1Interface, ns string) *FakeClient {
 	return &FakeClient{
-		graphqlizer:   Graphqlizer{},
-		runtimes:      []runtime{},
-		operations:    make(map[string]schema.OperationStatus),
-		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
-		shootUpgrades: make(map[string]schema.UpgradeShootInput),
+		graphqlizer:    Graphqlizer{},
+		runtimes:       []runtime{},
+		operations:     make(map[string]schema.OperationStatus),
+		upgrades:       make(map[string]schema.UpgradeRuntimeInput),
+		shootUpgrades:  make(map[string]schema.UpgradeShootInput),
+		gardenerClient: gc,
 	}
 }
 
@@ -101,6 +114,30 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 		Operation: schema.OperationTypeProvision,
 		State:     schema.OperationStateInProgress,
 	}
+
+	if c.gardenerClient != nil {
+		c.gardenerClient.Shoots(c.gardenerNamespace).Create(context.Background(), &v1beta1.Shoot{
+			ObjectMeta: v1.ObjectMeta{
+				Name: config.ClusterConfig.GardenerConfig.Name,
+				Annotations: map[string]string{
+					"kcp.provisioner.kyma-project.io/runtime-id": rid,
+				},
+			},
+			Spec: v1beta1.ShootSpec{
+
+				Maintenance: &v1beta1.Maintenance{
+					AutoUpdate: nil,
+					TimeWindow: &v1beta1.MaintenanceTimeWindow{
+						Begin: "010000+0000",
+						End:   "010000+0000",
+					},
+					ConfineSpecUpdateRollout: nil,
+				},
+			},
+			Status: v1beta1.ShootStatus{},
+		}, v1.CreateOptions{})
+	}
+
 	return schema.OperationStatus{
 		RuntimeID: &rid,
 		ID:        &opId,

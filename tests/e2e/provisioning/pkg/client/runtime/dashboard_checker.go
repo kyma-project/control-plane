@@ -28,11 +28,8 @@ func NewDashboardChecker(clientHttp http.Client, log logrus.FieldLogger) *Dashbo
 	}
 }
 
-// AssertRedirectedToUAA sends request to the dashboardURL and expects to be redirected to the logging page
-// There are 2 possible locations where we can be redirected:
-// `/auth/xsuaa` - if uua-issuer exist on the cluster
-// `/auth/local` - if Kyma use a standard login page
-func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
+// AssertRedirectedToBusola sends request to the old dashboardUrl and expects to be redirected to the Busola Migrator.
+func (c *DashboardChecker) AssertRedirectedToBusola(dashboardURL string, busolaurl string) error {
 	targetURL := c.buildTargetURL(dashboardURL)
 
 	c.log.Infof("Calling the dashboard URL: %s", targetURL)
@@ -47,7 +44,7 @@ func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
 
 	if location, err := resp.Location(); err != nil {
 		return errors.Wrap(err, "while getting response location")
-	} else if location.Path != "/auth/xsuaa" {
+	} else if location.Hostname() != busolaurl {
 		return errors.Errorf("request was wrongly redirected: %s", location.String())
 	}
 
@@ -60,25 +57,13 @@ func (c *DashboardChecker) AssertRedirectedToUAA(dashboardURL string) error {
 // Kyma console URL won't redirect us to the UUA logging page, to achieve that we must call dex with a set of parameters
 // state and nonce params are faked
 func (c *DashboardChecker) buildTargetURL(dashboardURL string) string {
-	domain := strings.Split(strings.Split(dashboardURL, "console.")[1], "/")[0]
+	consoleHost := strings.Split(strings.Split(dashboardURL, "//")[1], "/")[0]
 
 	u := url.URL{
 		Scheme: "https",
-		Host:   fmt.Sprintf("dex.%s", domain),
-		Path:   "auth",
+		Host:   consoleHost,
+		Path:   "console-redirect",
 	}
-	q := u.Query()
-
-	// Static params
-	q.Set("client_id", "console")
-	q.Set("redirect_uri", dashboardURL)
-	q.Set("response_type", "id_token token")
-	q.Set("scope", "audience:server:client_id:kyma-client audience:server:client_id:console openid profile email groups")
-
-	// These params are faked because its value must be non-empty
-	q.Set("state", "5a4f3d15")
-	q.Set("nonce", "79bf9c29")
-	u.RawQuery = q.Encode()
 
 	return u.String()
 }
