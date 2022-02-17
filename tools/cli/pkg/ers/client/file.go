@@ -3,8 +3,9 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"io/ioutil"
+
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 )
 
 type FileClient struct {
