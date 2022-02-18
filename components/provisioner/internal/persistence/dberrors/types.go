@@ -17,10 +17,10 @@ const (
 type dbErrReason = apperrors.ErrReason
 
 const (
-	ErrDBInternal      dbErrReason = "ERR_DB_INTERNAL"
-	ErrDBNotFound      dbErrReason = "ERR_DB_NOT_FOUND"
-	ErrDBAlreadyExists dbErrReason = "ERR_DB_ALREADY_EXISTS"
-	ErrDBUnknown       dbErrReason = "ERR_DB_UNKNOWN"
+	ErrDBInternal      dbErrReason = "err_db_internal"
+	ErrDBNotFound      dbErrReason = "err_db_not_found"
+	ErrDBAlreadyExists dbErrReason = "err_db_already_exists"
+	ErrDBUnknown       dbErrReason = "err_db_unknown"
 )
 
 // type Error interface {
