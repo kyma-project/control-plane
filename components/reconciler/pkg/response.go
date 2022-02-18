@@ -2,9 +2,10 @@ package mothership
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 func ReadErrResponse(reader io.Reader) (HTTPErrorResponse, error) {

@@ -1,10 +1,11 @@
 package mothership
 
 import (
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadErrResponse(t *testing.T) {

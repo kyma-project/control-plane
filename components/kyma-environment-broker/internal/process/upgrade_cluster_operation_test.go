@@ -1,9 +1,10 @@
 package process
 
 import (
-	"github.com/pkg/errors"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"

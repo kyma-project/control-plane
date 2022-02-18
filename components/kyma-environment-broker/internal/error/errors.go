@@ -133,18 +133,3 @@ func ReasonForError(err error) LastError {
 		component: ErrKEB,
 	}
 }
-
-//extract the value in text from key: value(\w+)
-// func valueFromTextKey(msg string, key string) string {
-// 	exp, err := regexp.Compile(fmt.Sprintf(`%s: ([\w ]+)`, key))
-// 	if err != nil {
-// 		return ""
-// 	}
-
-// 	vals := exp.FindStringSubmatch(msg)
-// 	if len(vals) >= 2 {
-// 		return strings.Trim(vals[1], " ")
-// 	}
-
-// 	return ""
-// }
