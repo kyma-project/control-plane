@@ -95,6 +95,8 @@ spec:
           protocol: TCP
         livenessProbe:
           {{- toYaml .Values.deployment.livenessProbe | nindent 10 }}
+        startupProbe:
+          {{- toYaml .Values.deployment.startupProbe | nindent 10 }}
         readinessProbe:
           {{- toYaml .Values.deployment.readinessProbe | nindent 10 }}
         resources:
