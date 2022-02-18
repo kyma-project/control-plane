@@ -2,23 +2,22 @@ package director
 
 import (
 	"errors"
+	"fmt"
+	"testing"
+	"time"
 
 	directorApperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	oauthmocks "github.com/kyma-project/control-plane/components/provisioner/internal/oauth/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
-
-	"fmt"
-	"testing"
-	"time"
 )
 
 const (
@@ -66,7 +65,6 @@ var (
 )
 
 func TestDirectorClient_RuntimeRegistering(t *testing.T) {
-
 	expectedRequest := gcli.NewRequest(expectedRegisterRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
@@ -226,7 +224,6 @@ func TestDirectorClient_RuntimeRegistering(t *testing.T) {
 }
 
 func TestDirectorClient_RuntimeUnregistering(t *testing.T) {
-
 	expectedRequest := gcli.NewRequest(expectedDeleteRuntimeQuery)
 	expectedRequest.Header.Set(AuthorizationHeader, fmt.Sprintf("Bearer %s", validTokenValue))
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
@@ -411,7 +408,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("Should return OneTimeToken when Oauth Token is valid", func(t *testing.T) {
-		//given
+		// given
 		expectedResponse := &graphql.OneTimeTokenForRuntimeExt{
 			OneTimeTokenForRuntime: graphql.OneTimeTokenForRuntime{
 				TokenWithURL: graphql.TokenWithURL{
@@ -441,7 +438,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 		// when
 		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 		require.NotEmpty(t, receivedOneTimeToken)
 		assert.Equal(t, oneTimeToken, receivedOneTimeToken.Token)
@@ -449,7 +446,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 	})
 
 	t.Run("Should return error when Oauth Token is empty", func(t *testing.T) {
-		//given
+		// given
 		token := oauth.Token{
 			AccessToken: "",
 			Expiration:  futureExpirationTime,
@@ -463,13 +460,13 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 		// when
 		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		require.Empty(t, receivedOneTimeToken)
 	})
 
 	t.Run("Should return error when Oauth Token is expired", func(t *testing.T) {
-		//given
+		// given
 		token := oauth.Token{
 			AccessToken: validTokenValue,
 			Expiration:  passedExpirationTime,
@@ -483,13 +480,13 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 		// when
 		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		require.Empty(t, receivedOneTimeToken)
 	})
 
 	t.Run("Should return error when Director call returns nil reponse", func(t *testing.T) {
-		//given
+		// given
 		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*OneTimeTokenResponse)
 			require.True(t, ok)
@@ -509,7 +506,7 @@ func TestDirectorClient_GetConnectionToken(t *testing.T) {
 		// when
 		receivedOneTimeToken, err := configClient.GetConnectionToken(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		require.Empty(t, receivedOneTimeToken)
 	})
@@ -521,7 +518,7 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("should return Runtime", func(t *testing.T) {
-		//given
+		// given
 		expectedResponse := &graphql.RuntimeExt{
 			Runtime: graphql.Runtime{
 				ID:   runtimeTestingID,
@@ -546,10 +543,10 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 		assert.Equal(t, expectedResponse.Name, runtime.Name)
 		assert.Equal(t, expectedResponse.ID, runtime.ID)
@@ -576,7 +573,7 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 	})
 
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
-		//given
+		// given
 		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
@@ -594,16 +591,16 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Empty(t, runtime)
 	})
 
 	t.Run("should return error when Director fails to get Runtime", func(t *testing.T) {
-		//given
+		// given
 		gqlClient := gql.NewQueryAssertClient(t, errors.New("error"), []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
@@ -621,10 +618,10 @@ func TestDirectorClient_GetRuntime(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		runtime, err := configClient.GetRuntime(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Empty(t, runtime)
 	})
@@ -636,15 +633,15 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("should update Runtime", func(t *testing.T) {
-		//given
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		// given
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		expectedResponse := &graphql.Runtime{
@@ -669,10 +666,10 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		err := configClient.UpdateRuntime(runtimeTestingID, runtimeInput, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 	})
 
@@ -683,14 +680,14 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 			Expiration:  futureExpirationTime,
 		}
 
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		mockedOAuthClient := &oauthmocks.Client{}
@@ -706,15 +703,15 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	})
 
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
-		//given
-		conditionConnectoed := graphql.RuntimeStatusConditionConnected
+		// given
+		conditionConnected := graphql.RuntimeStatusConditionConnected
 		runtimeInput := &graphql.RuntimeInput{
 			Name: runtimeTestingName,
-			Labels: &graphql.Labels{
+			Labels: graphql.Labels{
 				"label1": "something",
 				"label2": "something2",
 			},
-			StatusCondition: &conditionConnectoed,
+			StatusCondition: &conditionConnected,
 		}
 
 		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
@@ -734,10 +731,10 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		err := configClient.UpdateRuntime(runtimeTestingID, runtimeInput, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 	})
 }
@@ -796,10 +793,10 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 	})
 
@@ -835,10 +832,10 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 	})
 
@@ -880,10 +877,10 @@ func TestDirectorClient_SetRuntimeStatusCondition(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		err := configClient.SetRuntimeStatusCondition(runtimeTestingID, statusCondition, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 	})
 }
@@ -894,7 +891,7 @@ func TestDirectorClient_RuntimeExists(t *testing.T) {
 	expectedRequest.Header.Set(TenantHeader, tenantValue)
 
 	t.Run("should return true when Runtime exists", func(t *testing.T) {
-		//given
+		// given
 		expectedResponse := &graphql.RuntimeExt{
 			Runtime: graphql.Runtime{
 				ID:   runtimeTestingID,
@@ -919,16 +916,16 @@ func TestDirectorClient_RuntimeExists(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return false when Runtime does not exist", func(t *testing.T) {
-		//given
+		// given
 		gqlClient := gql.NewQueryAssertClient(t, nil, []*gcli.Request{expectedRequest}, func(t *testing.T, r interface{}) {
 			cfg, ok := r.(*GetRuntimeResponse)
 			require.True(t, ok)
@@ -946,16 +943,16 @@ func TestDirectorClient_RuntimeExists(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
 
 	t.Run("should return error when director returns error", func(t *testing.T) {
-		//given
+		// given
 		directorError := &testGraphQLError{
 			Message:         "some error",
 			ErrorExtensions: map[string]interface{}{"error_code": float64(directorApperrors.InternalError)},
@@ -978,16 +975,16 @@ func TestDirectorClient_RuntimeExists(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.False(t, exists)
 	})
 
 	t.Run("should return false when director returns TenantNotFound error", func(t *testing.T) {
-		//given
+		// given
 		directorError := &testGraphQLError{
 			Message:         "some error",
 			ErrorExtensions: map[string]interface{}{"error_code": float64(directorApperrors.TenantNotFound)},
@@ -1010,10 +1007,10 @@ func TestDirectorClient_RuntimeExists(t *testing.T) {
 
 		configClient := NewDirectorClient(gqlClient, mockedOAuthClient)
 
-		//when
+		// when
 		exists, err := configClient.RuntimeExists(runtimeTestingID, tenantValue)
 
-		//then
+		// then
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
@@ -1027,6 +1024,7 @@ type testGraphQLError struct {
 func (e testGraphQLError) Error() string {
 	return "graphql: " + e.Message
 }
+
 func (e testGraphQLError) Extensions() map[string]interface{} {
 	return e.ErrorExtensions
 }
@@ -1048,7 +1046,7 @@ func TestDirectorClient_MapDirectorErrors(t *testing.T) {
 		Expiration:  futureExpirationTime,
 	}
 
-	var testcases = []struct {
+	testcases := []struct {
 		description             string
 		directorErrorExtensions map[string]interface{}
 		provisionerErrorCode    apperrors.ErrCode
