@@ -1718,8 +1718,8 @@ github.com/vrischmann/envconfig v1.1.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+Njsr
 github.com/vrischmann/envconfig v1.2.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+NjsrLsYq4zhwsoHo=
 github.com/vrischmann/envconfig v1.3.0 h1:4XIvQTXznxmWMnjouj0ST5lFo/WAYf5Exgl3x82crEk=
 github.com/vrischmann/envconfig v1.3.0/go.mod h1:bbvxFYJdRSpXrhS63mBFtKJzkDiNkyArOLXtY6q0kuI=
-github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220217021200-1c5b043c850c h1:up1B9o4AHL0DcI3O53blXm4E2QrOUF6SMcnL7AbA0Jw=
-github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220217021200-1c5b043c850c/go.mod h1:l/T172BDmutk/cLLFUD8rnfUBnsc2027siNZrwllr8c=
+github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220218144630-a80c1066c1c1 h1:vZpKd4ADPkVONRd/z8DZEphKXVWS2fmiP3Rz5Ajq8/o=
+github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220218144630-a80c1066c1c1/go.mod h1:l/T172BDmutk/cLLFUD8rnfUBnsc2027siNZrwllr8c=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11/go.mod h1:83CECat5yLh5zVOf4P1ErAgKA5UDvKtgyUABdr3+MjI=
 github.com/xanzy/go-gitlab v0.15.0/go.mod h1:8zdQa/ri1dfn8eS3Ir1SyfvOKlw7WBJ8DVThkpGiXrs=
