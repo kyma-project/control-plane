@@ -2,10 +2,11 @@ package pvc
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sort"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
@@ -69,7 +70,12 @@ func NewFakeClient(pvcList *corev1.PersistentVolumeClaimList) (*Client, error) {
 		return nil, err
 	}
 
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, pvcList)
+	dynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme,
+		map[schema.GroupVersionResource]string{
+			{Group: "core", Version: "v1", Resource: "PersistentVolumeClaim"}: "PersistentVolumeClaimList",
+		}, pvcList)
+
+	// dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, pvcList)
 	nsResourceClient := dynamicClient.Resource(GroupVersionResource())
 	return &Client{Resource: nsResourceClient}, nil
 }

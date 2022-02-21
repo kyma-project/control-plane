@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sort"
 	"testing"
 
@@ -69,7 +70,11 @@ func NewFakeClient(svcList *corev1.ServiceList) (*Client, error) {
 		return nil, err
 	}
 
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, svcList)
+	dynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme,
+		map[schema.GroupVersionResource]string{
+			{Group: "core", Version: "v1", Resource: "Service"}: "ServiceList",
+		}, svcList)
+
 	nsResourceClient := dynamicClient.Resource(GroupVersionResource())
 	return &Client{Resource: nsResourceClient}, nil
 }
