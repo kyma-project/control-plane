@@ -641,7 +641,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(
 			func(accountID string, operationID string) gqlschema.OperationStatus {
 				callCounter++
-				if callCounter <= 2 {
+				if callCounter < 2 {
 					return gqlschema.OperationStatus{
 						ID:        ptr.String(fixProvisionerOperationID),
 						Operation: "",

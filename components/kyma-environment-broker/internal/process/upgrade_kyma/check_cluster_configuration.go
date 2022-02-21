@@ -6,6 +6,7 @@ import (
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -17,15 +18,18 @@ import (
 type CheckClusterConfigurationStep struct {
 	reconcilerClient      reconciler.Client
 	operationManager      *process.UpgradeKymaOperationManager
+	evaluationManager     *avs.EvaluationManager
 	reconciliationTimeout time.Duration
 }
 
 func NewCheckClusterConfigurationStep(os storage.Operations,
 	reconcilerClient reconciler.Client,
+	evaluationManager *avs.EvaluationManager,
 	provisioningTimeout time.Duration) *CheckClusterConfigurationStep {
 	return &CheckClusterConfigurationStep{
 		reconcilerClient:      reconcilerClient,
 		operationManager:      process.NewUpgradeKymaOperationManager(os),
+		evaluationManager:     evaluationManager,
 		reconciliationTimeout: provisioningTimeout,
 	}
 }
@@ -59,6 +63,17 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
+
+	// Restore AVS evaluations statuses when reconciler status is ready or unknown/failure
+	if state.Status != reconcilerApi.StatusReconciling && state.Status != reconcilerApi.StatusReconcilePending && state.Status != reconcilerApi.StatusReconcileErrorRetryable {
+		operation, err = RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
+		if err != nil {
+			if kebError.IsTemporaryError(err) {
+				return operation, 30 * time.Second, nil
+			}
+			return s.operationManager.OperationFailed(operation, err.Error(), log)
+		}
+	}
 
 	switch state.Status {
 	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
