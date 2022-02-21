@@ -7,54 +7,43 @@ import (
 	"sync"
 	"time"
 
-	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-
-	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
-
-	retry "github.com/avast/retry-go"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
-	"k8s.io/client-go/rest"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
-
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/avast/retry-go"
+	"github.com/gorilla/mux"
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/99designs/gqlgen/handler"
-	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
+	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
+	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
 
-//TODO: Remove after data migration
+// TODO: Remove after data migration
 const migrationErrThreshold = 10
 
 type config struct {
@@ -104,7 +93,7 @@ type config struct {
 
 	LogLevel string `envconfig:"default=info"`
 
-	//TODO: Remove after data migration
+	// TODO: Remove after data migration
 	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
@@ -174,7 +163,7 @@ func main() {
 
 	dbsFactory := dbsession.NewFactory(connection)
 
-	//TODO: Remove after data migration
+	// TODO: Remove after data migration
 	if cfg.RunAwsConfigMigration {
 		log.Infof("Starting AWS Config Migration")
 
@@ -313,8 +302,13 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(middlewares.ExtractTenant)
 
-	router.HandleFunc("/", handler.Playground("Dataloader", cfg.PlaygroundAPIEndpoint))
-	router.HandleFunc(cfg.APIEndpoint, handler.GraphQL(executableSchema, handler.ErrorPresenter(presenter.Do)))
+	router.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
+
+	gqlHandler := handler.New(executableSchema)
+	gqlHandler.AddTransport(transport.POST{})
+	gqlHandler.AddTransport(transport.GET{})
+	gqlHandler.SetErrorPresenter(presenter.Do)
+	router.Handle(cfg.APIEndpoint, gqlHandler)
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
 
 	// Metrics

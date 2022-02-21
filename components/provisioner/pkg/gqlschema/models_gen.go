@@ -291,7 +291,7 @@ type RuntimeConnectionStatus struct {
 type RuntimeInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	Labels      Labels  `json:"labels"`
 }
 
 type RuntimeStatus struct {

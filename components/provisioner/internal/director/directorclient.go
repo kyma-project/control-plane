@@ -3,16 +3,16 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
 	directorApperrors "github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	gql "github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	gcli "github.com/kyma-project/control-plane/components/provisioner/third_party/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -56,10 +56,10 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 		return "", apperrors.BadRequest("Cannot register runtime in Director: missing Runtime config")
 	}
 
-	var labels *graphql.Labels
+	var labels graphql.Labels
 	if config.Labels != nil {
-		l := graphql.Labels(*config.Labels)
-		labels = &l
+		l := graphql.Labels(config.Labels)
+		labels = l
 	}
 
 	directorInput := graphql.RuntimeInput{
@@ -197,7 +197,7 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 		Name:            runtime.Name,
 		Description:     runtime.Description,
 		StatusCondition: &statusCondition,
-		Labels:          &runtime.Labels,
+		Labels:          runtime.Labels,
 	}
 	err = cc.UpdateRuntime(id, runtimeInput, tenant)
 	if err != nil {
