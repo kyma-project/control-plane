@@ -36,7 +36,7 @@ require (
 	github.com/opencontainers/runc v1.0.3 // indirect
 	github.com/pivotal-cf/brokerapi/v8 v8.0.1-0.20210524135831-3563fe51db34
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0
@@ -48,7 +48,6 @@ require (
 	golang.org/x/mod v0.4.2
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
