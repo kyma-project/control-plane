@@ -441,6 +441,8 @@ type RuntimeState struct {
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
+
+	KymaVersion string `json:"kyma_version"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
@@ -451,6 +453,9 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 }
 
 func (r *RuntimeState) GetKymaVersion() string {
+	if r.KymaVersion != "" {
+		return r.KymaVersion
+	}
 	if r.ClusterSetup != nil {
 		return r.ClusterSetup.KymaConfig.Version
 	}
@@ -539,7 +544,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			Version:         0,
 			Description:     "Operation created",
 			InstanceID:      instance.InstanceID,
-			State:           domain.InProgress,
+			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,

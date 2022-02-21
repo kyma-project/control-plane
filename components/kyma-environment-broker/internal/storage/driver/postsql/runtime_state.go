@@ -176,8 +176,11 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 	if result.KymaConfig.Version != "" {
 		return result, nil
 	}
+	if result.KymaVersion != "" {
+		return result, nil
+	}
 
-	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with kyma version for runtime %s", runtimeID)
+	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with kyma version for runtime %s ", runtimeID)
 }
 
 func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
@@ -250,6 +253,7 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 		KymaConfig:    kymaCfg,
 		ClusterConfig: clusterCfg,
 		ClusterSetup:  clusterSetup,
+		KymaVersion:   dto.KymaVersion,
 	}, nil
 }
 

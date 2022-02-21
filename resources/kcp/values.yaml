@@ -1,39 +1,39 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:e635ce55"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:e635ce55"
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.28.1-alpine-b582f7ea
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:1ce659b0"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:bff6b243"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1276"
+      version: "PR-1348"
     provisioner:
       dir:
-      version: "PR-1334"
+      version: "PR-1360"
     kyma_environment_broker:
       dir:
-      version: "PR-1337"
+      version: "PR-1352"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1285"
+      version: "PR-1361"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1279"
+      version: "PR-1348"
     subscription_cleanup_job:
       dir:
-      version: "PR-1268"
+      version: "PR-1346"
     kyma_metrics_collector:
       dir:
       version: "PR-1158"
     tests:
       provisioner:
         dir:
-        version: "PR-699"
+        version: "PR-1346"
       e2e_provisioning:
         dir:
-        version: "PR-1235"
+        version: "PR-1346"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:

@@ -570,7 +570,7 @@ func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID strin
 
 func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID string) {
 	var upgradeOp *internal.UpgradeKymaOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := wait.Poll(pollingInterval, 3*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetUpgradeKymaOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -584,7 +584,7 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 1*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err

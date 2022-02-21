@@ -9,7 +9,7 @@ COPY ./go.mod ${BASE_APP_DIR}/go.mod
 COPY ./go.sum ${BASE_APP_DIR}/go.sum
 
 # Run go mod download first to take advantage of Docker caching
-RUN apk add git && go mod download
+RUN apk --no-cache add git && go mod download
 
 COPY ./licenses ${BASE_APP_DIR}/licenses
 COPY ./cmd/ ${BASE_APP_DIR}/cmd

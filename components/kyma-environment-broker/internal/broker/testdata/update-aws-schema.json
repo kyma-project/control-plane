@@ -1,20 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "_controlsOrder": [
+    "autoScalerMin",
+    "autoScalerMax"
+  ],
+  "_show_form_view": true,
   "properties": {
-    "autoScalerMin": {
-      "type": "integer",
-      "description": "Specifies the minimum number of virtual machines to create",
-      "minimum": 2
-    },
     "autoScalerMax": {
-      "type": "integer",
       "description": "Specifies the maximum number of virtual machines to create",
+      "maximum": 40,
       "minimum": 2,
-      "maximum": 40
+      "type": "integer"
+    },
+    "autoScalerMin": {
+      "description": "Specifies the minimum number of virtual machines to create",
+      "minimum": 2,
+      "type": "integer"
     }
   },
   "required": [],
-  "_show_form_view": true,
-  "_controlsOrder": []
+  "type": "object"
 }

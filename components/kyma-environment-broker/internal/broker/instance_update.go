@@ -336,12 +336,6 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 	if err != nil {
 		return false, "", err
 	}
-	kv := ""
-	if s.KymaConfig.Version != "" {
-		kv = s.KymaConfig.Version
-	}
-	if s.ClusterSetup != nil && s.ClusterSetup.KymaConfig.Version != "" {
-		kv = s.ClusterSetup.KymaConfig.Version
-	}
+	kv := s.GetKymaVersion()
 	return internal.DetermineMajorVersion(kv) == 2, kv, nil
 }
