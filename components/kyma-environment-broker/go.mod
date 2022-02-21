@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	github.com/99designs/gqlgen v0.9.3
+	github.com/99designs/gqlgen v0.11.3
 	github.com/Azure/azure-sdk-for-go v54.2.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Azure/go-autorest/autorest/adal v0.9.14
@@ -25,11 +25,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/kennygrant/sanitize v1.2.4
-	github.com/kyma-incubator/compass/components/director v0.0.0-20200813093525-96b1a733a11b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220125140301-bfb0c437ad31
 	github.com/kyma-incubator/reconciler v0.0.0-20211220095539-bb1616d411aa
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20211103174936-687e40a56850
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
-	github.com/lib/pq v1.10.2
+	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
@@ -42,12 +42,11 @@ require (
 	github.com/spf13/afero v1.6.0
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.12.0
-	github.com/tidwall/gjson v1.11.0 // indirect
 	github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410
 	github.com/vrischmann/envconfig v1.3.0
-	golang.org/x/mod v0.4.2
+	golang.org/x/mod v0.5.1
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
-	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -59,7 +58,7 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220218144630-a80c1066c1c1
+	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220221034251-3c62bca75556
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 
