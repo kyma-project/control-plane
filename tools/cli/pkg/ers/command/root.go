@@ -15,18 +15,20 @@ import (
 func New() *cobra.Command {
 	cobra.OnInitialize(initConfig)
 	cmd := &cobra.Command{
-		Use:          "ers",
-		Short:        "ERS operations tool for Kyma Runtimes.",
-		Long:         "The ers tool provides commands to play with ERS API for Service Catalog migration.",
-		Version:      "N/A",
-		SilenceUsage: true,
+		Use:              "ers",
+		Short:            "ERS operations tool for Kyma Runtimes.",
+		Long:             "The ers tool provides commands to play with ERS API for Service Catalog migration.",
+		Version:          "N/A",
+		SilenceUsage:     true,
+		TraverseChildren: true,
 	}
 
-	cmd.AddCommand(NewInstancesCommand(), NewMigrationCommand())
-
-	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the KCP CLI config file. Can also be set using the KCPCONFIG environment variable. Defaults to $HOME/.kcp/config.yaml .")
+	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the ERS CLI config file. Can also be set using the ERSCONFIG environment variable.")
 	SetGlobalOpts(cmd)
 	logger.AddFlags(cmd.PersistentFlags())
+	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
+
+	cmd.AddCommand(NewInstancesCommand(), NewMigrationCommand(), NewSwitchBrokerCommand())
 
 	return cmd
 }
