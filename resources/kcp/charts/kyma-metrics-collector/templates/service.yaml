@@ -12,6 +12,10 @@ spec:
     port: {{ .Values.service.port }}
     protocol: {{ .Values.service.protocol }}
     targetPort: {{ .Values.config.portName }}
+  - port: { { $global.Values.service.istioPort } }
+    targetPort: { { $global.Values.service.istioPort } }
+    protocol: TCP
+    name: istio-http
   selector:
     app: {{ .Chart.Name }}
 {{- end -}}
