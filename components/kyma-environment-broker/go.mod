@@ -32,7 +32,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
-	github.com/moby/sys/mountinfo v0.5.0 // indirect
+	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/opencontainers/runc v1.0.3 // indirect
 	github.com/pivotal-cf/brokerapi/v8 v8.0.1-0.20210524135831-3563fe51db34
 	github.com/pkg/errors v0.9.1
@@ -47,6 +47,7 @@ require (
 	golang.org/x/mod v0.5.1
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -58,7 +59,8 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220221034251-3c62bca75556
+	// github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220221034631-35365e23ca37
+	github.com/kyma-project/control-plane/components/provisioner => ../provisioner
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 

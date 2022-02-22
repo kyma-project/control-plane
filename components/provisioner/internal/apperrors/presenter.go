@@ -35,7 +35,7 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 func newGraphqlErrorResponse(ctx context.Context, code ErrCode, reason ErrReason, component ErrComponent, msg string, args ...interface{}) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message: fmt.Sprintf(msg, args...),
-		Path:    graphql.GetResolverContext(ctx).Path(),
+		Path:    graphql.GetFieldContext(ctx).Path(),
 		Extensions: map[string]interface{}{
 			"error_component": component,
 			"error_reason":    reason,

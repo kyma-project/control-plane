@@ -786,7 +786,7 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
 	input := s.fetchProvisionInput()
 
-	labels := *input.RuntimeInput.Labels
+	labels := input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
 	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)

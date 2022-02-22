@@ -386,11 +386,60 @@ func TestClient_RuntimeOperationStatus(t *testing.T) {
 
 		// When
 		status, err := client.RuntimeOperationStatus(testAccountID, provisionRuntimeID)
-		t.Logf("--------------------%+v\n", err)
 
 		// Then
 		assert.Error(t, err)
 		assert.Empty(t, status)
+	})
+}
+
+func TestClient_OperationStatusLastError(t *testing.T) {
+	t.Run("nil last error", func(t *testing.T) {
+		// Given
+		response := schema.OperationStatus{
+			ID:        ptr.String(provisionRuntimeOperationID),
+			State:     schema.OperationStateInProgress,
+			RuntimeID: ptr.String(provisionRuntimeID),
+		}
+
+		// When
+		lastErr := OperationStatusLastError(response.LastError)
+
+		// Then
+		assert.Equal(t, kebError.ErrProvisioner, lastErr.Component())
+		assert.Equal(t, kebError.ErrProvisionerNilLastError, lastErr.Reason())
+		assert.Equal(t, "", lastErr.Error())
+	})
+
+	t.Run("with last error", func(t *testing.T) {
+		// Given
+		response := schema.OperationStatus{
+			ID:        ptr.String(provisionRuntimeOperationID),
+			State:     schema.OperationStateInProgress,
+			RuntimeID: ptr.String(provisionRuntimeID),
+			LastError: &schema.LastError{
+				ErrMessage: "error msg",
+				Reason:     "not found",
+				Component:  "provisioner-db",
+			},
+		}
+
+		// When
+		lastErr := OperationStatusLastError(response.LastError)
+
+		// Then
+		assert.Equal(t, kebError.ErrComponent("provisioner-db"), lastErr.Component())
+		assert.Equal(t, kebError.ErrReason("not found"), lastErr.Reason())
+		assert.Equal(t, "error msg", lastErr.Error())
+
+		// When
+		err := errors.Wrap(lastErr, "something")
+		lastErr = kebError.ReasonForError(err)
+
+		// Then
+		assert.Equal(t, kebError.ErrComponent("provisioner-db"), lastErr.Component())
+		assert.Equal(t, kebError.ErrReason("not found"), lastErr.Reason())
+		assert.Equal(t, "something: error msg", lastErr.Error())
 	})
 }
 
