@@ -1940,8 +1940,8 @@ github.com/vrischmann/envconfig v1.1.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+Njsr
 github.com/vrischmann/envconfig v1.2.0/go.mod h1:c5DuUlkzfsnspy1g7qiqryPCsW+NjsrLsYq4zhwsoHo=
 github.com/vrischmann/envconfig v1.3.0 h1:4XIvQTXznxmWMnjouj0ST5lFo/WAYf5Exgl3x82crEk=
 github.com/vrischmann/envconfig v1.3.0/go.mod h1:bbvxFYJdRSpXrhS63mBFtKJzkDiNkyArOLXtY6q0kuI=
-github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220221034631-35365e23ca37 h1:duKHuzteVtloOwS1ECwUnl8vyYg2DhFW5FxL8N+D+Bg=
-github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220221034631-35365e23ca37/go.mod h1:fK1/XxGeE62jHK/LAKS2VevdLaxififz9VVPYujqpHU=
+github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220222075235-c97622a62836 h1:1ZRU/Mi65MwHP6f5qrrd5lfFv+rlqjP2SNsEjF/T+2w=
+github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220222075235-c97622a62836/go.mod h1:fK1/XxGeE62jHK/LAKS2VevdLaxififz9VVPYujqpHU=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11/go.mod h1:83CECat5yLh5zVOf4P1ErAgKA5UDvKtgyUABdr3+MjI=
 github.com/xanzy/go-gitlab v0.15.0/go.mod h1:8zdQa/ri1dfn8eS3Ir1SyfvOKlw7WBJ8DVThkpGiXrs=
