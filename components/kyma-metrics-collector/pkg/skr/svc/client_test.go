@@ -2,9 +2,10 @@ package svc
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sort"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
