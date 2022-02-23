@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -62,7 +64,11 @@ func NewFakeClient(nodeList *corev1.NodeList) (*Client, error) {
 		return nil, err
 	}
 
-	dynamicClient := dynamicfake.NewSimpleDynamicClient(scheme, nodeList)
+	dynamicClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme,
+		map[schema.GroupVersionResource]string{
+			{Group: "core", Version: "v1", Resource: "Node"}: "NodeList",
+		}, nodeList)
+
 	nsResourceClient := dynamicClient.Resource(GroupVersionResource())
 	return &Client{Resource: nsResourceClient}, nil
 }

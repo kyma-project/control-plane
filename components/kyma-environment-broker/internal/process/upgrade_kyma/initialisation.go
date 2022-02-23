@@ -184,43 +184,6 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	return nil
 }
 
-// performRuntimeTasks Ensures that required logic on init and finish is executed.
-// Uses internal and external Avs monitor statuses to verify state.
-func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	hasMonitors := s.evaluationManager.HasMonitors(operation.Avs)
-	inMaintenance := s.evaluationManager.InMaintenance(operation.Avs)
-	var err error = nil
-	var delay time.Duration = 0
-	var updateAvsStatus = func(op *internal.UpgradeKymaOperation) {
-		op.Avs.AvsInternalEvaluationStatus = operation.Avs.AvsInternalEvaluationStatus
-		op.Avs.AvsExternalEvaluationStatus = operation.Avs.AvsExternalEvaluationStatus
-	}
-
-	switch step {
-	case UpgradeInitSteps:
-		if hasMonitors && !inMaintenance {
-			log.Infof("executing init upgrade steps")
-			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
-		}
-	case UpgradeFinishSteps:
-		if hasMonitors && inMaintenance {
-			log.Infof("executing finish upgrade steps")
-			err = s.evaluationManager.RestoreStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
-		}
-	}
-
-	switch {
-	case err == nil:
-		return operation, delay, nil
-	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
-	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
-	}
-}
-
 // checkRuntimeStatus will check operation runtime status
 // It will also trigger performRuntimeTasks upgrade steps to ensure
 // all the required dependencies have been fulfilled for upgrade operation.
@@ -228,6 +191,15 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+	}
+
+	// Ensure AVS evaluations are set to maintenance
+	operation, err := SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
+		}
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 
 	if operation.ClusterConfigurationVersion != 0 {
@@ -244,14 +216,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	log.Infof("call to provisioner returned %s status", status.State.String())
 
 	var msg string
+	var delay time.Duration
 	if status.Message != nil {
 		msg = *status.Message
-	}
-
-	// do required steps on init
-	operation, delay, err := s.performRuntimeTasks(UpgradeInitSteps, operation, log)
-	if delay != 0 || err != nil {
-		return operation, delay, err
 	}
 
 	// wait for operation completion
@@ -270,10 +237,13 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		}
 	}
 
-	// do required steps on finish
-	operation, delay, err = s.performRuntimeTasks(UpgradeFinishSteps, operation, log)
-	if delay != 0 || err != nil {
-		return operation, delay, err
+	// Kyma 1.X operation is finished or failed, restore AVS status
+	operation, err = RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
+		}
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 
 	// handle operation completion

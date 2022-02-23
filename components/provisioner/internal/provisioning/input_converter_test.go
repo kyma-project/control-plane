@@ -3,19 +3,15 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
-	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -33,7 +29,6 @@ const (
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
-
 	releaseProvider := &realeaseMocks.Provider{}
 	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 	releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
@@ -50,7 +45,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -130,7 +125,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			RuntimeInput: &gqlschema.RuntimeInput{
 				Name:        "runtimeName",
 				Description: nil,
-				Labels:      &gqlschema.Labels{},
+				Labels:      gqlschema.Labels{},
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -168,7 +163,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	}
 
 	expectedGardenerAzureRuntimeConfig := func(zones []string) model.Cluster {
-
 		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr", Zones: zones})
 		require.NoError(t, err)
 
@@ -240,7 +234,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -326,7 +320,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -443,7 +437,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	for _, testCase := range configurations {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(6)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
@@ -456,10 +450,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				defaultEnableMachineImageVersionAutoUpdate,
 				forceAllowPrivilegedContainers)
 
-			//when
+			// when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
 
-			//then
+			// then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
@@ -537,7 +531,7 @@ func dnsInput() *gqlschema.DNSConfigInput {
 	return &gqlschema.DNSConfigInput{
 		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*gqlschema.DNSProviderInput{
-			&gqlschema.DNSProviderInput{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_inconverter",
@@ -551,7 +545,7 @@ func dnsConfig() *model.DNSConfig {
 	return &model.DNSConfig{
 		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*model.DNSProvider{
-			&model.DNSProvider{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_inconverter",
@@ -574,8 +568,7 @@ func upgradedOidcConfig() *model.OIDCConfig {
 
 func TestConverter_ParseInput(t *testing.T) {
 	t.Run("should parse KymaConfig input", func(t *testing.T) {
-
-		//given
+		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
 		uuidGeneratorMock.On("New").Return("id").Times(6)
 		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
@@ -611,7 +604,6 @@ func TestConverter_ParseInput(t *testing.T) {
 }
 
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
-
 	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
 		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
@@ -636,10 +628,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		uuidGeneratorMock.AssertExpectations(t)
 	})
@@ -656,10 +648,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "ClusterConfig not provided")
 	})
@@ -681,10 +673,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "GardenerConfig not provided")
 	})
@@ -709,14 +701,13 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
-
 }
 
 func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
@@ -738,7 +729,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		initialConfig  model.GardenerConfig
 		upgradedConfig model.GardenerConfig
 	}{
-		{description: "regular GCP shoot upgrade",
+		{
+			description:  "regular GCP shoot upgrade",
 			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "1.19",
@@ -773,7 +765,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:      util.StringPtr("internet"),
 			},
 		},
-		{description: "regular Azure shoot upgrade",
+		{
+			description:  "regular Azure shoot upgrade",
 			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "1.19",
@@ -808,7 +801,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:      util.StringPtr("internet"),
 			},
 		},
-		{description: "regular AWS shoot upgrade",
+		{
+			description:  "regular AWS shoot upgrade",
 			upgradeInput: newUpgradeShootInputAwsAzureGCP(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:   "1.19",
@@ -841,7 +835,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:   util.StringPtr("internet"),
 			},
 		},
-		{description: "regular OpenStack shoot upgrade",
+		{
+			description:  "regular OpenStack shoot upgrade",
 			upgradeInput: newUpgradeOpenStackShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:   "1.19",
@@ -870,7 +865,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:   util.StringPtr("internet"),
 			},
 		},
-		{description: "shoot upgrade with nil values",
+		{
+			description:  "shoot upgrade with nil values",
 			upgradeInput: newUpgradeShootInputWithNilValues(),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:   "version",
@@ -910,7 +906,8 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		upgradeInput  gqlschema.UpgradeShootInput
 		initialConfig model.GardenerConfig
 	}{
-		{description: "should return error failed to convert provider specific config",
+		{
+			description:  "should return error failed to convert provider specific config",
 			upgradeInput: newUpgradeShootInputWithoutProviderConfig(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "version",
@@ -932,7 +929,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 
 	for _, testCase := range casesWithNoErrors {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
@@ -943,10 +940,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				forceAllowPrivilegedContainers,
 			)
 
-			//when
+			// when
 			shootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
 
-			//then
+			// then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.upgradedConfig, shootConfig)
 			uuidGeneratorMock.AssertExpectations(t)
@@ -955,7 +952,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 
 	for _, testCase := range casesWithErrors {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
@@ -966,10 +963,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				forceAllowPrivilegedContainers,
 			)
 
-			//when
+			// when
 			_, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
 
-			//then
+			// then
 			require.Error(t, err)
 			uuidGeneratorMock.AssertExpectations(t)
 		})

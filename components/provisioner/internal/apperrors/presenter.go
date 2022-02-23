@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/vektah/gqlparser/gqlerror"
+	log "github.com/sirupsen/logrus"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 type presenter struct {
@@ -30,13 +29,12 @@ func (p *presenter) Do(ctx context.Context, err error) *gqlerror.Error {
 		p.Logger.Errorf("Internal Server Error: %s", err.Error())
 	}
 	return newGraphqlErrorResponse(ctx, customErr.Code(), customErr.Error())
-
 }
 
 func newGraphqlErrorResponse(ctx context.Context, errCode ErrCode, msg string, args ...interface{}) *gqlerror.Error {
 	return &gqlerror.Error{
 		Message:    fmt.Sprintf(msg, args...),
-		Path:       graphql.GetResolverContext(ctx).Path(),
+		Path:       graphql.GetFieldContext(ctx).Path(),
 		Extensions: map[string]interface{}{"error_code": errCode},
 	}
 }

@@ -166,7 +166,6 @@ func NewInfraConfig() *gardenerazurev1alpha1.InfrastructureConfig {
 				Name: &name,
 				CIDR: &cidr,
 			},
-			Workers:          "",
 			NatGateway:       nil,
 			ServiceEndpoints: nil,
 		},
