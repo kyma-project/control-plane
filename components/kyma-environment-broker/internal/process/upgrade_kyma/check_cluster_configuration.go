@@ -43,7 +43,7 @@ func (s *CheckClusterConfigurationStep) Name() string {
 func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.reconciliationTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), log)
+		return s.restoreAvsFailOperation(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), log)
 	}
 
 	if operation.ClusterConfigurationVersion == 0 || !operation.ClusterConfigurationApplied {
@@ -60,19 +60,24 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), log)
+		return s.restoreAvsFailOperation(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
-	// Restore AVS evaluations statuses when reconciler status is ready or unknown/failure
-	if state.Status != reconcilerApi.StatusReconciling && state.Status != reconcilerApi.StatusReconcilePending && state.Status != reconcilerApi.StatusReconcileErrorRetryable {
+	// Ensure AVS evaluations status:
+	//  - set to maintenance in reconcile_pending, reconciling, error_retryable
+	//  - restore when reconciler status is ready or unknown/failure (operation terminal)
+	switch state.Status {
+	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending, reconcilerApi.StatusReconcileErrorRetryable:
+		operation, err = SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+	default:
 		operation, err = RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
-		if err != nil {
-			if kebError.IsTemporaryError(err) {
-				return operation, 30 * time.Second, nil
-			}
-			return s.operationManager.OperationFailed(operation, err.Error(), log)
+	}
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+			return operation, 30 * time.Second, nil
 		}
+		return s.operationManager.OperationFailed(operation, err.Error(), log)
 	}
 
 	switch state.Status {
@@ -90,4 +95,12 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	default:
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), log)
 	}
+}
+
+func (s *CheckClusterConfigurationStep) restoreAvsFailOperation(operation internal.UpgradeKymaOperation, description string, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	operation, err := RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
+	if kebError.IsTemporaryError(err) {
+		return operation, 30 * time.Second, nil
+	}
+	return s.operationManager.OperationFailed(operation, description, log)
 }
