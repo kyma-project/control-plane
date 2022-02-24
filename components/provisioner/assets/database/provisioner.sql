@@ -82,6 +82,13 @@ CREATE TABLE operation
     error_component text
 );
 
+-- last error columns
+
+ALTER TABLE operation
+ADD COLUMN error_msg text,
+ADD COLUMN error_reason text,
+ADD COLUMN error_component text;
+
 -- Kyma Release
 
 CREATE TABLE kyma_release
