@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -21,8 +20,6 @@ const (
 	jsonOutput   string = "json"
 	customOutput string = "custom"
 )
-
-var ErsHttpClient *http.Client
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
 type GlobalOptionsKey struct {

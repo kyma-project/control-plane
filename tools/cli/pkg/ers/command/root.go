@@ -1,18 +1,22 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
+var log = logrus.New()
+
 func New() *cobra.Command {
+	log.SetLevel(logrus.DebugLevel)
+	log.Out = os.Stdout
+
 	cobra.OnInitialize(initConfig)
 	cmd := &cobra.Command{
 		Use:              "ers",
@@ -23,12 +27,13 @@ func New() *cobra.Command {
 		TraverseChildren: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the ERS CLI config file. Can also be set using the ERSCONFIG environment variable.")
+	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv),
+		"Path to the ERS CLI config file. Can also be set using the ERSCONFIG environment variable.")
 	SetGlobalOpts(cmd)
 	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
-	cmd.AddCommand(NewInstancesCommand(), NewMigrationCommand(), NewSwitchBrokerCommand())
+	cmd.AddCommand(NewInstancesCommand(log), NewMigrationCommand(), NewSwitchBrokerCommand())
 
 	return cmd
 }
@@ -61,13 +66,4 @@ func initConfig() {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-
-	config := clientcredentials.Config{
-		ClientID:     GlobalOpts.ClientID(),
-		ClientSecret: GlobalOpts.ClientSecret(),
-		TokenURL:     GlobalOpts.OauthUrl(),
-	}
-
-	// create a shared ERS HTTP client which does the oauth flow
-	ErsHttpClient = config.Client(context.Background())
 }

@@ -1,9 +1,16 @@
 package command
 
 import (
+	"context"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
+
 	"github.com/spf13/cobra"
 )
 
@@ -26,11 +33,6 @@ var tableColumns = []printer.Column{
 	},
 }
 
-type InstanceFetcher interface {
-	GetAllInstances() ([]ers.Instance, error)
-	GetInstanceById(id string) (ers.Instance, error)
-}
-
 type Filters struct {
 	GlobalAccountID string
 	Migrated        bool
@@ -42,17 +44,29 @@ type Filters struct {
 
 type InstancesCommand struct {
 	corbaCmd        *cobra.Command
-	instanceFetcher InstanceFetcher
+	instanceFetcher fetcher.InstanceFetcher
 	filters         Filters
 	source          string
 }
 
 func (c *InstancesCommand) Run() error {
+
+	config := clientcredentials.Config{
+		ClientID:     GlobalOpts.ClientID(),
+		ClientSecret: GlobalOpts.ClientSecret(),
+		TokenURL:     GlobalOpts.OauthUrl(),
+	}
+	configClient := config.Client(context.Background())
+
 	if c.source != "" {
-		c.instanceFetcher = client.NewFileClient(c.source)
+		c.instanceFetcher = fetcher.NewFileClient(c.source)
 	} else {
+		// create a shared ERS HTTP client which does the oauth flow
+		httpClient := client.NewHttpClient(logger.New(), configClient)
+		ers := client.NewErsClient(GlobalOpts.ErsUrl(), httpClient)
+
 		// todo: use real client to ers
-		c.instanceFetcher = &emptyFetcher{}
+		c.instanceFetcher = fetcher.NewInitialFetcher(ers)
 	}
 
 	tp, _ := printer.NewTablePrinter(tableColumns, false)
@@ -71,17 +85,19 @@ func (c *InstancesCommand) Run() error {
 		if c.filters.NotMigrated && item.Migrated {
 			continue
 		}
-		if c.filters.GlobalAccountID != "" && item.GlobalAccountId != c.filters.GlobalAccountID {
+		if c.filters.GlobalAccountID != "" && item.GlobalAccountID != c.filters.GlobalAccountID {
 			continue
 		}
 		result = append(result, item)
 	}
 
+	configClient.CloseIdleConnections()
+
 	tp.PrintObj(result)
 	return err
 }
 
-func NewInstancesCommand() *cobra.Command {
+func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 	cmd := &InstancesCommand{}
 	corbaCmd := &cobra.Command{
 		Use:   "instances",
@@ -94,28 +110,6 @@ func NewInstancesCommand() *cobra.Command {
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return cmd.Run()
 		},
-		//RunE: func(cmd *cobra.Command, args []string) error {
-		//		// TODO: this is an example of a call to ERS
-		//
-		//		url := GlobalOpts.ErsUrl() + "provisioning/v1/kyma/environments?page=0&size=60"
-		//
-		//		resp, err := ErsHttpClient.Get(url)
-		//		if err != nil {
-		//			fmt.Println("Request error: ", err)
-		//			return err
-		//		}
-		//		defer func() {
-		//			resp.Body.Close()
-		//		}()
-		//
-		//		d, err := ioutil.ReadAll(resp.Body)
-		//		if err != nil {
-		//			fmt.Println("Read error:", err)
-		//			return err
-		//		}
-		//		fmt.Println(string(d))
-		//		return nil
-		//	},
 	}
 
 	cmd.corbaCmd = corbaCmd
