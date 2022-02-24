@@ -213,9 +213,9 @@ type Operation struct {
 	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string                 `json:"-"`
-	FinishedStages  map[string]struct{}    `json:"-"`
-	LastError       kebError.ErrorReporter `json:"-"`
+	OrchestrationID string              `json:"-"`
+	FinishedStages  map[string]struct{} `json:"-"`
+	LastError       kebError.LastError  `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
