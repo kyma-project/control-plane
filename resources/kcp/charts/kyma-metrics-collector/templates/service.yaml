@@ -14,7 +14,7 @@ spec:
     targetPort: {{ .Values.config.portName }}
   - port: {{ .Values.global.istio.proxy.port }}
     protocol: TCP
-    name: proxy-status
+    name: http-status
   selector:
     app: {{ .Chart.Name }}
 {{- end -}}
