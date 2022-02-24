@@ -39,8 +39,8 @@
 /tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @pxsalehi
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @pxsalehi
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar
 
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP
