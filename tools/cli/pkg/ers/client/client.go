@@ -14,18 +14,18 @@ const idParam = "id=%s"
 
 type ersClient struct {
 	url    string
-	client *HttpClient
+	client *HTTPClient
 }
 
-func NewErsClient(url string, client *HttpClient) Client {
+func NewErsClient(url string, client *HTTPClient) Client {
 	return &ersClient{
 		url,
 		client,
 	}
 }
 
-func (c *ersClient) GetOne(instanceId string) (*ers.Instance, error) {
-	instances, err := c.client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceId))
+func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
+	instances, err := c.client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceID))
 	if err != nil {
 		return nil, errors.Wrap(err, "Error while sending request")
 	}
@@ -45,10 +45,10 @@ func (c *ersClient) GetPaged(pageNo, pageSize int) ([]ers.Instance, error) {
 	return c.client.get(fmt.Sprintf(environmentsPath+"?"+pagedParams, c.url, pageNo, pageSize))
 }
 
-func (c *ersClient) Migrate(instanceId string) error {
-	return c.client.put(fmt.Sprintf(environmentsPath+"/%s", c.url, instanceId))
+func (c *ersClient) Migrate(instanceID string) error {
+	return c.client.put(fmt.Sprintf(environmentsPath+"/%s", c.url, instanceID))
 }
 
-func (c *ersClient) Switch(brokerId string) error {
-	return c.client.put(fmt.Sprintf(brokersPath+"/%s", c.url, brokerId))
+func (c *ersClient) Switch(brokerID string) error {
+	return c.client.put(fmt.Sprintf(brokersPath+"/%s", c.url, brokerID))
 }

@@ -53,6 +53,7 @@ func initConfig() {
 		viper.AddConfigPath(configPath)
 		viper.SetConfigName("config")
 	}
+
 	viper.SetConfigType("yaml")
 	replacer := strings.NewReplacer("-", "_")
 	viper.SetEnvKeyReplacer(replacer)

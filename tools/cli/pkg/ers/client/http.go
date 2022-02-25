@@ -10,31 +10,29 @@ import (
 	"github.com/pkg/errors"
 )
 
-type HttpClient struct {
+type HTTPClient struct {
 	logger logger.Logger
 	client *http.Client
 }
 
-func NewHttpClient(logger logger.Logger, client *http.Client) *HttpClient {
-	return &HttpClient{
+func NewHTTPClient(logger logger.Logger, client *http.Client) *HTTPClient {
+	return &HTTPClient{
 		logger,
 		client,
 	}
 }
 
-func (c *HttpClient) put(url string) error {
-	c.do(nil, func() (resp *http.Response, err error) {
+func (c *HTTPClient) put(url string) error {
+	return c.do(nil, func() (resp *http.Response, err error) {
 		req, err := http.NewRequest("PUT", url, nil)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Error while sending a PUT request")
 		}
 		return c.client.Do(req)
 	})
-
-	return nil
 }
 
-func (c *HttpClient) get(url string) ([]ers.Instance, error) {
+func (c *HTTPClient) get(url string) ([]ers.Instance, error) {
 	kymaEnv := make([]ers.Instance, 0)
 
 	err := c.do(&kymaEnv, func() (resp *http.Response, err error) {
@@ -44,7 +42,7 @@ func (c *HttpClient) get(url string) ([]ers.Instance, error) {
 	return kymaEnv, err
 }
 
-func (c *HttpClient) do(v interface{}, request func() (resp *http.Response, err error)) error {
+func (c *HTTPClient) do(v interface{}, request func() (resp *http.Response, err error)) error {
 	resp, err := request()
 
 	c.logger.Debugf("Sending request to %s", resp.Request.URL)
@@ -55,9 +53,7 @@ func (c *HttpClient) do(v interface{}, request func() (resp *http.Response, err 
 
 	c.logger.Debugf("Response status: %s", resp.Status)
 
-	defer func() {
-		resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
@@ -47,9 +48,17 @@ type InstancesCommand struct {
 	instanceFetcher fetcher.InstanceFetcher
 	filters         Filters
 	source          string
+	pageStart       int
+	pageSize        int
+	pageLimit       int
 }
 
 func (c *InstancesCommand) Run() error {
+	if GlobalOpts.ClientID() == "" ||
+		GlobalOpts.ClientSecret() == "" ||
+		GlobalOpts.OauthUrl() == "" {
+		return errors.New("no auth data provided")
+	}
 
 	config := clientcredentials.Config{
 		ClientID:     GlobalOpts.ClientID(),
@@ -62,11 +71,11 @@ func (c *InstancesCommand) Run() error {
 		c.instanceFetcher = fetcher.NewFileClient(c.source)
 	} else {
 		// create a shared ERS HTTP client which does the oauth flow
-		httpClient := client.NewHttpClient(logger.New(), configClient)
+		httpClient := client.NewHTTPClient(logger.New(), configClient)
 		ers := client.NewErsClient(GlobalOpts.ErsUrl(), httpClient)
 
 		// todo: use real client to ers
-		c.instanceFetcher = fetcher.NewInitialFetcher(ers)
+		c.instanceFetcher = fetcher.NewInitialFetcher(ers, c.pageStart, c.pageSize, c.pageLimit)
 	}
 
 	tp, _ := printer.NewTablePrinter(tableColumns, false)
@@ -119,6 +128,9 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 	corbaCmd.Flags().StringVarP(&cmd.filters.InstanceID, "instance-id", "i", "", "Get not migrated instances")
 	corbaCmd.Flags().StringVarP(&cmd.filters.GlobalAccountID, "global-account-id", "g", "", "Filter by global account ID.")
 	corbaCmd.Flags().StringVar(&cmd.source, "source", "", "File containing instances data")
+	corbaCmd.Flags().IntVar(&cmd.pageStart, "pageNo", 0, "Specify which page to load")
+	corbaCmd.Flags().IntVar(&cmd.pageSize, "pageSize", 5, "Specify how many elements per page to load")
+	corbaCmd.Flags().IntVar(&cmd.pageLimit, "pageLimit", 2, "Specify how many pages to load, by default loads only 2 pages")
 
 	return corbaCmd
 }
