@@ -134,14 +134,3 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 
 	return corbaCmd
 }
-
-type emptyFetcher struct {
-}
-
-func (e emptyFetcher) GetAllInstances() ([]ers.Instance, error) {
-	panic("implement me")
-}
-
-func (e emptyFetcher) GetInstanceById(id string) (ers.Instance, error) {
-	panic("implement me")
-}
