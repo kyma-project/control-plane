@@ -22,7 +22,7 @@ func NewFileClient(filename string) InstanceFetcher {
 func (c *FileClient) GetInstanceById(id string) (*ers.Instance, error) {
 	instances, err := c.GetAllInstances()
 	if err != nil {
-		return &ers.Instance{}, err
+		return &ers.Instance{}, errors.Wrap(err, "while loading specific instance")
 	}
 
 	for _, inst := range instances {
@@ -37,7 +37,7 @@ func (c *FileClient) GetInstanceById(id string) (*ers.Instance, error) {
 func (c *FileClient) GetAllInstances() ([]ers.Instance, error) {
 	data, err := ioutil.ReadFile(c.filename)
 	if err != nil {
-		return []ers.Instance{}, errors.Wrap(err, "error while reading all instances")
+		return []ers.Instance{}, errors.Wrap(err, "error while loading all instances")
 	}
 
 	var objects []ers.Instance
