@@ -197,11 +197,11 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		if err != nil {
 			processedOperation.LastError = kebError.ReasonForError(err)
 			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.Operation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
-			logOperation.Infof("Last error from step %s: %s", step.Name(), processedOperation.LastError.Error())
+			logOperation.Errorf("Last error from step %s: %s", step.Name(), processedOperation.LastError.Error())
 			// only save to storage, skip for alerting if error
 			_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 			if err != nil {
-				logOperation.Infof("Unable to save operation with resolved last error from step: %s", step.Name())
+				logOperation.Errorf("Unable to save operation with resolved last error from step: %s", step.Name())
 			}
 		}
 
