@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const timeoutInMilli = 400
@@ -19,11 +20,18 @@ type HTTPClient struct {
 	client *http.Client
 }
 
-func NewHTTPClient(logger logger.Logger, client *http.Client) *HTTPClient {
+func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
+
+	// create a shared ERS HTTP client which does the oauth flow
+	client, err := createConfigClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "while create http client")
+	}
+
 	return &HTTPClient{
 		logger,
 		client,
-	}
+	}, nil
 }
 
 func (c *HTTPClient) put(url string) error {
@@ -83,4 +91,23 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 	}
 
 	return nil
+}
+
+func (c *HTTPClient) Close() {
+	c.client.CloseIdleConnections()
+}
+
+func createConfigClient() (*http.Client, error) {
+	if ers.GlobalOpts.ClientID() == "" ||
+		ers.GlobalOpts.ClientSecret() == "" ||
+		ers.GlobalOpts.OauthUrl() == "" {
+		return nil, errors.New("no auth data provided")
+	}
+
+	config := clientcredentials.Config{
+		ClientID:     ers.GlobalOpts.ClientID(),
+		ClientSecret: ers.GlobalOpts.ClientSecret(),
+		TokenURL:     ers.GlobalOpts.OauthUrl(),
+	}
+	return config.Client(context.Background()), nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 )
 
@@ -17,17 +18,22 @@ type ersClient struct {
 	client *HTTPClient
 }
 
-func NewErsClient(url string, client *HTTPClient) Client {
+func NewErsClient(url string) (Client, error) {
+	client, err := NewHTTPClient(logger.New())
+	if err != nil {
+		return nil, errors.Wrap(err, "while ers client creation")
+	}
+
 	return &ersClient{
 		url,
 		client,
-	}
+	}, nil
 }
 
 func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
 	instances, err := c.client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceID))
 	if err != nil {
-		return nil, errors.Wrap(err, "Error while sending request")
+		return nil, errors.Wrap(err, "while sending request")
 	}
 
 	if len(instances) != 1 {
@@ -51,4 +57,8 @@ func (c *ersClient) Migrate(instanceID string) error {
 
 func (c *ersClient) Switch(brokerID string) error {
 	return c.client.put(fmt.Sprintf(brokersPath+"/%s", c.url, brokerID))
+}
+
+func (c *ersClient) Close() {
+	c.client.Close()
 }

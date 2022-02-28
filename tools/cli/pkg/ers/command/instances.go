@@ -1,16 +1,12 @@
 package command
 
 import (
-	"context"
-	"errors"
-
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/spf13/cobra"
 )
@@ -54,25 +50,16 @@ type InstancesCommand struct {
 }
 
 func (c *InstancesCommand) Run() error {
-	if GlobalOpts.ClientID() == "" ||
-		GlobalOpts.ClientSecret() == "" ||
-		GlobalOpts.OauthUrl() == "" {
-		return errors.New("no auth data provided")
-	}
-
-	config := clientcredentials.Config{
-		ClientID:     GlobalOpts.ClientID(),
-		ClientSecret: GlobalOpts.ClientSecret(),
-		TokenURL:     GlobalOpts.OauthUrl(),
-	}
-	configClient := config.Client(context.Background())
 
 	if c.source != "" {
 		c.instanceFetcher = fetcher.NewFileClient(c.source)
 	} else {
-		// create a shared ERS HTTP client which does the oauth flow
-		httpClient := client.NewHTTPClient(logger.New(), configClient)
-		ers := client.NewErsClient(GlobalOpts.ErsUrl(), httpClient)
+
+		ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
+		if err != nil {
+			return errors.Wrap(err, "while initializing ers client")
+		}
+		defer ers.Close()
 
 		// todo: use real client to ers
 		c.instanceFetcher = fetcher.NewInitialFetcher(ers, c.pageStart, c.pageSize, c.pageLimit)
@@ -99,8 +86,6 @@ func (c *InstancesCommand) Run() error {
 		}
 		result = append(result, item)
 	}
-
-	configClient.CloseIdleConnections()
 
 	tp.PrintObj(result)
 	return err

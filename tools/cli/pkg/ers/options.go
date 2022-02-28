@@ -1,4 +1,4 @@
-package command
+package ers
 
 import (
 	"fmt"
@@ -6,19 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-var configPath string
-
-const (
-	configEnv string = "ERSCONFIG"
-	configDir string = ".ers"
-)
-
-const (
-	tableOutput  string = "table"
-	jsonOutput   string = "json"
-	customOutput string = "custom"
 )
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
@@ -83,20 +70,4 @@ func ValidateGlobalOpts() error {
 		return nil
 	}
 	return fmt.Errorf("missing required options: %s. See kcp --help for more information", strings.Join(missingGlobalOpts, ", "))
-}
-
-// SetOutputOpt configures the optput type option on the given command
-func SetOutputOpt(cmd *cobra.Command, opt *string) {
-	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Instances(s). The possible values are: %s, %s, %s(e.g. custom=<header>:<jsonpath-field-spec>.", tableOutput, jsonOutput, customOutput))
-}
-
-// ValidateOutputOpt checks whether the given optput type is one of the valid values
-func ValidateOutputOpt(opt string) error {
-	switch {
-	case opt == tableOutput, opt == jsonOutput:
-		return nil
-	case strings.HasPrefix(opt, customOutput):
-		return nil
-	}
-	return fmt.Errorf("invalid value for output: %s", opt)
 }
