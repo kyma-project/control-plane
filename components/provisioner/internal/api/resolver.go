@@ -162,7 +162,7 @@ func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID strin
 		return nil, err
 	}
 
-	log.Infof("Getting Runtime operation status for Operation %s succeeded.", operationID)
+	log.Infof("Getting Runtime operation status for Operation %s succeeded with last error %+v.", operationID, status.LastError)
 
 	return status, nil
 }
