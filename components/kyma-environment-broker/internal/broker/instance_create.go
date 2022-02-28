@@ -218,6 +218,11 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	if err := parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
 		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
 	}
+	if parameters.OIDC.IsProvided() {
+		if err := parameters.OIDC.Validate(); err != nil {
+			return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+		}
+	}
 
 	planValidator, err := b.validator(&details, provider)
 	if err != nil {
