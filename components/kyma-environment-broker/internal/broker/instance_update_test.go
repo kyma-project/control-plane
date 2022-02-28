@@ -318,8 +318,8 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 
 	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
 		// given
-		oidcParams := `"issuerURL":"test"`
-		errMsg := errors.New("clientID must not be empty, issuerURL must be a valid URL, issuerURL must have https scheme")
+		oidcParams := `"clientID":"{clientID}","groupsClaim":"groups","issuerURL":"{issuerURL}","signingAlgs":["RS256"],"usernameClaim":"email","usernamePrefix":"-"`
+		errMsg := errors.New("issuerURL must be a valid URL, issuerURL must have https scheme")
 		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
 
 		// when
