@@ -447,8 +447,13 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
 		r.upgradeShootInput.Administrators = newAdministrators
 	} else {
-		// get default admin (user_id from provisioning operation)
-		r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+		if r.provisioningParameters.ErsContext.UserID != "" {
+			// get default admin (user_id from provisioning operation)
+			r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+		} else {
+			// some old clusters does not have an user_id
+			r.upgradeShootInput.Administrators = []string{}
+		}
 	}
 
 	// use autoscaler value in provisioningParameters if it is not nil
