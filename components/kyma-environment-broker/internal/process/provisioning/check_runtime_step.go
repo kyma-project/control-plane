@@ -66,11 +66,6 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
 
-	var msg string
-	if status.Message != nil {
-		msg = *status.Message
-	}
-
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		return operation, 0, nil
@@ -80,11 +75,9 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
 		lastErr := provisioner.OperationStatusLastError(status.LastError)
-		log.Errorf("call to provisioner returned last error: %+v", status.LastError)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), lastErr, log)
+		return s.operationManager.OperationFailed(operation, "provisioner client returns failed status", lastErr, log)
 	}
 
 	lastErr := provisioner.OperationStatusLastError(status.LastError)
-	log.Errorf("call to provisioner returned last error: %+v", status.LastError)
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), lastErr, log)
 }

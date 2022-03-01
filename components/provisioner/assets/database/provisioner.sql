@@ -77,9 +77,9 @@ CREATE TABLE operation
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     stage varchar(256) NOT NULL,
     last_transition timestamp without time zone,
-    error_msg text,
-    error_reason text,
-    error_component text
+    err_msg text,
+    reason text,
+    component text
 );
 
 -- Kyma Release
