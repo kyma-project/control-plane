@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -298,4 +299,44 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
 	assert.Len(t, response.Metadata.Labels, 1)
+}
+
+func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
+	// given
+	instance := fixture.FixInstance(instanceID)
+	st := storage.NewMemoryStorage()
+	st.Instances().Insert(instance)
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("provisioning01"))
+
+	handler := &handler{}
+	q := process.Queue{}
+	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+		return &gqlschema.ClusterConfigInput{}, nil
+	}
+
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New())
+
+	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
+		// given
+		oidcParams := `"clientID":"{clientID}","groupsClaim":"groups","issuerURL":"{issuerURL}","signingAlgs":["RS256"],"usernameClaim":"email","usernamePrefix":"-"`
+		errMsg := errors.New("issuerURL must be a valid URL, issuerURL must have https scheme")
+		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
+
+		// when
+		_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AzurePlanID,
+			RawParameters:   json.RawMessage("{\"oidc\":{" + oidcParams + "}}"),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"globalaccount_id\":\"globalaccount_id_1\", \"active\":true}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
 }

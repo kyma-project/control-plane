@@ -176,6 +176,13 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		logger.Debugf("Updating with params: %+v", params)
 	}
 
+	if params.OIDC.IsProvided() {
+		if err := params.OIDC.Validate(); err != nil {
+			logger.Errorf("invalid OIDC parameters: %s", err.Error())
+			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+		}
+	}
+
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
 
@@ -206,7 +213,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	}
 
 	var updateStorage []string
-	// update provisioning parameters in the instance
 	if params.OIDC.IsProvided() {
 		instance.Parameters.Parameters.OIDC = params.OIDC
 		updateStorage = append(updateStorage, "OIDC")
