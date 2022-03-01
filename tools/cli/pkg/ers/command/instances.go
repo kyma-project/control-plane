@@ -18,7 +18,7 @@ var tableColumns = []printer.Column{
 	},
 	{
 		Header:    "GLOBALACCOUNT ID",
-		FieldSpec: "{.GlobalAccountId}",
+		FieldSpec: "{.GlobalAccountID}",
 	},
 	{
 		Header:    "BROKER ID",
