@@ -43,10 +43,6 @@ func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
 	return &instances[0], nil
 }
 
-func (c *ersClient) GetPagedDefault() ([]ers.Instance, error) {
-	return c.GetPaged(0, 1)
-}
-
 func (c *ersClient) GetPaged(pageNo, pageSize int) ([]ers.Instance, error) {
 	return c.client.get(fmt.Sprintf(environmentsPath+"?"+pagedParams, c.url, pageNo, pageSize))
 }

@@ -114,8 +114,8 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 	corbaCmd.Flags().StringVarP(&cmd.filters.GlobalAccountID, "global-account-id", "g", "", "Filter by global account ID.")
 	corbaCmd.Flags().StringVar(&cmd.source, "source", "", "File containing instances data")
 	corbaCmd.Flags().IntVar(&cmd.pageStart, "pageNo", 0, "Specify which page to load")
-	corbaCmd.Flags().IntVar(&cmd.pageSize, "pageSize", 5, "Specify how many elements per page to load")
-	corbaCmd.Flags().IntVar(&cmd.pageLimit, "pageLimit", 2, "Specify how many pages to load, by default loads only 2 pages")
+	corbaCmd.Flags().IntVar(&cmd.pageSize, "pageSize", 0, "Specify how many elements per page to load")
+	corbaCmd.Flags().IntVar(&cmd.pageLimit, "pageLimit", 0, "Specify how many pages to load, by default loads all")
 
 	return corbaCmd
 }
