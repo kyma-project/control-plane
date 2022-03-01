@@ -224,6 +224,7 @@ oidc:
   groups:
     admin: runtimeAdmin
     operator: runtimeOperator
+    orchestrations: orchestrationsAdmin
 
 kebClient:
   scope: "broker:write cld:read"
