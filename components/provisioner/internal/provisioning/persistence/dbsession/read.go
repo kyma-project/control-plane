@@ -369,7 +369,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 
 var (
 	operationColumns = []string{
-		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition", "err_msg", "reason", "component",
+		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition", "err_message", "reason", "component",
 	}
 )
 

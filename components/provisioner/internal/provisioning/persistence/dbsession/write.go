@@ -352,7 +352,7 @@ func (ws writeSession) UpdateOperationState(operationID string, message string, 
 func (ws writeSession) UpdateOperationLastError(operationID, msg, reason, component string) dberrors.Error {
 	res, err := ws.update("operation").
 		Where(dbr.Eq("id", operationID)).
-		Set("err_msg", msg).
+		Set("err_message", msg).
 		Set("reason", reason).
 		Set("component", component).
 		Exec()
