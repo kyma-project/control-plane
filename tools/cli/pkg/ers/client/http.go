@@ -13,7 +13,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-const timeoutInMilli = 400
+const timeoutInMilli = 3000
 
 type HTTPClient struct {
 	logger logger.Logger
