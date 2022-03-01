@@ -19,7 +19,7 @@ func NewSwitchBrokerCommand() *cobra.Command {
 		Short: "Switching a broker to SM operator credentials.",
 		Long: `The command use "/provisioning/v1/kyma/brokers/{brokerId}" endpoint to switch to SM operator credentials.
 The broker is specified by an ID`,
-		Example: `ers switch-broker abcd-1234		switches broker abcd-1234 to use SM operator credentials.`,
+		Example: `ers switch abcd-1234		switches broker abcd-1234 to use SM operator credentials.`,
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			if len(args) == 0 || args[0] == "" {
 				return errors.New("Missing required param `id`")
