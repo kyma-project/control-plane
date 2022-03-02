@@ -115,7 +115,7 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 		result, err := step.Run(cluster, operation, log)
 		if err != nil {
-			if err.Error() == "cluster kubeconfig is nil" {
+			if errors.Is(err, errors.New("cluster kubeconfig is nil")) {
 				log.Warnf("Warning, the %s", err.Error())
 				break
 			}
