@@ -10,10 +10,9 @@ import (
 )
 
 /*
-
-Run:
-go run cmd/ers/main.go
-*/
+ * Run:
+ * go run cmd/ers/main.go
+ */
 func main() {
 	setupCloseHandler()
 	cmd := command.New()
