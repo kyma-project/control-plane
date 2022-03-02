@@ -117,7 +117,7 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		if err != nil {
 			if err.Error() == "cluster kubeconfig is nil" {
 				log.Warnf("Warning, the %s", err.Error())
-				return false, 0, nil
+				break
 			}
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
 			return false, 0, err
