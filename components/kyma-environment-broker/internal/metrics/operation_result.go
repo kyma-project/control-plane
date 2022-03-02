@@ -157,6 +157,20 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 	return nil
 }
 
+func (c *OperationResultCollector) OnProvisioningSucceeded(ctx context.Context, ev interface{}) error {
+	provisioningSucceeded, ok := ev.(process.ProvisioningSucceeded)
+	if !ok {
+		return fmt.Errorf("expected ProvisioningSucceeded but got %+v", ev)
+	}
+	op := provisioningSucceeded.Operation
+	pp := op.ProvisioningParameters
+	c.provisioningResultGauge.WithLabelValues(
+		op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		Set(resultSucceeded)
+
+	return nil
+}
+
 func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Context, ev interface{}) error {
 	stepProcessed, ok := ev.(process.ProvisioningStepProcessed)
 	if !ok {
