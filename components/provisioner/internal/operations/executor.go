@@ -115,6 +115,10 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 		result, err := step.Run(cluster, operation, log)
 		if err != nil {
+			if err.Error() == "cluster kubeconfig is nil" {
+				log.Warnf("Warning, the %s", err.Error())
+				return false, 0, nil
+			}
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
 			return false, 0, err
 		}
