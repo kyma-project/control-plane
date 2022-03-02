@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -89,7 +88,7 @@ func (s *InitialisationStep) Run(operation internal.DeprovisioningOperation, log
 func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.CreatedAt) > s.operationTimeout {
 		log.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.operationTimeout), nil, log)
 	}
 
 	// rewrite necessary data from ProvisioningOperation to operation internal.DeprovisioningOperation
@@ -158,7 +157,7 @@ func setAvsIds(deprovisioningOperation *internal.DeprovisioningOperation, provis
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.DeprovisioningOperation, instance *internal.Instance, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
@@ -199,10 +198,10 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStatePending:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), nil, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), errors.New(""), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
 }
 
 func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, error) {

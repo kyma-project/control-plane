@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -47,7 +46,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", nil, log)
 	}
 
 	overridesVersion := s.getOverridesVersion(operation)

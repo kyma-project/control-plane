@@ -52,7 +52,7 @@ func (s *CreateRuntimeStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 	if time.Since(operation.UpdatedAt) > CreateRuntimeTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CreateRuntimeTimeout), nil, log)
 	}
 
 	requestInput, err := s.createProvisionInput(operation)

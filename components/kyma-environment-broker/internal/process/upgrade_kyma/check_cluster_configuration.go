@@ -1,7 +1,6 @@
 package upgrade_kyma
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -78,7 +77,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		if kebError.IsTemporaryError(err) {
 			return operation, 30 * time.Second, nil
 		}
-		return s.operationManager.OperationFailed(operation, err.Error(), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, err.Error(), nil, log)
 	}
 
 	switch state.Status {
@@ -92,9 +91,9 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return s.operationManager.OperationFailed(operation, errMsg, errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, errMsg, nil, log)
 	default:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), nil, log)
 	}
 }
 

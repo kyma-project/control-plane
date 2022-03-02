@@ -52,7 +52,7 @@ func (s *UpgradeKymaStep) Run(operation internal.UpgradeKymaOperation, log logru
 	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeKymaTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeKymaTimeout), nil, log)
 	}
 
 	requestInput, err := s.createUpgradeKymaInput(operation)

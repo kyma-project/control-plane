@@ -41,7 +41,16 @@ func (om *UpgradeKymaOperationManager) OperationFailed(operation internal.Upgrad
 		return updatedOperation, repeat, nil
 	}
 
-	return updatedOperation, 0, errors.Wrap(err, description)
+	var retErr error
+	if err == nil {
+		// no exact err passed in
+		retErr = errors.New(description)
+	} else {
+		// keep the original err object for error categorizer
+		retErr = errors.Wrap(err, description)
+	}
+
+	return updatedOperation, 0, retErr
 }
 
 // OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error

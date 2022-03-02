@@ -51,7 +51,7 @@ func (s *UpgradeClusterStep) Name() string {
 func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeClusterTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), nil, log)
 	}
 
 	input, err := s.createUpgradeShootInput(operation)

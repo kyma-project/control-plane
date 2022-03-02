@@ -73,7 +73,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	// configure the Kyma version to use
 	err := s.configureKymaVersion(&operation, log)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, "while configuring kyma version", err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while configuring kyma version", err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	// create Provisioner InputCreator
@@ -87,13 +87,13 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
-			return s.operationManager.RetryOperation(operation, "while creating provisioning input creator", err, 1*time.Second, 5*time.Second, log)
+			return s.operationManager.RetryOperation(operation, "error while creating provisioning input creator", err, 1*time.Second, 5*time.Second, log)
 		}
 
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create input creator at the moment for plan %s and version %s: %s", operation.ProvisioningParameters.PlanID, operation.ProvisioningParameters.Parameters.KymaVersion, err)
-		return s.operationManager.RetryOperation(operation, "while creating provisioning input creator", err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while creating provisioning input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
 		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)

@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -40,23 +39,21 @@ func (s *CheckRuntimeStep) Name() string {
 func (s *CheckRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeID))
 }
 
 func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	emptyErr := errors.New("")
-
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), emptyErr, log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), nil, log)
 	}
 
 	if operation.ProvisionerOperationID == "" {
 		msg := "Operation dos not contain Provisioner Operation ID"
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, emptyErr, log)
+		return s.operationManager.OperationFailed(operation, msg, nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)

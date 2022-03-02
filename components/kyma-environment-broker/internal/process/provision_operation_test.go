@@ -2,7 +2,6 @@ package process
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -53,7 +52,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
-	errorMessage := fmt.Sprintf("ups ... ")
+	errorMessage := "ups ... "
 	errOut := errors.New("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 

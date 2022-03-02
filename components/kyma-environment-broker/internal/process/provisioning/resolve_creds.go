@@ -38,8 +38,9 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 
 	hypType, err := hyperscaler.FromCloudProvider(operation.InputCreator.Provider())
 	if err != nil {
-		log.Errorf("Aborting after failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
-		return s.operationManager.OperationFailed(operation, "failed to determine the type of Hyperscaler", err, log)
+		msg := fmt.Sprintf("failing to determine the type of Hyperscaler to use for planID: %s", operation.ProvisioningParameters.PlanID)
+		log.Errorf("Aborting after %s", msg)
+		return s.operationManager.OperationFailed(operation, msg, err, log)
 	}
 
 	log.Infof("HAP lookup for credentials secret binding to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)

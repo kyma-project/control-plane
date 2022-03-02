@@ -50,9 +50,16 @@ func TestUpgradeClusterOperationManager_OperationFailed(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.EqualError(t, err, errors.Wrap(errOut, errMsg).Error())
+	assert.EqualError(t, err, "task failed miserably: error occurred")
 	assert.Equal(t, domain.Failed, op.State)
 	assert.Equal(t, time.Duration(0), when)
+
+	// when
+	_, _, err = opManager.OperationFailed(op, errMsg, nil, logrus.New())
+
+	// then
+	assert.Error(t, err)
+	assert.EqualError(t, err, "task failed miserably")
 }
 
 func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {

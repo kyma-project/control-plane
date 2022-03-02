@@ -1,7 +1,6 @@
 package upgrade_kyma
 
 import (
-	"errors"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -39,7 +38,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 	}
 	if operation.Runtime.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.Runtime.RuntimeID)

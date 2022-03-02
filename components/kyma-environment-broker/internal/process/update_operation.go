@@ -39,7 +39,16 @@ func (om *UpdateOperationManager) OperationFailed(operation internal.UpdatingOpe
 		return updatedOperation, repeat, nil
 	}
 
-	return updatedOperation, 0, errors.Wrap(err, description)
+	var retErr error
+	if err == nil {
+		// no exact err passed in
+		retErr = errors.New(description)
+	} else {
+		// keep the original err object for error categorizer
+		retErr = errors.Wrap(err, description)
+	}
+
+	return updatedOperation, 0, retErr
 }
 
 // RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed

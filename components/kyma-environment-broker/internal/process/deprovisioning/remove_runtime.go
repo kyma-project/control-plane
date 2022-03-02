@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -37,7 +36,7 @@ func (s *RemoveRuntimeStep) Name() string {
 func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisionerTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), errors.New(""), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), nil, log)
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
