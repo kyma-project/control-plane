@@ -117,7 +117,6 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
-			//store the last error from operation
 			return false, 0, err
 		}
 
