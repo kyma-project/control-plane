@@ -14,9 +14,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
+	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,8 +62,26 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: mock.Anything,
+				StartDate:  mock.Anything,
+				EndDate:    mock.Anything,
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       mock.Anything,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", mock.Anything, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
+
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -82,6 +103,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
 					Type:     orchestration.ParallelStrategy,
@@ -91,8 +113,20 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KymaMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
+
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -124,8 +158,11 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			}})
 		require.NoError(t, err)
 
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -175,6 +212,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		givenO := internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
 					Type:     orchestration.ParallelStrategy,
@@ -184,8 +222,20 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err = store.Orchestrations().Insert(givenO)
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KymaMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
+
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -223,8 +273,17 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			},
 		})
 
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false)
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CancelNotificationEvent").Return(nil).Once()
+
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -253,6 +312,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Retrying,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
 				Schedule: orchestration.Immediate,
@@ -276,12 +336,28 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{
+			{
+				StartDate: time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KymaMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
+
 		executor := retryTestExecutor{
 			store:       store,
 			upgradeType: orchestration.UpgradeKymaOrchestration,
 		}
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)
@@ -310,6 +386,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.InProgress,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
 				Schedule: orchestration.Immediate,
@@ -333,12 +410,28 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{
+			{
+				StartDate: time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KymaMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
+
 		executor := retryTestExecutor{
 			store:       store,
 			upgradeType: orchestration.UpgradeKymaOrchestration,
 		}
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig)
+			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder)
 
 		// when
 		_, err = svc.Execute(id)

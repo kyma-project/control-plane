@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -24,7 +25,7 @@ type upgradeClusterFactory struct {
 
 func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaClusterExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	log logrus.FieldLogger, cli client.Client, cfg internalOrchestration.Config) process.Executor {
+	log logrus.FieldLogger, cli client.Client, cfg internalOrchestration.Config, bundleBuilder notification.BundleBuilder) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -41,6 +42,7 @@ func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, opera
 		configName:        cfg.Name,
 		kymaVersion:       cfg.KymaVersion,
 		kubernetesVersion: cfg.KubernetesVersion,
+		bundleBuilder:     bundleBuilder,
 	}
 }
 

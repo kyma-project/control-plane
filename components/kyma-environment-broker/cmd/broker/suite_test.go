@@ -29,6 +29,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -159,18 +160,21 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
 	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
 
+	notificationFakeClient := notification.NewFakeClient()
+	notificationBundleBuilder := notification.NewBundleBuilder(notificationFakeClient, cfg.Notification)
+
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 		Retry:              10 * time.Millisecond,
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), inMemoryFs, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -940,6 +944,10 @@ func fixConfig() *Config {
 		Avs: avs.Config{},
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
+		},
+		Notification: notification.Config{
+			Url:      "http://host:8080/",
+			Disabled: false,
 		},
 		AuditLog: auditlog.Config{
 			URL:           "https://host1:8080/aaa/v2/",
