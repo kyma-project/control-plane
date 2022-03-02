@@ -538,6 +538,7 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
+		LastError: &gqlschema.LastError{},
 	}
 }
 

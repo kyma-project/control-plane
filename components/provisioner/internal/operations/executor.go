@@ -114,8 +114,10 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		}
 
 		result, err := step.Run(cluster, operation, log)
+		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
+			//store the last error from operation
 			return false, 0, err
 		}
 
@@ -172,6 +174,27 @@ func (e *Executor) updateOperationStatus(log logrus.FieldLogger, id, message str
 	}, retry.Attempts(5))
 	if err != nil {
 		log.Infof("Cannot set operation status to %s: %s", state, err.Error())
+	}
+}
+
+func (e *Executor) updateOperationLastError(log logrus.FieldLogger, id string, runErr error) {
+	var lastErr model.LastError
+
+	if runErr != nil {
+		appErr := ConvertToAppError(runErr)
+		lastErr = model.LastError{
+			ErrMessage: runErr.Error(),
+			Reason:     string(appErr.Reason()),
+			Component:  string(appErr.Component()),
+		}
+	}
+
+	err := retry.Do(func() error {
+		return e.dbSession.UpdateOperationLastError(id, lastErr.ErrMessage, lastErr.Reason, lastErr.Component)
+	}, retry.Attempts(5))
+
+	if err != nil {
+		log.Infof("Cannot set operation last error to %v: %s", lastErr, err.Error())
 	}
 }
 

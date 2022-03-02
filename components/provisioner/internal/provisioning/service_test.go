@@ -204,13 +204,14 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		directorServiceMock := &directormock.DirectorClient{}
 		provisioner := &mocks2.Provisioner{}
 
+		expectErr := dberrors.Internal("Failed to commit transaction: error")
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return(runtimeID, nil)
 		sessionFactoryMock.On("NewSessionWithinTransaction").Return(writeSessionWithinTransactionMock, nil)
 		writeSessionWithinTransactionMock.On("InsertCluster", mock.MatchedBy(clusterMatcher)).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertGardenerConfig", mock.AnythingOfType("model.GardenerConfig")).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(nil)
 		writeSessionWithinTransactionMock.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
-		writeSessionWithinTransactionMock.On("Commit").Return(dberrors.Internal("error"))
+		writeSessionWithinTransactionMock.On("Commit").Return(expectErr)
 		writeSessionWithinTransactionMock.On("RollbackUnlessCommitted").Return()
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
@@ -221,7 +222,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
 		require.Error(t, err)
 
-		// then
+		//then
+		assert.Equal(t, expectErr, err)
 		assert.Contains(t, err.Error(), "Failed to commit transaction")
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)
@@ -276,7 +278,8 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		require.Error(t, err)
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
-		// then
+		//then
+		assert.Equal(t, err, apperrors.Internal("Failed to register Runtime, registering error"))
 		assert.Contains(t, err.Error(), "Failed to register Runtime")
 		directorServiceMock.AssertExpectations(t)
 	})
