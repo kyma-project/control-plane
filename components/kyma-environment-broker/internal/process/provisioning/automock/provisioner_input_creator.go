@@ -329,6 +329,22 @@ func (_m *ProvisionerInputCreator) SetShootDomain(shootDomain string) internal.P
 	return r0
 }
 
+// SetClusterName provides a mock function with given fields: shootDomain
+func (_m *ProvisionerInputCreator) SetClusterName(clusterName string) internal.ProvisionerInputCreator {
+	ret := _m.Called(clusterName)
+
+	var r0 internal.ProvisionerInputCreator
+	if rf, ok := ret.Get(0).(func(string) internal.ProvisionerInputCreator); ok {
+		r0 = rf(clusterName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(internal.ProvisionerInputCreator)
+		}
+	}
+
+	return r0
+}
+
 // SetShootName provides a mock function with given fields: _a0
 func (_m *ProvisionerInputCreator) SetShootName(_a0 string) internal.ProvisionerInputCreator {
 	ret := _m.Called(_a0)

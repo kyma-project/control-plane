@@ -121,6 +121,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
 		operation.ClusterConfigurationApplied = true
+		operation.ClusterName = clusterConfiguration.RuntimeInput.Name
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")

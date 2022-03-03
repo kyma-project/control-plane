@@ -61,7 +61,6 @@ type RuntimeInput struct {
 	kubeconfig        string
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
-	runtimeName       string
 	clusterName       string
 }
 
