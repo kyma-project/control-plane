@@ -227,6 +227,9 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 }
 
 func (m *StagedManager) callPubSubOutsideSteps(operation *internal.ProvisioningOperation, err error) {
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operation.Operation.ID, "error_component": operation.LastError.Component(), "error_reason": operation.LastError.Reason()})
+	logOperation.Errorf("Last error: %s", operation.LastError.Error())
+
 	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
 		Operation: *operation,
 		StepProcessed: process.StepProcessed{
