@@ -397,7 +397,11 @@ func (c *SimpleInputCreator) SetLabel(key, val string) internal.ProvisionerInput
 	return c
 }
 
-func (c *SimpleInputCreator) SetKubeconfig(kcfg string) internal.ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetKubeconfig(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetClusterName(_ string) internal.ProvisionerInputCreator {
 	return c
 }
 
