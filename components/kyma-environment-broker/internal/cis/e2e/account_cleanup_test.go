@@ -1,3 +1,4 @@
+//go:build cis
 // +build cis
 
 package e2e
