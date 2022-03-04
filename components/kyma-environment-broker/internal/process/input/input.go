@@ -61,6 +61,7 @@ type RuntimeInput struct {
 	kubeconfig        string
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
+	clusterName       string
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -111,6 +112,13 @@ func (r *RuntimeInput) SetRuntimeID(runtimeID string) internal.ProvisionerInputC
 
 func (r *RuntimeInput) SetKubeconfig(kubeconfig string) internal.ProvisionerInputCreator {
 	r.kubeconfig = kubeconfig
+	return r
+}
+
+func (r *RuntimeInput) SetClusterName(name string) internal.ProvisionerInputCreator {
+	if name != "" {
+		r.clusterName = name
+	}
 	return r
 }
 
@@ -574,6 +582,11 @@ func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
 }
 
 func (r *RuntimeInput) adjustRuntimeName() error {
+	// if the cluster name was created before, it must be used instead of generating one
+	if r.clusterName != "" {
+		r.provisionRuntimeInput.RuntimeInput.Name = r.clusterName
+		return nil
+	}
 
 	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
 	if err != nil {
