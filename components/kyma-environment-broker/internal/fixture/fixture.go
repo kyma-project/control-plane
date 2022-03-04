@@ -207,7 +207,7 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	return &SimpleInputCreator{
 		Overrides:         make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		Labels:            make(map[string]string),
-		EnabledComponents: []string{"istio-configuration"},
+		EnabledComponents: []string{"istio"},
 		ShootName:         ptr.String("ShootName"),
 		CloudProvider:     provider,
 	}
