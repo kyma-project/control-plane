@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+type Printer interface {
+	PrintObj(o interface{}) error
+}
 
 var tableColumns = []printer.Column{
 	{
@@ -47,6 +52,7 @@ type InstancesCommand struct {
 	pageStart       int
 	pageSize        int
 	pageLimit       int
+	output          string
 }
 
 func (c *InstancesCommand) Run() error {
@@ -65,11 +71,17 @@ func (c *InstancesCommand) Run() error {
 		c.instanceFetcher = fetcher.NewInitialFetcher(ers, c.pageStart, c.pageSize, c.pageLimit)
 	}
 
-	tp, _ := printer.NewTablePrinter(tableColumns, false)
+	var pr Printer
+	switch c.output {
+	case jsonOutput:
+		pr = printer.NewJSONPrinter("  ")
+	case tableOutput:
+		pr, _ = printer.NewTablePrinter(tableColumns, false)
+	}
 
 	if c.filters.InstanceID != "" {
 		instance, err := c.instanceFetcher.GetInstanceById(c.filters.InstanceID)
-		tp.PrintObj(instance)
+		pr.PrintObj(instance)
 		return err
 	}
 	var result []ers.Instance
@@ -87,7 +99,7 @@ func (c *InstancesCommand) Run() error {
 		result = append(result, item)
 	}
 
-	tp.PrintObj(result)
+	pr.PrintObj(result)
 	return err
 }
 
@@ -116,6 +128,7 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 	corbaCmd.Flags().IntVar(&cmd.pageStart, "pageNo", 0, "Specify which page to load")
 	corbaCmd.Flags().IntVar(&cmd.pageSize, "pageSize", 0, "Specify how many elements per page to load")
 	corbaCmd.Flags().IntVar(&cmd.pageLimit, "pageLimit", 0, "Specify how many pages to load, by default loads all")
+	corbaCmd.Flags().StringVarP(&cmd.output, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Instances. The possible values are: %s, %s.", tableOutput, jsonOutput))
 
 	return corbaCmd
 }
