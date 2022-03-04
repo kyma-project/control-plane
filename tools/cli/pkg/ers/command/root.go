@@ -1,18 +1,52 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
+var configPath string
+
+const (
+	configEnv string = "ERSCONFIG"
+	configDir string = ".ers"
+)
+
+const (
+	tableOutput  string = "table"
+	jsonOutput   string = "json"
+	customOutput string = "custom"
+)
+
+// SetOutputOpt configures the optput type option on the given command
+func SetOutputOpt(cmd *cobra.Command, opt *string) {
+	cmd.Flags().StringVarP(opt, "output", "o", tableOutput, fmt.Sprintf("Output type of displayed Instances(s). The possible values are: %s, %s, %s(e.g. custom=<header>:<jsonpath-field-spec>.", tableOutput, jsonOutput, customOutput))
+}
+
+// ValidateOutputOpt checks whether the given optput type is one of the valid values
+func ValidateOutputOpt(opt string) error {
+	switch {
+	case opt == tableOutput, opt == jsonOutput:
+		return nil
+	case strings.HasPrefix(opt, customOutput):
+		return nil
+	}
+	return fmt.Errorf("invalid value for output: %s", opt)
+}
+
+var log = logrus.New()
+
 func New() *cobra.Command {
+	log.SetLevel(logrus.DebugLevel)
+	log.Out = os.Stdout
+
 	cobra.OnInitialize(initConfig)
 	cmd := &cobra.Command{
 		Use:              "ers",
@@ -23,12 +57,13 @@ func New() *cobra.Command {
 		TraverseChildren: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv), "Path to the ERS CLI config file. Can also be set using the ERSCONFIG environment variable.")
-	SetGlobalOpts(cmd)
+	cmd.PersistentFlags().StringVar(&configPath, "config", os.Getenv(configEnv),
+		"Path to the ERS CLI config file. Can also be set using the ERSCONFIG environment variable.")
+	ers.SetGlobalOpts(cmd)
 	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
-	cmd.AddCommand(NewInstancesCommand(), NewMigrationCommand(), NewSwitchBrokerCommand())
+	cmd.AddCommand(NewInstancesCommand(log), NewSwitchBrokerCommand(), NewMigrationCommand())
 
 	return cmd
 }
@@ -48,6 +83,7 @@ func initConfig() {
 		viper.AddConfigPath(configPath)
 		viper.SetConfigName("config")
 	}
+
 	viper.SetConfigType("yaml")
 	replacer := strings.NewReplacer("-", "_")
 	viper.SetEnvKeyReplacer(replacer)
@@ -61,13 +97,4 @@ func initConfig() {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-
-	config := clientcredentials.Config{
-		ClientID:     GlobalOpts.ClientID(),
-		ClientSecret: GlobalOpts.ClientSecret(),
-		TokenURL:     GlobalOpts.OauthUrl(),
-	}
-
-	// create a shared ERS HTTP client which does the oauth flow
-	ErsHttpClient = config.Client(context.Background())
 }

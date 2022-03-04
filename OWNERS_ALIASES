@@ -11,3 +11,25 @@ aliases:
     - mmitoraj
     - majakurcius
     - alexandra-simeonova
+  kmc-reviewers:
+    - k15r
+    - nachtmaar
+    - marcobebway
+    - radufa
+    - pxsalehi
+    - mfaizanse
+    - friedrichwilken
+    - vladislavpaskar
+    - raypinto
+    - lilitgh
+  kmc-approvers:
+    - k15r
+    - nachtmaar
+    - marcobebway
+    - radufa
+    - pxsalehi
+    - mfaizanse
+    - friedrichwilken
+    - vladislavpaskar
+    - raypinto
+    - lilitgh

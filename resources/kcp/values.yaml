@@ -1,7 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.28.1-alpine-b582f7ea
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.29.0-alpine-5854b8b6
     mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:e5396c4a"
     component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:e5396c4a"
     containerRegistry:
@@ -14,7 +14,7 @@ global:
       version: "PR-1306"
     kyma_environment_broker:
       dir:
-      version: "PR-1401"
+      version: "PR-1406"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1380"
@@ -26,7 +26,7 @@ global:
       version: "PR-1346"
     kyma_metrics_collector:
       dir:
-      version: "PR-1386"
+      version: "PR-1397"
     tests:
       provisioner:
         dir:
