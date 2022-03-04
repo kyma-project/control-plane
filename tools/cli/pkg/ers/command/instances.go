@@ -103,6 +103,13 @@ func (c *InstancesCommand) Run() error {
 	return err
 }
 
+func (c *InstancesCommand) Validate() error {
+	if c.output != tableOutput && c.output != jsonOutput {
+		return fmt.Errorf("invalid value for output: %s", c.output)
+	}
+	return nil
+}
+
 func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 	cmd := &InstancesCommand{}
 	corbaCmd := &cobra.Command{
@@ -116,6 +123,7 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return cmd.Run()
 		},
+		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 	}
 
 	cmd.corbaCmd = corbaCmd
