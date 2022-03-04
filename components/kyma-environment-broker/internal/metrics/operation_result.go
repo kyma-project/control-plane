@@ -165,7 +165,7 @@ func (c *OperationResultCollector) OnProvisioningSucceeded(ctx context.Context, 
 	op := provisioningSucceeded.Operation
 	pp := op.ProvisioningParameters
 	c.provisioningResultGauge.WithLabelValues(
-		op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
+		op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID, "", "").
 		Set(resultSucceeded)
 
 	return nil
