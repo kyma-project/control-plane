@@ -3,9 +3,9 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
-	github.com/gardener/gardener v1.40.1
+	github.com/gardener/gardener v1.40.2
 	github.com/gardener/gardener-extension-provider-aws v1.33.1
-	github.com/gardener/gardener-extension-provider-azure v1.25.1
+	github.com/gardener/gardener-extension-provider-azure v1.26.0
 	github.com/gardener/gardener-extension-provider-gcp v1.20.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
