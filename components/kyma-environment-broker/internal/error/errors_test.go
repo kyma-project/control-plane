@@ -95,7 +95,6 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 
 	t.Run("new temporary error", func(t *testing.T) {
 		// given
-
 		tempErr := errors.Wrap(kebError.NewTemporaryError("temporary error..."), "something")
 		expectMsg := "something: temporary error..."
 
@@ -108,4 +107,18 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 		assert.Equal(t, expectMsg, lastErr.Error())
 		assert.True(t, kebError.IsTemporaryError(tempErr))
 	})
+}
+
+func TestNotFoundError(t *testing.T) {
+	// given
+	err := errors.Wrap(kebError.NotFoundError{}, "something")
+
+	// when
+	lastErr := kebError.ReasonForError(err)
+
+	// then
+	assert.EqualError(t, err, "something: not found")
+	assert.Equal(t, kebError.ErrClusterNotFound, lastErr.Reason())
+	assert.Equal(t, kebError.ErrReconciler, lastErr.Component())
+	assert.True(t, kebError.IsNotFoundError(err))
 }

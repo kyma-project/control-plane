@@ -22,14 +22,12 @@ type ErrorReporter interface {
 type ErrReason string
 
 const (
-	ErrKEBInternal ErrReason = "err_keb_internal"
-	ErrKEBTimeOut  ErrReason = "err_keb_timeout"
-
+	ErrKEBInternal             ErrReason = "err_keb_internal"
+	ErrKEBTimeOut              ErrReason = "err_keb_timeout"
 	ErrProvisionerNilLastError ErrReason = "err_provisioner_nil_last_error"
-
-	ErrHttpStatusCode ErrReason = "err_http_status_code"
-
-	ErrReconcilerNilFailures ErrReason = "err_reconciler_nil_failures"
+	ErrHttpStatusCode          ErrReason = "err_http_status_code"
+	ErrReconcilerNilFailures   ErrReason = "err_reconciler_nil_failures"
+	ErrClusterNotFound         ErrReason = "err_cluster_not_found"
 )
 
 type ErrComponent string
