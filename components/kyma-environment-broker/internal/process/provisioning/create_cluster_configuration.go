@@ -61,11 +61,12 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
+	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s], name=%s",
 		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
-		s.componentList(clusterConfiguration))
+		s.componentList(clusterConfiguration),
+		clusterConfiguration.RuntimeInput.Name)
 	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
@@ -81,6 +82,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 
 	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
+		operation.ClusterName = clusterConfiguration.RuntimeInput.Name
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")

@@ -45,6 +45,7 @@ type ProvisionerInputCreator interface {
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
 	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
+	SetClusterName(name string) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -268,6 +269,7 @@ type InstanceDetails struct {
 	RuntimeID         string                    `json:"runtime_id"`
 	ShootName         string                    `json:"shoot_name"`
 	ShootDomain       string                    `json:"shoot_domain"`
+	ClusterName       string                    `json:"clusterName"`
 	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
 	XSUAA             XSUAAData                 `json:"xsuaa"`
 	Ems               EmsData                   `json:"ems"`
