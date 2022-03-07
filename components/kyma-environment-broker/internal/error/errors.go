@@ -1,10 +1,14 @@
 package error
 
 import (
+	"strings"
+
 	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	"github.com/pkg/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 )
+
+const OperationTimeOutMsg string = "operation has reached the time limit"
 
 // error reporter
 type LastError struct {
@@ -123,6 +127,10 @@ func ReasonForError(err error) LastError {
 			reason:    errReason,
 			component: errComponent,
 		}
+	}
+
+	if strings.Contains(err.Error(), OperationTimeOutMsg) {
+		return TimeoutError(err.Error())
 	}
 
 	return LastError{

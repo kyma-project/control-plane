@@ -32,12 +32,16 @@ func TestLastError(t *testing.T) {
 		dbErr := errors.Wrap(dberr.NotFound("Some NotFound apperror, %s", "Some pkg err"), "something")
 		expectDbErr := fmt.Sprintf("something: Some NotFound apperror, Some pkg err")
 
+		timeoutErr := errors.Wrap(errors.New("operation has reached the time limit: 2h"), "something")
+		expectTimeoutMsg := "something: operation has reached the time limit: 2h"
+
 		// when
 		edpLastErr := kebError.ReasonForError(edpErr)
 		edpConfLastErr := kebError.ReasonForError(edpConfErr)
 		avsLastErr := kebError.ReasonForError(avsErr)
 		reccLastErr := kebError.ReasonForError(reccErr)
 		dbLastErr := kebError.ReasonForError(dbErr)
+		timeoutLastErr := kebError.ReasonForError(timeoutErr)
 
 		// then
 		assert.Equal(t, edp.ErrEDPBadRequest, edpLastErr.Reason())
@@ -61,6 +65,10 @@ func TestLastError(t *testing.T) {
 		assert.Equal(t, dberr.ErrDBNotFound, dbLastErr.Reason())
 		assert.Equal(t, kebError.ErrDB, dbLastErr.Component())
 		assert.Equal(t, expectDbErr, dbLastErr.Error())
+
+		assert.Equal(t, kebError.ErrKEBTimeOut, timeoutLastErr.Reason())
+		assert.Equal(t, kebError.ErrKEB, timeoutLastErr.Component())
+		assert.Equal(t, expectTimeoutMsg, timeoutLastErr.Error())
 	})
 }
 
