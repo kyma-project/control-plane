@@ -19,3 +19,8 @@ service:
   type: ClusterIP
   port: 8080
   istioPort: 15020
+
+serviceMonitor:
+  enabled: true
+  scrapeTimeout: 30s
+  interval: 60s

@@ -121,6 +121,6 @@ service:
   istioPort: 15020
 
 serviceMonitor:
-  enabled: false
+  enabled: true
   scrapeTimeout: 30s
   interval: 60s
