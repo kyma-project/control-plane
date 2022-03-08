@@ -3,10 +3,10 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
-	github.com/gardener/gardener v1.40.2
-	github.com/gardener/gardener-extension-provider-aws v1.33.1
+	github.com/gardener/gardener v1.41.2
+	github.com/gardener/gardener-extension-provider-aws v1.34.0
 	github.com/gardener/gardener-extension-provider-azure v1.26.0
-	github.com/gardener/gardener-extension-provider-gcp v1.20.0
+	github.com/gardener/gardener-extension-provider-gcp v1.21.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -60,7 +60,7 @@ require (
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
-	sigs.k8s.io/yaml v1.2.0 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.22.7
