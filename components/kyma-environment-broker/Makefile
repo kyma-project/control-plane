@@ -3,7 +3,7 @@ APP_PATH = components/kyma-environment-broker
 APP_CLEANUP_NAME = kyma-environments-cleanup-job
 APP_SUBACCOUNT_CLEANUP_NAME = kyma-environment-subaccount-cleanup-job
 ENTRYPOINT = cmd/broker/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20210601-19326f24
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220217-8d32835a
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
@@ -73,7 +73,7 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
-		$(DOCKER_CREATE_OPTS) go test  -tags=database_integration ./...
+		$(DOCKER_CREATE_OPTS) go test -tags=database_integration ./...
 	@docker network rm $(TESTING_DB_NETWORK) || true
 
 clean-up:
