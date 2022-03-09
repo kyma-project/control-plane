@@ -44,7 +44,9 @@ func (cmd *UpgradeClusterCommand) Validate() error {
 	if err != nil {
 		return err
 	}
-
+	if GlobalOpts.SlackAPIURL() == "" {
+		return fmt.Errorf("missing required %s option", GlobalOpts.SlackAPIURL())
+	}
 	return nil
 }
 
@@ -57,5 +59,13 @@ func (cmd *UpgradeClusterCommand) Run() error {
 		return errors.Wrap(err, "while triggering kyma upgrade")
 	}
 	fmt.Println("OrchestrationID:", ur.OrchestrationID)
+
+	if !cmd.orchestrationParams.DryRun {
+		slack_title := `upgrade cluster`
+		slack_err := SendSlackNotification(slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID)
+		if slack_err != nil {
+			return errors.Wrap(slack_err, "while sending notification to slack")
+		}
+	}
 	return nil
 }

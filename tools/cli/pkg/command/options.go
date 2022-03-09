@@ -53,6 +53,7 @@ type GlobalOptionsKey struct {
 	kebAPIURL          string
 	mothershipAPIURL   string
 	kubeconfigAPIURL   string
+	slackAPIURL        string
 	gardenerKubeconfig string
 	gardenerNamespace  string
 	username           string
@@ -66,6 +67,7 @@ var GlobalOpts = GlobalOptionsKey{
 	kebAPIURL:          "keb-api-url",
 	mothershipAPIURL:   "mothership-api-url",
 	kubeconfigAPIURL:   "kubeconfig-api-url",
+	slackAPIURL:        "slack-api-url",
 	gardenerKubeconfig: "gardener-kubeconfig",
 	gardenerNamespace:  "gardener-namespace",
 	username:           "username",
@@ -84,6 +86,9 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(GlobalOpts.kebAPIURL, "", "Kyma Environment Broker API URL to use for all commands. Can also be set using the KCP_KEB_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.kebAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.kebAPIURL))
+
+	cmd.PersistentFlags().String(GlobalOpts.slackAPIURL, "", "Slack API URL to use for all commands. Can also be set using the SLACK_API_URL environment variable.")
+	viper.BindPFlag(GlobalOpts.slackAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.slackAPIURL))
 
 	cmd.PersistentFlags().String(GlobalOpts.mothershipAPIURL, "", "Mothership API URL to use for all commands. Can also be set using the KCP_MOTHERSHIP_API_URL environment variable.")
 	viper.BindPFlag(GlobalOpts.mothershipAPIURL, cmd.PersistentFlags().Lookup(GlobalOpts.mothershipAPIURL))
@@ -142,6 +147,11 @@ func (keys *GlobalOptionsKey) MothershipAPIURL() string {
 // KubeconfigAPIURL gets the kubeconfig-api-url global parameter
 func (keys *GlobalOptionsKey) KubeconfigAPIURL() string {
 	return viper.GetString(keys.kubeconfigAPIURL)
+}
+
+// SlackAPIURL gets the slack-api-url global parameter
+func (keys *GlobalOptionsKey) SlackAPIURL() string {
+	return viper.GetString(keys.slackAPIURL)
 }
 
 // GardenerKubeconfig gets the gardener-kubeconfig global parameter
