@@ -274,8 +274,8 @@ github.com/gardener/gardener v1.17.1/go.mod h1:uucRHq0xV46xd9MpJJjRswx/Slq3+ipbb
 github.com/gardener/gardener v1.23.0/go.mod h1:xS/sYyzYsq2W0C79mT98G/qoOTvy/hHTfApHIVF3v2o=
 github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G278DY720FI=
 github.com/gardener/gardener v1.40.2/go.mod h1:lIao8ImIqVztkLy7soQRZ/73+mvndN0XGhSfhaIU+Y8=
-github.com/gardener/gardener v1.41.2 h1:IhrM2uE09r/ZSdKkDhLQ2dnLnicb+U5FGPajAhs7+us=
-github.com/gardener/gardener v1.41.2/go.mod h1:fWqscJsj4Yccr/b45GzBKhdDyL3lm5EA0o+LxickiJE=
+github.com/gardener/gardener v1.41.3 h1:1eNZ63C1RWTJ7IhWtUJmL9bvXGFYJTBOgQf2ZV5Z0Gg=
+github.com/gardener/gardener v1.41.3/go.mod h1:fWqscJsj4Yccr/b45GzBKhdDyL3lm5EA0o+LxickiJE=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.34.0 h1:CN20BwC7imBdkk/U8K7say15tyqIPHLJgCIwRCYlyrI=
 github.com/gardener/gardener-extension-provider-aws v1.34.0/go.mod h1:0YDtrNCSRBDqJLMuzE3DqD2JGgDpiD3p/t8U/b3rttk=
