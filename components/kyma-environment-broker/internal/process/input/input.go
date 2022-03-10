@@ -628,7 +628,7 @@ func (r *RuntimeInput) configureDNS() error {
 }
 
 func (r *RuntimeInput) configureOIDC() error {
-	// set default or provided params to provisioning/update inpuit (if exists)
+	// set default or provided params to provisioning/update input (if exists)
 	// This method could be used for:
 	// provisioning (upgradeShootInput.GardenerConfig is nil)
 	// or upgrade (provisionRuntimeInput.ClusterConfig is nil)
