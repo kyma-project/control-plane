@@ -8,6 +8,8 @@ metadata:
 spec:
   endpoints:
    - port: http
+    interval: 20
+    scrapeTimeout: 20
   namespaceSelector:
     matchNames:
     - kcp-system
