@@ -59,6 +59,7 @@ global:
     - serverless
     - cluster-essentials
     - rma
+    - sc-migration
 
   auditlog:
     configMapName: "kcp-auditlog-config"
