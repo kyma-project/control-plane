@@ -1,6 +1,10 @@
 package client
 
-import "github.com/kyma-project/control-plane/tools/cli/pkg/ers"
+import (
+	"net/http"
+
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
+)
 
 type Client interface {
 	GetOne(id string) (*ers.Instance, error)
@@ -11,4 +15,5 @@ type Client interface {
 	// Handle status codes and how we should react to them - 4xx, 5xx errors
 
 	Close()
+	GetClient() *http.Client
 }

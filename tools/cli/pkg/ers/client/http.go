@@ -17,7 +17,7 @@ const timeoutInMilli = 3000
 
 type HTTPClient struct {
 	logger logger.Logger
-	client *http.Client
+	Client *http.Client
 }
 
 func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
@@ -41,7 +41,7 @@ func (c *HTTPClient) put(url string) error {
 		if err != nil {
 			return nil, errors.Wrap(err, "Error while sending a PUT request")
 		}
-		return c.client.Do(req)
+		return c.Client.Do(req)
 	})
 }
 
@@ -54,7 +54,7 @@ func (c *HTTPClient) get(url string) ([]ers.Instance, error) {
 		if err != nil {
 			return nil, err
 		}
-		return c.client.Do(req)
+		return c.Client.Do(req)
 	})
 
 	return kymaEnv, err
@@ -94,7 +94,7 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 }
 
 func (c *HTTPClient) Close() {
-	c.client.CloseIdleConnections()
+	c.Client.CloseIdleConnections()
 }
 
 func createConfigClient() (*http.Client, error) {

@@ -10,18 +10,24 @@ import (
 
 // GlobalOptionsKey is the type for holding the configuration key for each global parameter
 type GlobalOptionsKey struct {
-	clientId     string
-	clientSecret string
-	oauthUrl     string
-	ersUrl       string
+	clientId         string
+	clientSecret     string
+	oauthUrl         string
+	ersUrl           string
+	kebAPIURL        string
+	mothershipAPIURL string
+	kubeconfigAPIURL string
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys
 var GlobalOpts = GlobalOptionsKey{
-	clientId:     "client-id",
-	clientSecret: "client-secret",
-	oauthUrl:     "oauth-url",
-	ersUrl:       "ers-url",
+	clientId:         "client-id",
+	clientSecret:     "client-secret",
+	oauthUrl:         "oauth-url",
+	ersUrl:           "ers-url",
+	kebAPIURL:        "keb-api-url",
+	mothershipAPIURL: "mothership-api-url",
+	kubeconfigAPIURL: "kubeconfig-api-url",
 }
 
 func (key *GlobalOptionsKey) ClientID() string {
@@ -38,6 +44,14 @@ func (key *GlobalOptionsKey) ErsUrl() string {
 
 func (key *GlobalOptionsKey) OauthUrl() string {
 	return viper.GetString(key.oauthUrl)
+}
+
+func (key *GlobalOptionsKey) KebApiUrl() string {
+	return viper.GetString(key.kebAPIURL)
+}
+
+func (key *GlobalOptionsKey) MothershipApiUrl() string {
+	return viper.GetString(key.mothershipAPIURL)
 }
 
 // SetGlobalOpts configures the global parameters on the given root command

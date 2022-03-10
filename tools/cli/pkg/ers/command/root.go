@@ -63,7 +63,13 @@ func New() *cobra.Command {
 	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
-	cmd.AddCommand(NewInstancesCommand(log), NewSwitchBrokerCommand(), NewMigrationCommand())
+	cmd.AddCommand(NewInstancesCommand(log),
+		NewSwitchBrokerCommand(),
+		NewMigrationCommand(),
+		NewMigrationAllCommand(),
+		NewStatusCommand(),
+		NewLogsCommand(),
+	)
 
 	return cmd
 }

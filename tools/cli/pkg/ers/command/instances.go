@@ -40,7 +40,7 @@ type Filters struct {
 }
 
 type InstancesCommand struct {
-	corbaCmd        *cobra.Command
+	cobraCmd        *cobra.Command
 	instanceFetcher fetcher.InstanceFetcher
 	filters         Filters
 	source          string
@@ -106,7 +106,7 @@ func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
 		},
 	}
 
-	cmd.corbaCmd = corbaCmd
+	cmd.cobraCmd = corbaCmd
 
 	corbaCmd.Flags().BoolVar(&cmd.filters.Migrated, "migrated", false, "Get migrated instances")
 	corbaCmd.Flags().BoolVar(&cmd.filters.NotMigrated, "not-migrated", false, "Get not migrated instances")

@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -15,11 +16,12 @@ const idParam = "id=%s"
 
 type ersClient struct {
 	url    string
-	client *HTTPClient
+	Client *HTTPClient
 }
 
 func NewErsClient(url string) (Client, error) {
-	client, err := NewHTTPClient(logger.New())
+	logger := logger.New()
+	client, err := NewHTTPClient(logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "while ers client creation")
 	}
@@ -31,7 +33,7 @@ func NewErsClient(url string) (Client, error) {
 }
 
 func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
-	instances, err := c.client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceID))
+	instances, err := c.Client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceID))
 	if err != nil {
 		return nil, errors.Wrap(err, "while sending request")
 	}
@@ -44,17 +46,21 @@ func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
 }
 
 func (c *ersClient) GetPaged(pageNo, pageSize int) ([]ers.Instance, error) {
-	return c.client.get(fmt.Sprintf(environmentsPath+"?"+pagedParams, c.url, pageNo, pageSize))
+	return c.Client.get(fmt.Sprintf(environmentsPath+"?"+pagedParams, c.url, pageNo, pageSize))
 }
 
 func (c *ersClient) Migrate(instanceID string) error {
-	return c.client.put(fmt.Sprintf(environmentsPath+"/%s", c.url, instanceID))
+	return c.Client.put(fmt.Sprintf(environmentsPath+"/%s", c.url, instanceID))
 }
 
 func (c *ersClient) Switch(brokerID string) error {
-	return c.client.put(fmt.Sprintf(brokersPath+"/%s", c.url, brokerID))
+	return c.Client.put(fmt.Sprintf(brokersPath+"/%s", c.url, brokerID))
 }
 
 func (c *ersClient) Close() {
-	c.client.Close()
+	c.Client.Close()
+}
+
+func (c *ersClient) GetClient() *http.Client {
+	return c.Client.Client
 }
