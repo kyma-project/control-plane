@@ -78,7 +78,8 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		SetInstanceID(operation.InstanceID).
 		SetShootName(operation.InstanceDetails.ShootName).
 		SetShootDomain(operation.ShootDomain).
-		SetProvisioningParameters(operation.ProvisioningParameters)
+		SetProvisioningParameters(operation.ProvisioningParameters).
+		SetClusterName(operation.ClusterName)
 
 	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
@@ -98,11 +99,12 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
+	log.Infof("Apply Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s], name=%s",
 		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
-		s.componentList(clusterConfiguration))
+		s.componentList(clusterConfiguration),
+		clusterConfiguration.RuntimeInput.Name)
 	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
@@ -119,6 +121,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
 		operation.ClusterConfigurationApplied = true
+		operation.ClusterName = clusterConfiguration.RuntimeInput.Name
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")

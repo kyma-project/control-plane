@@ -22,7 +22,7 @@ securityContext:
   runAsUser: 1001
 
 podAnnotations:
-  sidecar.istio.io/inject: "false"
+  sidecar.istio.io/inject: "true"
 
 serviceAccount:
   enabled: true

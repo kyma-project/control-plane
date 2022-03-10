@@ -5,22 +5,22 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @koala7659 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @hanngos @tillknuesting
+* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @hanngos @tillknuesting
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @k15r @marcobebway @nachtmaar @radufa @sayanh @voigt @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar @radufa @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @voigt @wozniakjan @hanngos @tillknuesting @ebensom
+/scripts @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting @ebensom
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @ksputo @koala7659 @voigt @wozniakjan @hanngos @tillknuesting
+/resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @Maladie @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/components/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/components/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
 
 # Runtime Provisioner
 /resources/kcp/charts/provisioner @janmedrek @akgalwas @franpog859 @Maladie @koala7659
@@ -30,27 +30,27 @@
 /tests/provisioner-tests @janmedrek @akgalwas @franpog859 @Maladie @koala7659
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
-/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
-/tools/reconciler @tobiscr @pbochynski @varbanv @suleymanakbas91 @m00g3n @pPrecel @dbadura @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/resources/kcp/charts/component-reconcilers @tobiscr @pbochynski @varbanv @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
+/resources/kcp/charts/mothership-reconciler @tobiscr @pbochynski @varbanv @m00g3n @pPrecel @kwiatekus @dbadura @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
+/tools/reconciler @tobiscr @pbochynski @varbanv @m00g3n @pPrecel @dbadura @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
 
 
 # e2e-provisioning
-/tests/e2e/provisioning @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/tests/e2e/provisioning @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @pxsalehi
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @sayanh @pxsalehi
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @radufa @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP
-/resources/oidc-kubeconfig-service  @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
+/components/kubeconfig-service @ebensom @fhivemind @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP
+/resources/oidc-kubeconfig-service  @ebensom @fhivemind @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
 
 # KCP CLI
-/tools/cli @ebensom @fhivemind @lauraanddola @life0215 @lumi017 @PK85 @piotrmiskiewicz @ksputo @szwedm @voigt @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting
+/tools/cli @ebensom @fhivemind @life0215 @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting
 
 # reconciler
-/components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin
+/components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
 
 # All .md files
 *.md @klaudiagrz @mmitoraj @majakurcius @alexandra-simeonova @NHingerl @grego952

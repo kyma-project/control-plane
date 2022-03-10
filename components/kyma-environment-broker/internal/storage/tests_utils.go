@@ -98,7 +98,7 @@ func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (fu
 			"POSTGRES_PASSWORD": DbPass,
 			"POSTGRES_DB":       DbName,
 		},
-		WaitingFor: wait.ForListeningPort(DbPort),
+		WaitingFor: wait.ForLog("database system is ready to accept connections"),
 	}
 
 	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -161,7 +161,7 @@ func SetupTestDBContainer(ctx context.Context, hostname string) (cleanupFunc fun
 			"POSTGRES_PASSWORD": DbPass,
 			"POSTGRES_DB":       DbName,
 		},
-		WaitingFor: wait.ForListeningPort(DbPort),
+		WaitingFor: wait.ForLog("database system is ready to accept connections"),
 	}
 
 	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

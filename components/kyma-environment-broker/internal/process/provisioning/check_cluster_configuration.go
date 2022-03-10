@@ -61,6 +61,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 		return operation, 10 * time.Minute, nil
 	case reconcilerApi.StatusReady:
 		return operation, 0, nil
+
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
