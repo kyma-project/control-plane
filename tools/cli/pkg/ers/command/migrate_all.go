@@ -36,7 +36,6 @@ func NewMigrationAllCommand() *cobra.Command {
 
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
-	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "dry-run", "d", false, "runs migration in a test mode without executing trigger command.")
 
 	cmd.corbaCmd = cobraCmd
 
@@ -51,7 +50,6 @@ type MigrationAllCommand struct {
 	wg        sync.WaitGroup
 	log       *logrus.Logger
 	ersClient client.Client
-	dryRun    bool
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -122,15 +120,13 @@ func (c *MigrationAllCommand) worker(id int, instances chan ers.Instance) {
 
 			if !refreshed.Migrated {
 				c.log.Infof("[Worker %d] %sTrigerring migration %s%s", id, Green, instance.Name, Reset)
-				c.log.Infof("[Worker %d] %sDry run is %b%s", id, Red, c.dryRun, Reset)
 				c.log.Infof("[Worker %d] %sWorker number is %d%s", id, Red, c.workers, Reset)
 
-				c.log.Infof("[Worker %d] %sTurning dry run off%s", id, Red, instance.Name, Reset)
 				err := c.ersClient.Migrate(instance.Id)
 				c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
 
 				if err != nil {
-					c.log.Errorf("Error while loading the instance %d %e", instance.Name, err)
+					c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
 				} else {
 					c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
 				}
