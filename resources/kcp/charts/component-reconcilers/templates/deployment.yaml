@@ -37,7 +37,7 @@ spec:
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
-        name: reconciler
+        name: {{ $component }}-reconciler
         ports:
         - name: http
           containerPort: 8080
