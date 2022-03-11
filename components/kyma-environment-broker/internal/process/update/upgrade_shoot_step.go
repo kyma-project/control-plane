@@ -44,6 +44,12 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 	log = log.WithField("runtimeID", operation.RuntimeID)
 
+	lastRuntimeState, err := s.runtimeStateStorage.GetLatestWithKymaVersionByRuntimeID(operation.RuntimeID)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+	}
+	operation.LastRuntimeState = lastRuntimeState
+
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
@@ -92,6 +98,8 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
 	}
 
+	s.patchOIDCConfig(&fullInput, operation.LastRuntimeState.ClusterConfig.OidcConfig)
+
 	// modify configuration
 	result := gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
@@ -105,6 +113,21 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 	}
 
 	return result, nil
+}
+
+func (s *UpgradeShootStep) patchOIDCConfig(fullInput *gqlschema.UpgradeShootInput, lastOIDCConfig *gqlschema.OIDCConfigInput) {
+	if len(fullInput.GardenerConfig.OidcConfig.GroupsClaim) == 0 {
+		fullInput.GardenerConfig.OidcConfig.GroupsClaim = lastOIDCConfig.GroupsClaim
+	}
+	if len(fullInput.GardenerConfig.OidcConfig.SigningAlgs) == 0 {
+		fullInput.GardenerConfig.OidcConfig.SigningAlgs = lastOIDCConfig.SigningAlgs
+	}
+	if len(fullInput.GardenerConfig.OidcConfig.UsernameClaim) == 0 {
+		fullInput.GardenerConfig.OidcConfig.UsernameClaim = lastOIDCConfig.UsernameClaim
+	}
+	if len(fullInput.GardenerConfig.OidcConfig.UsernamePrefix) == 0 {
+		fullInput.GardenerConfig.OidcConfig.UsernamePrefix = lastOIDCConfig.UsernamePrefix
+	}
 }
 
 func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlschema.GardenerConfigInput {

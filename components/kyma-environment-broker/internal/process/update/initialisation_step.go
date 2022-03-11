@@ -102,8 +102,6 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 }
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	pp := operation.ProvisioningParameters
-	pp.Parameters.OIDC = operation.UpdatingParameters.OIDC
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
 	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
 	switch {
