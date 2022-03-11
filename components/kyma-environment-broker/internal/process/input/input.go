@@ -641,22 +641,13 @@ func (r *RuntimeInput) configureOIDC() error {
 		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
 		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
 	}
-	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		oidc := r.provisioningParameters.Parameters.OIDC
-		oidcParamsToSet = &gqlschema.OIDCConfigInput{
-			ClientID:       oidc.ClientID,
-			GroupsClaim:    oidc.GroupsClaim,
-			IssuerURL:      oidc.IssuerURL,
-			SigningAlgs:    oidc.SigningAlgs,
-			UsernameClaim:  oidc.UsernameClaim,
-			UsernamePrefix: oidc.UsernamePrefix,
-		}
-	}
 
 	if r.provisionRuntimeInput.ClusterConfig != nil {
+		r.setOIDCForProvisioning(oidcParamsToSet)
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	if r.upgradeShootInput.GardenerConfig != nil {
+		r.setOIDCForUpgrade(oidcParamsToSet)
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	return nil
@@ -684,6 +675,30 @@ func (r *RuntimeInput) setNodesForTrialUpgrade() error {
 		r.upgradeShootInput.GardenerConfig.AutoScalerMax = &r.trialNodesNumber
 	}
 	return nil
+}
+
+func (r *RuntimeInput) setOIDCForProvisioning(oidcConfig *gqlschema.OIDCConfigInput) {
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		providedOIDC := r.provisioningParameters.Parameters.OIDC
+		oidcConfig.ClientID = providedOIDC.ClientID
+		oidcConfig.IssuerURL = providedOIDC.IssuerURL
+		if len(providedOIDC.GroupsClaim) != 0 {
+			oidcConfig.GroupsClaim = providedOIDC.GroupsClaim
+		}
+		if len(providedOIDC.SigningAlgs) != 0 {
+			oidcConfig.SigningAlgs = providedOIDC.SigningAlgs
+		}
+		if len(providedOIDC.UsernameClaim) != 0 {
+			oidcConfig.UsernameClaim = providedOIDC.UsernameClaim
+		}
+		if len(providedOIDC.UsernamePrefix) != 0 {
+			oidcConfig.UsernamePrefix = providedOIDC.UsernamePrefix
+		}
+	}
+}
+
+func (r *RuntimeInput) setOIDCForUpgrade(oidcConfig *gqlschema.OIDCConfigInput) {
+
 }
 
 func updateString(toUpdate *string, value *string) {
