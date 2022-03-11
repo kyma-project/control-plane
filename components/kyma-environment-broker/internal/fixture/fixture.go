@@ -418,6 +418,10 @@ func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlsche
 	return c
 }
 
+func (c *SimpleInputCreator) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	return c
+}
+
 func (c *SimpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.Overrides[component] = append(c.Overrides[component], overrides...)
 	return c

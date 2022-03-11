@@ -339,4 +339,76 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
 		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
 	})
+
+	t.Run("Should fail on insufficient OIDC params (missing issuerURL)", func(t *testing.T) {
+		// given
+		oidcParams := `"clientID":"client-id"`
+		errMsg := errors.New("issuerURL must not be empty")
+		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
+
+		// when
+		_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AzurePlanID,
+			RawParameters:   json.RawMessage("{\"oidc\":{" + oidcParams + "}}"),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"globalaccount_id\":\"globalaccount_id_1\", \"active\":true}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
+
+	t.Run("Should fail on insufficient OIDC params (missing clientID)", func(t *testing.T) {
+		// given
+		oidcParams := `"issuerURL":"https://test.local"`
+		errMsg := errors.New("clientID must not be empty")
+		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
+
+		// when
+		_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AzurePlanID,
+			RawParameters:   json.RawMessage("{\"oidc\":{" + oidcParams + "}}"),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"globalaccount_id\":\"globalaccount_id_1\", \"active\":true}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
+
+	t.Run("Should fail on invalid OIDC signingAlgs param", func(t *testing.T) {
+		// given
+		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
+		errMsg := errors.New("signingAlgs must contain valid signing algorithm(s)")
+		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
+
+		// when
+		_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AzurePlanID,
+			RawParameters:   json.RawMessage("{\"oidc\":{" + oidcParams + "}}"),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"globalaccount_id\":\"globalaccount_id_1\", \"active\":true}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
 }
