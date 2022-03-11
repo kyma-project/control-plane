@@ -27,7 +27,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.0.3 // indirect
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
-	github.com/coreos/go-oidc v2.2.1+incompatible // indirect
 	github.com/coreos/go-oidc/v3 v3.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
@@ -60,7 +59,6 @@ require (
 	github.com/pivotal-cf/brokerapi/v8 v8.0.1-0.20210524135831-3563fe51db34 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/pquerna/cachecontrol v0.0.0-20201205024021-ac21108117ac // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
@@ -74,7 +72,6 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
@@ -84,7 +81,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/api v0.23.4 // indirect
 	k8s.io/apimachinery v0.23.4 // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
