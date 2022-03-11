@@ -3,6 +3,7 @@ package broker_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -571,6 +572,168 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, ptr.String(internal.LicenceTypeLite), operation.ProvisioningParameters.Parameters.LicenceType)
+	})
+
+	t.Run("Should fail on insufficient OIDC params (missing issuerURL)", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+		)
+
+		oidcParams := `"clientID":"client-id"`
+		err := errors.New("issuerURL must not be empty")
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
+
+		// when
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
+
+	t.Run("Should fail on insufficient OIDC params (missing clientID)", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+		)
+
+		oidcParams := `"issuerURL":"https://test.local"`
+		err := errors.New("clientID must not be empty")
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
+
+		// when
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
+
+	t.Run("Should fail on invalid OIDC signingAlgs param", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+		)
+
+		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
+		err := errors.New("signingAlgs must contain valid signing algorithm(s)")
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
+
+		// when
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
 	})
 }
 
