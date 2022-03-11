@@ -5,13 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/int128/kubelogin/pkg/adaptors/browser"
-	"github.com/int128/kubelogin/pkg/adaptors/clock"
-	"github.com/int128/kubelogin/pkg/adaptors/credentialpluginwriter"
-	"github.com/int128/kubelogin/pkg/adaptors/mutex"
-	"github.com/int128/kubelogin/pkg/adaptors/oidcclient"
-	"github.com/int128/kubelogin/pkg/adaptors/reader"
-	"github.com/int128/kubelogin/pkg/adaptors/tokencache"
+	credentialpluginwriter "github.com/int128/kubelogin/pkg/credentialplugin"
+	"github.com/int128/kubelogin/pkg/infrastructure/browser"
+	"github.com/int128/kubelogin/pkg/infrastructure/clock"
+	"github.com/int128/kubelogin/pkg/infrastructure/mutex"
+	"github.com/int128/kubelogin/pkg/infrastructure/reader"
+	"github.com/int128/kubelogin/pkg/oidc"
+	oidcclient "github.com/int128/kubelogin/pkg/oidc/client"
+	tokencache "github.com/int128/kubelogin/pkg/tokencache/repository"
 	"github.com/int128/kubelogin/pkg/usecases/authentication"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
@@ -62,7 +63,7 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret, username string, 
 	auth := &authentication.Authentication{
 		Clock:  clock,
 		Logger: log,
-		OIDCClient: &oidcclient.Factory{
+		ClientFactory: &oidcclient.Factory{
 			Clock:  clock,
 			Logger: log,
 		},
@@ -83,9 +84,13 @@ func NewManager(oidcIssuerURL, oidcClientID, oidcClientSecret, username string, 
 	mgr := &manager{
 		username: username,
 		input: credentialplugin.Input{
-			IssuerURL:     oidcIssuerURL,
-			ClientID:      oidcClientID,
-			ClientSecret:  oidcClientSecret,
+			Provider: oidc.Provider{
+				IssuerURL:    oidcIssuerURL,
+				ClientID:     oidcClientID,
+				ClientSecret: oidcClientSecret,
+				UsePKCE:      oidcClientSecret == "",
+				ExtraScopes:  []string{"email", "openid"},
+			},
 			TokenCacheDir: defaultTokenCacheDir,
 		},
 	}
