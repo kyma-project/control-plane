@@ -69,8 +69,6 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 		}, log)
 	}
 
-	evalAssistant.AppendOverrides(updatedOperation.InputCreator, updatedOperation.Avs.AvsEvaluationInternalId, updatedOperation.ProvisioningParameters)
-
 	return updatedOperation, d, nil
 }
 

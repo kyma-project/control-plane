@@ -8,7 +8,6 @@ import (
 
 type EvalAssistant interface {
 	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
-	AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, pp internal.ProvisioningParameters)
 	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
 	IsValid(lifecycleData internal.AvsLifecycleData) bool
 	IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool
