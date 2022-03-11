@@ -309,4 +309,6 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	assert.NotEqual(t, rsu1.ID, rsu2.ID, "runtime_state ID from update should differ runtime_state ID from upgrade")
 	assert.Equal(t, upgradeKymaOperationID, rsu2.OperationID, "runtime state upgrade operation ID")
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
+
+	assert.Equal(t, rsu1.ClusterConfig.Name, rsu2.ClusterConfig.Name)
 }

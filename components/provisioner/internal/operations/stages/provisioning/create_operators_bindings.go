@@ -68,7 +68,7 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
 	if cluster.Kubeconfig == nil {
-		return operations.StageResult{}, fmt.Errorf("cluster kubeconfig is nil")
+		return operations.StageResult{}, operations.ErrKubeconfigNil
 	}
 
 	k8sClient, err := s.k8sClientProvider.CreateK8SClient(*cluster.Kubeconfig)

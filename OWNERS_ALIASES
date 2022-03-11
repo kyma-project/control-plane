@@ -1,16 +1,16 @@
 aliases:
   documentation-reviewers:
     - klaudiagrz
-    - bszwarc
     - mmitoraj
     - majakurcius
-    - alexandra-simeonova
+    - NHingerl
+    - grego952
   documentation-approvers:
     - klaudiagrz
-    - bszwarc
     - mmitoraj
     - majakurcius
-    - alexandra-simeonova
+    - NHingerl
+    - grego952
   kmc-reviewers:
     - k15r
     - nachtmaar
