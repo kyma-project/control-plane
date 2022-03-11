@@ -99,6 +99,9 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 	}
 	if op.State == domain.InProgress {
 		log.Info("waiting for provisioning operation to finish")
+		// This is only in memory copy because metrics depend on provisioning parameters being available, this doesn't persist them in KEB database
+		operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
+		operation.ProvisioningParameters = op.ProvisioningParameters
 		return operation, time.Minute, nil
 	}
 	operation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
