@@ -54,6 +54,7 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
+	oidcLastValues            gqlschema.OIDCConfigInput
 
 	trialNodesNumber  int
 	instanceID        string
@@ -119,6 +120,11 @@ func (r *RuntimeInput) SetClusterName(name string) internal.ProvisionerInputCrea
 	if name != "" {
 		r.clusterName = name
 	}
+	return r
+}
+
+func (r *RuntimeInput) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	r.oidcLastValues = oidcConfig
 	return r
 }
 
@@ -679,23 +685,23 @@ func (r *RuntimeInput) setOIDCForProvisioning() *gqlschema.OIDCConfigInput {
 	}
 
 	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		r.setOIDCConfigFromProvisioningParameters(oidcConfig)
+		r.setOIDCFromProvisioningParameters(oidcConfig)
 	}
 
 	return oidcConfig
 }
 
 func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
-	oidcConfig := &gqlschema.OIDCConfigInput{}
+	oidcConfig := r.oidcLastValues
 
 	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		r.setOIDCConfigFromProvisioningParameters(oidcConfig)
+		r.setOIDCFromProvisioningParameters(&oidcConfig)
 	}
 
-	return oidcConfig
+	return &oidcConfig
 }
 
-func (r *RuntimeInput) setOIDCConfigFromProvisioningParameters(oidcConfig *gqlschema.OIDCConfigInput) {
+func (r *RuntimeInput) setOIDCFromProvisioningParameters(oidcConfig *gqlschema.OIDCConfigInput) {
 	providedOIDC := r.provisioningParameters.Parameters.OIDC
 	oidcConfig.ClientID = providedOIDC.ClientID
 	oidcConfig.IssuerURL = providedOIDC.IssuerURL

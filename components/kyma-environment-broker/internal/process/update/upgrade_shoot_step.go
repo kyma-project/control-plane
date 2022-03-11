@@ -93,12 +93,11 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
+	operation.InputCreator.SetOIDCLastValues(*operation.LastRuntimeState.ClusterConfig.OidcConfig)
 	fullInput, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
 	}
-
-	s.patchOIDCConfig(&fullInput, operation.LastRuntimeState.ClusterConfig.OidcConfig)
 
 	// modify configuration
 	result := gqlschema.UpgradeShootInput{
@@ -113,21 +112,6 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 	}
 
 	return result, nil
-}
-
-func (s *UpgradeShootStep) patchOIDCConfig(fullInput *gqlschema.UpgradeShootInput, lastOIDCConfig *gqlschema.OIDCConfigInput) {
-	if len(fullInput.GardenerConfig.OidcConfig.GroupsClaim) == 0 {
-		fullInput.GardenerConfig.OidcConfig.GroupsClaim = lastOIDCConfig.GroupsClaim
-	}
-	if len(fullInput.GardenerConfig.OidcConfig.SigningAlgs) == 0 {
-		fullInput.GardenerConfig.OidcConfig.SigningAlgs = lastOIDCConfig.SigningAlgs
-	}
-	if len(fullInput.GardenerConfig.OidcConfig.UsernameClaim) == 0 {
-		fullInput.GardenerConfig.OidcConfig.UsernameClaim = lastOIDCConfig.UsernameClaim
-	}
-	if len(fullInput.GardenerConfig.OidcConfig.UsernamePrefix) == 0 {
-		fullInput.GardenerConfig.OidcConfig.UsernamePrefix = lastOIDCConfig.UsernamePrefix
-	}
 }
 
 func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlschema.GardenerConfigInput {
