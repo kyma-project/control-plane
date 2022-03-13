@@ -1,0 +1,26 @@
+{{- if and .Values.global.mothership_reconciler.featureFlags.occupancyMonitoring .Values.deployment.autoscaling.enabled .Values.global.keda.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: mothership-reconciler-scaledobject
+  namespace: {{ .Release.Namespace }}
+  labels:
+    deploymentName: mothership-reconciler
+spec:
+  scaleTargetRef:
+    name: mothership-reconciler
+  pollingInterval: 30  # Optional. Default: 30 seconds
+  cooldownPeriod:  300 # Optional. Default: 300 seconds
+  minReplicaCount: 1   # Optional. Default: 0
+  maxReplicaCount: 10 # Optional. Default: 100
+  triggers:
+    - type: prometheus
+      metadata:
+        # Required
+        serverAddress: http://prometheus-service.kcp-system.svc.cluster.local:9090
+        metricName: mothership_reconciler_worker_pool_occupancy_ratio
+        threshold: '4'
+        query: 'rate(reconciler_worker_pool_occupancy_ratio{component="mothership"}[30s])'
+---
+{{- end }}

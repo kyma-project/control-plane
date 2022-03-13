@@ -1,0 +1,32 @@
+{{- if and .Values.global.mothership_reconciler.featureFlags.occupancyMonitoring .Values.global.keda.enabled }}
+{{ $global := . }}
+{{- range $component := .Values.global.components }}
+{{ if not (hasKey $global.Subcharts $component) }}
+{{ $componentPrometheusLabelName := $component | replace "-" "_" }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ $component }}-reconciler-scaledobject
+  namespace: {{ $global.Release.Namespace }}
+  labels:
+    deploymentName: {{ $component }}-reconciler
+spec:
+  scaleTargetRef:
+    name: {{ $component }}-reconciler
+  pollingInterval: 30  # Optional. Default: 30 seconds
+  cooldownPeriod:  300 # Optional. Default: 300 seconds
+  minReplicaCount: 1   # Optional. Default: 0
+  maxReplicaCount: 10 # Optional. Default: 100
+  triggers:
+    - type: prometheus
+      metadata:
+        # Required
+        serverAddress: http://prometheus-service.kcp-system.svc.cluster.local:9090
+        metricName: {{ $component }}_reconciler_worker_pool_occupancy_ratio
+        threshold: '80'
+        query: 'reconciler_worker_pool_occupancy_ratio{component="{{ $componentPrometheusLabelName }}"}'
+---
+{{- end }}
+{{- end }}
+{{- end }}

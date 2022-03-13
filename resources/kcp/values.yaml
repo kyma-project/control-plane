@@ -165,6 +165,8 @@ global:
         accessMode: ReadWriteOnce
         size: 2Gi
         storageClass: ""
+    featureFlags:
+      occupancyMonitoring: false
   component_reconcilers:
     enabled: false
     authentication: true
@@ -172,6 +174,8 @@ global:
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
+  keda:
+    enabled: false
 
 pairing-adapter:
   enabled: false
