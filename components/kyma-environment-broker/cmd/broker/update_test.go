@@ -37,7 +37,7 @@ func TestUpdate(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-initial",
-							"signingAlgs": ["xxx"],
+							"signingAlgs": ["PS512"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -58,7 +58,7 @@ func TestUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
+				"signingAlgs": ["RS256"],
                 "issuerURL": "https://issuer.url.com"
 			}
 		}
@@ -74,11 +74,11 @@ func TestUpdate(t *testing.T) {
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
-				GroupsClaim:    "",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url.com",
-				SigningAlgs:    []string{"RSA256"},
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: []string{"john.smith@email.com"},

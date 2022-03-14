@@ -54,7 +54,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), nil, log)
 	}
 
-	lastRuntimeState, err := s.runtimeStateStorage.GetLatestWithKymaVersionByRuntimeID(operation.InstanceDetails.RuntimeID)
+	lastRuntimeState, err := s.runtimeStateStorage.GetLatestByRuntimeID(operation.InstanceDetails.RuntimeID)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 	}
