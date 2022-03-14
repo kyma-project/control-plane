@@ -694,6 +694,8 @@ func (r *RuntimeInput) setOIDCForProvisioning() *gqlschema.OIDCConfigInput {
 func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
 	oidcConfig := r.oidcLastValues
 
+	r.setOIDCDefaultValuesIfEmpty(&oidcConfig)
+
 	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
 		r.setOIDCFromProvisioningParameters(&oidcConfig)
 	}
@@ -716,6 +718,27 @@ func (r *RuntimeInput) setOIDCFromProvisioningParameters(oidcConfig *gqlschema.O
 	}
 	if len(providedOIDC.UsernamePrefix) != 0 {
 		oidcConfig.UsernamePrefix = providedOIDC.UsernamePrefix
+	}
+}
+
+func (r *RuntimeInput) setOIDCDefaultValuesIfEmpty(oidcConfig *gqlschema.OIDCConfigInput) {
+	if oidcConfig.ClientID == "" {
+		oidcConfig.ClientID = r.oidcDefaultValues.ClientID
+	}
+	if oidcConfig.IssuerURL == "" {
+		oidcConfig.IssuerURL = r.oidcDefaultValues.IssuerURL
+	}
+	if oidcConfig.GroupsClaim == "" {
+		oidcConfig.GroupsClaim = r.oidcDefaultValues.GroupsClaim
+	}
+	if len(oidcConfig.SigningAlgs) == 0 {
+		oidcConfig.SigningAlgs = r.oidcDefaultValues.SigningAlgs
+	}
+	if oidcConfig.UsernameClaim == "" {
+		oidcConfig.UsernameClaim = r.oidcDefaultValues.UsernameClaim
+	}
+	if oidcConfig.UsernamePrefix == "" {
+		oidcConfig.UsernamePrefix = r.oidcDefaultValues.UsernamePrefix
 	}
 }
 
