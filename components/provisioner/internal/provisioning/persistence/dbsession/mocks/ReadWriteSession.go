@@ -3,9 +3,8 @@
 package mocks
 
 import (
-	dberrors "github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	apperrors "github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	dbsession "github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -19,15 +18,15 @@ type ReadWriteSession struct {
 }
 
 // DeleteCluster provides a mock function with given fields: runtimeID
-func (_m *ReadWriteSession) DeleteCluster(runtimeID string) dberrors.Error {
+func (_m *ReadWriteSession) DeleteCluster(runtimeID string) apperrors.AppError {
 	ret := _m.Called(runtimeID)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string) apperrors.AppError); ok {
 		r0 = rf(runtimeID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -35,15 +34,15 @@ func (_m *ReadWriteSession) DeleteCluster(runtimeID string) dberrors.Error {
 }
 
 // FixShootProvisioningStage provides a mock function with given fields: message, newStage, transitionTime
-func (_m *ReadWriteSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
+func (_m *ReadWriteSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) apperrors.AppError {
 	ret := _m.Called(message, newStage, transitionTime)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, model.OperationStage, time.Time) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, model.OperationStage, time.Time) apperrors.AppError); ok {
 		r0 = rf(message, newStage, transitionTime)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -51,7 +50,7 @@ func (_m *ReadWriteSession) FixShootProvisioningStage(message string, newStage m
 }
 
 // GetCluster provides a mock function with given fields: runtimeID
-func (_m *ReadWriteSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error) {
+func (_m *ReadWriteSession) GetCluster(runtimeID string) (model.Cluster, apperrors.AppError) {
 	ret := _m.Called(runtimeID)
 
 	var r0 model.Cluster
@@ -61,12 +60,12 @@ func (_m *ReadWriteSession) GetCluster(runtimeID string) (model.Cluster, dberror
 		r0 = ret.Get(0).(model.Cluster)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(runtimeID)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -74,7 +73,7 @@ func (_m *ReadWriteSession) GetCluster(runtimeID string) (model.Cluster, dberror
 }
 
 // GetGardenerClusterByName provides a mock function with given fields: name
-func (_m *ReadWriteSession) GetGardenerClusterByName(name string) (model.Cluster, dberrors.Error) {
+func (_m *ReadWriteSession) GetGardenerClusterByName(name string) (model.Cluster, apperrors.AppError) {
 	ret := _m.Called(name)
 
 	var r0 model.Cluster
@@ -84,12 +83,12 @@ func (_m *ReadWriteSession) GetGardenerClusterByName(name string) (model.Cluster
 		r0 = ret.Get(0).(model.Cluster)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(name)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -97,7 +96,7 @@ func (_m *ReadWriteSession) GetGardenerClusterByName(name string) (model.Cluster
 }
 
 // GetLastOperation provides a mock function with given fields: runtimeID
-func (_m *ReadWriteSession) GetLastOperation(runtimeID string) (model.Operation, dberrors.Error) {
+func (_m *ReadWriteSession) GetLastOperation(runtimeID string) (model.Operation, apperrors.AppError) {
 	ret := _m.Called(runtimeID)
 
 	var r0 model.Operation
@@ -107,12 +106,12 @@ func (_m *ReadWriteSession) GetLastOperation(runtimeID string) (model.Operation,
 		r0 = ret.Get(0).(model.Operation)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(runtimeID)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -120,7 +119,7 @@ func (_m *ReadWriteSession) GetLastOperation(runtimeID string) (model.Operation,
 }
 
 // GetOperation provides a mock function with given fields: operationID
-func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, dberrors.Error) {
+func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, apperrors.AppError) {
 	ret := _m.Called(operationID)
 
 	var r0 model.Operation
@@ -130,12 +129,12 @@ func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, d
 		r0 = ret.Get(0).(model.Operation)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(operationID)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -143,7 +142,7 @@ func (_m *ReadWriteSession) GetOperation(operationID string) (model.Operation, d
 }
 
 // GetProviderSpecificConfigsByProvider provides a mock function with given fields: provider
-func (_m *ReadWriteSession) GetProviderSpecificConfigsByProvider(provider string) ([]dbsession.ProviderData, dberrors.Error) {
+func (_m *ReadWriteSession) GetProviderSpecificConfigsByProvider(provider string) ([]dbsession.ProviderData, apperrors.AppError) {
 	ret := _m.Called(provider)
 
 	var r0 []dbsession.ProviderData
@@ -155,12 +154,12 @@ func (_m *ReadWriteSession) GetProviderSpecificConfigsByProvider(provider string
 		}
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(provider)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -168,7 +167,7 @@ func (_m *ReadWriteSession) GetProviderSpecificConfigsByProvider(provider string
 }
 
 // GetRuntimeUpgrade provides a mock function with given fields: operationId
-func (_m *ReadWriteSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error) {
+func (_m *ReadWriteSession) GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, apperrors.AppError) {
 	ret := _m.Called(operationId)
 
 	var r0 model.RuntimeUpgrade
@@ -178,12 +177,12 @@ func (_m *ReadWriteSession) GetRuntimeUpgrade(operationId string) (model.Runtime
 		r0 = ret.Get(0).(model.RuntimeUpgrade)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(operationId)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -191,7 +190,7 @@ func (_m *ReadWriteSession) GetRuntimeUpgrade(operationId string) (model.Runtime
 }
 
 // GetTenant provides a mock function with given fields: runtimeID
-func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, dberrors.Error) {
+func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, apperrors.AppError) {
 	ret := _m.Called(runtimeID)
 
 	var r0 string
@@ -201,12 +200,12 @@ func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, dberrors.Error)
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(runtimeID)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -214,7 +213,7 @@ func (_m *ReadWriteSession) GetTenant(runtimeID string) (string, dberrors.Error)
 }
 
 // GetTenantForOperation provides a mock function with given fields: operationID
-func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, dberrors.Error) {
+func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, apperrors.AppError) {
 	ret := _m.Called(operationID)
 
 	var r0 string
@@ -224,12 +223,12 @@ func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, d
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(operationID)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -237,7 +236,7 @@ func (_m *ReadWriteSession) GetTenantForOperation(operationID string) (string, d
 }
 
 // GetUpdatedProviderSpecificConfigByID provides a mock function with given fields: id
-func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error) {
+func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (string, apperrors.AppError) {
 	ret := _m.Called(id)
 
 	var r0 string
@@ -247,12 +246,12 @@ func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (str
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func(string) dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
 		r1 = rf(id)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -260,7 +259,7 @@ func (_m *ReadWriteSession) GetUpdatedProviderSpecificConfigByID(id string) (str
 }
 
 // InProgressOperationsCount provides a mock function with given fields:
-func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, dberrors.Error) {
+func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, apperrors.AppError) {
 	ret := _m.Called()
 
 	var r0 model.OperationsCount
@@ -270,12 +269,12 @@ func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, 
 		r0 = ret.Get(0).(model.OperationsCount)
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func() dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func() apperrors.AppError); ok {
 		r1 = rf()
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -283,15 +282,15 @@ func (_m *ReadWriteSession) InProgressOperationsCount() (model.OperationsCount, 
 }
 
 // InsertAdministrators provides a mock function with given fields: clusterId, administrators
-func (_m *ReadWriteSession) InsertAdministrators(clusterId string, administrators []string) dberrors.Error {
+func (_m *ReadWriteSession) InsertAdministrators(clusterId string, administrators []string) apperrors.AppError {
 	ret := _m.Called(clusterId, administrators)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, []string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, []string) apperrors.AppError); ok {
 		r0 = rf(clusterId, administrators)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -299,15 +298,15 @@ func (_m *ReadWriteSession) InsertAdministrators(clusterId string, administrator
 }
 
 // InsertCluster provides a mock function with given fields: cluster
-func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) dberrors.Error {
+func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) apperrors.AppError {
 	ret := _m.Called(cluster)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.Cluster) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.Cluster) apperrors.AppError); ok {
 		r0 = rf(cluster)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -315,15 +314,15 @@ func (_m *ReadWriteSession) InsertCluster(cluster model.Cluster) dberrors.Error 
 }
 
 // InsertGardenerConfig provides a mock function with given fields: config
-func (_m *ReadWriteSession) InsertGardenerConfig(config model.GardenerConfig) dberrors.Error {
+func (_m *ReadWriteSession) InsertGardenerConfig(config model.GardenerConfig) apperrors.AppError {
 	ret := _m.Called(config)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.GardenerConfig) apperrors.AppError); ok {
 		r0 = rf(config)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -331,15 +330,15 @@ func (_m *ReadWriteSession) InsertGardenerConfig(config model.GardenerConfig) db
 }
 
 // InsertKymaConfig provides a mock function with given fields: kymaConfig
-func (_m *ReadWriteSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error {
+func (_m *ReadWriteSession) InsertKymaConfig(kymaConfig model.KymaConfig) apperrors.AppError {
 	ret := _m.Called(kymaConfig)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.KymaConfig) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.KymaConfig) apperrors.AppError); ok {
 		r0 = rf(kymaConfig)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -347,15 +346,15 @@ func (_m *ReadWriteSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberro
 }
 
 // InsertOperation provides a mock function with given fields: operation
-func (_m *ReadWriteSession) InsertOperation(operation model.Operation) dberrors.Error {
+func (_m *ReadWriteSession) InsertOperation(operation model.Operation) apperrors.AppError {
 	ret := _m.Called(operation)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.Operation) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.Operation) apperrors.AppError); ok {
 		r0 = rf(operation)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -363,15 +362,15 @@ func (_m *ReadWriteSession) InsertOperation(operation model.Operation) dberrors.
 }
 
 // InsertRelease provides a mock function with given fields: artifacts
-func (_m *ReadWriteSession) InsertRelease(artifacts model.Release) dberrors.Error {
+func (_m *ReadWriteSession) InsertRelease(artifacts model.Release) apperrors.AppError {
 	ret := _m.Called(artifacts)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.Release) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.Release) apperrors.AppError); ok {
 		r0 = rf(artifacts)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -379,15 +378,15 @@ func (_m *ReadWriteSession) InsertRelease(artifacts model.Release) dberrors.Erro
 }
 
 // InsertRuntimeUpgrade provides a mock function with given fields: runtimeUpgrade
-func (_m *ReadWriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error {
+func (_m *ReadWriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) apperrors.AppError {
 	ret := _m.Called(runtimeUpgrade)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.RuntimeUpgrade) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.RuntimeUpgrade) apperrors.AppError); ok {
 		r0 = rf(runtimeUpgrade)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -395,7 +394,7 @@ func (_m *ReadWriteSession) InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpg
 }
 
 // ListInProgressOperations provides a mock function with given fields:
-func (_m *ReadWriteSession) ListInProgressOperations() ([]model.Operation, dberrors.Error) {
+func (_m *ReadWriteSession) ListInProgressOperations() ([]model.Operation, apperrors.AppError) {
 	ret := _m.Called()
 
 	var r0 []model.Operation
@@ -407,12 +406,12 @@ func (_m *ReadWriteSession) ListInProgressOperations() ([]model.Operation, dberr
 		}
 	}
 
-	var r1 dberrors.Error
-	if rf, ok := ret.Get(1).(func() dberrors.Error); ok {
+	var r1 apperrors.AppError
+	if rf, ok := ret.Get(1).(func() apperrors.AppError); ok {
 		r1 = rf()
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(dberrors.Error)
+			r1 = ret.Get(1).(apperrors.AppError)
 		}
 	}
 
@@ -420,15 +419,15 @@ func (_m *ReadWriteSession) ListInProgressOperations() ([]model.Operation, dberr
 }
 
 // MarkClusterAsDeleted provides a mock function with given fields: runtimeID
-func (_m *ReadWriteSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
+func (_m *ReadWriteSession) MarkClusterAsDeleted(runtimeID string) apperrors.AppError {
 	ret := _m.Called(runtimeID)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string) apperrors.AppError); ok {
 		r0 = rf(runtimeID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -436,15 +435,15 @@ func (_m *ReadWriteSession) MarkClusterAsDeleted(runtimeID string) dberrors.Erro
 }
 
 // SetActiveKymaConfig provides a mock function with given fields: runtimeID, kymaConfigId
-func (_m *ReadWriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error {
+func (_m *ReadWriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId string) apperrors.AppError {
 	ret := _m.Called(runtimeID, kymaConfigId)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, kymaConfigId)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -452,15 +451,15 @@ func (_m *ReadWriteSession) SetActiveKymaConfig(runtimeID string, kymaConfigId s
 }
 
 // TransitionOperation provides a mock function with given fields: operationID, message, stage, transitionTime
-func (_m *ReadWriteSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error {
+func (_m *ReadWriteSession) TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) apperrors.AppError {
 	ret := _m.Called(operationID, message, stage, transitionTime)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, model.OperationStage, time.Time) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string, model.OperationStage, time.Time) apperrors.AppError); ok {
 		r0 = rf(operationID, message, stage, transitionTime)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -468,15 +467,15 @@ func (_m *ReadWriteSession) TransitionOperation(operationID string, message stri
 }
 
 // UpdateGardenerClusterConfig provides a mock function with given fields: config
-func (_m *ReadWriteSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
+func (_m *ReadWriteSession) UpdateGardenerClusterConfig(config model.GardenerConfig) apperrors.AppError {
 	ret := _m.Called(config)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(model.GardenerConfig) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(model.GardenerConfig) apperrors.AppError); ok {
 		r0 = rf(config)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -484,15 +483,15 @@ func (_m *ReadWriteSession) UpdateGardenerClusterConfig(config model.GardenerCon
 }
 
 // UpdateKubeconfig provides a mock function with given fields: runtimeID, kubeconfig
-func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string) apperrors.AppError {
 	ret := _m.Called(runtimeID, kubeconfig)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, kubeconfig)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -500,15 +499,31 @@ func (_m *ReadWriteSession) UpdateKubeconfig(runtimeID string, kubeconfig string
 }
 
 // UpdateKubernetesVersion provides a mock function with given fields: runtimeID, version
-func (_m *ReadWriteSession) UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error {
+func (_m *ReadWriteSession) UpdateKubernetesVersion(runtimeID string, version string) apperrors.AppError {
 	ret := _m.Called(runtimeID, version)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
+		}
+	}
+
+	return r0
+}
+
+// UpdateOperationLastError provides a mock function with given fields: operationID, msg, reason, component
+func (_m *ReadWriteSession) UpdateOperationLastError(operationID string, msg string, reason string, component string) apperrors.AppError {
+	ret := _m.Called(operationID, msg, reason, component)
+
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string, string, string) apperrors.AppError); ok {
+		r0 = rf(operationID, msg, reason, component)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -516,15 +531,15 @@ func (_m *ReadWriteSession) UpdateKubernetesVersion(runtimeID string, version st
 }
 
 // UpdateOperationState provides a mock function with given fields: operationID, message, state, endTime
-func (_m *ReadWriteSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error {
+func (_m *ReadWriteSession) UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) apperrors.AppError {
 	ret := _m.Called(operationID, message, state, endTime)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string, model.OperationState, time.Time) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string, model.OperationState, time.Time) apperrors.AppError); ok {
 		r0 = rf(operationID, message, state, endTime)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -532,15 +547,15 @@ func (_m *ReadWriteSession) UpdateOperationState(operationID string, message str
 }
 
 // UpdateProviderSpecificConfig provides a mock function with given fields: id, providerSpecificConfig
-func (_m *ReadWriteSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
+func (_m *ReadWriteSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) apperrors.AppError {
 	ret := _m.Called(id, providerSpecificConfig)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(id, providerSpecificConfig)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -548,15 +563,15 @@ func (_m *ReadWriteSession) UpdateProviderSpecificConfig(id string, providerSpec
 }
 
 // UpdateTenant provides a mock function with given fields: runtimeID, tenant
-func (_m *ReadWriteSession) UpdateTenant(runtimeID string, tenant string) dberrors.Error {
+func (_m *ReadWriteSession) UpdateTenant(runtimeID string, tenant string) apperrors.AppError {
 	ret := _m.Called(runtimeID, tenant)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, string) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, string) apperrors.AppError); ok {
 		r0 = rf(runtimeID, tenant)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 
@@ -564,15 +579,15 @@ func (_m *ReadWriteSession) UpdateTenant(runtimeID string, tenant string) dberro
 }
 
 // UpdateUpgradeState provides a mock function with given fields: operationID, upgradeState
-func (_m *ReadWriteSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) dberrors.Error {
+func (_m *ReadWriteSession) UpdateUpgradeState(operationID string, upgradeState model.UpgradeState) apperrors.AppError {
 	ret := _m.Called(operationID, upgradeState)
 
-	var r0 dberrors.Error
-	if rf, ok := ret.Get(0).(func(string, model.UpgradeState) dberrors.Error); ok {
+	var r0 apperrors.AppError
+	if rf, ok := ret.Get(0).(func(string, model.UpgradeState) apperrors.AppError); ok {
 		r0 = rf(operationID, upgradeState)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dberrors.Error)
+			r0 = ret.Get(0).(apperrors.AppError)
 		}
 	}
 

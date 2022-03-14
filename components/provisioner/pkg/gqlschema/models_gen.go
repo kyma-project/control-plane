@@ -215,6 +215,12 @@ type KymaConfigInput struct {
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
 }
 
+type LastError struct {
+	ErrMessage string `json:"errMessage"`
+	Reason     string `json:"reason"`
+	Component  string `json:"component"`
+}
+
 type OIDCConfig struct {
 	ClientID       string   `json:"clientID"`
 	GroupsClaim    string   `json:"groupsClaim"`
@@ -255,6 +261,7 @@ type OperationStatus struct {
 	State     OperationState `json:"state"`
 	Message   *string        `json:"message"`
 	RuntimeID *string        `json:"runtimeID"`
+	LastError *LastError     `json:"lastError"`
 }
 
 type ProviderSpecificInput struct {

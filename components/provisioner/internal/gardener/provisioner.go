@@ -88,7 +88,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
 	if k8serr != nil {
-		appError := util.K8SErrorToAppError(k8serr)
+		appError := util.K8SErrorToAppError(k8serr).SetComponent(apperrors.ErrGardenerClient)
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
 	}
 
@@ -99,7 +99,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 
 	shoot, err := g.shootClient.Get(context.Background(), upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
 	}
 
@@ -114,7 +114,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return err
 	}, retry.Attempts(5))
 	if err != nil {
-		apperr := util.K8SErrorToAppError(err)
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return apperr.Append("error executing update shoot configuration")
 	}
 
@@ -124,7 +124,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig model.GardenerConfig) apperrors.AppError {
 	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 
@@ -148,7 +148,7 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 	}, retry.Attempts(5))
 
 	if err != nil {
-		apperr := util.K8SErrorToAppError(err)
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return apperr.Append("error executing update shoot configuration")
 	}
 
@@ -188,7 +188,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 
 	_, err = g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
 	if err != nil {
-		appError := util.K8SErrorToAppError(err)
+		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return model.Operation{}, appError.Append("error updating Shoot")
 	}
 
@@ -203,7 +203,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return model.HibernationStatus{}, appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 

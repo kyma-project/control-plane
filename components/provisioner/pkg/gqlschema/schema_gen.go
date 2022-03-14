@@ -132,6 +132,12 @@ type ComplexityRoot struct {
 		Version       func(childComplexity int) int
 	}
 
+	LastError struct {
+		Component  func(childComplexity int) int
+		ErrMessage func(childComplexity int) int
+		Reason     func(childComplexity int) int
+	}
+
 	Mutation struct {
 		DeprovisionRuntime       func(childComplexity int, id string) int
 		HibernateRuntime         func(childComplexity int, id string) int
@@ -160,6 +166,7 @@ type ComplexityRoot struct {
 
 	OperationStatus struct {
 		ID        func(childComplexity int) int
+		LastError func(childComplexity int) int
 		Message   func(childComplexity int) int
 		Operation func(childComplexity int) int
 		RuntimeID func(childComplexity int) int
@@ -597,6 +604,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KymaConfig.Version(childComplexity), true
 
+	case "LastError.component":
+		if e.complexity.LastError.Component == nil {
+			break
+		}
+
+		return e.complexity.LastError.Component(childComplexity), true
+
+	case "LastError.errMessage":
+		if e.complexity.LastError.ErrMessage == nil {
+			break
+		}
+
+		return e.complexity.LastError.ErrMessage(childComplexity), true
+
+	case "LastError.reason":
+		if e.complexity.LastError.Reason == nil {
+			break
+		}
+
+		return e.complexity.LastError.Reason(childComplexity), true
+
 	case "Mutation.deprovisionRuntime":
 		if e.complexity.Mutation.DeprovisionRuntime == nil {
 			break
@@ -757,6 +785,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OperationStatus.ID(childComplexity), true
+
+	case "OperationStatus.lastError":
+		if e.complexity.OperationStatus.LastError == nil {
+			break
+		}
+
+		return e.complexity.OperationStatus.LastError(childComplexity), true
 
 	case "OperationStatus.message":
 		if e.complexity.OperationStatus.Message == nil {
@@ -937,7 +972,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema.graphql", Input: `
+	&ast.Source{Name: "schema.graphql", Input: `
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: GardenerConfig
@@ -1044,12 +1079,19 @@ type KymaConfig {
     configuration: [ConfigEntry]
 }
 
+type LastError {
+    errMessage: String!
+    reason: String!
+    component: String!
+}
+
 type OperationStatus {
     id: String
     operation: OperationType!
     state: OperationState!
     message: String
     runtimeID: String
+    lastError: LastError
 }
 
 enum OperationType {
@@ -3197,6 +3239,108 @@ func (ec *executionContext) _KymaConfig_configuration(ctx context.Context, field
 	return ec.marshalOConfigEntry2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐConfigEntry(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LastError_errMessage(ctx context.Context, field graphql.CollectedField, obj *LastError) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LastError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LastError_reason(ctx context.Context, field graphql.CollectedField, obj *LastError) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LastError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LastError_component(ctx context.Context, field graphql.CollectedField, obj *LastError) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LastError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Component, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_provisionRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3968,6 +4112,37 @@ func (ec *executionContext) _OperationStatus_runtimeID(ctx context.Context, fiel
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OperationStatus_lastError(ctx context.Context, field graphql.CollectedField, obj *OperationStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OperationStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastError, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*LastError)
+	fc.Result = res
+	return ec.marshalOLastError2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLastError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_runtimeStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6694,6 +6869,43 @@ func (ec *executionContext) _KymaConfig(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var lastErrorImplementors = []string{"LastError"}
+
+func (ec *executionContext) _LastError(ctx context.Context, sel ast.SelectionSet, obj *LastError) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lastErrorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LastError")
+		case "errMessage":
+			out.Values[i] = ec._LastError_errMessage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._LastError_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "component":
+			out.Values[i] = ec._LastError_component(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6861,6 +7073,8 @@ func (ec *executionContext) _OperationStatus(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._OperationStatus_message(ctx, field, obj)
 		case "runtimeID":
 			out.Values[i] = ec._OperationStatus_runtimeID(ctx, field, obj)
+		case "lastError":
+			out.Values[i] = ec._OperationStatus_lastError(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8258,6 +8472,17 @@ func (ec *executionContext) marshalOLabels2githubᚗcomᚋkymaᚑprojectᚋcontr
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOLastError2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLastError(ctx context.Context, sel ast.SelectionSet, v LastError) graphql.Marshaler {
+	return ec._LastError(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOLastError2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐLastError(ctx context.Context, sel ast.SelectionSet, v *LastError) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LastError(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOOIDCConfig2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐOIDCConfig(ctx context.Context, sel ast.SelectionSet, v OIDCConfig) graphql.Marshaler {

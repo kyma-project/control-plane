@@ -132,7 +132,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	dbSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
-		return nil, apperrors.Internal("Failed to start database transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
@@ -142,7 +142,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal(dberr.Error())
+		return nil, dberr
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
@@ -154,7 +154,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	dberr = dbSession.Commit()
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 
 	if withKymaConfig {
@@ -400,7 +400,7 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 	runtimeStatus, dberr := r.getRuntimeStatus(runtimeID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
 	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
@@ -411,7 +411,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 
 	operation, dberr := readSession.GetOperation(operationID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Operation Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
@@ -481,7 +481,7 @@ func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool 
 	return installationState.State == installationSDK.NoInstallationState
 }
 
-func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
+func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
 	operation, err := session.GetLastOperation(runtimeID)
