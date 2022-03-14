@@ -119,8 +119,8 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			if errors.Is(err, ErrKubeconfigNil) {
-				log.Warnf("Warning, the %s", err.Error())
-				break
+				log.Warnf("Warning, the %s", err)
+				// break
 			}
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
 			return false, 0, err
