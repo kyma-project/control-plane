@@ -19,6 +19,8 @@ const (
 	backOffDirectorDelay = 1 * time.Second
 )
 
+var ErrKubeconfigNil = errors.New("cluster kubeconfig is nil")
+
 func NewExecutor(
 	session dbsession.ReadWriteSession,
 	operation model.OperationType,
@@ -116,6 +118,10 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 		result, err := step.Run(cluster, operation, log)
 		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
+			if errors.Is(err, ErrKubeconfigNil) {
+				log.Warnf("Warning, the %s", err)
+				// break
+			}
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
 			//store the last error from operation
 			return false, 0, err

@@ -13,8 +13,7 @@ type Config struct {
 	OauthClientId               string
 	ApiEndpoint                 string
 	DefinitionType              string `envconfig:"default=BASIC"`
-	ApiKey                      string
-	Disabled                    bool `envconfig:"default=false"`
+	Disabled                    bool   `envconfig:"default=false"`
 	InternalTesterAccessId      int64
 	InternalTesterService       string `envconfig:"optional"`
 	InternalTesterTags          []*Tag `envconfig:"optional"`
@@ -27,14 +26,13 @@ type Config struct {
 	GardenerShootNameTagClassId int
 	GardenerSeedNameTagClassId  int
 	RegionTagClassId            int
-	TrialApiKey                 string `envconfig:"optional"`
-	TrialInternalTesterAccessId int64  `envconfig:"optional"`
-	TrialParentId               int64  `envconfig:"optional"`
-	TrialGroupId                int64  `envconfig:"optional"`
+	TrialInternalTesterAccessId int64 `envconfig:"optional"`
+	TrialParentId               int64 `envconfig:"optional"`
+	TrialGroupId                int64 `envconfig:"optional"`
 }
 
 func (c Config) IsTrialConfigured() bool {
-	return c.TrialApiKey != "" && c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
+	return c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
 }
 
 type avsError struct {

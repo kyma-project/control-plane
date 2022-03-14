@@ -936,10 +936,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight: 4,
-			step:   upgrade_kyma.NewInternalEvaluationStep(internalEvalAssistant),
-		},
-		{
 			weight: 5,
 			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
 			cnd:    upgrade_kyma.ForKyma1,

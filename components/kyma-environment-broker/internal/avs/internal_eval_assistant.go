@@ -1,19 +1,10 @@
 package avs
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-)
-
-const (
-	EvaluationIdKey = "avs_bridge.config.evaluations.cluster.id"
-	AvsBridgeAPIKey = "avs_bridge.config.availabilityService.apiKey"
-	ComponentName   = "avs-bridge"
 )
 
 type InternalEvalAssistant struct {
@@ -30,24 +21,6 @@ func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
 
 func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
 	return newBasicEvaluationCreateRequest(operations, iec, url)
-}
-
-func (iec *InternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, pp internal.ProvisioningParameters) {
-	apiKey := iec.avsConfig.ApiKey
-	if (broker.IsTrialPlan(pp.PlanID) || broker.IsFreemiumPlan(pp.PlanID)) && iec.avsConfig.IsTrialConfigured() {
-		apiKey = iec.avsConfig.TrialApiKey
-	}
-	inputCreator.AppendOverrides(ComponentName, []*gqlschema.ConfigEntryInput{
-		{
-			Key:   EvaluationIdKey,
-			Value: strconv.FormatInt(evaluationId, 10),
-		},
-		{
-			Key:    AvsBridgeAPIKey,
-			Value:  apiKey,
-			Secret: ptr.Bool(true),
-		},
-	})
 }
 
 func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool {

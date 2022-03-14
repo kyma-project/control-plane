@@ -1,3 +1,4 @@
+//go:build reconciler_integration
 // +build reconciler_integration
 
 package reconciler

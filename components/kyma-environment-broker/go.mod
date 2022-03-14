@@ -13,7 +13,7 @@ require (
 	github.com/Peripli/service-manager v0.19.4
 	github.com/Peripli/service-manager-cli v1.11.8
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/gardener/gardener v1.24.0
+	github.com/gardener/gardener v1.41.1
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
@@ -23,7 +23,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220125140301-bfb0c437ad31
 	github.com/kyma-incubator/reconciler v0.0.0-20211220095539-bb1616d411aa
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20211103174936-687e40a56850
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220314101303-181ad2e1cc94
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -41,11 +41,11 @@ require (
 	golang.org/x/mod v0.5.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.22.4
-	k8s.io/apiextensions-apiserver v0.22.4
-	k8s.io/apimachinery v0.22.4
+	k8s.io/api v0.23.4
+	k8s.io/apiextensions-apiserver v0.23.3
+	k8s.io/apimachinery v0.23.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	sigs.k8s.io/controller-runtime v0.8.3
+	sigs.k8s.io/controller-runtime v0.11.0
 )
 
 require (
@@ -76,11 +76,11 @@ require (
 	github.com/docker/docker v20.10.12+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
+	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/go-logr/logr v0.4.0 // indirect
+	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
@@ -99,9 +99,9 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
-	github.com/mitchellh/copystructure v1.1.2 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
-	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/sys/mount v0.3.0 // indirect
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
@@ -110,7 +110,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onrik/logrus v0.9.0 // indirect
-	github.com/onsi/ginkgo v1.16.2 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.0.3 // indirect
@@ -136,7 +136,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
-	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -146,23 +146,23 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/klog/v2 v2.9.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20211109043538-20434351676c // indirect
-	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
-	sigs.k8s.io/yaml v1.2.0 // indirect
+	k8s.io/klog/v2 v2.30.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
+	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
+	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220304025713-0dd20eb84d55
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 
 	// NOTE: some dependencies require old style client-go version k8s.io/client-go@v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	// github.com/gardener/hvpa-controller, github.com/kyma-project/kyma/components/compass-runtime-agent, github.com/kyma-project/control-plane/components/provisioner, github.com/gardener/gardener
-	k8s.io/api => k8s.io/api v0.22.3
+	k8s.io/api => k8s.io/api v0.23.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.12
-	k8s.io/apimachinery => k8s.io/apimachinery v0.22.3
-	k8s.io/client-go => k8s.io/client-go v0.22.3
-	k8s.io/kubectl => k8s.io/kubectl v0.22.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.23.4
+	k8s.io/client-go => k8s.io/client-go v0.23.4
+	k8s.io/kubectl => k8s.io/kubectl v0.23.4
 )

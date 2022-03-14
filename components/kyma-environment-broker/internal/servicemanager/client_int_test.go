@@ -1,3 +1,4 @@
+//go:build sm_integration
 // +build sm_integration
 
 package servicemanager
