@@ -269,7 +269,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -302,11 +302,11 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
-				GroupsClaim:    "",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url.com",
-				SigningAlgs:    []string{"RSA256"},
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: []string{"john.smith@email.com"},
@@ -336,7 +336,7 @@ func TestUpdateContext(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS384"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -516,7 +516,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -558,7 +558,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
        "parameters": {
        		"oidc": {
 				"clientID": "id-oooxx",
-				"signingAlgs": ["RSA256"],
+				"signingAlgs": ["RS256"],
                 "issuerURL": "https://issuer.url.com"
 			}
        }
@@ -619,7 +619,7 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -694,10 +694,10 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -730,7 +730,6 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -764,9 +763,12 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -813,8 +815,11 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["RS384"],
+				"issuerURL": "https://issuer.url.com",
+				"groupsClaim": "new-groups-claim",
+				"usernameClaim": "new-username-claim",
+				"usernamePrefix": "->"
 			}
 		}
    }`)
@@ -831,9 +836,12 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "new-groups-claim",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"RS384"},
+				UsernameClaim:  "new-username-claim",
+				UsernamePrefix: "->",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -894,10 +902,10 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -961,10 +969,10 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1014,8 +1022,8 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["ES256"],
+				"issuerURL": "https://newissuer.url.com"
 			}
 		}
    }`)
@@ -1032,9 +1040,12 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://newissuer.url.com",
+				SigningAlgs:    []string{"ES256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -1097,10 +1108,10 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1151,8 +1162,9 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["ES384"],
+				"issuerURL": "https://issuer.url.com",
+				"groupsClaim": "new-groups-claim"
 			},
 			"administrators":["newAdmin3@kyma.cx", "newAdmin4@kyma.cx"]
 		}
@@ -1170,9 +1182,12 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "new-groups-claim",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"ES384"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -1236,10 +1251,10 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1259,8 +1274,9 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["PS256"],
+				"issuerURL": "https://newissuer.url.com",
+				"usernamePrefix": "->"
 			},
 			"administrators":["newAdmin5@kyma.cx", "newAdmin6@kyma.cx"]
 		}
@@ -1276,9 +1292,12 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://newissuer.url.com",
+				SigningAlgs:    []string{"PS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "->",
 			},
 		},
 		Administrators: expectedAdmins2,
@@ -1347,10 +1366,10 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1482,10 +1501,10 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1517,10 +1536,10 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1572,7 +1591,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -1696,10 +1715,10 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},

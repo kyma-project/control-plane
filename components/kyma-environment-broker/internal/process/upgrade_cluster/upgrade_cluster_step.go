@@ -124,7 +124,9 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 
 func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation, lastClusterConfig *gqlschema.GardenerConfigInput) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
-	operation.InputCreator.SetOIDCLastValues(*lastClusterConfig.OidcConfig)
+	if lastClusterConfig != nil {
+		operation.InputCreator.SetOIDCLastValues(*lastClusterConfig.OidcConfig)
+	}
 	input, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return input, errors.Wrap(err, "while building upgradeShootInput for provisioner")

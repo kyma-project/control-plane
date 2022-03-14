@@ -93,7 +93,9 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
-	operation.InputCreator.SetOIDCLastValues(*operation.LastRuntimeState.ClusterConfig.OidcConfig)
+	if operation.LastRuntimeState.ClusterConfig.OidcConfig != nil {
+		operation.InputCreator.SetOIDCLastValues(*operation.LastRuntimeState.ClusterConfig.OidcConfig)
+	}
 	fullInput, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
