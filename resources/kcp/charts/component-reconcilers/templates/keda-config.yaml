@@ -22,7 +22,7 @@ spec:
     - type: prometheus
       metadata:
         # Required
-        serverAddress: http://prometheus-service.kcp-system.svc.cluster.local:9090
+        serverAddress: http://monitoring-prometheus.kyma-system.svc.cluster.local:9090
         metricName: {{ $component }}_reconciler_worker_pool_occupancy_ratio
         threshold: '80'
         query: 'reconciler_worker_pool_occupancy_ratio{component="{{ $componentPrometheusLabelName }}"}'
