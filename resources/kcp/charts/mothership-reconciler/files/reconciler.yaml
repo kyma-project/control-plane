@@ -2,7 +2,7 @@ db:
   driver: postgres
   encryption:
     keyFile: "/encryption/reconciler.key"
-  blockQueries: true
+  blockQueries: false
   postgres:
     host: {{ .Values.db.serviceHost }}
     database: {{ .Values.db.reconcilerDbName }}
