@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
@@ -36,6 +37,7 @@ func NewMigrationAllCommand() *cobra.Command {
 
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
+	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cmd.corbaCmd = cobraCmd
 
@@ -47,6 +49,7 @@ type MigrationAllCommand struct {
 	source    string
 	workers   int
 	buffer    int
+	recheck   int64
 	wg        sync.WaitGroup
 	log       *logrus.Logger
 	ersClient client.Client
@@ -61,10 +64,10 @@ func (c *MigrationAllCommand) Run() error {
 	defer ersClient.Close()
 
 	c.log.Infof("Creating a migrator with %d workers", c.workers)
-	instances := make(chan ers.Instance, c.buffer)
+	payloads := make(chan ers.Work, c.buffer)
 
 	for w := 0; w < c.workers; w++ {
-		go c.worker(w, instances)
+		go c.worker(w, payloads)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -80,12 +83,12 @@ func (c *MigrationAllCommand) Run() error {
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
 
-		instances <- instance
+		payloads <- ers.Work{instance, 0}
 		c.wg.Add(1)
 	}
 
 	c.wg.Wait()
-	close(instances)
+	close(payloads)
 
 	return nil
 }
@@ -94,28 +97,38 @@ type Worker struct {
 	color string
 }
 
-func (c *MigrationAllCommand) worker(id int, instances chan ers.Instance) {
-	for instance := range instances {
-		c.log.Infof("[Worker %d] Processing instance %s", id, instance.Name)
+func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 
+	for work := range workChannel {
+		now := time.Now().Unix()
+		delta := now - work.ProcessedTimestamp
+		if delta < c.recheck {
+			workChannel <- work
+			continue
+		}
+
+		c.log.Infof("[Worker %d] Processing instance %s", id, work.Instance.Name)
+
+		instance := work.Instance
 		if instance.Migrated {
 			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
 				id, Green, instance.Name, Reset)
 			c.wg.Done()
 		} else {
-			c.log.Infof("[Worker %d] Instance %s not yet migrated, triggering migration",
+			c.log.Infof("[Worker %d] Instance %s not yet migrated",
 				id, instance.Name)
-			c.log.Infof("[Worker %d] Instance %s checking current status",
+			c.log.Infof("[Worker %d] Instance %s - refreshing status",
 				id, instance.Name)
 			refreshed, err := c.ersClient.GetOne(instance.Id)
+			work.Instance = *refreshed
 			if err != nil {
 				c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
-				instances <- instance
+				workChannel <- work
 			}
 
 			if refreshed == nil {
 				c.log.Errorf("[Worker %d] Instance %s is missing", id, instance.Name)
-				instances <- instance
+				workChannel <- work
 			}
 
 			if !refreshed.Migrated {
@@ -132,7 +145,9 @@ func (c *MigrationAllCommand) worker(id int, instances chan ers.Instance) {
 				}
 			}
 
-			instances <- *refreshed
+			c.log.Infof("[Worker %d] Checking instance %s. Processing again after %v s", id, work.Instance.Name, c.recheck)
+			work.ProcessedTimestamp = now
+			workChannel <- work
 		}
 	}
 }
