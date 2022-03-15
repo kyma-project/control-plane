@@ -54,7 +54,12 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), nil, log)
 	}
 
-	input, err := s.createUpgradeShootInput(operation)
+	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.InstanceDetails.RuntimeID)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
+	}
+
+	input, err := s.createUpgradeShootInput(operation, &latestRuntimeStateWithOIDC.ClusterConfig)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
@@ -117,8 +122,11 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 
 }
 
-func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation) (gqlschema.UpgradeShootInput, error) {
+func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation, lastClusterConfig *gqlschema.GardenerConfigInput) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
+	if lastClusterConfig.OidcConfig != nil {
+		operation.InputCreator.SetOIDCLastValues(*lastClusterConfig.OidcConfig)
+	}
 	input, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return input, errors.Wrap(err, "while building upgradeShootInput for provisioner")

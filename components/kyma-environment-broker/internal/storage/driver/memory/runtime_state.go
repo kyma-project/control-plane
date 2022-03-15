@@ -102,6 +102,21 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 	return internal.RuntimeState{}, dberr.NotFound("runtime state with Reconciler input for runtime with ID: %s not found", runtimeID)
 }
 
+func (s *runtimeState) GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (internal.RuntimeState, error) {
+	states, err := s.getRuntimeStatesByRuntimeID(runtimeID)
+	if err != nil {
+		return internal.RuntimeState{}, err
+	}
+
+	for _, state := range states {
+		if state.ClusterConfig.OidcConfig != nil {
+			return state, nil
+		}
+	}
+
+	return internal.RuntimeState{}, dberr.NotFound("runtime state with OIDC config for runtime with ID: %s not found", runtimeID)
+}
+
 func (s *runtimeState) getRuntimeStatesByRuntimeID(runtimeID string) ([]internal.RuntimeState, error) {
 	states, err := s.ListByRuntimeID(runtimeID)
 	if err != nil {

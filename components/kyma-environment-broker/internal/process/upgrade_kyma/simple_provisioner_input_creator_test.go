@@ -146,3 +146,7 @@ func (c *simpleInputCreator) SetRuntimeID(_ string) internal.ProvisionerInputCre
 func (c *simpleInputCreator) SetInstanceID(_ string) internal.ProvisionerInputCreator {
 	return c
 }
+
+func (c *simpleInputCreator) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	return c
+}

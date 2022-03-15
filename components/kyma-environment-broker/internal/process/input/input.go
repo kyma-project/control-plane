@@ -54,6 +54,7 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
+	oidcLastValues            gqlschema.OIDCConfigInput
 
 	trialNodesNumber  int
 	instanceID        string
@@ -119,6 +120,11 @@ func (r *RuntimeInput) SetClusterName(name string) internal.ProvisionerInputCrea
 	if name != "" {
 		r.clusterName = name
 	}
+	return r
+}
+
+func (r *RuntimeInput) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	r.oidcLastValues = oidcConfig
 	return r
 }
 
@@ -628,35 +634,17 @@ func (r *RuntimeInput) configureDNS() error {
 }
 
 func (r *RuntimeInput) configureOIDC() error {
-	// set default or provided params to provisioning/update inpuit (if exists)
+	// set default or provided params to provisioning/update input (if exists)
 	// This method could be used for:
 	// provisioning (upgradeShootInput.GardenerConfig is nil)
 	// or upgrade (provisionRuntimeInput.ClusterConfig is nil)
 
-	oidcParamsToSet := &gqlschema.OIDCConfigInput{
-		ClientID:       r.oidcDefaultValues.ClientID,
-		GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
-		IssuerURL:      r.oidcDefaultValues.IssuerURL,
-		SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
-		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
-		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
-	}
-	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		oidc := r.provisioningParameters.Parameters.OIDC
-		oidcParamsToSet = &gqlschema.OIDCConfigInput{
-			ClientID:       oidc.ClientID,
-			GroupsClaim:    oidc.GroupsClaim,
-			IssuerURL:      oidc.IssuerURL,
-			SigningAlgs:    oidc.SigningAlgs,
-			UsernameClaim:  oidc.UsernameClaim,
-			UsernamePrefix: oidc.UsernamePrefix,
-		}
-	}
-
 	if r.provisionRuntimeInput.ClusterConfig != nil {
+		oidcParamsToSet := r.setOIDCForProvisioning()
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	if r.upgradeShootInput.GardenerConfig != nil {
+		oidcParamsToSet := r.setOIDCForUpgrade()
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	return nil
@@ -684,6 +672,73 @@ func (r *RuntimeInput) setNodesForTrialUpgrade() error {
 		r.upgradeShootInput.GardenerConfig.AutoScalerMax = &r.trialNodesNumber
 	}
 	return nil
+}
+
+func (r *RuntimeInput) setOIDCForProvisioning() *gqlschema.OIDCConfigInput {
+	oidcConfig := &gqlschema.OIDCConfigInput{
+		ClientID:       r.oidcDefaultValues.ClientID,
+		GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
+		IssuerURL:      r.oidcDefaultValues.IssuerURL,
+		SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
+		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
+		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
+	}
+
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		r.setOIDCFromProvisioningParameters(oidcConfig)
+	}
+
+	return oidcConfig
+}
+
+func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
+	oidcConfig := r.oidcLastValues
+	r.setOIDCDefaultValuesIfEmpty(&oidcConfig)
+
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		r.setOIDCFromProvisioningParameters(&oidcConfig)
+	}
+
+	return &oidcConfig
+}
+
+func (r *RuntimeInput) setOIDCFromProvisioningParameters(oidcConfig *gqlschema.OIDCConfigInput) {
+	providedOIDC := r.provisioningParameters.Parameters.OIDC
+	oidcConfig.ClientID = providedOIDC.ClientID
+	oidcConfig.IssuerURL = providedOIDC.IssuerURL
+	if len(providedOIDC.GroupsClaim) != 0 {
+		oidcConfig.GroupsClaim = providedOIDC.GroupsClaim
+	}
+	if len(providedOIDC.SigningAlgs) != 0 {
+		oidcConfig.SigningAlgs = providedOIDC.SigningAlgs
+	}
+	if len(providedOIDC.UsernameClaim) != 0 {
+		oidcConfig.UsernameClaim = providedOIDC.UsernameClaim
+	}
+	if len(providedOIDC.UsernamePrefix) != 0 {
+		oidcConfig.UsernamePrefix = providedOIDC.UsernamePrefix
+	}
+}
+
+func (r *RuntimeInput) setOIDCDefaultValuesIfEmpty(oidcConfig *gqlschema.OIDCConfigInput) {
+	if oidcConfig.ClientID == "" {
+		oidcConfig.ClientID = r.oidcDefaultValues.ClientID
+	}
+	if oidcConfig.IssuerURL == "" {
+		oidcConfig.IssuerURL = r.oidcDefaultValues.IssuerURL
+	}
+	if oidcConfig.GroupsClaim == "" {
+		oidcConfig.GroupsClaim = r.oidcDefaultValues.GroupsClaim
+	}
+	if len(oidcConfig.SigningAlgs) == 0 {
+		oidcConfig.SigningAlgs = r.oidcDefaultValues.SigningAlgs
+	}
+	if oidcConfig.UsernameClaim == "" {
+		oidcConfig.UsernameClaim = r.oidcDefaultValues.UsernameClaim
+	}
+	if oidcConfig.UsernamePrefix == "" {
+		oidcConfig.UsernamePrefix = r.oidcDefaultValues.UsernamePrefix
+	}
 }
 
 func updateString(toUpdate *string, value *string) {

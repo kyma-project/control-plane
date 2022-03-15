@@ -38,6 +38,16 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 	}
 	operation.InputCreator = fixInputCreator(t)
 	os.InsertUpdatingOperation(operation)
+	runtimeState := fixture.FixRuntimeState("runtime-id", "runtime-id", "provisioning-op-1")
+	runtimeState.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+		ClientID:       "clientID",
+		GroupsClaim:    "groupsClaim",
+		IssuerURL:      "https://issuer.url",
+		SigningAlgs:    []string{"PS512"},
+		UsernameClaim:  "usernameClaim",
+		UsernamePrefix: "usernamePrefix",
+	}
+	rs.Insert(runtimeState)
 
 	// when
 	newOperation, d, err := step.Run(operation, logrus.New())

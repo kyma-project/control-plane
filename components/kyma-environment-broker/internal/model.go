@@ -46,6 +46,7 @@ type ProvisionerInputCreator interface {
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
 	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
 	SetClusterName(name string) ProvisionerInputCreator
+	SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for

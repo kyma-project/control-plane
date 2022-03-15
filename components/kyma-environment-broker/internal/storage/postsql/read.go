@@ -454,6 +454,31 @@ func (r readSession) GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID s
 	return state, nil
 }
 
+func (r readSession) GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID),
+		dbr.Expr("cluster_config::json->>'oidcConfig' != ?", "null"),
+	)
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return state, dberr.NotFound("cannot find latest runtime state with OIDC config: %s", err)
+		}
+		return state, dberr.Internal("failed to get the latest runtime state with OIDC config: %s", err)
+	}
+	if count == 0 {
+		return state, dberr.NotFound("found 0 latest runtime states with OIDC config: %s", err)
+	}
+	return state, nil
+}
+
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {
 	var operation dbmodel.OperationDTO
 
