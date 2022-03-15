@@ -188,7 +188,7 @@ func (s *runtimeState) GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (int
 	var state dbmodel.RuntimeStateDTO
 	var lastErr dberr.Error
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		state, lastErr = sess.GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID)
+		state, lastErr = sess.GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID)
 		if lastErr != nil {
 			if dberr.IsNotFound(lastErr) {
 				return false, dberr.NotFound("RuntimeState for runtime %s not found", runtimeID)
@@ -205,6 +205,9 @@ func (s *runtimeState) GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (int
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
 		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+	}
+	if result.ClusterConfig.OidcConfig != nil {
+		return result, nil
 	}
 
 	return internal.RuntimeState{}, fmt.Errorf("failed to find RuntimeState with OIDC config for runtime %s ", runtimeID)

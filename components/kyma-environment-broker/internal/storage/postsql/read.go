@@ -469,12 +469,12 @@ func (r readSession) GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID st
 		Load(&state)
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return state, dberr.NotFound("cannot find latest runtime state with kyma version: %s", err)
+			return state, dberr.NotFound("cannot find latest runtime state with OIDC config: %s", err)
 		}
-		return state, dberr.Internal("Failed to get the latest runtime state with kyma version: %s", err)
+		return state, dberr.Internal("failed to get the latest runtime state with OIDC config: %s", err)
 	}
 	if count == 0 {
-		return state, dberr.NotFound("found 0 latest runtime states with kyma version: %s", err)
+		return state, dberr.NotFound("found 0 latest runtime states with OIDC config: %s", err)
 	}
 	return state, nil
 }
