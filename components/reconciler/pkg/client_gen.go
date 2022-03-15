@@ -103,6 +103,9 @@ type ClientInterface interface {
 	// GetClustersState request
 	GetClustersState(ctx context.Context, params *GetClustersStateParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteReconciliationsRuntimeID request
+	DeleteReconciliationsRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteClustersRuntimeID request
 	DeleteClustersRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -185,6 +188,18 @@ func (c *Client) PutClusters(ctx context.Context, body PutClustersJSONRequestBod
 
 func (c *Client) GetClustersState(ctx context.Context, params *GetClustersStateParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClustersStateRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteReconciliationsRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClustersRuntimeIDRequest(c.Server, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -479,6 +494,40 @@ func NewGetClustersStateRequest(server string, params *GetClustersStateParams) (
 	queryURL.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteClustersRuntimeIDRequest generates requests for DeleteClustersRuntimeID
+func NewDeleteReconciliationsRuntimeIDRequest(server string, runtimeID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/clusters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
