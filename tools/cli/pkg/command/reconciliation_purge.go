@@ -23,7 +23,7 @@ type operationPurgeCmd struct {
 	opts          operationPurgeOpts
 }
 
-func NewOperationPurgeCmd() *cobra.Command {
+func NewReconciliationPurgeCmd() *cobra.Command {
 	cmd := operationPurgeCmd{}
 
 	cobraCmd := &cobra.Command{
