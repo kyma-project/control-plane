@@ -56,7 +56,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 
 	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.InstanceDetails.RuntimeID)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
 	}
 
 	input, err := s.createUpgradeShootInput(operation, &latestRuntimeStateWithOIDC.ClusterConfig)

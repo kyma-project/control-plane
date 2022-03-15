@@ -46,7 +46,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.RuntimeID)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
 	}
 	operation.LastRuntimeState = latestRuntimeStateWithOIDC
 
