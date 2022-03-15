@@ -124,7 +124,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 
 func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation, lastClusterConfig *gqlschema.GardenerConfigInput) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
-	if lastClusterConfig != nil {
+	if lastClusterConfig.OidcConfig != nil {
 		operation.InputCreator.SetOIDCLastValues(*lastClusterConfig.OidcConfig)
 	}
 	input, err := operation.InputCreator.CreateUpgradeShootInput()
