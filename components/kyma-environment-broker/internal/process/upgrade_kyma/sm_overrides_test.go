@@ -113,7 +113,7 @@ func TestServiceManagerOverridesStepError(t *testing.T) {
 	}{
 		"return error when creds in request are not provided and overrides should not be applied": {
 			givenReqParams: internal.ProvisioningParameters{},
-			expErr:         "Service Manager Credentials are required to be send in provisioning request.",
+			expErr:         "unable to obtain SM credentials: Service Manager Credentials are required to be send in provisioning request.",
 		},
 	}
 	for tN, tC := range tests {

@@ -181,10 +181,10 @@ func (r *RuntimeInput) SetLabel(key, value string) internal.ProvisionerInputCrea
 	defer r.mutex.Unlock("Labels")
 
 	if r.provisionRuntimeInput.RuntimeInput.Labels == nil {
-		r.provisionRuntimeInput.RuntimeInput.Labels = &gqlschema.Labels{}
+		r.provisionRuntimeInput.RuntimeInput.Labels = gqlschema.Labels{}
 	}
 
-	(*r.provisionRuntimeInput.RuntimeInput.Labels)[key] = value
+	(r.provisionRuntimeInput.RuntimeInput.Labels)[key] = value
 	return r
 }
 

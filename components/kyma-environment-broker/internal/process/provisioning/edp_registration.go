@@ -85,7 +85,7 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 		}
 	}
 
-	newOp, repeat := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+	newOp, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
 		op.EDPCreated = true
 	}, log)
 	if repeat != 0 {
@@ -112,7 +112,7 @@ func (s *EDPRegistrationStep) handleError(operation internal.ProvisioningOperati
 		return operation, 0, nil
 	}
 
-	return s.operationManager.OperationFailed(operation, msg, log)
+	return s.operationManager.OperationFailed(operation, msg, err, log)
 }
 
 func (s *EDPRegistrationStep) selectEnvironmentKey(region string, log logrus.FieldLogger) string {

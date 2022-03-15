@@ -57,13 +57,13 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 			errMsg := "cannot create AVS evaluation (temporary)"
 			log.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			return del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, log)
+			return del.provisionManager.RetryOperation(operation, errMsg, err, retryConfig.retryInterval, retryConfig.maxTime, log)
 		default:
 			errMsg := "cannot create AVS evaluation"
 			log.Errorf("%s: %s", errMsg, err)
-			return del.provisionManager.OperationFailed(operation, errMsg, log)
+			return del.provisionManager.OperationFailed(operation, errMsg, err, log)
 		}
-		updatedOperation, d = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		updatedOperation, d, _ = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 			evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
 			evalAssistant.SetDeleted(&operation.Avs, false)
 		}, log)
@@ -88,12 +88,12 @@ func (del *Delegator) AddTags(log logrus.FieldLogger, operation internal.Provisi
 			errMsg := "cannot add tags to AVS evaluation (temporary)"
 			log.Errorf("%s: %s", errMsg, err)
 			retryConfig := evalAssistant.provideRetryConfig()
-			op, duration, err := del.provisionManager.RetryOperation(operation, errMsg, retryConfig.retryInterval, retryConfig.maxTime, log)
+			op, duration, err := del.provisionManager.RetryOperation(operation, errMsg, err, retryConfig.retryInterval, retryConfig.maxTime, log)
 			return op, duration, err
 		default:
 			errMsg := "cannot add tags to AVS evaluation"
 			log.Errorf("%s: %s", errMsg, err)
-			op, duration, err := del.provisionManager.OperationFailed(operation, errMsg, log)
+			op, duration, err := del.provisionManager.OperationFailed(operation, errMsg, err, log)
 			return op, duration, err
 		}
 	}

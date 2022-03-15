@@ -38,7 +38,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 	}
 	if operation.Runtime.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.Runtime.RuntimeID)
@@ -53,7 +53,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 
-	newOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}, log)
 	if retry > 0 {

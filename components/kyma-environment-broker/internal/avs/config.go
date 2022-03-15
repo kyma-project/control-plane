@@ -1,5 +1,11 @@
 package avs
 
+import (
+	"fmt"
+
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+)
+
 type Config struct {
 	OauthTokenEndpoint          string
 	OauthUsername               string
@@ -27,4 +33,24 @@ type Config struct {
 
 func (c Config) IsTrialConfigured() bool {
 	return c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
+}
+
+type avsError struct {
+	message string
+}
+
+func (e avsError) Error() string {
+	return e.message
+}
+
+func (e avsError) Component() kebError.ErrComponent {
+	return kebError.ErrAVS
+}
+
+func (e avsError) Reason() kebError.ErrReason {
+	return kebError.ErrHttpStatusCode
+}
+
+func NewAvsError(format string, args ...interface{}) kebError.ErrorReporter {
+	return avsError{message: fmt.Sprintf(format, args...)}
 }

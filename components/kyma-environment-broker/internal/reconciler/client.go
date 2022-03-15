@@ -69,9 +69,9 @@ func (c *client) ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerA
 	switch {
 	case res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated:
 	case res.StatusCode >= 400 && res.StatusCode < 500:
-		return nil, fmt.Errorf("got status %d", res.StatusCode)
+		return nil, httpStatusCodeError(res.StatusCode)
 	case res.StatusCode >= 500:
-		return nil, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return nil, kebError.WrapNewTemporaryError(httpStatusCodeError(res.StatusCode))
 	}
 
 	registerClusterResponse, err := ioutil.ReadAll(res.Body)
@@ -105,9 +105,9 @@ func (c *client) DeleteCluster(clusterName string) error {
 	case res.StatusCode == http.StatusNotFound:
 		return nil
 	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
-		return fmt.Errorf("got status %d", res.StatusCode)
+		return httpStatusCodeError(res.StatusCode)
 	case res.StatusCode >= 500:
-		return kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return kebError.WrapNewTemporaryError(httpStatusCodeError(res.StatusCode))
 	default:
 		return nil
 	}
@@ -132,9 +132,9 @@ func (c *client) GetCluster(clusterName string, configVersion int64) (*reconcile
 	case res.StatusCode == http.StatusNotFound:
 		return &reconcilerApi.HTTPClusterResponse{}, kebError.NotFoundError{}
 	case res.StatusCode >= 400 && res.StatusCode < 500 && res.StatusCode != http.StatusNotFound:
-		return &reconcilerApi.HTTPClusterResponse{}, fmt.Errorf("got status %d", res.StatusCode)
+		return &reconcilerApi.HTTPClusterResponse{}, httpStatusCodeError(res.StatusCode)
 	case res.StatusCode >= 500:
-		return &reconcilerApi.HTTPClusterResponse{}, kebError.NewTemporaryError("Got status %d", res.StatusCode)
+		return &reconcilerApi.HTTPClusterResponse{}, kebError.WrapNewTemporaryError(httpStatusCodeError(res.StatusCode))
 	}
 
 	getClusterResponse, err := ioutil.ReadAll(res.Body)
@@ -208,4 +208,11 @@ func (c *client) GetStatusChange(clusterName, offset string) ([]*reconcilerApi.S
 		return []*reconcilerApi.StatusChange{}, err
 	}
 	return response, nil
+}
+
+func httpStatusCodeError(code int) kebError.LastError {
+	return kebError.LastError{}.
+		SetMessage(fmt.Sprintf("got status %d", code)).
+		SetReason(kebError.ErrHttpStatusCode).
+		SetComponent(kebError.ErrReconciler)
 }

@@ -2,11 +2,11 @@ package provisioning
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -105,14 +105,21 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
+		timeoutErr := kebError.TimeoutError("operation has reached the time limit")
+		operation.LastError = timeoutErr
+		defer m.callPubSubOutsideSteps(operation, timeoutErr)
+
 		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		operation.State = domain.Failed
 		_, err = m.operationStorage.UpdateProvisioningOperation(*operation)
 		if err != nil {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
-			return time.Second, err
+			timeoutErr = timeoutErr.SetMessage(fmt.Sprintf("%s and %s", timeoutErr.Error(), err.Error()))
+			operation.LastError = timeoutErr
+			return time.Second, timeoutErr
 		}
-		return 0, errors.New("operation has reached the time limit")
+
+		return 0, timeoutErr
 	}
 
 	var when time.Duration
@@ -159,6 +166,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	m.publisher.Publish(context.TODO(), process.ProvisioningSucceeded{
 		Operation: processedOperation,
 	})
+
 	_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
@@ -185,9 +193,20 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		start := time.Now()
 		logger.Infof("Start step")
 		processedOperation, when, err := step.Run(operation, logger)
+
+		if err != nil {
+			processedOperation.LastError = kebError.ReasonForError(err)
+			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.Operation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
+			logOperation.Errorf("Last error from step %s: %s", step.Name(), processedOperation.LastError.Error())
+			// only save to storage, skip for alerting if error
+			_, err = m.operationStorage.UpdateProvisioningOperation(processedOperation)
+			if err != nil {
+				logOperation.Errorf("Unable to save operation with resolved last error from step: %s", step.Name())
+			}
+		}
+
 		m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
-			OldOperation: operation,
-			Operation:    processedOperation,
+			Operation: processedOperation,
 			StepProcessed: process.StepProcessed{
 				StepName: step.Name(),
 				Duration: time.Since(start),
@@ -205,4 +224,17 @@ func (m *StagedManager) runStep(step Step, operation internal.ProvisioningOperat
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
+}
+
+func (m *StagedManager) callPubSubOutsideSteps(operation *internal.ProvisioningOperation, err error) {
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operation.Operation.ID, "error_component": operation.LastError.Component(), "error_reason": operation.LastError.Reason()})
+	logOperation.Errorf("Last error: %s", operation.LastError.Error())
+
+	m.publisher.Publish(context.TODO(), process.ProvisioningStepProcessed{
+		Operation: *operation,
+		StepProcessed: process.StepProcessed{
+			Duration: time.Since(operation.CreatedAt),
+			Error:    err,
+		},
+	})
 }

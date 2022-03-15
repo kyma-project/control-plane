@@ -36,7 +36,7 @@ func (s *RemoveRuntimeStep) Name() string {
 func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisionerTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), nil, log)
 	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
@@ -73,7 +73,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		}
 		log.Infof("fetched ProvisionerOperationID=%s", provisionerResponse)
 		repeat := time.Duration(0)
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 			operation.ProvisionerOperationID = provisionerResponse
 		}, log)
 		if repeat != 0 {
