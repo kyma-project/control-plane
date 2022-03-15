@@ -54,12 +54,12 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), nil, log)
 	}
 
-	lastRuntimeState, err := s.runtimeStateStorage.GetLatestByRuntimeID(operation.InstanceDetails.RuntimeID)
+	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.InstanceDetails.RuntimeID)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 	}
 
-	input, err := s.createUpgradeShootInput(operation, &lastRuntimeState.ClusterConfig)
+	input, err := s.createUpgradeShootInput(operation, &latestRuntimeStateWithOIDC.ClusterConfig)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}

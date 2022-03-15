@@ -693,7 +693,6 @@ func (r *RuntimeInput) setOIDCForProvisioning() *gqlschema.OIDCConfigInput {
 
 func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
 	oidcConfig := r.oidcLastValues
-
 	r.setOIDCDefaultValuesIfEmpty(&oidcConfig)
 
 	if r.provisioningParameters.Parameters.OIDC.IsProvided() {

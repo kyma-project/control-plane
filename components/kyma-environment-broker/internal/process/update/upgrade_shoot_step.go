@@ -44,11 +44,11 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 	log = log.WithField("runtimeID", operation.RuntimeID)
 
-	lastRuntimeState, err := s.runtimeStateStorage.GetLatestByRuntimeID(operation.RuntimeID)
+	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.RuntimeID)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
 	}
-	operation.LastRuntimeState = lastRuntimeState
+	operation.LastRuntimeState = latestRuntimeStateWithOIDC
 
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
