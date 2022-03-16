@@ -66,7 +66,7 @@ func (cmd *operationPurgeCmd) Run() error {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	response, err := client.DeleteReconciliationsRuntimeID(ctx, cmd.opts.runtimeID)
+	response, err := client.DeleteReconciliationsClusterRuntimeID(ctx, cmd.opts.runtimeID)
 	if err != nil {
 		return errors.Wrap(err, "while doing DELETE request to reconciliations delete endpoint")
 	}
