@@ -123,4 +123,4 @@ service:
 serviceMonitor:
   enabled: false
   scrapeTimeout: 30s
-  interval: 60s
+  interval: 30s
