@@ -73,6 +73,7 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
+          - --purge-older-than=96h
           {{- if .Values.options.verbose }}
           - --verbose
           {{- end }}
