@@ -20,7 +20,9 @@ service:
   port: 8080
   istioPort: 15020
 
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# disable here to bypass deploy AuthorizationPolicy and ServiceMonitor in Pipeline Cluster
 serviceMonitor:
-  enabled: true
+  enabled: false
   scrapeTimeout: 30s
   interval: 60s
