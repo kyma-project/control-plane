@@ -284,4 +284,76 @@ func TestRuntimeState(t *testing.T) {
 		assert.Equal(t, runtimeStatePlainVersion.ID, gotRuntimeState.ID)
 		assert.Equal(t, "2.1.55", gotRuntimeState.GetKymaVersion())
 	})
+
+	t.Run("should fetch latest RuntimeState with OIDC config", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		fixRuntimeID := "runtimeID"
+		fixKymaVersion := "2.0.4"
+		expectedOIDCConfig := gqlschema.OIDCConfigInput{
+			ClientID:       "clientID",
+			GroupsClaim:    "groups",
+			IssuerURL:      "https://issuer.url",
+			SigningAlgs:    []string{"RS256"},
+			UsernameClaim:  "sub",
+			UsernamePrefix: "-",
+		}
+
+		fixRuntimeStateID1 := "runtimestate1"
+		fixOperationID1 := "operation1"
+		runtimeStateWithOIDCConfig := fixture.FixRuntimeState(fixRuntimeStateID1, fixRuntimeID, fixOperationID1)
+		runtimeStateWithOIDCConfig.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+			ClientID:       expectedOIDCConfig.ClientID,
+			GroupsClaim:    expectedOIDCConfig.GroupsClaim,
+			IssuerURL:      expectedOIDCConfig.IssuerURL,
+			SigningAlgs:    expectedOIDCConfig.SigningAlgs,
+			UsernameClaim:  expectedOIDCConfig.UsernameClaim,
+			UsernamePrefix: expectedOIDCConfig.UsernamePrefix,
+		}
+		runtimeStateWithOIDCConfig.CreatedAt = runtimeStateWithOIDCConfig.CreatedAt.Add(time.Hour * 1)
+
+		fixRuntimeStateID2 := "runtimestate2"
+		fixOperationID2 := "operation2"
+		runtimeStateWithoutOIDCConfig := fixture.FixRuntimeState(fixRuntimeStateID2, fixRuntimeID, fixOperationID2)
+		runtimeStateWithoutOIDCConfig.CreatedAt = runtimeStateWithoutOIDCConfig.CreatedAt.Add(time.Hour * 2)
+		runtimeStateWithoutOIDCConfig.ClusterSetup = &reconcilerApi.Cluster{
+			KymaConfig: reconcilerApi.KymaConfig{
+				Version: fixKymaVersion,
+			},
+			RuntimeID: fixRuntimeID,
+		}
+
+		storage := brokerStorage.RuntimeStates()
+
+		err = storage.Insert(runtimeStateWithOIDCConfig)
+		require.NoError(t, err)
+		err = storage.Insert(runtimeStateWithoutOIDCConfig)
+		require.NoError(t, err)
+
+		gotRuntimeStates, err := storage.ListByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Len(t, gotRuntimeStates, 2)
+
+		gotRuntimeState, err := storage.GetLatestByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Equal(t, runtimeStateWithoutOIDCConfig.ID, gotRuntimeState.ID)
+		assert.NotNil(t, gotRuntimeState.ClusterSetup)
+
+		gotRuntimeState, err = storage.GetLatestWithOIDCConfigByRuntimeID(fixRuntimeID)
+		require.NoError(t, err)
+		assert.Equal(t, gotRuntimeState.ID, runtimeStateWithOIDCConfig.ID)
+		assert.Nil(t, gotRuntimeState.ClusterSetup)
+		assert.Equal(t, expectedOIDCConfig, *gotRuntimeState.ClusterConfig.OidcConfig)
+	})
 }

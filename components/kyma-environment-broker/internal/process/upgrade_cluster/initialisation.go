@@ -96,7 +96,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 			}
 		}
 
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
@@ -123,10 +123,10 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade shoot input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while creating upgrade shoot input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }
 
@@ -147,13 +147,13 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 		if hasMonitors && !inMaintenance {
 			log.Infof("executing init upgrade steps")
 			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	case UpgradeFinishSteps:
 		if hasMonitors && inMaintenance {
 			log.Infof("executing finish upgrade steps")
 			err = s.evaluationManager.RestoreStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	}
 
@@ -161,9 +161,9 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	case err == nil:
 		return operation, delay, nil
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while performing runtime tasks", err, 10*time.Second, 10*time.Minute, log)
 	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, "error while performing runtime tasks", err, log)
 	}
 }
 
@@ -173,7 +173,7 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.RuntimeOperation.GlobalAccountID, operation.ProvisionerOperationID)
@@ -200,7 +200,7 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
 		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
 		if operation.Description != postUpgradeDescription {
-			operation, delay = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
 				operation.Description = postUpgradeDescription
 			}, log)
 			if delay != 0 {
@@ -220,8 +220,8 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg, log)
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), nil, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
 }

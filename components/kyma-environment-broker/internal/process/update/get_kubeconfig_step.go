@@ -38,14 +38,14 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 		cli, err := s.k8sClientProvider(operation.Kubeconfig)
 		if err != nil {
 			log.Errorf("Unable to create k8s client from the kubeconfig")
-			return s.operationManager.OperationFailed(operation, "could not create a k8s client", log)
+			return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
 		}
 		operation.K8sClient = cli
 		return operation, 0, nil
 	}
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
@@ -61,7 +61,7 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)
 	if err != nil {
 		log.Errorf("Unable to create k8s client from the kubeconfig")
-		return s.operationManager.OperationFailed(operation, "could not create a k8s client", log)
+		return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	operation.K8sClient = cli

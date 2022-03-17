@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
@@ -102,7 +103,7 @@ func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface,
 	_, err := namespaceInterface.Create(context.Background(), ns, meta.CreateOptions{})
 
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return apperrors.Internal("Failed to create namespace: %s", err.Error())
+		return util.K8SErrorToAppError(errors.Wrap(err, "Failed to create namespace"))
 	}
 	return nil
 }

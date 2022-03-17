@@ -37,7 +37,15 @@ spec:
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
-        name: reconciler
+        {{- if (($values).deployment).gitCloneToken }}
+        env:
+        - name: GIT_CLONE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ $component }}-git-token
+              key: token
+        {{- end }}
+        name: {{ $component }}-reconciler
         ports:
         - name: http
           containerPort: 8080

@@ -19,7 +19,7 @@ func SetAvsStatusMaintenance(evaluationManager *avs.EvaluationManager, operation
 	if hasMonitors && !inMaintenance {
 		log.Infof("setting AVS evaluations statuses to maintenance")
 		err = evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-		operation, delay = operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
+		operation, delay, _ = operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.Avs.AvsInternalEvaluationStatus = operation.Avs.AvsInternalEvaluationStatus
 			op.Avs.AvsExternalEvaluationStatus = operation.Avs.AvsExternalEvaluationStatus
 		}, log)
@@ -40,7 +40,7 @@ func RestoreAvsStatus(evaluationManager *avs.EvaluationManager, operationManager
 	if hasMonitors && inMaintenance {
 		log.Infof("clearing AVS maintenantce statuses and restoring original AVS evaluation statuses")
 		err = evaluationManager.RestoreStatus(&operation.Avs, log)
-		operation, delay = operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
+		operation, delay, _ = operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.Avs.AvsInternalEvaluationStatus = operation.Avs.AvsInternalEvaluationStatus
 			op.Avs.AvsExternalEvaluationStatus = operation.Avs.AvsExternalEvaluationStatus
 		}, log)

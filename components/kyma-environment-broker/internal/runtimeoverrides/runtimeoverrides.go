@@ -74,7 +74,7 @@ func (ro *runtimeOverrides) collectFromSecrets() (map[string][]*gqlschema.Config
 
 	if err := ro.k8sClient.List(ro.ctx, secrets, listOpts...); err != nil {
 		errMsg := fmt.Sprintf("cannot fetch list of secrets: %s", err)
-		return componentsOverrides, globalOverrides, errors.New(errMsg)
+		return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
 	}
 
 	for _, secret := range secrets.Items {
@@ -108,7 +108,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion str
 
 	if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
 		errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
-		return componentsOverrides, globalOverrides, errors.New(errMsg)
+		return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
 	}
 
 	for _, cm := range configMaps.Items {

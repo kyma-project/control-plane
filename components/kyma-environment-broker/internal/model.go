@@ -14,6 +14,7 @@ import (
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -45,6 +46,7 @@ type ProvisionerInputCreator interface {
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
 	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
 	SetClusterName(name string) ProvisionerInputCreator
+	SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -215,6 +217,7 @@ type Operation struct {
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
 	OrchestrationID string              `json:"-"`
 	FinishedStages  map[string]struct{} `json:"-"`
+	LastError       kebError.LastError  `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -530,6 +533,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
 			FinishedStages: make(map[string]struct{}, 0),
+			LastError:      kebError.LastError{},
 		},
 	}, nil
 }

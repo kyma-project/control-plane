@@ -67,7 +67,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if err != nil {
 			if dberr.IsNotFound(err) {
 				log.Warnf("the instance already deprovisioned")
-				return s.operationManager.OperationFailed(operation, "the instance was already deprovisioned", log)
+				return s.operationManager.OperationFailed(operation, "the instance was already deprovisioned", err, log)
 			}
 			return operation, time.Second, nil
 		}
@@ -79,7 +79,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
 			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
@@ -102,8 +102,6 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 }
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	pp := operation.ProvisioningParameters
-	pp.Parameters.OIDC = operation.UpdatingParameters.OIDC
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
 	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
 	switch {
@@ -112,9 +110,9 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade shoot input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 1*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while creating upgrade shoot input creator", err, 5*time.Second, 1*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }

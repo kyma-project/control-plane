@@ -51,7 +51,7 @@ func (c *oauthClient) getCredentials() (credentials, apperrors.AppError) {
 	secret, err := c.secretsClient.Get(context.Background(), c.secretName, metav1.GetOptions{})
 
 	if err != nil {
-		return credentials{}, util.K8SErrorToAppError(err)
+		return credentials{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisionerK8SClient)
 	}
 
 	return credentials{
@@ -90,7 +90,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, app
 		if err != nil {
 			dump = []byte("failed to dump response body")
 		}
-		return Token{}, apperrors.Internal("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump))
+		return Token{}, apperrors.External("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump)).SetComponent(apperrors.ErrMpsOAuth2)
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
