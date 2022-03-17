@@ -12,7 +12,10 @@ spec:
     matchLabels:
       component: {{ $component }}
   mtls:
-    mode: PERMISSIVE
+    mode: STRICT
+  portLevelMtls:
+    8080:
+      mode: PERMISSIVE
 ---
 {{- end }}
 {{- end }}
