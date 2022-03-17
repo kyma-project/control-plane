@@ -36,7 +36,7 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %v", err)
 		return operation, 1 * time.Minute, nil
 	} else if err != nil {
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, "failed to get cluster status", err, log)
 	}
 	switch state.Status {
 	case reconcilerApi.StatusReconciling, reconcilerApi.StatusReconcilePending:
@@ -49,9 +49,9 @@ func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log log
 		return operation, 0, nil
 	case reconcilerApi.StatusError:
 		msg := fmt.Sprintf("Reconciler failed %v: %v", state.Status, reconciler.PrettyFailures(state))
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, msg, nil, log)
 	default:
 		msg := fmt.Sprintf("Unknown reconciler cluster state %v, error: %v", state.Status, reconciler.PrettyFailures(state))
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, msg, nil, log)
 	}
 }

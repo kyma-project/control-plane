@@ -70,6 +70,12 @@ type Cluster struct {
 	KymaConfig    *KymaConfig    `db:"-"`
 }
 
+type LastError struct {
+	ErrMessage string
+	Reason     string
+	Component  string
+}
+
 type Operation struct {
 	ID             string
 	Type           OperationType
@@ -80,6 +86,7 @@ type Operation struct {
 	ClusterID      string
 	Stage          OperationStage
 	LastTransition *time.Time
+	LastError
 }
 
 type RuntimeAgentConnectionStatus int

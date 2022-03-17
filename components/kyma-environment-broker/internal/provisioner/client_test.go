@@ -279,7 +279,9 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 					"runtimeStatus"
 				  ],
 				  "extensions": {
-					"error_code": 400
+					"error_code": 400,
+					"error_reason": "Object not found",
+					"error_component": "compass director"
 				  }
 				}
 			  ],
@@ -293,10 +295,13 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 
 		// when
 		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		lastErr := kebError.ReasonForError(err)
 
 		// Then
 		assert.Error(t, err)
 		assert.False(t, kebError.IsTemporaryError(err))
+		assert.Equal(t, kebError.ErrReason("Object not found"), lastErr.Reason())
+		assert.Equal(t, kebError.ErrComponent("compass director"), lastErr.Component())
 	})
 
 	t.Run("provisioner returns temporary code error", func(t *testing.T) {
@@ -308,7 +313,9 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 					"runtimeStatus"
 				  ],
 				  "extensions": {
-					"error_code": 500
+					"error_code": 500,
+					"error_reason": "whatever",
+					"error_component": "db - provisioner"
 				  }
 				}
 			  ],
@@ -322,10 +329,13 @@ func TestClient_ReconnectRuntimeAgent(t *testing.T) {
 
 		// when
 		_, err := client.ProvisionRuntime(testAccountID, testSubAccountID, fixProvisionRuntimeInput())
+		lastErr := kebError.ReasonForError(err)
 
 		// Then
 		assert.Error(t, err)
 		assert.True(t, kebError.IsTemporaryError(err))
+		assert.Equal(t, kebError.ErrReason("whatever"), lastErr.Reason())
+		assert.Equal(t, kebError.ErrComponent("db - provisioner"), lastErr.Component())
 	})
 
 	t.Run("network error", func(t *testing.T) {
@@ -380,6 +390,56 @@ func TestClient_RuntimeOperationStatus(t *testing.T) {
 		// Then
 		assert.Error(t, err)
 		assert.Empty(t, status)
+	})
+}
+
+func TestClient_OperationStatusLastError(t *testing.T) {
+	t.Run("nil last error", func(t *testing.T) {
+		// Given
+		response := schema.OperationStatus{
+			ID:        ptr.String(provisionRuntimeOperationID),
+			State:     schema.OperationStateInProgress,
+			RuntimeID: ptr.String(provisionRuntimeID),
+		}
+
+		// When
+		lastErr := OperationStatusLastError(response.LastError)
+
+		// Then
+		assert.Equal(t, kebError.ErrProvisioner, lastErr.Component())
+		assert.Equal(t, kebError.ErrProvisionerNilLastError, lastErr.Reason())
+		assert.Equal(t, "", lastErr.Error())
+	})
+
+	t.Run("with last error", func(t *testing.T) {
+		// Given
+		response := schema.OperationStatus{
+			ID:        ptr.String(provisionRuntimeOperationID),
+			State:     schema.OperationStateInProgress,
+			RuntimeID: ptr.String(provisionRuntimeID),
+			LastError: &schema.LastError{
+				ErrMessage: "error msg",
+				Reason:     "not found",
+				Component:  "provisioner-db",
+			},
+		}
+
+		// When
+		lastErr := OperationStatusLastError(response.LastError)
+
+		// Then
+		assert.Equal(t, kebError.ErrComponent("provisioner-db"), lastErr.Component())
+		assert.Equal(t, kebError.ErrReason("not found"), lastErr.Reason())
+		assert.Equal(t, "error msg", lastErr.Error())
+
+		// When
+		err := errors.Wrap(lastErr, "something")
+		lastErr = kebError.ReasonForError(err)
+
+		// Then
+		assert.Equal(t, kebError.ErrComponent("provisioner-db"), lastErr.Component())
+		assert.Equal(t, kebError.ErrReason("not found"), lastErr.Reason())
+		assert.Equal(t, "something: error msg", lastErr.Error())
 	})
 }
 

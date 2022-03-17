@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -32,7 +32,7 @@ func (s *BTPOperatorCheckStep) Name() string {
 func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	if operation.K8sClient == nil {
 		log.Errorf("k8s client must be provided")
-		return s.operationManager.OperationFailed(operation, "k8s client must be provided", log)
+		return s.operationManager.OperationFailed(operation, "k8s client must be provided", nil, log)
 	}
 	processMustBeBlocked, err := s.CRDsInstalledByUser(operation.K8sClient)
 	if err != nil {
@@ -40,7 +40,7 @@ func (s *BTPOperatorCheckStep) Run(operation internal.UpdatingOperation, log log
 		return operation, time.Minute, nil
 	}
 	if processMustBeBlocked {
-		return s.operationManager.OperationFailed(operation, "BTP Operator already exists", log)
+		return s.operationManager.OperationFailed(operation, "BTP Operator already exists", nil, log)
 	}
 
 	return operation, 0, nil
@@ -55,7 +55,7 @@ func (s *BTPOperatorCheckStep) CRDsInstalledByUser(c client.Client) (bool, error
 			return true, nil
 		}
 	}
-	if !errors.IsNotFound(err) {
+	if !k8serrors.IsNotFound(err) {
 		return false, err
 	}
 
@@ -65,7 +65,7 @@ func (s *BTPOperatorCheckStep) CRDsInstalledByUser(c client.Client) (bool, error
 			return true, nil
 		}
 	}
-	if !errors.IsNotFound(err) {
+	if !k8serrors.IsNotFound(err) {
 		return false, err
 	}
 

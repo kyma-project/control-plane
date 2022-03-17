@@ -24,10 +24,6 @@ func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations intern
 	return newBasicEvaluationCreateRequest(operations, eea, url)
 }
 
-func (eea *ExternalEvalAssistant) AppendOverrides(inputCreator internal.ProvisionerInputCreator, evaluationId int64, _ internal.ProvisioningParameters) {
-	//do nothing
-}
-
 func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool {
 	return lifecycleData.AVSEvaluationExternalId != 0
 }

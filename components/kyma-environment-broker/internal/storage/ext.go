@@ -71,6 +71,7 @@ type RuntimeStates interface {
 	GetLatestByRuntimeID(runtimeID string) (internal.RuntimeState, error)
 	GetLatestWithReconcilerInputByRuntimeID(runtimeID string) (internal.RuntimeState, error)
 	GetLatestWithKymaVersionByRuntimeID(runtimeID string) (internal.RuntimeState, error)
+	GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (internal.RuntimeState, error)
 }
 
 type UpgradeKyma interface {

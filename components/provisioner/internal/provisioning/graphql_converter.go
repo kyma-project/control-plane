@@ -35,6 +35,11 @@ func (c graphQLConverter) OperationStatusToGQLOperationStatus(operation model.Op
 		State:     c.operationStateToGraphQLState(operation.State),
 		Message:   &operation.Message,
 		RuntimeID: &operation.ClusterID,
+		LastError: &gqlschema.LastError{
+			ErrMessage: operation.ErrMessage,
+			Reason:     operation.Reason,
+			Component:  operation.Component,
+		},
 	}
 }
 

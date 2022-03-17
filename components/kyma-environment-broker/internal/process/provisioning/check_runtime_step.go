@@ -39,7 +39,7 @@ func (s *CheckRuntimeStep) Name() string {
 func (s *CheckRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeID))
 }
@@ -47,13 +47,13 @@ func (s *CheckRuntimeStep) Run(operation internal.ProvisioningOperation, log log
 func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), nil, log)
 	}
 
 	if operation.ProvisionerOperationID == "" {
 		msg := "Operation dos not contain Provisioner Operation ID"
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, msg, nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisionerOperationID)
@@ -63,11 +63,6 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 	}
 	log.Infof("call to provisioner returned %s status", status.State.String())
 
-	var msg string
-	if status.Message != nil {
-		msg = *status.Message
-	}
-
 	switch status.State {
 	case gqlschema.OperationStateSucceeded:
 		return operation, 0, nil
@@ -76,8 +71,10 @@ func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOpe
 	case gqlschema.OperationStatePending:
 		return operation, 2 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		lastErr := provisioner.OperationStatusLastError(status.LastError)
+		return s.operationManager.OperationFailed(operation, "provisioner client returns failed status", lastErr, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	lastErr := provisioner.OperationStatusLastError(status.LastError)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), lastErr, log)
 }

@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 
@@ -68,11 +66,6 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
 	assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
-
-	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(mockAvsSvc.evals[inDB.Avs.AvsEvaluationInternalId].Id, 10)})
-	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest, Secret: ptr.Bool(true)})
 }
 
 func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.T) {
@@ -112,11 +105,6 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, id)
-
-	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.EvaluationIdKey, Value: strconv.FormatInt(id, 10)})
-	inputCreator.AssertOverride(t, avs.ComponentName, gqlschema.ConfigEntryInput{
-		Key: avs.AvsBridgeAPIKey, Value: dummyStrAvsTest, Secret: ptr.Bool(true)})
 }
 
 func newMockAvsOauthServer() *httptest.Server {
@@ -211,7 +199,6 @@ func avsConfig(mockOauthServer *httptest.Server, mockAvsServer *httptest.Server)
 		},
 		GroupId:                     5555,
 		ParentId:                    9101112,
-		ApiKey:                      dummyStrAvsTest,
 		AdditionalTagsEnabled:       true,
 		GardenerSeedNameTagClassId:  111111,
 		GardenerShootNameTagClassId: 111112,

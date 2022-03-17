@@ -291,12 +291,6 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 		return parameters, errors.Wrap(err, "while unmarshaling raw parameters")
 	}
 
-	if parameters.OIDC.IsProvided() {
-		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
-			return parameters, errors.New("OIDC parameters ClientID & IssuerURL cannot be empty")
-		}
-	}
-
 	return parameters, nil
 }
 

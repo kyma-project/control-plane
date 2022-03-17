@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
 
 	"github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
@@ -97,11 +98,14 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 
 		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
 
+		expectErr := apperrors.External("installation not yet started").SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrReason(installation.NoInstallationState))
+
 		// when
 		_, err := waitForInstallationStep.Run(cluster, model.Operation{}, logrus.New())
 
 		// then
 		require.Error(t, err)
+		assert.Equal(t, expectErr, err)
 		installationSvc.AssertExpectations(t)
 	})
 
@@ -109,20 +113,34 @@ func TestWaitForInstallationStep_Run(t *testing.T) {
 		// given
 		installationSvc := &installationMocks.Service{}
 		installationSvc.On("CheckInstallationState", mock.AnythingOfType("*rest.Config")).
-			Return(installation.InstallationState{}, installation.InstallationError{ShortMessage: "error", Recoverable: false})
+			Return(installation.InstallationState{}, installation.InstallationError{
+				ShortMessage: "error",
+				Recoverable:  false,
+				ErrorEntries: []installation.ErrorEntry{
+					installation.ErrorEntry{
+						Component: "monitoring",
+					},
+					installation.ErrorEntry{
+						Component: "newthing",
+					},
+				},
+			})
 
 		session := &mocks.WriteSession{}
 		session.On("UpdateOperationState", operation.ID, mock.AnythingOfType("string"),
 			operation.State, mock.AnythingOfType("time.Time")).Return(nil).Once()
 
 		waitForInstallationStep := NewWaitForInstallationStep(installationSvc, nextStageName, 10*time.Minute, session)
+		expectConvertErr := apperrors.External("error").SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrReason("monitoring, newthing"))
 
 		// when
 		_, err := waitForInstallationStep.Run(cluster, operation, logrus.New())
+		convertErr := operations.ConvertToAppError(err)
 
 		// then
 		require.Error(t, err)
 		assert.True(t, errors.As(err, &operations.NonRecoverableError{}))
+		assert.Equal(t, expectConvertErr, convertErr)
 		installationSvc.AssertExpectations(t)
 		session.AssertExpectations(t)
 	})

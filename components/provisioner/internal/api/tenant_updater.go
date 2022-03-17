@@ -40,13 +40,13 @@ func (u *updater) GetAndUpdateTenant(runtimeID string, ctx context.Context) appe
 	}
 	dbTenant, dberr := u.readWriteSession.GetTenant(runtimeID)
 	if dberr != nil {
-		return apperrors.Internal("Failed to get tenant from database: %s", err.Error())
+		return dberr
 	}
 
 	if tenant != dbTenant {
 		dberr := u.readWriteSession.UpdateTenant(runtimeID, tenant)
 		if dberr != nil {
-			return apperrors.Internal("Failed to update tenant in database: %s", err.Error())
+			return dberr
 		}
 	}
 	return nil

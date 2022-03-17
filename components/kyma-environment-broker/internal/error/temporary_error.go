@@ -21,8 +21,10 @@ func AsTemporaryError(err error, context string, args ...interface{}) *Temporary
 	return &TemporaryError{message: msg}
 }
 
-func (te TemporaryError) Error() string { return te.message }
-func (TemporaryError) Temporary() bool  { return true }
+func (te TemporaryError) Error() string        { return te.message }
+func (TemporaryError) Temporary() bool         { return true }
+func (TemporaryError) Reason() ErrReason       { return ErrKEBInternal }
+func (TemporaryError) Component() ErrComponent { return ErrKEB }
 
 func IsTemporaryError(err error) bool {
 	cause := errors.Cause(err)
@@ -30,4 +32,29 @@ func IsTemporaryError(err error) bool {
 		Temporary() bool
 	})
 	return ok && nfe.Temporary()
+}
+
+// can be used for temporary error
+// but still storing the original error in case returned to Execute
+type WrapTemporaryError struct {
+	err error
+}
+
+func WrapAsTemporaryError(err error, msg string, args ...interface{}) *WrapTemporaryError {
+	return &WrapTemporaryError{err: errors.Wrapf(err, msg, args...)}
+}
+
+func WrapNewTemporaryError(err error) *WrapTemporaryError {
+	return &WrapTemporaryError{err: err}
+}
+
+func (te WrapTemporaryError) Error() string { return te.err.Error() }
+func (WrapTemporaryError) Temporary() bool  { return true }
+
+func (wte WrapTemporaryError) Reason() ErrReason {
+	return ReasonForError(wte.err).Reason()
+}
+
+func (wte WrapTemporaryError) Component() ErrComponent {
+	return ReasonForError(wte.err).Component()
 }
