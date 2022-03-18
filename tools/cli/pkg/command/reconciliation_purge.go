@@ -28,7 +28,7 @@ func NewReconciliationPurgeCmd() *cobra.Command {
 
 	cobraCmd := &cobra.Command{
 		Use:     "purge",
-		Short:   "Purge reconciliations for given runtime ID",
+		Short:   "Purge reconciliations for specified runtime ID",
 		Long:    "Purge all cluster reconciliations for a specified runtime ID",
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
@@ -50,7 +50,7 @@ func (cmd *operationPurgeCmd) Validate() error {
 	cmd.auth = CLICredentialManager(logger.New())
 
 	if cmd.opts.runtimeID == "" {
-		return errors.New("runtime id cannot be empty")
+		return errors.New("runtime ID cannot be empty")
 	}
 
 	return nil
