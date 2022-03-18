@@ -216,10 +216,10 @@ func fakeK8sClientProvider(k8sCli client.Client) func(s string) (client.Client, 
 
 func defaultOIDCValues() internal.OIDCConfigDTO {
 	return internal.OIDCConfigDTO{
-		ClientID:       "clinet-id-oidc",
-		GroupsClaim:    "gropups",
+		ClientID:       "client-id-oidc",
+		GroupsClaim:    "groups",
 		IssuerURL:      "https://issuer.url",
-		SigningAlgs:    []string{"RSA256"},
+		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
 	}

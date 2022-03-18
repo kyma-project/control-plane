@@ -106,6 +106,10 @@ func (c *simpleInputCreator) SetClusterName(_ string) internal.ProvisionerInputC
 	return c
 }
 
+func (c *simpleInputCreator) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	return c
+}
+
 func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	c.overrides[component] = append(c.overrides[component], overrides...)
 	return c

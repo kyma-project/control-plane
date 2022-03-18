@@ -14,6 +14,9 @@ spec:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
   rules:
+  - to:
+    - operation:
+        paths: ["/metrics"]
   - from:
     - source:
         principals: ["cluster.local/ns/{{ $global.Release.Namespace }}/sa/{{ $global.Values.global.mothership_reconciler.serviceAccountName }}"]
