@@ -53,6 +53,7 @@ global:
     - cleaner
     - connectivity-proxy
     - istio-configuration
+    - istio
     - ory
     - rafter
     - eventing
