@@ -790,6 +790,51 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
 		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
 	})
+
+	t.Run("should normalize provided issuerURL", func(t *testing.T) {
+		// given
+		expectedOidcValues := &gqlschema.OIDCConfigInput{
+			ClientID:       "provided-id",
+			GroupsClaim:    "fake-groups-claim",
+			IssuerURL:      "https://test.domain.local",
+			SigningAlgs:    []string{"RS256", "HS256"},
+			UsernameClaim:  "usernameClaim",
+			UsernamePrefix: "<<",
+		}
+
+		id := uuid.New().String()
+
+		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
+		componentsProvider := &automock.ComponentListProvider{}
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(fixKymaComponentList(), nil)
+
+		inputBuilder, err := NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			Config{}, "1.24.0", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+
+		provisioningParams := fixture.FixProvisioningParameters(id)
+		provisioningParams.Parameters.OIDC = &internal.OIDCConfigDTO{
+			ClientID:       "provided-id",
+			GroupsClaim:    "fake-groups-claim",
+			IssuerURL:      "https://test.domain.local/",
+			SigningAlgs:    []string{"RS256", "HS256"},
+			UsernameClaim:  "usernameClaim",
+			UsernamePrefix: "<<",
+		}
+
+		creator, err := inputBuilder.CreateProvisionInput(provisioningParams, internal.RuntimeVersionData{Version: "", Origin: internal.Defaults})
+		require.NoError(t, err)
+
+		// when
+		input, err := creator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		clusterInput, err := creator.CreateProvisionClusterInput()
+		require.NoError(t, err)
+
+		// then
+		assert.Equal(t, expectedOidcValues, input.ClusterConfig.GardenerConfig.OidcConfig)
+		assert.Equal(t, expectedOidcValues, clusterInput.ClusterConfig.GardenerConfig.OidcConfig)
+	})
 }
 
 func TestCreateClusterConfiguration_Overrides(t *testing.T) {
