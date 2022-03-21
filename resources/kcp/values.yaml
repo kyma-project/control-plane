@@ -21,7 +21,7 @@ global:
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-1380"
-    subscription_cleanup_job:
+    kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1346"
     kyma_metrics_collector:
