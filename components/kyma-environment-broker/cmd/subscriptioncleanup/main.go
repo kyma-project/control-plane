@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	"io/ioutil"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/job"
 	"github.com/pkg/errors"
