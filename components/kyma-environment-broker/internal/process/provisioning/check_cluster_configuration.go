@@ -49,7 +49,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unable to get cluster state: %s", err.Error()), log)
+		return s.operationManager.OperationFailed(operation, "unable to get cluster state", err, log)
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
@@ -65,9 +65,10 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	case reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return s.operationManager.OperationFailed(operation, errMsg, log)
+		return s.operationManager.OperationFailed(operation, "Reconciler failed with error cluster status", reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	default:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("unknown cluster status: %s", state.Status), log)
+		errMsg := fmt.Sprintf("unknown cluster status: %s", state.Status)
+		return s.operationManager.OperationFailed(operation, "Reconciler failed with unknown cluster status", reconciler.NewReconcilerError(state.Failures, errMsg), log)
 	}
 }
 
@@ -88,5 +89,5 @@ func (s *CheckClusterConfigurationStep) handleTimeout(operation internal.Provisi
 	if err != nil {
 		log.Errorf("Unable to delete cluster: %s", err.Error())
 	}
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), err, log)
 }

@@ -84,12 +84,12 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to apply cluster configuration: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", err, log)
 	}
 
 	if err := checkBTPCredsValid(clusterConfiguration); err != nil {
 		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", log)
+		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
 	}
 
 	err = s.runtimeStateStorage.Insert(
@@ -114,11 +114,11 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 	case err != nil:
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, "Request to Reconciler failed", err, log)
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
 
-	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
 		operation.ClusterConfigurationApplied = true
 		operation.ClusterName = clusterConfiguration.RuntimeInput.Name

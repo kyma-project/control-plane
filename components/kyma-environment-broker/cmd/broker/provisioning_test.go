@@ -573,6 +573,41 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertProvisioningRequest()
 		suite.AssertOIDC(expectedOIDC)
 	})
+
+	t.Run("should apply default OIDC values on empty OIDC params from input", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		providedOIDC := internal.OIDCConfigDTO{
+			ClientID:  "fake-client-id-1",
+			IssuerURL: "https://testurl.local",
+		}
+		defaultOIDC := defaultOIDCValues()
+		expectedOIDC := gqlschema.OIDCConfigInput{
+			ClientID:       providedOIDC.ClientID,
+			GroupsClaim:    defaultOIDC.GroupsClaim,
+			IssuerURL:      providedOIDC.IssuerURL,
+			SigningAlgs:    defaultOIDC.SigningAlgs,
+			UsernameClaim:  defaultOIDC.UsernameClaim,
+			UsernamePrefix: defaultOIDC.UsernamePrefix,
+		}
+		options := RuntimeOptions{OIDC: &providedOIDC}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOIDC(expectedOIDC)
+	})
 }
 
 func TestProvisioning_RuntimeAdministrators(t *testing.T) {

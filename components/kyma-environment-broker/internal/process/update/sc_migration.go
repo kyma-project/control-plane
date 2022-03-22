@@ -59,10 +59,11 @@ func (s *SCMigrationStep) Run(operation internal.UpdatingOperation, logger logru
 			containsSCMigrationComponent = true
 		}
 	}
+
 	if !containsSCMigrationComponent {
 		c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion)
 		if err != nil {
-			return s.operationManager.OperationFailed(operation, err.Error(), logger)
+			return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
 		}
 		components = append(components, c)
 		operation.RequiresReconcilerUpdate = true

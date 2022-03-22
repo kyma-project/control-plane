@@ -1,5 +1,11 @@
 package avs
 
+import (
+	"fmt"
+
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+)
+
 type Config struct {
 	OauthTokenEndpoint          string
 	OauthUsername               string
@@ -7,8 +13,7 @@ type Config struct {
 	OauthClientId               string
 	ApiEndpoint                 string
 	DefinitionType              string `envconfig:"default=BASIC"`
-	ApiKey                      string
-	Disabled                    bool `envconfig:"default=false"`
+	Disabled                    bool   `envconfig:"default=false"`
 	InternalTesterAccessId      int64
 	InternalTesterService       string `envconfig:"optional"`
 	InternalTesterTags          []*Tag `envconfig:"optional"`
@@ -21,12 +26,31 @@ type Config struct {
 	GardenerShootNameTagClassId int
 	GardenerSeedNameTagClassId  int
 	RegionTagClassId            int
-	TrialApiKey                 string `envconfig:"optional"`
-	TrialInternalTesterAccessId int64  `envconfig:"optional"`
-	TrialParentId               int64  `envconfig:"optional"`
-	TrialGroupId                int64  `envconfig:"optional"`
+	TrialInternalTesterAccessId int64 `envconfig:"optional"`
+	TrialParentId               int64 `envconfig:"optional"`
+	TrialGroupId                int64 `envconfig:"optional"`
 }
 
 func (c Config) IsTrialConfigured() bool {
-	return c.TrialApiKey != "" && c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
+	return c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
+}
+
+type avsError struct {
+	message string
+}
+
+func (e avsError) Error() string {
+	return e.message
+}
+
+func (e avsError) Component() kebError.ErrComponent {
+	return kebError.ErrAVS
+}
+
+func (e avsError) Reason() kebError.ErrReason {
+	return kebError.ErrHttpStatusCode
+}
+
+func NewAvsError(format string, args ...interface{}) kebError.ErrorReporter {
+	return avsError{message: fmt.Sprintf(format, args...)}
 }

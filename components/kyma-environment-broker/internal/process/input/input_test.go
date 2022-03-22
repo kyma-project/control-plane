@@ -446,7 +446,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 	assert.EqualValues(t, mappedComponentList, input.KymaConfig.Components)
 	assert.Equal(t, shootName, input.ClusterConfig.GardenerConfig.Name)
 	assert.NotNil(t, input.ClusterConfig.Administrators)
-	assert.Equal(t, &gqlschema.Labels{
+	assert.Equal(t, gqlschema.Labels{
 		"label1": "value1",
 	}, input.RuntimeInput.Labels)
 

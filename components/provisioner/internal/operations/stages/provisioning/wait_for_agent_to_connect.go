@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
 	compass_conn_clientset "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,7 @@ type CompassConnectionClientConstructor func(k8sConfig *rest.Config) (compass_co
 func NewCompassConnectionClient(k8sConfig *rest.Config) (compass_conn_clientset.CompassConnectionInterface, error) {
 	compassConnClientset, err := compass_conn_clientset.NewForConfig(k8sConfig)
 	if err != nil {
-		return nil, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
+		return nil, errors.Wrap(err, "error: failed to create Compass Connection client")
 	}
 
 	return compassConnClientset.CompassConnections(), nil
@@ -79,12 +80,12 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operations.StageResult{}, util.K8SErrorToAppError(err)
 	}
 
 	compassConnClient, err := s.newCompassConnectionClient(k8sConfig)
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: failed to create Compass Connection client: %s", err.Error())
+		return operations.StageResult{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrCompassConnectionClient)
 	}
 
 	compassConnCR, err := compassConnClient.Get(context.Background(), defaultCompassConnectionName, v1meta.GetOptions{})
@@ -94,14 +95,14 @@ func (s *WaitForAgentToConnectStep) Run(cluster model.Cluster, _ model.Operation
 			return operations.StageResult{Stage: s.Name(), Delay: 5 * time.Second}, nil
 		}
 
-		return operations.StageResult{}, fmt.Errorf("error getting Compass Connection CR on the Runtime: %s", err.Error())
+		return operations.StageResult{}, util.K8SErrorToAppError(errors.Wrap(err, "error getting Compass Connection CR on the Runtime")).SetComponent(apperrors.ErrCompassConnection)
 	}
 
 	if compassConnCR.Status.State == v1alpha1.ConnectionFailed {
 		log.Warn("Compass Connection is in Failed state, trying to reconfigure runtime")
 		err := s.runtimeConfigurator.ConfigureRuntime(cluster, *cluster.Kubeconfig)
 		if err != nil {
-			return operations.StageResult{}, fmt.Errorf("error: Compass Connection is in Failed state: reconfigure runtime faiure: %s", err.Error())
+			return operations.StageResult{}, err.Append("error: Compass Connection is in Failed state: reconfigure runtime faiure")
 		}
 		return operations.StageResult{Stage: s.Name(), Delay: 2 * time.Minute}, nil
 	}

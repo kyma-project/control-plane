@@ -41,6 +41,7 @@ type WriteSession interface {
 	InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Error
 	InsertOperation(operation model.Operation) dberrors.Error
 	UpdateOperationState(operationID string, message string, state model.OperationState, endTime time.Time) dberrors.Error
+	UpdateOperationLastError(operationID, msg, reason, component string) dberrors.Error
 	TransitionOperation(operationID string, message string, stage model.OperationStage, transitionTime time.Time) dberrors.Error
 	UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error
 	SetActiveKymaConfig(runtimeID string, kymaConfigId string) dberrors.Error

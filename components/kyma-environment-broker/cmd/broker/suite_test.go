@@ -276,6 +276,8 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New().String()
+	runtimeStateID := uuid.New().String()
+	oidcConfig := fixture.FixOIDCConfigDTO()
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID: planID,
 		ErsContext: internal.ERSContext{
@@ -292,6 +294,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: options.ProvideRegion(),
+			OIDC:   &oidcConfig,
 		},
 	}
 
@@ -324,6 +327,15 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			},
 		},
 	}
+	runtimeState := fixture.FixRuntimeState(runtimeStateID, runtimeID, provisioningOperation.ID)
+	runtimeState.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+		ClientID:       oidcConfig.ClientID,
+		GroupsClaim:    oidcConfig.GroupsClaim,
+		IssuerURL:      oidcConfig.IssuerURL,
+		SigningAlgs:    oidcConfig.SigningAlgs,
+		UsernameClaim:  oidcConfig.UsernameClaim,
+		UsernamePrefix: oidcConfig.UsernamePrefix,
+	}
 	shoot := &gardenerapi.Shoot{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      shootName,
@@ -349,6 +361,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
 	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
 	return runtimeID
@@ -786,7 +799,7 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
 	input := s.fetchProvisionInput()
 
-	labels := *input.RuntimeInput.Labels
+	labels := input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
 	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)
