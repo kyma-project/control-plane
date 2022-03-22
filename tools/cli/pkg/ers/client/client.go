@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"errors"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/pkg/errors"
 )
 
 const environmentsPath = "%s/provisioning/v1/kyma/environments"
@@ -23,7 +24,7 @@ func NewErsClient(url string) (Client, error) {
 	logger := logger.New()
 	client, err := NewHTTPClient(logger)
 	if err != nil {
-		return nil, errors.Wrap(err, "while ers client creation")
+		return nil, fmt.Errorf("while ers client creation: %w", err)
 	}
 
 	return &ersClient{
@@ -35,7 +36,7 @@ func NewErsClient(url string) (Client, error) {
 func (c *ersClient) GetOne(instanceID string) (*ers.Instance, error) {
 	instances, err := c.Client.get(fmt.Sprintf(environmentsPath+"?"+idParam, c.url, instanceID))
 	if err != nil {
-		return nil, errors.Wrap(err, "while sending request")
+		return nil, fmt.Errorf("while sending request: %w", err)
 	}
 
 	if len(instances) != 1 {

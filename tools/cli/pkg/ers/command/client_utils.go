@@ -19,7 +19,7 @@ func ResponseErr(resp *http.Response) error {
 	if err != nil {
 		msg = []byte(fmt.Errorf("unexpected error: %w", err).Error())
 	}
-	return fmt.Errorf("%s %d: %w", command.ErrMothershipResponse, string(msg), resp.StatusCode)
+	return fmt.Errorf("%s %d: %w", string(msg), resp.StatusCode, command.ErrMothershipResponse)
 }
 
 func OpString(op *runtime.Operation) string {

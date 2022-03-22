@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -64,7 +63,7 @@ func (c *InstancesCommand) Run() error {
 
 		ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
 		if err != nil {
-			return errors.Wrap(err, "while initializing ers client")
+			return fmt.Errorf("while initializing ers client: %w", err)
 		}
 		defer ers.Close()
 

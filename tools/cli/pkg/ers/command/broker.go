@@ -1,9 +1,11 @@
 package command
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +44,7 @@ The broker is specified by an ID`,
 func (c *SwitchCommand) Run() error {
 	ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
 	if err != nil {
-		return errors.Wrap(err, "while initializing ers client")
+		return fmt.Errorf("while initializing ers client: %w", err)
 	}
 	defer ers.Close()
 

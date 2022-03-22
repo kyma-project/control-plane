@@ -3,13 +3,13 @@ package command
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +59,7 @@ func (c *MigrationAllCommand) Run() error {
 	ersClient, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
 	c.ersClient = ersClient
 	if err != nil {
-		return errors.Wrap(err, "while initializing ers client")
+		return fmt.Errorf("while initializing ers client: %w", err)
 	}
 	defer ersClient.Close()
 

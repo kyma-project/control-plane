@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"errors"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	mothershipAuth "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
@@ -15,7 +17,6 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
@@ -67,13 +68,13 @@ func (c *StatusCommand) Run() error {
 	fmt.Printf("%sERS%s - ", Red, Reset)
 	ersClient, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
 	if err != nil {
-		return errors.Wrap(err, "while initializing ers client")
+		return fmt.Errorf("while initializing ers client: %w", err)
 	}
 	defer ersClient.Close()
 
 	instance, err := ersClient.GetOne(c.instanceID)
 	if err != nil {
-		return errors.Wrap(err, "while getting ers instance")
+		return fmt.Errorf("while getting ers instance: %w", err)
 	}
 
 	jsonData, err := ToJson(instance)
@@ -96,7 +97,7 @@ func (c *StatusCommand) Run() error {
 
 	runtimesPage, err := kebClient.ListRuntimes(runtime.ListParameters{InstanceIDs: []string{c.instanceID}})
 	if err != nil {
-		return errors.Wrap(err, "while listing runtimes")
+		return fmt.Errorf("while listing runtimes: %w", err)
 	}
 
 	if len(runtimesPage.Data) != 1 {
@@ -150,14 +151,14 @@ func (c *StatusCommand) Run() error {
 	fmt.Printf("%sMOTHERSHIP%s", Red, Reset)
 	mothershipClient, err := mothershipAuth.NewClient(ers.GlobalOpts.MothershipApiUrl(), httpClient)
 	if err != nil {
-		return errors.Wrap(err, "while creating mothership client")
+		return fmt.Errorf("while creating mothership client: %w", err)
 	}
 
 	response, err := mothershipClient.GetClustersState(ctx, &mothership.GetClustersStateParams{
 		RuntimeID: &runtime.RuntimeID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "wile getting cluster state")
+		return fmt.Errorf("wile getting cluster state: %w", err)
 	}
 
 	defer response.Body.Close()
@@ -169,7 +170,7 @@ func (c *StatusCommand) Run() error {
 
 	var result mothership.HTTPClusterStateResponse
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return errors.WithStack(command.ErrMothershipResponse)
+		return fmt.Errorf("Error getting %w", command.ErrMothershipResponse)
 	}
 
 	result.Configuration.Components = nil

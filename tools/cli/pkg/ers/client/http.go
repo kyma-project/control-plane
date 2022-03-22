@@ -3,13 +3,15 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"errors"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -25,7 +27,7 @@ func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
 	// create a shared ERS HTTP client which does the oauth flow
 	client, err := createConfigClient()
 	if err != nil {
-		return nil, errors.Wrap(err, "while create http client")
+		return nil, fmt.Errorf("while create http client: %w", err)
 	}
 
 	return &HTTPClient{
@@ -39,7 +41,7 @@ func (c *HTTPClient) put(url string) error {
 		c.logger.Debugf("Sending request to %s", url)
 		req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "Error while sending a PUT request")
+			return nil, fmt.Errorf("Error while sending a PUT request: %w", err)
 		}
 		return c.Client.Do(req)
 	})
@@ -68,7 +70,7 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 	resp, err := request(ctx)
 
 	if err != nil {
-		return errors.Wrap(err, "Error while sending request")
+		return fmt.Errorf("Error while sending request: %w", err)
 	}
 
 	c.logger.Debugf("Response status: %s", resp.Status)
@@ -77,7 +79,7 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "Error while reading from response")
+		return fmt.Errorf("Error while reading from response: %w", err)
 	}
 	c.logger.Debug("Received raw response: %s", string(d))
 
@@ -87,7 +89,7 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 
 	err = json.Unmarshal(d, v)
 	if err != nil {
-		return errors.Wrap(err, "Error while unmarshaling")
+		return fmt.Errorf("Error while unmarshaling: %w", err)
 	}
 
 	return nil
