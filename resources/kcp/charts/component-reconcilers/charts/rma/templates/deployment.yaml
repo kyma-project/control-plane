@@ -34,7 +34,7 @@ spec:
           - --worker-timeout={{ .Values.config.workerTimeout }}
           - --retries-max={{ .Values.config.retriesMax }}
           - --retries-delay={{ .Values.config.retriesDelay }}
-        name: reconciler
+        name: rma-reconciler
         ports:
         - name: http
           containerPort: 8080
