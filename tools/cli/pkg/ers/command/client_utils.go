@@ -17,7 +17,7 @@ func IsErrResponse(statusCode int) bool {
 func ResponseErr(resp *http.Response) error {
 	msg, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		msg = []byte(errors.Wrap(err, "unexpected error").Error())
+		msg = []byte(fmt.Errorf("unexpected error: %w", err).Error())
 	}
 	return fmt.Errorf("%s %d: %w", command.ErrMothershipResponse, string(msg), resp.StatusCode)
 }
