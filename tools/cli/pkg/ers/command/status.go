@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +77,7 @@ func (c *StatusCommand) Run() error {
 
 	jsonData, err := ToJson(instance)
 	if err != nil {
-		return errors.Wrapf(err, "while creating a json")
+		return fmt.Errorf("while creating a json: %w", err)
 	}
 	fmt.Printf("%s - %s\n", instance.State, instance.StateMessage)
 	fmt.Printf("Migrated - %t\n", instance.Migrated)
@@ -106,7 +105,7 @@ func (c *StatusCommand) Run() error {
 	runtime := runtimesPage.Data[0]
 	jsonData, err = ToJson(runtime)
 	if err != nil {
-		return errors.Wrapf(err, "while creating a json")
+		return fmt.Errorf("while creating a json: %w", err)
 	}
 	fmt.Printf("%s\n", runtime.Status.State)
 	fmt.Printf("Provisioning: %s %s\n", runtime.Status.Provisioning.State, runtime.Status.Provisioning.CreatedAt)
@@ -175,7 +174,7 @@ func (c *StatusCommand) Run() error {
 	result.Configuration.Components = nil
 	jsonData, err = ToJson(result)
 	if err != nil {
-		return errors.Wrapf(err, "while creating a json")
+		return fmt.Errorf("while creating a json %w: ", err)
 	}
 
 	fmt.Printf("- %s\n created: %s\n deleted: %v\n", *result.Status.Status, result.Status.Created, *result.Status.Deleted)
@@ -223,7 +222,7 @@ func (c *StatusCommand) Run() error {
 
 			logsStream, err := req.Stream(context.Background())
 			if err != nil {
-				return errors.Wrapf(err, "error in opening stream")
+				return fmt.Errorf("error in opening stream: %w", err)
 			}
 
 			scanner := bufio.NewScanner(logsStream)

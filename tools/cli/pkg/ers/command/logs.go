@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -60,8 +58,7 @@ func (c *LogsCommand) Run() error {
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 	config, err := kubeConfig.ClientConfig()
 	if err != nil {
-		c.log.Errorf("while creating kubernetes config %e", err)
-		return err
+		return fmt.Errorf("while creatin kubernetes config: %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -71,7 +68,7 @@ func (c *LogsCommand) Run() error {
 
 	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "while creatin a client set")
+		return fmt.Errorf("while creatin a client set: %w", err)
 	}
 
 	for _, pod := range podsList.Items {
@@ -97,8 +94,7 @@ func (c *LogsCommand) printLogs(clientset *kubernetes.Clientset, pod v1.Pod, con
 	logsStream, err := req.Stream(context.TODO())
 
 	if err != nil {
-		c.log.Errorf("Error while creating a stream")
-		return errors.Wrapf(err, "error in opening stream")
+		return fmt.Errorf("error in opening stream: %w", err)
 	}
 	defer logsStream.Close()
 
@@ -108,7 +104,7 @@ func (c *LogsCommand) printLogs(clientset *kubernetes.Clientset, pod v1.Pod, con
 	r, err := regexp.Compile(searchedString)
 
 	if err != nil {
-		return errors.Wrapf(err, "Error during string compilation")
+		return fmt.Errorf("error during regex compilation: %w", err)
 	}
 
 	scanner.Split(bufio.ScanLines)
