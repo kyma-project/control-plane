@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
