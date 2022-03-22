@@ -705,7 +705,7 @@ func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
 func (r *RuntimeInput) setOIDCFromProvisioningParameters(oidcConfig *gqlschema.OIDCConfigInput) {
 	providedOIDC := r.provisioningParameters.Parameters.OIDC
 	oidcConfig.ClientID = providedOIDC.ClientID
-	oidcConfig.IssuerURL = providedOIDC.IssuerURL
+	oidcConfig.IssuerURL = strings.TrimSuffix(providedOIDC.IssuerURL, "/")
 	if len(providedOIDC.GroupsClaim) != 0 {
 		oidcConfig.GroupsClaim = providedOIDC.GroupsClaim
 	}
