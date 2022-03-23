@@ -3,12 +3,13 @@ package command
 import (
 	"encoding/json"
 	"fmt"
-	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 func TestPurge(t *testing.T) {
