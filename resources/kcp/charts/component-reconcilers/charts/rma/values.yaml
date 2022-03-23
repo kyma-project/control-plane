@@ -19,3 +19,8 @@ config:
   workerTimeout: 10m
   retriesMax: 10
   retriesDelay: 60s
+
+serviceMonitor:
+  enabled: false
+  scrapeTimeout: 30s
+  interval: 60s
