@@ -2,6 +2,7 @@ package dbsession
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -136,7 +137,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
 	}
-	cluster.ClusterConfig.DNSConfig = &dnsConfig
+	cluster.ClusterConfig.DNSConfig = dnsConfig
 
 	if cluster.ActiveKymaConfigId != nil {
 		kymaConfig, dberr := r.getKymaConfig(runtimeID, *cluster.ActiveKymaConfigId)
@@ -519,7 +520,7 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 	return oidc, nil
 }
 
-func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dberrors.Error) {
+func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, dberrors.Error) {
 	var dnsConfigWithID struct {
 		model.DNSConfig
 		ID string `db:"id"`
@@ -529,14 +530,17 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dbe
 		rawDomains string `db:"domains_include"`
 	}
 
-	_, err := r.session.
+	err := r.session.
 		Select("*").
 		From("dns_config").
 		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
-		Load(&dnsConfigWithID)
+		LoadOne(&dnsConfigWithID)
 
+	if errors.Is(err, dbr.ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
-		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS config: %s", err)
+		return nil, dberrors.Internal("Failed to get DNS config: %s", err)
 	}
 
 	dnsConfig := dnsConfigWithID.DNSConfig
@@ -553,8 +557,8 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dbe
 	}
 
 	if err != nil {
-		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS provider: %s", err)
+		return nil, dberrors.Internal("Failed to get DNS provider: %s", err)
 	}
 
-	return dnsConfig, nil
+	return &dnsConfig, nil
 }
