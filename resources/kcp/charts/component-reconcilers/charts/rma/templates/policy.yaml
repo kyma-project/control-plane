@@ -1,0 +1,18 @@
+{{ if .Values.serviceMonitor.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  labels:
+    component: rma
+  name: rma-reconciler
+  namespace: {{ $.Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: rma
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8080:
+      mode: PERMISSIVE
+{{- end }}
