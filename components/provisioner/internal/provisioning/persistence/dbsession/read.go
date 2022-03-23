@@ -522,7 +522,7 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dberrors.Error) {
 	var dnsConfigWithID struct {
 		model.DNSConfig
-		ID string
+		ID string `db:"id"`
 	}
 	var dnsProvidersPreSplit []struct {
 		model.DNSProvider
