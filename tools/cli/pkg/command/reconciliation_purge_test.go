@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -39,14 +38,28 @@ func TestPurge(t *testing.T) {
 		"Cluster Not Found": {
 			ctx:            testCtx,
 			wantErr:        true,
-			expectedErrMsg: "Operation not found",
+			expectedErrMsg: errMsg,
 			mockResponse: func(t *testing.T) func(http.ResponseWriter, *http.Request) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					assertRequests(t, r, expectedPath)
 					w.WriteHeader(http.StatusNotFound)
+					writeErrResponses(t, w, errMsg)
 				}
 			},
-		}, "Request Failed": {
+		},
+		"Bad Request": {
+			ctx:            testCtx,
+			wantErr:        true,
+			expectedErrMsg: errMsg,
+			mockResponse: func(t *testing.T) func(http.ResponseWriter, *http.Request) {
+				return func(w http.ResponseWriter, r *http.Request) {
+					assertRequests(t, r, expectedPath)
+					w.WriteHeader(http.StatusBadRequest)
+					writeErrResponses(t, w, errMsg)
+				}
+			},
+		},
+		"Request Failed": {
 			ctx:            testCtx,
 			wantErr:        true,
 			expectedErrMsg: errMsg,
@@ -90,19 +103,7 @@ func TestPurge(t *testing.T) {
 
 func assertRequests(t *testing.T, r *http.Request, expectedPath string) {
 	require.Equal(t, expectedPath, r.URL.Path)
-
-	out := unmarshallRequests(t, r)
-	require.Equal(t, "Operation set to DONE manually via KCP CLI", out.Body)
-}
-
-func unmarshallRequests(t *testing.T, r *http.Request) mothership.DeleteReconciliationsClusterRuntimeIDResponse {
-	out, err := io.ReadAll(r.Body)
-	require.NoError(t, err)
-
-	var reqBody mothership.DeleteReconciliationsClusterRuntimeIDResponse
-	require.NoError(t, json.Unmarshal(out, &reqBody))
-
-	return reqBody
+	require.Equal(t, http.MethodDelete, r.Method)
 }
 
 func writeErrResponses(t *testing.T, w http.ResponseWriter, msg string) {

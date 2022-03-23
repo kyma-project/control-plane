@@ -1328,7 +1328,6 @@ func (r GetReconciliationsResponse) StatusCode() int {
 type DeleteReconciliationsClusterRuntimeIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *HTTPClusterResponse
 	JSON400      *HTTPErrorResponse
 	JSON500      *HTTPErrorResponse
 }
@@ -2012,13 +2011,6 @@ func ParseDeleteReconciliationsClusterRuntimeIDResponse(rsp *http.Response) (*De
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest HTTPClusterResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest HTTPErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
