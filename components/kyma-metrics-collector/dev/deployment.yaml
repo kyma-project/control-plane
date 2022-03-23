@@ -38,11 +38,6 @@ spec:
             value: http://kcp-kyma-environment-broker.kcp-system/runtimes
           - name: EDP_URL
 #           value: http://edp-mock.kcp-system:8080
-          - name: EDP_TOKEN
-            valueFrom:
-              secretKeyRef:
-                key: token
-                name: kcp-kyma-metrics-collector
           - name: EDP_NAMESPACE
             value: kyma-dev
           - name: EDP_DATASTREAM_NAME
@@ -54,6 +49,9 @@ spec:
         volumeMounts:
           - mountPath: /gardener
             name: gardener-kubeconfig
+            readOnly: true
+          - mountPath: /edp-credentials
+            name: edp
             readOnly: true
         ports:
         - containerPort: 8080
@@ -68,4 +66,7 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: gardener-credentials
+      - name: edp
+        secret:
+          secretName: kyma-metrics-collector
 

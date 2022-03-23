@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"os"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -36,8 +38,9 @@ import (
 )
 
 const (
-	metricsPath = "/metrics"
-	healthzPath = "/healthz"
+	metricsPath        = "/metrics"
+	healthzPath        = "/healthz"
+	edpCredentialsFile = "/edp-credentials/token"
 )
 
 func main() {
@@ -84,6 +87,14 @@ func main() {
 	if err := envconfig.Process("", edpConfig); err != nil {
 		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load EDP config")
 	}
+
+	// read the token from the mounted secret
+	token, err := getEDPToken()
+	if err != nil {
+		logger.With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("Load EDP token")
+	}
+	edpConfig.Token = token
+
 	edpClient := edp.NewClient(edpConfig, logger)
 
 	queue := workqueue.NewDelayingQueue()
@@ -148,4 +159,14 @@ func enableDebugging(debugPort int, log *zap.SugaredLogger) {
 	go func() {
 		debugSvc.Start()
 	}()
+}
+
+// getEDPToken read the EDP token from the mounted secret file
+func getEDPToken() (string, error) {
+	token, err := os.ReadFile(edpCredentialsFile)
+	if err != nil {
+		return "", err
+	}
+	trimmedToken := strings.TrimSuffix(string(token), "\n")
+	return trimmedToken, nil
 }
