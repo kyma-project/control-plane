@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/gocraft/dbr/v2"
 
@@ -519,34 +520,41 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 }
 
 func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dberrors.Error) {
-	var dnsConfig model.DNSConfig
-	var dnsProviders []model.DNSProvider
+	var dnsConfigWithID struct {
+		model.DNSConfig
+		ID string
+	}
+	var dnsProvidersPreSplit []struct {
+		model.DNSProvider
+		rawDomains string `db:"domains_include"`
+	}
 
 	_, err := r.session.
 		Select("*").
 		From("dns_config").
 		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
-		Load(&dnsConfig)
+		Load(&dnsConfigWithID)
 
 	if err != nil {
 		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS config: %s", err)
 	}
 
+	dnsConfig := dnsConfigWithID.DNSConfig
+
 	_, err = r.session.
 		Select("*").
 		From("dns_providers").
-		Where(dbr.Eq("dns_config_id", dnsConfig.ID)).
-		Load(&dnsProviders)
+		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
+		Load(&dnsProvidersPreSplit)
 
-	for _, provider := range dnsProviders {
-		_ = provider.DomainsInclude
+	for _, provider := range dnsProvidersPreSplit {
+		provider.DNSProvider.DomainsInclude = strings.Split(provider.rawDomains, ",")
+		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
 	}
 
 	if err != nil {
 		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS provider: %s", err)
 	}
-
-	// dnsConfig.Providers = dnsProviders
 
 	return dnsConfig, nil
 }
