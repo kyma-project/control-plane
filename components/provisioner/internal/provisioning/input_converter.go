@@ -120,6 +120,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
 		DNSConfig:                           dnsConfigFromInput(input.DNSConfig),
 		ExposureClassName:                   input.ExposureClassName,
+		ShootNetworkingFilterDisabled:       input.ShootNetworkingFilter,
 	}, nil
 }
 
@@ -208,6 +209,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
 		ExposureClassName:                   util.DefaultStrIfNil(input.ExposureClassName, config.ExposureClassName),
+		ShootNetworkingFilterDisabled:       util.DefaultBoolIfNil(input.ShootNetworkingFilter, config.ShootNetworkingFilterDisabled),
 	}, nil
 }
 

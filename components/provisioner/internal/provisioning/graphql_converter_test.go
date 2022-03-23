@@ -92,6 +92,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
+		shootNetworkingFilterDisabled := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -133,6 +134,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
 					ExposureClassName:                   &exposureClassName,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
@@ -196,7 +198,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
 					},
-					ExposureClassName: &exposureClassName,
+					ExposureClassName:     &exposureClassName,
+					ShootNetworkingFilter: &shootNetworkingFilterDisabled,
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
@@ -241,6 +244,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
+		shootNetworkingFilterDisabled := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -282,6 +286,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
 					ExposureClassName:                   &exposureClassName,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -344,7 +349,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
 					},
-					ExposureClassName: &exposureClassName,
+					ExposureClassName:     &exposureClassName,
+					ShootNetworkingFilter: &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -386,6 +392,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
+		shootNetworkingFilterDisabled := true
 
 		modelProductionProfile := model.ProductionProfile
 		gqlProductionProfile := gqlschema.KymaProfileProduction
@@ -428,6 +435,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(&modelProductionProfile),
@@ -479,6 +487,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           &allowPrivilegedContainers,
+					ShootNetworkingFilter:               &shootNetworkingFilterDisabled,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.

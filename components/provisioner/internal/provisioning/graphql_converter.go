@@ -103,6 +103,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		ProviderSpecificConfig:              providerSpecificConfig,
 		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
 		ExposureClassName:                   config.ExposureClassName,
+		ShootNetworkingFilter:               config.ShootNetworkingFilterDisabled,
 	}
 }
 
