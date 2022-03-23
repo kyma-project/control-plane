@@ -152,7 +152,7 @@ func main() {
 	}
 	log.SetLevel(logLevel)
 
-	log.Infof("Starting Provisioner")
+	log.Infof("Starting Provisioneiro")
 	log.Infof("Config: %s", cfg.String())
 
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,

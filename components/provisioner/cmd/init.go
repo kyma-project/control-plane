@@ -92,7 +92,7 @@ func newSecretsInterface(namespace string) (v1.SecretInterface, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
 		logrus.Warnf("Failed to read in cluster config: %s", err.Error())
-		logrus.Info("Trying to initialize with local config")
+		logrus.Info("Trying to initialize with local configu")
 		home := homedir.HomeDir()
 		k8sConfPath := filepath.Join(home, ".kube", "config")
 		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
