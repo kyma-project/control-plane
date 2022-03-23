@@ -35,18 +35,6 @@ func TestPurge(t *testing.T) {
 				}
 			},
 		},
-		"Cluster Not Found": {
-			ctx:            testCtx,
-			wantErr:        true,
-			expectedErrMsg: errMsg,
-			mockResponse: func(t *testing.T) func(http.ResponseWriter, *http.Request) {
-				return func(w http.ResponseWriter, r *http.Request) {
-					assertRequests(t, r, expectedPath)
-					w.WriteHeader(http.StatusNotFound)
-					writeErrResponses(t, w, errMsg)
-				}
-			},
-		},
 		"Bad Request": {
 			ctx:            testCtx,
 			wantErr:        true,
