@@ -183,19 +183,6 @@ CREATE TABLE signing_algorithms
     foreign key (oidc_config_id) REFERENCES oidc_config (id) ON DELETE CASCADE
 );
 
-/*type DNSConfig struct {
-	Domain    string         `json:"domain"`
-	Providers []*DNSProvider `json:"providers"`
-}
-
-type DNSProvider struct {
-	DomainsInclude []string `json:"domainsInclude"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
-}
-*/
-
 -- DNS config
 CREATE TABLE dns_config
 (
