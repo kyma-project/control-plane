@@ -3,12 +3,13 @@ package dbsession
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"sort"
 
 	"github.com/gocraft/dbr/v2"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
 type readSession struct {
@@ -517,48 +518,6 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 	return oidc, nil
 }
 
-/*
-/*type DNSConfig struct {
-	Domain    string         `json:"domain"`
-	Providers []*DNSProvider `json:"providers"`
-}
-
-type DNSProvider struct {
-	DomainsInclude []string `json:"domainsInclude"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
-}
-
-func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Error {
-	_, err := ws.insertInto("dns_config").
-		Pair("id", config.ID).
-		Pair("domain", config.DNSConfig.Domain).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to insert record to dns_config table: %s", err)
-	}
-
-	for _, provider := range config.DNSConfig.Providers {
-		_, err = ws.insertInto("dns_providers").
-			Pair("id", uuid.New().String()).
-			Pair("dns_config_id", config.ID).
-			Pair("domains_include", strings.Join(provider.DomainsInclude, ",")).
-			Pair("is_primary", provider.Primary).
-			Pair("secret_name", provider.SecretName).
-			Pair("type", provider.Type).
-			Exec()
-
-		if err != nil {
-			return dberrors.Internal("Failed to insert record to dns_providers table: %s", err)
-		}
-	}
-	return nil
-}
-
-*/
-
 func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dberrors.Error) {
 	var dnsConfig model.DNSConfig
 	var dnsProviders []model.DNSProvider
@@ -576,18 +535,18 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (model.DNSConfig, dbe
 	_, err = r.session.
 		Select("*").
 		From("dns_providers").
-		Where(dbr.Eq("dns_config_id", gardenerConfigID)).
+		Where(dbr.Eq("dns_config_id", dnsConfig.ID)).
 		Load(&dnsProviders)
 
 	for _, provider := range dnsProviders {
-		provider.DomainsInclude
+		_ = provider.DomainsInclude
 	}
 
 	if err != nil {
 		return model.DNSConfig{}, dberrors.Internal("Failed to get DNS provider: %s", err)
 	}
 
-	dnsConfig.Providers = dnsProviders
+	// dnsConfig.Providers = dnsProviders
 
 	return dnsConfig, nil
 }
