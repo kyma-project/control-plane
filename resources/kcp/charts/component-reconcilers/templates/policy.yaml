@@ -1,0 +1,21 @@
+{{- range $component := .Values.global.components }}
+{{ if $.Values.serviceMonitor.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  labels:
+    component: {{ $component }}
+  name: {{ $component }}-reconciler
+  namespace: {{ $.Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      component: {{ $component }}
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8080:
+      mode: PERMISSIVE
+---
+{{- end }}
+{{- end }}

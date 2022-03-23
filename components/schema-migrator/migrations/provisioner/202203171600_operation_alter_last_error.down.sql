@@ -1,0 +1,4 @@
+ALTER TABLE operation
+    ALTER COLUMN err_message DROP DEFAULT,
+    ALTER COLUMN reason DROP DEFAULT,
+    ALTER COLUMN component DROP DEFAULT;
