@@ -21,12 +21,12 @@ func NewLogsCommand() *cobra.Command {
 	cmd := &LogsCommand{}
 
 	cobraCmd := &cobra.Command{
-		Use:   "logs [id]",
+		Use:   "logs [regex]",
 		Short: "Get all logs for specific regex from sc migration.",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			if len(args) == 0 || args[0] == "" {
-				return errors.New("Missing required param `id`")
+				return errors.New("Missing required param `regex`")
 			}
 
 			cmd.regex = args[0]
