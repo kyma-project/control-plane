@@ -9,6 +9,7 @@ import (
 
 	dbr "github.com/gocraft/dbr/v2"
 	uuid "github.com/google/uuid"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -175,23 +176,13 @@ func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Er
 	return nil
 }
 
-/*type DNSConfig struct {
-	Domain    string         `json:"domain"`
-	Providers []*DNSProvider `json:"providers"`
-}
-
-type DNSProvider struct {
-	DomainsInclude []string `json:"domainsInclude"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
-}
-*/
-
 func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Error {
+	dnsConfigID := uuid.New().String()
+
 	_, err := ws.insertInto("dns_config").
-		Pair("id", config.ID).
+		Pair("id", dnsConfigID).
 		Pair("domain", config.DNSConfig.Domain).
+		Pair("gardener_config_id", config.ID).
 		Exec()
 
 	if err != nil {
@@ -201,7 +192,7 @@ func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Err
 	for _, provider := range config.DNSConfig.Providers {
 		_, err = ws.insertInto("dns_providers").
 			Pair("id", uuid.New().String()).
-			Pair("dns_config_id", config.ID).
+			Pair("dns_config_id", dnsConfigID).
 			Pair("domains_include", strings.Join(provider.DomainsInclude, ",")).
 			Pair("is_primary", provider.Primary).
 			Pair("secret_name", provider.SecretName).
