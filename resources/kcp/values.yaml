@@ -23,7 +23,7 @@ global:
       version: "PR-1380"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1346"
+      version: "PR-1474"
     kyma_metrics_collector:
       dir:
       version: "PR-1425"
