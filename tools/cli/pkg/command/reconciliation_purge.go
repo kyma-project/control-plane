@@ -12,19 +12,19 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type operationPurgeOpts struct {
+type reconciliationsPurgeOpts struct {
 	runtimeID string
 }
 
-type operationPurgeCmd struct {
+type reconciliationsPurgeCmd struct {
 	reconcilerURL string
 	auth          oauth2.TokenSource
 	ctx           context.Context
-	opts          operationPurgeOpts
+	opts          reconciliationsPurgeOpts
 }
 
 func NewReconciliationPurgeCmd() *cobra.Command {
-	cmd := operationPurgeCmd{}
+	cmd := reconciliationsPurgeCmd{}
 
 	cobraCmd := &cobra.Command{
 		Use:     "purge",
@@ -44,7 +44,7 @@ func NewReconciliationPurgeCmd() *cobra.Command {
 	return cobraCmd
 }
 
-func (cmd *operationPurgeCmd) Validate() error {
+func (cmd *reconciliationsPurgeCmd) Validate() error {
 
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
 	cmd.auth = CLICredentialManager(logger.New())
@@ -56,7 +56,7 @@ func (cmd *operationPurgeCmd) Validate() error {
 	return nil
 }
 
-func (cmd *operationPurgeCmd) Run() error {
+func (cmd *reconciliationsPurgeCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
