@@ -120,11 +120,11 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 			c.log.Infof("[Worker %d] Instance %s - refreshing status",
 				id, instance.Name)
 			refreshed, err := c.ersClient.GetOne(instance.Id)
-			work.Instance = *refreshed
 			if err != nil {
 				c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
 				workChannel <- work
 			}
+			work.Instance = *refreshed
 
 			if refreshed == nil {
 				c.log.Errorf("[Worker %d] Instance %s is missing", id, instance.Name)
