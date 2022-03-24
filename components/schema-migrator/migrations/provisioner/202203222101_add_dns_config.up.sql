@@ -1,7 +1,7 @@
 CREATE TABLE dns_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    domain varchar(256) NOT NULL, -- Not null?
+    domain varchar(256) NOT NULL,
     gardener_config_id uuid NOT NULL,
     unique(gardener_config_id),
     foreign key (gardener_config_id) REFERENCES gardener_config (id) ON DELETE CASCADE
