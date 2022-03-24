@@ -115,7 +115,7 @@ type ComplexityRoot struct {
 		Purpose                             func(childComplexity int) int
 		Region                              func(childComplexity int) int
 		Seed                                func(childComplexity int) int
-		ShootNetworkingFilter               func(childComplexity int) int
+		ShootNetworkingFilterDisabled       func(childComplexity int) int
 		TargetSecret                        func(childComplexity int) int
 		VolumeSizeGb                        func(childComplexity int) int
 		WorkerCidr                          func(childComplexity int) int
@@ -542,12 +542,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.Seed(childComplexity), true
 
-	case "GardenerConfig.shootNetworkingFilter":
-		if e.complexity.GardenerConfig.ShootNetworkingFilter == nil {
+	case "GardenerConfig.shootNetworkingFilterDisabled":
+		if e.complexity.GardenerConfig.ShootNetworkingFilterDisabled == nil {
 			break
 		}
 
-		return e.complexity.GardenerConfig.ShootNetworkingFilter(childComplexity), true
+		return e.complexity.GardenerConfig.ShootNetworkingFilterDisabled(childComplexity), true
 
 	case "GardenerConfig.targetSecret":
 		if e.complexity.GardenerConfig.TargetSecret == nil {
@@ -1014,7 +1014,7 @@ type GardenerConfig {
     dnsConfig: DNSConfig
     oidcConfig: OIDCConfig
     exposureClassName: String
-    shootNetworkingFilter: Boolean
+    shootNetworkingFilterDisabled: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -1207,7 +1207,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
-    shootNetworkingFilter: Boolean                  # Indicator for the Shoot Networking Filter extension
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 input OIDCConfigInput {
@@ -1316,7 +1316,7 @@ input GardenerUpgradeInput {
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
     oidcConfig: OIDCConfigInput
     exposureClassName: String                     # ExposureClass name
-    shootNetworkingFilter: Boolean                # Indicator for the Shoot Networking Filter extension
+    shootNetworkingFilterDisabled: Boolean        # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 type Mutation {
@@ -3064,7 +3064,7 @@ func (ec *executionContext) _GardenerConfig_exposureClassName(ctx context.Contex
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GardenerConfig_shootNetworkingFilter(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+func (ec *executionContext) _GardenerConfig_shootNetworkingFilterDisabled(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3081,7 +3081,7 @@ func (ec *executionContext) _GardenerConfig_shootNetworkingFilter(ctx context.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ShootNetworkingFilter, nil
+		return obj.ShootNetworkingFilterDisabled, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6083,9 +6083,9 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "shootNetworkingFilter":
+		case "shootNetworkingFilterDisabled":
 			var err error
-			it.ShootNetworkingFilter, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.ShootNetworkingFilterDisabled, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6197,9 +6197,9 @@ func (ec *executionContext) unmarshalInputGardenerUpgradeInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "shootNetworkingFilter":
+		case "shootNetworkingFilterDisabled":
 			var err error
-			it.ShootNetworkingFilter, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.ShootNetworkingFilterDisabled, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6856,8 +6856,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_oidcConfig(ctx, field, obj)
 		case "exposureClassName":
 			out.Values[i] = ec._GardenerConfig_exposureClassName(ctx, field, obj)
-		case "shootNetworkingFilter":
-			out.Values[i] = ec._GardenerConfig_shootNetworkingFilter(ctx, field, obj)
+		case "shootNetworkingFilterDisabled":
+			out.Values[i] = ec._GardenerConfig_shootNetworkingFilterDisabled(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
