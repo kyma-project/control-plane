@@ -2,7 +2,6 @@ package command
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -101,7 +100,7 @@ func (c *StatusCommand) Run() error {
 	}
 
 	if len(runtimesPage.Data) != 1 {
-		fmt.Printf("No data in KEB")
+		return fmt.Errorf("No data in KEB")
 	}
 
 	runtime := runtimesPage.Data[0]
@@ -203,16 +202,14 @@ func (c *StatusCommand) Run() error {
 		panic(err.Error())
 	}
 
-	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "component=base",
+	})
 	if err != nil {
 		return err // todo: logs
 	}
 
 	for _, pod := range podsList.Items {
-		if !bytes.HasPrefix([]byte(pod.Name), []byte("base-reconciler")) {
-			continue
-		}
-
 		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
 			options := &corev1.PodLogOptions{}
 

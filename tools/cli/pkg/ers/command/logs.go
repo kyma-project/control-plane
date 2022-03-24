@@ -2,7 +2,6 @@ package command
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -67,16 +66,14 @@ func (c *LogsCommand) Run() error {
 		panic(err.Error())
 	}
 
-	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "component=base",
+	})
 	if err != nil {
 		return fmt.Errorf("while creatin a client set: %w", err)
 	}
 
 	for _, pod := range podsList.Items {
-		if !bytes.HasPrefix([]byte(pod.Name), []byte("base-reconciler")) {
-			continue
-		}
-
 		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
 			c.printLogs(clientset, pod, container)
 		}
