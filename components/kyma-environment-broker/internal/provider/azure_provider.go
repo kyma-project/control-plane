@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -144,8 +146,11 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 		}
 	}
 
-	if params.Region != nil {
+	if params.Region != nil && *params.Region != "" {
+		fmt.Println(*params.Region)
 		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
+		fmt.Println(input.GardenerConfig.Region)
+		fmt.Println(toAzureSpecific[*params.Region])
 	}
 
 	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
