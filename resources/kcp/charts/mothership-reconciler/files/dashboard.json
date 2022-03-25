@@ -21,10 +21,118 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 3589,
-  "iteration": 1648024533680,
+  "id": 3591,
+  "iteration": 1648138473763,
   "links": [],
   "panels": [
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 227,
+      "interval": "5m",
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.5",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "exemplar": false,
+          "expr": "histogram_quantile(0.95, sum by (le)(rate(reconciler_processing_time_bucket{metric=\"processing_duration_successful_millisecond\"}[$__interval])))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 4,
+          "legendFormat": "",
+          "refId": "a"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "All Component Reconciler Successful Processing Duration 95th percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2010",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2011",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
     {
       "collapsed": true,
       "datasource": null,
@@ -32,7 +140,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "id": 151,
       "panels": [
@@ -61,7 +169,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 2
+            "y": 7
           },
           "id": 179,
           "options": {
@@ -131,7 +239,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 2
+            "y": 7
           },
           "id": 181,
           "options": {
@@ -193,7 +301,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 10
+            "y": 15
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -267,7 +375,7 @@
             "h": 6,
             "w": 24,
             "x": 0,
-            "y": 18
+            "y": 23
           },
           "hiddenSeries": false,
           "id": 154,
@@ -303,7 +411,7 @@
               "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
               "hide": false,
               "interval": "",
-              "legendFormat": "{{le}}",
+              "legendFormat": "{{pod, component}}",
               "refId": "a"
             }
           ],
@@ -361,7 +469,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 7
       },
       "id": 146,
       "panels": [
@@ -664,7 +772,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 8
       },
       "id": 141,
       "panels": [
@@ -969,7 +1077,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 9
       },
       "id": 135,
       "panels": [
@@ -1273,7 +1381,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 10
       },
       "id": 130,
       "panels": [
@@ -1579,7 +1687,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 11
       },
       "id": 124,
       "panels": [
@@ -1885,7 +1993,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 12
       },
       "id": 117,
       "panels": [
@@ -2191,7 +2299,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 13
       },
       "id": 111,
       "panels": [
@@ -2497,7 +2605,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 14
       },
       "id": 105,
       "panels": [
@@ -2797,7 +2905,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 15
       },
       "id": 92,
       "panels": [
@@ -3097,7 +3205,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 16
       },
       "id": 88,
       "panels": [
@@ -3395,7 +3503,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 11
+        "y": 17
       },
       "id": 84,
       "panels": [
@@ -3718,7 +3826,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 18
       },
       "id": 80,
       "panels": [
@@ -4041,7 +4149,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 19
       },
       "id": 76,
       "panels": [
@@ -4339,7 +4447,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 20
       },
       "id": 53,
       "panels": [
@@ -4637,7 +4745,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 21
       },
       "id": 221,
       "panels": [],
@@ -4671,7 +4779,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 22
       },
       "id": 223,
       "options": {
@@ -4732,7 +4840,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 22
       },
       "id": 224,
       "options": {
@@ -4791,7 +4899,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -4891,7 +4999,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 38
       },
       "id": 219,
       "interval": "5m",
@@ -4934,7 +5042,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 44
       },
       "id": 216,
       "panels": [],
@@ -4968,7 +5076,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 45
       },
       "id": 214,
       "options": {
@@ -5029,7 +5137,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 45
       },
       "id": 217,
       "options": {
@@ -5088,7 +5196,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 53
       },
       "heatmap": {},
       "hideZeroBuckets": false,
@@ -5188,7 +5296,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 61
       },
       "id": 226,
       "interval": "5m",
@@ -5231,7 +5339,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 61
+        "y": 67
       },
       "id": 46,
       "panels": [],
@@ -5290,7 +5398,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 62
+        "y": 68
       },
       "id": 44,
       "options": {
@@ -5383,15 +5491,6 @@
         {
           "datasource": null,
           "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==8))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Deleted",
-          "refId": "I"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
           "expr": "(count(reconciler_reconciliation_status{}==9))",
           "hide": false,
           "interval": "",
@@ -5463,7 +5562,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 62
+        "y": 68
       },
       "id": 40,
       "options": {
@@ -5527,7 +5626,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 70
+        "y": 76
       },
       "id": 36,
       "options": {
@@ -5547,7 +5646,7 @@
         {
           "datasource": null,
           "exemplar": false,
-          "expr": "reconciler_reconciliation_waiting_total{}",
+          "expr": "sum(reconciler_reconciliation_waiting_total{})",
           "interval": "",
           "legendFormat": "{{pod}}",
           "refId": "A"
@@ -5581,7 +5680,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 70
+        "y": 76
       },
       "id": 42,
       "options": {
@@ -5602,7 +5701,7 @@
         {
           "datasource": null,
           "exemplar": false,
-          "expr": "reconciler_reconciliation_not_ready_total{}",
+          "expr": "sum(reconciler_reconciliation_not_ready_total{})",
           "interval": "",
           "legendFormat": "{{pod}}",
           "refId": "A"
@@ -5618,7 +5717,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 84
       },
       "id": 38,
       "panels": [],
@@ -5649,7 +5748,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 79
+        "y": 85
       },
       "hiddenSeries": false,
       "id": 9,
@@ -5747,7 +5846,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 92
       },
       "hiddenSeries": false,
       "id": 7,
@@ -5834,7 +5933,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 93
+        "y": 99
       },
       "id": 25,
       "panels": [
@@ -6134,7 +6233,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 94
+        "y": 100
       },
       "id": 27,
       "panels": [],
@@ -6160,7 +6259,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 95
+        "y": 101
       },
       "id": 10,
       "interval": "1m",
@@ -6433,7 +6532,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 102
+        "y": 108
       },
       "id": 28,
       "panels": [],
@@ -6459,7 +6558,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 103
+        "y": 109
       },
       "id": 11,
       "interval": "1m",
@@ -6708,7 +6807,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 110
+        "y": 116
       },
       "id": 32,
       "panels": [],
@@ -6733,7 +6832,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 111
+        "y": 117
       },
       "hiddenSeries": false,
       "id": 18,
@@ -6828,7 +6927,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 111
+        "y": 117
       },
       "hiddenSeries": false,
       "id": 19,
@@ -6971,7 +7070,7 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {
@@ -7001,6 +7100,6 @@
   },
   "timezone": "UTC",
   "title": "Reconciler",
-  "uid": "efa86fd1d0c121a26444b636a3f509a93",
+  "uid": "efa86fd1d0c12236444b636a3f509a9344",
   "version": 6
 }
