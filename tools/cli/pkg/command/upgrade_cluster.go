@@ -45,7 +45,7 @@ func (cmd *UpgradeClusterCommand) Validate() error {
 		return err
 	}
 	if GlobalOpts.SlackAPIURL() == "" {
-		return fmt.Errorf("missing required %s option", GlobalOpts.SlackAPIURL())
+		fmt.Println("Note: Ignore sending slack notification when slackAPIURL is empty")
 	}
 	return nil
 }
