@@ -135,7 +135,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 
 	dnsConfig, dberr := r.getDNSConfig(providerConfig.ID)
 	if dberr != nil {
-		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
+		return model.Cluster{}, dberr.Append("Cannot get DNS config for runtimeID: %s", runtimeID)
 	}
 	cluster.ClusterConfig.DNSConfig = dnsConfig
 
@@ -531,7 +531,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	}
 
 	err := r.session.
-		Select("*").
+		Select("domain", "id").
 		From("dns_config").
 		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
 		LoadOne(&dnsConfigWithID)
@@ -546,7 +546,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	dnsConfig := dnsConfigWithID.DNSConfig
 
 	_, err = r.session.
-		Select("*").
+		Select("primary", "secret_name", "type", "domains_include").
 		From("dns_providers").
 		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
 		Load(&dnsProvidersPreSplit)

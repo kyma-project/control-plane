@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE dns_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
@@ -18,3 +20,5 @@ CREATE TABLE dns_providers
     type varchar(256) NOT NULL,
     foreign key (dns_config_id) REFERENCES dns_config (id) ON DELETE CASCADE
 );
+
+COMMIT;

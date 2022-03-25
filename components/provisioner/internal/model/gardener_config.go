@@ -38,9 +38,9 @@ type DNSConfig struct {
 
 type DNSProvider struct {
 	DomainsInclude []string `json:"domainsInclude" db:"-"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
+	Primary        bool     `json:"primary" db:"primary"`
+	SecretName     string   `json:"secretName" db:"secret_name"`
+	Type           string   `json:"type" db:"type"`
 }
 
 type GardenerConfig struct {

@@ -184,6 +184,7 @@ CREATE TABLE signing_algorithms
 );
 
 -- DNS config
+
 CREATE TABLE dns_config
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
@@ -193,7 +194,8 @@ CREATE TABLE dns_config
     foreign key (gardener_config_id) REFERENCES gardener_config (id) ON DELETE CASCADE
 );
 
--- DNS config
+-- DNS provider
+
 CREATE TABLE dns_providers
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
