@@ -64,7 +64,7 @@ func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
 					},
 					"parameters": {
 						"name": "testing-cluster",
-                        "region":""
+						"region":""
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
