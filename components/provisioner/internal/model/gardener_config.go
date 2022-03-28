@@ -621,25 +621,40 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		shoot.Spec.ExposureClassName = upgradeConfig.ExposureClassName
 	}
 
-	// TODO: Check if the Extensions are correctly modified after such an operation
-	// TODO: Refactor it as a separate function
 	if upgradeConfig.ShootNetworkingFilterDisabled != nil {
-		found := false
+		upgradedExtensions := []gardener_types.Extension{}
 		for _, extension := range shoot.Spec.Extensions {
-			if extension.Type == ShootNetworkingFilterExtensionType {
-				found = true
-				extension.Disabled = upgradeConfig.ShootNetworkingFilterDisabled
+			if extension.Type != ShootNetworkingFilterExtensionType {
+				upgradedExtensions = append(upgradedExtensions, extension)
 			}
 		}
-		if !found {
-			shoot.Spec.Extensions = append(shoot.Spec.Extensions, gardener_types.Extension{
-				Type:     ShootNetworkingFilterExtensionType,
-				Disabled: upgradeConfig.ShootNetworkingFilterDisabled,
-			})
-		}
+		upgradedExtensions = append(upgradedExtensions, gardener_types.Extension{
+			Type:     ShootNetworkingFilterExtensionType,
+			Disabled: upgradeConfig.ShootNetworkingFilterDisabled,
+		})
+		shoot.Spec.Extensions = upgradedExtensions
 	}
 
 	return nil
+}
+
+// TODO: Remove it after the manual test
+func PutShootNetworkingExtension(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) bool {
+	if upgradeConfig.ShootNetworkingFilterDisabled != nil {
+		upgradedExtensions := []gardener_types.Extension{}
+		for _, extension := range shoot.Spec.Extensions {
+			if extension.Type != ShootNetworkingFilterExtensionType {
+				upgradedExtensions = append(upgradedExtensions, extension)
+			}
+		}
+		upgradedExtensions = append(upgradedExtensions, gardener_types.Extension{
+			Type:     ShootNetworkingFilterExtensionType,
+			Disabled: upgradeConfig.ShootNetworkingFilterDisabled,
+		})
+		shoot.Spec.Extensions = upgradedExtensions
+		return true
+	}
+	return false
 }
 
 func getMachineConfig(config GardenerConfig) gardener_types.Machine {
