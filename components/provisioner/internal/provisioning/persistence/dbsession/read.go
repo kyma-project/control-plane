@@ -551,13 +551,13 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
 		Load(&dnsProvidersPreSplit)
 
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get DNS provider: %s", err)
+	}
+
 	for _, provider := range dnsProvidersPreSplit {
 		provider.DNSProvider.DomainsInclude = strings.Split(provider.rawDomains, ",")
 		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
-	}
-
-	if err != nil {
-		return nil, dberrors.Internal("Failed to get DNS provider: %s", err)
 	}
 
 	return &dnsConfig, nil
