@@ -22,7 +22,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 3591,
-  "iteration": 1648138473763,
+  "iteration": 1648138473765,
   "links": [],
   "panels": [
     {
@@ -134,7 +134,7 @@
       }
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -143,324 +143,323 @@
         "y": 6
       },
       "id": 151,
-      "panels": [
-        {
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "custom": {},
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 7
-          },
-          "id": 179,
-          "options": {
-            "displayMode": "gradient",
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "7.4.5",
-          "targets": [
-            {
-              "exemplar": false,
-              "expr": "sum by (le) (reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"})",
-              "format": "heatmap",
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{le}}",
-              "refId": "A"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Successful Processing Duration Histogram",
-          "transformations": [
-            {
-              "id": "reduce",
-              "options": {
-                "includeTimeField": false,
-                "mode": "reduceFields",
-                "reducers": []
-              }
-            }
-          ],
-          "type": "bargauge"
-        },
-        {
-          "datasource": null,
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "custom": {},
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percentunit"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 7
-          },
-          "id": 181,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "7.4.5",
-          "targets": [
-            {
-              "expr": "sum(reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_unsuccessful_millisecond\"}) /sum(reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_unsuccessful_millisecond\"} + ignoring(metric) reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_successful_millisecond\"})",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "B"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Unsuccessful Processing Rate",
-          "type": "stat"
-        },
-        {
-          "cards": {
-            "cardPadding": null,
-            "cardRound": null
-          },
+      "panels": [],
+      "title": "Logging (Base)",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
           "color": {
-            "cardColor": "#b4ff00",
-            "colorScale": "sqrt",
-            "colorScheme": "interpolateOranges",
-            "exponent": 0.5,
-            "mode": "opacity"
+            "mode": "thresholds"
           },
-          "dataFormat": "tsbuckets",
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
               }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 15
-          },
-          "heatmap": {},
-          "hideZeroBuckets": false,
-          "highlightCards": true,
-          "id": 212,
-          "interval": "5m",
-          "legend": {
-            "show": false
-          },
-          "maxDataPoints": null,
-          "pluginVersion": "7.4.5",
-          "reverseYBuckets": false,
-          "targets": [
-            {
-              "expr": "sum by (le) (increase(reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
-              "format": "heatmap",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "{{le}}",
-              "refId": "B"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Successful Processing Duration Heatmap",
-          "tooltip": {
-            "show": true,
-            "showHistogram": false
-          },
-          "transformations": [],
-          "type": "heatmap",
-          "xAxis": {
-            "show": true
-          },
-          "xBucketNumber": null,
-          "xBucketSize": null,
-          "yAxis": {
-            "decimals": 0,
-            "format": "ms",
-            "logBase": 1,
-            "max": null,
-            "min": null,
-            "show": true,
-            "splitFactor": null
-          },
-          "yBucketBound": "auto",
-          "yBucketNumber": null,
-          "yBucketSize": null
+            ]
+          }
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 179,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
         {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {
-              "color": {},
-              "custom": {},
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              },
-              "unit": "ms"
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 23
-          },
-          "hiddenSeries": false,
-          "id": 154,
-          "interval": "5m",
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
+          "exemplar": false,
+          "expr": "sum by (le) (reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"})",
+          "format": "heatmap",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{le}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Successful Processing Duration Histogram",
+      "transformations": [
+        {
+          "id": "reduce",
           "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.4.5",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "datasource": "Prometheus",
-              "exemplar": false,
-              "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "{{pod, component}}",
-              "refId": "a"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Successful Processing Duration 95th percentile",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:2010",
-              "format": "ms",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:2011",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "includeTimeField": false,
+            "mode": "reduceFields",
+            "reducers": []
           }
         }
       ],
-      "title": "Logging (Base)",
-      "type": "row"
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 181,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "expr": "sum(reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_unsuccessful_millisecond\"}) /sum(reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_unsuccessful_millisecond\"} + ignoring(metric) reconciler_processing_time_count{component=\"logging\",metric=\"processing_duration_successful_millisecond\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unsuccessful Processing Rate",
+      "type": "stat"
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "opacity"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 212,
+      "interval": "5m",
+      "legend": {
+        "show": false
+      },
+      "maxDataPoints": null,
+      "pluginVersion": "7.4.5",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "expr": "sum by (le) (increase(reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+          "format": "heatmap",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{le}}",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Successful Processing Duration Heatmap",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "transformations": [],
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": 0,
+        "format": "ms",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "hiddenSeries": false,
+      "id": 154,
+      "interval": "5m",
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.4.5",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "exemplar": false,
+          "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"logging\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{pod, component}}",
+          "refId": "a"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Successful Processing Duration 95th percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2010",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2011",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "collapsed": true,
@@ -469,7 +468,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 29
       },
       "id": 146,
       "panels": [
@@ -498,7 +497,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 3
+            "y": 8
           },
           "id": 178,
           "options": {
@@ -568,7 +567,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 3
+            "y": 8
           },
           "id": 182,
           "options": {
@@ -627,7 +626,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 11
+            "y": 16
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -727,7 +726,7 @@
             "h": 6,
             "w": 24,
             "x": 0,
-            "y": 19
+            "y": 24
           },
           "id": 149,
           "interval": "5m",
@@ -772,7 +771,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 30
       },
       "id": 141,
       "panels": [
@@ -1077,7 +1076,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 31
       },
       "id": 135,
       "panels": [
@@ -1381,7 +1380,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 32
       },
       "id": 130,
       "panels": [
@@ -1687,7 +1686,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 11
+        "y": 33
       },
       "id": 124,
       "panels": [
@@ -1993,7 +1992,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 34
       },
       "id": 117,
       "panels": [
@@ -2299,7 +2298,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 35
       },
       "id": 111,
       "panels": [
@@ -2605,7 +2604,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 36
       },
       "id": 105,
       "panels": [
@@ -2905,7 +2904,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 37
       },
       "id": 92,
       "panels": [
@@ -3205,7 +3204,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 38
       },
       "id": 88,
       "panels": [
@@ -3503,7 +3502,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 39
       },
       "id": 84,
       "panels": [
@@ -3826,7 +3825,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 40
       },
       "id": 80,
       "panels": [
@@ -4149,7 +4148,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 41
       },
       "id": 76,
       "panels": [
@@ -4447,7 +4446,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 42
       },
       "id": 53,
       "panels": [
@@ -4739,301 +4738,302 @@
       "type": "row"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 43
       },
       "id": 221,
-      "panels": [],
+      "panels": [
+        {
+          "datasource": null,
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 22
+          },
+          "id": 223,
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "7.4.5",
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "sum by (le) (reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"})",
+              "format": "heatmap",
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{le}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Successful Processing Duration Histogram",
+          "type": "bargauge"
+        },
+        {
+          "datasource": null,
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {},
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 22
+          },
+          "id": 224,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.4.5",
+          "targets": [
+            {
+              "expr": "sum(reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_unsuccessful_millisecond\"}) /sum(reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_unsuccessful_millisecond\"} + ignoring(metric) reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"})",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Unsuccessful Processing Rate",
+          "type": "stat"
+        },
+        {
+          "cards": {
+            "cardPadding": null,
+            "cardRound": null
+          },
+          "color": {
+            "cardColor": "#b4ff00",
+            "colorScale": "sqrt",
+            "colorScheme": "interpolateOranges",
+            "exponent": 0.5,
+            "mode": "opacity"
+          },
+          "dataFormat": "tsbuckets",
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {},
+              "custom": {},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": []
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 30
+          },
+          "heatmap": {},
+          "hideZeroBuckets": false,
+          "highlightCards": true,
+          "id": 218,
+          "interval": "5m",
+          "legend": {
+            "show": false
+          },
+          "maxDataPoints": null,
+          "pluginVersion": "7.4.5",
+          "reverseYBuckets": false,
+          "targets": [
+            {
+              "expr": "sum by (le) (increase(reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+              "format": "heatmap",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{le}}",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Successful Processing Duration Heatmap",
+          "tooltip": {
+            "show": true,
+            "showHistogram": false
+          },
+          "transformations": [],
+          "type": "heatmap",
+          "xAxis": {
+            "show": true
+          },
+          "xBucketNumber": null,
+          "xBucketSize": null,
+          "yAxis": {
+            "decimals": 0,
+            "format": "ms",
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true,
+            "splitFactor": null
+          },
+          "yBucketBound": "auto",
+          "yBucketNumber": null,
+          "yBucketSize": null
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 38
+          },
+          "id": 219,
+          "interval": "5m",
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.4.5",
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{le}}",
+              "refId": "processing duration successful millisecond 5 minutes"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Successful Processing Duration 95th percentile",
+          "type": "timeseries"
+        }
+      ],
       "title": "Istio Configuration",
       "type": "row"
-    },
-    {
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 22
-      },
-      "id": 223,
-      "options": {
-        "displayMode": "gradient",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "text": {}
-      },
-      "pluginVersion": "7.4.5",
-      "targets": [
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "sum by (le) (reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"})",
-          "format": "heatmap",
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{le}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Successful Processing Duration Histogram",
-      "type": "bargauge"
-    },
-    {
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {},
-          "mappings": [],
-          "noValue": "0",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 22
-      },
-      "id": 224,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.4.5",
-      "targets": [
-        {
-          "expr": "sum(reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_unsuccessful_millisecond\"}) /sum(reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_unsuccessful_millisecond\"} + ignoring(metric) reconciler_processing_time_count{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"})",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "title": "Unsuccessful Processing Rate",
-      "type": "stat"
-    },
-    {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
-      "color": {
-        "cardColor": "#b4ff00",
-        "colorScale": "sqrt",
-        "colorScheme": "interpolateOranges",
-        "exponent": 0.5,
-        "mode": "opacity"
-      },
-      "dataFormat": "tsbuckets",
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {},
-          "custom": {},
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 30
-      },
-      "heatmap": {},
-      "hideZeroBuckets": false,
-      "highlightCards": true,
-      "id": 218,
-      "interval": "5m",
-      "legend": {
-        "show": false
-      },
-      "maxDataPoints": null,
-      "pluginVersion": "7.4.5",
-      "reverseYBuckets": false,
-      "targets": [
-        {
-          "expr": "sum by (le) (increase(reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
-          "format": "heatmap",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{le}}",
-          "refId": "B"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Successful Processing Duration Heatmap",
-      "tooltip": {
-        "show": true,
-        "showHistogram": false
-      },
-      "transformations": [],
-      "type": "heatmap",
-      "xAxis": {
-        "show": true
-      },
-      "xBucketNumber": null,
-      "xBucketSize": null,
-      "yAxis": {
-        "decimals": 0,
-        "format": "ms",
-        "logBase": 1,
-        "max": null,
-        "min": null,
-        "show": true,
-        "splitFactor": null
-      },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "graph": false,
-              "legend": false,
-              "tooltip": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 38
-      },
-      "id": 219,
-      "interval": "5m",
-      "options": {
-        "graph": {},
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "tooltipOptions": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "7.4.5",
-      "targets": [
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"istio-configuration\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{le}}",
-          "refId": "processing duration successful millisecond 5 minutes"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Successful Processing Duration 95th percentile",
-      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -5341,9 +5341,9 @@
         "x": 0,
         "y": 67
       },
-      "id": 46,
+      "id": 231,
       "panels": [],
-      "title": "Mothership",
+      "title": "Rma",
       "type": "row"
     },
     {
@@ -5351,315 +5351,6 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "graph": false,
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {},
-            "thresholdsStyle": {}
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 68
-      },
-      "id": 44,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "tooltipOptions": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.4.1",
-      "targets": [
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==0))",
-          "interval": "",
-          "legendFormat": "Reconcile Error",
-          "refId": "A"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==1))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Ready",
-          "refId": "B"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==2))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Reconcile Pending",
-          "refId": "C"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==3))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Reconciling",
-          "refId": "D"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==4))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Reconcile Disabled",
-          "refId": "E"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==5))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delete Pending",
-          "refId": "F"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==6))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Deleting",
-          "refId": "G"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==7))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delete Error",
-          "refId": "H"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==9))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Reconcile Error Retryable",
-          "refId": "J"
-        },
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "(count(reconciler_reconciliation_status{}==10))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delete Error Retryable",
-          "refId": "K"
-        }
-      ],
-      "title": "Cluster Status",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "graph": false,
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {},
-            "thresholdsStyle": {}
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 68
-      },
-      "id": 40,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "tooltipOptions": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "reconciler_worker_pool_occupancy_ratio{component=\"mothership\"}",
-          "format": "time_series",
-          "interval": "",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Mothership - Workers Occupancy",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 20
-              },
-              {
-                "color": "dark-red",
-                "value": 50
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 76
-      },
-      "id": 36,
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "7.4.5",
-      "targets": [
-        {
-          "datasource": null,
-          "exemplar": false,
-          "expr": "sum(reconciler_reconciliation_waiting_total{})",
-          "interval": "",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Total Waiting Reconciliations",
-      "type": "gauge"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
             "mode": "thresholds"
           },
           "custom": {},
@@ -5679,11 +5370,12 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 76
+        "x": 0,
+        "y": 68
       },
-      "id": 42,
+      "id": 232,
       "options": {
+        "displayMode": "gradient",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -5692,23 +5384,639 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
+        "showUnfilled": true,
         "text": {}
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "sum by (le) (reconciler_processing_time_bucket{component=\"rma\",metric=\"processing_duration_successful_millisecond\"})",
+          "format": "heatmap",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{le}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Successful Processing Duration Histogram",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "mode": "reduceFields",
+            "reducers": []
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 68
+      },
+      "id": 233,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "expr": "sum(reconciler_processing_time_count{component=\"rma\",metric=\"processing_duration_unsuccessful_millisecond\"}) /sum(reconciler_processing_time_count{component=\"rma\",metric=\"processing_duration_unsuccessful_millisecond\"} + ignoring(metric) reconciler_processing_time_count{component=\"rma\",metric=\"processing_duration_successful_millisecond\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unsuccessful Processing Rate",
+      "type": "stat"
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "opacity"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {},
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 234,
+      "interval": "5m",
+      "legend": {
+        "show": false
+      },
+      "maxDataPoints": null,
+      "pluginVersion": "7.4.5",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "expr": "sum by (le) (increase(reconciler_processing_time_bucket{component=\"rma\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+          "format": "heatmap",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{le}}",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Successful Processing Duration Heatmap",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "transformations": [],
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": 0,
+        "format": "ms",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 84
+      },
+      "id": 235,
+      "interval": "5m",
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
       },
       "pluginVersion": "7.4.5",
       "targets": [
         {
           "datasource": null,
           "exemplar": false,
-          "expr": "sum(reconciler_reconciliation_not_ready_total{})",
+          "expr": "histogram_quantile(0.95, rate(reconciler_processing_time_bucket{component=\"rma\",metric=\"processing_duration_successful_millisecond\"}[$__interval]))",
+          "hide": false,
           "interval": "",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
+          "legendFormat": "{{le}}",
+          "refId": "processing duration successful millisecond 5 minutes"
         }
       ],
-      "title": "Total number of clusters currently reconciling or in error/failed state",
-      "type": "gauge"
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Successful Processing Duration 95th percentile",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 90
+      },
+      "id": 46,
+      "panels": [
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {},
+                "thresholdsStyle": {}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 24
+          },
+          "id": 44,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.4.1",
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==0))",
+              "interval": "",
+              "legendFormat": "Reconcile Error",
+              "refId": "A"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==1))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Ready",
+              "refId": "B"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==2))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Reconcile Pending",
+              "refId": "C"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==3))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Reconciling",
+              "refId": "D"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==4))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Reconcile Disabled",
+              "refId": "E"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==5))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Delete Pending",
+              "refId": "F"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==6))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Deleting",
+              "refId": "G"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==7))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Delete Error",
+              "refId": "H"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==9))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Reconcile Error Retryable",
+              "refId": "J"
+            },
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "(count(reconciler_reconciliation_status{}==10))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Delete Error Retryable",
+              "refId": "K"
+            }
+          ],
+          "title": "Cluster Status",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {},
+                "thresholdsStyle": {}
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "percentage",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 24
+          },
+          "id": 40,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "reconciler_worker_pool_occupancy_ratio{component=\"mothership\"}",
+              "format": "time_series",
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Mothership - Workers Occupancy",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 20
+                  },
+                  {
+                    "color": "dark-red",
+                    "value": 50
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 32
+          },
+          "id": 36,
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "7.4.5",
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "sum(reconciler_reconciliation_waiting_total{})",
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Waiting Reconciliations",
+          "type": "gauge"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 32
+          },
+          "id": 42,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "7.4.5",
+          "targets": [
+            {
+              "datasource": null,
+              "exemplar": false,
+              "expr": "sum(reconciler_reconciliation_not_ready_total{})",
+              "interval": "",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Total number of clusters currently reconciling or in error/failed state",
+          "type": "gauge"
+        }
+      ],
+      "title": "Mothership",
+      "type": "row"
     },
     {
       "collapsed": false,
@@ -5717,7 +6025,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 84
+        "y": 91
       },
       "id": 38,
       "panels": [],
@@ -5748,7 +6056,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 85
+        "y": 92
       },
       "hiddenSeries": false,
       "id": 9,
@@ -5846,7 +6154,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 92
+        "y": 99
       },
       "hiddenSeries": false,
       "id": 7,
@@ -5933,7 +6241,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 99
+        "y": 106
       },
       "id": 25,
       "panels": [
@@ -6233,7 +6541,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 100
+        "y": 107
       },
       "id": 27,
       "panels": [],
@@ -6259,7 +6567,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 101
+        "y": 108
       },
       "id": 10,
       "interval": "1m",
@@ -6532,7 +6840,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 108
+        "y": 115
       },
       "id": 28,
       "panels": [],
@@ -6558,7 +6866,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 109
+        "y": 116
       },
       "id": 11,
       "interval": "1m",
@@ -6807,7 +7115,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 116
+        "y": 123
       },
       "id": 32,
       "panels": [],
@@ -6832,7 +7140,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 117
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 18,
@@ -6927,7 +7235,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 117
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 19,
@@ -7006,7 +7314,7 @@
       }
     }
   ],
-  "refresh": "10s",
+  "refresh": false,
   "schemaVersion": 27,
   "style": "dark",
   "tags": [
@@ -7070,8 +7378,8 @@
     ]
   },
   "time": {
-    "from": "now-7d",
-    "to": "now"
+    "from": "2022-03-25T18:47:01.702Z",
+    "to": "2022-03-26T19:44:21.793Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -7100,6 +7408,6 @@
   },
   "timezone": "UTC",
   "title": "Reconciler",
-  "uid": "efa86fd1d0c12236444b636a3f509a9344",
-  "version": 6
+  "uid": "efa86fd1d210c121a26444b636a3f509a9344",
+  "version": 7
 }
