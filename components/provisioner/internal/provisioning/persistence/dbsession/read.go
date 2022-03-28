@@ -546,7 +546,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	dnsConfig := dnsConfigWithID.DNSConfig
 
 	_, err = r.session.
-		Select("primary", "secret_name", "type", "domains_include").
+		Select("is_primary", "secret_name", "type", "domains_include").
 		From("dns_providers").
 		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
 		Load(&dnsProvidersPreSplit)
