@@ -638,25 +638,6 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	return nil
 }
 
-// TODO: Remove it after the manual test
-func PutShootNetworkingExtension(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) bool {
-	if upgradeConfig.ShootNetworkingFilterDisabled != nil {
-		upgradedExtensions := []gardener_types.Extension{}
-		for _, extension := range shoot.Spec.Extensions {
-			if extension.Type != ShootNetworkingFilterExtensionType {
-				upgradedExtensions = append(upgradedExtensions, extension)
-			}
-		}
-		upgradedExtensions = append(upgradedExtensions, gardener_types.Extension{
-			Type:     ShootNetworkingFilterExtensionType,
-			Disabled: upgradeConfig.ShootNetworkingFilterDisabled,
-		})
-		shoot.Spec.Extensions = upgradedExtensions
-		return true
-	}
-	return false
-}
-
 func getMachineConfig(config GardenerConfig) gardener_types.Machine {
 	machine := gardener_types.Machine{
 		Type: config.MachineType,
