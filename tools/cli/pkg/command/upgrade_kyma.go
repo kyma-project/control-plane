@@ -59,7 +59,7 @@ func (cmd *UpgradeKymaCommand) Run() error {
 	}
 	fmt.Println("OrchestrationID:", ur.OrchestrationID)
 
-	if !cmd.orchestrationParams.DryRun {
+	if !cmd.orchestrationParams.DryRun && GlobalOpts.SlackAPIURL() != "" {
 		slack_title := `upgrade kyma`
 		slack_err := SendSlackNotification(slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID)
 		if slack_err != nil {
