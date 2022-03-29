@@ -116,9 +116,7 @@ func NewInstancesCommand(log logger.Logger) *cobra.Command {
 		Short: "Displays ERS instances.",
 		Long:  `Displays information about ERS instances.`,
 		Example: `  ers instances -i fff090a1-b46f-4f14-a79e-681b00227921		Display details about the instance fff090a1-b46f-4f14-a79e-681b00227921.
-  ers instances -g 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given global account
-  ers instances -s 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given subaccount
-  ers instances -s 44534cae-796b-c46a-ef52-aa15125a023b		Display details about all instances created by given broker`,
+  ers instances -g 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given global account`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return cmd.Run()
 		},

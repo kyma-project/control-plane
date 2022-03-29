@@ -38,7 +38,7 @@ func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
 
 func (c *HTTPClient) put(url string) error {
 	return c.do(nil, func(ctx context.Context) (resp *http.Response, err error) {
-		fmt.Printf("Sending request to %s\n", url)
+		//fmt.Printf("Sending request to %s\n", url)
 		req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Error while sending a PUT request: %w", err)
@@ -51,7 +51,7 @@ func (c *HTTPClient) get(url string) ([]ers.Instance, error) {
 	kymaEnv := make([]ers.Instance, 0)
 
 	err := c.do(&kymaEnv, func(ctx context.Context) (resp *http.Response, err error) {
-		fmt.Printf("Sending request to %s\n", url)
+		//fmt.Printf("Sending request to %s\n", url)
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			return nil, err
@@ -73,7 +73,7 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 		return fmt.Errorf("Error while sending request: %w", err)
 	}
 
-	fmt.Printf("Response status: %s\n", resp.Status)
+	//fmt.Printf("Response status: %s\n", resp.Status)
 
 	// TODO: return error codes
 
