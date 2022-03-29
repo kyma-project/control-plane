@@ -428,7 +428,9 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
 	updateInt(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
-	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
+	if params.Region != nil && *params.Region != "" {
+		updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
+	}
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)
 	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Purpose, params.Purpose)

@@ -38,11 +38,6 @@ spec:
 {{ toYaml .Values.extraArgs | trim | indent 12 }}
             {{- end }}
           env:
-            - name: EDP_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "kyma-metrics-collector.fullname" . }}
-                  key: token
             - name: EDP_URL
               value: {{ .Values.edp.url | quote }}
             - name: EDP_NAMESPACE
@@ -96,12 +91,18 @@ spec:
             - mountPath: /gardener
               name: gardener-kubeconfig
               readOnly: true
+            - mountPath: /edp-credentials
+              name: edp
+              readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
+      - name: edp
+        secret:
+          secretName: {{ template "kyma-metrics-collector.fullname" . }}
       - name: tmp
         emptyDir: {}
 {{- end -}}

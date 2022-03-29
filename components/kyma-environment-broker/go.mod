@@ -4,13 +4,13 @@ go 1.17
 
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	github.com/99designs/gqlgen v0.17.1
-	github.com/Azure/azure-sdk-for-go v62.2.0+incompatible
+	github.com/99designs/gqlgen v0.17.2
+	github.com/Azure/azure-sdk-for-go v63.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.24
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Peripli/service-manager v0.22.8
+	github.com/Peripli/service-manager v0.23.2
 	github.com/Peripli/service-manager-cli v1.11.12
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gardener/gardener v1.42.0
@@ -34,7 +34,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/testcontainers/testcontainers-go v0.12.0
 	github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410
 	github.com/vrischmann/envconfig v1.3.0
