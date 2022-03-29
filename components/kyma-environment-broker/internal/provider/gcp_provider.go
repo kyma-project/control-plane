@@ -56,7 +56,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region))
 	}
 
@@ -106,7 +106,7 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 	}
 
 	// if the user provides a region - use this one
-	if params.Region != nil {
+	if params.Region != nil && *params.Region != "" {
 		region = *toGCPSpecific[*params.Region]
 	}
 
