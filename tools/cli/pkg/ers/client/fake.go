@@ -2,9 +2,10 @@ package client
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"net/http"
 	"time"
+
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 )
 
 type migrationInfo struct {
