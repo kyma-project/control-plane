@@ -16,16 +16,16 @@ import (
 
 func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cmd := &MigrationAllCommand{}
-	cmd.log = log
 
 	cobraCmd := &cobra.Command{
-		Use:   `migrate-all`,
-		Short: `Triggers full SC migration accepting json objects as input.`,
-		Long:  `Migrates all instances that are feed through stdin in the form of json objects`,
+		Use:     `migrate-all`,
+		Short:   `Triggers full SC migration accepting json objects as input.`,
+		Long:    `Migrates all instances that are feed through stdin in the form of json objects`,
 		Example: `  ers migrate -w2 -d	Triggers migration starting two workers`,
-		Args: cobra.MaximumNArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			// for possible param validation
+			cmd.log = logger.New()
 			return nil
 		},
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -36,6 +36,8 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
+
+	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
 
 	cmd.corbaCmd = cobraCmd
 
@@ -51,35 +53,39 @@ type MigrationAllCommand struct {
 	wg        sync.WaitGroup
 	log       logger.Logger
 	ersClient client.Client
-	mock      bool
+	dryRun    bool
 }
 
 func (c *MigrationAllCommand) Run() error {
-	ersClient, err := client.NewErsClient()
-	c.ersClient = ersClient
-	if err != nil {
-		return fmt.Errorf("while initializing ers client: %w", err)
+	c.ersClient = client.NewFake()
+	if !c.dryRun {
+		ersClient, err := client.NewErsClient()
+		c.ersClient = ersClient
+		if err != nil {
+			return fmt.Errorf("while initializing ers client: %w", err)
+		}
+		defer ersClient.Close()
 	}
-	defer ersClient.Close()
 
 	c.log.Infof("Creating a migrator with %d workers", c.workers)
 	payloads := make(chan ers.Work, c.buffer)
 
 	for w := 0; w < c.workers; w++ {
-		go c.worker(w, payloads)
+		go c.simpleWorker(w, payloads)
 	}
 
 	c.log.Debugf("Preparing readers")
 	reader := bufio.NewReader(os.Stdin)
 	dec := json.NewDecoder(reader)
 
-	c.log.Debugf("Decoding instances")
-	for dec.More() {
-		var instance ers.Instance
-		err := dec.Decode(&instance)
-		if err != nil {
-			c.log.Fatal(err)
-		}
+	var instances []ers.Instance
+	err := dec.Decode(&instances)
+	if err != nil {
+		c.log.Errorf("Unable to decode input: %s", err.Error())
+		return err
+	}
+
+	for _, instance := range instances {
 
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
@@ -97,6 +103,54 @@ func (c *MigrationAllCommand) Run() error {
 
 type Worker struct {
 	color string
+}
+
+func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Work) {
+	for work := range workChannel {
+		start := time.Now()
+
+		c.log.Infof("[Worker %d] Processing instance %s", workerId, work.Instance.Name)
+		instance := work.Instance
+		if instance.Migrated {
+			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
+				workerId, Green, instance.Name, Reset)
+			c.wg.Done()
+			continue
+		}
+		refreshed, err := c.ersClient.GetOne(instance.Id)
+		if err != nil {
+			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
+			c.wg.Done()
+			continue
+		}
+		if refreshed.Migrated {
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
+				workerId, Green, instance.Name, Reset)
+			c.wg.Done()
+			continue
+		}
+		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
+		c.ersClient.Migrate(instance.Id)
+
+		c.log.Infof("[Worker %d] Instance %s not yet migrated",
+			workerId, instance.Name)
+		c.log.Infof("[Worker %d] Instance %s - refreshing status",
+			workerId, instance.Name)
+
+		for time.Since(start) < 20*time.Minute {
+			refreshed, err := c.ersClient.GetOne(instance.Id)
+			if err != nil {
+				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
+			}
+			if refreshed.Migrated {
+				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
+				break
+			}
+			time.Sleep(10 * time.Second)
+		}
+		c.wg.Done()
+
+	}
 }
 
 func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {

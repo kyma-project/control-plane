@@ -2,8 +2,6 @@ package command
 
 import (
 	"errors"
-	"fmt"
-
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/spf13/cobra"
 )
@@ -47,11 +45,12 @@ type MigrationCommand struct {
 }
 
 func (c *MigrationCommand) Run() error {
-	ers, err := client.NewErsClient()
-	if err != nil {
-		return fmt.Errorf("while initializing ers client: %w", err)
-	}
-	defer ers.Close()
+	//ers, err := client.NewErsClient()
+	//if err != nil {
+	//	return fmt.Errorf("while initializing ers client: %w", err)
+	//}
+	//defer ers.Close()
+	ers := client.NewFake()
 
 	return ers.Migrate(c.instanceID)
 }
