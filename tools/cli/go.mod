@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/tools/cli
 
-go 1.17
+go 1.18
 
 require (
 	github.com/golang/mock v1.6.0
@@ -14,16 +14,19 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/mod v0.5.1
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/api v0.23.5
+	k8s.io/apimachinery v0.23.5
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.1 // indirect
+	cloud.google.com/go v0.99.0 // indirect
+	github.com/99designs/gqlgen v0.17.2 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
@@ -39,6 +42,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
+	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -75,9 +79,8 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.23.4 // indirect
-	k8s.io/apimachinery v0.23.4 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20220310132336-3f90b8c54bbb // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
@@ -89,8 +92,8 @@ replace (
 	github.com/kyma-project/control-plane/components/kyma-environment-broker => ../../components/kyma-environment-broker
 	github.com/kyma-project/control-plane/components/provisioner => ../../components/provisioner
 	github.com/kyma-project/control-plane/components/reconciler => ../../components/reconciler
-	k8s.io/api => k8s.io/api v0.23.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.4
-	k8s.io/apiserver => k8s.io/apiserver v0.23.4
-	k8s.io/client-go => k8s.io/client-go v0.23.4
+	k8s.io/api => k8s.io/api v0.23.5
+	k8s.io/apimachinery => k8s.io/apimachinery v0.23.5
+	k8s.io/apiserver => k8s.io/apiserver v0.23.5
+	k8s.io/client-go => k8s.io/client-go v0.23.5
 )

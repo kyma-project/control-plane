@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,12 +40,9 @@ func ValidateOutputOpt(opt string) error {
 	return fmt.Errorf("invalid value for output: %s", opt)
 }
 
-var log = logrus.New()
+var log = logger.New()
 
 func New() *cobra.Command {
-	log.SetLevel(logrus.DebugLevel)
-	log.Out = os.Stdout
-
 	cobra.OnInitialize(initConfig)
 	cmd := &cobra.Command{
 		Use:              "ers",
@@ -63,7 +59,13 @@ func New() *cobra.Command {
 	logger.AddFlags(cmd.PersistentFlags())
 	cmd.PersistentFlags().BoolP("help", "h", false, "Option that displays help for the CLI.")
 
-	cmd.AddCommand(NewInstancesCommand(log), NewSwitchBrokerCommand(), NewMigrationCommand())
+	cmd.AddCommand(NewInstancesCommand(log),
+		NewSwitchBrokerCommand(),
+		NewMigrationCommand(),
+		NewMigrationAllCommand(log),
+		NewStatusCommand(),
+		NewLogsCommand(),
+	)
 
 	return cmd
 }

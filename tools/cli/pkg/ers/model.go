@@ -1,7 +1,13 @@
 package ers
 
-import "fmt"
+import (
+	"fmt"
+)
 
+type Work struct {
+	Instance           Instance
+	ProcessedTimestamp int64
+}
 type Instance struct {
 	BrokerId       string
 	CommercialType string
