@@ -36,7 +36,6 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
-	cobraCmd.Flags().BoolVarP(&cmd.mock, "mock", "m", false, "Use mock instead of sending request to ERS.")
 
 	cmd.corbaCmd = cobraCmd
 
@@ -56,15 +55,12 @@ type MigrationAllCommand struct {
 }
 
 func (c *MigrationAllCommand) Run() error {
-	c.ersClient = &client.TestClient{}
-	if !c.mock {
-		ersClient, err := client.NewErsClient()
-		c.ersClient = ersClient
-		if err != nil {
-			return fmt.Errorf("while initializing ers client: %w", err)
-		}
-		defer ersClient.Close()
+	ersClient, err := client.NewErsClient()
+	c.ersClient = ersClient
+	if err != nil {
+		return fmt.Errorf("while initializing ers client: %w", err)
 	}
+	defer ersClient.Close()
 
 	c.log.Infof("Creating a migrator with %d workers", c.workers)
 	payloads := make(chan ers.Work, c.buffer)
