@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +33,6 @@ The broker is specified by an ID`,
 			return cmd.Run()
 		},
 	}
-	cobraCmd.Flags().StringVarP(&cmd.brokerId, "broker-id", "i", "", "Get not migrated instances")
 
 	cmd.cobraCmd = cobraCmd
 
@@ -42,11 +40,12 @@ The broker is specified by an ID`,
 }
 
 func (c *SwitchCommand) Run() error {
-	ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
+	ers, err := client.NewErsClient()
 	if err != nil {
 		return fmt.Errorf("while initializing ers client: %w", err)
 	}
 	defer ers.Close()
+	// TODO: Correcte responses
 
 	return ers.Migrate(c.brokerId)
 }

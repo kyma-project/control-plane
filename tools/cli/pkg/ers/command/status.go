@@ -65,7 +65,7 @@ func (c *StatusCommand) Run() error {
 
 	// ers
 	fmt.Printf("%sERS%s - ", Red, Reset)
-	ersClient, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
+	ersClient, err := client.NewErsClient()
 	if err != nil {
 		return fmt.Errorf("while initializing ers client: %w", err)
 	}

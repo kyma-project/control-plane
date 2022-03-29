@@ -10,12 +10,13 @@ import (
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
-	"github.com/sirupsen/logrus"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
-func NewMigrationAllCommand() *cobra.Command {
+func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cmd := &MigrationAllCommand{}
+	cmd.log = log
 
 	cobraCmd := &cobra.Command{
 		Use:   `migrate-all`,
@@ -28,9 +29,6 @@ func NewMigrationAllCommand() *cobra.Command {
 			return nil
 		},
 		RunE: func(_ *cobra.Command, _ []string) error {
-			cmd.log = logrus.New()
-			cmd.log.Out = os.Stdout
-
 			return cmd.Run()
 		},
 	}
@@ -38,6 +36,7 @@ func NewMigrationAllCommand() *cobra.Command {
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
+	cobraCmd.Flags().BoolVarP(&cmd.mock, "mock", "m", false, "Use mock instead of sending request to ERS.")
 
 	cmd.corbaCmd = cobraCmd
 
@@ -51,17 +50,21 @@ type MigrationAllCommand struct {
 	buffer    int
 	recheck   int64
 	wg        sync.WaitGroup
-	log       *logrus.Logger
+	log       logger.Logger
 	ersClient client.Client
+	mock      bool
 }
 
 func (c *MigrationAllCommand) Run() error {
-	ersClient, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
-	c.ersClient = ersClient
-	if err != nil {
-		return fmt.Errorf("while initializing ers client: %w", err)
+	c.ersClient = &client.TestClient{}
+	if !c.mock {
+		ersClient, err := client.NewErsClient()
+		c.ersClient = ersClient
+		if err != nil {
+			return fmt.Errorf("while initializing ers client: %w", err)
+		}
+		defer ersClient.Close()
 	}
-	defer ersClient.Close()
 
 	c.log.Infof("Creating a migrator with %d workers", c.workers)
 	payloads := make(chan ers.Work, c.buffer)
@@ -70,9 +73,11 @@ func (c *MigrationAllCommand) Run() error {
 		go c.worker(w, payloads)
 	}
 
+	c.log.Debugf("Preparing readers")
 	reader := bufio.NewReader(os.Stdin)
 	dec := json.NewDecoder(reader)
 
+	c.log.Debugf("Decoding instances")
 	for dec.More() {
 		var instance ers.Instance
 		err := dec.Decode(&instance)
@@ -90,6 +95,7 @@ func (c *MigrationAllCommand) Run() error {
 	c.wg.Wait()
 	close(payloads)
 
+	c.log.Debugf("Closing...")
 	return nil
 }
 

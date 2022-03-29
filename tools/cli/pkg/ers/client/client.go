@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"net/http"
 
 	"errors"
 
@@ -20,7 +19,8 @@ type ersClient struct {
 	Client *HTTPClient
 }
 
-func NewErsClient(url string) (Client, error) {
+func NewErsClient() (Client, error) {
+	url := ers.GlobalOpts.ErsUrl()
 	logger := logger.New()
 	client, err := NewHTTPClient(logger)
 	if err != nil {
@@ -60,8 +60,4 @@ func (c *ersClient) Switch(brokerID string) error {
 
 func (c *ersClient) Close() {
 	c.Client.Close()
-}
-
-func (c *ersClient) GetClient() *http.Client {
-	return c.Client.Client
 }

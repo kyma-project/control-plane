@@ -6,8 +6,8 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -40,7 +40,6 @@ type Filters struct {
 	Migrated        bool
 	NotMigrated     bool
 	InstanceID      string
-
 	// TODO: define more filters
 }
 
@@ -61,7 +60,7 @@ func (c *InstancesCommand) Run() error {
 		c.instanceFetcher = fetcher.NewFileClient(c.source)
 	} else {
 
-		ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
+		ers, err := client.NewErsClient()
 		if err != nil {
 			return fmt.Errorf("while initializing ers client: %w", err)
 		}
@@ -110,7 +109,7 @@ func (c *InstancesCommand) Validate() error {
 	return nil
 }
 
-func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
+func NewInstancesCommand(log logger.Logger) *cobra.Command {
 	cmd := &InstancesCommand{}
 	corbaCmd := &cobra.Command{
 		Use:   "instances",
