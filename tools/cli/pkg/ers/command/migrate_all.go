@@ -40,6 +40,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
 
 	cmd.corbaCmd = cobraCmd
+	cmd.stats = NewStats()
 
 	return cobraCmd
 }
@@ -54,6 +55,7 @@ type MigrationAllCommand struct {
 	log       logger.Logger
 	ersClient client.Client
 	dryRun    bool
+	stats     *Stats
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -92,10 +94,12 @@ func (c *MigrationAllCommand) Run() error {
 
 		payloads <- ers.Work{instance, 0}
 		c.wg.Add(1)
+		c.stats.Add()
 	}
 
 	c.wg.Wait()
 	close(payloads)
+	c.stats.Print()
 
 	c.log.Debugf("Closing...")
 	return nil
@@ -107,6 +111,7 @@ type Worker struct {
 
 func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Work) {
 	for work := range workChannel {
+		c.stats.PrintProgress()
 		start := time.Now()
 
 		c.log.Infof("[Worker %d] Processing instance %s", workerId, work.Instance.Name)
@@ -115,18 +120,23 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
 				workerId, Green, instance.Name, Reset)
 			c.wg.Done()
+			c.stats.Done()
 			continue
 		}
 		refreshed, err := c.ersClient.GetOne(instance.Id)
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.wg.Done()
+			c.stats.Err(instance.Id, err)
+			// TODO: add retries
+
 			continue
 		}
 		if refreshed.Migrated {
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
 				workerId, Green, instance.Name, Reset)
 			c.wg.Done()
+			c.stats.Done()
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
@@ -148,8 +158,9 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			}
 			time.Sleep(10 * time.Second)
 		}
+		// TODO: Add retries
 		c.wg.Done()
-
+		c.stats.Done()
 	}
 }
 
