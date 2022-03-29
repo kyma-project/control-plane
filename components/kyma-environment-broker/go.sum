@@ -186,8 +186,8 @@ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMo
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Peripli/service-manager v0.19.0/go.mod h1:FtRJlibH3yLD1v/JCp6yTBx+m2GDpodxnwmawl756Fo=
 github.com/Peripli/service-manager v0.19.9/go.mod h1:FtRJlibH3yLD1v/JCp6yTBx+m2GDpodxnwmawl756Fo=
-github.com/Peripli/service-manager v0.22.8 h1:HQEZCQtKOQeb0251HXvUMwT+GtTJBjShK0R7kQaWumk=
-github.com/Peripli/service-manager v0.22.8/go.mod h1:+VZrEYenb9fahsWy9olKNxRWtt3tnn/jm1dHPTnTEUg=
+github.com/Peripli/service-manager v0.23.2 h1:3YBMFUokTa8b5sNsWc9Pfz6g2dQcec78zNKMnsjAG3E=
+github.com/Peripli/service-manager v0.23.2/go.mod h1:BORpNM8+9Mvqy2stSFyY/c9sW8r7NlAiwG63kNbvm5Y=
 github.com/Peripli/service-manager-cli v1.11.12 h1:mjokQay0eHG/aI17fkq2J746wX9e+/epmdYkj6+cFk8=
 github.com/Peripli/service-manager-cli v1.11.12/go.mod h1:xwtaPnYY0vkzqw8fq59Xa+Q295e+kRUIIoq5A/l+GZM=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
