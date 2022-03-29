@@ -8,7 +8,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 COPY vendor vendor
 
-RUN CGO_ENABLED=0 go build -o /bin/subscriptioncleanup ./cmd/subscriptioncleanup/main.go
+RUN CGO_ENABLED=0 go build -o /app/subscriptioncleanup ./cmd/subscriptioncleanup/main.go
 
 # Get latest CA certs
 FROM alpine:latest as certs
@@ -19,6 +19,6 @@ FROM scratch
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /bin/subscriptioncleanup /bin/subscriptioncleanup
+COPY --from=build /app/subscriptioncleanup /app/subscriptioncleanup
 
-CMD ["/bin/subscriptioncleanup"]
+CMD ["/app/subscriptioncleanup"]
