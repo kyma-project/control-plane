@@ -1,6 +1,8 @@
 package client
 
-import "github.com/kyma-project/control-plane/tools/cli/pkg/ers"
+import (
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
+)
 
 type Client interface {
 	GetOne(id string) (*ers.Instance, error)

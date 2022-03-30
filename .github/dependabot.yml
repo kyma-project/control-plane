@@ -25,4 +25,25 @@ updates:
     commit-message:
       prefix: "docker"
       include: "scope"
+  - package-ecosystem: "gomod"
+    directory: "/components/kyma-environment-broker"
+    labels:
+      - "go"
+      - "skip-review"
+      - "area/dependency"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "gomod"
+      include: "scope"
+  - package-ecosystem: "docker"
+    directory: "/components/kyma-environment-broker"
+    labels:
+      - "docker"
+      - "area/dependency"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
 

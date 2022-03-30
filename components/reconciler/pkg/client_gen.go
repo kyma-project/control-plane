@@ -131,6 +131,9 @@ type ClientInterface interface {
 	// GetReconciliations request
 	GetReconciliations(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteReconciliationsClusterRuntimeID request
+	DeleteReconciliationsClusterRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetReconciliationsSchedulingIDInfo request
 	GetReconciliationsSchedulingIDInfo(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -305,6 +308,18 @@ func (c *Client) PostOperationsSchedulingIDCorrelationIDStop(ctx context.Context
 
 func (c *Client) GetReconciliations(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetReconciliationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteReconciliationsClusterRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteReconciliationsClusterRuntimeIDRequest(c.Server, runtimeID)
 	if err != nil {
 		return nil, err
 	}
@@ -882,6 +897,40 @@ func NewGetReconciliationsRequest(server string, params *GetReconciliationsParam
 	return req, nil
 }
 
+// NewDeleteReconciliationsClusterRuntimeIDRequest generates requests for DeleteReconciliationsClusterRuntimeID
+func NewDeleteReconciliationsClusterRuntimeIDRequest(server string, runtimeID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runtimeID", runtime.ParamLocationPath, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/reconciliations/cluster/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetReconciliationsSchedulingIDInfoRequest generates requests for GetReconciliationsSchedulingIDInfo
 func NewGetReconciliationsSchedulingIDInfoRequest(server string, schedulingID string) (*http.Request, error) {
 	var err error
@@ -999,6 +1048,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetReconciliations request
 	GetReconciliationsWithResponse(ctx context.Context, params *GetReconciliationsParams, reqEditors ...RequestEditorFn) (*GetReconciliationsResponse, error)
+
+	// DeleteReconciliationsClusterRuntimeID request
+	DeleteReconciliationsClusterRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*DeleteReconciliationsClusterRuntimeIDResponse, error)
 
 	// GetReconciliationsSchedulingIDInfo request
 	GetReconciliationsSchedulingIDInfoWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*GetReconciliationsSchedulingIDInfoResponse, error)
@@ -1273,6 +1325,29 @@ func (r GetReconciliationsResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteReconciliationsClusterRuntimeIDResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteReconciliationsClusterRuntimeIDResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteReconciliationsClusterRuntimeIDResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetReconciliationsSchedulingIDInfoResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1427,6 +1502,15 @@ func (c *ClientWithResponses) GetReconciliationsWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseGetReconciliationsResponse(rsp)
+}
+
+// DeleteReconciliationsClusterRuntimeIDWithResponse request returning *DeleteReconciliationsClusterRuntimeIDResponse
+func (c *ClientWithResponses) DeleteReconciliationsClusterRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*DeleteReconciliationsClusterRuntimeIDResponse, error) {
+	rsp, err := c.DeleteReconciliationsClusterRuntimeID(ctx, runtimeID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteReconciliationsClusterRuntimeIDResponse(rsp)
 }
 
 // GetReconciliationsSchedulingIDInfoWithResponse request returning *GetReconciliationsSchedulingIDInfoResponse
@@ -1894,6 +1978,39 @@ func ParseGetReconciliationsResponse(rsp *http.Response) (*GetReconciliationsRes
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteReconciliationsClusterRuntimeIDResponse parses an HTTP response from a DeleteReconciliationsClusterRuntimeIDWithResponse call
+func ParseDeleteReconciliationsClusterRuntimeIDResponse(rsp *http.Response) (*DeleteReconciliationsClusterRuntimeIDResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteReconciliationsClusterRuntimeIDResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest HTTPErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
