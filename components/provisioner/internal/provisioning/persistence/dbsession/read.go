@@ -527,7 +527,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	}
 	var dnsProvidersPreSplit []struct {
 		model.DNSProvider
-		rawDomains string `db:"domains_include"`
+		RawDomains string `db:"domains_include"`
 	}
 
 	err := r.session.
@@ -556,7 +556,7 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	}
 
 	for _, provider := range dnsProvidersPreSplit {
-		provider.DNSProvider.DomainsInclude = strings.Split(provider.rawDomains, ",")
+		provider.DNSProvider.DomainsInclude = strings.Split(provider.RawDomains, ",")
 		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
 	}
 
