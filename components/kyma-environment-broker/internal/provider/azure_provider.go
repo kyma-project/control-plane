@@ -144,7 +144,7 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 		}
 	}
 
-	if params.Region != nil {
+	if params.Region != nil && *params.Region != "" {
 		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
 	}
 

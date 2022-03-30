@@ -51,6 +51,23 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 	})
 
 	// when
+	t.Run("forget customer empty region", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+		r := ""
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: &r,
+			},
+		})
+
+		//then
+		assert.Equal(t, "eastus", input.GardenerConfig.Region)
+	})
+
+	// when
 	t.Run("use default region", func(t *testing.T) {
 		// given
 		input := svc.Defaults()

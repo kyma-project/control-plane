@@ -95,6 +95,26 @@ func (mr *MockClientInterfaceMockRecorder) DeleteClustersRuntimeID(ctx, runtimeI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClustersRuntimeID", reflect.TypeOf((*MockClientInterface)(nil).DeleteClustersRuntimeID), varargs...)
 }
 
+// DeleteReconciliationsClusterRuntimeID mocks base method.
+func (m *MockClientInterface) DeleteReconciliationsClusterRuntimeID(ctx context.Context, runtimeID string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, runtimeID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteReconciliationsClusterRuntimeID", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReconciliationsClusterRuntimeID indicates an expected call of DeleteReconciliationsClusterRuntimeID.
+func (mr *MockClientInterfaceMockRecorder) DeleteReconciliationsClusterRuntimeID(ctx, runtimeID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, runtimeID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReconciliationsClusterRuntimeID", reflect.TypeOf((*MockClientInterface)(nil).DeleteReconciliationsClusterRuntimeID), varargs...)
+}
+
 // GetClustersRuntimeIDConfigConfigVersionStatus mocks base method.
 func (m *MockClientInterface) GetClustersRuntimeIDConfigConfigVersionStatus(ctx context.Context, runtimeID, configVersion string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -436,6 +456,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteClustersRuntimeIDW
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, runtimeID}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClustersRuntimeIDWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeleteClustersRuntimeIDWithResponse), varargs...)
+}
+
+// DeleteReconciliationsClusterRuntimeIDWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeleteReconciliationsClusterRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...mothership.RequestEditorFn) (*mothership.DeleteReconciliationsClusterRuntimeIDResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, runtimeID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteReconciliationsClusterRuntimeIDWithResponse", varargs...)
+	ret0, _ := ret[0].(*mothership.DeleteReconciliationsClusterRuntimeIDResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteReconciliationsClusterRuntimeIDWithResponse indicates an expected call of DeleteReconciliationsClusterRuntimeIDWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteReconciliationsClusterRuntimeIDWithResponse(ctx, runtimeID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, runtimeID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReconciliationsClusterRuntimeIDWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeleteReconciliationsClusterRuntimeIDWithResponse), varargs...)
 }
 
 // GetClustersRuntimeIDConfigConfigVersionStatusWithResponse mocks base method.

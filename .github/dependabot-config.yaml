@@ -33,3 +33,13 @@ templates:
                 inheritedConfigs:
                   local:
                     - "dailyDockerEcosystem"
+              - jobConfig:
+                  directory: "/components/kyma-environment-broker"
+                inheritedConfigs:
+                  local:
+                    - "dailyGoEcosystem"
+              - jobConfig:
+                  directory: "/components/kyma-environment-broker"
+                inheritedConfigs:
+                  local:
+                    - "dailyDockerEcosystem"

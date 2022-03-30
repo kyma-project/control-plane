@@ -3,13 +3,15 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"errors"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -17,7 +19,7 @@ const timeoutInMilli = 3000
 
 type HTTPClient struct {
 	logger logger.Logger
-	client *http.Client
+	Client *http.Client
 }
 
 func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
@@ -25,7 +27,7 @@ func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
 	// create a shared ERS HTTP client which does the oauth flow
 	client, err := createConfigClient()
 	if err != nil {
-		return nil, errors.Wrap(err, "while create http client")
+		return nil, fmt.Errorf("while create http client: %w", err)
 	}
 
 	return &HTTPClient{
@@ -36,12 +38,12 @@ func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
 
 func (c *HTTPClient) put(url string) error {
 	return c.do(nil, func(ctx context.Context) (resp *http.Response, err error) {
-		c.logger.Debugf("Sending request to %s", url)
+		//fmt.Printf("Sending request to %s\n", url)
 		req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "Error while sending a PUT request")
+			return nil, fmt.Errorf("Error while sending a PUT request: %w", err)
 		}
-		return c.client.Do(req)
+		return c.Client.Do(req)
 	})
 }
 
@@ -49,12 +51,12 @@ func (c *HTTPClient) get(url string) ([]ers.Instance, error) {
 	kymaEnv := make([]ers.Instance, 0)
 
 	err := c.do(&kymaEnv, func(ctx context.Context) (resp *http.Response, err error) {
-		c.logger.Debugf("Sending request to %s", url)
+		//fmt.Printf("Sending request to %s\n", url)
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
-		return c.client.Do(req)
+		return c.Client.Do(req)
 	})
 
 	return kymaEnv, err
@@ -68,16 +70,18 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 	resp, err := request(ctx)
 
 	if err != nil {
-		return errors.Wrap(err, "Error while sending request")
+		return fmt.Errorf("Error while sending request: %w", err)
 	}
 
-	c.logger.Debugf("Response status: %s", resp.Status)
+	//fmt.Printf("Response status: %s\n", resp.Status)
+
+	// TODO: return error codes
 
 	defer resp.Body.Close()
 
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "Error while reading from response")
+		return fmt.Errorf("Error while reading from response: %w", err)
 	}
 	c.logger.Debug("Received raw response: %s", string(d))
 
@@ -87,14 +91,14 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 
 	err = json.Unmarshal(d, v)
 	if err != nil {
-		return errors.Wrap(err, "Error while unmarshaling")
+		return fmt.Errorf("Error while unmarshaling: %w", err)
 	}
 
 	return nil
 }
 
 func (c *HTTPClient) Close() {
-	c.client.CloseIdleConnections()
+	c.Client.CloseIdleConnections()
 }
 
 func createConfigClient() (*http.Client, error) {

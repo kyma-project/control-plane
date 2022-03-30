@@ -6,9 +6,8 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/fetcher"
+	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -41,12 +40,11 @@ type Filters struct {
 	Migrated        bool
 	NotMigrated     bool
 	InstanceID      string
-
 	// TODO: define more filters
 }
 
 type InstancesCommand struct {
-	corbaCmd        *cobra.Command
+	cobraCmd        *cobra.Command
 	instanceFetcher fetcher.InstanceFetcher
 	filters         Filters
 	source          string
@@ -62,9 +60,9 @@ func (c *InstancesCommand) Run() error {
 		c.instanceFetcher = fetcher.NewFileClient(c.source)
 	} else {
 
-		ers, err := client.NewErsClient(ers.GlobalOpts.ErsUrl())
+		ers, err := client.NewErsClient()
 		if err != nil {
-			return errors.Wrap(err, "while initializing ers client")
+			return fmt.Errorf("while initializing ers client: %w", err)
 		}
 		defer ers.Close()
 
@@ -111,23 +109,21 @@ func (c *InstancesCommand) Validate() error {
 	return nil
 }
 
-func NewInstancesCommand(log *logrus.Logger) *cobra.Command {
+func NewInstancesCommand(log logger.Logger) *cobra.Command {
 	cmd := &InstancesCommand{}
 	corbaCmd := &cobra.Command{
 		Use:   "instances",
 		Short: "Displays ERS instances.",
 		Long:  `Displays information about ERS instances.`,
 		Example: `  ers instances -i fff090a1-b46f-4f14-a79e-681b00227921		Display details about the instance fff090a1-b46f-4f14-a79e-681b00227921.
-  ers instances -g 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given global account
-  ers instances -s 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given subaccount
-  ers instances -s 44534cae-796b-c46a-ef52-aa15125a023b		Display details about all instances created by given broker`,
+  ers instances -g 0f9a6a13-796b-4b6e-ac22-0d1512261a83		Display details about all instances of a given global account`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return cmd.Run()
 		},
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 	}
 
-	cmd.corbaCmd = corbaCmd
+	cmd.cobraCmd = corbaCmd
 
 	corbaCmd.Flags().BoolVar(&cmd.filters.Migrated, "migrated", false, "Get migrated instances")
 	corbaCmd.Flags().BoolVar(&cmd.filters.NotMigrated, "not-migrated", false, "Get not migrated instances")

@@ -150,7 +150,7 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }
@@ -187,7 +187,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AWSHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		if pp.Parameters.ZonesCount != nil {
 			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
 			return
@@ -227,7 +227,7 @@ func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 					VpcCidr: "10.250.0.0/16",
 					AwsZones: []*gqlschema.AWSZoneInput{
 						{
-							Name:         ZoneForAWSRegion(DefaultAWSRegion),
+							Name:         ZoneForAWSRegion(DefaultAWSTrialRegion),
 							PublicCidr:   "10.250.32.0/20",
 							InternalCidr: "10.250.48.0/20",
 							WorkerCidr:   "10.250.0.0/19",
@@ -251,7 +251,7 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 		}
 	}
 
-	if params.Region != nil {
+	if params.Region != nil && *params.Region != "" {
 		r := toAWSSpecific[*params.Region]
 		p.updateRegionWithZones(input, r)
 	}
@@ -279,7 +279,7 @@ func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }

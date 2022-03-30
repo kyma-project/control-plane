@@ -1,6 +1,6 @@
 OAPI_GENERATOR=oapi-codegen
 OAPI_FILE=./docs/external_api.yaml
-OAPI_REVISION='9740877a27c0b096bac44df2e8fd6ad10b9c102e'
+OAPI_REVISION='be3fe478e9fdca2baea8cedfd661f5a9119a0052'
 
 CLIENT_FILE=./pkg/client_gen.go
 TYPES_FILE=./pkg/types_gen.go
