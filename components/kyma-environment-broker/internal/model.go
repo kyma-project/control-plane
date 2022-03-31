@@ -350,9 +350,11 @@ type DeprovisioningOperation struct {
 	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool      `json:"temporary"`
-	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
-	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
+	Temporary                   bool          `json:"temporary"`
+	ClusterConfigurationDeleted bool          `json:"clusterConfigurationDeleted"`
+	IsServiceInstanceDeleted    bool          `json:"isServiceInstanceDeleted"`
+	ReconcilerDeregistrationAt  time.Time     `json:"reconcilerDeregistrationAt"`
+	K8sClient                   client.Client `json:"-"`
 }
 
 func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
