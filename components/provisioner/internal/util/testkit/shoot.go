@@ -94,6 +94,12 @@ func (ts *TestShoot) WithWorkers(workers ...v1beta1.Worker) *TestShoot {
 	return ts
 }
 
+// WithExtensions adds gardener_types Extensions to shoot.Spec.Extensions.
+func (ts *TestShoot) WithExtensions(extensions []gardener_types.Extension) *TestShoot {
+	ts.shoot.Spec.Extensions = append(ts.shoot.Spec.Extensions, extensions...)
+	return ts
+}
+
 // WithGeneration sets value of shoot.Generation field
 func (ts *TestShoot) WithGeneration(generation int64) *TestShoot {
 	ts.shoot.Generation = generation

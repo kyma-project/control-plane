@@ -42,6 +42,7 @@ CREATE TABLE gardener_config
     allow_privileged_containers boolean NOT NULL,
     exposure_class_name varchar(256),
     provider_specific_config jsonb,
+    shoot_networking_filter_disabled boolean,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );

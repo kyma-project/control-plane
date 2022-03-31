@@ -146,6 +146,7 @@ type GardenerConfig struct {
 	DNSConfig                           *DNSConfig             `json:"dnsConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type GardenerConfigInput struct {
@@ -174,6 +175,7 @@ type GardenerConfigInput struct {
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type GardenerUpgradeInput struct {
@@ -193,6 +195,7 @@ type GardenerUpgradeInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type HibernationStatus struct {

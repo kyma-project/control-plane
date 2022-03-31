@@ -205,16 +205,16 @@ func (p *AWSInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsLiteDefaults()
+	return awsLiteDefaults(DefaultAWSTrialRegion)
 }
 
-func awsLiteDefaults() *gqlschema.ClusterConfigInput {
+func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "m5.xlarge",
-			Region:         DefaultAWSTrialRegion,
+			Region:         region,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  1,
@@ -227,7 +227,7 @@ func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 					VpcCidr: "10.250.0.0/16",
 					AwsZones: []*gqlschema.AWSZoneInput{
 						{
-							Name:         ZoneForAWSRegion(DefaultAWSTrialRegion),
+							Name:         ZoneForAWSRegion(region),
 							PublicCidr:   "10.250.32.0/20",
 							InternalCidr: "10.250.48.0/20",
 							WorkerCidr:   "10.250.0.0/19",
@@ -271,10 +271,9 @@ func (p *AWSTrialInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
-	defaults := awsLiteDefaults()
-
 	// Lite (freemium) must have the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
-	defaults.GardenerConfig.Region = DefaultAWSRegion
+	defaults := awsLiteDefaults(DefaultAWSRegion)
+
 	return defaults
 }
 

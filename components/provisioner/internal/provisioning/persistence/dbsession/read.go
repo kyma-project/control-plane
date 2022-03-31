@@ -171,9 +171,10 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
-			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
+			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min",
+			"auto_scaler_max", "max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config",
+			"shoot_networking_filter_disabled").
 		From("gardener_config").
 		Join("cluster", "gardener_config.cluster_id=cluster.id").
 		Where(dbr.Eq("name", name)).
@@ -349,11 +350,13 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 	gardenerConfig := gardenerConfigRead{}
 
 	err := r.session.
-		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
-			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version", "provider", "purpose", "seed",
-			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "allow_privileged_containers", "exposure_class_name", "provider_specific_config").
+		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name",
+			"kubernetes_version", "volume_size_gb", "disk_type", "machine_type", "machine_image",
+			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "region",
+			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
+			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
+			"allow_privileged_containers", "exposure_class_name", "provider_specific_config",
+			"shoot_networking_filter_disabled").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
