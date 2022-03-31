@@ -1,6 +1,7 @@
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
 {{ $values := index $global.Values $component }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,7 +37,7 @@ spec:
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
-        {{- if or ((($values).deployment).gitCloneToken) ((($values).deployment).envvars)  }}
+        {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
         env:
         {{- if (($values).deployment).gitCloneToken }}
         - name: GIT_CLONE_TOKEN
@@ -45,8 +46,8 @@ spec:
               name: {{ $component }}-git-token
               key: token
         {{- end }}
-        {{- if ((($values).deployment).envvars) }}
-        {{- ((($values).deployment).envvars) | nindent 8 }}
+        {{- if ($.Values.global.mothership_reconciler.features) }}
+        {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
         {{- end }}
         {{- end }}
         name: {{ $component }}-reconciler
@@ -73,4 +74,5 @@ spec:
       - emptyDir: {}
         name: workspace
 ---
+{{- end }}
 {{- end }}

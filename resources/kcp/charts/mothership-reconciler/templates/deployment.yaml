@@ -89,6 +89,9 @@ spec:
             configMapKeyRef:
               name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
               key: auditlog-tenant
+        {{- if ($.Values.global.mothership_reconciler.features) }}
+        {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
+        {{- end }}
         name: mothership-reconciler
         ports:
         - name: http
