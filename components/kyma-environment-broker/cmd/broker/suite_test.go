@@ -14,8 +14,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	gardenerapi "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardenerFake "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"

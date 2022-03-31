@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"

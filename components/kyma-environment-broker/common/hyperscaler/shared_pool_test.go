@@ -3,8 +3,8 @@ package hyperscaler
 import (
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	gardener_types "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardener_fake "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

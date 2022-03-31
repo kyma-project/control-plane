@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardenerclient "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"

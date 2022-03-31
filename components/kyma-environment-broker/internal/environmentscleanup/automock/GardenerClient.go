@@ -5,7 +5,7 @@ package mocks
 import (
 	"context"
 
-	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1beta1 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
 	mock "github.com/stretchr/testify/mock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

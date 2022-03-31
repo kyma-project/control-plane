@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake"
+	gardenerapi "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardenerclient_fake "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake"
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/apimachinery/pkg/runtime"

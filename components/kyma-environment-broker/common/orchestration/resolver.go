@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	gardenerapi "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardenerclient "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

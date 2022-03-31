@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"code.cloudfoundry.org/lager"
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	gardenerapi "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/apis/core/v1beta1"
+	gardenerFake "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
