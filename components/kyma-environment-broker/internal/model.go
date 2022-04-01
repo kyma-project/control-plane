@@ -353,6 +353,7 @@ type DeprovisioningOperation struct {
 	Temporary                   bool          `json:"temporary"`
 	ClusterConfigurationDeleted bool          `json:"clusterConfigurationDeleted"`
 	IsServiceInstanceDeleted    bool          `json:"isServiceInstanceDeleted"`
+	Retries                     int           `json:"-"`
 	ReconcilerDeregistrationAt  time.Time     `json:"reconcilerDeregistrationAt"`
 	K8sClient                   client.Client `json:"-"`
 }
