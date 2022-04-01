@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
 	uuid "github.com/google/uuid"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -136,6 +138,13 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		}
 	}
 
+	if config.DNSConfig != nil {
+		err = ws.insertDNSConfig(config)
+		if err != nil {
+			return dberrors.Internal("Failed to update record for DNS config %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -163,6 +172,36 @@ func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Er
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to SigningAlgorithms table: %s", err)
+		}
+	}
+	return nil
+}
+
+func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Error {
+	dnsConfigID := uuid.New().String()
+
+	_, err := ws.insertInto("dns_config").
+		Pair("id", dnsConfigID).
+		Pair("domain", config.DNSConfig.Domain).
+		Pair("gardener_config_id", config.ID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to dns_config table: %s", err)
+	}
+
+	for _, provider := range config.DNSConfig.Providers {
+		_, err = ws.insertInto("dns_providers").
+			Pair("id", uuid.New().String()).
+			Pair("dns_config_id", dnsConfigID).
+			Pair("domains_include", strings.Join(provider.DomainsInclude, ",")).
+			Pair("is_primary", provider.Primary).
+			Pair("secret_name", provider.SecretName).
+			Pair("type", provider.Type).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to dns_providers table: %s", err)
 		}
 	}
 	return nil
