@@ -15,8 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const fieldSelectorFmt = "spec.secretBindingName=%s"
-
 type Type string
 
 type Cleaner interface {
@@ -136,15 +134,17 @@ func (p *cleaner) getSecretBindingsToRelease() ([]v1beta1.SecretBinding, error) 
 
 // Checks if there are no clusters tied to the secret binding
 func (p *cleaner) checkIfSecretCanBeReleased(binding v1beta1.SecretBinding) (bool, error) {
-	fieldSelector := fmt.Sprintf(fieldSelectorFmt, binding.Name)
-	list, err := p.shootClient.List(p.context, metav1.ListOptions{FieldSelector: fieldSelector})
+	list, err := p.shootClient.List(p.context, metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list shoots")
 	}
 
-	if list.Items != nil && len(list.Items) != 0 {
-		return false, nil
+	for _, shoot := range list.Items {
+		if shoot.Spec.SecretBindingName == binding.Name {
+			return false, nil
+		}
 	}
+
 	return true, nil
 }
 
