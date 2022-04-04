@@ -862,6 +862,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			weight: 1,
+			step:   deprovisioning.NewRemoveServiceInstanceStep(db.Operations()),
+		},
+		{
+			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{

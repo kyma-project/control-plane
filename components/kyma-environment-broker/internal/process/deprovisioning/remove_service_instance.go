@@ -66,7 +66,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	case *k8serrors.StatusError:
 		operation.Retries++
 		log.Warnf("could not delete %s service instance, status: %s", serviceInstanceName, err)
-		s.retryOrFail(&operation, &log)
+		return s.retryOrFail(&operation, &log)
 	case nil:
 		return operation, 0, nil
 	}
