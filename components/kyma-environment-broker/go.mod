@@ -10,7 +10,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Peripli/service-manager v0.23.2
+	github.com/Peripli/service-manager v0.23.3
 	github.com/Peripli/service-manager-cli v1.11.12
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gardener/gardener v1.43.2
