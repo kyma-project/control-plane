@@ -88,6 +88,8 @@ func (c *MigrationAllCommand) Run() error {
 		return err
 	}
 
+	fmt.Printf("Starting migration for %d instances\n", len(instances))
+
 	for _, instance := range instances {
 
 		c.log.Debugf("Read: %s\n", instance)
@@ -128,7 +130,6 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		c.log.Infof("[Worker %d] Processing instance %s - attempt no. %d",
 			workerId, work.Instance.Name, work.ProcessedCnt)
 		instance := work.Instance
-
 		refreshed, err := c.ersClient.GetOne(instance.Id)
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
@@ -140,6 +141,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
 				workerId, Green, instance.Name, Reset)
 			c.tryFinish(work, nil, workChannel)
+			c.migrated(instance)
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
@@ -157,6 +159,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			}
 			if refreshed.Migrated {
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
+				c.migrated(instance)
 				break
 			}
 			time.Sleep(10 * time.Second)
@@ -238,4 +241,10 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 			workChannel <- work
 		}
 	}
+}
+
+func (c *MigrationAllCommand) migrated(instance ers.Instance) {
+	fmt.Printf("Instance %d migrated\n", instance.Id)
+	c.wg.Done()
+	c.stats.Done()
 }
