@@ -246,7 +246,7 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 }
 
 func (c *MigrationAllCommand) migrated(instance ers.Instance) {
-	fmt.Printf("Instance %d migrated\n", instance.Id)
+	fmt.Printf("Instance %s migrated\n", instance.Id)
 	c.wg.Done()
 	c.stats.Done()
 }
