@@ -6,12 +6,13 @@ import (
 	"fmt"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 const (
@@ -37,10 +38,10 @@ type DNSConfig struct {
 }
 
 type DNSProvider struct {
-	DomainsInclude []string `json:"domainsInclude"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
+	DomainsInclude []string `json:"domainsInclude" db:"-"`
+	Primary        bool     `json:"primary" db:"is_primary"`
+	SecretName     string   `json:"secretName" db:"secret_name"`
+	Type           string   `json:"type" db:"type"`
 }
 
 type GardenerConfig struct {

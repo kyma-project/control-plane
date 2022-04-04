@@ -2,14 +2,16 @@ package dbsession
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"strings"
 
 	"github.com/gocraft/dbr/v2"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
 type readSession struct {
@@ -130,6 +132,12 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		return model.Cluster{}, dberr.Append("Cannot get Oidc config for runtimeID: %s", runtimeID)
 	}
 	cluster.ClusterConfig.OIDCConfig = &oidcConfig
+
+	dnsConfig, dberr := r.getDNSConfig(providerConfig.ID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get DNS config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig.DNSConfig = dnsConfig
 
 	if cluster.ActiveKymaConfigId != nil {
 		kymaConfig, dberr := r.getKymaConfig(runtimeID, *cluster.ActiveKymaConfigId)
@@ -513,4 +521,47 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 	oidc.SigningAlgs = algorithms
 
 	return oidc, nil
+}
+
+func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, dberrors.Error) {
+	var dnsConfigWithID struct {
+		model.DNSConfig
+		ID string `db:"id"`
+	}
+	var dnsProvidersPreSplit []struct {
+		model.DNSProvider
+		RawDomains string `db:"domains_include"`
+	}
+
+	err := r.session.
+		Select("domain", "id").
+		From("dns_config").
+		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
+		LoadOne(&dnsConfigWithID)
+
+	if errors.Is(err, dbr.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get DNS config: %s", err)
+	}
+
+	dnsConfig := dnsConfigWithID.DNSConfig
+
+	_, err = r.session.
+		Select("is_primary", "secret_name", "type", "domains_include").
+		From("dns_providers").
+		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
+		Load(&dnsProvidersPreSplit)
+
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get DNS provider: %s", err)
+	}
+
+	for _, provider := range dnsProvidersPreSplit {
+		provider.DNSProvider.DomainsInclude = strings.Split(provider.RawDomains, ",")
+		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
+	}
+
+	return &dnsConfig, nil
 }
