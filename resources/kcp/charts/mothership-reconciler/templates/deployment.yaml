@@ -73,7 +73,8 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
-          - --purge-older-than=96h
+          - --reconciliations-keep-n-latest=150
+          - --entities-max-age-days=4
           {{- if .Values.options.verbose }}
           - --verbose
           {{- end }}
@@ -89,6 +90,9 @@ spec:
             configMapKeyRef:
               name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
               key: auditlog-tenant
+        {{- if ($.Values.global.mothership_reconciler.features) }}
+        {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
+        {{- end }}
         name: mothership-reconciler
         ports:
         - name: http

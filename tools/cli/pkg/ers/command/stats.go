@@ -59,7 +59,7 @@ func (s *Stats) PrintProgress() {
 
 func (s *Stats) Print() {
 	if len(s.errStats) == 0 {
-		fmt.Printf("Finished without errors.")
+		fmt.Printf("Finished without errors.\n")
 		return
 	}
 
