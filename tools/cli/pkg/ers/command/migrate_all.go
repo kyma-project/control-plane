@@ -133,6 +133,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.tryFinish(work, err, workChannel)
+
 			continue
 		}
 
@@ -140,6 +141,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
 				workerId, Green, instance.Name, Reset)
 			c.tryFinish(work, nil, workChannel)
+
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
@@ -180,6 +182,7 @@ func (c *MigrationAllCommand) tryFinish(work ers.Work, err error, workChannel ch
 		workChannel <- work
 	} else { // Tool is done with an instance
 		c.wg.Done()
+
 		c.stats.Done()
 	}
 }

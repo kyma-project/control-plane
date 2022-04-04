@@ -79,3 +79,11 @@ func DefaultIntIfNil(ptr *int, def *int) *int {
 	}
 	return ptr
 }
+
+// DefaultBoolIfNil returns default bool pointer if passed pointer is nil
+func DefaultBoolIfNil(ptr *bool, def *bool) *bool {
+	if ptr == nil {
+		return def
+	}
+	return ptr
+}

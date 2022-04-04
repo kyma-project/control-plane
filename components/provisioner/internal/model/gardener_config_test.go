@@ -3,19 +3,15 @@ package model
 import (
 	"testing"
 
-	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
-
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var purpose = gardener_types.ShootPurposeTesting
@@ -224,6 +220,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
 							},
 						},
+						{
+							Type:     ShootNetworkingFilterExtensionType,
+							Disabled: util.BoolPtr(true),
+						},
 					},
 				},
 			},
@@ -291,6 +291,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							ProviderConfig: &apimachineryRuntime.RawExtension{
 								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
 							},
+						},
+						{
+							Type:     ShootNetworkingFilterExtensionType,
+							Disabled: util.BoolPtr(true),
 						},
 					},
 				},
@@ -360,6 +364,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
 							},
 						},
+						{
+							Type:     ShootNetworkingFilterExtensionType,
+							Disabled: util.BoolPtr(true),
+						},
 					},
 				},
 			},
@@ -428,6 +436,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
 							},
 						},
+						{
+							Type:     ShootNetworkingFilterExtensionType,
+							Disabled: util.BoolPtr(true),
+						},
 					},
 				},
 			},
@@ -471,6 +483,8 @@ func TestEditShootConfig(t *testing.T) {
 				WithMaxUnavailable(1).
 				WithZones("fix-zone-1", "fix-zone-2").
 				ToWorker()).
+		WithExtensions(
+			[]gardener_types.Extension{{Type: ShootNetworkingFilterExtensionType, Disabled: util.BoolPtr(true)}}).
 		ToShoot()
 
 	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -577,6 +591,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),
+		ShootNetworkingFilterDisabled:       util.BoolPtr(true),
 	}
 }
 
@@ -639,7 +654,7 @@ func dnsConfig() *DNSConfig {
 	return &DNSConfig{
 		Domain: "cluster.devtest.kyma.ondemand.com",
 		Providers: []*DNSProvider{
-			&DNSProvider{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_ingardenerconfig",
