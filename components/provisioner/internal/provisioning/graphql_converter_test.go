@@ -3,13 +3,12 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -92,6 +91,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
+		shootNetworkingFilterDisabled := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -132,7 +132,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
+					DNSConfig:                           dnsConfig(),
 					ExposureClassName:                   &exposureClassName,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
@@ -196,7 +198,19 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
 					},
-					ExposureClassName: &exposureClassName,
+					DNSConfig: &gqlschema.DNSConfig{
+						Domain: "verylon.devtest.kyma.ondemand.com",
+						Providers: []*gqlschema.DNSProvider{
+							{
+								DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+								Primary:        true,
+								SecretName:     "aws_dns_domain_secrets_test_inconverter",
+								Type:           "route53_type_test",
+							},
+						},
+					},
+					ExposureClassName:             &exposureClassName,
+					ShootNetworkingFilterDisabled: &shootNetworkingFilterDisabled,
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
@@ -241,6 +255,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
+		shootNetworkingFilterDisabled := true
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -282,6 +297,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
 					ExposureClassName:                   &exposureClassName,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -344,7 +360,8 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
 					},
-					ExposureClassName: &exposureClassName,
+					ExposureClassName:             &exposureClassName,
+					ShootNetworkingFilterDisabled: &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -386,6 +403,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
+		shootNetworkingFilterDisabled := true
 
 		modelProductionProfile := model.ProductionProfile
 		gqlProductionProfile := gqlschema.KymaProfileProduction
@@ -428,6 +446,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(&modelProductionProfile),
@@ -479,6 +498,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           &allowPrivilegedContainers,
+					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.

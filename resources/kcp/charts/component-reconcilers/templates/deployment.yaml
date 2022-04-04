@@ -37,13 +37,18 @@ spec:
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
-        {{- if (($values).deployment).gitCloneToken }}
+        {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
         env:
+        {{- if (($values).deployment).gitCloneToken }}
         - name: GIT_CLONE_TOKEN
           valueFrom:
             secretKeyRef:
               name: {{ $component }}-git-token
               key: token
+        {{- end }}
+        {{- if ($.Values.global.mothership_reconciler.features) }}
+        {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
+        {{- end }}
         {{- end }}
         name: {{ $component }}-reconciler
         ports:

@@ -32,6 +32,7 @@ type GardenerConfig {
     dnsConfig: DNSConfig
     oidcConfig: OIDCConfig
     exposureClassName: String
+    shootNetworkingFilterDisabled: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -224,6 +225,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 input OIDCConfigInput {
@@ -332,6 +334,7 @@ input GardenerUpgradeInput {
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
     oidcConfig: OIDCConfigInput
     exposureClassName: String                     # ExposureClass name
+    shootNetworkingFilterDisabled: Boolean        # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 type Mutation {
