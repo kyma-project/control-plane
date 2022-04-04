@@ -102,7 +102,6 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		AllowPrivilegedContainers:           &config.AllowPrivilegedContainers,
 		ProviderSpecificConfig:              providerSpecificConfig,
 		OidcConfig:                          c.oidcConfigToGraphQLConfig(config.OIDCConfig),
-		DNSConfig:                           c.dnsConfigToGraphQLConfig(config.DNSConfig),
 		ExposureClassName:                   config.ExposureClassName,
 		ShootNetworkingFilterDisabled:       config.ShootNetworkingFilterDisabled,
 	}
@@ -214,27 +213,4 @@ func (c graphQLConverter) profileToGraphQLProfile(profile *model.KymaProfile) *g
 	}
 
 	return &result
-}
-
-func (c graphQLConverter) dnsConfigToGraphQLConfig(config *model.DNSConfig) *gqlschema.DNSConfig {
-	if config == nil {
-		return nil
-	}
-
-	gqlConfig := gqlschema.DNSConfig{
-		Domain: config.Domain,
-	}
-
-	for _, provider := range config.Providers {
-		gqlConfig.Providers = append(gqlConfig.Providers,
-			&gqlschema.DNSProvider{
-				DomainsInclude: provider.DomainsInclude,
-				Primary:        provider.Primary,
-				SecretName:     provider.SecretName,
-				Type:           provider.Type,
-			},
-		)
-	}
-
-	return &gqlConfig
 }
