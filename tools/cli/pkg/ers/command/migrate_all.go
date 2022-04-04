@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -131,10 +132,14 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			workerId, work.Instance.Name, work.ProcessedCnt)
 		instance := work.Instance
 		refreshed, err := c.ersClient.GetOne(instance.Id)
-		if err != nil {
+		if err != nil || refreshed == nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.tryFinish(work, err, workChannel)
 
+			continue
+		}
+
+		if c.isNil(workerId, refreshed) {
 			continue
 		}
 
@@ -154,10 +159,16 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			workerId, instance.Name)
 
 		for time.Since(start) < 20*time.Minute {
-			refreshed, err := c.ersClient.GetOne(instance.Id)
+			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
+				break
 			}
+
+			if c.isNil(workerId, refreshed) {
+				break
+			}
+
 			if refreshed.Migrated {
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				c.migrated(instance)
@@ -165,7 +176,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			}
 			time.Sleep(10 * time.Second)
 		}
-		c.tryFinish(work, nil, workChannel)
+		c.tryFinish(work, err, workChannel)
 	}
 }
 
@@ -249,4 +260,21 @@ func (c *MigrationAllCommand) migrated(instance ers.Instance) {
 	fmt.Printf("Instance %s migrated\n", instance.Id)
 	c.wg.Done()
 	c.stats.Done()
+}
+
+func (c *MigrationAllCommand) notMigrated(instance *ers.Instance, err error) {
+	fmt.Printf("Instance %s no migrated\n", instance.Id)
+	c.wg.Done()
+	c.stats.Err(instance.Id, err)
+}
+
+func (c *MigrationAllCommand) isNil(workerId int, instance *ers.Instance) bool {
+	if instance == nil {
+		c.log.Infof("[Worker %d] Trying to refresh but no instance %s, id %s in ERS",
+			workerId, instance.Name, instance.Id)
+		c.notMigrated(instance, errors.New("No instance in ERS"))
+		return true
+	}
+
+	return false
 }
