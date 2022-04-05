@@ -137,6 +137,9 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 
 			continue
 		}
+		if c.isNil(workerId, refreshed) {
+			continue
+		}
 
 		if refreshed.Migrated {
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
