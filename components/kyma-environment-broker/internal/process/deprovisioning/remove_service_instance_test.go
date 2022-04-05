@@ -1,20 +1,23 @@
 package deprovisioning
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var si = []byte(`
+var siCRD = []byte(`
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -30,24 +33,41 @@ spec:
 `)
 
 func TestRemoveServiceInstanceStep(t *testing.T) {
-	t.Run("should remove uaa-issuer service instance (service catalog)", func(t *testing.T) {
-		//given
+	t.Run("should remove uaa-issuer service instance (btp operator)", func(t *testing.T) {
+		// given
 		log := logrus.New()
 		ms := storage.NewMemoryStorage()
+		si := &unstructured.Unstructured{Object: map[string]interface{}{
+			"apiVersion": "services.cloud.sap.com/v1",
+			"kind":       "ServiceInstance",
+			"metadata": map[string]interface{}{
+				"name":      "uaa-issuer",
+				"namespace": "kyma-system",
+			},
+		}}
 
 		scheme := runtime.NewScheme()
 		err := apiextensionsv1.AddToScheme(scheme)
 		decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
-		obj, gvk, err := decoder.Decode(si, nil, nil)
+		obj, gvk, err := decoder.Decode(siCRD, nil, nil)
 		fmt.Println(gvk)
 		require.NoError(t, err)
 
 		k8sCli := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(obj).Build()
+		err = k8sCli.Create(context.TODO(), si)
+		require.NoError(t, err)
 
 		op := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
 		op.State = "in progress"
 		op.K8sClient = k8sCli
 
-		step := NewRemoveServiceInstanceStep(ms)
+		step := NewRemoveServiceInstanceStep(ms.Operations())
+
+		// when
+		entry := log.WithFields(logrus.Fields{"step": "TEST"})
+		_, _, err = step.Run(op, entry)
+
+		// then
+		assert.NoError(t, err)
 	})
 }

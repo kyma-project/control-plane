@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -11,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -76,10 +76,15 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 
 func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*unstructured.Unstructured, error) {
 	si := &unstructured.Unstructured{}
+	si.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "services.cloud.sap.com",
+		Version: "v1",
+		Kind:    "ServiceInstance",
+	})
 
 	err := k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: serviceInstanceNamespace,
-		Name:      fmt.Sprintf("%s.%s", serviceInstanceName, svcatObjectKey),
+		Name:      serviceInstanceName,
 	}, si)
 	if err == nil {
 		return si, nil
@@ -89,7 +94,7 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 
 	err = k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: serviceInstanceNamespace,
-		Name:      fmt.Sprintf("%s.%s", serviceInstanceName, btpOperatorObjectKey),
+		Name:      serviceInstanceName,
 	}, si)
 	if err == nil {
 		return si, nil
