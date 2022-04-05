@@ -9,8 +9,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,7 +56,6 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 		return s.operationManager.OperationFailed(operation, "could not get service instance to be deleted", nil, log)
 	}
 
-	// todo error handling, cases: cannot delete, slow delete, SM outage
 	err = s.deleteServiceInstance(operation.K8sClient, si)
 
 	switch err.(type) {
@@ -75,8 +74,8 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	return s.operationManager.OperationFailed(operation, "could not delete service instance", nil, log)
 }
 
-func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*apiextensions.CustomResourceDefinition, error) {
-	si := &apiextensions.CustomResourceDefinition{}
+func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*unstructured.Unstructured, error) {
+	si := &unstructured.Unstructured{}
 
 	err := k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: serviceInstanceNamespace,
@@ -101,7 +100,7 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 	return nil, err
 }
 
-func (s *RemoveServiceInstanceStep) deleteServiceInstance(k8sClient client.Client, si *apiextensions.CustomResourceDefinition) error {
+func (s *RemoveServiceInstanceStep) deleteServiceInstance(k8sClient client.Client, si *unstructured.Unstructured) error {
 	err := k8sClient.Delete(context.Background(), si)
 	return err
 }
