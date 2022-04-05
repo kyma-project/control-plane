@@ -67,6 +67,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 		log.Warnf("could not delete %s service instance, status: %s", serviceInstanceName, err)
 		return s.retryOrFail(&operation, &log)
 	case nil:
+		operation.IsServiceInstanceDeleted = true
 		return operation, 0, nil
 	}
 
