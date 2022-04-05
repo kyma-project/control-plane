@@ -77,8 +77,8 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*unstructured.Unstructured, error) {
 	si := &unstructured.Unstructured{}
 	si.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "services.cloud.sap.com",
-		Version: "v1",
+		Group:   "servicecatalog.k8s.io",
+		Version: "v1beta1",
 		Kind:    "ServiceInstance",
 	})
 
@@ -91,6 +91,12 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 	} else if client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
+
+	si.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "services.cloud.sap.com",
+		Version: "v1",
+		Kind:    "ServiceInstance",
+	})
 
 	err = k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: serviceInstanceNamespace,
