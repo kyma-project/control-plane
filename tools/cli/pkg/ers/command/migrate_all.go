@@ -132,7 +132,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			workerId, work.Instance.Name, work.ProcessedCnt)
 		instance := work.Instance
 		refreshed, err := c.ersClient.GetOne(instance.Id)
-		if err != nil || refreshed == nil {
+		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.tryFinish(work, err, workChannel)
 
