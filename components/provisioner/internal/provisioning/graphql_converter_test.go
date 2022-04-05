@@ -3,13 +3,12 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -133,6 +132,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
+					DNSConfig:                           dnsConfig(),
 					ExposureClassName:                   &exposureClassName,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 				},
@@ -197,6 +197,17 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 						SigningAlgs:    []string{"RS256"},
 						UsernameClaim:  "sub",
 						UsernamePrefix: "-",
+					},
+					DNSConfig: &gqlschema.DNSConfig{
+						Domain: "verylon.devtest.kyma.ondemand.com",
+						Providers: []*gqlschema.DNSProvider{
+							{
+								DomainsInclude: []string{"devtest.kyma.ondemand.com"},
+								Primary:        true,
+								SecretName:     "aws_dns_domain_secrets_test_inconverter",
+								Type:           "route53_type_test",
+							},
+						},
 					},
 					ExposureClassName:             &exposureClassName,
 					ShootNetworkingFilterDisabled: &shootNetworkingFilterDisabled,
