@@ -39,6 +39,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
+	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Use fake ERS client to test")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
@@ -52,6 +53,7 @@ type MigrationAllCommand struct {
 	workers   int
 	buffer    int
 	recheck   int64
+	timeout   time.Duration
 	wg        sync.WaitGroup
 	log       logger.Logger
 	ersClient client.Client
@@ -158,7 +160,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		c.log.Infof("[Worker %d] Instance %s - refreshing status",
 			workerId, instance.Name)
 
-		for time.Since(start) < 20*time.Minute {
+		for time.Since(start) < c.timeout {
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
@@ -175,6 +177,10 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				break
 			}
 			time.Sleep(10 * time.Second)
+		}
+
+		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
+			err = errors.New("Refreshing take too much time. Timeout triggered.")
 		}
 		c.tryFinish(work, err, workChannel)
 	}
@@ -195,7 +201,6 @@ func (c *MigrationAllCommand) tryFinish(work ers.Work, err error, workChannel ch
 		workChannel <- work
 	} else { // Tool is done with an instance
 		c.wg.Done()
-
 		c.stats.Done()
 	}
 }
