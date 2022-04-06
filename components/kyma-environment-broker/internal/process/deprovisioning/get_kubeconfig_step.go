@@ -46,8 +46,9 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 	}
 
 	if operation.RuntimeID == "" {
-		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
+		log.Infof("RuntimeID is empty, skipping step")
+		operation.IsServiceInstanceDeleted = true
+		return operation, 0, nil
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
