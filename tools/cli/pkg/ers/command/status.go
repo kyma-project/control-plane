@@ -227,7 +227,7 @@ func (c *StatusCommand) Run() error {
 
 			scanner := bufio.NewScanner(logsStream)
 
-			searchedString := fmt.Sprintf("%s.*%s", "btp-operator", runtime.RuntimeID)
+			searchedString := fmt.Sprintf(".*%s.*", runtime.RuntimeID)
 			r, _ := regexp.Compile(searchedString)
 
 			scanner.Split(bufio.ScanLines)
