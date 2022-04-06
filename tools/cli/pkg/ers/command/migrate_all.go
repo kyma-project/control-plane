@@ -173,7 +173,6 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 
 			if refreshed.Migrated {
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
-				c.migrated(instance)
 				break
 			}
 			time.Sleep(10 * time.Second)
