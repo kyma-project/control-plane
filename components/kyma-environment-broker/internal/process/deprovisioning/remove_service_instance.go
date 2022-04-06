@@ -17,8 +17,11 @@ import (
 const (
 	serviceInstanceName      = "uaa-issuer"
 	serviceInstanceNamespace = "kyma-system"
-	svcatObjectKey           = "serviceinstances.servicecatalog.k8s.io"
-	btpOperatorObjectKey     = "serviceinstances.services.cloud.sap.com"
+	k8sResourceType          = "ServiceInstance"
+	svcatGroup               = "servicecatalog.k8s.io"
+	svcatApiVer              = "v1beta1"
+	btpOperatorGroup         = "services.cloud.sap.com"
+	btpOperatorApiVer        = "v1"
 	allowedRetries           = 5
 )
 
@@ -78,9 +81,9 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*unstructured.Unstructured, error) {
 	si := &unstructured.Unstructured{}
 	si.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "servicecatalog.k8s.io",
-		Version: "v1beta1",
-		Kind:    "ServiceInstance",
+		Group:   svcatGroup,
+		Version: svcatApiVer,
+		Kind:    k8sResourceType,
 	})
 
 	err := k8sClient.Get(context.Background(), client.ObjectKey{
@@ -94,9 +97,9 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 	}
 
 	si.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "services.cloud.sap.com",
-		Version: "v1",
-		Kind:    "ServiceInstance",
+		Group:   btpOperatorGroup,
+		Version: btpOperatorApiVer,
+		Kind:    k8sResourceType,
 	})
 
 	err = k8sClient.Get(context.Background(), client.ObjectKey{
