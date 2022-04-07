@@ -70,6 +70,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.22.7
-
-replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+replace (
+	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+	k8s.io/client-go => k8s.io/client-go v0.22.7
+	k8s.io/helm => k8s.io/helm v2.17.0+incompatible
+)
