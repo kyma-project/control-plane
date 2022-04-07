@@ -284,8 +284,8 @@ github.com/gardener/gardener v1.44.1/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.34.3 h1:zW4usX529mpq6gBxsryrBKKoXZg89zA09Pj8XmFP4vQ=
 github.com/gardener/gardener-extension-provider-aws v1.34.3/go.mod h1:0YDtrNCSRBDqJLMuzE3DqD2JGgDpiD3p/t8U/b3rttk=
-github.com/gardener/gardener-extension-provider-azure v1.26.2 h1:w6l75AwZoX5xsmr6n5rszt4BcJkm4sLNhBcWcWx4s60=
-github.com/gardener/gardener-extension-provider-azure v1.26.2/go.mod h1:z+lv3weFbJ2CR+SAvII/mCj6Fwpm97capbWNMz1QJKY=
+github.com/gardener/gardener-extension-provider-azure v1.26.3 h1:HrayB/xY/I4FMQK+WmhmwaYQkMy9wsblb/uw+Pa08fk=
+github.com/gardener/gardener-extension-provider-azure v1.26.3/go.mod h1:z+lv3weFbJ2CR+SAvII/mCj6Fwpm97capbWNMz1QJKY=
 github.com/gardener/gardener-extension-provider-gcp v1.21.3 h1:0OCQ9hf4V+47yiDtWHVtAi2AwfKZ5ZCDApsk4Uamtsw=
 github.com/gardener/gardener-extension-provider-gcp v1.21.3/go.mod h1:JVqCUmtn1QyAedwgEgx7l4rwNXq4zoQeuyNBMM1b6wg=
 github.com/gardener/gardener-resource-manager v0.10.0/go.mod h1:0pKTHOhvU91eQB0EYr/6Ymd7lXc/5Hi8P8tF/gpV0VQ=
@@ -623,8 +623,8 @@ github.com/kubernetes-csi/external-snapshotter/v2 v2.1.4/go.mod h1:2ar8FelpdkUJa
 github.com/kyma-incubator/compass/components/director v0.0.0-20220310123037-ff57d60a32d3 h1:O9tQZkRI7LktOtlS5/fHlTiVruHgwcmtEekRyfUiqA8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220310123037-ff57d60a32d3/go.mod h1:w6lSUmlGKIFQ1QV0+cE7VHEx/d+/R+HfyEhCd8WFTEw=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220406123924-b4e0cf771f8a h1:xZRcAOfWarr5EX1RQBYKgsHuAKqeh1iKIKHeBbdD6q4=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220406123924-b4e0cf771f8a/go.mod h1:3uXQBpWc+02a8SwENMh4u7Htarp7GaDC/ZDH2ev9Umg=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220407145529-5c1b863c3b87 h1:rtYtc80u0qI0A5CklOn8YTTkgAoJiExjndumUSIVhWs=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220407145529-5c1b863c3b87/go.mod h1:x/ZKw7jqxGxYOM5FI1CeFRVKHfd1J/SXeG37u+C5Kcg=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220322140443-084cd6204aed h1:EDdwpUT9lcyXHRV5jVu5qiA7wZRfaarxU3GpgbidEMY=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220322140443-084cd6204aed/go.mod h1:fK1/XxGeE62jHK/LAKS2VevdLaxififz9VVPYujqpHU=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
