@@ -241,3 +241,7 @@ environmentsCleanup:
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
+
+serviceMonitor:
+  scrapeTimeout: 10s
+  interval: 30s

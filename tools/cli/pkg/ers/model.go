@@ -7,6 +7,8 @@ import (
 type Work struct {
 	Instance           Instance
 	ProcessedTimestamp int64
+	ProcessedCnt       int64
+	MaxProcessedCnt    int64
 }
 type Instance struct {
 	BrokerId       string

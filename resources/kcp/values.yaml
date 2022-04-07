@@ -2,16 +2,16 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.29.0-alpine-5854b8b6
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:be3fe478"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:be3fe478"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:1b429333"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:1b429333"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1462"
+      version: "PR-1523"
     provisioner:
       dir:
-      version: "PR-1462"
+      version: "PR-1523"
     kyma_environment_broker:
       dir:
       version: "PR-1511"
@@ -167,6 +167,9 @@ global:
         accessMode: ReadWriteOnce
         size: 2Gi
         storageClass: ""
+    features: |-
+      - name: "LOG_ISTIO_OPERATOR"
+        value: "false"
   component_reconcilers:
     enabled: false
     authentication: true

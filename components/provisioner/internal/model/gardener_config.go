@@ -5,21 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
 const (
 	SubAccountLabel = "subaccount"
 	AccountLabel    = "account"
 
-	LicenceTypeAnnotation = "kcp.provisioner.kyma-project.io/licence-type"
+	LicenceTypeAnnotation              = "kcp.provisioner.kyma-project.io/licence-type"
+	ShootNetworkingFilterExtensionType = "shoot-networking-filter"
 )
 
 type OIDCConfig struct {
@@ -37,10 +38,10 @@ type DNSConfig struct {
 }
 
 type DNSProvider struct {
-	DomainsInclude []string `json:"domainsInclude"`
-	Primary        bool     `json:"primary"`
-	SecretName     string   `json:"secretName"`
-	Type           string   `json:"type"`
+	DomainsInclude []string `json:"domainsInclude" db:"-"`
+	Primary        bool     `json:"primary" db:"is_primary"`
+	SecretName     string   `json:"secretName" db:"secret_name"`
+	Type           string   `json:"type" db:"type"`
 }
 
 type GardenerConfig struct {
@@ -72,6 +73,7 @@ type GardenerConfig struct {
 	OIDCConfig                          *OIDCConfig
 	DNSConfig                           *DNSConfig
 	ExposureClassName                   *string
+	ShootNetworkingFilterDisabled       *bool
 }
 
 type ExtensionProviderConfig struct {
@@ -147,6 +149,17 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		return nil, apperrors.Internal("error encoding Cert extension config: %s", encodingErr.Error())
 	}
 
+	extensions := []gardener_types.Extension{
+		{Type: "shoot-dns-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig}},
+		{Type: "shoot-cert-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig}},
+	}
+	if c.ShootNetworkingFilterDisabled != nil {
+		extensions = append(extensions, gardener_types.Extension{
+			Type:     ShootNetworkingFilterExtensionType,
+			Disabled: c.ShootNetworkingFilterDisabled,
+		})
+	}
+
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -181,17 +194,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
-			DNS: gardenerDnsConfig(dnsInputConfig),
-			Extensions: []gardener_types.Extension{
-				{
-					Type:           "shoot-dns-service",
-					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonDNSConfig},
-				},
-				{
-					Type:           "shoot-cert-service",
-					ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig},
-				},
-			},
+			DNS:        gardenerDnsConfig(dnsInputConfig),
+			Extensions: extensions,
 		},
 	}
 
@@ -617,6 +621,21 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	if util.NotNilOrEmpty(upgradeConfig.ExposureClassName) {
 		shoot.Spec.ExposureClassName = upgradeConfig.ExposureClassName
 	}
+
+	if upgradeConfig.ShootNetworkingFilterDisabled != nil {
+		upgradedExtensions := []gardener_types.Extension{}
+		for _, extension := range shoot.Spec.Extensions {
+			if extension.Type != ShootNetworkingFilterExtensionType {
+				upgradedExtensions = append(upgradedExtensions, extension)
+			}
+		}
+		upgradedExtensions = append(upgradedExtensions, gardener_types.Extension{
+			Type:     ShootNetworkingFilterExtensionType,
+			Disabled: upgradeConfig.ShootNetworkingFilterDisabled,
+		})
+		shoot.Spec.Extensions = upgradedExtensions
+	}
+
 	return nil
 }
 

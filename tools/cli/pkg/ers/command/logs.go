@@ -67,7 +67,7 @@ func (c *LogsCommand) Run() error {
 	}
 
 	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "component=base",
+		LabelSelector: "component=sc-migration",
 	})
 	if err != nil {
 		return fmt.Errorf("while creatin a client set: %w", err)

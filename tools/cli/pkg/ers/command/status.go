@@ -81,6 +81,7 @@ func (c *StatusCommand) Run() error {
 		return fmt.Errorf("while creating a json: %w", err)
 	}
 	fmt.Printf("%s - %s\n", instance.State, instance.StateMessage)
+	fmt.Printf("%s - %s\n", "Status", instance.Status)
 	fmt.Printf("Migrated - %t\n", instance.Migrated)
 	c.log.Debugf(jsonData)
 
@@ -178,7 +179,7 @@ func (c *StatusCommand) Run() error {
 		return fmt.Errorf("while creating a json %w: ", err)
 	}
 
-	fmt.Printf("- %s\n created: %s\n deleted: %v\n", *result.Status.Status, result.Status.Created, *result.Status.Deleted)
+	fmt.Printf("- %s\n last reconcilled: %s\n deleted: %v\n", *result.Status.Status, result.Status.Created, *result.Status.Deleted)
 	c.log.Debugf(jsonData)
 
 	// logs
@@ -203,7 +204,7 @@ func (c *StatusCommand) Run() error {
 	}
 
 	podsList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "component=base",
+		LabelSelector: "component=sc-migration",
 	})
 	if err != nil {
 		return err // todo: logs
@@ -226,7 +227,7 @@ func (c *StatusCommand) Run() error {
 
 			scanner := bufio.NewScanner(logsStream)
 
-			searchedString := fmt.Sprintf("%s.*%s", "btp-operator", runtime.RuntimeID)
+			searchedString := fmt.Sprintf(".*%s.*", runtime.RuntimeID)
 			r, _ := regexp.Compile(searchedString)
 
 			scanner.Split(bufio.ScanLines)
