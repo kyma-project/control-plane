@@ -72,8 +72,8 @@ require (
 
 replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	k8s.io/client-go => k8s.io/client-go v0.22.7
 	k8s.io/helm => k8s.io/helm v2.17.0+incompatible
 )
-
-replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
