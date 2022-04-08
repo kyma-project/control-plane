@@ -5,12 +5,12 @@ go 1.17
 require (
 	github.com/gardener/gardener v1.44.1
 	github.com/gardener/gardener-extension-provider-aws v1.34.3
-	github.com/gardener/gardener-extension-provider-azure v1.26.2
+	github.com/gardener/gardener-extension-provider-azure v1.26.3
 	github.com/gardener/gardener-extension-provider-gcp v1.21.3
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220406123924-b4e0cf771f8a
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220407145529-5c1b863c3b87
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -72,6 +72,8 @@ require (
 
 replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	k8s.io/client-go => k8s.io/client-go v0.22.7
 	k8s.io/helm => k8s.io/helm v2.17.0+incompatible
 )
