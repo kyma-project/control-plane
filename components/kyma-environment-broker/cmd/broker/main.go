@@ -346,7 +346,8 @@ func main() {
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
-		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
+		avsDel, internalEvalAssistant, externalEvalAssistant, serviceManagerClientFactory, bundleBuilder, edpClient, accountProvider, reconcilerClient,
+		k8sClientProvider, logs)
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 3, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
@@ -845,7 +846,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, smcf deprovisioning.SMClientFactory, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client,
-	logs logrus.FieldLogger) *process.Queue {
+	k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, smcf, cfg.OperationTimeout)
 	deprovisionManager.InitStep(deprovisioningInit)
@@ -855,6 +856,14 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		weight   int
 		step     deprovisioning.Step
 	}{
+		{
+			weight: 1,
+			step:   deprovisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
+		},
+		{
+			weight: 1,
+			step:   deprovisioning.NewRemoveServiceInstanceStep(db.Operations()),
+		},
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
