@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors2 "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,7 +93,7 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 	}, si)
 	if err == nil {
 		return si, nil
-	} else if client.IgnoreNotFound(err) != nil {
+	} else if client.IgnoreNotFound(err) != nil && !k8serrors2.IsNoMatchError(err) {
 		return nil, err
 	}
 
@@ -108,7 +109,7 @@ func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) 
 	}, si)
 	if err == nil {
 		return si, nil
-	} else if client.IgnoreNotFound(err) != nil {
+	} else if client.IgnoreNotFound(err) != nil && !k8serrors2.IsNoMatchError(err) {
 		return nil, err
 	}
 
