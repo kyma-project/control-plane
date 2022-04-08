@@ -18,3 +18,15 @@ build-to-minikube:
 
 deploy-on-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}
+
+ensure-local:
+	@echo ${SKIP_DEPLOY_MESSAGE}
+
+resolve-local:
+	@echo ${SKIP_DEPLOY_MESSAGE}
+
+dep-status:
+	@echo ${SKIP_DEPLOY_MESSAGE}
+
+dep-status-local:
+	@echo ${SKIP_DEPLOY_MESSAGE}
