@@ -225,7 +225,7 @@ func (f *fakeK8sClient) Get(ctx context.Context, key client.ObjectKey, obj clien
 }
 
 func (f *fakeK8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	return nil
+	return fmt.Errorf("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
@@ -240,25 +240,25 @@ func (f *fakeK8sClient) Delete(ctx context.Context, obj client.Object, opts ...c
 }
 
 func (f *fakeK8sClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return nil
+	return fmt.Errorf("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return nil
+	return fmt.Errorf("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
-	return nil
+	return fmt.Errorf("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) Status() client.StatusWriter {
-	return nil
+	panic("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) Scheme() *runtime.Scheme {
-	return nil
+	panic("not implemented in fakeK8sClient")
 }
 
 func (f *fakeK8sClient) RESTMapper() meta.RESTMapper {
-	return nil
+	panic("not implemented in fakeK8sClient")
 }
