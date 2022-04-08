@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/job"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/job"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"

@@ -14,19 +14,19 @@ global:
       version: "PR-1523"
     kyma_environment_broker:
       dir:
-      version: "PR-1513"
+      version: "PR-1521"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1380"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-1380"
-    subscription_cleanup_job:
+    kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1346"
+      version: "PR-1474"
     kyma_metrics_collector:
       dir:
-      version: "PR-1534"
+      version: "PR-1547"
     tests:
       provisioner:
         dir:

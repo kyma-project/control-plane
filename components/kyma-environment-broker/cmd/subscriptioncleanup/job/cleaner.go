@@ -6,16 +6,14 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider"
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/model"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-const fieldSelectorFmt = "spec.secretBindingName=%s"
 
 type Type string
 
@@ -136,15 +134,17 @@ func (p *cleaner) getSecretBindingsToRelease() ([]v1beta1.SecretBinding, error) 
 
 // Checks if there are no clusters tied to the secret binding
 func (p *cleaner) checkIfSecretCanBeReleased(binding v1beta1.SecretBinding) (bool, error) {
-	fieldSelector := fmt.Sprintf(fieldSelectorFmt, binding.Name)
-	list, err := p.shootClient.List(p.context, metav1.ListOptions{FieldSelector: fieldSelector})
+	list, err := p.shootClient.List(p.context, metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list shoots")
 	}
 
-	if list.Items != nil && len(list.Items) != 0 {
-		return false, nil
+	for _, shoot := range list.Items {
+		if shoot.Spec.SecretBindingName == binding.Name {
+			return false, nil
+		}
 	}
+
 	return true, nil
 }
 
