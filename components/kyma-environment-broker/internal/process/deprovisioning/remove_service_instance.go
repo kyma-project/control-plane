@@ -56,7 +56,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 			operation.IsServiceInstanceDeleted = true
 			return operation, 0, nil
 		}
-		log.Errorf("while getting %s service instance from the cluster", serviceInstanceName)
+		log.Errorf("while getting %s service instance from the cluster: %s", serviceInstanceName, err)
 		return s.operationManager.OperationFailed(operation, "could not get service instance to be deleted", nil, log)
 	}
 
