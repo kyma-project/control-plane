@@ -54,6 +54,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	if err != nil {
 		if k8serrors.IsNotFound(err) || k8serrors2.IsNoMatchError(err) {
 			operation.IsServiceInstanceDeleted = true
+			log.Infof("%s Service Instance is not present in the cluster, skipping step", serviceInstanceName)
 			return operation, 0, nil
 		}
 		log.Errorf("while getting %s service instance from the cluster: %s", serviceInstanceName, err)
