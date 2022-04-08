@@ -52,11 +52,12 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 
 	si, err := s.getServiceInstance(operation.K8sClient)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) || k8serrors2.IsNoMatchError(err) {
 			operation.IsServiceInstanceDeleted = true
+			log.Infof("%s Service Instance is not present in the cluster, skipping step", serviceInstanceName)
 			return operation, 0, nil
 		}
-		log.Errorf("while getting %s service instance from the cluster", serviceInstanceName)
+		log.Errorf("while getting %s service instance from the cluster: %s", serviceInstanceName, err)
 		return s.operationManager.OperationFailed(operation, "could not get service instance to be deleted", nil, log)
 	}
 
