@@ -52,7 +52,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 
 	si, err := s.getServiceInstance(operation.K8sClient)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) || k8serrors2.IsNoMatchError(err) {
 			operation.IsServiceInstanceDeleted = true
 			return operation, 0, nil
 		}
