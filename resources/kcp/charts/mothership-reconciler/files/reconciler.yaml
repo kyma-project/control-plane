@@ -11,6 +11,10 @@ db:
     password: {{ .Values.db.reconcilerPassword }}
     useSsl: {{ .Values.db.useSsl }}
     migrationsDir: "./configs/db/postgres"
+    maxOpenConns: {{ .Values.db.maxOpenConns }}
+    maxIdleConns: {{ .Values.db.maxIdleConns }}
+    connMaxLifetime: {{ .Values.db.connMaxLifetime }}
+    connMaxIdleTime: {{ .Values.db.connMaxIdleTime }}
   sqlite:
     file: {{ .Values.db.file }}
     deploySchema: {{ .Values.db.deploySchema }}
