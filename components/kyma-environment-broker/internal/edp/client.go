@@ -185,7 +185,7 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool, id
 		return nil
 	case http.StatusConflict:
 		c.log.Warnf("Resource already exist: %s", responseLog(response))
-		return NewEDPConflictError(id, fmt.Sprintf("Resource %s already exists", id))
+		return NewEDPConflictError(id, "Resource %s already exists", id)
 	case http.StatusNoContent:
 		c.log.Infof("Action executed correctly: %s", responseLog(response))
 		return nil
@@ -195,22 +195,22 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool, id
 			return nil
 		}
 		c.log.Errorf("Body content: %s", body)
-		return NewEDPNotFoundError(id, fmt.Sprintf("Not Found: %s", responseLog(response)))
+		return NewEDPNotFoundError(id, "Not Found: %s", responseLog(response))
 	case http.StatusRequestTimeout:
 		c.log.Errorf("Request timeout %s: %s", responseLog(response), body)
-		return kebError.NewTemporaryError("Request timeout: %s", responseLog(response))
+		return kebError.WrapNewTemporaryError(NewEDPOtherError(id, http.StatusRequestTimeout, "Request timeout: %s", responseLog(response)))
 	case http.StatusBadRequest:
 		c.log.Errorf("Bad request %s: %s", responseLog(response), body)
-		return NewEDPBadRequestError(id, fmt.Sprintf("Bad request: %s", responseLog(response)))
+		return NewEDPBadRequestError(id, "Bad request: %s", responseLog(response))
 	}
 
 	if response.StatusCode >= 500 {
 		c.log.Errorf("EDP server returns failed status %s: %s", responseLog(response), body)
-		return kebError.NewTemporaryError("EDP server returns failed status %s", responseLog(response))
+		return kebError.WrapNewTemporaryError(NewEDPOtherError(id, http.StatusRequestTimeout, "EDP server returns failed status %s", responseLog(response)))
 	}
 
 	c.log.Errorf("EDP server not supported response %s: %s", responseLog(response), body)
-	return NewEDPOtherError(id, response.StatusCode, fmt.Sprintf("Undefined/empty/notsupported status code response %s", responseLog(response)))
+	return NewEDPOtherError(id, response.StatusCode, "Undefined/empty/notsupported status code response %s", responseLog(response))
 }
 
 func responseLog(r *http.Response) string {

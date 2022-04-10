@@ -261,6 +261,7 @@ func TestConvertToAppError(t *testing.T) {
 		DbErr := dberrors.NotFound("db error")
 		nonRecoverableErr1 := NewNonRecoverableError(err1)
 		nonRecoverableErr2 := NewNonRecoverableError(err2)
+		nonRecoverableErr3 := NewNonRecoverableError(apperrors.Internal("timeout").SetReason(apperrors.ErrProvisionerTimeout))
 		k8sErr := util.K8SErrorToAppError(errors.Wrapf(err1, "failed to create %s ClusterRoleBinding", "crb.Name")).SetComponent(apperrors.ErrClusterK8SClient)
 
 		expectErr1 := apperrors.Internal("err1")
@@ -272,6 +273,7 @@ func TestConvertToAppError(t *testing.T) {
 		apperrDbErr := ConvertToAppError(DbErr)
 		apperrNonRecovErr1 := ConvertToAppError(nonRecoverableErr1)
 		apperrNonRecovErr2 := ConvertToAppError(nonRecoverableErr2)
+		apperrNonRecovErr3 := ConvertToAppError(nonRecoverableErr3)
 		apperrK8sErr := ConvertToAppError(k8sErr)
 
 		//then
@@ -282,6 +284,9 @@ func TestConvertToAppError(t *testing.T) {
 		assert.Equal(t, dberrors.ErrDBNotFound, apperrDbErr.Reason())
 		assert.Equal(t, expectErr1, apperrNonRecovErr1)
 		assert.Equal(t, err2, apperrNonRecovErr2)
+		assert.Error(t, apperrNonRecovErr3, "timeout")
+		assert.Equal(t, apperrors.ErrProvisioner, apperrNonRecovErr3.Component())
+		assert.Equal(t, apperrors.ErrProvisionerTimeout, apperrNonRecovErr3.Reason())
 		assert.Equal(t, expectK8sErr, apperrK8sErr)
 	})
 }

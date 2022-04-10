@@ -189,19 +189,19 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 
 	cluster, dberr := session.GetCluster(id)
 	if dberr != nil {
-		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
+		return "", dberr
 	}
 
 	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
 
 	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
 	if appErr != nil {
-		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error())
+		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error()).SetComponent(appErr.Component()).SetReason(appErr.Reason())
 	}
 
 	dberr = session.InsertOperation(operation)
 	if dberr != nil {
-		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
+		return "", dberr
 	}
 
 	if withoutUninstall {
@@ -321,7 +321,7 @@ func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return apperrors.Internal("failed to get last operation: %s", dberr.Error())
+		return dberr
 	}
 
 	if lastOperation.State == model.InProgress {

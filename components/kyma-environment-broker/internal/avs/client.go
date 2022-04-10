@@ -182,7 +182,7 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		}
 	}
 
-	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationID, err)
+	return errors.Wrapf(err, "unexpected response for evaluationId: %d while deleting reference from parent evaluation, error", evaluationID)
 }
 
 func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {

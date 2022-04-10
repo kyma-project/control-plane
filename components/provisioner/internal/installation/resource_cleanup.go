@@ -8,6 +8,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
+	utilErrors "github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiServBeta "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -99,7 +100,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 func (s *serviceCatalogClient) ensureCRDsExist() (bool, error) {
 	list, err := s.crdsManager.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return false, err
+		return false, utilErrors.K8SErrorToAppError(err)
 	}
 	for _, crd := range []string{SystemBrokerCRDName, SystemCatalogCRDName, SystemInstanceCRD} {
 		exists := s.ensureCRDExists(crd, list)
@@ -131,7 +132,7 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 		result = csbList
 		return true, nil
 	})
-	return result, err
+	return result, utilErrors.K8SErrorToAppError(err)
 }
 
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
@@ -145,7 +146,7 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 		result = cscList
 		return true, nil
 	})
-	return result, err
+	return result, utilErrors.K8SErrorToAppError(err)
 }
 
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
@@ -159,7 +160,7 @@ func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (
 		result = siList
 		return true, nil
 	})
-	return result, err
+	return result, utilErrors.K8SErrorToAppError(err)
 }
 
 func (s *serviceCatalogClient) filterCsbWithUrlPrefix(csbList *v1beta1.ClusterServiceBrokerList, urlPrefix string) []v1beta1.ClusterServiceBroker {
