@@ -27,7 +27,7 @@ db:
   maxOpenConns: 50 # if n <= 0, then there is no limit on the number of open connections. The default is 0 (unlimited).
   maxIdleConns: 20 # If n <= 0, no idle connections are retained. The default max idle connections is currently 2. This may change in a future release.
   connMaxLifetime: 10m # If d <= 0, connections are not closed due to a connection's age.
-  connMaxIdleTime: 0s # If d <= 0, connections are not closed due to a connection's idle time.
+  connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
 preComponents:
   - [cluster-essentials, istio-configuration, istio, certificates]
