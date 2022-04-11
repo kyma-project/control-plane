@@ -5,7 +5,7 @@ WORKDIR /migrate
 RUN apk --no-cache add --update git make
 RUN git clone https://github.com/golang-migrate/migrate.git .
 
-RUN sed -i 's/^go .*/go 1.18/g' go.mod && go mod tidy && make build
+RUN go mod tidy && make build
 
 FROM alpine:3.15.4
 
