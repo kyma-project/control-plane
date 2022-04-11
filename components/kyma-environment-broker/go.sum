@@ -547,8 +547,8 @@ github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXt
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
 github.com/gabriel-vasile/mimetype v1.3.1/go.mod h1:fA8fi6KUiG7MgQQ+mEWotXoEOvmxRtOJlERCzSmRvr8=
 github.com/gabriel-vasile/mimetype v1.4.0/go.mod h1:fA8fi6KUiG7MgQQ+mEWotXoEOvmxRtOJlERCzSmRvr8=
-github.com/gardener/gardener v1.44.1 h1:EHleLdA9rdrTv1SvunjAYWZfQYHQqQGYOgDxAdzoytA=
-github.com/gardener/gardener v1.44.1/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
+github.com/gardener/gardener v1.44.2 h1:A/wY9ZqnsQTOmmqt8uHtN2sYlH4HSxLn2ArMXmQwoqs=
+github.com/gardener/gardener v1.44.2/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/gavv/httpexpect v0.0.0-20170820080527-c44a6d7bb636 h1:FbWwmG7qBNykpmPppq5767far39ty4P7lOhpPNK8Ik4=
 github.com/gavv/httpexpect v0.0.0-20170820080527-c44a6d7bb636/go.mod h1:x+9tiU1YnrOvnB725RkpoLv1M62hOWzwo5OXotisrKc=

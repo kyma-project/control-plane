@@ -13,7 +13,7 @@ require (
 	github.com/Peripli/service-manager v0.23.3
 	github.com/Peripli/service-manager-cli v1.11.12
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/gardener/gardener v1.44.1
+	github.com/gardener/gardener v1.44.2
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
