@@ -28,8 +28,8 @@ type NetworkConfig struct {
 	// Workers is the worker subnet range to create (used for the VMs).
 	Workers string `json:"workers"`
 	// ServiceEndpoints is a list of Azure ServiceEndpoints which should be associated with the worker subnet.
-	ServiceEndpoints []string   `json:"serviceEndpoints,omitempty"`
-	NatGateway       NatGateway `json:"natGateway"`
+	ServiceEndpoints []string    `json:"serviceEndpoints,omitempty"`
+	NatGateway       *NatGateway `json:"natGateway,omitempty"`
 }
 
 // VNet contains information about the VNet and some related resources.
