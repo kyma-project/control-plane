@@ -384,7 +384,7 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 }
 
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones}
+	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones, EnableNatGateway: c.input.EnableNatGateway, IdleConnectionTimeoutMinutes: c.input.IdleConnectionTimeoutMinutes}
 }
 
 type AWSGardenerConfig struct {
