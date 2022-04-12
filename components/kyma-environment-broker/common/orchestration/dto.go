@@ -103,9 +103,10 @@ type ParallelStrategySpec struct {
 
 // StrategySpec is the strategy part common for all orchestration trigger/status API
 type StrategySpec struct {
-	Type     StrategyType         `json:"type"`
-	Schedule ScheduleType         `json:"schedule,omitempty"`
-	Parallel ParallelStrategySpec `json:"parallel,omitempty"`
+	Type          StrategyType         `json:"type"`
+	Schedule      ScheduleType         `json:"schedule,omitempty"`
+	ScheduleAfter time.Time            `json:"scheduleAfter,omitempty"`
+	Parallel      ParallelStrategySpec `json:"parallel,omitempty"`
 }
 
 // TargetSpec is the targets part common for all orchestration trigger/status API

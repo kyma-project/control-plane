@@ -691,6 +691,9 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 }
 
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
+	s.AssertReconcilerStatusReconcilingWhenUpgrading(instanceID, reconcilerApi.StatusReconcilePending)
+}
+func (s *BrokerSuiteTest) AssertReconcilerStatusReconcilingWhenUpgrading(instanceID string, reconcilerStatus reconcilerApi.Status) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
 	var upgradeKymaOp *internal.Operation
 	err := wait.Poll(pollingInterval, time.Second, func() (bool, error) {
@@ -718,7 +721,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instan
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
+	assert.Equal(s.t, reconcilerStatus, state.Status)
 }
 
 func (s *BrokerSuiteTest) DecodeErrorResponse(resp *http.Response) apiresponses.ErrorResponse {
@@ -757,7 +760,7 @@ func (s *BrokerSuiteTest) DecodeOrchestrationID(resp *http.Response) string {
 	return upgradeResponse.OrchestrationID
 }
 
-func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationFromOrchestration(resp *http.Response) (orchestration.OperationResponse, error) {
 	m, err := ioutil.ReadAll(resp.Body)
 	s.Log(string(m))
 	require.NoError(s.t, err)
@@ -766,10 +769,19 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	require.NoError(s.t, err)
 
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
-		return "", errors.New("no operations found for given orchestration")
+		return orchestration.OperationResponse{}, errors.New("no operations found for given orchestration")
 	}
 
-	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+	return operationsList.Data[len(operationsList.Data)-1], nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+	op, err := s.DecodeLastUpgradeKymaOperationFromOrchestration(resp)
+	if err == nil {
+		return op.OperationID, nil
+	} else {
+		return "", err
+	}
 }
 
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {

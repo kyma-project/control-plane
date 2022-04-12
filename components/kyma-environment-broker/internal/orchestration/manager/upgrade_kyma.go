@@ -159,7 +159,7 @@ func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 }
 
 // get current retrying operations, update state to pending and update other required params to storage
-func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool, updateAfter time.Time) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
 	if err != nil {
@@ -174,7 +174,7 @@ func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule or
 
 			// use the latest policy
 			if schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy, updateAfter)
 			}
 			op.MaintenanceWindowBegin = windowBegin
 			op.MaintenanceWindowEnd = windowEnd
