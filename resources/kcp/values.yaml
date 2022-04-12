@@ -14,13 +14,13 @@ global:
       version: "PR-1523"
     kyma_environment_broker:
       dir:
-      version: "6d652829"
+      version: "PR-1527"
     kyma_environments_cleanup_job:
       dir:
-      version: "6d652829"
+      version: "PR-1527"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "6d652829"
+      version: "PR-1527"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1474"

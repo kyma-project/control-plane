@@ -14,8 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -68,7 +67,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should fail when unable to fetch shoots from gardener", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&v1beta1.ShootList{}, errors.New("failed to reach gardener"))
+		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.UnstructuredList{}, errors.New("failed to reach gardener"))
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -183,35 +182,38 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		creationTime, parseErr := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
 		require.NoError(t, parseErr)
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&v1beta1.ShootList{
-			TypeMeta: v1.TypeMeta{},
-			ListMeta: v1.ListMeta{},
-			Items: []v1beta1.Shoot{
+		unl := unstructured.UnstructuredList{
+			Items: []unstructured.Unstructured{
 				{
-					TypeMeta: v1.TypeMeta{},
-					ObjectMeta: v1.ObjectMeta{
-						Name:              "az-1234",
-						CreationTimestamp: v1.Time{Time: creationTime},
-						Annotations:       map[string]string{shootAnnotationRuntimeId: fixRuntimeID1},
-						ClusterName:       "cluster-one",
-					},
-					Spec: v1beta1.ShootSpec{
-						CloudProfileName: "az",
+					Object: map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"name":              "az-1234",
+							"creationTimestamp": creationTime,
+							"annotations": map[string]interface{}{
+								shootAnnotationRuntimeId: fixRuntimeID1,
+							},
+							"clusterName": "cluster-one",
+						},
+						"spec": map[string]interface{}{
+							"cloudProfileName": "az",
+						},
 					},
 				},
 				{
-					TypeMeta: v1.TypeMeta{},
-					ObjectMeta: v1.ObjectMeta{
-						Name:              "az-1234",
-						CreationTimestamp: v1.Time{Time: creationTime},
-						ClusterName:       "cluster-one",
-					},
-					Spec: v1beta1.ShootSpec{
-						CloudProfileName: "az",
+					Object: map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"name":              "az-1234",
+							"creationTimestamp": creationTime,
+							"clusterName":       "cluster-one",
+						},
+						"spec": map[string]interface{}{
+							"cloudProfileName": "az",
+						},
 					},
 				},
 			},
-		}, nil)
+		}
+		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -242,65 +244,74 @@ func TestService_PerformCleanup(t *testing.T) {
 	})
 }
 
-func fixShootList() *v1beta1.ShootList {
-	return &v1beta1.ShootList{
-		TypeMeta: v1.TypeMeta{},
-		ListMeta: v1.ListMeta{},
-		Items:    fixShootListItems(),
+func fixShootList() *unstructured.UnstructuredList {
+	return &unstructured.UnstructuredList{
+		Items: fixShootListItems(),
 	}
 }
 
-func fixShootListItems() []v1beta1.Shoot {
+func fixShootListItems() []unstructured.Unstructured {
 	creationTime, _ := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
-
-	return []v1beta1.Shoot{
-		{
-			TypeMeta: v1.TypeMeta{},
-			ObjectMeta: v1.ObjectMeta{
-				Name:              "az-1234",
-				CreationTimestamp: v1.Time{Time: creationTime},
-				Labels: map[string]string{
-					"should-be-deleted": "true",
-					shootLabelAccountId: fixAccountID,
+	unl := unstructured.UnstructuredList{
+		Items: []unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name":              "az-1234",
+						"creationTimestamp": creationTime,
+						"labels": map[string]interface{}{
+							"should-be-deleted": "true",
+							shootLabelAccountId: fixAccountID,
+						},
+						"annotations": map[string]interface{}{
+							shootAnnotationRuntimeId: fixRuntimeID1,
+						},
+						"clusterName": "cluster-one",
+					},
+					"spec": map[string]interface{}{
+						"cloudProfileName": "az",
+					},
 				},
-				Annotations: map[string]string{shootAnnotationRuntimeId: fixRuntimeID1},
-				ClusterName: "cluster-one",
 			},
-			Spec: v1beta1.ShootSpec{
-				CloudProfileName: "az",
-			},
-		},
-		{
-			TypeMeta: v1.TypeMeta{},
-			ObjectMeta: v1.ObjectMeta{
-				Name:              "gcp-1234",
-				CreationTimestamp: v1.Time{Time: creationTime},
-				Labels: map[string]string{
-					"should-be-deleted": "true",
-					shootLabelAccountId: fixAccountID,
+			{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name":              "gcp-1234",
+						"creationTimestamp": creationTime,
+						"labels": map[string]interface{}{
+							"should-be-deleted": "true",
+							shootLabelAccountId: fixAccountID,
+						},
+						"annotations": map[string]interface{}{
+							shootAnnotationRuntimeId: fixRuntimeID2,
+						},
+						"clusterName": "cluster-two",
+					},
+					"spec": map[string]interface{}{
+						"cloudProfileName": "gcp",
+					},
 				},
-				Annotations: map[string]string{shootAnnotationRuntimeId: fixRuntimeID2},
-				ClusterName: "cluster-two",
 			},
-			Spec: v1beta1.ShootSpec{
-				CloudProfileName: "gcp",
-			},
-		},
-		{
-			TypeMeta: v1.TypeMeta{},
-			ObjectMeta: v1.ObjectMeta{
-				Name:              "az-4567",
-				CreationTimestamp: v1.Time{Time: creationTime},
-				Labels: map[string]string{
-					"should-be-deleted-by-provisioner": "true",
-					shootLabelAccountId:                fixAccountID,
+			{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name":              "az-4567",
+						"creationTimestamp": creationTime,
+						"labels": map[string]interface{}{
+							"should-be-deleted-by-provisioner": "true",
+							shootLabelAccountId:                fixAccountID,
+						},
+						"annotations": map[string]interface{}{
+							shootAnnotationRuntimeId: fixRuntimeID3,
+						},
+						"clusterName": "cluster-one",
+					},
+					"spec": map[string]interface{}{
+						"cloudProfileName": "az",
+					},
 				},
-				Annotations: map[string]string{shootAnnotationRuntimeId: fixRuntimeID3},
-				ClusterName: "cluster-one",
-			},
-			Spec: v1beta1.ShootSpec{
-				CloudProfileName: "az",
 			},
 		},
 	}
+	return unl.Items
 }

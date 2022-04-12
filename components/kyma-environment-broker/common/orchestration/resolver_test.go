@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1/fake"
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8s "k8s.io/apimachinery/pkg/runtime"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 )
 
@@ -178,7 +178,7 @@ func TestResolver_Resolve(t *testing.T) {
 			Target: TargetSpec{
 				Include: []RuntimeTarget{
 					{
-						Shoot: expectedRuntime1.shoot.Name,
+						Shoot: expectedRuntime1.shoot.GetName(),
 					},
 				},
 				Exclude: nil,
@@ -204,10 +204,9 @@ func TestResolver_Resolve(t *testing.T) {
 
 func TestResolver_Resolve_GardenerFailure(t *testing.T) {
 	// given
-	fake := &k8stesting.Fake{}
-	client := &gardenerclient_fake.FakeCoreV1beta1{
-		Fake: fake,
-	}
+	fake := k8stesting.Fake{}
+	client := gardener.NewDynamicFakeClient()
+	client.Fake = fake
 	fake.AddReactor("list", "shoots", func(action k8stesting.Action) (bool, k8s.Object, error) {
 		return true, nil, errors.New("Fake gardener client failure")
 	})
@@ -284,25 +283,29 @@ var (
 	runtime11 = fixRuntimeDTO(11, globalAccountID1, plan1, runtimeOpState{provision: string(brokerapi.Succeeded), suspension: string(brokerapi.Succeeded), unsuspension: string(brokerapi.Failed)})
 )
 
-func fixShoot(id int, globalAccountID, region string) gardenerapi.Shoot {
-	return gardenerapi.Shoot{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("shoot%d", id),
-			Namespace: shootNamespace,
-			Labels: map[string]string{
-				globalAccountLabel: globalAccountID,
-				subAccountLabel:    fmt.Sprintf("subaccount-id-%d", id),
+func fixShoot(id int, globalAccountID, region string) unstructured.Unstructured {
+	return unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "core.gardener.cloud/v1beta1",
+			"kind":       "Shoot",
+			"metadata": map[string]interface{}{
+				"name":      fmt.Sprintf("shoot%d", id),
+				"namespace": shootNamespace,
+				"labels": map[string]interface{}{
+					globalAccountLabel: globalAccountID,
+					subAccountLabel:    fmt.Sprintf("subaccount-id-%d", id),
+				},
+				"annotations": map[string]interface{}{
+					runtimeIDAnnotation: fmt.Sprintf("runtime-id-%d", id),
+				},
 			},
-			Annotations: map[string]string{
-				runtimeIDAnnotation: fmt.Sprintf("runtime-id-%d", id),
-			},
-		},
-		Spec: gardenerapi.ShootSpec{
-			Region: region,
-			Maintenance: &gardenerapi.Maintenance{
-				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-					Begin: "030000+0000",
-					End:   "040000+0000",
+			"spec": map[string]interface{}{
+				"region": region,
+				"maintenance": map[string]interface{}{
+					"timeWindow": map[string]interface{}{
+						"begin": "030000+0000",
+						"end":   "040000+0000",
+					},
 				},
 			},
 		},
@@ -368,31 +371,22 @@ func fixRuntimeDTO(id int, globalAccountID, planName string, state runtimeOpStat
 }
 
 type expectedRuntime struct {
-	shoot   *gardenerapi.Shoot
+	shoot   *unstructured.Unstructured
 	runtime *runtime.RuntimeDTO
 }
 
-func newFakeGardenerClient() *gardenerclient_fake.FakeCoreV1beta1 {
-	fake := &k8stesting.Fake{}
-	client := &gardenerclient_fake.FakeCoreV1beta1{
-		Fake: fake,
-	}
-	fake.AddReactor("list", "shoots", func(action k8stesting.Action) (bool, k8s.Object, error) {
-		sl := &gardenerapi.ShootList{
-			Items: []gardenerapi.Shoot{
-				shoot1,
-				shoot2,
-				shoot3,
-				shoot4,
-				shoot5,
-				shoot6,
-				shoot8,
-				shoot9,
-				shoot10,
-			},
-		}
-		return true, sl, nil
-	})
+func newFakeGardenerClient() *dynamicfake.FakeDynamicClient {
+	client := gardener.NewDynamicFakeClient(
+		&shoot1,
+		&shoot2,
+		&shoot3,
+		&shoot4,
+		&shoot5,
+		&shoot6,
+		&shoot8,
+		&shoot9,
+		&shoot10,
+	)
 
 	return client
 }
@@ -440,12 +434,13 @@ func assertRuntimeTargets(t *testing.T, expectedRuntimes []expectedRuntime, runt
 
 	for _, e := range expectedRuntimes {
 		r := lookupRuntime(e.runtime.RuntimeID, runtimes)
+		s := gardener.Shoot{*e.shoot}
 		require.NotNil(t, r)
 		assert.Equal(t, e.runtime.InstanceID, r.InstanceID)
 		assert.Equal(t, e.runtime.GlobalAccountID, r.GlobalAccountID)
 		assert.Equal(t, e.runtime.SubAccountID, r.SubAccountID)
-		assert.Equal(t, e.shoot.Name, r.ShootName)
-		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.Begin, r.MaintenanceWindowBegin.Format(maintenanceWindowFormat))
-		assert.Equal(t, e.shoot.Spec.Maintenance.TimeWindow.End, r.MaintenanceWindowEnd.Format(maintenanceWindowFormat))
+		assert.Equal(t, s.GetName(), r.ShootName)
+		assert.Equal(t, s.GetSpecMaintenanceTimeWindowBegin(), r.MaintenanceWindowBegin.Format(maintenanceWindowFormat))
+		assert.Equal(t, s.GetSpecMaintenanceTimeWindowEnd(), r.MaintenanceWindowEnd.Format(maintenanceWindowFormat))
 	}
 }

@@ -14,8 +14,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -54,8 +52,11 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -82,13 +83,17 @@ const (
 	pollingInterval = 3 * time.Millisecond
 )
 
+var (
+	shootGVK = schema.GroupVersionKind{Group: "core.gardener.cloud", Version: "v1beta1", Kind: "Shoot"}
+)
+
 type OrchestrationSuite struct {
 	gardenerNamespace string
 	provisionerClient *provisioner.FakeClient
 	kymaQueue         *process.Queue
 	clusterQueue      *process.Queue
 	storage           storage.BrokerStorage
-	gardenerClient    *gardenerFake.Clientset
+	gardenerClient    dynamic.Interface
 
 	t *testing.T
 }
@@ -143,7 +148,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 
 	reconcilerClient := reconciler.NewFakeClient()
-	gardenerClient := gardenerFake.NewSimpleClientset()
+	gardenerClient := gardener.NewDynamicFakeClient()
 	provisionerClient := provisioner.NewFakeClient()
 	const gardenerProject = "testing"
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProject)
@@ -158,7 +163,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
 	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
 	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
-	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
 
 	notificationFakeClient := notification.NewFakeClient()
 	notificationBundleBuilder := notification.NewBundleBuilder(notificationFakeClient, cfg.Notification)
@@ -340,33 +345,34 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		UsernameClaim:  oidcConfig.UsernameClaim,
 		UsernamePrefix: oidcConfig.UsernamePrefix,
 	}
-	shoot := &gardenerapi.Shoot{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      shootName,
-			Namespace: s.gardenerNamespace,
-			Labels: map[string]string{
+	shoot := &unstructured.Unstructured{Object: map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name":      shootName,
+			"namespace": s.gardenerNamespace,
+			"labels": map[string]interface{}{
 				globalAccountLabel: globalAccountID,
 				subAccountLabel:    subAccountID,
 			},
-			Annotations: map[string]string{
+			"annotations": map[string]interface{}{
 				runtimeIDAnnotation: runtimeID,
 			},
 		},
-		Spec: gardenerapi.ShootSpec{
-			Region: options.ProvidePlatformRegion(),
-			Maintenance: &gardenerapi.Maintenance{
-				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-					Begin: "030000+0000",
-					End:   "040000+0000",
+		"spec": map[string]interface{}{
+			"region": options.ProvidePlatformRegion(),
+			"maintenance": map[string]interface{}{
+				"timeWindow": map[string]interface{}{
+					"begin": "030000+0000",
+					"end":   "040000+0000",
 				},
 			},
 		},
-	}
+	}}
+	shoot.SetGroupVersionKind(shootGVK)
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
 	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
-	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
+	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
 	return runtimeID
 }
