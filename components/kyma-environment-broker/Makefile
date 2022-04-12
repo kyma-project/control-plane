@@ -2,6 +2,8 @@ APP_NAME = kyma-environment-broker
 APP_PATH = components/kyma-environment-broker
 APP_CLEANUP_NAME = kyma-environments-cleanup-job
 APP_SUBACCOUNT_CLEANUP_NAME = kyma-environment-subaccount-cleanup-job
+APP_SUBSCRIPTION_CLEANUP_NAME = kyma-environment-subscription-cleanup-job
+
 ENTRYPOINT = cmd/broker/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220217-8d32835a
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
@@ -84,6 +86,7 @@ build-image:
 	docker build -t $(IMG_NAME) -f Dockerfile.keb .
 	docker build -t $(CLEANUP_IMG_NAME) -f Dockerfile.cleanup .
 	docker build -t $(SUBACCOUNT_CLEANUP_IMG_NAME) -f Dockerfile.sac .
+	docker build -t $(SUBSCRIPTION_CLEANUP_IMG_NAME) -f Dockerfile.scj .
 
 # overide push-image to push two separate images - broker and cleanup job
 push-image:
@@ -95,3 +98,6 @@ push-image:
 
 	docker tag $(SUBACCOUNT_CLEANUP_IMG_NAME) $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
 	docker push $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
+
+	docker tag $(SUBSCRIPTION_CLEANUP_IMG_NAME) $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
+	docker push $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)

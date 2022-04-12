@@ -165,7 +165,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
-		bundleBuilder, edpClient, accountProvider, reconcilerClient, logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)

@@ -7,8 +7,8 @@ import (
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/cloudprovider/mocks"
-	"github.com/kyma-project/control-plane/components/subscription-cleanup-job/internal/model"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider/mocks"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
