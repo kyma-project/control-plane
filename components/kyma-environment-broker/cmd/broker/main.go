@@ -942,11 +942,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			weight: 8,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
-			cnd:    upgrade_kyma.ForKyma1,
-		},
-		{
 			weight:   8,
 			step:     upgrade_kyma.NewSendNotificationStep(db.Operations(), notificationBuilder),
 			disabled: cfg.Notification.Disabled,
