@@ -23,7 +23,6 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
@@ -47,7 +46,6 @@ import (
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -98,22 +96,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.AuditLog.Disabled = false
-	cfg.AuditLog = auditlog.Config{
-		URL:           "https://host1:8080/aaa/v2/",
-		User:          "fooUser",
-		Password:      "barPass",
-		Tenant:        "fooTen",
-		EnableSeqHttp: true,
-	}
 	cfg.OrchestrationConfig = kebOrchestration.Config{
 		KymaVersion:       "",
 		KubernetesVersion: "",
 	}
-
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -168,7 +154,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -535,10 +521,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	cfg := fixConfig()
 
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
-
 	provisionerClient := provisioner.NewFakeClient()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -604,7 +586,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -949,13 +931,6 @@ func fixConfig() *Config {
 			Url:      "http://host:8080/",
 			Disabled: false,
 		},
-		AuditLog: auditlog.Config{
-			URL:           "https://host1:8080/aaa/v2/",
-			User:          "fooUser",
-			Password:      "barPass",
-			Tenant:        "fooTen",
-			EnableSeqHttp: true,
-		},
 		OrchestrationConfig: kebOrchestration.Config{
 			Name:      "orchestration-config",
 			Namespace: "kcp-system",
@@ -997,19 +972,4 @@ func fixServiceManagerFactory() provisioning.SMClientFactory {
 	smcf.SynchronousProvisioning()
 
 	return smcf
-}
-
-func createInMemFS() (afero.Fs, error) {
-
-	inMemoryFs := afero.NewMemMapFs()
-
-	fileScript := `
-		func myScript() {
-		foo: sub_account_id
-		bar: tenant_id
-		return "fooBar"
-	}`
-
-	err := afero.WriteFile(inMemoryFs, "/auditlog-script/script", []byte(fileScript), 0755)
-	return inMemoryFs, err
 }
