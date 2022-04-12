@@ -19,7 +19,7 @@ var purpose = gardener_types.ShootPurposeTesting
 func Test_NewGardenerConfigFromJSON(t *testing.T) {
 
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
-	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
+	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
 	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.250.0.0/19"}]}
 `
@@ -45,7 +45,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			jsonData:    azureConfigJSON,
 			expectedConfig: &AzureGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(azureConfigJSON),
-				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
+				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}, EnableNatGateway: util.BoolPtr(true), IdleConnectionTimeoutMinutes: util.IntPtr(4)},
 			},
 			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
 		},

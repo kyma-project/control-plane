@@ -45,7 +45,7 @@ func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 
 func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *azure.InfrastructureConfig {
 	isZoned := len(azConfig.input.Zones) > 0
-	return &azure.InfrastructureConfig{
+	azureConfig := &azure.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: azureAPIVersion,
@@ -58,6 +58,17 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 		},
 		Zoned: isZoned,
 	}
+
+	if isZoned && azConfig.input.EnableNatGateway != nil {
+		natGateway := azure.NatGateway{
+			Enabled:                      *azConfig.input.EnableNatGateway,
+			IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, 4),
+			Zone:                         1,
+		}
+		azureConfig.Networks.NatGateway = natGateway
+	}
+
+	return azureConfig
 }
 
 func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {
