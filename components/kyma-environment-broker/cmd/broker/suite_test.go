@@ -111,7 +111,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
 
-	kymaVer := "1.15.1"
+	kymaVer := "2.1.1"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
@@ -915,8 +915,8 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                "1.24.7",
-		KymaPreviewVersion:         "2.0",
+		KymaVersion:                "2.0",
+		KymaPreviewVersion:         "2.1",
 		EnableOnDemandVersion:      true,
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
