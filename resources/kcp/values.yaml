@@ -48,7 +48,19 @@ global:
     periodSeconds: 2
 
   components:
+    - base
+    - busola-migrator
+    - cleaner
     - connectivity-proxy
+    - istio-configuration
+    - istio
+    - ory
+    - rafter
+    - eventing
+    - serverless
+    - cluster-essentials
+    - rma
+    - sc-migration
 
   auditlog:
     configMapName: "kcp-auditlog-config"
@@ -159,7 +171,7 @@ global:
       - name: "LOG_ISTIO_OPERATOR"
         value: "false"
   component_reconcilers:
-    enabled: true
+    enabled: false
     authentication: true
 
   oathkeeper:
