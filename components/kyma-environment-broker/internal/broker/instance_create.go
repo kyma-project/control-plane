@@ -49,6 +49,8 @@ type ProvisionEndpoint struct {
 	shootProject      string
 	shootDnsProviders gardener.DNSProvidersData
 
+	kubeconfigOrigin string
+
 	log logrus.FieldLogger
 }
 
@@ -62,6 +64,7 @@ func NewProvision(cfg Config,
 	kvod bool,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	kubeconfigOrigin string,
 ) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
@@ -83,6 +86,7 @@ func NewProvision(cfg Config,
 		shootProject:      gardenerConfig.Project,
 		shootDnsProviders: gardenerConfig.DNSProviders,
 		planDefaults:      planDefaults,
+		kubeconfigOrigin:  kubeconfigOrigin,
 	}
 }
 
@@ -135,7 +139,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	dashboardURL := fmt.Sprintf("%s/?kubeconfigID=%s", b.kubeconfigOrigin, instanceID)
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
