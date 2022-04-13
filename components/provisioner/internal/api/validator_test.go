@@ -225,7 +225,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("version2"),
+				KubernetesVersion:      util.StringPtr("1.20.8"),
 				MachineType:            util.StringPtr("new-machine"),
 				DiskType:               util.StringPtr("papyrus"),
 				Purpose:                util.StringPtr("development"),
@@ -265,7 +265,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("version2"),
+				KubernetesVersion:      util.StringPtr("1.20.8"),
 				MachineType:            util.StringPtr(""),
 				DiskType:               util.StringPtr("stone"),
 				Purpose:                util.StringPtr("development"),
@@ -292,7 +292,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("version2"),
+				KubernetesVersion:      util.StringPtr("1.20.8"),
 				MachineType:            util.StringPtr("time-machine"),
 				DiskType:               util.StringPtr(""),
 				Purpose:                util.StringPtr("evaluation"),
@@ -319,7 +319,7 @@ func TestValidator_ValidateUpgradeShootInput(t *testing.T) {
 
 		input := gqlschema.UpgradeShootInput{
 			GardenerConfig: &gqlschema.GardenerUpgradeInput{
-				KubernetesVersion:      util.StringPtr("version2"),
+				KubernetesVersion:      util.StringPtr("1.20.8"),
 				MachineType:            util.StringPtr("time-machine"),
 				DiskType:               util.StringPtr("papyrus"),
 				Purpose:                util.StringPtr(""),

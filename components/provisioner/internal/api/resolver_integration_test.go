@@ -235,7 +235,7 @@ func seedConfig(seedName, auditIdentifier, provider string) *gardener_types.Seed
 func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   util.StringPtr("version2"),
+			KubernetesVersion:                   util.StringPtr("1.20.8"),
 			Purpose:                             util.StringPtr("testing"),
 			MachineType:                         util.StringPtr("new-machine"),
 			DiskType:                            util.StringPtr("papyrus"),
@@ -257,7 +257,7 @@ func NewUpgradeShootInput() gqlschema.UpgradeShootInput {
 func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:                   util.StringPtr("version2"),
+			KubernetesVersion:                   util.StringPtr("1.20.8"),
 			Purpose:                             util.StringPtr("testing"),
 			MachineType:                         util.StringPtr("new-machine"),
 			MachineImage:                        util.StringPtr("ubuntu"),

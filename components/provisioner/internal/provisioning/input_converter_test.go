@@ -50,7 +50,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
 				MachineImage:                      util.StringPtr("gardenlinux"),
@@ -93,7 +93,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineImage:                        util.StringPtr("gardenlinux"),
 			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			VolumeSizeGB:                        util.IntPtr(1024),
 			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "GCP",
@@ -132,7 +132,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
 					Name:                              "verylon",
-					KubernetesVersion:                 "version",
+					KubernetesVersion:                 "1.20.7",
 					VolumeSizeGb:                      util.IntPtr(1024),
 					MachineType:                       "n1-standard-1",
 					MachineImage:                      util.StringPtr("gardenlinux"),
@@ -178,7 +178,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				MachineImage:                        util.StringPtr("gardenlinux"),
 				MachineImageVersion:                 util.StringPtr("25.0.0"),
 				Region:                              "region",
-				KubernetesVersion:                   "version",
+				KubernetesVersion:                   "1.20.7",
 				VolumeSizeGB:                        util.IntPtr(1024),
 				DiskType:                            util.StringPtr("ssd"),
 				Provider:                            "Azure",
@@ -241,7 +241,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
 				MachineImage:                      util.StringPtr("gardenlinux"),
