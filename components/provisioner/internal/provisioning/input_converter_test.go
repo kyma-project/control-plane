@@ -284,7 +284,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineImage:                        util.StringPtr("gardenlinux"),
 			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			VolumeSizeGB:                        util.IntPtr(1024),
 			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "AWS",
@@ -329,7 +329,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				MachineType:                       "large.1n",
 				MachineImage:                      util.StringPtr("gardenlinux"),
 				MachineImageVersion:               util.StringPtr("25.0.0"),
@@ -370,7 +370,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			MachineImage:                        util.StringPtr("gardenlinux"),
 			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			Provider:                            "Openstack",
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "ops-1",
@@ -882,7 +882,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			description:  "shoot upgrade with nil values",
 			upgradeInput: newUpgradeShootInputWithNilValues(),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:             "version",
+				KubernetesVersion:             "1.20.7",
 				VolumeSizeGB:                  util.IntPtr(1),
 				DiskType:                      util.StringPtr("ssd"),
 				MachineType:                   "1",
@@ -898,7 +898,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ShootNetworkingFilterDisabled: util.BoolPtr(false),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion:             "version",
+				KubernetesVersion:             "1.20.7",
 				VolumeSizeGB:                  util.IntPtr(1),
 				DiskType:                      util.StringPtr("ssd"),
 				MachineType:                   "1",
@@ -925,7 +925,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			description:  "should return error failed to convert provider specific config",
 			upgradeInput: newUpgradeShootInputWithoutProviderConfig(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:      "version",
+				KubernetesVersion:      "1.20.7",
 				VolumeSizeGB:           util.IntPtr(1),
 				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
