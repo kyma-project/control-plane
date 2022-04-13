@@ -126,7 +126,7 @@ func azureGardenerClusterConfigInput(zones ...string) gqlschema.ClusterConfigInp
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
-			KubernetesVersion:   "version",
+			KubernetesVersion:   "1.20.7",
 			Purpose:             util.StringPtr("evaluation"),
 			Provider:            "Azure",
 			TargetSecret:        "secret",
@@ -158,7 +158,7 @@ func azureGardenerClusterConfigInputNoSeed(zones ...string) gqlschema.ClusterCon
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
-			KubernetesVersion:   "version",
+			KubernetesVersion:   "1.20.7",
 			Purpose:             util.StringPtr("evaluation"),
 			Provider:            "Azure",
 			TargetSecret:        "secret",
@@ -188,7 +188,7 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	return gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			Name:                util.CreateGardenerClusterName(),
-			KubernetesVersion:   "version",
+			KubernetesVersion:   "1.20.7",
 			Purpose:             util.StringPtr("evaluation"),
 			Provider:            "Openstack",
 			TargetSecret:        "secret",
