@@ -616,6 +616,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
+			kubeconfigOrigin,
 		)
 
 		oidcParams := `"clientID":"client-id"`
@@ -670,6 +671,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
+			kubeconfigOrigin,
 		)
 
 		oidcParams := `"issuerURL":"https://test.local"`
@@ -724,6 +726,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
+			kubeconfigOrigin,
 		)
 
 		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
