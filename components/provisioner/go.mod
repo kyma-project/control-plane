@@ -9,7 +9,7 @@ require (
 	github.com/gocraft/dbr/v2 v2.6.3
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/hashicorp/go-version v1.2.0
+	github.com/hashicorp/go-version v1.4.0
 	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220125140301-bfb0c437ad31
 	github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f
