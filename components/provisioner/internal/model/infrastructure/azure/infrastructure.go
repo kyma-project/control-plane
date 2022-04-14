@@ -53,5 +53,5 @@ type VNetStatus struct {
 type NatGateway struct {
 	Enabled                      bool `json:"enabled"`
 	IdleConnectionTimeoutMinutes int  `json:"idleConnectionTimeoutMinutes"`
-	Zone                         int  `json:"zone"`
+	Zone                         int  `json:"zone,omitempty"`
 }
