@@ -8,6 +8,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -83,14 +84,20 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient)
 		cluster            model.Cluster
 		unrecoverableError bool
+		errComponent       apperrors.ErrComponent
+		errReason          apperrors.ErrReason
+		errMsg             string
 	}{
 		{
 			description: "should return error when failed to delete shoot",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient) {
-				gardenerClient.On("Delete", context.Background(), clusterName, mock.Anything).Return(errors.New("some error"))
+				gardenerClient.On("Delete", context.Background(), clusterName, mock.Anything).Return(k8serrors.NewBadRequest("some error"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrGardenerClient,
+			errReason:          apperrors.ErrReason("BadRequest"),
+			errMsg:             "some error",
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -106,11 +113,15 @@ func TestDeprovisionCluster_Run(t *testing.T) {
 
 			// when
 			_, err := deleteClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			appErr := operations.ConvertToAppError(err)
 
 			// then
 			require.Error(t, err)
 			nonRecoverable := operations.NonRecoverableError{}
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+			assert.Equal(t, testCase.errComponent, appErr.Component())
+			assert.Equal(t, testCase.errReason, appErr.Reason())
+			assert.Error(t, err, testCase.errMsg)
 			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 			dbSessionFactory.AssertExpectations(t)
