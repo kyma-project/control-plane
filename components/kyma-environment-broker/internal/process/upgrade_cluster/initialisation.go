@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -37,10 +38,11 @@ type InitialisationStep struct {
 	inputBuilder         input.CreatorForPlan
 	evaluationManager    *avs.EvaluationManager
 	timeSchedule         TimeSchedule
+	bundleBuilder        notification.BundleBuilder
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule) *InitialisationStep {
+	timeSchedule *TimeSchedule, bundleBuilder notification.BundleBuilder) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -57,6 +59,7 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, pc
 		inputBuilder:         b,
 		evaluationManager:    em,
 		timeSchedule:         *ts,
+		bundleBuilder:        bundleBuilder,
 	}
 }
 
@@ -173,6 +176,14 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
+		//send cunstomer notification
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
@@ -198,6 +209,14 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
+		//send cunstomer notification
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
 		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
 		if operation.Description != postUpgradeDescription {
 			operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
@@ -224,4 +243,30 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	}
 
 	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
+}
+
+func (s *InitialisationStep) sendNotificationComplete(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) error {
+	tenants := []notification.NotificationTenant{
+		{
+			InstanceID: operation.InstanceID,
+			EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			State:      notification.FinishedMaintenanceState,
+		},
+	}
+	notificationParams := notification.NotificationParams{
+		OrchestrationID: operation.OrchestrationID,
+		Tenants:         tenants,
+	}
+	notificationBundle, err := s.bundleBuilder.NewBundle(operation.OrchestrationID, notificationParams)
+	if err != nil {
+		log.Errorf("%s: %s", "Failed to create Notification Bundle", err)
+		return err
+	}
+	err2 := notificationBundle.UpdateNotificationEvent()
+	if err2 != nil {
+		msg := fmt.Sprintf("cannot update notification for orchestration %s", operation.OrchestrationID)
+		log.Errorf("%s: %s", msg, err)
+		return err
+	}
+	return nil
 }
