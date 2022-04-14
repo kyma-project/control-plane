@@ -154,6 +154,17 @@ func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64
 	})
 }
 
+func (c *FakeClient) ChangeClusterStateForAllReconciliations(desiredState reconcilerApi.Status) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, cluster := range c.inventoryClusters {
+		for _, clusterState := range cluster.clusterStates {
+			clusterState.Status = desiredState
+		}
+	}
+}
+
 func (c *FakeClient) LastClusterConfig(runtimeID string) (*reconcilerApi.Cluster, error) {
 	cluster, found := c.inventoryClusters[runtimeID]
 	if !found {

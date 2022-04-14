@@ -42,7 +42,7 @@ func (s *CheckClusterConfigurationStep) Name() string {
 
 func (s *CheckClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.reconciliationTimeout {
-		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
+		log.Infof("operation has reached the time limit: %s updated operation time: %s", s.reconciliationTimeout, operation.UpdatedAt)
 		return s.restoreAvsFailOperation(operation, fmt.Sprintf("operation has reached the time limit: %s", s.reconciliationTimeout), log)
 	}
 

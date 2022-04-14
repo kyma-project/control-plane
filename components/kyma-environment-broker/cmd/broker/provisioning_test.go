@@ -24,22 +24,39 @@ const (
 
 func TestProvisioning_HappyPath(t *testing.T) {
 	// given
-	suite := NewProvisioningSuite(t)
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
 
 	// when
-	provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{})
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
 
 	// then
-	suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
-	suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
-
-	// when
-	suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-
-	// then
-	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
-	suite.AssertAllStagesFinished(provisioningOperationID)
-	suite.AssertProvisioningRequest()
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	suite.AssertAllStagesFinished(opID)
+	input := suite.LastProvisionInput(iid)
+	labels := input.RuntimeInput.Labels
+	assert.Equal(t, iid, labels["broker_instance_id"])
+	assert.Equal(t, "sub-id", labels["global_subaccount_id"])
+	assert.NotEmpty(t, input.ClusterConfig.GardenerConfig.Name)
 }
 
 func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {

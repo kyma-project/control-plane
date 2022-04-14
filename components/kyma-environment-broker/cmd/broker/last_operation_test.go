@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestLastOperationWithoutOperationIDHappyPath(t *testing.T) {
@@ -33,7 +33,9 @@ func TestLastOperationWithoutOperationIDHappyPath(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
+
+	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation", iid), "")
@@ -66,7 +68,7 @@ func TestLastOperationWithOperationIDHappyPath(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation?operation=%s", iid, opID), "")

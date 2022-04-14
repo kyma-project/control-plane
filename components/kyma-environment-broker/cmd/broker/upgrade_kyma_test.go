@@ -125,7 +125,6 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
-	// provision Kyma 1.x
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",

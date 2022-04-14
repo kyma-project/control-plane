@@ -52,6 +52,8 @@ type Strategy interface {
 	Cancel(executionID string)
 	// Insert operations into the delaying queue of a given execution ID
 	Insert(execID string, operations []RuntimeOperation, strategySpec StrategySpec) error
+	// SpeedUp makes the retries speedFactor times faster, used for unit testing
+	SpeedUp(speedFactor int)
 }
 
 func ConvertSliceOfDaysToMap(days []string) map[time.Weekday]bool {

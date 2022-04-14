@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"sort"
 	"strings"
 	"testing"
@@ -88,7 +89,8 @@ type OrchestrationSuite struct {
 	storage           storage.BrokerStorage
 	gardenerClient    *gardenerFake.Clientset
 
-	t *testing.T
+	t                *testing.T
+	reconcilerClient *reconciler.FakeClient
 }
 
 func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *OrchestrationSuite {
@@ -100,6 +102,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		KymaVersion:       "",
 		KubernetesVersion: "",
 	}
+	cfg.Reconciler.ProvisioningTimeout = 2 * time.Second
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -154,13 +157,13 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, logs, cli, 10000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg, 10000)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -172,6 +175,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		clusterQueue:      clusterQueue,
 		storage:           db,
 		gardenerClient:    gardenerClient,
+		reconcilerClient:  reconcilerClient,
 
 		t: t,
 	}
@@ -398,6 +402,10 @@ func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID strin
 	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, runtimeID)
 }
 
+func (s *OrchestrationSuite) FinishReconciliations() {
+	s.reconcilerClient.ChangeClusterStateForAllReconciliations(reconcilerApi.StatusReady)
+}
+
 func (s *OrchestrationSuite) FinishUpgradeShootOperationByProvisioner(runtimeID string) {
 	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, runtimeID)
 }
@@ -412,7 +420,9 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 }
 
 func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string, version string) {
-	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, version), "The runtime %s expected to be upgraded", runtimeID)
+	c, err := s.reconcilerClient.LastClusterConfig(runtimeID)
+	assert.NoError(s.t, err)
+	assert.Equal(s.t, version, c.KymaConfig.Version)
 }
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
@@ -546,7 +556,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
-	additionalKymaVersions := []string{"1.19", "1.20", "main"}
+	additionalKymaVersions := []string{"1.19", "1.20", "2.0", "2.1", "main"}
 	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
 
 	server := avs.NewMockAvsServer(t)

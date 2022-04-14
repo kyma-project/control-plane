@@ -78,6 +78,7 @@ type BrokerSuiteTest struct {
 
 	t                   *testing.T
 	inputBuilderFactory input.CreatorForPlan
+	provisioningStages  []string
 }
 
 func (s *BrokerSuiteTest) TearDown() {
@@ -178,6 +179,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		router:              mux.NewRouter(),
 		t:                   t,
 		inputBuilderFactory: inputFactory,
+		provisioningStages:  provisionManager.GetAllStages(),
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -193,13 +195,13 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, logs, cli)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg, 1000)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -710,6 +712,21 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
 }
 
+func (s *BrokerSuiteTest) DecodeOperationIDsFromOrchestration(resp *http.Response) ([]string, error) {
+	m, err := ioutil.ReadAll(resp.Body)
+	s.Log(string(m))
+	require.NoError(s.t, err)
+	var operationsList orchestration.OperationResponseList
+	err = json.Unmarshal(m, &operationsList)
+	require.NoError(s.t, err)
+
+	var operationIDs []string
+	for _, o := range operationsList.Data {
+		operationIDs = append(operationIDs, o.OperationID)
+	}
+	return operationIDs, nil
+}
+
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	var provisioningOp *internal.Operation
@@ -792,6 +809,13 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 	assert.Equal(s.t, expectedState, state)
 }
 
+func (s *BrokerSuiteTest) AssertAllStagesFinished(operationID string) {
+	operation, _ := s.db.Operations().GetProvisioningOperationByID(operationID)
+	for _, stageName := range s.provisioningStages {
+		assert.True(s.t, operation.IsStageFinished(stageName))
+	}
+}
+
 func (s *BrokerSuiteTest) AssertClusterConfig(operationID string, expectedClusterConfig *reconcilerApi.Cluster) {
 	clusterConfig := s.getClusterConfig(operationID)
 
@@ -826,6 +850,10 @@ func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconcilerAp
 	clusterConfig := s.getClusterConfig(id)
 
 	assert.Equal(s.t, metadata, clusterConfig.Metadata)
+}
+
+func (s *BrokerSuiteTest) LastClusterConfigByRuntimeID(runtimeID string) reconcilerApi.Cluster {
+	clusterConfig, err := s.reconcilerClient.LastClusterConfig(runtimeID)
 }
 
 func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconcilerApi.Cluster {
@@ -885,7 +913,7 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	require.NoError(s.t, err)
 
 	// provisioner finishes the operation
-	s.WaitForOperationState(opID, domain.Succeeded)
+	//s.WaitForOperationState(opID, domain.Succeeded)
 }
 
 func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
