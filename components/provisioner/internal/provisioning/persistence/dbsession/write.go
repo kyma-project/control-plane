@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
 	uuid "github.com/google/uuid"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
@@ -122,6 +124,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
 		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
+		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
 		Exec()
 
 	if err != nil {
@@ -132,6 +135,13 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		err := ws.insertOidcConfig(config)
 		if err != nil {
 			return err
+		}
+	}
+
+	if config.DNSConfig != nil {
+		err = ws.insertDNSConfig(config)
+		if err != nil {
+			return dberrors.Internal("Failed to update record for DNS config %s", err)
 		}
 	}
 
@@ -167,6 +177,36 @@ func (ws writeSession) insertOidcConfig(config model.GardenerConfig) dberrors.Er
 	return nil
 }
 
+func (ws writeSession) insertDNSConfig(config model.GardenerConfig) dberrors.Error {
+	dnsConfigID := uuid.New().String()
+
+	_, err := ws.insertInto("dns_config").
+		Pair("id", dnsConfigID).
+		Pair("domain", config.DNSConfig.Domain).
+		Pair("gardener_config_id", config.ID).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to insert record to dns_config table: %s", err)
+	}
+
+	for _, provider := range config.DNSConfig.Providers {
+		_, err = ws.insertInto("dns_providers").
+			Pair("id", uuid.New().String()).
+			Pair("dns_config_id", dnsConfigID).
+			Pair("domains_include", strings.Join(provider.DomainsInclude, ",")).
+			Pair("is_primary", provider.Primary).
+			Pair("secret_name", provider.SecretName).
+			Pair("type", provider.Type).
+			Exec()
+
+		if err != nil {
+			return dberrors.Internal("Failed to insert record to dns_providers table: %s", err)
+		}
+	}
+	return nil
+}
+
 func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) dberrors.Error {
 	res, err := ws.update("gardener_config").
 		Where(dbr.Eq("cluster_id", config.ClusterID)).
@@ -186,6 +226,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
 		Set("exposure_class_name", config.ExposureClassName).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
+		Set("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
 		Exec()
 
 	if config.OIDCConfig != nil {

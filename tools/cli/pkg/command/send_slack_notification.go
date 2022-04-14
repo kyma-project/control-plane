@@ -30,6 +30,9 @@ type SlackRequestBody struct {
 const ICON_EMOJI = ":high_brightness:"
 const SLACK_USER_NAME = "upgrade-info"
 const SLACK_COLOR = "#36a64f" //green
+const Gardener_Namespace_Prefix = "garden-kyma"
+const KCP_Prefix = "kcp"
+const PROD_Postfix = "-prod"
 
 var upgradeOpts = []string{"parallel-workers", "schedule", "strategy",
 	"target", "target-exclude", "verbose", "version"}
@@ -37,14 +40,15 @@ var upgradeOpts = []string{"parallel-workers", "schedule", "strategy",
 // SendSlackNotification will post message including attachments to slackhookUrl.
 func SendSlackNotification(title string, cobraCmd *cobra.Command, output string) error {
 	slackhookUrl := GlobalOpts.SlackAPIURL()
+	text_msg := "New " + title + " is triggerred on " + getClusterType()
 	triggeredCmd := revertUpgradeOpts(title, cobraCmd)
 	attachment := Attachment{
 		Color: SLACK_COLOR,
 		Text:  triggeredCmd + "\n" + output,
 	}
 
-	slackBody, _ := json.Marshal(SlackRequestBody{Text: "New " + title + " is triggerred",
-		Icon_emoji: ICON_EMOJI, Username: SLACK_USER_NAME, Attachments: []Attachment{attachment}})
+	slackBody, _ := json.Marshal(SlackRequestBody{Text: text_msg, Icon_emoji: ICON_EMOJI, Username: SLACK_USER_NAME,
+		Attachments: []Attachment{attachment}})
 	req, err := http.NewRequest(http.MethodPost, slackhookUrl, bytes.NewBuffer(slackBody))
 	if err != nil {
 		return err
@@ -89,6 +93,15 @@ func drainResponseBody(body io.Reader) error {
 	}
 	_, err := io.Copy(ioutil.Discard, io.LimitReader(body, 4096))
 	return err
+}
+
+func getClusterType() string {
+	clusterType := strings.Replace(GlobalOpts.GardenerNamespace(), Gardener_Namespace_Prefix, KCP_Prefix, -1)
+
+	if clusterType == KCP_Prefix {
+		clusterType = KCP_Prefix + PROD_Postfix
+	}
+	return clusterType
 }
 
 func revertUpgradeOpts(title string, cobraCmd *cobra.Command) string {

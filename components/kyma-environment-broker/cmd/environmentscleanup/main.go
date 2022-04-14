@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -39,10 +40,10 @@ func main() {
 
 	clusterCfg, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(errors.Wrap(err, "while creating Gardener cluster config"))
-	cli, err := gardener.NewClient(clusterCfg)
+	cli, err := dynamic.NewForConfig(clusterCfg)
 	fatalOnError(errors.Wrap(err, "while creating Gardener client"))
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
-	shootClient := cli.Shoots(gardenerNamespace)
+	shootClient := cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 
 	ctx := context.Background()
 	brokerClient := broker.NewClient(ctx, cfg.Broker)

@@ -218,6 +218,10 @@ cis:
     secret: "TBD"
     secretName: "cis-creds-v2"
 
+notification:
+  url: "TBD"
+  disabled: true
+
 oidc:
   issuer: https://dex.{{ .Values.global.ingress.domainName }}
   keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
@@ -237,3 +241,7 @@ environmentsCleanup:
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
+
+serviceMonitor:
+  scrapeTimeout: 10s
+  interval: 30s

@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -38,6 +39,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
+	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Use fake ERS client to test")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
@@ -51,6 +53,7 @@ type MigrationAllCommand struct {
 	workers   int
 	buffer    int
 	recheck   int64
+	timeout   time.Duration
 	wg        sync.WaitGroup
 	log       logger.Logger
 	ersClient client.Client
@@ -61,6 +64,7 @@ type MigrationAllCommand struct {
 func (c *MigrationAllCommand) Run() error {
 	c.ersClient = client.NewFake()
 	if !c.dryRun {
+		c.log.Infof("Overriding mock - running live")
 		ersClient, err := client.NewErsClient()
 		c.ersClient = ersClient
 		if err != nil {
@@ -87,15 +91,27 @@ func (c *MigrationAllCommand) Run() error {
 		return err
 	}
 
+	fmt.Printf("Starting migration for %d instances\n", len(instances))
+
 	for _, instance := range instances {
 
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
 
-		payloads <- ers.Work{instance, 0}
-		c.wg.Add(1)
-		c.stats.Add()
+		if !instance.Migrated {
+			payloads <- ers.Work{instance, 0, 0, 1}
+			c.wg.Add(1)
+			c.stats.Add()
+		} else {
+			c.log.Infof("%sInstance %s already migrated%s",
+				Green, instance.Name, Reset)
+			// just add to statistics as done
+			c.stats.Add()
+			c.stats.Done()
+		}
 	}
+
+	c.stats.PrintProgress()
 
 	c.wg.Wait()
 	close(payloads)
@@ -111,32 +127,29 @@ type Worker struct {
 
 func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Work) {
 	for work := range workChannel {
-		c.stats.PrintProgress()
+		work.ProcessedCnt++
 		start := time.Now()
 
-		c.log.Infof("[Worker %d] Processing instance %s", workerId, work.Instance.Name)
+		c.log.Infof("[Worker %d] Processing instance %s - attempt no. %d",
+			workerId, work.Instance.Name, work.ProcessedCnt)
 		instance := work.Instance
-		if instance.Migrated {
-			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
-				workerId, Green, instance.Name, Reset)
-			c.wg.Done()
-			c.stats.Done()
-			continue
-		}
 		refreshed, err := c.ersClient.GetOne(instance.Id)
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-			c.wg.Done()
-			c.stats.Err(instance.Id, err)
-			// TODO: add retries
+			c.tryFinish(work, err, workChannel)
 
 			continue
 		}
+
+		if c.isNil(workerId, refreshed) {
+			continue
+		}
+
 		if refreshed.Migrated {
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
 				workerId, Green, instance.Name, Reset)
-			c.wg.Done()
-			c.stats.Done()
+			c.tryFinish(work, nil, workChannel)
+			c.migrated(instance)
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
@@ -147,25 +160,51 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		c.log.Infof("[Worker %d] Instance %s - refreshing status",
 			workerId, instance.Name)
 
-		for time.Since(start) < 20*time.Minute {
-			refreshed, err := c.ersClient.GetOne(instance.Id)
+		for time.Since(start) < c.timeout {
+			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
+				break
 			}
+
+			if c.isNil(workerId, refreshed) {
+				break
+			}
+
 			if refreshed.Migrated {
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
 			time.Sleep(10 * time.Second)
 		}
-		// TODO: Add retries
+
+		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
+			err = errors.New("Refreshing take too much time. Timeout triggered.")
+		}
+		c.tryFinish(work, err, workChannel)
+	}
+}
+
+func (c *MigrationAllCommand) tryFinish(work ers.Work, err error, workChannel chan ers.Work) {
+	if work.Instance.Migrated {
+		c.stats.Done()
+		c.wg.Done()
+		return
+	}
+
+	if err != nil {
+		c.stats.Err(work.Instance.Id, err)
+	}
+
+	if work.ProcessedCnt < work.MaxProcessedCnt {
+		workChannel <- work
+	} else { // Tool is done with an instance
 		c.wg.Done()
 		c.stats.Done()
 	}
 }
 
 func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
-
 	for work := range workChannel {
 		now := time.Now().Unix()
 		delta := now - work.ProcessedTimestamp
@@ -202,13 +241,15 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 				c.log.Infof("[Worker %d] %sTrigerring migration %s%s", id, Green, instance.Name, Reset)
 				c.log.Infof("[Worker %d] %sWorker number is %d%s", id, Red, c.workers, Reset)
 
-				err := c.ersClient.Migrate(instance.Id)
-				c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
-
-				if err != nil {
-					c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
-				} else {
+				if refreshed.Status == "Processed" {
+					err := c.ersClient.Migrate(instance.Id)
 					c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
+
+					if err != nil {
+						c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
+					} else {
+						c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
+					}
 				}
 			}
 
@@ -217,4 +258,27 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 			workChannel <- work
 		}
 	}
+}
+
+func (c *MigrationAllCommand) migrated(instance ers.Instance) {
+	fmt.Printf("Instance %s migrated\n", instance.Id)
+	c.wg.Done()
+	c.stats.Done()
+}
+
+func (c *MigrationAllCommand) notMigrated(instance *ers.Instance, err error) {
+	fmt.Printf("Instance %s no migrated\n", instance.Id)
+	c.wg.Done()
+	c.stats.Err(instance.Id, err)
+}
+
+func (c *MigrationAllCommand) isNil(workerId int, instance *ers.Instance) bool {
+	if instance == nil {
+		c.log.Infof("[Worker %d] Trying to refresh but no instance %s, id %s in ERS",
+			workerId, instance.Name, instance.Id)
+		c.notMigrated(instance, errors.New("No instance in ERS"))
+		return true
+	}
+
+	return false
 }
