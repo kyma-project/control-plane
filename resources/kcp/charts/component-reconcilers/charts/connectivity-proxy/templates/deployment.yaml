@@ -33,9 +33,9 @@ spec:
             - --verbose
           {{- end }}
             - --worker-count={{ default .Values.options.workerCount (.Values.options).workerCount }}
-        {{- if or ((.Values.deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
+        {{- if or (.Values.deployment.gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
           env:
-        {{- if (.Values.deployment).gitCloneToken }}
+        {{- if .Values.deployment.gitCloneToken }}
             - name: GIT_CLONE_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -59,8 +59,7 @@ spec:
             httpGet:
               path: /health/ready
               port: http
-          resources:
-          {{- toYaml (default .Values.deployment.resources (.Values.deployment).resources) | nindent 10 }}
+          resources: {{- toYaml .Values.deployment.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /tmp
               name: workspace
