@@ -63,7 +63,6 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 		natGateway := azure.NatGateway{
 			Enabled:                      *azConfig.input.EnableNatGateway,
 			IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, 4),
-			Zone:                         1,
 		}
 		azureConfig.Networks.NatGateway = &natGateway
 	}
