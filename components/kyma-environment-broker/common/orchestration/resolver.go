@@ -6,14 +6,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 // RuntimeLister is the interface to get runtime objects from KEB
@@ -29,7 +30,7 @@ type RuntimeLister interface {
 // The logic could be optimized with k8s client cache using shoot lister / indexer.
 // The implementation is thread safe, i.e. it is safe to call Resolve() from multiple threads concurrently.
 type GardenerRuntimeResolver struct {
-	gardenerClient    gardenerclient.CoreV1beta1Interface
+	gardenerClient    dynamic.Interface
 	gardenerNamespace string
 	runtimeLister     RuntimeLister
 	runtimes          map[string]runtime.RuntimeDTO
@@ -45,7 +46,7 @@ const (
 )
 
 // NewGardenerRuntimeResolver constructs a GardenerRuntimeResolver with the mandatory input parameters.
-func NewGardenerRuntimeResolver(gardenerClient gardenerclient.CoreV1beta1Interface, gardenerNamespace string, lister RuntimeLister, logger logrus.FieldLogger) *GardenerRuntimeResolver {
+func NewGardenerRuntimeResolver(gardenerClient dynamic.Interface, gardenerNamespace string, lister RuntimeLister, logger logrus.FieldLogger) *GardenerRuntimeResolver {
 	return &GardenerRuntimeResolver{
 		gardenerClient:    gardenerClient,
 		gardenerNamespace: gardenerNamespace,
@@ -97,9 +98,9 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 	return runtimes, nil
 }
 
-func (resolver *GardenerRuntimeResolver) getAllShoots() ([]gardenerapi.Shoot, error) {
+func (resolver *GardenerRuntimeResolver) getAllShoots() ([]unstructured.Unstructured, error) {
 	ctx := context.Background()
-	shootList, err := resolver.gardenerClient.Shoots(resolver.gardenerNamespace).List(ctx, metav1.ListOptions{})
+	shootList, err := resolver.gardenerClient.Resource(gardener.ShootResource).Namespace(resolver.gardenerNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -130,13 +131,14 @@ func (resolver *GardenerRuntimeResolver) getRuntime(runtimeID string) (runtime.R
 	return rt, ok
 }
 
-func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []gardenerapi.Shoot) ([]Runtime, error) {
+func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, shoots []unstructured.Unstructured) ([]Runtime, error) {
 	runtimes := []Runtime{}
 	// Iterate over all shoots. Evaluate target specs. If multiple are specified, all must match for a given shoot.
-	for _, shoot := range shoots {
-		runtimeID := shoot.Annotations[runtimeIDAnnotation]
+	for _, s := range shoots {
+		shoot := &gardener.Shoot{s}
+		runtimeID := shoot.GetAnnotations()[runtimeIDAnnotation]
 		if runtimeID == "" {
-			resolver.logger.Errorf("Failed to get runtimeID from %s annotation for Shoot %s", runtimeIDAnnotation, shoot.Name)
+			resolver.logger.Errorf("Failed to get runtimeID from %s annotation for Shoot %s", runtimeIDAnnotation, shoot.GetName())
 			continue
 		}
 		r, ok := resolver.getRuntime(runtimeID)
@@ -151,24 +153,24 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		//  - suspension
 		//  - deprovision
 		if lastOp.Type == runtime.Deprovision || lastOp.Type == runtime.Suspension || (lastOp.Type == runtime.Provision || lastOp.Type == runtime.Unsuspension) && lastOp.State != string(brokerapi.Succeeded) {
-			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.Name, runtimeID, r.InstanceID, lastOp.Type, lastOp.State)
+			resolver.logger.Infof("Skipping Shoot %s (runtimeID: %s, instanceID %s) due to %s state: %s", shoot.GetName(), runtimeID, r.InstanceID, lastOp.Type, lastOp.State)
 			continue
 		}
-		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.Begin)
+		maintenanceWindowBegin, err := time.Parse(maintenanceWindowFormat, shoot.GetSpecMaintenanceTimeWindowBegin())
 		if err != nil {
-			resolver.logger.Errorf("Failed to parse maintenanceWindowBegin value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.Begin, shoot.Name)
+			resolver.logger.Errorf("Failed to parse maintenanceWindowBegin value %s of shoot %s ", shoot.GetSpecMaintenanceTimeWindowBegin(), shoot.GetName())
 			continue
 		}
-		maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, shoot.Spec.Maintenance.TimeWindow.End)
+		maintenanceWindowEnd, err := time.Parse(maintenanceWindowFormat, shoot.GetSpecMaintenanceTimeWindowEnd())
 		if err != nil {
-			resolver.logger.Errorf("Failed to parse maintenanceWindowEnd value %s of shoot %s ", shoot.Spec.Maintenance.TimeWindow.End, shoot.Name)
+			resolver.logger.Errorf("Failed to parse maintenanceWindowEnd value %s of shoot %s ", shoot.GetSpecMaintenanceTimeWindowEnd(), shoot.GetName())
 			continue
 		}
 
 		// Match exact shoot by runtimeID
 		if rt.RuntimeID != "" {
 			if rt.RuntimeID == runtimeID {
-				runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+				runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.GetName(), maintenanceWindowBegin, maintenanceWindowEnd))
 			}
 			continue
 		}
@@ -181,7 +183,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 		}
 
 		// Match exact shoot by name
-		if rt.Shoot != "" && rt.Shoot != shoot.Name {
+		if rt.Shoot != "" && rt.Shoot != shoot.GetName() {
 			continue
 		}
 
@@ -194,7 +196,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 
 		// Perform match against GlobalAccount regexp
 		if rt.GlobalAccount != "" {
-			matched, err := regexp.MatchString(rt.GlobalAccount, shoot.Labels[globalAccountLabel])
+			matched, err := regexp.MatchString(rt.GlobalAccount, shoot.GetLabels()[globalAccountLabel])
 			if err != nil || !matched {
 				continue
 			}
@@ -202,7 +204,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 
 		// Perform match against SubAccount regexp
 		if rt.SubAccount != "" {
-			matched, err := regexp.MatchString(rt.SubAccount, shoot.Labels[subAccountLabel])
+			matched, err := regexp.MatchString(rt.SubAccount, shoot.GetLabels()[subAccountLabel])
 			if err != nil || !matched {
 				continue
 			}
@@ -210,7 +212,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 
 		// Perform match against Region regexp
 		if rt.Region != "" {
-			matched, err := regexp.MatchString(rt.Region, shoot.Spec.Region)
+			matched, err := regexp.MatchString(rt.Region, shoot.GetSpecRegion())
 			if err != nil || !matched {
 				continue
 			}
@@ -221,7 +223,7 @@ func (resolver *GardenerRuntimeResolver) resolveRuntimeTarget(rt RuntimeTarget, 
 			continue
 		}
 
-		runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.Name, maintenanceWindowBegin, maintenanceWindowEnd))
+		runtimes = append(runtimes, resolver.runtimeFromDTO(r, shoot.GetName(), maintenanceWindowBegin, maintenanceWindowEnd))
 	}
 
 	return runtimes, nil

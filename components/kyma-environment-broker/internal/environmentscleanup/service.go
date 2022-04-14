@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 
 //go:generate mockery -name=GardenerClient -output=automock
 type GardenerClient interface {
-	List(context context.Context, opts v1.ListOptions) (*v1beta1.ShootList, error)
+	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
 }
 
 //go:generate mockery -name=BrokerClient -output=automock
@@ -81,22 +82,22 @@ func (s *Service) PerformCleanup() error {
 	return s.cleanUp(runtimesToDelete)
 }
 
-func (s *Service) getStaleShoots(labelSelector string) ([]v1beta1.Shoot, error) {
+func (s *Service) getStaleShoots(labelSelector string) ([]unstructured.Unstructured, error) {
 	opts := v1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
-		return []v1beta1.Shoot{}, errors.Wrap(err, "while listing Gardener shoots")
+		return []unstructured.Unstructured{}, errors.Wrap(err, "while listing Gardener shoots")
 	}
 
-	var shoots []v1beta1.Shoot
+	var shoots []unstructured.Unstructured
 	for _, shoot := range shootList.Items {
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
 		if shootAge.Hours() >= s.MaxShootAge.Hours() {
-			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.Name, s.MaxShootAge.Hours(), shootAge.Hours())
+			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
 			shoots = append(shoots, shoot)
 		}
 	}
@@ -104,19 +105,20 @@ func (s *Service) getStaleShoots(labelSelector string) ([]v1beta1.Shoot, error) 
 	return shoots, nil
 }
 
-func (s *Service) getRuntimes(shoots []v1beta1.Shoot) []runtime {
+func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
 	var runtimes []runtime
-	for _, shoot := range shoots {
-		runtimeID, ok := shoot.Annotations[shootAnnotationRuntimeId]
+	for _, st := range shoots {
+		shoot := gardener.Shoot{st}
+		runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
 		if !ok {
-			err := errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.Name))
+			err := errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.GetName()))
 			s.logger.Error(err)
 			continue
 		}
 
-		accountID, ok := shoot.Labels[shootLabelAccountId]
+		accountID, ok := shoot.GetLabels()[shootLabelAccountId]
 		if !ok {
-			err := errors.New(fmt.Sprintf("shoot %q has no account label", shoot.Name))
+			err := errors.New(fmt.Sprintf("shoot %q has no account label", shoot.GetName()))
 			s.logger.Error(err)
 			continue
 		}

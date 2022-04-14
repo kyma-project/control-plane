@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -28,7 +29,7 @@ type upgradeKymaFactory struct {
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config) process.Executor {
+	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config, bundleBuilder notification.BundleBuilder) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -48,6 +49,7 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		configName:        cfg.Name,
 		kymaVersion:       cfg.KymaVersion,
 		kubernetesVersion: cfg.KubernetesVersion,
+		bundleBuilder:     bundleBuilder,
 	}
 }
 

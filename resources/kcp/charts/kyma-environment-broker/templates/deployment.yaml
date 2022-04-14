@@ -375,6 +375,10 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
+            - name: APP_NOTIFICATION_URL
+              value: "{{ .Values.notification.url }}"
+            - name: APP_NOTIFICATION_DISABLED
+              value: "{{ .Values.notification.disabled }}"
             - name: APP_VERSION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME

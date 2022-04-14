@@ -14,6 +14,8 @@ type Parameters struct {
 	Kubernetes *KubernetesParameters `json:"kubernetes,omitempty"`
 	// upgrade kyma specific parameters
 	Kyma *KymaParameters `json:"kyma,omitempty"`
+	//customer notification status
+	NotificationState notificationStateType `json:"notificationstate,omitempty"`
 }
 
 type KubernetesParameters struct {
@@ -191,3 +193,11 @@ type MaintenancePolicy struct {
 	Rules   []MaintenancePolicyRule `json:"rules"`
 	Default MaintenancePolicyEntry  `json:"default"`
 }
+
+type notificationStateType string
+
+const (
+	NotificationPending   notificationStateType = "pending"
+	NotificationCreated   notificationStateType = "created"
+	NotificationCancelled notificationStateType = "cancelled"
+)
