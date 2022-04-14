@@ -482,7 +482,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 	assert.NoError(s.t, err)
 }
 
-func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
+func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisionerAndReconciler(operationID string) {
 	var updatingOp *internal.UpdatingOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
@@ -505,6 +505,24 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 		}
 		if state.Cluster != "" {
 			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
+	op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+	assert.NoError(s.t, err)
+	var state *reconcilerApi.HTTPClusterResponse
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		state, err = s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusReady)
 			return true, nil
 		}
 		return false, nil
