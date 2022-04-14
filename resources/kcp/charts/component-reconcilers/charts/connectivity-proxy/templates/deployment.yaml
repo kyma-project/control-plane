@@ -70,5 +70,4 @@ spec:
         - emptyDir: {}
           name: workspace
 ---
-{{- end }}
-{{- end }}
+
