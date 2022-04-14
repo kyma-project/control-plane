@@ -48,9 +48,9 @@ spec:
         {{- end }}
           name: connectivity-proxy-reconciler
           ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
+          - name: http
+            containerPort: 8080
+            protocol: TCP
           livenessProbe:
             httpGet:
               path: /health/live
@@ -69,5 +69,4 @@ spec:
       volumes:
         - emptyDir: {}
           name: workspace
----
 
