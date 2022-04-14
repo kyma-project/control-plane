@@ -5,7 +5,7 @@ metadata:
     kyma-project.io/component-reconciler: ""
     component: connectivity-proxy
   name: connectivity-proxy-reconciler
-  namespace: {{ Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
