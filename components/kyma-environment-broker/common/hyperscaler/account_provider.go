@@ -56,7 +56,7 @@ func (p *accountProvider) GardenerSecretName(hyperscalerType Type, tenantName st
 		return "", errors.Wrap(err, "getting secret")
 	}
 
-	return secretBinding.SecretRef.Name, nil
+	return secretBinding.GetSecretRefName(), nil
 }
 
 func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string, error) {
@@ -70,7 +70,7 @@ func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string
 		return "", errors.Wrap(err, "getting shared secret binding")
 	}
 
-	return secretBinding.SecretRef.Name, nil
+	return secretBinding.GetSecretRefName(), nil
 }
 
 func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error {

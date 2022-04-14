@@ -3,12 +3,12 @@ package hyperscaler
 import (
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -101,18 +101,15 @@ func TestSharedPool_SharedCredentialsSecretBinding(t *testing.T) {
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			gardenerFake := gardener_fake.NewSimpleClientset(append(testCase.shoots, testCase.secretBindings...)...)
-			mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-			mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-
-			pool := NewSharedGardenerAccountPool(mockSecretBindings, mockShoots)
+			gardenerFake := gardener.NewDynamicFakeClient(append(testCase.shoots, testCase.secretBindings...)...)
+			pool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
 
 			// when
 			secretBinding, err := pool.SharedCredentialsSecretBinding(testCase.hyperscaler)
 			require.NoError(t, err)
 
 			// then
-			assert.Equal(t, testCase.expectedSecret, secretBinding.SecretRef.Name)
+			assert.Equal(t, testCase.expectedSecret, secretBinding.GetSecretRefName())
 		})
 	}
 }
@@ -120,13 +117,11 @@ func TestSharedPool_SharedCredentialsSecretBinding(t *testing.T) {
 func TestSharedPool_SharedCredentialsSecretBinding_Errors(t *testing.T) {
 	t.Run("should return error when no Secret Bindings for hyperscaler found", func(t *testing.T) {
 		// given
-		gardenerFake := gardener_fake.NewSimpleClientset(
+		gardenerFake := gardener.NewDynamicFakeClient(
 			newSecretBinding("sb1", "s1", "azure", true),
 			newSecretBinding("sb2", "s2", "gcp", false),
 		)
-		mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-
-		pool := NewSharedGardenerAccountPool(mockSecretBindings, nil)
+		pool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
 
 		// when
 		_, err := pool.SharedCredentialsSecretBinding("gcp")
@@ -148,35 +143,45 @@ func newSecret(name string) *corev1.Secret {
 	}
 }
 
-func newSecretBinding(name, secretName, hyperscaler string, shared bool) *gardener_types.SecretBinding {
-	secretBinding := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name: name, Namespace: testNamespace,
-			Labels: map[string]string{
-				"hyperscalerType": hyperscaler,
+func newSecretBinding(name, secretName, hyperscaler string, shared bool) *unstructured.Unstructured {
+	secretBinding := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": hyperscaler,
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      secretName,
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      secretName,
-			Namespace: testNamespace,
-		},
 	}
+	secretBinding.SetGroupVersionKind(secretBindingGVK)
 
 	if shared {
-		secretBinding.Labels["shared"] = "true"
+		labels := secretBinding.GetLabels()
+		labels["shared"] = "true"
+		secretBinding.SetLabels(labels)
 	}
 
 	return secretBinding
 }
 
-func newShoot(name, secretBinding string) *gardener_types.Shoot {
-	return &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      name,
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: secretBinding,
+func newShoot(name, secretBinding string) *unstructured.Unstructured {
+	shoot := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": testNamespace,
+			},
+			"spec": map[string]interface{}{
+				"secretBindingName": secretBinding,
+			},
 		},
 	}
+	shoot.SetGroupVersionKind(shootGVK)
+	return shoot
 }

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerclient "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 type runtime struct {
@@ -28,7 +28,7 @@ type FakeClient struct {
 	operations    map[string]schema.OperationStatus
 	dumpRequest   bool
 
-	gardenerClient    gardenerclient.CoreV1beta1Interface
+	gardenerClient    dynamic.Interface
 	gardenerNamespace string
 }
 
@@ -36,7 +36,7 @@ func NewFakeClient() *FakeClient {
 	return NewFakeClientWithGardener(nil, "")
 }
 
-func NewFakeClientWithGardener(gc gardenerclient.CoreV1beta1Interface, ns string) *FakeClient {
+func NewFakeClientWithGardener(gc dynamic.Interface, ns string) *FakeClient {
 	return &FakeClient{
 		graphqlizer:    Graphqlizer{},
 		runtimes:       []runtime{},
@@ -116,26 +116,27 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	}
 
 	if c.gardenerClient != nil {
-		c.gardenerClient.Shoots(c.gardenerNamespace).Create(context.Background(), &v1beta1.Shoot{
-			ObjectMeta: v1.ObjectMeta{
-				Name: config.ClusterConfig.GardenerConfig.Name,
-				Annotations: map[string]string{
-					"kcp.provisioner.kyma-project.io/runtime-id": rid,
-				},
-			},
-			Spec: v1beta1.ShootSpec{
-
-				Maintenance: &v1beta1.Maintenance{
-					AutoUpdate: nil,
-					TimeWindow: &v1beta1.MaintenanceTimeWindow{
-						Begin: "010000+0000",
-						End:   "010000+0000",
+		shoot := unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "core.gardener.cloud/v1beta1",
+				"kind":       "Shoot",
+				"metadata": map[string]interface{}{
+					"name": config.ClusterConfig.GardenerConfig.Name,
+					"annotations": map[string]interface{}{
+						"kcp.provisioner.kyma-project.io/runtime-id": rid,
 					},
-					ConfineSpecUpdateRollout: nil,
+				},
+				"spec": map[string]interface{}{
+					"maintenance": map[string]interface{}{
+						"timeWindow": map[string]interface{}{
+							"begin": "010000+0000",
+							"end":   "010000+0000",
+						},
+					},
 				},
 			},
-			Status: v1beta1.ShootStatus{},
-		}, v1.CreateOptions{})
+		}
+		c.gardenerClient.Resource(gardener.ShootResource).Namespace(c.gardenerNamespace).Create(context.Background(), &shoot, v1.CreateOptions{})
 	}
 
 	return schema.OperationStatus{

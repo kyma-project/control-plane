@@ -253,8 +253,10 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	// make sure migration finished
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
-	suite.FinishUpdatingOperationByReconcilerBoth(updateOperationID)
+	time.Sleep(5 * time.Millisecond)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
+	time.Sleep(5 * time.Millisecond)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
 	// ensure component list after update is correct
