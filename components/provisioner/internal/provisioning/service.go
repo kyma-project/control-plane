@@ -321,7 +321,7 @@ func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return dberr
+		return dberr.Append("failed to get last operation")
 	}
 
 	if lastOperation.State == model.InProgress {

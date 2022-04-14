@@ -75,7 +75,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 
 	clusterServiceBrokers, err := s.listClusterServiceBroker(metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
+		return errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ClusterServiceBrokers")
 	}
 
 	logrus.Debugf("Filtering ClusterServiceBrokers with url prefix %s", resourceSelector)
@@ -132,7 +132,7 @@ func (s *serviceCatalogClient) listClusterServiceBroker(options metav1.ListOptio
 		result = csbList
 		return true, nil
 	})
-	return result, utilErrors.K8SErrorToAppError(err)
+	return result, err
 }
 
 func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOptions) (*v1beta1.ClusterServiceClassList, error) {
@@ -146,7 +146,7 @@ func (s *serviceCatalogClient) listClusterServiceClass(options metav1.ListOption
 		result = cscList
 		return true, nil
 	})
-	return result, utilErrors.K8SErrorToAppError(err)
+	return result, err
 }
 
 func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
@@ -160,7 +160,7 @@ func (s *serviceCatalogClient) listServiceInstance(options metav1.ListOptions) (
 		result = siList
 		return true, nil
 	})
-	return result, utilErrors.K8SErrorToAppError(err)
+	return result, err
 }
 
 func (s *serviceCatalogClient) filterCsbWithUrlPrefix(csbList *v1beta1.ClusterServiceBrokerList, urlPrefix string) []v1beta1.ClusterServiceBroker {
@@ -183,7 +183,7 @@ func (s *serviceCatalogClient) getClusterServiceClassesForBrokers(brokers []v1be
 
 		clusterServiceClasses, err := s.listClusterServiceClass(csbListOptions)
 		if err != nil {
-			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(err, "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
+			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
 		}
 
 		for _, serviceClass := range clusterServiceClasses.Items {
@@ -205,7 +205,7 @@ func (s *serviceCatalogClient) getServiceInstancesForClusterServiceClasses(servi
 
 		serviceInstancesList, err := s.listServiceInstance(options)
 		if err != nil {
-			return []v1beta1.ServiceInstance{}, errors.Wrapf(err, "while listing ServiceInstances")
+			return []v1beta1.ServiceInstance{}, errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ServiceInstances")
 		}
 
 		for _, serviceInstance := range serviceInstancesList.Items {

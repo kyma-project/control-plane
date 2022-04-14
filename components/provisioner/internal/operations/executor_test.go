@@ -171,6 +171,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			Return(nil)
 		dbSession.On("UpdateOperationState", operationId, "error: timeout while processing operation", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
+		dbSession.On("UpdateOperationLastError", operationId, "error: timeout while processing operation", string(apperrors.ErrProvisionerTimeout), string(apperrors.ErrProvisioner)).Return(nil)
 
 		mockStage := NewMockStep(model.WaitingForInstallation, model.ConnectRuntimeAgent, 0, 0*time.Second)
 
