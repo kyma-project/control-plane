@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"k8s.io/client-go/dynamic"
 	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
+
+	"k8s.io/client-go/dynamic"
 
 	"golang.org/x/oauth2"
 
