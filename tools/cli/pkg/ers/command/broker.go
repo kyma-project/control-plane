@@ -47,5 +47,5 @@ func (c *SwitchCommand) Run() error {
 	defer ers.Close()
 	// TODO: Correcte responses
 
-	return ers.Migrate(c.brokerId)
+	return ers.Switch(c.brokerId)
 }
