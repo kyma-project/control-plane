@@ -10,7 +10,7 @@ import (
 )
 
 const environmentsPath = "%s/provisioning/v1/kyma/environments"
-const brokersPath = "%s/provisioning/v1/brokers"
+const brokersPath = "%s/provisioning/v1/kyma/brokers"
 const pagedParams = "page=%d&size=%d"
 const idParam = "id=%s"
 
