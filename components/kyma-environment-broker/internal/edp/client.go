@@ -206,7 +206,7 @@ func (c *Client) processResponse(response *http.Response, allowNotFound bool, id
 
 	if response.StatusCode >= 500 {
 		c.log.Errorf("EDP server returns failed status %s: %s", responseLog(response), body)
-		return kebError.WrapNewTemporaryError(NewEDPOtherError(id, http.StatusRequestTimeout, "EDP server returns failed status %s", responseLog(response)))
+		return kebError.WrapNewTemporaryError(NewEDPOtherError(id, response.StatusCode, "EDP server returns failed status %s", responseLog(response)))
 	}
 
 	c.log.Errorf("EDP server not supported response %s: %s", responseLog(response), body)
