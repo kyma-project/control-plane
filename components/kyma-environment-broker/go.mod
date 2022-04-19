@@ -5,12 +5,12 @@ go 1.18
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/99designs/gqlgen v0.17.2
-	github.com/Azure/azure-sdk-for-go v63.2.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.25
+	github.com/Azure/azure-sdk-for-go v63.3.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.26
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Peripli/service-manager v0.23.3
+	github.com/Peripli/service-manager v0.23.4
 	github.com/Peripli/service-manager-cli v1.11.14
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gardener/gardener v1.44.3

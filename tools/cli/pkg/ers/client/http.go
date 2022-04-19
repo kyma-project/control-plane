@@ -37,6 +37,7 @@ func NewHTTPClient(logger logger.Logger) (*HTTPClient, error) {
 }
 
 func (c *HTTPClient) put(url string) error {
+	c.logger.Debugf("Executing PUT request: %s", url)
 	return c.do(nil, func(ctx context.Context) (resp *http.Response, err error) {
 		req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
 		if err != nil {
@@ -79,7 +80,8 @@ func (c *HTTPClient) do(v interface{}, request func(ctx context.Context) (resp *
 	if err != nil {
 		return fmt.Errorf("Error while reading from response: %w", err)
 	}
-	c.logger.Debug("Received raw response: %s", string(d))
+	c.logger.Debugf("Received status code: %d", resp.StatusCode)
+	c.logger.Debugf("Received raw response: %s", string(d))
 
 	if v == nil {
 		return nil
