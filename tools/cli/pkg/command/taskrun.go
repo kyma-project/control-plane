@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/client-go/dynamic"
+
 	"golang.org/x/oauth2"
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/client"
@@ -201,14 +203,14 @@ func (cmd *TaskRunCommand) resolveOperations() ([]orchestration.RuntimeOperation
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting Gardener kubeconfig")
 	}
-	gardenClient, err := gardener.NewClient(gardenCfg)
+	dynamicGardener, err := dynamic.NewForConfig(gardenCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting Gardener client")
 	}
 
 	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), cmd.cred)
 	lister := NewRuntimeLister(runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient))
-	resolver := orchestration.NewGardenerRuntimeResolver(gardenClient, GlobalOpts.GardenerNamespace(), lister, cmd.log)
+	resolver := orchestration.NewGardenerRuntimeResolver(dynamicGardener, GlobalOpts.GardenerNamespace(), lister, cmd.log)
 	runtimes, err := resolver.Resolve(cmd.targets)
 	if err != nil {
 		return nil, errors.Wrap(err, "while resolving targets")

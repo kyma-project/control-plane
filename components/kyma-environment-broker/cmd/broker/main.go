@@ -752,6 +752,12 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			return false
 		}
 	}
+	negation := func(c update.StepCondition) update.StepCondition {
+		return func(o internal.UpdatingOperation) bool {
+			v := c(o)
+			return !v
+		}
+	}
 
 	btpMigrationEnabled := func(o internal.UpdatingOperation) bool {
 		return cfg.EnableBTPOperatorMigration
@@ -768,8 +774,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
 		},
 		{
-			stage: "cluster",
-			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			stage:     "cluster",
+			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			condition: negation(ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided)),
 		},
 		{
 			stage:     "migration",
@@ -832,8 +839,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
 		},
 		{
-			stage: "check",
-			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			stage:     "check",
+			step:      update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			condition: negation(ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided)),
 		},
 	}
 

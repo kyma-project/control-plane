@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -1701,7 +1702,8 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	time.Sleep(5 * time.Millisecond)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 
 	// check first call to reconciler installing BTP-Operator and sc-migration, disabling SVCAT
 	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
@@ -1711,20 +1713,8 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
 
 	// check second call to reconciler and see that sc-migration is no longer present and svcat related components are gone as well
+	time.Sleep(5 * time.Millisecond)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
-	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
-		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "client-id-oidc",
-				GroupsClaim:    "groups",
-				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RS256"},
-				UsernameClaim:  "sub",
-				UsernamePrefix: "-",
-			},
-		},
-		Administrators: []string{"john.smith@email.com"},
-	})
 
 	i, err = suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after update")
@@ -1754,6 +1744,8 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	}
 
 	// finalize second call to reconciler and wait for the operation to finish
+	//suite.AssertReconcilerStartedReconcilingWhenUpgrading(instanceID)
+	time.Sleep(5 * time.Millisecond)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }

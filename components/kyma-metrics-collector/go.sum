@@ -274,11 +274,11 @@ github.com/gardener/gardener v1.17.1/go.mod h1:uucRHq0xV46xd9MpJJjRswx/Slq3+ipbb
 github.com/gardener/gardener v1.23.0/go.mod h1:xS/sYyzYsq2W0C79mT98G/qoOTvy/hHTfApHIVF3v2o=
 github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G278DY720FI=
 github.com/gardener/gardener v1.40.2/go.mod h1:lIao8ImIqVztkLy7soQRZ/73+mvndN0XGhSfhaIU+Y8=
-github.com/gardener/gardener v1.44.2 h1:A/wY9ZqnsQTOmmqt8uHtN2sYlH4HSxLn2ArMXmQwoqs=
-github.com/gardener/gardener v1.44.2/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
+github.com/gardener/gardener v1.44.3 h1:TSnPSa1btD9poY4z6OvZ+GT33p3KTX6YA9ljIh0yuRI=
+github.com/gardener/gardener v1.44.3/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
-github.com/gardener/gardener-extension-provider-aws v1.34.3 h1:zW4usX529mpq6gBxsryrBKKoXZg89zA09Pj8XmFP4vQ=
-github.com/gardener/gardener-extension-provider-aws v1.34.3/go.mod h1:0YDtrNCSRBDqJLMuzE3DqD2JGgDpiD3p/t8U/b3rttk=
+github.com/gardener/gardener-extension-provider-aws v1.34.4 h1:JwEDHSBELxs1JOVOIlTCsjQ6cS8l8nlGVkFN3cWSwpE=
+github.com/gardener/gardener-extension-provider-aws v1.34.4/go.mod h1:0YDtrNCSRBDqJLMuzE3DqD2JGgDpiD3p/t8U/b3rttk=
 github.com/gardener/gardener-extension-provider-azure v1.26.3 h1:HrayB/xY/I4FMQK+WmhmwaYQkMy9wsblb/uw+Pa08fk=
 github.com/gardener/gardener-extension-provider-azure v1.26.3/go.mod h1:z+lv3weFbJ2CR+SAvII/mCj6Fwpm97capbWNMz1QJKY=
 github.com/gardener/gardener-extension-provider-gcp v1.21.3 h1:0OCQ9hf4V+47yiDtWHVtAi2AwfKZ5ZCDApsk4Uamtsw=
@@ -618,8 +618,8 @@ github.com/kubernetes-csi/external-snapshotter/v2 v2.1.4/go.mod h1:2ar8FelpdkUJa
 github.com/kyma-incubator/compass/components/director v0.0.0-20220310123037-ff57d60a32d3 h1:O9tQZkRI7LktOtlS5/fHlTiVruHgwcmtEekRyfUiqA8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220310123037-ff57d60a32d3/go.mod h1:w6lSUmlGKIFQ1QV0+cE7VHEx/d+/R+HfyEhCd8WFTEw=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220408072935-6a051368e184 h1:yXpLGW3LI2e9wfo/f7P9SXOPrFcyrNsmzedk59Gk0H8=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220408072935-6a051368e184/go.mod h1:upwYTCpIJb2RAEneNFSOoVCL1BJCVypWTPIRl9Cse9s=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220414125625-ffb034089a0f h1:qwOj+yXUp9yZUROcugzFM2kNYH9xu/UVqUjao6D9Xac=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220414125625-ffb034089a0f/go.mod h1:4e8zCP9L8Wvs6WyLy/8DOHtaoB1dtf7ffi7lwC8PNbs=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220322140443-084cd6204aed h1:EDdwpUT9lcyXHRV5jVu5qiA7wZRfaarxU3GpgbidEMY=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220322140443-084cd6204aed/go.mod h1:fK1/XxGeE62jHK/LAKS2VevdLaxififz9VVPYujqpHU=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
