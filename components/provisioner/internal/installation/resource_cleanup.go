@@ -8,6 +8,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
+	utilErrors "github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiServBeta "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -74,7 +75,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 
 	clusterServiceBrokers, err := s.listClusterServiceBroker(metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "while listing ClusterServiceBrokers")
+		return errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ClusterServiceBrokers")
 	}
 
 	logrus.Debugf("Filtering ClusterServiceBrokers with url prefix %s", resourceSelector)
@@ -99,7 +100,7 @@ func (s *serviceCatalogClient) PerformCleanup(resourceSelector string) error {
 func (s *serviceCatalogClient) ensureCRDsExist() (bool, error) {
 	list, err := s.crdsManager.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return false, err
+		return false, utilErrors.K8SErrorToAppError(err)
 	}
 	for _, crd := range []string{SystemBrokerCRDName, SystemCatalogCRDName, SystemInstanceCRD} {
 		exists := s.ensureCRDExists(crd, list)
@@ -182,7 +183,7 @@ func (s *serviceCatalogClient) getClusterServiceClassesForBrokers(brokers []v1be
 
 		clusterServiceClasses, err := s.listClusterServiceClass(csbListOptions)
 		if err != nil {
-			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(err, "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
+			return []v1beta1.ClusterServiceClass{}, errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ClusterServiceClasses for ClusterServiceBroker %q", csb.Name)
 		}
 
 		for _, serviceClass := range clusterServiceClasses.Items {
@@ -204,7 +205,7 @@ func (s *serviceCatalogClient) getServiceInstancesForClusterServiceClasses(servi
 
 		serviceInstancesList, err := s.listServiceInstance(options)
 		if err != nil {
-			return []v1beta1.ServiceInstance{}, errors.Wrapf(err, "while listing ServiceInstances")
+			return []v1beta1.ServiceInstance{}, errors.Wrapf(utilErrors.K8SErrorToAppError(err), "while listing ServiceInstances")
 		}
 
 		for _, serviceInstance := range serviceInstancesList.Items {

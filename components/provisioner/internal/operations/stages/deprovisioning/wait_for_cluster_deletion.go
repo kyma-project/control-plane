@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +69,7 @@ func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string) (bo
 		if k8serrors.IsNotFound(err) {
 			return false, nil
 		}
-		return false, err
+		return false, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 	}
 
 	return true, nil
@@ -78,13 +78,13 @@ func (s *WaitForClusterDeletionStep) shootExists(gardenerClusterName string) (bo
 func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Cluster) error {
 	session, dberr := s.dbsFactory.NewSessionWithinTransaction()
 	if dberr != nil {
-		return fmt.Errorf("error starting db session with transaction: %s", dberr.Error())
+		return errors.Wrap(dberr, "error starting db session with transaction")
 	}
 	defer session.RollbackUnlessCommitted()
 
 	dberr = session.MarkClusterAsDeleted(cluster.ID)
 	if dberr != nil {
-		return fmt.Errorf("error marking cluster for deletion: %s", dberr.Error())
+		return errors.Wrap(dberr, "error marking cluster for deletion")
 	}
 
 	err := s.deleteRuntime(cluster)
@@ -94,7 +94,7 @@ func (s *WaitForClusterDeletionStep) setDeprovisioningFinished(cluster model.Clu
 
 	dberr = session.Commit()
 	if dberr != nil {
-		return fmt.Errorf("error commiting transaction: %s", dberr.Error())
+		return errors.Wrap(dberr, "error commiting transaction")
 	}
 
 	return nil
@@ -108,7 +108,7 @@ func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error 
 	})
 
 	if err != nil {
-		return fmt.Errorf("error checking Runtime exists in Director: %s", err.Error())
+		return errors.Wrap(err, "error checking Runtime exists in Director")
 	}
 
 	if !exists {
@@ -121,7 +121,7 @@ func (s *WaitForClusterDeletionStep) deleteRuntime(cluster model.Cluster) error 
 	})
 
 	if err != nil {
-		return fmt.Errorf("error deleting Runtime form Director: %s", err.Error())
+		return errors.Wrap(err, "error deleting Runtime form Director")
 	}
 
 	return nil
