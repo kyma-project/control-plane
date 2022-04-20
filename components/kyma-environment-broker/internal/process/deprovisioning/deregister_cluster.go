@@ -61,6 +61,6 @@ func (s *DeregisterClusterStep) handleError(operation internal.DeprovisioningOpe
 		}
 	}
 
-	log.Errorf("Reconciler cluster configuration have not been deleted in step %s: %s.", s.Name(), err)
+	log.Errorf("Reconciler cluster configuration have not been deleted in step %s.", s.Name())
 	return operation, 0, nil
 }
