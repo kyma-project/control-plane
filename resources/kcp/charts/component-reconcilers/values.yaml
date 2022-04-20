@@ -6,6 +6,9 @@ fullnameOverride: ""
 options:
    verbose: false
    workerCount: 50
+   workerTimeout: 10m
+   retriesMax: 5
+   retriesDelay: 30s
 
 deployment:
   imagePullPolicy: "IfNotPresent"

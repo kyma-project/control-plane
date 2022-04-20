@@ -1,56 +1,59 @@
 {{ $global := . }}
-{{- range $component := .Values.global.components }}
-{{ $values := index $global.Values $component }}
-{{ if not (hasKey $global.Subcharts $component) }}
+{{- range $component := .Values.global.images.components }}
+{{ $values := index $global.Values $component.name }}
+{{ if not (hasKey $global.Subcharts $component.name) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     kyma-project.io/component-reconciler: ""
-    component: {{ $component }}
-  name: {{ $component }}-reconciler
+    component: {{ $component.name }}
+  name: {{ $component.name }}-reconciler
   namespace: {{ $global.Release.Namespace }}
 spec:
   selector:
     matchLabels:
       kyma-project.io/component-reconciler: ""
-      component: {{ $component }}
+      component: {{ $component.name }}
   replicas: {{ default $global.Values.deployment.replicasCount (($values).deployment).replicasCount }}
   template:
     metadata:
       labels:
         kyma-project.io/component-reconciler: ""
-        component: {{ $component }}
+        component: {{ $component.name }}
     spec:
-      serviceAccountName: component-reconcilers-{{ $component }}
+      serviceAccountName: component-reconcilers-{{ $component.name }}
       nodeSelector:
         {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      - image: "{{ $global.Values.global.images.component_reconciler }}"
+      - image: "{{ $.Values.global.images.reconciler_repo }}/component:{{ $component.version }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
         args:
           - reconciler
           - start
-          - {{ $component }}
+          - {{ $component.name }}
           - --workspace=/tmp/reconciler
           {{- if $global.Values.options.verbose }}
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
+          - --worker-timeout={{ default $global.Values.options.workerTimeout (($values).options).workerTimeout }}
+          - --retries-max={{ default $global.Values.options.retriesMax (($values).options).retriesMax }}
+          - --retries-delay={{ default $global.Values.options.retriesDelay (($values).options).retriesDelay }}
         {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
         env:
         {{- if (($values).deployment).gitCloneToken }}
         - name: GIT_CLONE_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ $component }}-git-token
+              name: {{ $component.name }}-git-token
               key: token
         {{- end }}
         {{- if ($.Values.global.mothership_reconciler.features) }}
         {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
         {{- end }}
         {{- end }}
-        name: {{ $component }}-reconciler
+        name: {{ $component.name }}-reconciler
         ports:
         - name: http
           containerPort: 8080

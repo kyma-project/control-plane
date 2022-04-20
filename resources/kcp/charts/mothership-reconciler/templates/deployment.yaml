@@ -65,7 +65,7 @@ spec:
 {{ toYaml . | indent 10 }}
             {{- end }}
           {{ end }}
-      - image: "{{ .Values.global.images.mothership_reconciler }}"
+      - image: "{{ .Values.global.images.reconciler_repo}}/mothership:{{ .Values.global.images.mothership_reconciler_version }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
           - mothership
