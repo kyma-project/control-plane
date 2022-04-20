@@ -94,18 +94,6 @@ func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceMa
 	r.AppendOverrides(BTPOperatorComponentName, overrides)
 }
 
-func CreateBTPOperatorUpdateInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) error {
-	id, err := clusterIdGetter()
-	if err != nil {
-		return err
-	}
-	provisioning := getBTPOperatorProvisioningOverrides(creds)
-	update := getBTPOperatorUpdateOverrides(creds, id)
-	r.AppendOverrides(BTPOperatorComponentName, provisioning)
-	r.AppendOverrides(BTPOperatorComponentName, update)
-	return nil
-}
-
 func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
 	return func() (string, error) {
 		cfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))

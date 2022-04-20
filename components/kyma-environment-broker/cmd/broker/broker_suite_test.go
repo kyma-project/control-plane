@@ -1242,5 +1242,4 @@ func mockBTPOperatorClusterID() {
 		}
 	}
 	update.ConfigMapGetter = mock
-	upgrade_kyma.ConfigMapGetter = mock
 }
