@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +48,7 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 
 	shoot, err := s.gardenerClient.Get(context.Background(), cluster.ClusterConfig.Name, metav1.GetOptions{})
 	if err != nil {
-		return operations.StageResult{}, err
+		return operations.StageResult{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 	}
 
 	if shoot.Status.IsHibernated {
@@ -57,7 +59,7 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
 		err := fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
-		return operations.StageResult{}, operations.NewNonRecoverableError(err)
+		return operations.StageResult{}, operations.NewNonRecoverableError(util.K8SErrorToAppError(err))
 	}
 
 	err = s.installationService.PerformCleanup(k8sConfig)
