@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
-
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -137,6 +137,9 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service)
 		cluster            model.Cluster
 		unrecoverableError bool
+		errComponent       apperrors.ErrComponent
+		errReason          apperrors.ErrReason
+		errMsg             string
 	}{
 		{
 			description: "should return error if failed to get shoot",
@@ -145,6 +148,9 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 			},
 			cluster:            clusterWithKubeconfig,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrGardenerClient,
+			errReason:          "",
+			errMsg:             "some error",
 		},
 		{
 			description: "should return error if failed to parse kubeconfig",
@@ -157,6 +163,9 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 			},
 			cluster:            clusterWithInvalidKubeconfig,
 			unrecoverableError: true,
+			errComponent:       apperrors.ErrClusterK8SClient,
+			errReason:          "",
+			errMsg:             "error: failed to create kubernetes config from raw: error constructing kubeconfig from raw config: ",
 		},
 		{
 			description: "should return error when failed to trigger installation",
@@ -170,6 +179,9 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 			},
 			cluster:            clusterWithKubeconfig,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrKymaInstaller,
+			errReason:          apperrors.ErrTriggerKymaUninstall,
+			errMsg:             "some error",
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -183,11 +195,15 @@ func TestTriggerKymaUninstall_Run(t *testing.T) {
 
 			// when
 			_, err := triggerKymaUninstallStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			appErr := operations.ConvertToAppError(err)
 
 			// then
 			require.Error(t, err)
 			nonRecoverable := operations.NonRecoverableError{}
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+			assert.Equal(t, testCase.errComponent, appErr.Component())
+			assert.Equal(t, testCase.errReason, appErr.Reason())
+			assert.Contains(t, err.Error(), testCase.errMsg)
 			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 		})

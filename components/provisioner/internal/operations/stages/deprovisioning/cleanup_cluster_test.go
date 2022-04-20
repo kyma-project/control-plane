@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/testkit"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
@@ -115,14 +116,21 @@ func TestCleanupCluster_Run(t *testing.T) {
 		mockFunc           func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service)
 		cluster            model.Cluster
 		unrecoverableError bool
-	}{{
-		description: "should return error if failed to get shoot",
-		mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
-			gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
+		errComponent       apperrors.ErrComponent
+		errReason          apperrors.ErrReason
+		errMsg             string
+	}{
+		{
+			description: "should return error if failed to get shoot",
+			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
+				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, errors.New("some error"))
+			},
+			cluster:            clusterWithKubeconfig,
+			unrecoverableError: false,
+			errComponent:       apperrors.ErrGardenerClient,
+			errReason:          "",
+			errMsg:             "some error",
 		},
-		cluster:            clusterWithKubeconfig,
-		unrecoverableError: false,
-	},
 		{
 			description: "should return error is failed to parse kubeconfig",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, installationSvc *installationMocks.Service) {
@@ -135,6 +143,9 @@ func TestCleanupCluster_Run(t *testing.T) {
 			},
 			cluster:            clusterWithInvalidKubeconfig,
 			unrecoverableError: true,
+			errComponent:       apperrors.ErrClusterK8SClient,
+			errReason:          "",
+			errMsg:             "error: failed to create kubernetes config from raw: error constructing kubeconfig from raw config: ",
 		},
 		{
 			description: "should return error when failed to perform cleanup",
@@ -145,10 +156,13 @@ func TestCleanupCluster_Run(t *testing.T) {
 					ToShoot()
 
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(shoot, nil)
-				installationSvc.On("PerformCleanup", mock.AnythingOfType("*rest.Config")).Return(errors.New("some error"))
+				installationSvc.On("PerformCleanup", mock.AnythingOfType("*rest.Config")).Return(util.K8SErrorToAppError(errors.New("timeout")))
 			},
 			cluster:            clusterWithKubeconfig,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrClusterK8SClient,
+			errReason:          "",
+			errMsg:             "timeout",
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -162,11 +176,15 @@ func TestCleanupCluster_Run(t *testing.T) {
 
 			// when
 			_, err := cleanupClusterStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			appErr := operations.ConvertToAppError(err)
 
 			// then
 			require.Error(t, err)
 			nonRecoverable := operations.NonRecoverableError{}
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+			assert.Equal(t, testCase.errComponent, appErr.Component())
+			assert.Equal(t, testCase.errReason, appErr.Reason())
+			assert.Contains(t, err.Error(), testCase.errMsg)
 			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 		})

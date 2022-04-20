@@ -153,11 +153,11 @@ func (cc *directorClient) DeleteRuntime(id, tenant string) apperrors.AppError {
 	}
 	// Nil check is necessary due to GraphQL client not checking response code
 	if response.Result == nil {
-		return apperrors.Internal("Failed to unregister runtime %s in Director: received nil response.", id)
+		return apperrors.Internal("Failed to unregister runtime %s in Director: received nil response.", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorNilResponse)
 	}
 
 	if response.Result.ID != id {
-		return apperrors.Internal("Failed to unregister runtime %s in Director: received unexpected RuntimeID.", id)
+		return apperrors.Internal("Failed to unregister runtime %s in Director: received unexpected RuntimeID.", id).SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrDirectorRuntimeIDMismatch)
 	}
 
 	log.Infof("Successfully unregistered Runtime %s in Director for tenant %s", id, tenant)
