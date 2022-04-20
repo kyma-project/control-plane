@@ -45,7 +45,6 @@ func (c *SwitchCommand) Run() error {
 		return fmt.Errorf("while initializing ers client: %w", err)
 	}
 	defer ers.Close()
-	// TODO: Correcte responses
 
-	return ers.Migrate(c.brokerId)
+	return ers.Switch(c.brokerId)
 }

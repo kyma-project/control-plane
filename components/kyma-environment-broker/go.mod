@@ -5,12 +5,12 @@ go 1.18
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/99designs/gqlgen v0.17.2
-	github.com/Azure/azure-sdk-for-go v63.2.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.25
+	github.com/Azure/azure-sdk-for-go v63.3.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.26
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Peripli/service-manager v0.23.3
+	github.com/Peripli/service-manager v0.23.4
 	github.com/Peripli/service-manager-cli v1.11.14
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/gardener/gardener v1.44.3
@@ -23,7 +23,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220310123037-ff57d60a32d3
 	github.com/kyma-incubator/reconciler v0.0.0-20220314135913-3b9e766e05b4
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220322140443-084cd6204aed
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/lib/pq v1.10.5
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -155,8 +155,6 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => github.com/vvxxvvxx/control-plane/components/provisioner v0.0.0-20220414100347-ef257aa5fc5e
-
 	// include fix https://github.com/satori/go.uuid/pull/75 https://nvd.nist.gov/vuln/detail/CVE-2021-3538
 	github.com/satori/go.uuid => github.com/satori/go.uuid v0.0.0-20181028125025-b2ce2384e17b
 
