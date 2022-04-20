@@ -2,8 +2,37 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
+    reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
     mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:38b04f8c"
     component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:38b04f8c"
+    mothership_reconciler_version: "38b04f8c"
+    components:
+      base:
+        version: "38b04f8c"
+      busola-migrator:
+        version: "38b04f8c"
+      cleaner:
+        version: "38b04f8c"
+      connectivity-proxy:
+        version: "38b04f8c"
+      istio-configuration:
+        version: "38b04f8c"
+      istio:
+        version: "38b04f8c"
+      ory:
+        version: "38b04f8c"
+      rafter:
+        version: "38b04f8c"
+      eventing:
+        version: "38b04f8c"
+      serverless:
+        version: "38b04f8c"
+      cluster-essentials:
+        version: "38b04f8c"
+      rma:
+        version: "38b04f8c"
+      sc-migration:
+        version: "38b04f8c"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -46,21 +75,6 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
-
-  components:
-    - base
-    - busola-migrator
-    - cleaner
-    - connectivity-proxy
-    - istio-configuration
-    - istio
-    - ory
-    - rafter
-    - eventing
-    - serverless
-    - cluster-essentials
-    - rma
-    - sc-migration
 
   auditlog:
     configMapName: "kcp-auditlog-config"

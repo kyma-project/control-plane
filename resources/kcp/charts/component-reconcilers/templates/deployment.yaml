@@ -1,5 +1,5 @@
 {{ $global := . }}
-{{- range $component := .Values.global.components }}
+{{- range $component, $entry := .Values.global.images.components }}
 {{ $values := index $global.Values $component }}
 {{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: apps/v1
@@ -26,7 +26,7 @@ spec:
       nodeSelector:
         {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      - image: "{{ $global.Values.global.images.component_reconciler }}"
+      - image: "{{ $.Values.global.images.reconciler_repo }}/component:{{ $entry.version }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
         args:
           - reconciler
@@ -37,6 +37,9 @@ spec:
           - --verbose
           {{- end }}
           - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
+          - --worker-timeout={{ default $global.Values.options.workerTimeout (($values).options).workerTimeout }}
+          - --retries-max={{ default $global.Values.options.retriesMax (($values).options).retriesMax }}
+          - --retries-delay={{ default $global.Values.options.retriesDelay (($values).options).retriesDelay }}
         {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
         env:
         {{- if (($values).deployment).gitCloneToken }}
