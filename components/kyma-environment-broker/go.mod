@@ -13,7 +13,6 @@ require (
 	github.com/Peripli/service-manager v0.23.4
 	github.com/Peripli/service-manager-cli v1.11.14
 	github.com/dlmiddlecote/sqlstats v1.0.2
-	github.com/gardener/gardener v1.45.0
 	github.com/gocraft/dbr v0.0.0-20190714181702-8114670a83bd
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
@@ -78,6 +77,7 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/gardener/gardener v1.44.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
