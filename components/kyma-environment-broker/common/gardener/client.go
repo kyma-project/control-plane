@@ -8,8 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 )
 
 type SecretBinding struct {
@@ -85,36 +83,4 @@ func NewGardenerClusterConfig(kubeconfigPath string) (*restclient.Config, error)
 
 func RESTConfig(kubeconfig []byte) (*restclient.Config, error) {
 	return clientcmd.RESTConfigFromKubeConfig(kubeconfig)
-}
-
-// NOTE: for subscription cleanup job backwards compatibility
-
-func gardenerNamespace(projectName string) string {
-	return fmt.Sprintf("garden-%s", projectName)
-}
-
-func NewClient(config *restclient.Config) (*gardener_apis.CoreV1beta1Client, error) {
-	clientset, err := gardener_apis.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return clientset, nil
-}
-
-func NewGardenerSecretBindingsInterface(gardenerClient *gardener_apis.CoreV1beta1Client, gardenerProjectName string) gardener_apis.SecretBindingInterface {
-	gardenerNamespace := gardenerNamespace(gardenerProjectName)
-	return gardenerClient.SecretBindings(gardenerNamespace)
-}
-
-func NewGardenerShootInterface(gardenerClusterCfg *restclient.Config, gardenerProjectName string) (gardener_apis.ShootInterface, error) {
-
-	gardenerNamespace := gardenerNamespace(gardenerProjectName)
-
-	gardenerClusterClient, err := gardener_apis.NewForConfig(gardenerClusterCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return gardenerClusterClient.Shoots(gardenerNamespace), nil
 }
