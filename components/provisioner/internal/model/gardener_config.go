@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -393,7 +394,24 @@ type AWSGardenerConfig struct {
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	err := updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	if err != nil {
+		return err
+	}
+	if c.input.EnableNatGateway != nil {
+		infra := azure.InfrastructureConfig{}
+		err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.Raw, &infra)
+		if err != nil {
+			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
+		}
+		infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
+		jsonData, err := json.Marshal(infra)
+		if err != nil {
+			return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
+		}
+		shoot.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{Raw: jsonData}
+	}
+	return nil
 }
 
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
