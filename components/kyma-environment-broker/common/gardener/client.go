@@ -23,6 +23,15 @@ func (b SecretBinding) GetSecretRefName() string {
 	return str
 }
 
+func (b SecretBinding) GetSecretRefNamespace() string {
+	str, _, err := unstructured.NestedString(b.Unstructured.Object, "secretRef", "namespace")
+	if err != nil {
+		// NOTE this is a safety net, gardener v1beta1 API would need to break the contract for this to panic
+		panic(fmt.Sprintf("SecretBinding missing field '.secretRef.namespace': %v", err))
+	}
+	return str
+}
+
 type Shoot struct {
 	unstructured.Unstructured
 }
