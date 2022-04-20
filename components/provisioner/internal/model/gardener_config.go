@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
