@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	github.com/99designs/gqlgen v0.17.2
+	github.com/99designs/gqlgen v0.17.3
 	github.com/Azure/azure-sdk-for-go v63.3.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.26
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
@@ -127,7 +127,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.4 // indirect
 	github.com/valyala/fasthttp v1.27.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.1 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
