@@ -6,6 +6,7 @@ import (
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -61,6 +62,9 @@ func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredential
 }
 
 func getBTPOperatorUpdateOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
+	if clusterId == "" {
+		return []*gqlschema.ConfigEntryInput{}
+	}
 	return []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "cluster.id",
@@ -105,6 +109,9 @@ func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
 			return "", err
 		}
 		cm, err := cs.CoreV1().ConfigMaps("kyma-system").Get(context.Background(), "cluster-info", metav1.GetOptions{})
+		if k8serrors.IsNotFound(err) {
+			return "", nil
+		}
 		if err != nil {
 			return "", err
 		}
