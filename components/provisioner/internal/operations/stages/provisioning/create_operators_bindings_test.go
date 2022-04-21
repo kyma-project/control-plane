@@ -48,10 +48,34 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), result.Delay)
 	})
 
+	t.Run("should not fail if cluster role already exists", func(t *testing.T) {
+		// given
+		k8sClient := fake.NewSimpleClientset()
+		clusterRole := buildClusterRole(l2OperatorClusterRoleName, map[string]string{"app": "kyma"}, []metav1.LabelSelector{
+			{MatchLabels: map[string]string{l2OperatorBaseRolesLabelKey: "true"}},
+			{MatchLabels: map[string]string{l2OperatorExtendedRolesLabelKey: "true"}},
+		}, nil)
+		_, err := k8sClient.RbacV1().ClusterRoles().Create(context.Background(), &clusterRole, metav1.CreateOptions{})
+		require.NoError(t, err)
+
+		k8sClientProvider := &mocks.K8sClientProvider{}
+		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+
+		// when
+		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, nextStageName, result.Stage)
+		assert.Equal(t, time.Duration(0), result.Delay)
+	})
+
 	t.Run("should not fail if cluster role binding already exists", func(t *testing.T) {
 		// given
 		k8sClient := fake.NewSimpleClientset()
-		clusterRoleBinding := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, operatorBindingConfig.L2SubjectName, l2OperatorClusterRoleBindingRoleRefName, groupKindSubject, map[string]string{"app": "kyma"})
+		clusterRoleBinding := buildClusterRoleBinding(l2OperatorClusterRoleBindingName, operatorBindingConfig.L2SubjectName, l2OperatorClusterRoleName, groupKindSubject, map[string]string{"app": "kyma"})
 		_, err := k8sClient.RbacV1().ClusterRoleBindings().Create(context.Background(), &clusterRoleBinding, metav1.CreateOptions{})
 		require.NoError(t, err)
 

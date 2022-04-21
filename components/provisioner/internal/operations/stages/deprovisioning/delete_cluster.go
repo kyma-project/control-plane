@@ -5,8 +5,10 @@ import (
 	"time"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +58,7 @@ func (s *DeleteClusterStep) deleteShoot(gardenerClusterName string) error {
 		if k8serrors.IsNotFound(err) {
 			return nil
 		}
-		return err
+		return util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 	}
 
 	return nil

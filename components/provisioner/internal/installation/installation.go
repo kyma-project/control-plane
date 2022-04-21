@@ -55,7 +55,7 @@ type installationService struct {
 func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
 	cli, err := NewServiceCatalogCleanupClient(kubeconfig)
 	if err != nil {
-		return err
+		return util.K8SErrorToAppError(err)
 	}
 	return cli.PerformCleanup(s.clusterCleanupResourceSelector)
 }

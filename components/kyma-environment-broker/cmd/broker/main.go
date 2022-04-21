@@ -776,7 +776,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		{
 			stage:     "cluster",
 			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
-			condition: negation(ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided)),
+			condition: negation(ifBTPMigrationEnabled(update.ForMigration)),
 		},
 		{
 			stage:     "migration",
