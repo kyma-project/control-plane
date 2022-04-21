@@ -8,8 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
-
 type BTPOperatorOverridesStep struct{}
 
 func NewBTPOperatorOverridesStep() *BTPOperatorOverridesStep {
@@ -21,12 +19,7 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if operation.InstanceDetails.SCMigrationTriggered {
-		cm := ConfigMapGetter(operation.InstanceDetails.Kubeconfig)
-		internal.CreateBTPOperatorUpdateInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, cm)
-	} else {
-		internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
-	}
+	internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials)
 	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)

@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	retry "github.com/avast/retry-go"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -76,6 +77,7 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 
 	if operation.Type == e.operation {
 		requeue, delay, err := e.process(operation, cluster, log)
+		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			nonRecoverable := NonRecoverableError{}
 			if errors.As(err, &nonRecoverable) {
@@ -103,7 +105,8 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 	step, found := e.stages[operation.Stage]
 	if !found {
-		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation stages", operation.Stage))
+		msg := fmt.Sprintf("error: step %s not found in installation stages", operation.Stage)
+		return false, 0, NewNonRecoverableError(apperrors.Internal(msg).SetReason(apperrors.ErrProvisionerStepNotFound))
 	}
 
 	for operation.Stage != model.FinishedStage {
@@ -112,11 +115,10 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 		if e.timeoutReached(operation, step.TimeLimit()) {
 			log.Errorf("Timeout reached for operation")
-			return false, 0, NewNonRecoverableError(fmt.Errorf("error: timeout while processing operation"))
+			return false, 0, NewNonRecoverableError(apperrors.Internal("error: timeout while processing operation").SetReason(apperrors.ErrProvisionerTimeout))
 		}
 
 		result, err := step.Run(cluster, operation, log)
-		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			if errors.Is(err, ErrKubeconfigNil) {
 				log.Warnf("Warning, the %s", err)

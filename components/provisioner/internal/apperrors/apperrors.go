@@ -23,14 +23,17 @@ const (
 )
 
 const (
-	ErrProvisionerInternal ErrReason = "err_provisioner_internal"
+	ErrProvisionerInternal     ErrReason = "err_provisioner_internal"
+	ErrProvisionerTimeout      ErrReason = "err_provisioner_timeout"
+	ErrProvisionerStepNotFound ErrReason = "err_provisioner_step_not_found"
 
 	ErrDirectorNilResponse       ErrReason = "err_director_nil_response"
 	ErrDirectorRuntimeIDMismatch ErrReason = "err_director_runtime_id_mismatch"
 	ErrDirectorClientGraphqlizer ErrReason = "err_director_client_graphqlizer"
 
 	ErrCheckKymaInstallationState ErrReason = "err_check_kyma_installation_state"
-	ErrTriggerKymaInstallation    ErrReason = "err_trigger_kyma_installation"
+	ErrTriggerKymaInstall         ErrReason = "err_trigger_kyma_install"
+	ErrTriggerKymaUninstall       ErrReason = "err_trigger_kyma_uninstall"
 )
 
 type ErrCode int
