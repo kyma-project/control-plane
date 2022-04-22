@@ -50,6 +50,6 @@ spec:
         - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Values.global.kyma_environment_broker.serviceAccountName }}"
 {{- $global := . }}
 {{- range $component := .Values.global.images.components }}
-        - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component.name }}"
+        - "cluster.local/ns/{{ $global.Release.Namespace }}/sa/component-reconcilers-{{ $component }}"
 {{- end }}
 {{- end }}

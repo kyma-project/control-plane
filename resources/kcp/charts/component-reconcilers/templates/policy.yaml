@@ -1,4 +1,4 @@
-{{- range $component, $value := .Values.global.images.components }}
+{{- range $component, $entry := .Values.global.images.components }}
 {{ if $.Values.serviceMonitor.enabled }}
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication

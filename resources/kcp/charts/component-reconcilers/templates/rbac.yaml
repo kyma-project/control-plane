@@ -1,5 +1,5 @@
 {{ $global := . }}
-{{- range $component, $value := .Values.global.images.components }}
+{{- range $component, $entry := .Values.global.images.components }}
 {{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: v1
 kind: ServiceAccount

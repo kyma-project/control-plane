@@ -27,8 +27,8 @@ mothership:
     deleteStrategy: all
     reconcilers:
 {{- range $component := .Values.global.images.components }}
-      {{ $component.name }}:
-        url: http://{{ $component.name }}-reconciler:8080/v1/run
+      {{ $component }}:
+        url: http://{{ $component }}-reconciler:8080/v1/run
 {{- end }}
 {{- if .Values.preComponents }}
     preComponents:

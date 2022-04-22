@@ -1,6 +1,6 @@
 {{ if .Values.global.component_reconcilers.authentication }}
 {{ $global := . }}
-{{- range $component, $value := .Values.global.images.components }}
+{{- range $component, $entry := .Values.global.images.components }}
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
