@@ -85,9 +85,13 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 		avsTempErr := kebError.WrapNewTemporaryError(avs.NewAvsError("avs server returned %d status code", 503))
 		expectAvsMsg := fmt.Sprintf("avs server returned %d status code", 503)
 
+		edpTempErr := kebError.WrapNewTemporaryError(edp.NewEDPOtherError("id", http.StatusRequestTimeout, "EDP server returns failed status %s", "501"))
+		expectEdpMsg := fmt.Sprintf("EDP server returns failed status %s", "501")
+
 		// when
 		lastErr := kebError.ReasonForError(tempErr)
 		avsLastErr := kebError.ReasonForError(avsTempErr)
+		edpLastErr := kebError.ReasonForError(edpTempErr)
 
 		// then
 		assert.Equal(t, kebError.ErrHttpStatusCode, lastErr.Reason())
@@ -99,6 +103,11 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 		assert.Equal(t, kebError.ErrAVS, avsLastErr.Component())
 		assert.Equal(t, expectAvsMsg, avsLastErr.Error())
 		assert.True(t, kebError.IsTemporaryError(avsTempErr))
+
+		assert.Equal(t, edp.ErrEDPTimeout, edpLastErr.Reason())
+		assert.Equal(t, kebError.ErrEDP, edpLastErr.Component())
+		assert.Equal(t, expectEdpMsg, edpLastErr.Error())
+		assert.True(t, kebError.IsTemporaryError(edpTempErr))
 	})
 
 	t.Run("new temporary error", func(t *testing.T) {

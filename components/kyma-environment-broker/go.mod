@@ -23,7 +23,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877
 	github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220419133030-e99907f4e98a
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/lib/pq v1.10.5
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
