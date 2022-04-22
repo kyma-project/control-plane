@@ -121,7 +121,7 @@ func (c *MigrationAllCommand) Run() error {
 		}
 
 		if !instance.IsUsable() {
-			c.log.Infof("%sInstance status %s, skipping%s",
+			c.log.Infof("%sInstance state %s, skipping%s",
 				Green, instance.State, instance.Id, Reset)
 			// just add to statistics as done
 			c.stats.Add()
@@ -132,7 +132,13 @@ func (c *MigrationAllCommand) Run() error {
 			continue
 		}
 
-		payloads <- ers.Work{Instance: instance, MigrationMetadata: meta, MaxProcessedCnt: 1}
+		payloads <- ers.Work{
+			Instance:           instance,
+			MigrationMetadata:  meta,
+			ProcessedTimestamp: 0,
+			ProcessedCnt:       0,
+			MaxProcessedCnt:    1,
+		}
 		c.wg.Add(1)
 		c.stats.Add()
 	}

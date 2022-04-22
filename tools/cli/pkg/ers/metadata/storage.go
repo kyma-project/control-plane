@@ -19,7 +19,7 @@ func (s *Storage) Save(metadata ers.MigrationMetadata) error {
 	if _, err := os.Stat(metadataFolderName); os.IsNotExist(err) {
 		os.Mkdir(metadataFolderName, 0777)
 	}
-	data, err := json.MarshalIndent(metadata, "", " ")
+	data, err := json.MarshalIndent(metadata, "", "  ")
 	if err != nil {
 		return err
 	}
