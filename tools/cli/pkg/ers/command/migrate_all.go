@@ -205,17 +205,18 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			time.Sleep(10 * time.Second)
 		}
 
-		work.MigrationMetadata.KymaMigrated = refreshed.Migrated
+		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
+			err = errors.New("Refreshing take too much time. Timeout triggered.")
+		}
+
+		work.MigrationMetadata.KymaMigrated = refreshed.Migrated && err != nil
 		work.MigrationMetadata.KymaMigrationStartedAt = start
-		work.MigrationMetadata.KymaMigrationStartedAt = time.Now()
+		work.MigrationMetadata.KymaMigrationStartedEnd = time.Now()
 		err = c.metadataStorage.Save(work.MigrationMetadata)
 		if err != nil {
 			c.log.Warnf("Unable to save metadata: %s", err.Error())
 		}
 
-		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
-			err = errors.New("Refreshing take too much time. Timeout triggered.")
-		}
 		c.tryFinish(work, err, workChannel)
 	}
 }
