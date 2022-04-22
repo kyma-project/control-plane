@@ -5,34 +5,34 @@ global:
     reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
     mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:38b04f8c"
     component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:38b04f8c"
-    mothership_reconciler_version: "38b04f8c"
+    mothership_reconciler_version: "32c1a52a"
     components:
       base:
-        version: "38b04f8c"
+        version: "32c1a52a"
       busola-migrator:
-        version: "38b04f8c"
+        version: "32c1a52a"
       cleaner:
-        version: "38b04f8c"
+        version: "32c1a52a"
       connectivity-proxy:
-        version: "38b04f8c"
+        version: "32c1a52a"
       istio-configuration:
-        version: "38b04f8c"
+        version: "32c1a52a"
       istio:
-        version: "38b04f8c"
+        version: "32c1a52a"
       ory:
-        version: "38b04f8c"
+        version: "32c1a52a"
       rafter:
-        version: "38b04f8c"
+        version: "32c1a52a"
       eventing:
-        version: "38b04f8c"
+        version: "32c1a52a"
       serverless:
-        version: "38b04f8c"
+        version: "32c1a52a"
       cluster-essentials:
-        version: "38b04f8c"
+        version: "32c1a52a"
       rma:
-        version: "38b04f8c"
+        version: "32c1a52a"
       sc-migration:
-        version: "38b04f8c"
+        version: "32c1a52a"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -75,7 +75,6 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
-
   auditlog:
     configMapName: "kcp-auditlog-config"
     secretName: "kcp-auditlog-secret"
@@ -83,10 +82,8 @@ global:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
     disabled: false
-
   provisioning:
     enabled: false
-
   kyma_environment_broker:
     enabled: false
     serviceAccountName: "kcp-kyma-environment-broker"
@@ -95,14 +92,12 @@ global:
         name: kcp-kyma-environment-broker-credentials
     environmentsCleanup:
       enabled: false
-
   provisioner:
     graphql:
       port: 3000
     secrets:
       integrationSystemCredentials:
         name: kcp-provisioner-credentials
-
   compass:
     registration:
       enabled: true
@@ -113,14 +108,12 @@ global:
           host: compass-gateway-auth-oauth
     mtls:
       host: compass-gateway-mtls
-
   istio:
     gateway:
       name: "kyma-gateway"
       namespace: "kyma-system"
     proxy:
       port: 15020
-
   database:
     manageSecrets: true
     embedded:
@@ -131,7 +124,6 @@ global:
         name: "broker"
       reconciler:
         name: "reconciler"
-
       #TODO remove below after migration to separate user will be done
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
@@ -152,16 +144,13 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
-
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-
   kyma_metrics_collector:
     enabled: false
-
   mothership_reconciler:
     enabled: false
     expose: true
@@ -187,13 +176,10 @@ global:
   component_reconcilers:
     enabled: false
     authentication: true
-
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
-
 pairing-adapter:
   enabled: false
-
 migratorJobs:
   enabled: true
