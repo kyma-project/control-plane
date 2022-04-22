@@ -41,3 +41,24 @@ func (s *Storage) Get(id string) (ers.MigrationMetadata, error) {
 	err = json.Unmarshal(data, &metadata)
 	return metadata, err
 }
+
+func (s *Storage) ListAll() ([]ers.MigrationMetadata, error) {
+	result := []ers.MigrationMetadata{}
+	files, err := ioutil.ReadDir(metadataFolderName)
+	if err != nil {
+		return []ers.MigrationMetadata{}, nil
+	}
+	for _, file := range files {
+		data, err := ioutil.ReadFile(file.Name())
+		if err != nil {
+			continue
+		}
+		var metadata ers.MigrationMetadata
+		err = json.Unmarshal(data, &metadata)
+		if err != nil {
+			continue
+		}
+		result = append(result, metadata)
+	}
+	return result, nil
+}
