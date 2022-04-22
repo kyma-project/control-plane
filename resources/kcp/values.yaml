@@ -5,31 +5,31 @@ global:
     reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
     mothership_reconciler_version: "38b04f8c"
     components:
-      - name: "base"
+      base:
         version: "38b04f8c"
-      - name: "busola-migrator"
+      busola-migrator:
         version: "38b04f8c"
-      - name: "cleaner"
+      cleaner:
         version: "38b04f8c"
-      - name: "connectivity-proxy"
+      connectivity-proxy:
         version: "38b04f8c"
-      - name: "istio-configuration"
+      istio-configuration:
         version: "38b04f8c"
-      - name: "istio"
+      istio:
         version: "38b04f8c"
-      - name: "ory"
+      ory:
         version: "38b04f8c"
-      - name: "rafter"
+      rafter:
         version: "38b04f8c"
-      - name: "eventing"
+      eventing:
         version: "38b04f8c"
-      - name: "serverless"
+      serverless:
         version: "38b04f8c"
-      - name: "cluster-essentials"
+      cluster-essentials:
         version: "38b04f8c"
-      - name: "rma"
+      rma:
         version: "38b04f8c"
-      - name: "sc-migration"
+      sc-migration:
         version: "38b04f8c"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane

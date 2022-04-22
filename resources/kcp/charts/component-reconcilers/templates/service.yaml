@@ -1,14 +1,14 @@
 {{ $global := . }}
-{{- range $component := .Values.global.images.components }}
-{{ if not (hasKey $global.Subcharts $component.name) }}
+{{- range $component, $value := .Values.global.images.components }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $component.name }}-reconciler
+  name: {{ $component }}-reconciler
   namespace: {{ $global.Release.Namespace }}
   labels:
     kyma-project.io/component-reconciler: ""
-    component: {{ $component.name }}
+    component: {{ $component }}
 spec:
   type: {{ $global.Values.service.type }}
   ports:
@@ -22,7 +22,7 @@ spec:
       name: istio-http
   selector:
     kyma-project.io/component-reconciler: ""
-    component: {{ $component.name }}
+    component: {{ $component }}
 ---
 {{- end }}
 {{- end }}

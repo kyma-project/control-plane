@@ -1,17 +1,17 @@
 {{ if .Values.global.component_reconcilers.authentication }}
 {{ $global := . }}
-{{- range $component := .Values.global.images.components }}
+{{- range $component, $value := .Values.global.images.components }}
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: {{ $component.name }}-reconciler
+  name: {{ $component }}-reconciler
   namespace: {{ $global.Release.Namespace }}
 spec:
   action: ALLOW
   selector:
     matchLabels:
       kyma-project.io/component-reconciler: ""
-      component: {{ $component.name }}
+      component: {{ $component }}
   rules:
   - to:
     - operation:

@@ -1,37 +1,37 @@
 {{ $global := . }}
-{{- range $component := .Values.global.images.components }}
-{{ $values := index $global.Values $component.name }}
-{{ if not (hasKey $global.Subcharts $component.name) }}
+{{- range $component, $entry := .Values.global.images.components }}
+{{ $values := index $global.Values $component }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     kyma-project.io/component-reconciler: ""
-    component: {{ $component.name }}
-  name: {{ $component.name }}-reconciler
+    component: {{ $component }}
+  name: {{ $component }}-reconciler
   namespace: {{ $global.Release.Namespace }}
 spec:
   selector:
     matchLabels:
       kyma-project.io/component-reconciler: ""
-      component: {{ $component.name }}
+      component: {{ $component }}
   replicas: {{ default $global.Values.deployment.replicasCount (($values).deployment).replicasCount }}
   template:
     metadata:
       labels:
         kyma-project.io/component-reconciler: ""
-        component: {{ $component.name }}
+        component: {{ $component }}
     spec:
-      serviceAccountName: component-reconcilers-{{ $component.name }}
+      serviceAccountName: component-reconcilers-{{ $component }}
       nodeSelector:
         {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      - image: "{{ $.Values.global.images.reconciler_repo }}/component:{{ $component.version }}"
+      - image: "{{ $.Values.global.images.reconciler_repo }}/component:{{ $entry.version }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
         args:
           - reconciler
           - start
-          - {{ $component.name }}
+          - {{ $component }}
           - --workspace=/tmp/reconciler
           {{- if $global.Values.options.verbose }}
           - --verbose
@@ -46,14 +46,14 @@ spec:
         - name: GIT_CLONE_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ $component.name }}-git-token
+              name: {{ $component }}-git-token
               key: token
         {{- end }}
         {{- if ($.Values.global.mothership_reconciler.features) }}
         {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
         {{- end }}
         {{- end }}
-        name: {{ $component.name }}-reconciler
+        name: {{ $component }}-reconciler
         ports:
         - name: http
           containerPort: 8080

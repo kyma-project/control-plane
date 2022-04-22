@@ -1,16 +1,16 @@
-{{- range $component := .Values.global.images.components }}
+{{- range $component, $value := .Values.global.images.components }}
 {{ if $.Values.serviceMonitor.enabled }}
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
   labels:
-    component: {{ $component.name }}
-  name: {{ $component.name }}-reconciler
+    component: {{ $component }}
+  name: {{ $component }}-reconciler
   namespace: {{ $.Release.Namespace }}
 spec:
   selector:
     matchLabels:
-      component: {{ $component.name }}
+      component: {{ $component }}
   mtls:
     mode: STRICT
   portLevelMtls:
