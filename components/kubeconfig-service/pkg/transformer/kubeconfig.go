@@ -24,7 +24,7 @@ type kubeconfig struct {
 	} `yaml:"users"`
 }
 
-const kubeconfigTemplate = `
+const KubeconfigTemplate = `
 ---
 apiVersion: v1
 kind: Config
@@ -61,4 +61,24 @@ users:
 
         # Chocolatey (Windows)
         choco install kubelogin
+`
+const KubeconfigSaTemplate = `
+---
+apiVersion: v1
+kind: Config
+current-context: {{ .ContextName }}
+clusters:
+- name: {{ .ContextName }}
+  cluster:
+    certificate-authority-data: {{ .CAData }}
+    server: {{ .ServerURL }}
+contexts:
+- name: {{ .ContextName }}
+  context:
+    cluster: {{ .ContextName }}
+    user: {{ .UserID }}
+users:
+- name: {{ .UserID }}
+  user:
+    token: {{ .SaToken }}
 `

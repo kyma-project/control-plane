@@ -36,7 +36,7 @@ func TestSpec(t *testing.T) {
 			c, err := transformer.NewClient(testInputRawKubeconfig)
 			So(err, ShouldBeNil)
 			//when
-			res, err := c.TransformKubeconfig()
+			res, err := c.TransformKubeconfig(transformer.KubeconfigTemplate)
 			//then
 			So(err, ShouldBeNil)
 			So(string(res), ShouldEqual, expectedTransformedKubeconfig)

@@ -3,10 +3,11 @@ package endpoints
 import (
 	"net/http"
 
-	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
-
 	"github.com/gorilla/mux"
+	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
+	run "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/runtime"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,10 +33,11 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	vars := mux.Vars(req)
 	tenant := vars["tenantID"]
 	runtime := vars["runtimeID"]
+	userInfo := req.Context().Value("userInfo").(authn.UserInfo)
 
-	log.Infof("Generating kubeconfig for %s/%s", tenant, runtime)
+	log.Infof("Generating kubeconfig for %s/%s %s", tenant, runtime, userInfo)
 
-	kubeConfig, err := ec.generateKubeConfig(tenant, runtime)
+	kubeConfig, err := ec.generateKubeConfig(tenant, runtime, userInfo)
 	if err != nil {
 		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,18 +68,31 @@ func (ec EndpointClient) callGQL(tenantID, runtimeID string) (string, error) {
 	return *status.RuntimeConfiguration.Kubeconfig, nil
 }
 
-func (ec EndpointClient) generateKubeConfig(tenant, runtime string) ([]byte, error) {
+func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo authn.UserInfo) ([]byte, error) {
 	rawConfig, err := ec.callGQL(tenant, runtime)
 	if err != nil || rawConfig == "" {
 		return nil, err
 	}
-	tc, err := transformer.NewClient(rawConfig)
+
+	tc, err := transformer.NewClient(rawConfig, userInfo.ID)
 	if err != nil {
 		return nil, err
 	}
-	kubeConfig, err := tc.TransformKubeconfig()
+
+	rawKubeConfig, err := tc.TransformKubeconfig(transformer.KubeconfigTemplate)
 	if err != nil {
 		return nil, err
 	}
-	return kubeConfig, nil
+
+	tc.SaToken, err = run.GenerateSAToken(rawKubeConfig, userInfo.ID, userInfo.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	saKubeConfig, err := tc.TransformKubeconfig(transformer.KubeconfigSaTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	return saKubeConfig, nil
 }
