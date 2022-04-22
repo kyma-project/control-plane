@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/command"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
@@ -12,7 +14,6 @@ import (
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	"os"
 )
 
 func NewMetadataCommand() *cobra.Command {
