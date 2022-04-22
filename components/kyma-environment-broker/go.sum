@@ -57,8 +57,8 @@ github.com/Azure/go-autorest v10.8.1+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSW
 github.com/Azure/go-autorest v14.2.0+incompatible h1:V5VMDjClD3GiElqLWO7mz2MxNAK/vTfRHdAubSIPRgs=
 github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/Azure/go-autorest/autorest v0.11.18/go.mod h1:dSiJPy22c3u0OtOKDNttNgqpNFY/GeWa7GH/Pz56QRA=
-github.com/Azure/go-autorest/autorest v0.11.26 h1:W/MzvoAiFfL5h4nq81wm7axvITgbnOoifXXGkFrgF1g=
-github.com/Azure/go-autorest/autorest v0.11.26/go.mod h1:7l8ybrIdUmGqZMTD0sRtAr8NvbHjfofbf8RSP2q7w7U=
+github.com/Azure/go-autorest/autorest v0.11.27 h1:F3R3q42aWytozkV8ihzcgMO4OA4cuqr3bNlsEuF6//A=
+github.com/Azure/go-autorest/autorest v0.11.27/go.mod h1:7l8ybrIdUmGqZMTD0sRtAr8NvbHjfofbf8RSP2q7w7U=
 github.com/Azure/go-autorest/autorest/adal v0.9.13/go.mod h1:W/MM4U6nLxnIskrw4UwWzlHfGjwUS50aOsc/I3yuU8M=
 github.com/Azure/go-autorest/autorest/adal v0.9.18 h1:kLnPsRjzZZUF3K5REu/Kc+qMQrvuza2bwSnNdhmzLfQ=
 github.com/Azure/go-autorest/autorest/adal v0.9.18/go.mod h1:XVVeme+LZwABT8K5Lc3hA4nAe8LDBVle26gTrguhhPQ=
@@ -776,10 +776,10 @@ github.com/kubernetes-sigs/service-catalog v0.3.0/go.mod h1:zRfgMd1T9HuXR24Qj4GO
 github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877 h1:p8dtZITQFZBfEqkefVW4Ds+EoGPDB7QZ45C2sLFGhTY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877/go.mod h1:017nxy7CUKOD3VjYyxMIEzKMvUXTjvJfSjPBq7kiJlk=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 h1:8im1YmVAcwDLVoLhvFFnqdQW8c2wsqX3uzdxS9GZkMc=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8/go.mod h1:OT4TJXzp5IIZrEkRksRazZ4vfLf9TxNYjPUGsPmQ+iY=
 github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986 h1:A66tp46cex5jWZ6JeW94EuTjpkvdX2D5P1FckN4Nt+0=
 github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986/go.mod h1:/x7yd8gZei/mm/CgoxEToPvkkJIXKTb4DYVC8gcKn78=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 h1:8im1YmVAcwDLVoLhvFFnqdQW8c2wsqX3uzdxS9GZkMc=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8/go.mod h1:OT4TJXzp5IIZrEkRksRazZ4vfLf9TxNYjPUGsPmQ+iY=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6/go.mod h1:RzRNmOyU59g0phPOjlZ/QAGTf+J1ff51r5/EHvBhbrI=
 github.com/lann/builder v0.0.0-20180802200727-47ae307949d0/go.mod h1:dXGbAdH5GtBTC4WfIxhKZfyBF/HBFgRZSWwZ9g/He9o=
