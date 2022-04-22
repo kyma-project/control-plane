@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/metadata"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -16,7 +18,9 @@ import (
 )
 
 func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
-	cmd := &MigrationAllCommand{}
+	cmd := &MigrationAllCommand{
+		metadataStorage: &metadata.Storage{},
+	}
 
 	cobraCmd := &cobra.Command{
 		Use:   `migrate-all`,
@@ -47,6 +51,11 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	return cobraCmd
 }
 
+type MetadataStorage interface {
+	Get(id string) (ers.MigrationMetadata, error)
+	Save(m ers.MigrationMetadata) error
+}
+
 type MigrationAllCommand struct {
 	corbaCmd  *cobra.Command
 	source    string
@@ -59,6 +68,8 @@ type MigrationAllCommand struct {
 	ersClient client.Client
 	dryRun    bool
 	stats     *Stats
+
+	metadataStorage MetadataStorage
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -98,17 +109,32 @@ func (c *MigrationAllCommand) Run() error {
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
 
-		if !instance.Migrated {
-			payloads <- ers.Work{instance, 0, 0, 1}
-			c.wg.Add(1)
-			c.stats.Add()
-		} else {
-			c.log.Infof("%sInstance %s already migrated%s",
-				Green, instance.Name, Reset)
+		meta, err := c.metadataStorage.Get(instance.Id)
+		if err != nil {
+			c.log.Warnf("Get %s Metadata error: %s", instance.Id, err.Error())
+			continue
+		}
+		if meta.KymaMigrated {
+			c.log.Infof("%sInstance %s already migrated, skipping %s",
+				Green, instance.Id, Reset)
+			continue
+		}
+
+		if !instance.IsUsable() {
+			c.log.Infof("%sInstance status %s, skipping%s",
+				Green, instance.State, instance.Id, Reset)
 			// just add to statistics as done
 			c.stats.Add()
 			c.stats.Done()
+
+			meta.KymaSkipped = true
+			c.metadataStorage.Save(meta)
+			continue
 		}
+
+		payloads <- ers.Work{Instance: instance, MigrationMetadata: meta, MaxProcessedCnt: 1}
+		c.wg.Add(1)
+		c.stats.Add()
 	}
 
 	c.stats.PrintProgress()
@@ -137,7 +163,6 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.tryFinish(work, err, workChannel)
-
 			continue
 		}
 
@@ -145,9 +170,9 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			continue
 		}
 
-		if refreshed.Migrated {
-			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
-				workerId, Green, instance.Name, Reset)
+		if !refreshed.IsUsable() {
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s state is %s, skipping%s",
+				workerId, Green, instance.Id, refreshed.State, Reset)
 			c.tryFinish(work, nil, workChannel)
 			c.migrated(instance)
 			continue
@@ -156,9 +181,11 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		c.ersClient.Migrate(instance.Id)
 
 		c.log.Infof("[Worker %d] Instance %s not yet migrated",
-			workerId, instance.Name)
+			workerId, instance.Id)
 		c.log.Infof("[Worker %d] Instance %s - refreshing status",
-			workerId, instance.Name)
+			workerId, instance.Id)
+
+		time.Sleep(10 * time.Second)
 
 		for time.Since(start) < c.timeout {
 			refreshed, err = c.ersClient.GetOne(instance.Id)
@@ -176,6 +203,14 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				break
 			}
 			time.Sleep(10 * time.Second)
+		}
+
+		work.MigrationMetadata.KymaMigrated = refreshed.Migrated
+		work.MigrationMetadata.KymaMigrationStartedAt = start
+		work.MigrationMetadata.KymaMigrationStartedAt = time.Now()
+		err = c.metadataStorage.Save(work.MigrationMetadata)
+		if err != nil {
+			c.log.Warnf("Unable to save metadata: %s", err.Error())
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
@@ -216,6 +251,7 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 		c.log.Infof("[Worker %d] Processing instance %s", id, work.Instance.Name)
 
 		instance := work.Instance
+
 		if instance.Migrated {
 			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
 				id, Green, instance.Name, Reset)
