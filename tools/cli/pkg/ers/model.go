@@ -53,7 +53,7 @@ type MigrationMetadata struct {
 	KymaMigrated            bool      `json:"kymaMigrated"`
 	KymaSkipped             bool      `json:"kymaSkipped"`
 	KymaMigrationStartedAt  time.Time `json:"kymaMigrationStartedAt"`
-	KymaMigrationStartedEnd time.Time `json:"kymaMigrationStartedEnd"`
+	KymaMigrationFinishedAt time.Time `json:"kymaMigrationFinishedAt"`
 }
 
 func (e Instance) String() string {

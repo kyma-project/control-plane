@@ -183,7 +183,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			work.MigrationMetadata.KymaMigrated = false
 			work.MigrationMetadata.KymaSkipped = true
 			work.MigrationMetadata.KymaMigrationStartedAt = start
-			work.MigrationMetadata.KymaMigrationStartedEnd = time.Now()
+			work.MigrationMetadata.KymaMigrationFinishedAt = time.Now()
 			err = c.metadataStorage.Save(work.MigrationMetadata)
 
 			c.tryFinish(work, nil, workChannel)
@@ -224,7 +224,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 
 		work.MigrationMetadata.KymaMigrated = refreshed.Migrated && err == nil
 		work.MigrationMetadata.KymaMigrationStartedAt = start
-		work.MigrationMetadata.KymaMigrationStartedEnd = time.Now()
+		work.MigrationMetadata.KymaMigrationFinishedAt = time.Now()
 		err = c.metadataStorage.Save(work.MigrationMetadata)
 		if err != nil {
 			c.log.Warnf("Unable to save metadata: %s", err.Error())

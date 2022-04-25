@@ -55,6 +55,8 @@ func (s *Storage) ListAll() ([]ers.MigrationMetadata, error) {
 		}
 		var metadata ers.MigrationMetadata
 		err = json.Unmarshal(data, &metadata)
+		metadata.KymaMigrationFinishedAt = metadata.KymaMigrationFinishedAt.Local()
+		metadata.KymaMigrationStartedAt = metadata.KymaMigrationFinishedAt.Local()
 		if err != nil {
 			continue
 		}

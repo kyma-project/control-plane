@@ -16,7 +16,7 @@ func TestSaveGet(t *testing.T) {
 		KymaMigrated:            true,
 		KymaSkipped:             true,
 		KymaMigrationStartedAt:  time.Now().Truncate(time.Second).Local(),
-		KymaMigrationStartedEnd: time.Now().Truncate(time.Second).Local(),
+		KymaMigrationFinishedAt: time.Now().Truncate(time.Second).Local(),
 	}
 	svc := Storage{}
 
