@@ -656,6 +656,7 @@
             "mode": "thresholds"
           },
           "custom": {},
+          "displayName": "${__series.name}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -724,6 +725,7 @@
             "mode": "thresholds"
           },
           "custom": {},
+          "displayName": "${__series.name}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
