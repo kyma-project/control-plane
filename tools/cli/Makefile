@@ -25,7 +25,7 @@ CLI_FLAGS = -ldflags '-s -w -X github.com/kyma-project/control-plane/tools/cli/p
 release: resolve verify test build 
 
 resolve:
-	GO111MODULE=on go mod vendor -v
+		GO111MODULE=on go mod vendor -v ||:
 
 verify: check-imports go-mod-verify go-mod-check
 
