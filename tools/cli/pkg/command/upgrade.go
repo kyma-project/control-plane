@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -16,6 +17,7 @@ type UpgradeCommand struct {
 	targetExcludeInputs []string
 	strategy            string
 	schedule            string
+	scheduleAfter       string
 	orchestrationParams orchestration.Parameters
 }
 
@@ -45,6 +47,7 @@ func (cmd *UpgradeCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	cobraCmd.Flags().StringVar(&cmd.strategy, "strategy", string(orchestration.ParallelStrategy), "Orchestration strategy to use.")
 	cobraCmd.Flags().IntVar(&cmd.orchestrationParams.Strategy.Parallel.Workers, "parallel-workers", 0, "Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.")
 	cobraCmd.Flags().StringVar(&cmd.schedule, "schedule", "", "Orchestration schedule to use. Possible values: \"immediate\", \"maintenancewindow\". By default the schedule will be auto-selected on control plane server side.")
+	cobraCmd.Flags().StringVar(&cmd.scheduleAfter, "scheduleAfter", "", "If schedule is \"maintenancewindow\", a window after this date (2006-01-01) is picked.")
 	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrade operations for the Runtimes. The details can be obtained using the \"kcp orchestrations\" command.")
 }
 
@@ -60,6 +63,13 @@ func (cmd *UpgradeCommand) ValidateTransformUpgradeOpts() error {
 		cmd.orchestrationParams.Strategy.Schedule = scheduleParam
 	} else {
 		return fmt.Errorf("invalid value for schedule: %s. Check kcp upgrade --help for more information", cmd.schedule)
+	}
+
+	// Validate schedule
+	if scheduleAfterParam, err := time.Parse("2006-12-31", string(cmd.scheduleAfter)); err != nil {
+		cmd.orchestrationParams.Strategy.ScheduleAfter = scheduleAfterParam
+	} else {
+		return fmt.Errorf("invalid value for scheduleAfter: %s. Check kcp upgrade --help for more information", cmd.scheduleAfter)
 	}
 
 	// Validate strategy type
