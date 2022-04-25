@@ -1,22 +1,18 @@
 package metadata
 
 import (
-	"testing"
-	"time"
-
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestSaveGet(t *testing.T) {
 	// given
 	m := ers.MigrationMetadata{
-		Id:                      "1234",
-		KymaMigrated:            true,
-		KymaSkipped:             true,
-		KymaMigrationStartedAt:  time.Now().Truncate(time.Second).Local(),
-		KymaMigrationFinishedAt: time.Now().Truncate(time.Second).Local(),
+		Id:           "1234",
+		KymaMigrated: true,
+		KymaSkipped:  true,
 	}
 	svc := Storage{}
 
