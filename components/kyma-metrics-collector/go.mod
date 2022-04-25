@@ -73,7 +73,6 @@ replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
-
 	k8s.io/api => k8s.io/api v0.22.8
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.8
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.8
@@ -88,6 +87,8 @@ replace (
 	k8s.io/controller-manager => k8s.io/controller-manager v0.22.8
 	k8s.io/cri-api => k8s.io/cri-api v0.22.8
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.22.8
+
+	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.8
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.22.8
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.22.8
