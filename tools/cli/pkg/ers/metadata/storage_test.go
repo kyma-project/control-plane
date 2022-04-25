@@ -1,10 +1,11 @@
 package metadata
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSaveGet(t *testing.T) {
