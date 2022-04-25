@@ -171,8 +171,8 @@ func verifyClusterRoleBinding(c kubernetes.Interface, user SAInfo, roleRef rbacv
 		if reflect.DeepEqual(crb.Subjects, subjects) && reflect.DeepEqual(crb.RoleRef, roleRef) {
 			return true, nil
 		} else {
-			deleteClusterRoleBinding(c, user)
-			return false, nil
+			err = deleteClusterRoleBinding(c, user)
+			return false, err
 		}
 	}
 	if errors.IsNotFound(err) {
@@ -192,8 +192,8 @@ func verifyClusterRole(c kubernetes.Interface, clusterRoleName string, roleType 
 		if reflect.DeepEqual(cr.Rules, L2L3OperatorPolicyRule[roleType]) {
 			return true, nil
 		} else {
-			deleteClusterRole(c, clusterRoleName)
-			return false, nil
+			err = deleteClusterRole(c, clusterRoleName)
+			return false, err
 		}
 	}
 	if errors.IsNotFound(err) {

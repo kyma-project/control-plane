@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -33,11 +34,17 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	vars := mux.Vars(req)
 	tenant := vars["tenantID"]
 	runtime := vars["runtimeID"]
-	userInfo := req.Context().Value("userInfo").(authn.UserInfo)
 
-	log.Infof("Generating kubeconfig for %s/%s %s", tenant, runtime, userInfo)
+	var err error
+	var kubeConfig []byte
+	userInfo, ok := req.Context().Value("userInfo").(authn.UserInfo)
+	if ok {
+		log.Infof("Generating kubeconfig for %s/%s %s", tenant, runtime, userInfo)
+		kubeConfig, err = ec.generateKubeConfig(tenant, runtime, userInfo)
+	} else {
+		err = errors.New("User info is null")
+	}
 
-	kubeConfig, err := ec.generateKubeConfig(tenant, runtime, userInfo)
 	if err != nil {
 		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
