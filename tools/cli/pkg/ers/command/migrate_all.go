@@ -222,7 +222,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			err = errors.New("Refreshing take too much time. Timeout triggered.")
 		}
 
-		work.MigrationMetadata.KymaMigrated = refreshed.Migrated && err != nil
+		work.MigrationMetadata.KymaMigrated = refreshed.Migrated && err == nil
 		work.MigrationMetadata.KymaMigrationStartedAt = start
 		work.MigrationMetadata.KymaMigrationStartedEnd = time.Now()
 		err = c.metadataStorage.Save(work.MigrationMetadata)

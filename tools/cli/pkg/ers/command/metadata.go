@@ -55,16 +55,20 @@ func (c *MetadataCommand) Run() error {
 		return err
 	}
 
-	fmt.Println("ID\tKEB\tmigrated\tState\tStatus\tKymaMigrated\tKymaSkipped\tProvisionedAt")
 	for _, instance := range instances {
 		meta, err := c.metadataStorage.Get(instance.Id)
 		if err != nil {
 			continue
 		}
 		runtime, err := c.getRuntime(instance.Id)
+		createdAt := "-"
+		if runtime != nil {
+			createdAt = fmt.Sprintf("%v", runtime.Status.CreatedAt.Format("2006-01-02"))
+		}
 
-		fmt.Printf("%s\t%v\t%v\t%s\t%s\t%v\t%v\t%v\n", instance.Id, runtime != nil, instance.Migrated,
-			instance.State, instance.Status, meta.KymaMigrated, meta.KymaSkipped, runtime.Status.CreatedAt)
+		fmt.Printf("%s migrated=%v state=%-13s type=%-9s status=%-9s kMigrated=%-5v kSkipped=%-5v createdAt=%v\n",
+			instance.Id, instance.Migrated,
+			instance.State, instance.Type, instance.Status, meta.KymaMigrated, meta.KymaSkipped, createdAt)
 	}
 
 	return nil
@@ -72,7 +76,6 @@ func (c *MetadataCommand) Run() error {
 
 // getRuntime gets the runtime data from KEB, returns nil, nil if not exists
 func (c *MetadataCommand) getRuntime(instanceID string) (*runtime.RuntimeDTO, error) {
-	fmt.Printf("%sKEB%s - ", Red, Reset)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
