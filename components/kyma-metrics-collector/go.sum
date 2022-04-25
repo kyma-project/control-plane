@@ -694,8 +694,9 @@ github.com/gardener/gardener v1.24.0/go.mod h1:Ka66bCr/+tUwkf2Ov4JDMEEvdeeGtHsCf
 github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G278DY720FI=
 github.com/gardener/gardener v1.36.0/go.mod h1:aVEbZy2WybsuwfXfUFNfOYz1JOmMjEOeYbv+sN9PzE0=
 github.com/gardener/gardener v1.40.2/go.mod h1:lIao8ImIqVztkLy7soQRZ/73+mvndN0XGhSfhaIU+Y8=
-github.com/gardener/gardener v1.44.4 h1:YLGcyHipGy00TMjQ/GuuQxubczo849orJzseBq7O4Is=
 github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
+github.com/gardener/gardener v1.45.0 h1:7KGKm5q7mrmqnsY3w5Jsw3zCbt1CPFMXrQkfgkT+d2g=
+github.com/gardener/gardener v1.45.0/go.mod h1:BsQ9s0Ms5rU1IAS1doVceBGj4kNBhSMQKaDB4a2ba4k=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.34.4 h1:JwEDHSBELxs1JOVOIlTCsjQ6cS8l8nlGVkFN3cWSwpE=
 github.com/gardener/gardener-extension-provider-aws v1.34.4/go.mod h1:0YDtrNCSRBDqJLMuzE3DqD2JGgDpiD3p/t8U/b3rttk=
@@ -710,6 +711,7 @@ github.com/gardener/hvpa-controller v0.0.0-20191014062307-fad3bdf06a25/go.mod h1
 github.com/gardener/hvpa-controller v0.2.5/go.mod h1:rjsb3BPKJFMluudZ8/bhCCDQfFCF/0Um+rzXQI/MmfI=
 github.com/gardener/hvpa-controller v0.3.1/go.mod h1:rjsb3BPKJFMluudZ8/bhCCDQfFCF/0Um+rzXQI/MmfI=
 github.com/gardener/hvpa-controller/api v0.4.0/go.mod h1:QQl3ELkCaki+8RhXl0FZMfvnm0WCGwGJlGmrxJj6lvM=
+github.com/gardener/hvpa-controller/api v0.5.0/go.mod h1:QQl3ELkCaki+8RhXl0FZMfvnm0WCGwGJlGmrxJj6lvM=
 github.com/gardener/landscaper/apis v0.7.0/go.mod h1:++MW27PlSnbWM4AJipikw62RSprxO5TKVxZ8nh0e4Yw=
 github.com/gardener/machine-controller-manager v0.27.0/go.mod h1:zlIxuLQMtRO+aXOFsG6qtYkBmggbWY82K7MSO051ARU=
 github.com/gardener/machine-controller-manager v0.33.0/go.mod h1:jxxE+mGgXwg4iPlCHTG4GtUfK2CcHA6yYoIIowoxOZU=
@@ -2944,9 +2946,11 @@ honnef.co/go/tools v0.2.2/go.mod h1:lPVVZ2BS5TfnjLyizF7o7hv7j9/L+8cZY2hLyjP9cGY=
 istio.io/api v0.0.0-20201123152548-197f11e4ea09/go.mod h1:88HN3o1fSD1jo+Z1WTLlJfMm9biopur6Ct9BFKjiB64=
 istio.io/api v0.0.0-20210520012029-891c0c12abfd/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
 istio.io/api v0.0.0-20211118170605-3f0f902cdfd1/go.mod h1:lavaUNsnT7RGyMFNOGgV5XvOgP3fkTSZkxP/0H/ISt4=
+istio.io/api v0.0.0-20220304035241-8c47cbbea144/go.mod h1:lavaUNsnT7RGyMFNOGgV5XvOgP3fkTSZkxP/0H/ISt4=
 istio.io/client-go v1.8.1/go.mod h1:Qymv71lwIqjDTkaE2NqBYLL+Bl5KsCfzEDhntXypHYY=
 istio.io/client-go v1.10.1/go.mod h1:xiCalTDM2HqP1KGxMOt+OOkqCLOI6QrwQMb95cSWw9U=
 istio.io/client-go v1.12.0/go.mod h1:Y46Rc0vTVHogmIXnGMCsb19Bc0XIMhOEnZUr+5ZxMmo=
+istio.io/client-go v1.12.5/go.mod h1:rKTRGbzRHY/lb3VCCIF4wwTwvkW000acWEcseSy3V9M=
 istio.io/gogo-genproto v0.0.0-20190930162913-45029607206a/go.mod h1:OzpAts7jljZceG4Vqi5/zXy/pOg1b209T3jb7Nv5wIs=
 istio.io/gogo-genproto v0.0.0-20210113155706-4daf5697332f/go.mod h1:6BwTZRNbWS570wHX/uR1Wqk5e0157TofTAUMzT7N4+s=
 k8s.io/api v0.22.8 h1:7Ld6tHuvaYzcQE2axLmomWlhP0fK3vpLfo6fBaNrCIs=
@@ -2958,6 +2962,7 @@ k8s.io/apimachinery v0.22.8/go.mod h1:ZvVLP5iLhwVFg2Yx9Gh5W0um0DUauExbRhe+2Z8I1E
 k8s.io/apiserver v0.22.8/go.mod h1:rIFIpE4+uMYo7LYlKw7BZpAoYe3+zVjLgcdQNqQ1iyc=
 k8s.io/autoscaler v0.0.0-20190805135949-100e91ba756e/go.mod h1:QEXezc9uKPT91dwqhSJq3GNI3B1HxFRQHiku9kmrsSA=
 k8s.io/autoscaler/vertical-pod-autoscaler v0.9.0/go.mod h1:PwWTGRRCxefhAezrDbG/tRYSAW7etHjjMPAr8fXKVAA=
+k8s.io/autoscaler/vertical-pod-autoscaler v0.10.0/go.mod h1:sOm4JDB+0ZrrqFuscsbWL5KoFMMJuOrN1NE/6ulmYNA=
 k8s.io/cli-runtime v0.22.8/go.mod h1:fdEthHxzUIxwYrhCdiY1lgyjzkElENYFo+V0ONZyldE=
 k8s.io/client-go v0.22.8 h1:dWgwPqpWH/DPLWSczA6b61VxFIILe989MXipoE9332s=
 k8s.io/client-go v0.22.8/go.mod h1:dOHOy82WOBz0siYHpVyY7FqTIq+iXFXW3+THFk6qErU=
@@ -3088,6 +3093,7 @@ sigs.k8s.io/controller-runtime v0.9.1/go.mod h1:cTqsgnwSOsYS03XwySYZj8k6vf0+eC4F
 sigs.k8s.io/controller-runtime v0.10.2/go.mod h1:CQp8eyUQZ/Q7PJvnIrB6/hgfTC1kBkGylwsLgOQi1WY=
 sigs.k8s.io/controller-runtime v0.10.3/go.mod h1:CQp8eyUQZ/Q7PJvnIrB6/hgfTC1kBkGylwsLgOQi1WY=
 sigs.k8s.io/controller-runtime v0.11.0/go.mod h1:KKwLiTooNGu+JmLZGn9Sl3Gjmfj66eMbCQznLP5zcqA=
+sigs.k8s.io/controller-runtime v0.11.1/go.mod h1:KKwLiTooNGu+JmLZGn9Sl3Gjmfj66eMbCQznLP5zcqA=
 sigs.k8s.io/controller-runtime v0.11.2/go.mod h1:P6QCzrEjLaZGqHsfd+os7JQ+WFZhvB8MRFsn4dWF7O4=
 sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20210609022947-fbf50b04fe17/go.mod h1:jqzBWjsNdxfl/cDmihB034I5aCqlfw2p24HYs3Eo4K4=
 sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20211005045149-78ce10e2ebad/go.mod h1:Fxb8+lsIhcPWKq89RReMSzjcv3COhP0D37vJplt4ABg=
