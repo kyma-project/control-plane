@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -36,13 +37,12 @@ func main() {
 	kubernetesInterface, err := newKubernetesInterface(clusterConfig)
 	exitOnError(err, "Failed to create kubernetes client")
 
-	gardenerClient, err := gardener.NewClient(clusterConfig)
+	gardenerClient, err := dynamic.NewForConfig(clusterConfig)
 	exitOnError(err, "Failed to create kubernetes client")
 
-	shootInterface, err := gardener.NewGardenerShootInterface(clusterConfig, cfg.Gardener.Project)
-	exitOnError(err, "Failed to create shoot client")
-
-	secretBindingsInterface := gardener.NewGardenerSecretBindingsInterface(gardenerClient, cfg.Gardener.Project)
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
+	shootInterface := gardenerClient.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
+	secretBindingsInterface := gardenerClient.Resource(gardener.SecretBindingResource).Namespace(gardenerNamespace)
 
 	err = job.NewCleaner(context.Background(), kubernetesInterface, secretBindingsInterface, shootInterface, cloudprovider.NewProviderFactory()).Do()
 	exitOnError(err, "Job execution failed")

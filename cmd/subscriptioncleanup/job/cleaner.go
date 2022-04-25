@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -23,8 +24,8 @@ type Cleaner interface {
 
 func NewCleaner(context context.Context,
 	kubernetesInterface kubernetes.Interface,
-	secretBindingsClient gardener_apis.SecretBindingInterface,
-	shootClient gardener_apis.ShootInterface,
+	secretBindingsClient dynamic.ResourceInterface,
+	shootClient dynamic.ResourceInterface,
 	providerFactory cloudprovider.ProviderFactory) Cleaner {
 
 	return &cleaner{
@@ -38,9 +39,9 @@ func NewCleaner(context context.Context,
 
 type cleaner struct {
 	kubernetesInterface  kubernetes.Interface
-	secretBindingsClient gardener_apis.SecretBindingInterface
+	secretBindingsClient dynamic.ResourceInterface
 	providerFactory      cloudprovider.ProviderFactory
-	shootClient          gardener_apis.ShootInterface
+	shootClient          dynamic.ResourceInterface
 	context              context.Context
 }
 
@@ -53,34 +54,34 @@ func (p *cleaner) Do() error {
 	for _, secretBinding := range secretBindings {
 		canRelease, err := p.checkIfSecretCanBeReleased(secretBinding)
 		if err != nil {
-			logrus.Errorf("Failed to list shoots for '%s' secret binding: %s", secretBinding.Name, err.Error())
+			logrus.Errorf("Failed to list shoots for '%s' secret binding: %s", secretBinding.GetName(), err.Error())
 			continue
 		}
 
 		if !canRelease {
-			logrus.Warnf("Cannot release secret binding: %s. Still in use", secretBinding.Name)
+			logrus.Warnf("Cannot release secret binding: %s. Still in use", secretBinding.GetName())
 			continue
 		}
 
 		err = p.releaseResources(secretBinding)
 		if err != nil {
-			logrus.Errorf("Failed to release resources for '%s' secret binding: %s", secretBinding.Name, err.Error())
+			logrus.Errorf("Failed to release resources for '%s' secret binding: %s", secretBinding.GetName(), err.Error())
 			continue
 		}
 		err = p.returnSecretBindingToThePool(secretBinding)
 		if err != nil {
-			logrus.Errorf("Failed returning '%s' secret binding to the pool: %s", secretBinding.Name, err.Error())
+			logrus.Errorf("Failed returning '%s' secret binding to the pool: %s", secretBinding.GetName(), err.Error())
 			continue
 		}
-		logrus.Infof("Resources released for '%s' secret binding", secretBinding.Name)
+		logrus.Infof("Resources released for '%s' secret binding", secretBinding.GetName())
 	}
 
 	logrus.Info("Finished releasing resources")
 	return nil
 }
 
-func (p *cleaner) releaseResources(secretBinding v1beta1.SecretBinding) error {
-	hyperscalerType, err := model.NewHyperscalerType(secretBinding.Labels["hyperscalerType"])
+func (p *cleaner) releaseResources(secretBinding unstructured.Unstructured) error {
+	hyperscalerType, err := model.NewHyperscalerType(secretBinding.GetLabels()["hyperscalerType"])
 	if err != nil {
 		return errors.Wrap(err, "starting releasing resources")
 	}
@@ -98,25 +99,28 @@ func (p *cleaner) releaseResources(secretBinding v1beta1.SecretBinding) error {
 	return cleaner.Do()
 }
 
-func (p *cleaner) getBoundSecret(secretBinding v1beta1.SecretBinding) (*apiv1.Secret, error) {
+func (p *cleaner) getBoundSecret(sb unstructured.Unstructured) (*apiv1.Secret, error) {
+	secretBinding := gardener.SecretBinding{sb}
 	secret, err := p.kubernetesInterface.CoreV1().
-		Secrets(secretBinding.SecretRef.Namespace).
-		Get(p.context, secretBinding.SecretRef.Name, metav1.GetOptions{})
+		Secrets(secretBinding.GetSecretRefNamespace()).
+		Get(p.context, secretBinding.GetSecretRefName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting %s/%s secret",
-			secretBinding.SecretRef.Namespace, secretBinding.SecretRef.Name)
+			secretBinding.GetSecretRefNamespace(), secretBinding.GetSecretRefName())
 	}
 	return secret, nil
 }
 
-func (p *cleaner) returnSecretBindingToThePool(secretBinding v1beta1.SecretBinding) error {
-	sb, err := p.secretBindingsClient.Get(p.context, secretBinding.Name, metav1.GetOptions{})
+func (p *cleaner) returnSecretBindingToThePool(secretBinding unstructured.Unstructured) error {
+	sb, err := p.secretBindingsClient.Get(p.context, secretBinding.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	delete(sb.Labels, "dirty")
-	delete(sb.Labels, "tenantName")
+	l := sb.GetLabels()
+	delete(l, "dirty")
+	delete(l, "tenantName")
+	sb.SetLabels(l)
 
 	_, err = p.secretBindingsClient.Update(p.context, sb, metav1.UpdateOptions{})
 	if err != nil {
@@ -126,21 +130,22 @@ func (p *cleaner) returnSecretBindingToThePool(secretBinding v1beta1.SecretBindi
 	return nil
 }
 
-func (p *cleaner) getSecretBindingsToRelease() ([]v1beta1.SecretBinding, error) {
+func (p *cleaner) getSecretBindingsToRelease() ([]unstructured.Unstructured, error) {
 	labelSelector := fmt.Sprintf("dirty=true")
 
 	return getSecretBindings(p.context, p.secretBindingsClient, labelSelector)
 }
 
 // Checks if there are no clusters tied to the secret binding
-func (p *cleaner) checkIfSecretCanBeReleased(binding v1beta1.SecretBinding) (bool, error) {
+func (p *cleaner) checkIfSecretCanBeReleased(binding unstructured.Unstructured) (bool, error) {
 	list, err := p.shootClient.List(p.context, metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list shoots")
 	}
 
-	for _, shoot := range list.Items {
-		if shoot.Spec.SecretBindingName == binding.Name {
+	for _, sh := range list.Items {
+		shoot := gardener.Shoot{sh}
+		if shoot.GetSpecSecretBindingName() == binding.GetName() {
 			return false, nil
 		}
 	}
@@ -148,7 +153,7 @@ func (p *cleaner) checkIfSecretCanBeReleased(binding v1beta1.SecretBinding) (boo
 	return true, nil
 }
 
-func getSecretBindings(ctx context.Context, secretBindingsClient gardener_apis.SecretBindingInterface, labelSelector string) ([]v1beta1.SecretBinding, error) {
+func getSecretBindings(ctx context.Context, secretBindingsClient dynamic.ResourceInterface, labelSelector string) ([]unstructured.Unstructured, error) {
 	secrets, err := secretBindingsClient.List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
