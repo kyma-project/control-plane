@@ -443,8 +443,8 @@ github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWp
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
-github.com/gardener/gardener v1.44.4 h1:YLGcyHipGy00TMjQ/GuuQxubczo849orJzseBq7O4Is=
-github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
+github.com/gardener/gardener v1.45.0 h1:7KGKm5q7mrmqnsY3w5Jsw3zCbt1CPFMXrQkfgkT+d2g=
+github.com/gardener/gardener v1.45.0/go.mod h1:BsQ9s0Ms5rU1IAS1doVceBGj4kNBhSMQKaDB4a2ba4k=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/gavv/httpexpect v0.0.0-20170820080527-c44a6d7bb636 h1:FbWwmG7qBNykpmPppq5767far39ty4P7lOhpPNK8Ik4=
 github.com/gavv/httpexpect v0.0.0-20170820080527-c44a6d7bb636/go.mod h1:x+9tiU1YnrOvnB725RkpoLv1M62hOWzwo5OXotisrKc=
@@ -776,10 +776,10 @@ github.com/kubernetes-sigs/service-catalog v0.3.0/go.mod h1:zRfgMd1T9HuXR24Qj4GO
 github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877 h1:p8dtZITQFZBfEqkefVW4Ds+EoGPDB7QZ45C2sLFGhTY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877/go.mod h1:017nxy7CUKOD3VjYyxMIEzKMvUXTjvJfSjPBq7kiJlk=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 h1:8im1YmVAcwDLVoLhvFFnqdQW8c2wsqX3uzdxS9GZkMc=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8/go.mod h1:OT4TJXzp5IIZrEkRksRazZ4vfLf9TxNYjPUGsPmQ+iY=
 github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986 h1:A66tp46cex5jWZ6JeW94EuTjpkvdX2D5P1FckN4Nt+0=
 github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986/go.mod h1:/x7yd8gZei/mm/CgoxEToPvkkJIXKTb4DYVC8gcKn78=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 h1:8im1YmVAcwDLVoLhvFFnqdQW8c2wsqX3uzdxS9GZkMc=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8/go.mod h1:OT4TJXzp5IIZrEkRksRazZ4vfLf9TxNYjPUGsPmQ+iY=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6/go.mod h1:RzRNmOyU59g0phPOjlZ/QAGTf+J1ff51r5/EHvBhbrI=
 github.com/lann/builder v0.0.0-20180802200727-47ae307949d0/go.mod h1:dXGbAdH5GtBTC4WfIxhKZfyBF/HBFgRZSWwZ9g/He9o=
