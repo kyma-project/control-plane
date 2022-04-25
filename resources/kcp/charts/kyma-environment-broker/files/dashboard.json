@@ -2711,12 +2711,13 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
+          "selected": true,
+          "tags": [],
           "text": [
-            "aws"
+            "All"
           ],
           "value": [
-            "361c511f-f939-4621-b228-d0fb79a1fe15"
+            "$__all"
           ]
         },
         "description": null,
@@ -2728,12 +2729,12 @@
         "name": "plan_id",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "All",
             "value": "$__all"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "aws",
             "value": "361c511f-f939-4621-b228-d0fb79a1fe15"
           },
@@ -2812,7 +2813,7 @@
           "query": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\"}, error_category)",
           "refId": "StandardVariableQuery"
         },
-        "refresh": 0,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -2846,7 +2847,7 @@
           "query": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\", error_category=~\"$error_category\"}, error_reason)",
           "refId": "StandardVariableQuery"
         },
-        "refresh": 0,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
