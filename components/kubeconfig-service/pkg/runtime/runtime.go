@@ -97,13 +97,13 @@ func removeObject(c kubernetes.Interface, rmObj map[string]bool, user SAInfo) {
 	if rmObj["SA"] {
 		err := deleteServiceAccount(c, user)
 		if err != nil {
-			log.Info("Delete service account %s failed", user.ServiceAccountName)
+			log.Infof("Delete service account %s failed", user.ServiceAccountName)
 		}
 	}
 	if rmObj["ClusterRole"] {
 		err := deleteClusterRole(c, user.ClusterRoleName)
 		if err != nil {
-			log.Info("Delete clusterrole %s failed", user.ServiceAccountName)
+			log.Infof("Delete clusterrole %s failed", user.ServiceAccountName)
 		}
 	}
 }
