@@ -2,18 +2,22 @@ package runtime
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	rbacv1helpers "k8s.io/kubernetes/pkg/apis/rbac/v1"
 )
 
@@ -46,12 +50,11 @@ var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
 
 //kubeconfig login skr, create sa, clusterrole and clusterrolebinding according to userID and roleType
 func GenerateSAToken(kubeConfig []byte, userID string, roleType string) (string, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
+	cmdConfig, err := parseKubeconfig(kubeConfig)
 	if err != nil {
-		return "", err
+		return " ", err
 	}
-
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(cmdConfig)
 	if err != nil {
 		return "", err
 	}
@@ -91,6 +94,87 @@ func GenerateSAToken(kubeConfig []byte, userID string, roleType string) (string,
 		return "", crbErr
 	}
 	return string(saToken), nil
+}
+
+func parseKubeconfig(kubeConfig []byte) (*rest.Config, error) {
+	type CLUSTER struct {
+		CertificateAuthorityData string `yaml:"certificate-authority-data,omitempty"`
+		Server                   string `yaml:"server,omitempty"`
+	}
+	type CLUSTERT struct {
+		Name    string
+		Cluster CLUSTER
+	}
+	type CONTEXT struct {
+		Cluster string
+		User    string
+	}
+	type CONTEXTT struct {
+		Name    string
+		Context CONTEXT
+	}
+	type EXEC struct {
+		ApiVersion  string `yaml:"apiVersion,omitempty"`
+		Args        []string
+		Command     string
+		InstallHint string `yaml:"installHint,omitempty"`
+	}
+	type USER struct {
+		Exec EXEC
+	}
+	type USERT struct {
+		Name string
+		User USER
+	}
+	type Kubeconfig struct {
+		ApiVersion     string `yaml:"apiVersion,omitempty"`
+		Kind           string `yaml:"kind,omitempty"`
+		CurrentContext string `yaml:"current-context,omitempty"`
+		Clusters       []CLUSTERT
+		Contexts       []CONTEXTT
+		Users          []USERT
+	}
+	var kubeconfig Kubeconfig
+	if err := yaml.Unmarshal(kubeConfig, &kubeconfig); err != nil {
+		return nil, err
+	}
+
+	cadata := kubeconfig.Clusters[0].Cluster.CertificateAuthorityData
+	args := kubeconfig.Users[0].User.Exec.Args
+	clusterName := kubeconfig.CurrentContext
+	cert, err := base64.StdEncoding.DecodeString(cadata)
+	if err != nil {
+		return nil, err
+	}
+
+	config := clientcmdapi.NewConfig()
+	config.Clusters[clusterName] = &clientcmdapi.Cluster{
+		Server:                   kubeconfig.Clusters[0].Cluster.Server,
+		CertificateAuthorityData: cert,
+	}
+	config.Contexts[clusterName] = &clientcmdapi.Context{
+		Cluster:  clusterName,
+		AuthInfo: clusterName,
+	}
+	config.CurrentContext = clusterName
+	overrides := clientcmd.ConfigOverrides{
+		AuthInfo: clientcmdapi.AuthInfo{
+			Exec: &clientcmdapi.ExecConfig{
+				Args:            args,
+				APIVersion:      kubeconfig.Users[0].User.Exec.ApiVersion,
+				Command:         kubeconfig.Users[0].User.Exec.Command,
+				InstallHint:     kubeconfig.Users[0].User.Exec.InstallHint,
+				InteractiveMode: clientcmdapi.IfAvailableExecInteractiveMode,
+			},
+		},
+	}
+
+	cmdConfig, err := clientcmd.NewNonInteractiveClientConfig(*config, clusterName, &overrides, nil).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return cmdConfig, nil
 }
 
 func removeObject(c kubernetes.Interface, rmObj map[string]bool, user SAInfo) {
