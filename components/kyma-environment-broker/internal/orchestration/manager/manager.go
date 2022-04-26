@@ -15,6 +15,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/strategies"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
@@ -42,6 +44,7 @@ type orchestrationManager struct {
 	configName           string
 	kymaVersion          string
 	kubernetesVersion    string
+	bundleBuilder        notification.BundleBuilder
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
@@ -81,13 +84,25 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	}
 
 	strategy := m.resolveStrategy(o.Parameters.Strategy.Type, m.executor, logger)
+
+	// ctreate notification after orchestration resolved
+	if !m.bundleBuilder.DisabledCheck() {
+		err := m.sendNotificationCreate(o, operations)
+		//currently notification error can only be temporary error
+		if err != nil && kebError.IsTemporaryError(err) {
+			return 5 * time.Second, nil
+		}
+	}
+
 	execID, err := strategy.Execute(operations, o.Parameters.Strategy)
 	if err != nil {
 		return 0, errors.Wrap(err, "while executing upgrade strategy")
 	}
 
 	o, err = m.waitForCompletion(o, strategy, execID, logger)
-	if err != nil {
+	if err != nil && kebError.IsTemporaryError(err) {
+		return 5 * time.Second, nil
+	} else if err != nil {
 		return 0, errors.Wrap(err, "while waiting for orchestration to finish")
 	}
 
@@ -281,6 +296,14 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 			return nil, errors.Wrap(err, "while resolving canceled operations")
 		}
 		strategy.Cancel(execID)
+		// Send customer notification for cancel
+		if !m.bundleBuilder.DisabledCheck() {
+			err := m.sendNotificationCancel(o)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return nil, err
+			}
+		}
 		o.State = orchestration.Canceled
 	} else {
 		state := orchestration.Succeeded
@@ -394,6 +417,82 @@ func (m *orchestrationManager) updateOrchestration(o *internal.Orchestration, st
 		}
 	}
 	return 0
+}
+
+func (m *orchestrationManager) sendNotificationCreate(o *internal.Orchestration, operations []orchestration.RuntimeOperation) error {
+	if o.State == orchestration.InProgress {
+		if o.Parameters.NotificationState == "" {
+			m.log.Info("Initialize notification status")
+			o.Parameters.NotificationState = orchestration.NotificationPending
+		}
+		//Skip sending create signal if notification already existed
+		if o.Parameters.NotificationState == orchestration.NotificationPending {
+			eventType := ""
+			tenants := []notification.NotificationTenant{}
+			if o.Type == orchestration.UpgradeKymaOrchestration {
+				eventType = notification.KymaMaintenanceNumber
+			} else if o.Type == orchestration.UpgradeClusterOrchestration {
+				eventType = notification.KubernetesMaintenanceNumber
+			}
+			for _, op := range operations {
+				startDate := ""
+				endDate := ""
+				if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+					startDate = op.Runtime.MaintenanceWindowBegin.String()
+					endDate = op.Runtime.MaintenanceWindowEnd.String()
+				} else {
+					startDate = time.Now().Format("2006-01-02 15:04:05")
+				}
+				tenant := notification.NotificationTenant{
+					InstanceID: op.Runtime.InstanceID,
+					StartDate:  startDate,
+					EndDate:    endDate,
+				}
+				tenants = append(tenants, tenant)
+			}
+			notificationParams := notification.NotificationParams{
+				OrchestrationID: o.OrchestrationID,
+				EventType:       eventType,
+				Tenants:         tenants,
+			}
+			m.log.Info("Start to create notification")
+			notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
+			if err != nil {
+				m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
+				return err
+			}
+			err = notificationBundle.CreateNotificationEvent()
+			if err != nil {
+				m.log.Errorf("%s: %s", "cannot send notification", err)
+				return err
+			}
+			m.log.Info("Creating notification succedded")
+			o.Parameters.NotificationState = orchestration.NotificationCreated
+		}
+	}
+	return nil
+}
+
+func (m *orchestrationManager) sendNotificationCancel(o *internal.Orchestration) error {
+	if o.Parameters.NotificationState == orchestration.NotificationCreated {
+		notificationParams := notification.NotificationParams{
+			OrchestrationID: o.OrchestrationID,
+		}
+		m.log.Info("Start to cancel notification")
+		notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
+		if err != nil {
+			m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
+			return err
+		}
+		err = notificationBundle.CancelNotificationEvent()
+		if err != nil {
+			m.log.Errorf("%s: %s", "cannot cancel notification", err)
+			return err
+		}
+		m.log.Info("Cancelling notification succedded")
+		o.Parameters.NotificationState = orchestration.NotificationCancelled
+	}
+	return nil
 }
 
 func updateRetryingDescription(desc string, newDesc string) string {

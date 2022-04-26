@@ -19,6 +19,7 @@ const (
 	ErrEDPConflict   EDPErrReason = "err_edp_internal"
 	ErrEDPNotFound   EDPErrReason = "err_edp_not_found"
 	ErrEDPBadRequest EDPErrReason = "err_edp_bad_request"
+	ErrEDPTimeout    EDPErrReason = "err_edp_timeout"
 	ErrEDPOther      EDPErrReason = "err_edp_other"
 )
 
@@ -64,6 +65,8 @@ func (e edpError) Reason() EDPErrReason {
 		reason = ErrEDPNotFound
 	case http.StatusBadRequest:
 		reason = ErrEDPBadRequest
+	case http.StatusRequestTimeout:
+		reason = ErrEDPTimeout
 	}
 
 	return reason

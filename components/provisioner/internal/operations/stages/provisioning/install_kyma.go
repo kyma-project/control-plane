@@ -72,7 +72,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		cluster.KymaConfig.GlobalConfiguration,
 		cluster.KymaConfig.Components)
 	if err != nil {
-		return operations.StageResult{}, apperrors.External(fmt.Sprintf("error: failed to start installation: %s", err.Error())).SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrTriggerKymaInstallation)
+		return operations.StageResult{}, apperrors.External(fmt.Sprintf("error: failed to start installation: %s", err.Error())).SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrTriggerKymaInstall)
 	}
 
 	logger.Warnf("Installation started, proceeding to next step...")

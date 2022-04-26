@@ -565,7 +565,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
-		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("error"))
+		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), false, mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("some error"))
 		installationClient.On("CheckInstallationState", mock.Anything).Return(installedState, nil)
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil, nil, nil, nil, nil)
@@ -576,20 +576,22 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		util.CheckErrorType(t, err, apperrors.CodeInternal)
 
 		// then
-		assert.Contains(t, err.Error(), "Failed to start deprovisioning")
+		assert.Error(t, err, "Failed to start deprovisioning: some error")
+		assert.Equal(t, apperrors.ErrProvisioner, err.Component())
+		assert.Equal(t, apperrors.ErrProvisionerInternal, err.Reason())
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 		provisioner.AssertExpectations(t)
 	})
 
-	t.Run("Should return error while deprovisioning when failed to get cluster ", func(t *testing.T) {
+	t.Run("Should return error while deprovisioning when failed to get cluster", func(t *testing.T) {
 		// given
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
-		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
+		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
@@ -598,7 +600,9 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		require.Error(t, err)
 
 		// then
-		assert.Contains(t, err.Error(), "Failed to get cluster")
+		assert.Error(t, err, "some error")
+		assert.Equal(t, apperrors.ErrDB, err.Component())
+		assert.Equal(t, dberrors.ErrDBInternal, err.Reason())
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 	})
@@ -621,6 +625,9 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 		// then
 		assert.Contains(t, err.Error(), "previous one is in progress")
+		assert.Equal(t, apperrors.ErrProvisioner, err.Component())
+		assert.Equal(t, apperrors.ErrProvisionerInternal, err.Reason())
+		assert.Equal(t, apperrors.CodeBadRequest, err.Code())
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 	})
@@ -631,7 +638,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
-		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
+		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
 
 		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
@@ -640,7 +647,9 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		require.Error(t, err)
 
 		// then
-		assert.Contains(t, err.Error(), "failed to get last operation")
+		assert.Error(t, err, "failed to get last operation, some error")
+		assert.Equal(t, apperrors.ErrDB, err.Component())
+		assert.Equal(t, dberrors.ErrDBInternal, err.Reason())
 		sessionFactoryMock.AssertExpectations(t)
 		readWriteSession.AssertExpectations(t)
 	})

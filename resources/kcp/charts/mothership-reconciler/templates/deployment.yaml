@@ -73,8 +73,7 @@ spec:
           - start
           - --config=mothership-configuration/reconciler.yaml
           - --migrate-database
-          - --reconciliations-keep-n-latest=150
-          - --entities-max-age-days=4
+          - --purge-older-than=96h
           {{- if .Values.options.verbose }}
           - --verbose
           {{- end }}
