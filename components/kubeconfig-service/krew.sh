@@ -25,6 +25,8 @@ tar zxvf "${KREW}.tar.gz" &&
 ./"${KREW}" install krew
 
 cp -r ${HOME}/.krew/bin/kubectl-krew /usr/local/bin/
+export PATH="${PATH}:${HOME}/.krew/bin"
 echo "Using krew install oidc-login pulgin"
-kubectl krew list
 kubectl krew install oidc-login
+kubectl krew list
+kubectl oidc-login
