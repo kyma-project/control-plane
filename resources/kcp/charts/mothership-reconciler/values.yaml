@@ -131,3 +131,12 @@ serviceMonitor:
   enabled: false
   scrapeTimeout: 30s
   interval: 60s
+
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# by default purgeOlderThan (old cleaner script) is activated
+cleanerScript:
+  enabled: false
+  reconMaxAge: 4
+  reconKeepCount: 150
+  inventoryMaxAge: 4
+  purgeOlderThan: 96h
