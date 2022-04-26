@@ -13,6 +13,7 @@ COPY . .
 #
 # Build app
 #
+RUN  /sbin/apk --no-cache add --update bash sudo git coreutils curl openssl vim jq
 COPY     krew.sh /opt/
 RUN     chmod +x /opt/* \
         && set -x \
