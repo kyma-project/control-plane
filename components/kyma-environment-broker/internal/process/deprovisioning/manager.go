@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -51,6 +52,13 @@ func (m *Manager) AddStep(weight int, step Step) {
 func (m *Manager) runStep(step Step, operation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	start := time.Now()
 	processedOperation, when, err := step.Run(operation, logger)
+	if err != nil {
+		processedOperation.LastError = kebError.ReasonForError(err)
+		log := logger.WithFields(logrus.Fields{"error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
+		log.Errorf("Last error: %s", processedOperation.LastError.Error())
+		// no saving to storage for deprovisioning
+	}
+
 	m.publisher.Publish(context.TODO(), process.DeprovisioningStepProcessed{
 		StepProcessed: process.StepProcessed{
 			StepName: step.Name(),
@@ -72,13 +80,26 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	}
 	operation := *op
 
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID})
+
 	provisioningOp, err := m.operationStorage.GetProvisioningOperationByInstanceID(op.InstanceID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch ProvisioningOperation for instanceID %s from storage: %s", op.InstanceID, err)
+
+		operation.LastError = kebError.ReasonForError(err)
+		log := logOperation.WithFields(logrus.Fields{"error_component": operation.LastError.Component(), "error_reason": operation.LastError.Reason()})
+		log.Errorf("Last error: %s", operation.LastError.Error())
+		m.publisher.Publish(context.TODO(), process.DeprovisioningStepProcessed{
+			StepProcessed: process.StepProcessed{
+				Error: err,
+			},
+			Operation: operation,
+		})
+
 		return 0, err
 	}
 
-	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": provisioningOp.ProvisioningParameters.PlanID})
+	logOperation = logOperation.WithField("planID", provisioningOp.ProvisioningParameters.PlanID)
 
 	var when time.Duration
 	logOperation.Info("Start process operation steps")

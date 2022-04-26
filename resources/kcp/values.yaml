@@ -2,8 +2,8 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:38b04f8c"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:38b04f8c"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:eeb6e71d"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:eeb6e71d"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -11,22 +11,22 @@ global:
       version: "4650dbfb"
     provisioner:
       dir:
-      version: "PR-1573"
+      version: "PR-1589"
     kyma_environment_broker:
       dir:
-      version: "PR-1591"
+      version: "PR-1628"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1527"
+      version: "PR-1600"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1527"
+      version: "PR-1600"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1474"
+      version: "PR-1600"
     kyma_metrics_collector:
       dir:
-      version: "PR-1585"
+      version: "PR-1620"
     tests:
       provisioner:
         dir:
@@ -161,7 +161,7 @@ global:
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
       image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 1.8.9-aef5095d
+      tag: 1.8.15-a6fa9cb0
       persistence:
         enabled: true
         accessMode: ReadWriteOnce

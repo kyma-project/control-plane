@@ -201,10 +201,12 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.Deprovisionin
 	case gqlschema.OperationStatePending:
 		return operation, 1 * time.Minute, nil
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), nil, log)
+		lastErr := provisioner.OperationStatusLastError(status.LastError)
+		return s.operationManager.OperationFailed(operation, "provisioner client returns failed status", lastErr, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
+	lastErr := provisioner.OperationStatusLastError(status.LastError)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), lastErr, log)
 }
 
 func (s *InitialisationStep) removeInstance(instanceID string) (time.Duration, error) {

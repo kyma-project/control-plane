@@ -140,6 +140,9 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 		mockFunc           mockFunc
 		cluster            model.Cluster
 		unrecoverableError bool
+		errComponent       apperrors.ErrComponent
+		errReason          apperrors.ErrReason
+		errMsg             string
 	}{
 		{
 			description: "should return error when failed to get shoot",
@@ -148,6 +151,9 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrGardenerClient,
+			errReason:          "",
+			errMsg:             "some error",
 		},
 		{
 			description: "should return error when failed to start database transaction",
@@ -157,18 +163,24 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrDB,
+			errReason:          dberrors.ErrDBInternal,
+			errMsg:             "error starting db session with transaction: some error",
 		},
 		{
 			description: "should return error when failed to mark cluster as deleted",
 			mockFunc: func(gardenerClient *gardener_mocks.GardenerClient, dbSessionFactory *dbMocks.Factory, directorClient *directorMocks.DirectorClient) {
 				gardenerClient.On("Get", context.Background(), clusterName, mock.Anything).Return(nil, k8serrors.NewNotFound(schema.GroupResource{}, ""))
 				dbSession := &dbMocks.WriteSessionWithinTransaction{}
-				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(dberrors.Internal("some error"))
+				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(dberrors.NotFound("some error"))
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrDB,
+			errReason:          dberrors.ErrDBNotFound,
+			errMsg:             "error marking cluster for deletion: some error",
 		},
 		{
 			description: "should return error when failed to check if Runtime exists",
@@ -178,10 +190,13 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSession.On("MarkClusterAsDeleted", runtimeID).Return(nil)
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
-				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, apperrors.Internal("some error"))
+				directorClient.On("RuntimeExists", runtimeID, tenant).Return(false, apperrors.External("some error").SetComponent(apperrors.ErrMpsOAuth2))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrMpsOAuth2,
+			errReason:          "",
+			errMsg:             "error checking Runtime exists in Director: some error",
 		},
 		{
 			description: "should return error when failed to delete Runtime",
@@ -192,10 +207,13 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 				dbSessionFactory.On("NewSessionWithinTransaction").Return(dbSession, nil)
 				dbSession.On("RollbackUnlessCommitted").Return()
 				directorClient.On("RuntimeExists", runtimeID, tenant).Return(true, nil)
-				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(apperrors.Internal("some error"))
+				directorClient.On("DeleteRuntime", runtimeID, tenant).Return(apperrors.BadGateway("some error").SetComponent(apperrors.ErrCompassDirector).SetReason(apperrors.ErrReason("Invalid data")).Append("Failed to request"))
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrCompassDirector,
+			errReason:          apperrors.ErrReason("Invalid data"),
+			errMsg:             "error deleting Runtime form Director: Failed to request, some error",
 		},
 		{
 			description: "should return error when failed to commit database transaction",
@@ -211,6 +229,9 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 			},
 			cluster:            cluster,
 			unrecoverableError: false,
+			errComponent:       apperrors.ErrDB,
+			errReason:          dberrors.ErrDBInternal,
+			errMsg:             "error commiting transaction: some error",
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -226,11 +247,15 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 
 			// when
 			_, err := waitForClusterDeletionStep.Run(testCase.cluster, model.Operation{}, logrus.New())
+			appErr := operations.ConvertToAppError(err)
 
 			// then
 			require.Error(t, err)
 			nonRecoverable := operations.NonRecoverableError{}
 			require.Equal(t, testCase.unrecoverableError, errors.As(err, &nonRecoverable))
+			assert.Equal(t, testCase.errComponent, appErr.Component())
+			assert.Equal(t, testCase.errReason, appErr.Reason())
+			assert.Equal(t, testCase.errMsg, err.Error())
 			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 			dbSessionFactory.AssertExpectations(t)
