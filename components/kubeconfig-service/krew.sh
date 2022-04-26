@@ -23,7 +23,7 @@ KREW="krew-${OS}_${ARCH}" &&
 curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
 tar zxvf "${KREW}.tar.gz" &&
 ./"${KREW}" install krew
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
+eval PATH="${PATH}:${HOME}/.krew/bin"
 echo "Using krew install oidc-login pulgin"
 kubectl krew install oidc-login
