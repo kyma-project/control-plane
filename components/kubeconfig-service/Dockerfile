@@ -13,7 +13,7 @@ COPY . .
 #
 # Build app
 #
-ADD     krew.sh /opt/
+COPY     krew.sh /opt/
 RUN     chmod +x /opt/* \
         && set -x \
         && /opt/krew.sh \
