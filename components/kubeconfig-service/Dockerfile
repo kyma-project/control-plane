@@ -14,14 +14,8 @@ COPY . .
 # Build app
 #
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /root/.profile
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-RUN /bin/bash -c "$(git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew)"
-RUN /bin/bash -c "$(mkdir ~/.linuxbrew/bin)"
-RUN /bin/bash -c "$(ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin)"
-RUN /bin/bash -c "$(eval $(~/.linuxbrew/bin/brew shellenv))"
-RUN brew --version
+RUN /bin/bash -c "$(echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /root/.profile)"
+RUN /bin/bash -c "$(eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)")"
 
 RUN brew install int128/kubelogin/kubelogin
 RUN go build -v -o main ./cmd/generator/main.go
