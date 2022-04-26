@@ -11,6 +11,15 @@ spec:
   - port: http
     interval: {{ .Values.serviceMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+  - port: fluentbit-metrics
+    interval: {{ .Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+    path: /api/v1/metrics/prometheus
+    metricRelabelings:
+      - action: keep
+        regex: ^(fluentbit_.*|go_.*|process_.*)$
+        sourceLabels:
+          - __name__
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
