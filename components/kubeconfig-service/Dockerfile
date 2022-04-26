@@ -13,10 +13,13 @@ COPY . .
 #
 # Build app
 #
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /root/.profile
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+RUN git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew \
+&& mkdir ~/.linuxbrew/bin \
+&& ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin \
+&& eval $(~/.linuxbrew/bin/brew shellenv) \
+&& brew --version
 RUN brew install int128/kubelogin/kubelogin
+
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
