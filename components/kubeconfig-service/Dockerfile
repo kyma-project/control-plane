@@ -13,7 +13,8 @@ COPY . .
 #
 # Build app
 #
-
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN brew install int128/kubelogin/kubelogin
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
