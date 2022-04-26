@@ -24,6 +24,7 @@ curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${
 tar zxvf "${KREW}.tar.gz" &&
 ./"${KREW}" install krew
 
-eval PATH="${PATH}:${HOME}/.krew/bin"
+cp -r ${HOME}/.krew/bin/kubectl-krew /usr/local/bin/
 echo "Using krew install oidc-login pulgin"
+kubectl krew list
 kubectl krew install oidc-login
