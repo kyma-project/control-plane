@@ -1,5 +1,5 @@
 {{ $global := . }}
-{{- range $component := .Values.global.components }}
+{{- range $component, $entry := .Values.global.images.components }}
 {{- if and $global.Values.deployment.podDisruptionBudget (gt ($global.Values.deployment.replicasCount | int) 1) -}}
 {{ $values := index $global.Values $component }}
 apiVersion: policy/v1beta1

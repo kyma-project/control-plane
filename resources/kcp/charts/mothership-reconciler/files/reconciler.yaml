@@ -26,7 +26,7 @@ mothership:
   scheduler:
     deleteStrategy: all
     reconcilers:
-{{- range $component := .Values.global.components }}
+{{- range $component := .Values.global.images.components }}
       {{ $component }}:
         url: http://{{ $component }}-reconciler:8080/v1/run
 {{- end }}
