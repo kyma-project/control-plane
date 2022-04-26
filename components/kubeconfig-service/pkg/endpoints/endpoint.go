@@ -86,12 +86,7 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 		return nil, err
 	}
 
-	rawKubeConfig, err := tc.TransformKubeconfig(transformer.KubeconfigTemplate)
-	if err != nil {
-		return nil, err
-	}
-
-	tc.SaToken, err = run.GenerateSAToken(rawKubeConfig, userInfo.ID, userInfo.Role)
+	tc.SaToken, err = run.GenerateSAToken([]byte(rawConfig), userInfo.ID, userInfo.Role)
 	if err != nil {
 		return nil, err
 	}

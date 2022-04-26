@@ -16,7 +16,6 @@ COPY . .
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.14.2
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app
@@ -25,12 +24,7 @@ WORKDIR /app
 # Install certificates
 #
 FROM alpine:3.15.4
-RUN apk add --no-cache ca-certificates openssl
-RUN  apk --no-cache add --update bash sudo git coreutils curl vim jq
-COPY krew.sh /opt/
-RUN  chmod +x /opt/* \
-     && set -x \
-     && /opt/krew.sh
+RUN  apk add --no-cache ca-certificates openssl
 #
 # Copy binary
 #
