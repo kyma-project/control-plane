@@ -149,7 +149,7 @@ spec:
               name: {{ .Values.global.mothership_reconciler.auditlog.secretName }}
               key: auditlog-password
         ports:
-        - name: fluentbit-metrics
+        - name: fluentbit
           containerPort: 2020
           protocol: TCP
         volumeMounts:
