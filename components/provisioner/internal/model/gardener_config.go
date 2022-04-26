@@ -405,7 +405,15 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		if err != nil {
 			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
 		}
-		infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
+		if *c.input.EnableNatGateway {
+			infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+			if c.input.IdleConnectionTimeoutMinutes != nil {
+				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = *c.input.IdleConnectionTimeoutMinutes
+			}
+		} else {
+			infra.Networks.NatGateway = nil
+		}
+		infra.Networks.VNet.CIDR = util.StringPtr(c.input.VnetCidr)
 		jsonData, err := json.Marshal(infra)
 		if err != nil {
 			return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
