@@ -53,6 +53,13 @@ spec:
         {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
         {{- end }}
         {{- end }}
+        {{- if $.Values.component_reconcilers }}
+        {{- if (index $.Values.component_reconcilers $component) }}
+        {{- if (index $.Values.component_reconcilers $component).env }}
+        {{- (index $.Values.component_reconcilers $component).env | nindent 8}}
+        {{- end}}
+        {{- end}}
+        {{- end}}
         name: {{ $component }}-reconciler
         ports:
         - name: http

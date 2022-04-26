@@ -6,6 +6,7 @@ import (
 
 	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -72,6 +73,53 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		_, err = memoryStorage.Instances().GetByID(instance.InstanceID)
 		assert.True(t, dberr.IsNotFound(err))
+	})
+
+	t.Run("Should mark operation as Failed when operation has failed", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+
+		operation := fixDeprovisioningOperation()
+		operation.ProvisionerOperationID = fixProvisionerOperationID
+		operation.State = domain.InProgress
+		err := memoryStorage.Operations().InsertDeprovisioningOperation(operation)
+		assert.NoError(t, err)
+
+		provisioningOperation := fixProvisioningOperation()
+		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		assert.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		assert.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateFailed,
+			Message:   nil,
+			RuntimeID: nil,
+			LastError: &gqlschema.LastError{
+				ErrMessage: "error msg",
+				Reason:     "Forbidden",
+				Component:  "k8s client - gardener",
+			},
+		}, nil)
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
+
+		// when
+		operation, _, err = step.Run(operation, log)
+		lastErr := kebError.ReasonForError(err)
+
+		// then
+		assert.Error(t, lastErr, "provisioner client returns failed status: error msg")
+		assert.Equal(t, kebError.ErrReason("Forbidden"), lastErr.Reason())
+		assert.Equal(t, kebError.ErrComponent("k8s client - gardener"), lastErr.Component())
+		assert.Equal(t, domain.Failed, operation.State)
+
 	})
 
 	t.Run("Should delete instance and userID when operation has succeeded", func(t *testing.T) {
