@@ -13,11 +13,11 @@ COPY . .
 #
 # Build app
 #
-RUN  /sbin/apk --no-cache add --update bash sudo git coreutils curl openssl vim jq
-COPY     krew.sh /opt/
-RUN     chmod +x /opt/* \
-        && set -x \
-        && /opt/krew.sh
+RUN  apk --no-cache add --update bash sudo git coreutils curl openssl vim jq
+COPY krew.sh /opt/
+RUN chmod +x /opt/* \
+    && set -x \
+    && /opt/krew.sh
 
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
