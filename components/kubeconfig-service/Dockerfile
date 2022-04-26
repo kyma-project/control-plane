@@ -16,7 +16,7 @@ COPY . .
 COPY     krew.sh /opt/
 RUN     chmod +x /opt/* \
         && set -x \
-        && /opt/krew.sh \
+        && /opt/krew.sh
 
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
