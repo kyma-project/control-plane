@@ -1,16 +1,9 @@
 FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20211116-11e89837 as builder
 
-FROM alpine:3.15.4
-RUN  apk --no-cache add --update bash sudo git coreutils curl openssl vim jq
-COPY krew.sh /opt/
-RUN  chmod +x /opt/* \
-     && set -x \
-     && /opt/krew.sh
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kubeconfig-service
 ENV CGO_ENABLED 0
 WORKDIR ${BASE_APP_DIR}
-
 #
 # Copy files
 #
@@ -31,9 +24,13 @@ WORKDIR /app
 #
 # Install certificates
 #
-
+FROM alpine:3.15.4
 RUN apk add --no-cache ca-certificates openssl
-
+RUN  apk --no-cache add --update bash sudo git coreutils curl vim jq
+COPY krew.sh /opt/
+RUN  chmod +x /opt/* \
+     && set -x \
+     && /opt/krew.sh
 #
 # Copy binary
 #
