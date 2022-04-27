@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gardener/gardener v1.45.0
-	github.com/gardener/gardener-extension-provider-aws v1.34.4
+	github.com/gardener/gardener-extension-provider-aws v1.35.0
 	github.com/gardener/gardener-extension-provider-azure v1.26.3
 	github.com/gardener/gardener-extension-provider-gcp v1.21.3
 	github.com/google/uuid v1.3.0
