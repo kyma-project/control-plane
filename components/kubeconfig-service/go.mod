@@ -48,7 +48,7 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => ../../components/provisioner
+	github.com/kyma-project/control-plane/components/provisioner => ../provisioner
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.7
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
 	k8s.io/client-go => k8s.io/client-go v0.20.5
