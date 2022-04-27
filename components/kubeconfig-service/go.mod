@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220427105742-42ddda791e49
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
@@ -48,7 +48,6 @@ require (
 )
 
 replace (
-	github.com/kyma-project/control-plane/components/provisioner => ../provisioner
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.7
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
 	k8s.io/client-go => k8s.io/client-go v0.20.5
