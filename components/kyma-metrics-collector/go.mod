@@ -3,14 +3,15 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
+	github.com/friedrichwilken/gardener-infra-configs/aws-infra-config v0.0.0-20220427153022-0a089c325b64
+	github.com/friedrichwilken/gardener-infra-configs/azure-infra-config v0.0.0-20220427150531-9d70ccaea21a
+	github.com/friedrichwilken/gardener-infra-configs/gcp-infra-config v0.0.0-20220427153022-0a089c325b64
 	github.com/gardener/gardener v1.45.0
-	github.com/gardener/gardener-extension-provider-aws v1.34.4
 	github.com/gardener/gardener-extension-provider-azure v1.26.3
-	github.com/gardener/gardener-extension-provider-gcp v1.21.3
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220421091031-056b8d97e2ae
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220427121742-8c7a89d3660b
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -22,7 +23,7 @@ require (
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.2 // indirect
+	github.com/99designs/gqlgen v0.17.4 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -38,7 +39,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220419124829-699e6c990877 // indirect
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220419133030-e99907f4e98a // indirect
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -48,7 +49,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.1 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect

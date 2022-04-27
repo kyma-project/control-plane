@@ -13,9 +13,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	gardenerawsv1alpha1 "github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
-	gardenerazurev1alpha1 "github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
-	gardenergcpv1alpha1 "github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
+	gardenerawsv1alpha1 "github.com/friedrichwilken/gardener-infra-configs/aws-infra-config"
+	gardenerazurev1alpha1 "github.com/friedrichwilken/gardener-infra-configs/azure-infra-config"
+	gardenergcpv1alpha1 "github.com/friedrichwilken/gardener-infra-configs/gcp-infra-config"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/edp"
 	corev1 "k8s.io/api/core/v1"
