@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -49,6 +50,8 @@ type ProvisionEndpoint struct {
 	shootProject      string
 	shootDnsProviders gardener.DNSProvidersData
 
+	dashboardConfig dashboard.Config
+
 	log logrus.FieldLogger
 }
 
@@ -62,6 +65,7 @@ func NewProvision(cfg Config,
 	kvod bool,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	dashboardConfig dashboard.Config,
 ) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
@@ -83,6 +87,7 @@ func NewProvision(cfg Config,
 		shootProject:      gardenerConfig.Project,
 		shootDnsProviders: gardenerConfig.DNSProviders,
 		planDefaults:      planDefaults,
+		dashboardConfig:   dashboardConfig,
 	}
 }
 
@@ -135,7 +140,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
+
 	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
