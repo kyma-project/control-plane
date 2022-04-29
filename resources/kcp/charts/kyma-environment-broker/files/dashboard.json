@@ -1301,7 +1301,7 @@
             "h": 5,
             "w": 7,
             "x": 0,
-            "y": 14
+            "y": 47
           },
           "id": 161,
           "options": {
@@ -1329,31 +1329,31 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"})",
+          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": false,
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1)",
+          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Succeeded",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0)",
+          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) / count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) * 100",
+          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Final Success Rate",
+          "legendFormat": "Success Rate",
               "refId": "D"
             }
           ],
@@ -1362,7 +1362,6 @@
         },
         {
           "datasource": null,
-          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1384,16 +1383,15 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 4,
+            "w": 5,
             "x": 7,
-            "y": 14
+            "y": 47
           },
           "id": 184,
-          "interval": null,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
-            "justifyMode": "center",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
@@ -1403,7 +1401,7 @@
               "values": false
             },
             "text": {},
-            "textMode": "value"
+            "textMode": "auto"
           },
           "pluginVersion": "7.4.0",
           "scopedVars": {
@@ -1415,36 +1413,34 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==2)",
-              "instant": false,
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==2) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 2)) or vector(0)",
               "interval": "",
               "legendFormat": "In Progress",
               "refId": "A"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==3)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==3) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 3)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Pending",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==4)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==4) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 4)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Cancelling",
+              "legendFormat": "Canceling",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Cancelled",
+              "legendFormat": "Canceled",
               "refId": "D"
             }
           ],
-          "title": "Upgrade Cluster  Progressing (${plan_id})",
-          "transformations": [],
+          "title": "Upgrade Cluster Progressing ($plan_id)",
           "type": "stat"
         },
         {
@@ -1471,8 +1467,8 @@
           "gridPos": {
             "h": 5,
             "w": 7,
-            "x": 11,
-            "y": 14
+            "x": 12,
+            "y": 47
           },
           "id": 182,
           "options": {
@@ -1500,31 +1496,31 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"})",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": false,
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Succeeded",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==0)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) / count (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) * 100",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Fina Success Rate",
+              "legendFormat": "Success Rate",
               "refId": "D"
             }
           ],
@@ -1533,7 +1529,6 @@
         },
         {
           "datasource": null,
-          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1555,16 +1550,15 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 4,
-            "x": 18,
-            "y": 14
+            "w": 5,
+            "x": 19,
+            "y": 47
           },
           "id": 185,
-          "interval": null,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
-            "justifyMode": "center",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
@@ -1574,7 +1568,7 @@
               "values": false
             },
             "text": {},
-            "textMode": "value"
+            "textMode": "auto"
           },
           "pluginVersion": "7.4.0",
           "scopedVars": {
@@ -1586,36 +1580,34 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==2)",
-              "instant": false,
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==2) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 2)) or vector(0)",
               "interval": "",
               "legendFormat": "In Progress",
               "refId": "A"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==3)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==3) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 3)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Pending",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==4)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==4) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 4)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Cancelling",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Cancelled",
               "refId": "D"
             }
           ],
-          "title": "Upgrade Kyma  Progressing (${plan_id})",
-          "transformations": [],
+          "title": "Upgrade Kyma Progressing ($plan_id)",
           "type": "stat"
         }
       ],
@@ -1637,7 +1629,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 93
+        "y": 104
       },
       "id": 42,
       "panels": [
@@ -2318,7 +2310,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 94
+        "y": 105
       },
       "id": 38,
       "panels": [
