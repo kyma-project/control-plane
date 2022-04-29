@@ -151,14 +151,13 @@ func (i *Instance) GetSubscriptionGlobalAccoundID() string {
 
 func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 	result := i.InstanceDetails
-	if result.ShootName == "" {
-		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
-		shoot, domain, e := i.extractShootNameAndDomain()
+	if result.ShootDomain == "" {
+		logrus.Infof("extracting shoot domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
+		domain, e := i.extractShootDomain()
 		if e != nil {
-			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
+			logrus.Errorf("unable to extract shoot domain: %s (instance %s)", e.Error(), i.InstanceID)
 			return result, e
 		}
-		result.ShootName = shoot
 		result.ShootDomain = domain
 	}
 	//overwrite RuntimeID in InstanceDetails with Instance.RuntimeID
@@ -167,17 +166,17 @@ func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 	return result, nil
 }
 
-func (i *Instance) extractShootNameAndDomain() (string, string, error) {
+func (i *Instance) extractShootDomain() (string, error) {
 	parsed, err := url.Parse(i.DashboardURL)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
+		return "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
 	}
 
 	parts := strings.Split(parsed.Host, ".")
 	if len(parts) <= 1 {
-		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
+		return "", fmt.Errorf("host is too short: %s", parsed.Host)
 	}
-	return parts[1], parsed.Host[len(parts[0])+1:], nil
+	return parsed.Host[len(parts[0])+1:], nil
 }
 
 // OperationType defines the possible types of an asynchronous operation to a broker.
