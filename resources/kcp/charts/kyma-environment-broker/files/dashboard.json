@@ -1272,7 +1272,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 52
       },
       "id": 193,
       "panels": [
@@ -1299,9 +1299,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 7,
+            "w": 8,
             "x": 0,
-            "y": 47
+            "y": 53
           },
           "id": 161,
           "options": {
@@ -1350,11 +1350,18 @@
               "refId": "C"
             },
             {
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Canceled",
+              "refId": "D"
+            },
+            {
               "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Success Rate",
-              "refId": "D"
+              "refId": "E"
             }
           ],
           "title": "Upgrade Cluster ($plan_id)",
@@ -1383,9 +1390,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 5,
-            "x": 7,
-            "y": 47
+            "w": 4,
+            "x": 8,
+            "y": 53
           },
           "id": 184,
           "options": {
@@ -1431,13 +1438,6 @@
               "interval": "",
               "legendFormat": "Canceling",
               "refId": "C"
-            },
-            {
-              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Canceled",
-              "refId": "D"
             }
           ],
           "title": "Upgrade Cluster Progressing ($plan_id)",
@@ -1466,9 +1466,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 7,
+            "w": 8,
             "x": 12,
-            "y": 47
+            "y": 53
           },
           "id": 182,
           "options": {
@@ -1517,11 +1517,18 @@
               "refId": "C"
             },
             {
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Canceled",
+              "refId": "D"
+            },
+            {
               "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Success Rate",
-              "refId": "D"
+              "refId": "E"
             }
           ],
           "title": "Upgrade Kyma ($plan_id)",
@@ -1550,9 +1557,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 5,
-            "x": 19,
-            "y": 47
+            "w": 4,
+            "x": 20,
+            "y": 53
           },
           "id": 185,
           "options": {
@@ -1596,15 +1603,8 @@
               "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==4) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 4)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Cancelling",
+              "legendFormat": "Canceling",
               "refId": "C"
-            },
-            {
-              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Cancelled",
-              "refId": "D"
             }
           ],
           "title": "Upgrade Kyma Progressing ($plan_id)",
@@ -1629,7 +1629,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 104
+        "y": 157
       },
       "id": 42,
       "panels": [
@@ -2310,7 +2310,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 105
+        "y": 158
       },
       "id": 38,
       "panels": [
