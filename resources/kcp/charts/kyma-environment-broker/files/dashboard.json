@@ -1329,31 +1329,31 @@
           },
           "targets": [
             {
-          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": false,
-          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Succeeded",
               "refId": "B"
             },
             {
-          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
               "refId": "C"
             },
             {
-          "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
               "hide": false,
               "interval": "",
-          "legendFormat": "Success Rate",
+              "legendFormat": "Success Rate",
               "refId": "D"
             }
           ],
