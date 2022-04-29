@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -42,6 +43,8 @@ type UpdateEndpoint struct {
 	updatingQueue *process.Queue
 
 	planDefaults PlanDefaults
+
+	dashboardConfig dashboard.Config
 }
 
 func NewUpdate(cfg Config,
@@ -54,6 +57,7 @@ func NewUpdate(cfg Config,
 	queue *process.Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	dashboardConfig dashboard.Config,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
 		config:                    cfg,
@@ -66,6 +70,7 @@ func NewUpdate(cfg Config,
 		subAccountMovementEnabled: subAccountMovementEnabled,
 		updatingQueue:             queue,
 		planDefaults:              planDefaults,
+		dashboardConfig:           dashboardConfig,
 	}
 }
 
@@ -119,6 +124,12 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 	}
 
+	dashboardURL := instance.DashboardURL
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+		instance.DashboardURL = dashboardURL
+	}
+
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
@@ -126,7 +137,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 
 		// NOTE: KEB currently can't process update parameters in one call along with context update
-		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
+		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
 		if !suspendStatusChange {
 			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
 		}
@@ -134,7 +145,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 	return domain.UpdateServiceSpec{
 		IsAsync:       false,
-		DashboardURL:  instance.DashboardURL,
+		DashboardURL:  dashboardURL,
 		OperationData: "",
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),

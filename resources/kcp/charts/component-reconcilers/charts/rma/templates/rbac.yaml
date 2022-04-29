@@ -12,7 +12,13 @@ metadata:
   name: component-reconcilers-rma
 rules:
   - apiGroups: [""]
-    resources: ["secrets"]
+    resources: ["secrets", "serviceaccounts"]
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings"]
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
     verbs: ["*"]
   - apiGroups: ["operator.victoriametrics.com"]
     resources: ["vmrules"]

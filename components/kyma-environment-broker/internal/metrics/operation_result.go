@@ -64,7 +64,7 @@ func NewOperationResultCollector() *OperationResultCollector {
 			Subsystem: prometheusSubsystem,
 			Name:      "deprovisioning_result",
 			Help:      "Result of the deprovisioning",
-		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id"}),
+		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id", "error_category", "error_reason"}),
 		upgradeKymaResultGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
@@ -222,8 +222,14 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
+	err := op.LastError
 	c.deprovisioningResultGauge.
-		WithLabelValues(op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).
-		Set(resultValue)
+		WithLabelValues(
+			op.ID,
+			op.InstanceID,
+			pp.ErsContext.GlobalAccountID,
+			pp.PlanID,
+			string(err.Component()),
+			string(err.Reason())).Set(resultValue)
 	return nil
 }

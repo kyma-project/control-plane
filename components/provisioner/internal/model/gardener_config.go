@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
+
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
@@ -384,7 +386,7 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 }
 
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones}
+	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones, EnableNatGateway: c.input.EnableNatGateway, IdleConnectionTimeoutMinutes: c.input.IdleConnectionTimeoutMinutes}
 }
 
 type AWSGardenerConfig struct {
@@ -393,7 +395,30 @@ type AWSGardenerConfig struct {
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	err := updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	if err != nil {
+		return err
+	}
+	if c.input.EnableNatGateway != nil {
+		infra := azure.InfrastructureConfig{}
+		err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.Raw, &infra)
+		if err != nil {
+			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
+		}
+		if *c.input.EnableNatGateway {
+			infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+			infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+		} else {
+			infra.Networks.NatGateway = nil
+		}
+		infra.Networks.VNet.CIDR = util.StringPtr(c.input.VnetCidr)
+		jsonData, err := json.Marshal(infra)
+		if err != nil {
+			return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
+		}
+		shoot.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{Raw: jsonData}
+	}
+	return nil
 }
 
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
