@@ -1735,6 +1735,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
 					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
 					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
+					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
 					{Key: "cluster.id", Value: "cluster_id"},
 				},
