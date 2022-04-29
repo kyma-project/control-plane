@@ -20,6 +20,10 @@ const (
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
+type kymaComponentsProvider interface {
+	getKymaComponents()
+}
+
 type KymaComponent struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
