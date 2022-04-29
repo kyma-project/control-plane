@@ -33,7 +33,7 @@ func NewDeprovisionClient(parameters DeprovisionParameters) *DeprovisionClient {
 	httpClientOAuth.Timeout = 30 * time.Second
 
 	return &DeprovisionClient{
-		log:    log("client", "deprovision"),
+		log:    logrus.WithField("client", "deprovision"),
 		URL:    parameters.EndpointURL,
 		client: httpClientOAuth,
 	}
