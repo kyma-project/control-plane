@@ -53,8 +53,7 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
-		log.Errorf("call to provisioner RuntimeStatus failed: %s", err.Error())
-		return operation, 1 * time.Minute, nil
+		return handleError(s.Name(), operation, err, log, "call to provisioner RuntimeStatus failed")
 	}
 
 	if status.RuntimeConfiguration.Kubeconfig == nil || *status.RuntimeConfiguration.Kubeconfig == "" {
