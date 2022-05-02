@@ -64,12 +64,6 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, instance := range instances {
-		op, err := h.operationsDb.GetLastOperation(instance.InstanceID)
-		if err != nil {
-			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching last operation on instance"))
-			return
-		}
-		instance.InstanceDetails.ShootName = op.InstanceDetails.ShootName
 		dto, err := h.converter.NewDTO(instance)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instance to DTO"))

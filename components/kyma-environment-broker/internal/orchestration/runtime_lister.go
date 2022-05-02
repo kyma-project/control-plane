@@ -34,12 +34,6 @@ func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 
 	runtimes := make([]runtime.RuntimeDTO, 0, len(instances))
 	for _, inst := range instances {
-		op, err := rl.operationsDb.GetLastOperation(inst.InstanceID)
-		if err != nil {
-			rl.log.Errorf("cannot fetch last operation for instance: %s", err.Error())
-			continue
-		}
-		inst.InstanceDetails.ShootName = op.InstanceDetails.ShootName
 		dto, err := rl.converter.NewDTO(inst)
 		if err != nil {
 			rl.log.Errorf("cannot convert instance to DTO: %s", err.Error())

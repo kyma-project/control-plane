@@ -43,16 +43,10 @@ func TestRuntimeHandler(t *testing.T) {
 			CreatedAt:  testTime2,
 			Parameters: internal.ProvisioningParameters{},
 		}
-		testOp1 := fixture.FixProvisioningOperation("op1", testID1)
-		testOp2 := fixture.FixProvisioningOperation("op2", testID2)
 
 		err := instances.Insert(testInstance1)
 		require.NoError(t, err)
 		err = instances.Insert(testInstance2)
-		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp1)
-		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp2)
 		require.NoError(t, err)
 
 		runtimeHandler := runtime.NewHandler(instances, operations, states, 2, "")
@@ -147,16 +141,10 @@ func TestRuntimeHandler(t *testing.T) {
 		testTime2 := time.Now().Add(time.Minute)
 		testInstance1 := fixInstance(testID1, testTime1)
 		testInstance2 := fixInstance(testID2, testTime2)
-		testOp1 := fixture.FixProvisioningOperation("op1", testID1)
-		testOp2 := fixture.FixProvisioningOperation("op2", testID2)
 
 		err := instances.Insert(testInstance1)
 		require.NoError(t, err)
 		err = instances.Insert(testInstance2)
-		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp1)
-		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp2)
 		require.NoError(t, err)
 
 		runtimeHandler := runtime.NewHandler(instances, operations, states, 2, "")
