@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	github.com/99designs/gqlgen v0.17.4
+	github.com/99designs/gqlgen v0.17.5
 	github.com/Azure/azure-sdk-for-go v63.4.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/Azure/go-autorest/autorest/adal v0.9.18
