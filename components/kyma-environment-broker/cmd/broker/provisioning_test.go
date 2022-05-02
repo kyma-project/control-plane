@@ -426,27 +426,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 	}
 }
 
-func TestUnsuspensionWithoutShootName(t *testing.T) {
-	// given
-	suite := NewProvisioningSuite(t)
-
-	// when
-	// Create an instance, succeeded suspension operation in the past and a pending unsuspension operation
-	unsuspensionOperationID := suite.CreateUnsuspension(RuntimeOptions{})
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.InProgress)
-	suite.AssertProvisionerStartedProvisioning(unsuspensionOperationID)
-
-	// when
-	suite.FinishProvisioningOperationByProvisioner(unsuspensionOperationID)
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
-	suite.AssertAllStagesFinished(unsuspensionOperationID)
-	suite.AssertProvisioningRequest()
-}
-
 func TestProvisioning_RuntimeOverrides(t *testing.T) {
 
 	t.Run("should apply overrides to default runtime version", func(t *testing.T) {
