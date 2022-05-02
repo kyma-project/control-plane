@@ -57,9 +57,10 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 		return operation, 1 * time.Minute, nil
 	}
 
-	if status.RuntimeConfiguration.Kubeconfig == nil {
-		log.Errorf("kubeconfig is not provided")
-		return operation, 1 * time.Minute, nil
+	if status.RuntimeConfiguration.Kubeconfig == nil || *status.RuntimeConfiguration.Kubeconfig == "" {
+		log.Infof("kubeconfig is not provided, skipping step")
+		operation.IsServiceInstanceDeleted = true
+		return operation, 0, nil
 	}
 
 	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)
