@@ -988,8 +988,9 @@ func (s *operations) getByID(id string) (*dbmodel.OperationDTO, error) {
 
 func (s *operations) insert(dto dbmodel.OperationDTO) error {
 	session := s.NewWriteSession()
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		lastErr := session.InsertOperation(dto)
+	var lastErr error
+	_ = wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		lastErr = session.InsertOperation(dto)
 		if lastErr != nil {
 			log.Errorf("while insert operation: %v", lastErr)
 			return false, nil
@@ -997,7 +998,7 @@ func (s *operations) insert(dto dbmodel.OperationDTO) error {
 		// TODO: insert link to orchestration
 		return true, nil
 	})
-	return err
+	return lastErr
 }
 func (s *operations) getByTypeAndInstanceID(id string, opType internal.OperationType) (*dbmodel.OperationDTO, error) {
 	session := s.NewReadSession()
