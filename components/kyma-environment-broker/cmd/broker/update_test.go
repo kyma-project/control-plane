@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -37,7 +38,7 @@ func TestUpdate(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-initial",
-							"signingAlgs": ["xxx"],
+							"signingAlgs": ["PS512"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -58,7 +59,7 @@ func TestUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
+				"signingAlgs": ["RS256"],
                 "issuerURL": "https://issuer.url.com"
 			}
 		}
@@ -74,11 +75,11 @@ func TestUpdate(t *testing.T) {
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
-				GroupsClaim:    "",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url.com",
-				SigningAlgs:    []string{"RSA256"},
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: []string{"john.smith@email.com"},
@@ -269,7 +270,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -302,11 +303,11 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       "id-ooo",
-				GroupsClaim:    "",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url.com",
-				SigningAlgs:    []string{"RSA256"},
-				UsernameClaim:  "",
-				UsernamePrefix: "",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: []string{"john.smith@email.com"},
@@ -336,7 +337,7 @@ func TestUpdateContext(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS384"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -356,6 +357,72 @@ func TestUpdateContext(t *testing.T) {
        }
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestUnsuspensionTrialKyma20(t *testing.T) {
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+                         "kymaVersion":"2.0"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+
+	suite.Log("*** Suspension ***")
+
+	// Process Suspension
+	// OSB context update (suspension)
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       }
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
+
+	suite.MarkClustertConfigurationDeleted(iid)
+	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
+	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
+	suite.RemoveFromReconcilerByInstanceID(iid)
+
+	// OSB update
+	suite.Log("*** Unsuspension ***")
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+			"active": true
+       }
+       
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.processReconciliationByInstanceID(iid)
+
 }
 
 func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testing.T) {
@@ -450,7 +517,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -492,7 +559,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
        "parameters": {
        		"oidc": {
 				"clientID": "id-oooxx",
-				"signingAlgs": ["RSA256"],
+				"signingAlgs": ["RS256"],
                 "issuerURL": "https://issuer.url.com"
 			}
        }
@@ -553,7 +620,7 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -628,10 +695,10 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -664,7 +731,6 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -698,9 +764,12 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -747,8 +816,11 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["RS384"],
+				"issuerURL": "https://issuer.url.com",
+				"groupsClaim": "new-groups-claim",
+				"usernameClaim": "new-username-claim",
+				"usernamePrefix": "->"
 			}
 		}
    }`)
@@ -765,9 +837,12 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "new-groups-claim",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"RS384"},
+				UsernameClaim:  "new-username-claim",
+				UsernamePrefix: "->",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -828,10 +903,10 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -895,10 +970,10 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -948,8 +1023,8 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["ES256"],
+				"issuerURL": "https://newissuer.url.com"
 			}
 		}
    }`)
@@ -966,9 +1041,12 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://newissuer.url.com",
+				SigningAlgs:    []string{"ES256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -1031,10 +1109,10 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1085,8 +1163,9 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["ES384"],
+				"issuerURL": "https://issuer.url.com",
+				"groupsClaim": "new-groups-claim"
 			},
 			"administrators":["newAdmin3@kyma.cx", "newAdmin4@kyma.cx"]
 		}
@@ -1104,9 +1183,12 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "new-groups-claim",
+				IssuerURL:      "https://issuer.url.com",
+				SigningAlgs:    []string{"ES384"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
 			},
 		},
 		Administrators: expectedAdmins,
@@ -1170,10 +1252,10 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1193,8 +1275,9 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 		"parameters": {
 			"oidc": {
 				"clientID": "id-ooo",
-				"signingAlgs": ["RSA256"],
-				"issuerURL": "https://issuer.url.com"
+				"signingAlgs": ["PS256"],
+				"issuerURL": "https://newissuer.url.com",
+				"usernamePrefix": "->"
 			},
 			"administrators":["newAdmin5@kyma.cx", "newAdmin6@kyma.cx"]
 		}
@@ -1210,9 +1293,12 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:    "id-ooo",
-				IssuerURL:   "https://issuer.url.com",
-				SigningAlgs: []string{"RSA256"},
+				ClientID:       "id-ooo",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://newissuer.url.com",
+				SigningAlgs:    []string{"PS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "->",
 			},
 		},
 		Administrators: expectedAdmins2,
@@ -1281,10 +1367,10 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1416,10 +1502,10 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1451,10 +1537,10 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
+				ClientID:       "client-id-oidc",
+				GroupsClaim:    "groups",
 				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
+				SigningAlgs:    []string{"RS256"},
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
@@ -1506,7 +1592,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 						"name": "testing-cluster",
 						"oidc": {
 							"clientID": "id-ooo",
-							"signingAlgs": ["RSA256"],
+							"signingAlgs": ["RS256"],
                             "issuerURL": "https://issuer.url.com"
 						}
 			}
@@ -1616,30 +1702,19 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	time.Sleep(5 * time.Millisecond)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 
-	// check first call to reconciler installing BTP-Operator and sc-migration
+	// check first call to reconciler installing BTP-Operator and sc-migration, disabling SVCAT
 	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime mid update")
 	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog", "btp-operator", "sc-migration"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
 
-	// check second call to reconciler and see that sc-migration and svcat related components are gone
+	// check second call to reconciler and see that sc-migration is no longer present and svcat related components are gone as well
+	time.Sleep(5 * time.Millisecond)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
-	suite.AssertShootUpgrade(updateOperationID, gqlschema.UpgradeShootInput{
-		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			OidcConfig: &gqlschema.OIDCConfigInput{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "gropups",
-				IssuerURL:      "https://issuer.url",
-				SigningAlgs:    []string{"RSA256"},
-				UsernameClaim:  "sub",
-				UsernamePrefix: "-",
-			},
-		},
-		Administrators: []string{"john.smith@email.com"},
-	})
 
 	i, err = suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after update")
@@ -1669,6 +1744,8 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	}
 
 	// finalize second call to reconciler and wait for the operation to finish
+	//suite.AssertReconcilerStartedReconcilingWhenUpgrading(instanceID)
+	time.Sleep(5 * time.Millisecond)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }

@@ -57,7 +57,12 @@ func (qp queryProvider) runtimeOperationStatus(operationID string) string {
 }
 
 func runtimeStatusData() string {
-	return fmt.Sprintf(`lastOperationStatus { operation state message }
+	return fmt.Sprintf(`lastOperationStatus {
+				operation
+				state
+				message
+				lastError { errMessage reason component }
+			}
 			runtimeConnectionStatus { status }
 			runtimeConfiguration {
 				kubeconfig
@@ -136,5 +141,6 @@ func operationStatusData() string {
 			operation
 			state
 			message
-			runtimeID`
+			runtimeID
+			lastError { errMessage reason component }`
 }

@@ -2,11 +2,14 @@ package internal
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
+	"strings"
 )
 
 const (
-	LicenceTypeLite = "TestDevelopmentAndDemo"
+	LicenceTypeLite      = "TestDevelopmentAndDemo"
+	oidcValidSigningAlgs = "RS256,RS384,RS512,ES256,ES384,ES512,PS256,PS384,PS512"
 )
 
 type OIDCConfigDTO struct {
@@ -26,6 +29,50 @@ func (o *OIDCConfigDTO) IsProvided() bool {
 		return false
 	}
 	return true
+}
+
+func (o *OIDCConfigDTO) Validate() error {
+	errs := make([]string, 0)
+	if len(o.ClientID) == 0 {
+		errs = append(errs, "clientID must not be empty")
+	}
+	if len(o.IssuerURL) == 0 {
+		errs = append(errs, "issuerURL must not be empty")
+	} else {
+		issuer, err := url.Parse(o.IssuerURL)
+		if err != nil || (issuer != nil && len(issuer.Host) == 0) {
+			errs = append(errs, "issuerURL must be a valid URL")
+		}
+		if issuer != nil && issuer.Scheme != "https" {
+			errs = append(errs, "issuerURL must have https scheme")
+		}
+	}
+	if len(o.SigningAlgs) != 0 {
+		validSigningAlgs := o.validSigningAlgsSet()
+		for _, providedAlg := range o.SigningAlgs {
+			if !validSigningAlgs[providedAlg] {
+				errs = append(errs, "signingAlgs must contain valid signing algorithm(s)")
+				break
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		err := fmt.Errorf(strings.Join(errs, ", "))
+		return err
+	}
+	return nil
+}
+
+func (o *OIDCConfigDTO) validSigningAlgsSet() map[string]bool {
+	algs := strings.Split(oidcValidSigningAlgs, ",")
+	signingAlgsSet := make(map[string]bool, len(algs))
+
+	for _, v := range algs {
+		signingAlgsSet[v] = true
+	}
+
+	return signingAlgsSet
 }
 
 type ProvisioningParameters struct {

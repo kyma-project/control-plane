@@ -1,39 +1,39 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.27.0-alpine-7c52185c
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:ca3498eb"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:ca3498eb"
+    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:44791537"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:44791537"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1228"
+      version: "4650dbfb"
     provisioner:
       dir:
-      version: "PR-1198"
+      version: "PR-1561"
     kyma_environment_broker:
       dir:
-      version: "PR-1222"
+      version: "PR-1658"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1187"
+      version: "PR-1600"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1187"
-    subscription_cleanup_job:
+      version: "PR-1600"
+    kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1131"
+      version: "PR-1600"
     kyma_metrics_collector:
       dir:
-      version: "PR-1158"
+      version: "PR-1634"
     tests:
       provisioner:
         dir:
-        version: "PR-699"
+        version: "PR-1346"
       e2e_provisioning:
         dir:
-        version: "PR-1235"
+        version: "PR-1346"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:
@@ -50,14 +50,17 @@ global:
   components:
     - base
     - busola-migrator
+    - cleaner
     - connectivity-proxy
     - istio-configuration
+    - istio
     - ory
     - rafter
     - eventing
     - serverless
     - cluster-essentials
     - rma
+    - sc-migration
 
   auditlog:
     configMapName: "kcp-auditlog-config"
@@ -149,7 +152,6 @@ global:
     enabled: false
     expose: true
     authentication: true
-    servicemonitor: false
     serviceAccountName: "mothership-reconciler"
     auditlog:
       enabled: true
@@ -159,12 +161,15 @@ global:
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
       image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 1.8.9-aef5095d
+      tag: 1.8.15-a6fa9cb0
       persistence:
         enabled: true
         accessMode: ReadWriteOnce
         size: 2Gi
         storageClass: ""
+    features: |-
+      - name: "LOG_ISTIO_OPERATOR"
+        value: "false"
   component_reconcilers:
     enabled: false
     authentication: true

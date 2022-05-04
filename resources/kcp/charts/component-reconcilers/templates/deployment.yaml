@@ -1,7 +1,7 @@
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
-{{ $subchart := printf "%s-component-reconciler" $component }}
-{{ if not (hasKey $global.Subcharts $subchart) }}
+{{ $values := index $global.Values $component }}
+{{ if not (hasKey $global.Subcharts $component) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +15,7 @@ spec:
     matchLabels:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
-  replicas: 1
+  replicas: {{ default $global.Values.deployment.replicasCount (($values).deployment).replicasCount }}
   template:
     metadata:
       labels:
@@ -23,6 +23,8 @@ spec:
         component: {{ $component }}
     spec:
       serviceAccountName: component-reconcilers-{{ $component }}
+      nodeSelector:
+        {{- toYaml $global.Values.deployment.nodeSelector | nindent 8 }}
       containers:
       - image: "{{ $global.Values.global.images.component_reconciler }}"
         imagePullPolicy: {{ $global.Values.deployment.imagePullPolicy }}
@@ -31,8 +33,31 @@ spec:
           - start
           - {{ $component }}
           - --workspace=/tmp/reconciler
+          {{- if $global.Values.options.verbose }}
           - --verbose
-        name: reconciler
+          {{- end }}
+          - --worker-count={{ default $global.Values.options.workerCount (($values).options).workerCount }}
+        {{- if or ((($values).deployment).gitCloneToken) ($.Values.global.mothership_reconciler.features)  }}
+        env:
+        {{- if (($values).deployment).gitCloneToken }}
+        - name: GIT_CLONE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ $component }}-git-token
+              key: token
+        {{- end }}
+        {{- if ($.Values.global.mothership_reconciler.features) }}
+        {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- if $.Values.component_reconcilers }}
+        {{- if (index $.Values.component_reconcilers $component) }}
+        {{- if (index $.Values.component_reconcilers $component).env }}
+        {{- (index $.Values.component_reconcilers $component).env | nindent 8}}
+        {{- end}}
+        {{- end}}
+        {{- end}}
+        name: {{ $component }}-reconciler
         ports:
         - name: http
           containerPort: 8080
@@ -45,7 +70,8 @@ spec:
           httpGet:
             path: /health/ready
             port: http
-        resources: {}
+        resources:
+          {{- toYaml (default $global.Values.deployment.resources (($values).deployment).resources) | nindent 10 }}
         volumeMounts:
         - mountPath: /tmp
           name: workspace

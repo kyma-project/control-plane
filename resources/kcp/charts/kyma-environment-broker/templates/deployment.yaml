@@ -375,6 +375,10 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-tenant
+            - name: APP_NOTIFICATION_URL
+              value: "{{ .Values.notification.url }}"
+            - name: APP_NOTIFICATION_DISABLED
+              value: "{{ .Values.notification.disabled }}"
             - name: APP_VERSION_CONFIG_NAMESPACE
               value: "{{ .Release.Namespace }}"
             - name: APP_VERSION_CONFIG_NAME
@@ -393,6 +397,10 @@ spec:
               value: /config/newAdditionalRuntimeComponents.yaml
             - name: APP_PROFILER_MEMORY
               value: "{{ .Values.broker.profiler.memory }}"
+            - name: APP_KYMA_DASHBOARD_CONFIG_ENABLED
+              value: "{{ .Values.dashboardConfig.enabled }}"
+            - name: APP_KYMA_DASHBOARD_CONFIG_LANDSCAPE_URL
+              value: "{{ .Values.dashboardConfig.landscapeURL }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

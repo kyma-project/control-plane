@@ -88,7 +88,7 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 
 	_, k8serr := g.shootClient.Create(context.Background(), shootTemplate, v1.CreateOptions{})
 	if k8serr != nil {
-		appError := util.K8SErrorToAppError(k8serr)
+		appError := util.K8SErrorToAppError(k8serr).SetComponent(apperrors.ErrGardenerClient)
 		return appError.Append("error creating Shoot for %s cluster: %s", cluster.ID)
 	}
 
@@ -99,7 +99,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 
 	shoot, err := g.shootClient.Get(context.Background(), upgradeConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
 	}
 
@@ -114,7 +114,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return err
 	}, retry.Attempts(5))
 	if err != nil {
-		apperr := util.K8SErrorToAppError(err)
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return apperr.Append("error executing update shoot configuration")
 	}
 
@@ -124,7 +124,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig model.GardenerConfig) apperrors.AppError {
 	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 
@@ -148,21 +148,21 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 	}, retry.Attempts(5))
 
 	if err != nil {
-		apperr := util.K8SErrorToAppError(err)
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return apperr.Append("error executing update shoot configuration")
 	}
 
 	return nil
 }
 
-func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
+func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutUninstall bool, operationId string) (model.Operation, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
 			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to WaitForClusterDeletion state
-			if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+			if withoutUninstall {
 				return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, time.Now()), nil
 			}
 			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, time.Now()), nil
@@ -173,7 +173,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 		annotate(shoot, operationIDAnnotation, operationId)
 		annotate(shoot, legacyOperationIDAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
-		if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		if withoutUninstall {
 			return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, shoot.DeletionTimestamp.Time), nil
 		}
 		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
@@ -188,13 +188,13 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 
 	_, err = g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
 	if err != nil {
-		appError := util.K8SErrorToAppError(err)
+		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return model.Operation{}, appError.Append("error updating Shoot")
 	}
 
 	message := fmt.Sprintf("Deprovisioning started")
 
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+	if withoutUninstall {
 		return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 	}
 	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
@@ -203,7 +203,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operatio
 func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
 	if err != nil {
-		appErr := util.K8SErrorToAppError(err)
+		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return model.HibernationStatus{}, appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 

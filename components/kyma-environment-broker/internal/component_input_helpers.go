@@ -6,6 +6,7 @@ import (
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -18,6 +19,12 @@ const (
 	ServiceCatalogComponentName       = "service-catalog"
 	ServiceCatalogAddonsComponentName = "service-catalog-addons"
 	ServiceManagerComponentName       = "service-manager-proxy"
+
+	// BTP Operator overrides keys
+	BTPOperatorClientID     = "manager.secret.clientid"
+	BTPOperatorClientSecret = "manager.secret.clientsecret"
+	BTPOperatorURL          = "manager.secret.url"
+	BTPOperatorTokenURL     = "manager.secret.tokenurl"
 )
 
 type ClusterIDGetter func() (string, error)
@@ -34,27 +41,30 @@ func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
-			Key:    "manager.secret.clientid",
+			Key:    BTPOperatorClientID,
 			Value:  creds.ClientID,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:    "manager.secret.clientsecret",
+			Key:    BTPOperatorClientSecret,
 			Value:  creds.ClientSecret,
 			Secret: ptr.Bool(true),
 		},
 		{
-			Key:   "manager.secret.url",
+			Key:   BTPOperatorURL,
 			Value: creds.ServiceManagerURL,
 		},
 		{
-			Key:   "manager.secret.tokenurl",
+			Key:   BTPOperatorTokenURL,
 			Value: creds.URL,
 		},
 	}
 }
 
 func getBTPOperatorUpdateOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
+	if clusterId == "" {
+		return []*gqlschema.ConfigEntryInput{}
+	}
 	return []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "cluster.id",
@@ -88,18 +98,6 @@ func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceMa
 	r.AppendOverrides(BTPOperatorComponentName, overrides)
 }
 
-func CreateBTPOperatorUpdateInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) error {
-	id, err := clusterIdGetter()
-	if err != nil {
-		return err
-	}
-	provisioning := getBTPOperatorProvisioningOverrides(creds)
-	update := getBTPOperatorUpdateOverrides(creds, id)
-	r.AppendOverrides(BTPOperatorComponentName, provisioning)
-	r.AppendOverrides(BTPOperatorComponentName, update)
-	return nil
-}
-
 func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
 	return func() (string, error) {
 		cfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
@@ -111,6 +109,9 @@ func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
 			return "", err
 		}
 		cm, err := cs.CoreV1().ConfigMaps("kyma-system").Get(context.Background(), "cluster-info", metav1.GetOptions{})
+		if k8serrors.IsNotFound(err) {
+			return "", nil
+		}
 		if err != nil {
 			return "", err
 		}

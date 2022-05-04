@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -14,12 +17,14 @@ import (
 type CheckClusterDeregistrationStep struct {
 	reconcilerClient reconciler.Client
 	timeout          time.Duration
+	operationManager *process.DeprovisionOperationManager
 }
 
-func NewCheckClusterDeregistrationStep(cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
+func NewCheckClusterDeregistrationStep(os storage.Operations, cli reconciler.Client, timeout time.Duration) *CheckClusterDeregistrationStep {
 	return &CheckClusterDeregistrationStep{
 		reconcilerClient: cli,
 		timeout:          timeout,
+		operationManager: process.NewDeprovisionOperationManager(os),
 	}
 }
 
@@ -32,15 +37,25 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 		log.Infof("Cluster deregistration has not be executed, skipping", s.timeout)
 		return operation, 0, nil
 	}
-	if time.Since(operation.UpdatedAt) > s.timeout {
-		log.Infof("Cluster deregistration has reached the time limit: %s", s.timeout)
+	if operation.ClusterConfigurationVersion == 0 {
+		log.Info("ClusterConfigurationVersion is zero, skipping")
 		return operation, 0, nil
+	}
+	if operation.TimeSinceReconcilerDeregistrationTriggered() > s.timeout {
+		log.Errorf("Cluster deregistration has reached the time limit: %s", s.timeout)
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 	if kebError.IsNotFoundError(err) {
 		log.Info("cluster already deleted")
-		return operation, 0, nil
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 	if kebError.IsTemporaryError(err) {
 		log.Errorf("Reconciler GetCluster method failed (temporary error, retrying): %s", err.Error())
@@ -48,7 +63,10 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	}
 	if err != nil {
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
-		return operation, 0, nil
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	}
 	log.Debugf("Cluster configuration status %s", state.Status)
 
@@ -56,11 +74,17 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.DeprovisioningOp
 	case reconcilerApi.StatusDeletePending, reconcilerApi.StatusDeleting, reconcilerApi.StatusDeleteErrorRetryable:
 		return operation, 30 * time.Second, nil
 	case reconcilerApi.StatusDeleted:
-		return operation, 0, nil
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	case reconcilerApi.StatusDeleteError, reconcilerApi.StatusError:
 		errMsg := fmt.Sprintf("Reconciler deletion failed. %v", reconciler.PrettyFailures(state))
 		log.Warnf(errMsg)
-		return operation, 0, nil
+		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+			op.ClusterConfigurationVersion = 0
+		}, log)
+		return modifiedOp, d, nil
 	default:
 		log.Warnf("Unexpected state: %s", state.Status)
 		return operation, time.Minute, nil

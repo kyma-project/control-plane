@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -119,6 +120,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
 		DNSConfig:                           dnsConfigFromInput(input.DNSConfig),
 		ExposureClassName:                   input.ExposureClassName,
+		ShootNetworkingFilterDisabled:       input.ShootNetworkingFilterDisabled,
 	}, nil
 }
 
@@ -189,6 +191,7 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		Region:                    config.Region,
 		LicenceType:               config.LicenceType,
 		AllowPrivilegedContainers: config.AllowPrivilegedContainers,
+		WorkerCidr:                config.WorkerCidr,
 
 		Purpose:                             util.DefaultStrIfNil(input.Purpose, config.Purpose),
 		KubernetesVersion:                   util.UnwrapStrOrDefault(input.KubernetesVersion, config.KubernetesVersion),
@@ -205,7 +208,8 @@ func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpg
 		EnableMachineImageVersionAutoUpdate: util.UnwrapBoolOrDefault(input.EnableMachineImageVersionAutoUpdate, config.EnableMachineImageVersionAutoUpdate),
 		GardenerProviderConfig:              providerSpecificConfig,
 		OIDCConfig:                          oidcConfigFromInput(input.OidcConfig),
-		ExposureClassName:                   input.ExposureClassName,
+		ExposureClassName:                   util.DefaultStrIfNil(input.ExposureClassName, config.ExposureClassName),
+		ShootNetworkingFilterDisabled:       util.DefaultBoolIfNil(input.ShootNetworkingFilterDisabled, config.ShootNetworkingFilterDisabled),
 	}, nil
 }
 
@@ -233,7 +237,7 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
 	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
 	if err != nil {
-		return model.KymaConfig{}, apperrors.Internal("failed to get Kyma Release with version %s: %s", input.Version, err.Error())
+		return model.KymaConfig{}, operations.ConvertToAppError(err)
 	}
 
 	var components []model.KymaComponentConfig

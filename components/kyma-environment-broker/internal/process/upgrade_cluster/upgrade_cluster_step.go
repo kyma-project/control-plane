@@ -51,12 +51,17 @@ func (s *UpgradeClusterStep) Name() string {
 func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.timeSchedule.UpgradeClusterTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.timeSchedule.UpgradeClusterTimeout), nil, log)
 	}
 
-	input, err := s.createUpgradeShootInput(operation)
+	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.InstanceDetails.RuntimeID)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", log)
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
+	}
+
+	input, err := s.createUpgradeShootInput(operation, &latestRuntimeStateWithOIDC.ClusterConfig)
+	if err != nil {
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
 
 	if operation.DryRun {
@@ -80,7 +85,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		}
 
 		repeat := time.Duration(0)
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
 			op.ProvisionerOperationID = *provisionerResponse.ID
 			op.Description = "cluster upgrade in progress"
 		}, log)
@@ -103,9 +108,8 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
 
-	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input)),
-	)
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
+	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
@@ -118,8 +122,11 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 
 }
 
-func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation) (gqlschema.UpgradeShootInput, error) {
+func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeClusterOperation, lastClusterConfig *gqlschema.GardenerConfigInput) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
+	if lastClusterConfig.OidcConfig != nil {
+		operation.InputCreator.SetOIDCLastValues(*lastClusterConfig.OidcConfig)
+	}
 	input, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return input, errors.Wrap(err, "while building upgradeShootInput for provisioner")

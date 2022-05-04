@@ -1,0 +1,24 @@
+FROM eu.gcr.io/kyma-project/external/golang:1.18.1-alpine3.15 as build
+
+WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environment-broker
+
+COPY cmd cmd
+COPY common/gardener common/gardener
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY vendor vendor
+
+RUN CGO_ENABLED=0 go build -o /app/subscriptioncleanup ./cmd/subscriptioncleanup/main.go
+
+# Get latest CA certs
+FROM alpine:latest as certs
+RUN apk --update add ca-certificates
+
+# Final image
+FROM scratch
+LABEL source = git@github.com:kyma-project/control-plane.git
+
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /app/subscriptioncleanup /app/subscriptioncleanup
+
+CMD ["/app/subscriptioncleanup"]

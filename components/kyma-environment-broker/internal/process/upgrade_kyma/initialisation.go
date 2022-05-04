@@ -11,6 +11,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -44,10 +45,11 @@ type InitialisationStep struct {
 	timeSchedule                TimeSchedule
 	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
 	serviceManagerClientFactory internal.SMClientFactory
+	bundleBuilder               notification.BundleBuilder
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf internal.SMClientFactory) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf internal.SMClientFactory, bundleBuilder notification.BundleBuilder) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -67,6 +69,7 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is
 		timeSchedule:                *ts,
 		runtimeVerConfigurator:      rvc,
 		serviceManagerClientFactory: smcf,
+		bundleBuilder:               bundleBuilder,
 	}
 }
 
@@ -114,10 +117,12 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 			log.Errorf("while getting provisioning operation from storage")
 			return operation, s.timeSchedule.Retry, nil
 		}
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
+			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
+				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
+			}
 			op.State = domain.InProgress
-			op.ClusterConfigurationVersion = 0
 		}, log)
 		if delay != 0 {
 			return operation, delay, nil
@@ -137,7 +142,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if err := s.configureKymaVersion(&operation, log); err != nil {
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while configuring kyma version", err, 5*time.Second, 5*time.Minute, log)
 	}
 
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters.PlanID)
@@ -148,10 +153,10 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade runtime input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while creating runtime input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }
 
@@ -173,50 +178,13 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 
 	// update operation version
 	var repeat time.Duration
-	if *operation, repeat = s.operationManager.UpdateOperation(*operation, func(operation *internal.UpgradeKymaOperation) {
+	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
-		return errors.New("unable to update operation with RuntimeVersion property")
+		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")
 	}
 
 	return nil
-}
-
-// performRuntimeTasks Ensures that required logic on init and finish is executed.
-// Uses internal and external Avs monitor statuses to verify state.
-func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	hasMonitors := s.evaluationManager.HasMonitors(operation.Avs)
-	inMaintenance := s.evaluationManager.InMaintenance(operation.Avs)
-	var err error = nil
-	var delay time.Duration = 0
-	var updateAvsStatus = func(op *internal.UpgradeKymaOperation) {
-		op.Avs.AvsInternalEvaluationStatus = operation.Avs.AvsInternalEvaluationStatus
-		op.Avs.AvsExternalEvaluationStatus = operation.Avs.AvsExternalEvaluationStatus
-	}
-
-	switch step {
-	case UpgradeInitSteps:
-		if hasMonitors && !inMaintenance {
-			log.Infof("executing init upgrade steps")
-			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
-		}
-	case UpgradeFinishSteps:
-		if hasMonitors && inMaintenance {
-			log.Infof("executing finish upgrade steps")
-			err = s.evaluationManager.RestoreStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
-		}
-	}
-
-	switch {
-	case err == nil:
-		return operation, delay, nil
-	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
-	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
-	}
 }
 
 // checkRuntimeStatus will check operation runtime status
@@ -225,7 +193,23 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
+	}
+
+	// Ensure AVS evaluations are set to maintenance
+	operation, err := SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, "error while setting avs to maintenance", err, 10*time.Second, 10*time.Minute, log)
+		}
+		return s.operationManager.OperationFailed(operation, "error while setting avs to maintenance", err, log)
 	}
 
 	if operation.ClusterConfigurationVersion != 0 {
@@ -242,14 +226,9 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	log.Infof("call to provisioner returned %s status", status.State.String())
 
 	var msg string
+	var delay time.Duration
 	if status.Message != nil {
 		msg = *status.Message
-	}
-
-	// do required steps on init
-	operation, delay, err := s.performRuntimeTasks(UpgradeInitSteps, operation, log)
-	if delay != 0 || err != nil {
-		return operation, delay, err
 	}
 
 	// wait for operation completion
@@ -257,9 +236,16 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
 		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
 		if operation.Description != postUpgradeDescription {
-			operation, delay = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 				operation.Description = postUpgradeDescription
 			}, log)
 			if delay != 0 {
@@ -268,10 +254,13 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		}
 	}
 
-	// do required steps on finish
-	operation, delay, err = s.performRuntimeTasks(UpgradeFinishSteps, operation, log)
-	if delay != 0 || err != nil {
-		return operation, delay, err
+	// Kyma 1.X operation is finished or failed, restore AVS status
+	operation, err = RestoreAvsStatus(s.evaluationManager, s.operationManager, operation, log)
+	if err != nil {
+		if kebError.IsTemporaryError(err) {
+			return s.operationManager.RetryOperation(operation, "error while restoring avs status", err, 10*time.Second, 10*time.Minute, log)
+		}
+		return s.operationManager.OperationFailed(operation, "error while restoring avs status", err, log)
 	}
 
 	// handle operation completion
@@ -279,8 +268,34 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg, log)
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), nil, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
+}
+
+func (s *InitialisationStep) sendNotificationComplete(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) error {
+	tenants := []notification.NotificationTenant{
+		{
+			InstanceID: operation.InstanceID,
+			EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			State:      notification.FinishedMaintenanceState,
+		},
+	}
+	notificationParams := notification.NotificationParams{
+		OrchestrationID: operation.OrchestrationID,
+		Tenants:         tenants,
+	}
+	notificationBundle, err := s.bundleBuilder.NewBundle(operation.OrchestrationID, notificationParams)
+	if err != nil {
+		log.Errorf("%s: %s", "Failed to create Notification Bundle", err)
+		return err
+	}
+	err = notificationBundle.UpdateNotificationEvent()
+	if err != nil {
+		msg := fmt.Sprintf("cannot update notification for orchestration %s", operation.OrchestrationID)
+		log.Errorf("%s: %s", msg, err)
+		return err
+	}
+	return nil
 }

@@ -54,6 +54,7 @@ type RuntimeInput struct {
 	componentsDisabler        ComponentsDisabler
 	enabledOptionalComponents map[string]struct{}
 	oidcDefaultValues         internal.OIDCConfigDTO
+	oidcLastValues            gqlschema.OIDCConfigInput
 
 	trialNodesNumber  int
 	instanceID        string
@@ -61,6 +62,7 @@ type RuntimeInput struct {
 	kubeconfig        string
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
+	clusterName       string
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -111,6 +113,18 @@ func (r *RuntimeInput) SetRuntimeID(runtimeID string) internal.ProvisionerInputC
 
 func (r *RuntimeInput) SetKubeconfig(kubeconfig string) internal.ProvisionerInputCreator {
 	r.kubeconfig = kubeconfig
+	return r
+}
+
+func (r *RuntimeInput) SetClusterName(name string) internal.ProvisionerInputCreator {
+	if name != "" {
+		r.clusterName = name
+	}
+	return r
+}
+
+func (r *RuntimeInput) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
+	r.oidcLastValues = oidcConfig
 	return r
 }
 
@@ -173,10 +187,10 @@ func (r *RuntimeInput) SetLabel(key, value string) internal.ProvisionerInputCrea
 	defer r.mutex.Unlock("Labels")
 
 	if r.provisionRuntimeInput.RuntimeInput.Labels == nil {
-		r.provisionRuntimeInput.RuntimeInput.Labels = &gqlschema.Labels{}
+		r.provisionRuntimeInput.RuntimeInput.Labels = gqlschema.Labels{}
 	}
 
-	(*r.provisionRuntimeInput.RuntimeInput.Labels)[key] = value
+	(r.provisionRuntimeInput.RuntimeInput.Labels)[key] = value
 	return r
 }
 
@@ -414,7 +428,9 @@ func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.AutoScalerMax, params.AutoScalerMax)
 	updateInt(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.VolumeSizeGb, params.VolumeSizeGb)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Name, r.shootName)
-	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
+	if params.Region != nil && *params.Region != "" {
+		updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region, params.Region)
+	}
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MachineType, params.MachineType)
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.TargetSecret, params.TargetSecret)
 	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Purpose, params.Purpose)
@@ -447,8 +463,13 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		newAdministrators = append(newAdministrators, r.provisioningParameters.Parameters.RuntimeAdministrators...)
 		r.upgradeShootInput.Administrators = newAdministrators
 	} else {
-		// get default admin (user_id from provisioning operation)
-		r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+		if r.provisioningParameters.ErsContext.UserID != "" {
+			// get default admin (user_id from provisioning operation)
+			r.upgradeShootInput.Administrators = []string{r.provisioningParameters.ErsContext.UserID}
+		} else {
+			// some old clusters does not have an user_id
+			r.upgradeShootInput.Administrators = []string{}
+		}
 	}
 
 	// use autoscaler value in provisioningParameters if it is not nil
@@ -569,6 +590,11 @@ func (r *RuntimeInput) applyGlobalConfigurationForUpgradeRuntime() error {
 }
 
 func (r *RuntimeInput) adjustRuntimeName() error {
+	// if the cluster name was created before, it must be used instead of generating one
+	if r.clusterName != "" {
+		r.provisionRuntimeInput.RuntimeInput.Name = r.clusterName
+		return nil
+	}
 
 	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
 	if err != nil {
@@ -610,35 +636,17 @@ func (r *RuntimeInput) configureDNS() error {
 }
 
 func (r *RuntimeInput) configureOIDC() error {
-	// set default or provided params to provisioning/update inpuit (if exists)
+	// set default or provided params to provisioning/update input (if exists)
 	// This method could be used for:
 	// provisioning (upgradeShootInput.GardenerConfig is nil)
 	// or upgrade (provisionRuntimeInput.ClusterConfig is nil)
 
-	oidcParamsToSet := &gqlschema.OIDCConfigInput{
-		ClientID:       r.oidcDefaultValues.ClientID,
-		GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
-		IssuerURL:      r.oidcDefaultValues.IssuerURL,
-		SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
-		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
-		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
-	}
-	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
-		oidc := r.provisioningParameters.Parameters.OIDC
-		oidcParamsToSet = &gqlschema.OIDCConfigInput{
-			ClientID:       oidc.ClientID,
-			GroupsClaim:    oidc.GroupsClaim,
-			IssuerURL:      oidc.IssuerURL,
-			SigningAlgs:    oidc.SigningAlgs,
-			UsernameClaim:  oidc.UsernameClaim,
-			UsernamePrefix: oidc.UsernamePrefix,
-		}
-	}
-
 	if r.provisionRuntimeInput.ClusterConfig != nil {
+		oidcParamsToSet := r.setOIDCForProvisioning()
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	if r.upgradeShootInput.GardenerConfig != nil {
+		oidcParamsToSet := r.setOIDCForUpgrade()
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
 	return nil
@@ -666,6 +674,73 @@ func (r *RuntimeInput) setNodesForTrialUpgrade() error {
 		r.upgradeShootInput.GardenerConfig.AutoScalerMax = &r.trialNodesNumber
 	}
 	return nil
+}
+
+func (r *RuntimeInput) setOIDCForProvisioning() *gqlschema.OIDCConfigInput {
+	oidcConfig := &gqlschema.OIDCConfigInput{
+		ClientID:       r.oidcDefaultValues.ClientID,
+		GroupsClaim:    r.oidcDefaultValues.GroupsClaim,
+		IssuerURL:      r.oidcDefaultValues.IssuerURL,
+		SigningAlgs:    r.oidcDefaultValues.SigningAlgs,
+		UsernameClaim:  r.oidcDefaultValues.UsernameClaim,
+		UsernamePrefix: r.oidcDefaultValues.UsernamePrefix,
+	}
+
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		r.setOIDCFromProvisioningParameters(oidcConfig)
+	}
+
+	return oidcConfig
+}
+
+func (r *RuntimeInput) setOIDCForUpgrade() *gqlschema.OIDCConfigInput {
+	oidcConfig := r.oidcLastValues
+	r.setOIDCDefaultValuesIfEmpty(&oidcConfig)
+
+	if r.provisioningParameters.Parameters.OIDC.IsProvided() {
+		r.setOIDCFromProvisioningParameters(&oidcConfig)
+	}
+
+	return &oidcConfig
+}
+
+func (r *RuntimeInput) setOIDCFromProvisioningParameters(oidcConfig *gqlschema.OIDCConfigInput) {
+	providedOIDC := r.provisioningParameters.Parameters.OIDC
+	oidcConfig.ClientID = providedOIDC.ClientID
+	oidcConfig.IssuerURL = strings.TrimSuffix(providedOIDC.IssuerURL, "/")
+	if len(providedOIDC.GroupsClaim) != 0 {
+		oidcConfig.GroupsClaim = providedOIDC.GroupsClaim
+	}
+	if len(providedOIDC.SigningAlgs) != 0 {
+		oidcConfig.SigningAlgs = providedOIDC.SigningAlgs
+	}
+	if len(providedOIDC.UsernameClaim) != 0 {
+		oidcConfig.UsernameClaim = providedOIDC.UsernameClaim
+	}
+	if len(providedOIDC.UsernamePrefix) != 0 {
+		oidcConfig.UsernamePrefix = providedOIDC.UsernamePrefix
+	}
+}
+
+func (r *RuntimeInput) setOIDCDefaultValuesIfEmpty(oidcConfig *gqlschema.OIDCConfigInput) {
+	if oidcConfig.ClientID == "" {
+		oidcConfig.ClientID = r.oidcDefaultValues.ClientID
+	}
+	if oidcConfig.IssuerURL == "" {
+		oidcConfig.IssuerURL = r.oidcDefaultValues.IssuerURL
+	}
+	if oidcConfig.GroupsClaim == "" {
+		oidcConfig.GroupsClaim = r.oidcDefaultValues.GroupsClaim
+	}
+	if len(oidcConfig.SigningAlgs) == 0 {
+		oidcConfig.SigningAlgs = r.oidcDefaultValues.SigningAlgs
+	}
+	if oidcConfig.UsernameClaim == "" {
+		oidcConfig.UsernameClaim = r.oidcDefaultValues.UsernameClaim
+	}
+	if oidcConfig.UsernamePrefix == "" {
+		oidcConfig.UsernamePrefix = r.oidcDefaultValues.UsernamePrefix
+	}
 }
 
 func updateString(toUpdate *string, value *string) {

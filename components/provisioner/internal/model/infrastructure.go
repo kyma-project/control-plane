@@ -18,6 +18,8 @@ const (
 	azureAPIVersion     = "azure.provider.extensions.gardener.cloud/v1alpha1"
 	awsAPIVersion       = "aws.provider.extensions.gardener.cloud/v1alpha1"
 	openStackApiVersion = "openstack.provider.extensions.gardener.cloud/v1alpha1"
+
+	defaultConnectionTimeOutMinutes = 4
 )
 
 func NewGCPInfrastructure(workerCIDR string) *gcp.InfrastructureConfig {
@@ -45,7 +47,7 @@ func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 
 func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *azure.InfrastructureConfig {
 	isZoned := len(azConfig.input.Zones) > 0
-	return &azure.InfrastructureConfig{
+	azureConfig := &azure.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: azureAPIVersion,
@@ -58,6 +60,15 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 		},
 		Zoned: isZoned,
 	}
+
+	if isZoned && azConfig.input.EnableNatGateway != nil && *azConfig.input.EnableNatGateway {
+		natGateway := azure.NatGateway{
+			Enabled:                      *azConfig.input.EnableNatGateway,
+			IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
+		}
+		azureConfig.Networks.NatGateway = &natGateway
+	}
+	return azureConfig
 }
 
 func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {

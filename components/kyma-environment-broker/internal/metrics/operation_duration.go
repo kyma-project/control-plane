@@ -25,14 +25,14 @@ func NewOperationDurationCollector() *OperationDurationCollector {
 			Name:      "provisioning_duration_minutes",
 			Help:      "The time of the provisioning process",
 			Buckets:   prometheus.LinearBuckets(20, 2, 40),
-		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
+		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id"}),
 		deprovisioningHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
 			Name:      "deprovisioning_duration_minutes",
 			Help:      "The time of the deprovisioning process",
 			Buckets:   prometheus.LinearBuckets(1, 1, 30),
-		}, []string{"operation_id", "runtime_id", "instance_id", "global_account_id", "plan_id"}),
+		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id"}),
 	}
 }
 
@@ -56,7 +56,7 @@ func (c *OperationDurationCollector) OnProvisioningSucceeded(ctx context.Context
 	pp := op.ProvisioningParameters
 	minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
 	c.provisioningHistogram.
-		WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
+		WithLabelValues(op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
 
 	return nil
 }
@@ -72,7 +72,7 @@ func (c *OperationDurationCollector) OnDeprovisioningStepProcessed(ctx context.C
 	if stepProcessed.OldOperation.State == domain.InProgress && op.State == domain.Succeeded {
 		minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
 		c.deprovisioningHistogram.
-			WithLabelValues(op.ID, op.RuntimeID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
+			WithLabelValues(op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
 	}
 
 	return nil

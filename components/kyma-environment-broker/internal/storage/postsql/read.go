@@ -429,33 +429,54 @@ func (r readSession) GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtime
 	return state, nil
 }
 
-func (r readSession) GetLatestRuntimeStatesByRuntimeID(runtimeID string, n int) ([]dbmodel.RuntimeStateDTO, dberr.Error) {
-	var states []dbmodel.RuntimeStateDTO
-	condition := dbr.And(dbr.Eq("runtime_id", runtimeID), dbr.Or(
-		dbr.And(dbr.Neq("cluster_setup", nil), dbr.Neq("cluster_setup", "")),
-		dbr.And(dbr.Neq("kyma_config", nil), dbr.Neq("kyma_config", "")),
-	))
+func (r readSession) GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID),
+		dbr.And(dbr.Neq("kyma_version", nil), dbr.Neq("kyma_version", "")),
+	)
 
 	count, err := r.session.
 		Select("*").
 		From(RuntimeStateTableName).
 		Where(condition).
 		OrderDesc(CreatedAtField).
-		// because both cluster_setup as well as kyma_config are encrypted
-		// we can't easily query the content of the json. This gets the last
-		// N operations for further processing
-		Limit(uint64(n)).
-		Load(&states)
+		Limit(1).
+		Load(&state)
 	if err != nil {
 		if err == dbr.ErrNotFound {
-			return states, dberr.NotFound("cannot find latest 10 runtime states: %s", err)
+			return state, dberr.NotFound("cannot find latest runtime state with kyma version: %s", err)
 		}
-		return states, dberr.Internal("Failed to get the latest 10 runtime states: %s", err)
+		return state, dberr.Internal("Failed to get the latest runtime state with kyma version: %s", err)
 	}
 	if count == 0 {
-		return states, dberr.NotFound("cannot find latest 10 runtime states with reconciler input: %s", err)
+		return state, dberr.NotFound("found 0 latest runtime states with kyma version: %s", err)
 	}
-	return states, nil
+	return state, nil
+}
+
+func (r readSession) GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
+	var state dbmodel.RuntimeStateDTO
+	condition := dbr.And(dbr.Eq("runtime_id", runtimeID),
+		dbr.Expr("cluster_config::json->>'oidcConfig' != ?", "null"),
+	)
+
+	count, err := r.session.
+		Select("*").
+		From(RuntimeStateTableName).
+		Where(condition).
+		OrderDesc(CreatedAtField).
+		Limit(1).
+		Load(&state)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			return state, dberr.NotFound("cannot find latest runtime state with OIDC config: %s", err)
+		}
+		return state, dberr.Internal("failed to get the latest runtime state with OIDC config: %s", err)
+	}
+	if count == 0 {
+		return state, dberr.NotFound("found 0 latest runtime states with OIDC config: %s", err)
+	}
+	return state, nil
 }
 
 func (r readSession) getOperation(condition dbr.Builder) (dbmodel.OperationDTO, dberr.Error) {

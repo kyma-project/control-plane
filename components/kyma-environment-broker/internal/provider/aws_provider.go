@@ -48,7 +48,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  2,
 			AutoScalerMax:  10,
-			MaxSurge:       4,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
@@ -150,7 +150,7 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }
@@ -174,7 +174,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  1,
 			AutoScalerMax:  10,
-			MaxSurge:       2,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
@@ -187,7 +187,7 @@ func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AWSHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		if pp.Parameters.ZonesCount != nil {
 			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
 			return
@@ -205,16 +205,16 @@ func (p *AWSInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSTrialInput) Defaults() *gqlschema.ClusterConfigInput {
-	return awsLiteDefaults()
+	return awsLiteDefaults(DefaultAWSTrialRegion)
 }
 
-func awsLiteDefaults() *gqlschema.ClusterConfigInput {
+func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
 			MachineType:    "m5.xlarge",
-			Region:         DefaultAWSTrialRegion,
+			Region:         region,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
 			AutoScalerMin:  1,
@@ -227,7 +227,7 @@ func awsLiteDefaults() *gqlschema.ClusterConfigInput {
 					VpcCidr: "10.250.0.0/16",
 					AwsZones: []*gqlschema.AWSZoneInput{
 						{
-							Name:         ZoneForAWSRegion(DefaultAWSRegion),
+							Name:         ZoneForAWSRegion(region),
 							PublicCidr:   "10.250.32.0/20",
 							InternalCidr: "10.250.48.0/20",
 							WorkerCidr:   "10.250.0.0/19",
@@ -251,7 +251,7 @@ func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 		}
 	}
 
-	if params.Region != nil {
+	if params.Region != nil && *params.Region != "" {
 		r := toAWSSpecific[*params.Region]
 		p.updateRegionWithZones(input, r)
 	}
@@ -271,15 +271,14 @@ func (p *AWSTrialInput) Provider() internal.CloudProvider {
 }
 
 func (p *AWSFreemiumInput) Defaults() *gqlschema.ClusterConfigInput {
-	defaults := awsLiteDefaults()
-
 	// Lite (freemium) must have the same defaults as Trial plan, but there was a requirement to change a region only for Trial.
-	defaults.GardenerConfig.Region = DefaultAWSRegion
+	defaults := awsLiteDefaults(DefaultAWSRegion)
+
 	return defaults
 }
 
 func (p *AWSFreemiumInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }

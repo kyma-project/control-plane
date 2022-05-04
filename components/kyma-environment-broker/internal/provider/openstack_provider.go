@@ -29,7 +29,7 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 			WorkerCidr:        "10.250.0.0/19",
 			AutoScalerMin:     2,
 			AutoScalerMax:     4,
-			MaxSurge:          4,
+			MaxSurge:          1,
 			MaxUnavailable:    0,
 			ExposureClassName: ptr.String(DefaultExposureClass),
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
@@ -45,7 +45,7 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *OpenStackInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		input.GardenerConfig.ProviderSpecificConfig.OpenStackConfig.Zones = ZonesForOpenStack(*pp.Parameters.Region)
 	}
 

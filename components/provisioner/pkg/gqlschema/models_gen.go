@@ -39,15 +39,19 @@ type AWSZoneInput struct {
 }
 
 type AzureProviderConfig struct {
-	VnetCidr *string  `json:"vnetCidr"`
-	Zones    []string `json:"zones"`
+	VnetCidr                     *string  `json:"vnetCidr"`
+	Zones                        []string `json:"zones"`
+	EnableNatGateway             *bool    `json:"enableNatGateway"`
+	IdleConnectionTimeoutMinutes *int     `json:"idleConnectionTimeoutMinutes"`
 }
 
 func (AzureProviderConfig) IsProviderSpecificConfig() {}
 
 type AzureProviderConfigInput struct {
-	VnetCidr string   `json:"vnetCidr"`
-	Zones    []string `json:"zones"`
+	VnetCidr                     string   `json:"vnetCidr"`
+	Zones                        []string `json:"zones"`
+	EnableNatGateway             *bool    `json:"enableNatGateway"`
+	IdleConnectionTimeoutMinutes *int     `json:"idleConnectionTimeoutMinutes"`
 }
 
 type ClusterConfigInput struct {
@@ -146,6 +150,7 @@ type GardenerConfig struct {
 	DNSConfig                           *DNSConfig             `json:"dnsConfig"`
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type GardenerConfigInput struct {
@@ -174,6 +179,7 @@ type GardenerConfigInput struct {
 	Seed                                *string                `json:"seed"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type GardenerUpgradeInput struct {
@@ -193,6 +199,7 @@ type GardenerUpgradeInput struct {
 	ProviderSpecificConfig              *ProviderSpecificInput `json:"providerSpecificConfig"`
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
+	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 }
 
 type HibernationStatus struct {
@@ -213,6 +220,12 @@ type KymaConfigInput struct {
 	Components       []*ComponentConfigurationInput `json:"components"`
 	Configuration    []*ConfigEntryInput            `json:"configuration"`
 	ConflictStrategy *ConflictStrategy              `json:"conflictStrategy"`
+}
+
+type LastError struct {
+	ErrMessage string `json:"errMessage"`
+	Reason     string `json:"reason"`
+	Component  string `json:"component"`
 }
 
 type OIDCConfig struct {
@@ -255,6 +268,7 @@ type OperationStatus struct {
 	State     OperationState `json:"state"`
 	Message   *string        `json:"message"`
 	RuntimeID *string        `json:"runtimeID"`
+	LastError *LastError     `json:"lastError"`
 }
 
 type ProviderSpecificInput struct {
@@ -284,7 +298,7 @@ type RuntimeConnectionStatus struct {
 type RuntimeInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
-	Labels      *Labels `json:"labels"`
+	Labels      Labels  `json:"labels"`
 }
 
 type RuntimeStatus struct {

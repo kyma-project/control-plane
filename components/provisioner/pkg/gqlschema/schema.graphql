@@ -32,6 +32,7 @@ type GardenerConfig {
     dnsConfig: DNSConfig
     oidcConfig: OIDCConfig
     exposureClassName: String
+    shootNetworkingFilterDisabled: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -55,6 +56,8 @@ type GCPProviderConfig {
 type AzureProviderConfig {
     vnetCidr: String
     zones: [String!]
+    enableNatGateway: Boolean
+    idleConnectionTimeoutMinutes: Int
 }
 
 type AWSProviderConfig {
@@ -105,12 +108,19 @@ type KymaConfig {
     configuration: [ConfigEntry]
 }
 
+type LastError {
+    errMessage: String!
+    reason: String!
+    component: String!
+}
+
 type OperationStatus {
     id: String
     operation: OperationType!
     state: OperationState!
     message: String
     runtimeID: String
+    lastError: LastError
 }
 
 enum OperationType {
@@ -217,6 +227,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 input OIDCConfigInput {
@@ -254,6 +265,8 @@ input GCPProviderConfigInput {
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
     zones: [String!]      # Zones in which to create the cluster
+    enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
+    idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
 
 input AWSProviderConfigInput {
@@ -325,6 +338,7 @@ input GardenerUpgradeInput {
     providerSpecificConfig: ProviderSpecificInput # Additional parameters, vary depending on the target provider
     oidcConfig: OIDCConfigInput
     exposureClassName: String                     # ExposureClass name
+    shootNetworkingFilterDisabled: Boolean        # Indicator for the Shoot Networking Filter extension being disabled
 }
 
 type Mutation {

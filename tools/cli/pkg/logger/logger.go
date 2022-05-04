@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/int128/kubelogin/pkg/adaptors/logger"
+	"github.com/int128/kubelogin/pkg/infrastructure/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )

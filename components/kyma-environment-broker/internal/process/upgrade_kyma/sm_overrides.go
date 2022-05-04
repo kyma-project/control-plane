@@ -38,7 +38,7 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.UpgradeKymaOperatio
 	creds, err := operation.ProvideServiceManagerCredentials(log)
 	if err != nil {
 		log.Errorf("unable to obtain SM credentials: %s", err)
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, "unable to obtain SM credentials", err, log)
 	}
 
 	smOverrides := []*gqlschema.ConfigEntryInput{
@@ -57,11 +57,11 @@ func (s *ServiceManagerOverridesStep) Run(operation internal.UpgradeKymaOperatio
 		},
 	}
 	operation.InputCreator.AppendOverrides(ServiceManagerComponentName, smOverrides)
+	operation.InputCreator.DisableOptionalComponent(internal.BTPOperatorComponentName)
 
 	operation.InputCreator.EnableOptionalComponent(HelmBrokerComponentName)
 	operation.InputCreator.EnableOptionalComponent(ServiceCatalogComponentName)
 	operation.InputCreator.EnableOptionalComponent(ServiceCatalogAddonsComponentName)
-
 	operation.InputCreator.EnableOptionalComponent(ServiceManagerComponentName)
 
 	return operation, 0, nil

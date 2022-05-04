@@ -44,9 +44,15 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 	log = log.WithField("runtimeID", operation.RuntimeID)
 
+	latestRuntimeStateWithOIDC, err := s.runtimeStateStorage.GetLatestWithOIDCConfigByRuntimeID(operation.RuntimeID)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, err.Error(), err, 5*time.Second, 1*time.Minute, log)
+	}
+	operation.LastRuntimeState = latestRuntimeStateWithOIDC
+
 	input, err := s.createUpgradeShootInput(operation)
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
 
 	var provisionerResponse gqlschema.OperationStatus
@@ -59,7 +65,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 		}
 
 		repeat := time.Duration(0)
-		operation, repeat = s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.ProvisionerOperationID = *provisionerResponse.ID
 			op.Description = "update in progress"
 		}, log)
@@ -70,9 +76,10 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
-	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input)),
-	)
+
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
+	rs.KymaVersion = operation.RuntimeVersion.Version
+	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil
@@ -86,6 +93,9 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
+	if operation.LastRuntimeState.ClusterConfig.OidcConfig != nil {
+		operation.InputCreator.SetOIDCLastValues(*operation.LastRuntimeState.ClusterConfig.OidcConfig)
+	}
 	fullInput, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
 		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")

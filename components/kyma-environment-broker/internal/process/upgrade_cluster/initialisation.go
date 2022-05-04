@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -37,10 +38,11 @@ type InitialisationStep struct {
 	inputBuilder         input.CreatorForPlan
 	evaluationManager    *avs.EvaluationManager
 	timeSchedule         TimeSchedule
+	bundleBuilder        notification.BundleBuilder
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule) *InitialisationStep {
+	timeSchedule *TimeSchedule, bundleBuilder notification.BundleBuilder) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -57,6 +59,7 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, pc
 		inputBuilder:         b,
 		evaluationManager:    em,
 		timeSchedule:         *ts,
+		bundleBuilder:        bundleBuilder,
 	}
 }
 
@@ -96,7 +99,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 			}
 		}
 
-		op, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
@@ -115,20 +118,6 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 }
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
-	// rewrite necessary data from ProvisioningOperation to operation internal.UpgradeOperation
-	provisioningOperation, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
-	if err != nil {
-		log.Errorf("while getting provisioning operation from storage")
-		return operation, s.timeSchedule.Retry, nil
-	}
-
-	operation, delay := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
-		op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
-	}, log)
-	if delay != 0 {
-		return operation, delay, nil
-	}
-
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
 	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
 	switch {
@@ -137,10 +126,10 @@ func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.Up
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
 		log.Errorf("cannot create upgrade shoot input creator at the moment for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.RetryOperation(operation, err.Error(), 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while creating upgrade shoot input creator", err, 5*time.Second, 5*time.Minute, log)
 	default:
 		log.Errorf("cannot create input creator for plan %s: %s", operation.ProvisioningParameters.PlanID, err)
-		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", log)
+		return s.operationManager.OperationFailed(operation, "cannot create provisioning input creator", err, log)
 	}
 }
 
@@ -161,13 +150,13 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 		if hasMonitors && !inMaintenance {
 			log.Infof("executing init upgrade steps")
 			err = s.evaluationManager.SetMaintenanceStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	case UpgradeFinishSteps:
 		if hasMonitors && inMaintenance {
 			log.Infof("executing finish upgrade steps")
 			err = s.evaluationManager.RestoreStatus(&operation.Avs, log)
-			operation, delay = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, updateAvsStatus, log)
 		}
 	}
 
@@ -175,9 +164,9 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 	case err == nil:
 		return operation, delay, nil
 	case kebError.IsTemporaryError(err):
-		return s.operationManager.RetryOperation(operation, err.Error(), 10*time.Second, 10*time.Minute, log)
+		return s.operationManager.RetryOperation(operation, "error while performing runtime tasks", err, 10*time.Second, 10*time.Minute, log)
 	default:
-		return s.operationManager.OperationFailed(operation, err.Error(), log)
+		return s.operationManager.OperationFailed(operation, "error while performing runtime tasks", err, log)
 	}
 }
 
@@ -187,7 +176,15 @@ func (s *InitialisationStep) performRuntimeTasks(step int, operation internal.Up
 func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > CheckStatusTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), log)
+		//send cunstomer notification
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(operation.RuntimeOperation.GlobalAccountID, operation.ProvisionerOperationID)
@@ -212,9 +209,17 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	case gqlschema.OperationStateInProgress, gqlschema.OperationStatePending:
 		return operation, s.timeSchedule.StatusCheck, nil
 	case gqlschema.OperationStateSucceeded, gqlschema.OperationStateFailed:
+		//send cunstomer notification
+		if !s.bundleBuilder.DisabledCheck() {
+			err := s.sendNotificationComplete(operation, log)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return operation, 5 * time.Second, nil
+			}
+		}
 		// Set post-upgrade description which also reset UpdatedAt for operation retries to work properly
 		if operation.Description != postUpgradeDescription {
-			operation, delay = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
+			operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeClusterOperation) {
 				operation.Description = postUpgradeDescription
 			}, log)
 			if delay != 0 {
@@ -234,8 +239,34 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeCluste
 	case gqlschema.OperationStateSucceeded:
 		return s.operationManager.OperationSucceeded(operation, msg, log)
 	case gqlschema.OperationStateFailed:
-		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), log)
+		return s.operationManager.OperationFailed(operation, fmt.Sprintf("provisioner client returns failed status: %s", msg), nil, log)
 	}
 
-	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), log)
+	return s.operationManager.OperationFailed(operation, fmt.Sprintf("unsupported provisioner client status: %s", status.State.String()), nil, log)
+}
+
+func (s *InitialisationStep) sendNotificationComplete(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) error {
+	tenants := []notification.NotificationTenant{
+		{
+			InstanceID: operation.InstanceID,
+			EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			State:      notification.FinishedMaintenanceState,
+		},
+	}
+	notificationParams := notification.NotificationParams{
+		OrchestrationID: operation.OrchestrationID,
+		Tenants:         tenants,
+	}
+	notificationBundle, err := s.bundleBuilder.NewBundle(operation.OrchestrationID, notificationParams)
+	if err != nil {
+		log.Errorf("%s: %s", "Failed to create Notification Bundle", err)
+		return err
+	}
+	err2 := notificationBundle.UpdateNotificationEvent()
+	if err2 != nil {
+		msg := fmt.Sprintf("cannot update notification for orchestration %s", operation.OrchestrationID)
+		log.Errorf("%s: %s", msg, err)
+		return err
+	}
+	return nil
 }

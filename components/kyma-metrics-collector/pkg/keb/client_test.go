@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	kmctesting "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/testing"
@@ -231,7 +232,7 @@ func getKEBClient(url string) *Client {
 	}
 	return &Client{
 		HTTPClient: http.DefaultClient,
-		Logger:     &logrus.Logger{},
+		Logger:     logger.NewLogger(zapcore.InfoLevel),
 		Config:     config,
 	}
 }

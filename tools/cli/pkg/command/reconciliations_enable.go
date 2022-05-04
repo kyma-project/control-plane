@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -81,7 +80,8 @@ func (cmd *reconciliationEnableCmd) Run() error {
 
 	if cmd.opts.shootName != "" {
 		var err error
-		cmd.opts.runtimeID, err = getRuntimeID(ctx, cmd.kebURL, cmd.opts.shootName, httpClient)
+		kebClient := runtime.NewClient(cmd.kebURL, httpClient)
+		cmd.opts.runtimeID, err = getRuntimeID(kebClient, cmd.opts.shootName)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}
@@ -114,10 +114,8 @@ func (cmd *reconciliationEnableCmd) Run() error {
 	return nil
 }
 
-func getRuntimeID(ctx context.Context, kebAddress, shootName string, httpClient *http.Client) (string, error) {
-	kebClient := runtime.NewClient(kebAddress, httpClient)
-
-	listRtResp, err := kebClient.ListRuntimes(runtime.ListParameters{Shoots: []string{shootName}})
+func getRuntimeID(httpClient kebClient, shootName string) (string, error) {
+	listRtResp, err := httpClient.ListRuntimes(runtime.ListParameters{Shoots: []string{shootName}})
 	if err != nil {
 		return "", err
 	}

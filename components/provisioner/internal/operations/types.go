@@ -3,7 +3,9 @@ package operations
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,4 +39,16 @@ func NewNonRecoverableError(err error) NonRecoverableError {
 
 type FailureHandler interface {
 	HandleFailure(operation model.Operation, cluster model.Cluster) error
+}
+
+func ConvertToAppError(err error) apperrors.AppError {
+	if nonRecoverErr := (NonRecoverableError{}); errors.As(err, &nonRecoverErr) {
+		err = nonRecoverErr.error
+	}
+
+	if customErr := apperrors.AppError(nil); errors.As(errors.Cause(err), &customErr) {
+		return customErr
+	}
+
+	return apperrors.Internal(err.Error())
 }

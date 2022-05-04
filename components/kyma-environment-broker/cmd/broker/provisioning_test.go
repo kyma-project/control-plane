@@ -42,6 +42,38 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	suite.AssertProvisioningRequest()
 }
 
+func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"region":""
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// then
+	suite.AssertAWSRegionAndZone("eu-west-1")
+}
+
 func TestProvisioning_TrialAtEU(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
@@ -394,27 +426,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 	}
 }
 
-func TestUnsuspensionWithoutShootName(t *testing.T) {
-	// given
-	suite := NewProvisioningSuite(t)
-
-	// when
-	// Create an instance, succeeded suspension operation in the past and a pending unsuspension operation
-	unsuspensionOperationID := suite.CreateUnsuspension(RuntimeOptions{})
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.InProgress)
-	suite.AssertProvisionerStartedProvisioning(unsuspensionOperationID)
-
-	// when
-	suite.FinishProvisioningOperationByProvisioner(unsuspensionOperationID)
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
-	suite.AssertAllStagesFinished(unsuspensionOperationID)
-	suite.AssertProvisioningRequest()
-}
-
 func TestProvisioning_RuntimeOverrides(t *testing.T) {
 
 	t.Run("should apply overrides to default runtime version", func(t *testing.T) {
@@ -554,6 +565,41 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 			SigningAlgs:    providedOIDC.SigningAlgs,
 			UsernameClaim:  providedOIDC.UsernameClaim,
 			UsernamePrefix: providedOIDC.UsernamePrefix,
+		}
+		options := RuntimeOptions{OIDC: &providedOIDC}
+
+		// when
+		provisioningOperationID := suite.CreateProvisioning(options)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
+		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
+
+		// when
+		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+
+		// then
+		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
+		suite.AssertAllStagesFinished(provisioningOperationID)
+		suite.AssertProvisioningRequest()
+		suite.AssertOIDC(expectedOIDC)
+	})
+
+	t.Run("should apply default OIDC values on empty OIDC params from input", func(t *testing.T) {
+		// given
+		suite := NewProvisioningSuite(t)
+		providedOIDC := internal.OIDCConfigDTO{
+			ClientID:  "fake-client-id-1",
+			IssuerURL: "https://testurl.local",
+		}
+		defaultOIDC := defaultOIDCValues()
+		expectedOIDC := gqlschema.OIDCConfigInput{
+			ClientID:       providedOIDC.ClientID,
+			GroupsClaim:    defaultOIDC.GroupsClaim,
+			IssuerURL:      providedOIDC.IssuerURL,
+			SigningAlgs:    defaultOIDC.SigningAlgs,
+			UsernameClaim:  defaultOIDC.UsernameClaim,
+			UsernamePrefix: defaultOIDC.UsernamePrefix,
 		}
 		options := RuntimeOptions{OIDC: &providedOIDC}
 

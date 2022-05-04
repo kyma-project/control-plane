@@ -9,18 +9,21 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type GetKubeconfigStep struct {
 	provisionerClient   provisioner.Client
 	operationManager    *process.UpdateOperationManager
 	provisioningTimeout time.Duration
+	k8sClientProvider   func(kcfg string) (client.Client, error)
 }
 
-func NewGetKubeconfigStep(os storage.Operations, provisionerClient provisioner.Client) *GetKubeconfigStep {
+func NewGetKubeconfigStep(os storage.Operations, provisionerClient provisioner.Client, k8sClientProvider func(kcfg string) (client.Client, error)) *GetKubeconfigStep {
 	return &GetKubeconfigStep{
 		provisionerClient: provisionerClient,
 		operationManager:  process.NewUpdateOperationManager(os),
+		k8sClientProvider: k8sClientProvider,
 	}
 }
 
@@ -32,11 +35,17 @@ func (s *GetKubeconfigStep) Name() string {
 
 func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	if operation.Kubeconfig != "" {
+		cli, err := s.k8sClientProvider(operation.Kubeconfig)
+		if err != nil {
+			log.Errorf("Unable to create k8s client from the kubeconfig")
+			return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
+		}
+		operation.K8sClient = cli
 		return operation, 0, nil
 	}
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
@@ -49,15 +58,13 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 		log.Errorf("kubeconfig is not provided")
 		return operation, 1 * time.Minute, nil
 	}
-	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
-
-	newOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpdatingOperation) {
-		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
-	}, log)
-	if retry > 0 {
-		log.Errorf("unable to update operation")
-		return operation, time.Second, nil
+	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)
+	if err != nil {
+		log.Errorf("Unable to create k8s client from the kubeconfig")
+		return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
 	}
+	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
+	operation.K8sClient = cli
 
-	return newOperation, 0, nil
+	return operation, 0, nil
 }

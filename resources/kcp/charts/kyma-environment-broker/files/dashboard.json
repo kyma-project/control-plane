@@ -514,13 +514,285 @@
       "valueName": "current"
     },
     {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#FADE2A",
+        "#d44a3a"
+      ],
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 13
+      },
+      "id": 195,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "",
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "round(sum(increase(compass_keb_operations_provisioning_succeeded_total[$__range])))/(round(sum(increase(compass_keb_operations_provisioning_failed_total[$__range])))+round(sum(increase(compass_keb_operations_provisioning_succeeded_total[$__range]))))*100",
+          "interval": "",
+          "legendFormat": "Provision",
+          "refId": "A"
+        },
+        {
+          "expr": "round(sum(increase(compass_keb_operations_deprovisioning_succeeded_total[$__range])))/(round(sum(increase(compass_keb_operations_deprovisioning_failed_total[$__range])))+round(sum(increase(compass_keb_operations_deprovisioning_succeeded_total[$__range]))))*100",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Deprovision",
+          "refId": "B"
+        }
+      ],
+      "thresholds": "1,10",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Success Rate (All)",
+      "type": "stat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "displayName": "${__series.name}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 6,
+        "y": 13
+      },
+      "id": 196,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "",
+      "targets": [
+        {
+          "expr": "topk(3, count by (error_category, error_reason) (compass_keb_provisioning_result{plan_id=~\"$plan_id\"} == 0 unless (compass_keb_provisioning_result{plan_id=~\"$plan_id\"} offset $__range == 0)))",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{error_category}} - {{error_reason}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Provision - Top 3 error category and reason ($plan_id)",
+      "type": "bargauge"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "displayName": "${__series.name}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 13,
+        "y": 13
+      },
+      "id": 198,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "",
+      "targets": [
+        {
+          "expr": "topk(3, count by (error_category, error_reason) (compass_keb_deprovisioning_result{plan_id=~\"$plan_id\"} == 0 unless (compass_keb_deprovisioning_result{plan_id=~\"$plan_id\"} offset $__range == 0)))",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{error_category}} - {{error_reason}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Deprovision - Top 3 error category and reason ($plan_id)",
+      "type": "bargauge"
+    },
+    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 17
       },
       "id": 159,
       "panels": [],
@@ -560,7 +832,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "id": 188,
       "options": {
@@ -570,7 +842,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -588,27 +860,29 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_provisioning_failed_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "round(sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_provisioning_failed_total{plan_id=\"$plan_id\"}[$__range])))",
           "hide": false,
           "interval": "",
           "legendFormat": "Total Provision ",
           "refId": "A"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "round(sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])))",
           "interval": "",
           "legendFormat": "Succeeded",
           "refId": "B"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_provisioning_failed_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "count((compass_keb_provisioning_result{plan_id=\"$plan_id\", error_category=~\"$error_category\", error_reason=~\"$error_reason\"} == 0) unless (compass_keb_provisioning_result{plan_id=\"$plan_id\", error_category=~\"$error_category\", error_reason=~\"$error_reason\"} offset $__range == 0)) or vector(0)",
+          "format": "time_series",
           "hide": false,
+          "instant": false,
           "interval": "",
           "legendFormat": "Failed",
           "refId": "C"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])) / (sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_provisioning_failed_total{plan_id=\"$plan_id\"}[$__range])) > 0 ) *100",
+          "expr": "sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])) / (sum(increase(compass_keb_operations_provisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_provisioning_failed_total{plan_id=\"$plan_id\"}[$__range])) > 0 ) *100 or vector(0)",
           "hide": false,
           "interval": "",
           "legendFormat": "Success Rate",
@@ -644,7 +918,7 @@
         "h": 5,
         "w": 2,
         "x": 6,
-        "y": 14
+        "y": 18
       },
       "id": 189,
       "interval": null,
@@ -713,7 +987,7 @@
         "h": 5,
         "w": 4,
         "x": 8,
-        "y": 14
+        "y": 18
       },
       "id": 178,
       "options": {
@@ -788,7 +1062,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 14
+        "y": 18
       },
       "id": 190,
       "options": {
@@ -816,27 +1090,27 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_deprovisioning_failed_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "round(sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_deprovisioning_failed_total{plan_id=\"$plan_id\"}[$__range])))",
           "hide": false,
           "interval": "",
           "legendFormat": "Total Deprovision ",
           "refId": "A"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "round(sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])))",
           "interval": "",
           "legendFormat": "Succeeded",
           "refId": "B"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_deprovisioning_failed_total{plan_id=\"$plan_id\"}[$__range]))",
+          "expr": "count((compass_keb_deprovisioning_result{plan_id=\"$plan_id\", error_category=~\"$error_category\", error_reason=~\"$error_reason\"} == 0) unless (compass_keb_deprovisioning_result{plan_id=\"$plan_id\", error_category=~\"$error_category\", error_reason=~\"$error_reason\"} offset $__range == 0)) or vector(0)",
           "hide": false,
           "interval": "",
           "legendFormat": "Failed",
           "refId": "C"
         },
         {
-          "expr": "sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])) / (sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_deprovisioning_failed_total{plan_id=\"$plan_id\"}[$__range])) > 0 ) *100",
+          "expr": "sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range])) / (sum(increase(compass_keb_operations_deprovisioning_succeeded_total{plan_id=\"$plan_id\"}[$__range]) + increase(compass_keb_operations_deprovisioning_failed_total{plan_id=\"$plan_id\"}[$__range])) > 0 ) *100 or vector(0)",
           "hide": false,
           "interval": "",
           "legendFormat": "Success Rate",
@@ -872,7 +1146,7 @@
         "h": 5,
         "w": 2,
         "x": 18,
-        "y": 14
+        "y": 18
       },
       "id": 191,
       "interval": null,
@@ -941,7 +1215,7 @@
         "h": 5,
         "w": 4,
         "x": 20,
-        "y": 14
+        "y": 18
       },
       "id": 168,
       "options": {
@@ -998,7 +1272,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 52
       },
       "id": 193,
       "panels": [
@@ -1025,9 +1299,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 7,
+            "w": 8,
             "x": 0,
-            "y": 14
+            "y": 53
           },
           "id": 161,
           "options": {
@@ -1055,32 +1329,39 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"})",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": false,
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Succeeded",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) / count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) * 100",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Final Success Rate",
+              "legendFormat": "Canceled",
               "refId": "D"
+            },
+            {
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Success Rate",
+              "refId": "E"
             }
           ],
           "title": "Upgrade Cluster ($plan_id)",
@@ -1088,7 +1369,6 @@
         },
         {
           "datasource": null,
-          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1111,15 +1391,14 @@
           "gridPos": {
             "h": 5,
             "w": 4,
-            "x": 7,
-            "y": 14
+            "x": 8,
+            "y": 53
           },
           "id": 184,
-          "interval": null,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
-            "justifyMode": "center",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
@@ -1129,7 +1408,7 @@
               "values": false
             },
             "text": {},
-            "textMode": "value"
+            "textMode": "auto"
           },
           "pluginVersion": "7.4.0",
           "scopedVars": {
@@ -1141,36 +1420,27 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==2)",
-              "instant": false,
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==2) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 2)) or vector(0)",
               "interval": "",
               "legendFormat": "In Progress",
               "refId": "A"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==3)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==3) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 3)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Pending",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==4)",
+              "expr": "count((compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==4) unless (compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"} offset $__range == 4)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Cancelling",
+              "legendFormat": "Canceling",
               "refId": "C"
-            },
-            {
-              "expr": "count(compass_keb_upgrade_cluster_result{plan_id=\"$plan_id\"}==5)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Cancelled",
-              "refId": "D"
             }
           ],
-          "title": "Upgrade Cluster  Progressing (${plan_id})",
-          "transformations": [],
+          "title": "Upgrade Cluster Progressing ($plan_id)",
           "type": "stat"
         },
         {
@@ -1196,9 +1466,9 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 7,
-            "x": 11,
-            "y": 14
+            "w": 8,
+            "x": 12,
+            "y": 53
           },
           "id": 182,
           "options": {
@@ -1226,32 +1496,39 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"})",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range)) or vector(0)",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": false,
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 1)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Succeeded",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==0)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==0) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 0)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
               "refId": "C"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) / count (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) * 100",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 5)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Fina Success Rate",
+              "legendFormat": "Canceled",
               "refId": "D"
+            },
+            {
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==1) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 1)) / count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range)) * 100 or vector(0)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Success Rate",
+              "refId": "E"
             }
           ],
           "title": "Upgrade Kyma ($plan_id)",
@@ -1259,7 +1536,6 @@
         },
         {
           "datasource": null,
-          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1282,15 +1558,14 @@
           "gridPos": {
             "h": 5,
             "w": 4,
-            "x": 18,
-            "y": 14
+            "x": 20,
+            "y": 53
           },
           "id": 185,
-          "interval": null,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
-            "justifyMode": "center",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
@@ -1300,7 +1575,7 @@
               "values": false
             },
             "text": {},
-            "textMode": "value"
+            "textMode": "auto"
           },
           "pluginVersion": "7.4.0",
           "scopedVars": {
@@ -1312,36 +1587,27 @@
           },
           "targets": [
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==2)",
-              "instant": false,
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==2) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 2)) or vector(0)",
               "interval": "",
               "legendFormat": "In Progress",
               "refId": "A"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==3)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==3) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 3)) or vector(0)",
               "hide": false,
               "interval": "",
               "legendFormat": "Pending",
               "refId": "B"
             },
             {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==4)",
+              "expr": "count((compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==4) unless (compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"} offset $__range == 4)) or vector(0)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Cancelling",
+              "legendFormat": "Canceling",
               "refId": "C"
-            },
-            {
-              "expr": "count(compass_keb_upgrade_kyma_result{plan_id=\"$plan_id\"}==5)",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Cancelled",
-              "refId": "D"
             }
           ],
-          "title": "Upgrade Kyma  Progressing (${plan_id})",
-          "transformations": [],
+          "title": "Upgrade Kyma Progressing ($plan_id)",
           "type": "stat"
         }
       ],
@@ -1363,7 +1629,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 157
       },
       "id": 42,
       "panels": [
@@ -2044,7 +2310,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 158
       },
       "id": 38,
       "panels": [
@@ -2439,12 +2705,13 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
+          "selected": true,
+          "tags": [],
           "text": [
-            "aws"
+            "All"
           ],
           "value": [
-            "361c511f-f939-4621-b228-d0fb79a1fe15"
+            "$__all"
           ]
         },
         "description": null,
@@ -2456,14 +2723,19 @@
         "name": "plan_id",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "All",
             "value": "$__all"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "aws",
             "value": "361c511f-f939-4621-b228-d0fb79a1fe15"
+          },
+          {
+            "selected": false,
+            "text": "aws_ha",
+            "value": "aecef2e6-49f1-4094-8433-eba0e135eb6a"
           },
           {
             "selected": false,
@@ -2472,8 +2744,8 @@
           },
           {
             "selected": false,
-            "text": "trial",
-            "value": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+            "text": "azure_ha",
+            "value": "f2951649-02ca-43a5-9188-9c07fb612491"
           },
           {
             "selected": false,
@@ -2482,19 +2754,102 @@
           },
           {
             "selected": false,
+            "text": "gcp",
+            "value": "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+          },
+          {
+            "selected": false,
+            "text": "openstack",
+            "value": "03b812ac-c991-4528-b5bd-08b303523a63"
+          },
+          {
+            "selected": false,
+            "text": "trial",
+            "value": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+          },
+          {
+            "selected": false,
             "text": "free",
             "value": "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
           },
           {
             "selected": false,
-            "text": "gcp",
-            "value": "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+            "text": "preview",
+            "value": "5cb3d976-b85c-42ea-a636-79cadda109a9"
           }
         ],
-        "query": "aws : 361c511f-f939-4621-b228-d0fb79a1fe15, azure : 4deee563-e5ec-4731-b9b1-53b42d855f0c, trial : 7d55d31d-35ae-4438-bf13-6ffdfa107d9f, azure_lite : 8cb22518-aa26-44c5-91a0-e669ec9bf443, free : b1a5764e-2ea1-4f95-94c0-2b4538b37b55, gcp : ca6e5357-707f-4565-bbbd-b3ab732597c6",
+        "query": "aws : 361c511f-f939-4621-b228-d0fb79a1fe15, aws_ha : aecef2e6-49f1-4094-8433-eba0e135eb6a, azure : 4deee563-e5ec-4731-b9b1-53b42d855f0c, azure_ha : f2951649-02ca-43a5-9188-9c07fb612491, azure_lite : 8cb22518-aa26-44c5-91a0-e669ec9bf443, gcp : ca6e5357-707f-4565-bbbd-b3ab732597c6, openstack : 03b812ac-c991-4528-b5bd-08b303523a63, trial : 7d55d31d-35ae-4438-bf13-6ffdfa107d9f, free : b1a5764e-2ea1-4f95-94c0-2b4538b37b55, preview : 5cb3d976-b85c-42ea-a636-79cadda109a9",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "definition": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\"}, error_category)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "error_category",
+        "query": {
+          "query": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\"}, error_category)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "definition": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\", error_category=~\"$error_category\"}, error_reason)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "error_reason",
+        "query": {
+          "query": "label_values({__name__=~\"compass_keb_provisioning_result|compass_keb_deprovisioning_result\", plan_id=~\"$plan_id\", error_category=~\"$error_category\"}, error_reason)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },

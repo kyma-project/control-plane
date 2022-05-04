@@ -3,20 +3,21 @@ package internal
 import (
 	"database/sql"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,6 +43,8 @@ type ProvisionerInputCreator interface {
 	SetInstanceID(instanceID string) ProvisionerInputCreator
 	SetShootDomain(shootDomain string) ProvisionerInputCreator
 	SetShootDNSProviders(dnsProviders gardener.DNSProvidersData) ProvisionerInputCreator
+	SetClusterName(name string) ProvisionerInputCreator
+	SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) ProvisionerInputCreator
 }
 
 // GitKymaProject and GitKymaRepo define public Kyma GitHub parameters used for
@@ -146,33 +149,10 @@ func (i *Instance) GetSubscriptionGlobalAccoundID() string {
 
 func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 	result := i.InstanceDetails
-	if result.ShootName == "" {
-		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
-		shoot, domain, e := i.extractShootNameAndDomain()
-		if e != nil {
-			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
-			return result, e
-		}
-		result.ShootName = shoot
-		result.ShootDomain = domain
-	}
 	//overwrite RuntimeID in InstanceDetails with Instance.RuntimeID
 	//needed for runtimes suspended without clearing RuntimeID in deprovisioning operation
 	result.RuntimeID = i.RuntimeID
 	return result, nil
-}
-
-func (i *Instance) extractShootNameAndDomain() (string, string, error) {
-	parsed, err := url.Parse(i.DashboardURL)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
-	}
-
-	parts := strings.Split(parsed.Host, ".")
-	if len(parts) <= 1 {
-		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
-	}
-	return parts[1], parsed.Host[len(parts[0])+1:], nil
 }
 
 // OperationType defines the possible types of an asynchronous operation to a broker.
@@ -212,10 +192,11 @@ type Operation struct {
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
 	OrchestrationID string              `json:"-"`
 	FinishedStages  map[string]struct{} `json:"-"`
+	LastError       kebError.LastError  `json:"-"`
 }
 
 func (o *Operation) IsFinished() bool {
-	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling
+	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling && o.State != orchestration.Retrying
 }
 
 // Orchestration holds all information about an orchestration.
@@ -264,6 +245,7 @@ type InstanceDetails struct {
 	RuntimeID         string                    `json:"runtime_id"`
 	ShootName         string                    `json:"shoot_name"`
 	ShootDomain       string                    `json:"shoot_domain"`
+	ClusterName       string                    `json:"clusterName"`
 	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
 	XSUAA             XSUAAData                 `json:"xsuaa"`
 	Ems               EmsData                   `json:"ems"`
@@ -343,8 +325,19 @@ type DeprovisioningOperation struct {
 	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool `json:"temporary"`
-	ClusterConfigurationDeleted bool `json:"clusterConfigurationDeleted"`
+	Temporary                   bool          `json:"temporary"`
+	ClusterConfigurationDeleted bool          `json:"clusterConfigurationDeleted"`
+	IsServiceInstanceDeleted    bool          `json:"isServiceInstanceDeleted"`
+	Retries                     int           `json:"-"`
+	ReconcilerDeregistrationAt  time.Time     `json:"reconcilerDeregistrationAt"`
+	K8sClient                   client.Client `json:"-"`
+}
+
+func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+	if op.ReconcilerDeregistrationAt.IsZero() {
+		return time.Since(op.CreatedAt)
+	}
+	return time.Since(op.ReconcilerDeregistrationAt)
 }
 
 type UpdatingOperation struct {
@@ -362,7 +355,8 @@ type UpdatingOperation struct {
 
 	// Flag used by the steps regarding Service Catalog migration
 	// denotes whether the payload to reconciler differs from last runtime state
-	RequiresReconcilerUpdate bool `json:"-"`
+	RequiresReconcilerUpdate bool          `json:"-"`
+	K8sClient                client.Client `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
@@ -375,6 +369,8 @@ type UpgradeKymaOperation struct {
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
 	SMClientFactory SMClientFactory `json:"-"`
+
+	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
 
 // UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
@@ -428,6 +424,8 @@ type RuntimeState struct {
 	KymaConfig    gqlschema.KymaConfigInput     `json:"kymaConfig"`
 	ClusterConfig gqlschema.GardenerConfigInput `json:"clusterConfig"`
 	ClusterSetup  *reconcilerApi.Cluster        `json:"clusterSetup,omitempty"`
+
+	KymaVersion string `json:"kyma_version"`
 }
 
 func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
@@ -435,6 +433,16 @@ func (r *RuntimeState) GetKymaConfig() gqlschema.KymaConfigInput {
 		return r.buildKymaConfigFromClusterSetup()
 	}
 	return r.KymaConfig
+}
+
+func (r *RuntimeState) GetKymaVersion() string {
+	if r.KymaVersion != "" {
+		return r.KymaVersion
+	}
+	if r.ClusterSetup != nil {
+		return r.ClusterSetup.KymaConfig.Version
+	}
+	return r.KymaConfig.Version
 }
 
 func (r *RuntimeState) buildKymaConfigFromClusterSetup() gqlschema.KymaConfigInput {
@@ -503,6 +511,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
 			FinishedStages: make(map[string]struct{}, 0),
+			LastError:      kebError.LastError{},
 		},
 	}, nil
 }
@@ -519,7 +528,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			Version:         0,
 			Description:     "Operation created",
 			InstanceID:      instance.InstanceID,
-			State:           domain.InProgress,
+			State:           orchestration.Pending,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,

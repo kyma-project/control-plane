@@ -51,7 +51,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	clusterConfiguration, err := operation.InputCreator.CreateClusterConfiguration()
 	if err != nil {
 		log.Errorf("Unable to create cluster configuration: %s", err.Error())
-		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", log)
+		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", err, log)
 	}
 
 	err = s.runtimeStateStorage.Insert(
@@ -61,11 +61,12 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s]",
+	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s], name=%s",
 		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
-		s.componentList(clusterConfiguration))
+		s.componentList(clusterConfiguration),
+		clusterConfiguration.RuntimeInput.Name)
 	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
 	case kebError.IsTemporaryError(err):
@@ -75,12 +76,13 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	case err != nil:
 		msg := fmt.Sprintf("Request to Reconciler failed: %s", err.Error())
 		log.Error(msg)
-		return s.operationManager.OperationFailed(operation, msg, log)
+		return s.operationManager.OperationFailed(operation, "Request to Reconciler failed", err, log)
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
 
-	updatedOperation, repeat := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
+		operation.ClusterName = clusterConfiguration.RuntimeInput.Name
 	}, log)
 	if repeat != 0 {
 		log.Errorf("cannot save cluster configuration version")

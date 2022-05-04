@@ -4,13 +4,20 @@ import (
 	"context"
 	"testing"
 
-	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_fake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
-	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	machineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+)
+
+var (
+	scheme           = runtime.NewScheme()
+	secretBindingGVK = schema.GroupVersionKind{Group: "core.gardener.cloud", Version: "v1beta1", Kind: "SecretBinding"}
+	shootGVK         = schema.GroupVersionKind{Group: "core.gardener.cloud", Version: "v1beta1", Kind: "Shoot"}
 )
 
 const (
@@ -43,6 +50,9 @@ func TestCredentialsSecretBinding(t *testing.T) {
 		{"Available credential for tenant4, GCP labels and returns existing secret",
 			"tenant4", AWS, "secretBinding5", ""},
 
+		{"There is only dirty Secret for tenant9, Azure labels and returns a new existing secret",
+			"tenant9", Azure, "secretBinding9", ""},
+
 		{"No Available credential for tenant5, Azure returns error",
 			"tenant5", Azure, "",
 			"failed to find unassigned secret binding for hyperscalerType: azure"},
@@ -67,8 +77,8 @@ func TestCredentialsSecretBinding(t *testing.T) {
 				actualError = err.Error()
 				assert.Equal(t, testcase.expectedError, actualError)
 			} else {
-				assert.Equal(t, testcase.expectedSecretBindingName, secretBinding.Name)
-				assert.Equal(t, string(testcase.hyperscalerType), secretBinding.Labels["hyperscalerType"])
+				assert.Equal(t, testcase.expectedSecretBindingName, secretBinding.GetName())
+				assert.Equal(t, string(testcase.hyperscalerType), secretBinding.GetLabels()["hyperscalerType"])
 				assert.Equal(t, testcase.expectedError, actualError)
 			}
 		})
@@ -168,309 +178,371 @@ func TestSecretsAccountPool_IsSecretBindingUsed(t *testing.T) {
 func TestSecretsAccountPool_MarkSecretBindingAsDirty(t *testing.T) {
 	t.Run("should mark secret binding as dirty", func(t *testing.T) {
 		//given
-		accPool, mockSecretBindings := newTestAccountPoolWithoutShoots()
+		accPool, gardenerClient := newTestAccountPoolWithoutShoots()
 
 		//when
 		err := accPool.MarkSecretBindingAsDirty("azure", "tenant1")
 
 		//then
 		require.NoError(t, err)
-		secretBinding, err := mockSecretBindings.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+		secretBinding, err := gardenerClient.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
 		require.NoError(t, err)
-		assert.Equal(t, secretBinding.Labels["dirty"], "true")
+		assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
 	})
 }
 
 func newTestAccountPool() AccountPool {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "gcp",
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "gcp",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding2 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding2",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
+	secretBinding2 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding2",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret2",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret2",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding3 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding3",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant2",
-				"hyperscalerType": "gcp",
+	secretBinding2.SetGroupVersionKind(secretBindingGVK)
+	secretBinding3 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding3",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant2",
+					"hyperscalerType": "gcp",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret3",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret3",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding4 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding4",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"hyperscalerType": "gcp",
+	secretBinding3.SetGroupVersionKind(secretBindingGVK)
+	secretBinding4 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding4",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": "gcp",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret4",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret4",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding5 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding5",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"hyperscalerType": "aws",
+	secretBinding4.SetGroupVersionKind(secretBindingGVK)
+	secretBinding5 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding5",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": "aws",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret5",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret5",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding6 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding6",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"hyperscalerType": "gcp",
-				"shared":          "true",
+	secretBinding5.SetGroupVersionKind(secretBindingGVK)
+	secretBinding6 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding6",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": "gcp",
+					"shared":          "true",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret6",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret6",
-			Namespace: testNamespace,
-		},
 	}
-	secretBinding7 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding7",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"hyperscalerType": "aws",
+	secretBinding6.SetGroupVersionKind(secretBindingGVK)
+	secretBinding7 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding7",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": "aws",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret7",
+				"namespace": "anothernamespace",
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret7",
-			Namespace: "anothernamespace",
+	}
+	secretBinding7.SetGroupVersionKind(secretBindingGVK)
+	secretBinding8 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding8",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant9",
+					"hyperscalerType": "azure",
+					"dirty":           "true",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret8",
+				"namespace": testNamespace,
+			},
 		},
 	}
+	secretBinding8.SetGroupVersionKind(secretBindingGVK)
+	secretBinding9 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding9",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"hyperscalerType": "azure",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret9",
+				"namespace": testNamespace,
+			},
+		},
+	}
+	secretBinding9.SetGroupVersionKind(secretBindingGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7).
-		CoreV1beta1().SecretBindings(testNamespace)
-
-	return NewAccountPool(gardenerFake, nil)
+	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1, secretBinding2, secretBinding3, secretBinding4, secretBinding5, secretBinding6, secretBinding7, secretBinding8, secretBinding9)
+	return NewAccountPool(gardenerFake, testNamespace)
 }
 
-func newTestAccountPoolWithSingleShoot() (AccountPool, v1beta1.SecretBindingInterface) {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
+func newTestAccountPoolWithSingleShoot() (AccountPool, dynamic.ResourceInterface) {
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+				},
 			},
-		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
-	}
-
-	shoot1 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot1",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secretBinding1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateSucceeded,
-				Type:  gardener_types.LastOperationTypeReconcile,
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
 	}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+	shoot1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "shoot1",
+				"namespace": testNamespace,
+			},
+			"spec": map[string]interface{}{
+				"secretBindingName": "secretBinding1",
+			},
+			"status": map[string]interface{}{
+				"lastOperation": map[string]interface{}{
+					"state": "Succeeded",
+					"type":  "Reconcile",
+				},
+			},
+		},
+	}
+	shoot1.SetGroupVersionKind(shootGVK)
 
-	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
+	gardenerFake := gardener.NewDynamicFakeClient(shoot1, secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
 func newEmptyTestAccountPool() AccountPool {
-	secretBinding1 := &gardener_types.SecretBinding{}
-
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-
-	return NewAccountPool(mockSecretBindings, mockShoots)
+	secretBinding1 := &unstructured.Unstructured{}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
+	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace)
 }
 
-func newTestAccountPoolWithSecretBindingInternal() (AccountPool, v1beta1.SecretBindingInterface) {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
-				"internal":        "true",
+func newTestAccountPoolWithSecretBindingInternal() (AccountPool, dynamic.ResourceInterface) {
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+					"internal":        "true",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
 	}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-
-	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
+	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithSecretBindingDirty() (AccountPool, v1beta1.SecretBindingInterface) {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
-				"dirty":           "true",
+func newTestAccountPoolWithSecretBindingDirty() (AccountPool, dynamic.ResourceInterface) {
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+					"dirty":           "true",
+				},
 			},
-		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
-	}
-
-	shoot1 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot1",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secretBinding1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateSucceeded,
-				Type:  gardener_types.LastOperationTypeReconcile,
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
 	}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+	shoot1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "shoot1",
+				"namespace": testNamespace,
+			},
+			"spec": map[string]interface{}{
+				"secretBindingName": "secretBinding1",
+			},
+			"status": map[string]interface{}{
+				"lastOperation": map[string]interface{}{
+					"state": "Succeeded",
+					"type":  "Reconcile",
+				},
+			},
+		},
+	}
+	shoot1.SetGroupVersionKind(shootGVK)
 
-	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
+	gardenerFake := gardener.NewDynamicFakeClient(shoot1, secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, v1beta1.SecretBindingInterface) {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
+func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, dynamic.ResourceInterface) {
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+				},
 			},
-		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
-	}
-
-	shoot1 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot1",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secretBinding1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateSucceeded,
-				Type:  gardener_types.LastOperationTypeReconcile,
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
 	}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
-	shoot2 := &gardener_types.Shoot{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "shoot2",
-			Namespace: testNamespace,
-		},
-		Spec: gardener_types.ShootSpec{
-			SecretBindingName: "secretBinding1",
-		},
-		Status: gardener_types.ShootStatus{
-			LastOperation: &gardener_types.LastOperation{
-				State: gardener_types.LastOperationStateSucceeded,
-				Type:  gardener_types.LastOperationTypeReconcile,
+	shoot1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "shoot1",
+				"namespace": testNamespace,
+			},
+			"spec": map[string]interface{}{
+				"secretBindingName": "secretBinding1",
+			},
+			"status": map[string]interface{}{
+				"lastOperation": map[string]interface{}{
+					"state": "Succeeded",
+					"type":  "Reconcile",
+				},
 			},
 		},
 	}
+	shoot1.SetGroupVersionKind(shootGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(shoot1, shoot2, secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
+	shoot2 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "shoot2",
+				"namespace": testNamespace,
+			},
+			"spec": map[string]interface{}{
+				"secretBindingName": "secretBinding1",
+			},
+			"status": map[string]interface{}{
+				"lastOperation": map[string]interface{}{
+					"state": "Succeeded",
+					"type":  "Reconcile",
+				},
+			},
+		},
+	}
+	shoot2.SetGroupVersionKind(shootGVK)
 
-	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
+	gardenerFake := gardener.NewDynamicFakeClient(shoot1, shoot2, secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithoutShoots() (AccountPool, v1beta1.SecretBindingInterface) {
-	secretBinding1 := &gardener_types.SecretBinding{
-		ObjectMeta: machineryv1.ObjectMeta{
-			Name:      "secretBinding1",
-			Namespace: testNamespace,
-			Labels: map[string]string{
-				"tenantName":      "tenant1",
-				"hyperscalerType": "azure",
+func newTestAccountPoolWithoutShoots() (AccountPool, dynamic.ResourceInterface) {
+	secretBinding1 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"name":      "secretBinding1",
+				"namespace": testNamespace,
+				"labels": map[string]interface{}{
+					"tenantName":      "tenant1",
+					"hyperscalerType": "azure",
+				},
+			},
+			"secretRef": map[string]interface{}{
+				"name":      "secret1",
+				"namespace": testNamespace,
 			},
 		},
-		SecretRef: corev1.SecretReference{
-			Name:      "secret1",
-			Namespace: testNamespace,
-		},
 	}
+	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
-	gardenerFake := gardener_fake.NewSimpleClientset(secretBinding1)
-	mockSecretBindings := gardenerFake.CoreV1beta1().SecretBindings(testNamespace)
-	mockShoots := gardenerFake.CoreV1beta1().Shoots(testNamespace)
-
-	return NewAccountPool(mockSecretBindings, mockShoots), mockSecretBindings
+	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1)
+	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }

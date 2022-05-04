@@ -6,12 +6,15 @@ import (
 	"time"
 
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +50,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operations.StageResult{}, util.K8SErrorToAppError(pkgErrors.Wrap(err, "error: failed to create kubernetes config from raw")).SetComponent(apperrors.ErrClusterK8SClient)
 	}
 
 	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
@@ -61,10 +64,12 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 				return operations.StageResult{Stage: s.Name(), Delay: 30 * time.Second}, nil
 			}
 
-			return operations.StageResult{}, operations.NewNonRecoverableError(err)
+			reason := util.KymaInstallationErrorToErrReason(installErr.ErrorEntries...)
+
+			return operations.StageResult{}, operations.NewNonRecoverableError(apperrors.External(installErr.Error()).SetComponent(apperrors.ErrKymaInstaller).SetReason(reason))
 		}
 
-		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
+		return operations.StageResult{}, apperrors.External(fmt.Sprintf("error: failed to check installation state: %s", err.Error())).SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrCheckKymaInstallationState)
 	}
 
 	if installationState.State == string(v1alpha1.StateInstalled) {
@@ -75,7 +80,7 @@ func (s *WaitForInstallationStep) Run(cluster model.Cluster, operation model.Ope
 	}
 
 	if installationState.State == installationSDK.NoInstallationState {
-		return operations.StageResult{}, fmt.Errorf("installation not yet started")
+		return operations.StageResult{}, apperrors.External("installation not yet started").SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrReason(installationSDK.NoInstallationState))
 	}
 
 	message := fmt.Sprintf("Installation in progress: %s", installationState.Description)

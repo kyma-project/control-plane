@@ -1,12 +1,17 @@
 package provisioner
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 type runtime struct {
@@ -22,15 +27,23 @@ type FakeClient struct {
 	shootUpgrades map[string]schema.UpgradeShootInput
 	operations    map[string]schema.OperationStatus
 	dumpRequest   bool
+
+	gardenerClient    dynamic.Interface
+	gardenerNamespace string
 }
 
 func NewFakeClient() *FakeClient {
+	return NewFakeClientWithGardener(nil, "")
+}
+
+func NewFakeClientWithGardener(gc dynamic.Interface, ns string) *FakeClient {
 	return &FakeClient{
-		graphqlizer:   Graphqlizer{},
-		runtimes:      []runtime{},
-		operations:    make(map[string]schema.OperationStatus),
-		upgrades:      make(map[string]schema.UpgradeRuntimeInput),
-		shootUpgrades: make(map[string]schema.UpgradeShootInput),
+		graphqlizer:    Graphqlizer{},
+		runtimes:       []runtime{},
+		operations:     make(map[string]schema.OperationStatus),
+		upgrades:       make(map[string]schema.UpgradeRuntimeInput),
+		shootUpgrades:  make(map[string]schema.UpgradeShootInput),
+		gardenerClient: gc,
 	}
 }
 
@@ -101,6 +114,31 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 		Operation: schema.OperationTypeProvision,
 		State:     schema.OperationStateInProgress,
 	}
+
+	if c.gardenerClient != nil {
+		shoot := unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "core.gardener.cloud/v1beta1",
+				"kind":       "Shoot",
+				"metadata": map[string]interface{}{
+					"name": config.ClusterConfig.GardenerConfig.Name,
+					"annotations": map[string]interface{}{
+						"kcp.provisioner.kyma-project.io/runtime-id": rid,
+					},
+				},
+				"spec": map[string]interface{}{
+					"maintenance": map[string]interface{}{
+						"timeWindow": map[string]interface{}{
+							"begin": "010000+0000",
+							"end":   "010000+0000",
+						},
+					},
+				},
+			},
+		}
+		c.gardenerClient.Resource(gardener.ShootResource).Namespace(c.gardenerNamespace).Create(context.Background(), &shoot, v1.CreateOptions{})
+	}
+
 	return schema.OperationStatus{
 		RuntimeID: &rid,
 		ID:        &opId,

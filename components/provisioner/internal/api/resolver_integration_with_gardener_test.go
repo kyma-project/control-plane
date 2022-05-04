@@ -120,6 +120,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
+	// to separate from other tests
+	installationServiceMockForDeprovisiong := &installationMocks.Service{}
+	installationServiceMockForDeprovisiong.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
+
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	ctx = context.WithValue(ctx, middlewares.SubAccountID, subAccountId)
 
@@ -248,7 +252,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewKubernetesVersionProvider(shootInterface), provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewKubernetesVersionProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator()
 
@@ -534,6 +538,7 @@ func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.Op
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
+		LastError: &gqlschema.LastError{},
 	}
 }
 

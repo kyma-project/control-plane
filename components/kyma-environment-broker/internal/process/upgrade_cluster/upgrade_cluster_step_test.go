@@ -40,6 +40,18 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 	assert.NoError(t, err)
 
+	runtimeState := fixture.FixRuntimeState("runtimestate-1", fixRuntimeID, provisioningOperation.ID)
+	runtimeState.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+		ClientID:       expectedOIDC.ClientID,
+		GroupsClaim:    expectedOIDC.GroupsClaim,
+		IssuerURL:      expectedOIDC.IssuerURL,
+		SigningAlgs:    expectedOIDC.SigningAlgs,
+		UsernameClaim:  expectedOIDC.UsernameClaim,
+		UsernamePrefix: expectedOIDC.UsernamePrefix,
+	}
+	memoryStorage.RuntimeStates().Insert(runtimeState)
+	assert.NoError(t, err)
+
 	// as autoscaler values are not nil in provisioningParameters, the provider values are not used
 	provider := fixGetHyperscalerProviderForPlanID(operation.ProvisioningParameters.PlanID)
 	assert.NotNil(t, provider)

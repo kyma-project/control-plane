@@ -65,7 +65,7 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
+      required_scope: ["{{ .Values.oidc.groups.orchestrations }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow
@@ -73,6 +73,7 @@ spec:
     methods:
     - GET
     - PUT
+    - POST
     url: <http|https>://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?></orchestrations.*>
   upstream:
     url: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
@@ -88,7 +89,7 @@ spec:
     config:
       jwks_urls: ["{{ tpl .Values.oidc.keysURL $ }}"]
       scope_strategy: exact
-      required_scope: ["{{ .Values.oidc.groups.admin }}"]
+      required_scope: ["{{ .Values.oidc.groups.orchestrations }}"]
       trusted_issuers: ["{{ tpl .Values.oidc.issuer $ }}"]
   authorizer:
     handler: allow

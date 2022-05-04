@@ -357,6 +357,21 @@ func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
 	}
 }
 
+func FixClusterSetup(runtimeID string) reconcilerApi.Cluster {
+	return reconcilerApi.Cluster{
+		Kubeconfig: "sample-kubeconfig",
+		KymaConfig: reconcilerApi.KymaConfig{
+			Administrators: nil,
+			Components:     nil,
+			Profile:        "",
+			Version:        "2.0.0",
+		},
+		Metadata:     reconcilerApi.Metadata{},
+		RuntimeID:    runtimeID,
+		RuntimeInput: reconcilerApi.RuntimeInput{},
+	}
+}
+
 // SimpleInputCreator implements ProvisionerInputCreator interface
 func (c *SimpleInputCreator) SetProvisioningParameters(params internal.ProvisioningParameters) internal.ProvisionerInputCreator {
 	return c
@@ -382,7 +397,11 @@ func (c *SimpleInputCreator) SetLabel(key, val string) internal.ProvisionerInput
 	return c
 }
 
-func (c *SimpleInputCreator) SetKubeconfig(kcfg string) internal.ProvisionerInputCreator {
+func (c *SimpleInputCreator) SetKubeconfig(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetClusterName(_ string) internal.ProvisionerInputCreator {
 	return c
 }
 
@@ -396,6 +415,10 @@ func (c *SimpleInputCreator) SetRuntimeID(runtimeID string) internal.Provisioner
 }
 
 func (c *SimpleInputCreator) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *SimpleInputCreator) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
 	return c
 }
 

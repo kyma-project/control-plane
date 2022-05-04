@@ -6,11 +6,14 @@ import (
 	"time"
 
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,7 +46,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 
 	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
+		return operations.StageResult{}, util.K8SErrorToAppError(pkgErrors.Wrap(err, "error: failed to create kubernetes config from raw")).SetComponent(apperrors.ErrClusterK8SClient)
 	}
 
 	installationState, err := s.installationClient.CheckInstallationState(k8sConfig)
@@ -54,7 +57,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
-		return operations.StageResult{}, fmt.Errorf("error: failed to check installation state: %s", err.Error())
+		return operations.StageResult{}, apperrors.External(fmt.Sprintf("error: failed to check installation state: %s", err.Error())).SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrCheckKymaInstallationState)
 	}
 
 	if installationState.State != installationSDK.NoInstallationState && installationState.State != string(v1alpha1.StateEmpty) {
@@ -69,7 +72,7 @@ func (s *InstallKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		cluster.KymaConfig.GlobalConfiguration,
 		cluster.KymaConfig.Components)
 	if err != nil {
-		return operations.StageResult{}, fmt.Errorf("error: failed to start installation: %s", err.Error())
+		return operations.StageResult{}, apperrors.External(fmt.Sprintf("error: failed to start installation: %s", err.Error())).SetComponent(apperrors.ErrKymaInstaller).SetReason(apperrors.ErrTriggerKymaInstall)
 	}
 
 	logger.Warnf("Installation started, proceeding to next step...")

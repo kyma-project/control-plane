@@ -1,24 +1,24 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
+  "_controlsOrder": [
+    "name"
+  ],
+  "_show_form_view": true,
   "properties": {
     "name": {
-      "type": "string",
-      "title": "Cluster Name",
-      "minLength": 1,
-      "pattern": "^[a-zA-Z0-9-]*$",
       "_BTPdefaultTemplate": {
         "elements": [
           "saSubdomain"
         ]
-      }
+      },
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "title": "Cluster Name",
+      "type": "string"
     }
   },
   "required": [
     "name"
   ],
-  "_show_form_view": true,
-  "_controlsOrder": [
-    "name"
-  ]
+  "type": "object"
 }

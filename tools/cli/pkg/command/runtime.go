@@ -21,6 +21,11 @@ type RuntimeCommand struct {
 	params   runtime.ListParameters
 	states   []string
 	opDetail bool
+	display  Display
+}
+
+type Display struct {
+	SubscriptionGlobalAccountID bool
 }
 
 var tableColumns = []printer.Column{
@@ -79,6 +84,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Shoots, "shoot", "c", nil, "Filter by Shoot cluster name. You can provide multiple values, either separated by a comma (e.g. shoot1,shoot2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.GlobalAccountIDs, "account", "g", nil, "Filter by global account ID. You can provide multiple values, either separated by a comma (e.g. GAID1,GAID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.SubAccountIDs, "subaccount", "s", nil, "Filter by subaccount ID. You can provide multiple values, either separated by a comma (e.g. SAID1,SAID2), or by specifying the option multiple times.")
+	cobraCmd.Flags().BoolVar(&cmd.display.SubscriptionGlobalAccountID, "subscription-global-account-id", false, "Display Subscription Global Account ID.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.InstanceIDs, "instance-id", "i", nil, "Filter by instance ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "R", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
@@ -138,6 +144,14 @@ func (cmd *RuntimeCommand) Validate() error {
 func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 	switch {
 	case cmd.output == tableOutput:
+		if cmd.display.SubscriptionGlobalAccountID {
+			tableColumns = append(tableColumns[:1+1], tableColumns[1:]...)
+			tableColumns[1] = printer.Column{
+				Header:    "Subscription Global Account ID",
+				FieldSpec: "{.subscriptionGlobalAccountID}",
+			}
+		}
+
 		if cmd.opDetail {
 			tableColumns = append(tableColumns, printer.Column{
 				Header:    "KYMA VERSION",

@@ -2,7 +2,7 @@ db:
   driver: postgres
   encryption:
     keyFile: "/encryption/reconciler.key"
-  blockQueries: true
+  blockQueries: false
   postgres:
     host: {{ .Values.db.serviceHost }}
     database: {{ .Values.db.reconcilerDbName }}
@@ -11,6 +11,10 @@ db:
     password: {{ .Values.db.reconcilerPassword }}
     useSsl: {{ .Values.db.useSsl }}
     migrationsDir: "./configs/db/postgres"
+    maxOpenConns: {{ .Values.db.maxOpenConns }}
+    maxIdleConns: {{ .Values.db.maxIdleConns }}
+    connMaxLifetime: {{ .Values.db.connMaxLifetime }}
+    connMaxIdleTime: {{ .Values.db.connMaxIdleTime }}
   sqlite:
     file: {{ .Values.db.file }}
     deploySchema: {{ .Values.db.deploySchema }}
@@ -20,6 +24,7 @@ mothership:
   host: {{ include "mothership-reconciler.fullname" . }}
   port: {{ .Values.service.port }}
   scheduler:
+    deleteStrategy: all
     reconcilers:
 {{- range $component := .Values.global.components }}
       {{ $component }}:

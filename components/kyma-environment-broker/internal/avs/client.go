@@ -182,7 +182,7 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		}
 	}
 
-	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %s", evaluationID, err)
+	return errors.Wrapf(err, "unexpected response for evaluationId: %d while deleting reference from parent evaluation, error", evaluationID)
 }
 
 func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
@@ -234,7 +234,7 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 	}
 
 	if response.StatusCode >= http.StatusInternalServerError {
-		return response, kebError.NewTemporaryError("avs server returned %d status code", response.StatusCode)
+		return response, kebError.WrapNewTemporaryError(NewAvsError("avs server returned %d status code", response.StatusCode))
 	}
 
 	switch response.StatusCode {
@@ -244,15 +244,15 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		if allowNotFound {
 			return response, nil
 		}
-		return response, fmt.Errorf("response status code: %d for %s", http.StatusNotFound, request.URL.String())
+		return response, NewAvsError("response status code: %d for %s", http.StatusNotFound, request.URL.String())
 	case http.StatusUnauthorized:
 		if allowResetToken {
 			return c.execute(request, allowNotFound, false)
 		}
-		return response, fmt.Errorf("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
+		return response, NewAvsError("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
 	}
 
-	return response, fmt.Errorf("unsupported status code: %d for %s", response.StatusCode, request.URL.String())
+	return response, NewAvsError("unsupported status code: %d for %s", response.StatusCode, request.URL.String())
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

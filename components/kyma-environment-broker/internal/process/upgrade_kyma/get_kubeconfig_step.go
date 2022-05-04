@@ -33,11 +33,12 @@ func (s *GetKubeconfigStep) Name() string {
 
 func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.Kubeconfig != "" {
+		operation.InputCreator.SetKubeconfig(operation.Kubeconfig)
 		return operation, 0, nil
 	}
 	if operation.Runtime.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
-		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", log)
+		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
 	}
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.Runtime.RuntimeID)
@@ -46,13 +47,13 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 		return operation, 1 * time.Minute, nil
 	}
 
-	if status.RuntimeConfiguration.Kubeconfig == nil {
+	if status.RuntimeConfiguration.Kubeconfig == nil || *status.RuntimeConfiguration.Kubeconfig == "" {
 		log.Errorf("kubeconfig is not provided")
 		return operation, 1 * time.Minute, nil
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 
-	newOperation, retry := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
+	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}, log)
 	if retry > 0 {

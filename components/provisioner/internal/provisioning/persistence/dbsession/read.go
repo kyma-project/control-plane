@@ -2,14 +2,16 @@ package dbsession
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"strings"
 
 	"github.com/gocraft/dbr/v2"
+
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
 type readSession struct {
@@ -131,6 +133,12 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	}
 	cluster.ClusterConfig.OIDCConfig = &oidcConfig
 
+	dnsConfig, dberr := r.getDNSConfig(providerConfig.ID)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot get DNS config for runtimeID: %s", runtimeID)
+	}
+	cluster.ClusterConfig.DNSConfig = dnsConfig
+
 	if cluster.ActiveKymaConfigId != nil {
 		kymaConfig, dberr := r.getKymaConfig(runtimeID, *cluster.ActiveKymaConfigId)
 		if dberr != nil {
@@ -163,9 +171,10 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
-			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config").
+			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min",
+			"auto_scaler_max", "max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
+			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config",
+			"shoot_networking_filter_disabled").
 		From("gardener_config").
 		Join("cluster", "gardener_config.cluster_id=cluster.id").
 		Where(dbr.Eq("name", name)).
@@ -341,11 +350,13 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 	gardenerConfig := gardenerConfigRead{}
 
 	err := r.session.
-		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name", "kubernetes_version",
-			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version", "provider", "purpose", "seed",
-			"target_secret", "worker_cidr", "region", "auto_scaler_min", "auto_scaler_max",
-			"max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "allow_privileged_containers", "exposure_class_name", "provider_specific_config").
+		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name",
+			"kubernetes_version", "volume_size_gb", "disk_type", "machine_type", "machine_image",
+			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "region",
+			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
+			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
+			"allow_privileged_containers", "exposure_class_name", "provider_specific_config",
+			"shoot_networking_filter_disabled").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
@@ -369,7 +380,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 
 var (
 	operationColumns = []string{
-		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition",
+		"id", "type", "start_timestamp", "stage", "end_timestamp", "state", "message", "cluster_id", "last_transition", "err_message", "reason", "component",
 	}
 )
 
@@ -510,4 +521,47 @@ func (r readSession) getOidcConfig(gardenerConfigID string) (model.OIDCConfig, d
 	oidc.SigningAlgs = algorithms
 
 	return oidc, nil
+}
+
+func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, dberrors.Error) {
+	var dnsConfigWithID struct {
+		model.DNSConfig
+		ID string `db:"id"`
+	}
+	var dnsProvidersPreSplit []struct {
+		model.DNSProvider
+		RawDomains string `db:"domains_include"`
+	}
+
+	err := r.session.
+		Select("domain", "id").
+		From("dns_config").
+		Where(dbr.Eq("gardener_config_id", gardenerConfigID)).
+		LoadOne(&dnsConfigWithID)
+
+	if errors.Is(err, dbr.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get DNS config: %s", err)
+	}
+
+	dnsConfig := dnsConfigWithID.DNSConfig
+
+	_, err = r.session.
+		Select("is_primary", "secret_name", "type", "domains_include").
+		From("dns_providers").
+		Where(dbr.Eq("dns_config_id", dnsConfigWithID.ID)).
+		Load(&dnsProvidersPreSplit)
+
+	if err != nil {
+		return nil, dberrors.Internal("Failed to get DNS provider: %s", err)
+	}
+
+	for _, provider := range dnsProvidersPreSplit {
+		provider.DNSProvider.DomainsInclude = strings.Split(provider.RawDomains, ",")
+		dnsConfig.Providers = append(dnsConfig.Providers, &provider.DNSProvider)
+	}
+
+	return &dnsConfig, nil
 }

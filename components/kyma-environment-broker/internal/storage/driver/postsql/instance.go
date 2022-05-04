@@ -486,6 +486,15 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 		if err != nil {
 			return []internal.Instance{}, 0, 0, err
 		}
+		lastOp, err := s.operations.GetLastOperation(instance.InstanceID)
+		if err != nil {
+			if dberr.IsNotFound(err) {
+				instances = append(instances, instance)
+				continue
+			}
+			return []internal.Instance{}, 0, 0, err
+		}
+		instance.InstanceDetails = lastOp.InstanceDetails
 		instances = append(instances, instance)
 	}
 	return instances, count, totalCount, err

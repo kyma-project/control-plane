@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
+	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
@@ -147,8 +149,25 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient,
-			nil, evalManager, nil)
+			nil, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -194,7 +213,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 		expectedOperation.Version++
 		expectedOperation.State = orchestration.InProgress
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -228,7 +264,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
 		require.NoError(t, err)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), nil, nil, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), nil, nil, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -276,7 +329,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -327,7 +397,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -378,7 +465,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -430,7 +534,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -482,7 +603,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -535,7 +673,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManager, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -588,7 +743,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 				RuntimeID: StringPtr(fixRuntimeID),
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -653,7 +825,24 @@ func TestInitialisationStep_Run(t *testing.T) {
 				}
 			}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil)
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient, inputBuilder, evalManagerInvalid, nil, notificationBuilder)
 
 		// when invalid client request, this should be delayed
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)

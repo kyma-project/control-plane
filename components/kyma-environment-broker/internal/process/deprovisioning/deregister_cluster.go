@@ -30,11 +30,11 @@ func (s *DeregisterClusterStep) Name() string {
 
 func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if operation.ClusterConfigurationVersion == 0 {
-		log.Debug("Cluster configuration was not created, skipping")
+		log.Info("Cluster configuration was not created, skipping")
 		return operation, 0, nil
 	}
 	if operation.ClusterConfigurationDeleted {
-		log.Debug("Cluster configuration was deleted, skipping")
+		log.Info("Cluster configuration was deleted, skipping")
 		return operation, 0, nil
 	}
 	err := s.reconcilerClient.DeleteCluster(operation.RuntimeID)
@@ -42,8 +42,9 @@ func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, 
 		return s.handleError(operation, err, log, "cannot remove DataTenant")
 	}
 
-	modifiedOp, d := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+	modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
 		op.ClusterConfigurationDeleted = true
+		op.ReconcilerDeregistrationAt = time.Now()
 	}, log)
 
 	return modifiedOp, d, nil
@@ -60,6 +61,6 @@ func (s *DeregisterClusterStep) handleError(operation internal.DeprovisioningOpe
 		}
 	}
 
-	log.Errorf("Reconciler cluster configuration have not been deleted.", s.Name())
+	log.Errorf("Reconciler cluster configuration have not been deleted in step %s.", s.Name())
 	return operation, 0, nil
 }

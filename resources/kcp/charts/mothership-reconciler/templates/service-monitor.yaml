@@ -1,4 +1,4 @@
-{{ if .Values.global.mothership_reconciler.servicemonitor }}
+{{ if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -9,6 +9,17 @@ metadata:
 spec:
   endpoints:
   - port: http
+    interval: {{ .Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+  - port: fluentbit
+    interval: {{ .Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+    path: /api/v1/metrics/prometheus
+    metricRelabelings:
+      - action: keep
+        regex: ^(fluentbit_.*|go_.*|process_.*)$
+        sourceLabels:
+          - __name__
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}

@@ -1,0 +1,21 @@
+{{ $global := . }}
+{{- range $component := .Values.global.components }}
+{{- if and $global.Values.deployment.podDisruptionBudget (gt ($global.Values.deployment.replicasCount | int) 1) -}}
+{{ $values := index $global.Values $component }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    kyma-project.io/component-reconciler: ""
+    component: {{ $component }}
+  name: {{ $component }}-reconciler
+  namespace: {{ $global.Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $component }}-reconciler
+      app.kubernetes.io/instance: {{ $global.Release.Name }}
+{{ default $global.Values.deployment.podDisruptionBudget (($values).deployment).podDisruptionBudget | indent 2 }}
+---
+{{- end -}}
+{{- end }}

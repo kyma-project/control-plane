@@ -24,14 +24,24 @@ db:
   file: "reconciler.db"
   deploySchema: true
   resetDatabase: false
+  maxOpenConns: 50 # if n <= 0, then there is no limit on the number of open connections. The default is 0 (unlimited).
+  maxIdleConns: 20 # If n <= 0, no idle connections are retained. The default max idle connections is currently 2. This may change in a future release.
+  connMaxLifetime: 10m # If d <= 0, connections are not closed due to a connection's age.
+  connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
 preComponents:
-  - [cluster-essentials, istio-configuration, certificates]
+  - [cluster-essentials, istio-configuration, istio, certificates]
+
+options:
+  verbose: false
+  workerCount: 50
 
 deployment:
   imagePullPolicy: "IfNotPresent"
 
   replicasCount: 1
+  podDisruptionBudget: |
+    maxUnavailable: 1
 
   # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
   strategy:
@@ -83,8 +93,52 @@ deployment:
 
   affinity: {}
 
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+
+  startupProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    failureThreshold: 180
+    periodSeconds: 10
+
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+
 service:
   type: ClusterIP
   scheme: http
   port: 80
   istioPort: 15020
+
+fluentbit:
+  port: 2020
+
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# disable here to bypass deploy AuthorizationPolicy and ServiceMonitor in Pipeline Cluster
+serviceMonitor:
+  enabled: false
+  scrapeTimeout: 30s
+  interval: 60s
+
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# by default purgeOlderThan (old cleaner script) is activated
+cleanerScript:
+  enabled: false
+  reconMaxAge: 4
+  reconKeepCount: 150
+  inventoryMaxAge: 4
+  purgeOlderThan: 96h

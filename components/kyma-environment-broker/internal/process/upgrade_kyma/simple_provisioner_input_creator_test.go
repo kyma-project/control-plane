@@ -26,6 +26,7 @@ type simpleInputCreator struct {
 	shootName         *string
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
+	clusterName       string
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -44,6 +45,11 @@ func (c *simpleInputCreator) DisableOptionalComponent(name string) internal.Prov
 
 func (c *simpleInputCreator) SetLabel(key, val string) internal.ProvisionerInputCreator {
 	c.labels[key] = val
+	return c
+}
+
+func (c *simpleInputCreator) SetClusterName(name string) internal.ProvisionerInputCreator {
+	c.clusterName = name
 	return c
 }
 
@@ -138,5 +144,9 @@ func (c *simpleInputCreator) SetRuntimeID(_ string) internal.ProvisionerInputCre
 }
 
 func (c *simpleInputCreator) SetInstanceID(_ string) internal.ProvisionerInputCreator {
+	return c
+}
+
+func (c *simpleInputCreator) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) internal.ProvisionerInputCreator {
 	return c
 }

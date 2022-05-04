@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -49,6 +50,8 @@ type ProvisionEndpoint struct {
 	shootProject      string
 	shootDnsProviders gardener.DNSProvidersData
 
+	dashboardConfig dashboard.Config
+
 	log logrus.FieldLogger
 }
 
@@ -62,6 +65,7 @@ func NewProvision(cfg Config,
 	kvod bool,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	dashboardConfig dashboard.Config,
 ) *ProvisionEndpoint {
 	enabledPlanIDs := map[string]struct{}{}
 	for _, planName := range cfg.EnablePlans {
@@ -83,6 +87,7 @@ func NewProvision(cfg Config,
 		shootProject:      gardenerConfig.Project,
 		shootDnsProviders: gardenerConfig.DNSProviders,
 		planDefaults:      planDefaults,
+		dashboardConfig:   dashboardConfig,
 	}
 }
 
@@ -91,7 +96,7 @@ func NewProvision(cfg Config,
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	operationID := uuid.New().String()
 	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID, "planID": details.PlanID})
-	logger.Info("Provision called")
+	logger.Infof("Provision called with context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
 	region, found := middleware.RegionFromContext(ctx)
 	if !found {
@@ -135,7 +140,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
+
 	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -162,7 +171,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].PlanDefinition.Name,
+		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].Name,
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
@@ -217,6 +226,11 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 	if err := parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
 		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+	}
+	if parameters.OIDC.IsProvided() {
+		if err := parameters.OIDC.Validate(); err != nil {
+			return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+		}
 	}
 
 	planValidator, err := b.validator(&details, provider)
@@ -286,12 +300,6 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 		return parameters, errors.Wrap(err, "while unmarshaling raw parameters")
 	}
 
-	if parameters.OIDC.IsProvided() {
-		if parameters.OIDC.ClientID == "" || parameters.OIDC.IssuerURL == "" {
-			return parameters, errors.New("OIDC parameters ClientID & IssuerURL cannot be empty")
-		}
-	}
-
 	return parameters, nil
 }
 
@@ -331,6 +339,7 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
 	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
 	plan := plans[details.PlanID]
-	schema := string(plan.provisioningRawSchema)
+	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
+
 	return jsonschema.NewValidatorFromStringSchema(schema)
 }

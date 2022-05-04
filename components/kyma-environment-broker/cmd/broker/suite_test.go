@@ -14,8 +14,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
 	"github.com/Peripli/service-manager-cli/pkg/types"
-	gardenerapi "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardenerFake "github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -29,6 +27,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
@@ -53,8 +52,11 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -81,13 +83,17 @@ const (
 	pollingInterval = 3 * time.Millisecond
 )
 
+var (
+	shootGVK = schema.GroupVersionKind{Group: "core.gardener.cloud", Version: "v1beta1", Kind: "Shoot"}
+)
+
 type OrchestrationSuite struct {
 	gardenerNamespace string
 	provisionerClient *provisioner.FakeClient
 	kymaQueue         *process.Queue
 	clusterQueue      *process.Queue
 	storage           storage.BrokerStorage
-	gardenerClient    *gardenerFake.Clientset
+	gardenerClient    dynamic.Interface
 
 	t *testing.T
 }
@@ -142,7 +148,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 
 	reconcilerClient := reconciler.NewFakeClient()
-	gardenerClient := gardenerFake.NewSimpleClientset()
+	gardenerClient := gardener.NewDynamicFakeClient()
 	provisionerClient := provisioner.NewFakeClient()
 	const gardenerProject = "testing"
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProject)
@@ -157,20 +163,23 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
 	upgradeEvaluationManager := avs.NewEvaluationManager(avsDel, avs.Config{})
 	runtimeLister := kebOrchestration.NewRuntimeLister(db.Instances(), db.Operations(), kebRuntime.NewConverter(defaultRegion), logs)
-	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient.CoreV1beta1(), gardenerNamespace, runtimeLister, logs)
+	runtimeResolver := orchestration.NewGardenerRuntimeResolver(gardenerClient, gardenerNamespace, runtimeLister, logs)
+
+	notificationFakeClient := notification.NewFakeClient()
+	notificationBundleBuilder := notification.NewBundleBuilder(notificationFakeClient, cfg.Notification)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
 		Retry:              10 * time.Millisecond,
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), inMemoryFs, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, logs, cli, cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -276,6 +285,8 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	globalAccountID := options.ProvideGlobalAccountID()
 	subAccountID := options.ProvideSubAccountID()
 	instanceID := uuid.New().String()
+	runtimeStateID := uuid.New().String()
+	oidcConfig := fixture.FixOIDCConfigDTO()
 	provisioningParameters := internal.ProvisioningParameters{
 		PlanID: planID,
 		ErsContext: internal.ERSContext{
@@ -292,6 +303,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: options.ProvideRegion(),
+			OIDC:   &oidcConfig,
 		},
 	}
 
@@ -324,32 +336,43 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 			},
 		},
 	}
-	shoot := &gardenerapi.Shoot{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      shootName,
-			Namespace: s.gardenerNamespace,
-			Labels: map[string]string{
+	runtimeState := fixture.FixRuntimeState(runtimeStateID, runtimeID, provisioningOperation.ID)
+	runtimeState.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
+		ClientID:       oidcConfig.ClientID,
+		GroupsClaim:    oidcConfig.GroupsClaim,
+		IssuerURL:      oidcConfig.IssuerURL,
+		SigningAlgs:    oidcConfig.SigningAlgs,
+		UsernameClaim:  oidcConfig.UsernameClaim,
+		UsernamePrefix: oidcConfig.UsernamePrefix,
+	}
+	shoot := &unstructured.Unstructured{Object: map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name":      shootName,
+			"namespace": s.gardenerNamespace,
+			"labels": map[string]interface{}{
 				globalAccountLabel: globalAccountID,
 				subAccountLabel:    subAccountID,
 			},
-			Annotations: map[string]string{
+			"annotations": map[string]interface{}{
 				runtimeIDAnnotation: runtimeID,
 			},
 		},
-		Spec: gardenerapi.ShootSpec{
-			Region: options.ProvidePlatformRegion(),
-			Maintenance: &gardenerapi.Maintenance{
-				TimeWindow: &gardenerapi.MaintenanceTimeWindow{
-					Begin: "030000+0000",
-					End:   "040000+0000",
+		"spec": map[string]interface{}{
+			"region": options.ProvidePlatformRegion(),
+			"maintenance": map[string]interface{}{
+				"timeWindow": map[string]interface{}{
+					"begin": "030000+0000",
+					"end":   "040000+0000",
 				},
 			},
 		},
-	}
+	}}
+	shoot.SetGroupVersionKind(shootGVK)
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
-	_, err := s.gardenerClient.CoreV1beta1().Shoots(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
+	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
+	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
 	return runtimeID
 }
@@ -440,6 +463,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws_ha":       "true",
 				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
+				"overrides-version-2.0.0":     "true",
 			},
 		},
 		Data: map[string]string{
@@ -461,6 +485,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws_ha":       "true",
 				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
+				"overrides-version-2.0.0":     "true",
 				"component":                   "service-catalog2",
 			},
 		},
@@ -473,7 +498,27 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		override.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 		scOverride.ObjectMeta.Labels[fmt.Sprintf("overrides-version-%s", version)] = "true"
 	}
-	resources = append(resources, override, scOverride)
+
+	orchestrationConfig := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "orchestration-config",
+			Namespace: "kcp-system",
+			Labels:    map[string]string{},
+		},
+		Data: map[string]string{
+			"maintenancePolicy": `{
+	      "rules": [
+	        
+	      ],
+	      "default": {
+	        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+	          "timeBegin": "010000+0000",
+	          "timeEnd": "010000+0000"
+	      }
+	    }`,
+		},
+	}
+	resources = append(resources, override, scOverride, orchestrationConfig)
 
 	return resources
 }
@@ -764,7 +809,7 @@ func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema
 func (s *ProvisioningSuite) AssertProvisioningRequest() {
 	input := s.fetchProvisionInput()
 
-	labels := *input.RuntimeInput.Labels
+	labels := input.RuntimeInput.Labels
 	assert.Equal(s.t, instanceID, labels["broker_instance_id"])
 	assert.Contains(s.t, labels, "global_subaccount_id")
 	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)
@@ -890,10 +935,14 @@ func fixConfig() *Config {
 		Database: storage.Config{
 			SecretKey: dbSecretKey,
 		},
-		KymaVersion:        "1.24.7",
-		KymaPreviewVersion: "2.0",
-
+		Gardener: gardener.Config{
+			Project:     "kyma",
+			ShootDomain: "kyma.sap.com",
+		},
+		KymaVersion:                "1.24.7",
+		KymaPreviewVersion:         "2.0",
 		EnableOnDemandVersion:      true,
+		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "preview"},
@@ -902,6 +951,10 @@ func fixConfig() *Config {
 		IAS: ias.Config{
 			IdentityProvider: ias.FakeIdentityProviderName,
 		},
+		Notification: notification.Config{
+			Url:      "http://host:8080/",
+			Disabled: false,
+		},
 		AuditLog: auditlog.Config{
 			URL:           "https://host1:8080/aaa/v2/",
 			User:          "fooUser",
@@ -909,13 +962,12 @@ func fixConfig() *Config {
 			Tenant:        "fooTen",
 			EnableSeqHttp: true,
 		},
-		FreemiumProviders:       []string{"aws", "azure"},
-		UpdateProcessingEnabled: true,
-		Gardener: gardener.Config{
-			Project:     "kyma",
-			ShootDomain: "kyma.sap.com",
+		OrchestrationConfig: kebOrchestration.Config{
+			Name:      "orchestration-config",
+			Namespace: "kcp-system",
 		},
 		MaxPaginationPage: 100,
+		FreemiumProviders: []string{"aws", "azure"},
 	}
 }
 

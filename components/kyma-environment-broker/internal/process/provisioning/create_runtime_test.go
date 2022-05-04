@@ -65,7 +65,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
 			Description: nil,
-			Labels: &gqlschema.Labels{
+			Labels: gqlschema.Labels{
 				"broker_instance_id":   instanceID,
 				"global_subaccount_id": subAccountID,
 				"operator_grafanaUrl":  "https://grafana.kyma.org",
@@ -85,7 +85,7 @@ func TestCreateRuntimeStep_Run(t *testing.T) {
 				WorkerCidr:                          "10.250.0.0/19",
 				AutoScalerMin:                       2,
 				AutoScalerMax:                       10,
-				MaxSurge:                            4,
+				MaxSurge:                            1,
 				MaxUnavailable:                      0,
 				TargetSecret:                        "",
 				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),

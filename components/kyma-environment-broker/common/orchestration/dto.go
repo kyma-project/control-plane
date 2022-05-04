@@ -14,6 +14,8 @@ type Parameters struct {
 	Kubernetes *KubernetesParameters `json:"kubernetes,omitempty"`
 	// upgrade kyma specific parameters
 	Kyma *KymaParameters `json:"kyma,omitempty"`
+	//customer notification status
+	NotificationState notificationStateType `json:"notificationstate,omitempty"`
 }
 
 type KubernetesParameters struct {
@@ -37,6 +39,7 @@ const (
 	Pending    = "pending"
 	InProgress = "in progress"
 	Canceling  = "canceling"
+	Retrying   = "retrying" // to signal a retry sign before marking it to pending
 	Canceled   = "canceled"
 	Succeeded  = "succeeded"
 	Failed     = "failed"
@@ -161,6 +164,14 @@ type UpgradeResponse struct {
 	OrchestrationID string `json:"orchestrationID"`
 }
 
+type RetryResponse struct {
+	OrchestrationID   string   `json:"orchestrationID"`
+	RetryOperations   []string `json:"retryOperations"`
+	OldOperations     []string `json:"oldOperations"`
+	InvalidOperations []string `json:"invalidOperations"`
+	Msg               string   `json:"msg"`
+}
+
 type MaintenancePolicyMatch struct {
 	GlobalAccountID string `json:"globalAccountID"`
 	Plan            string `json:"plan"`
@@ -182,3 +193,11 @@ type MaintenancePolicy struct {
 	Rules   []MaintenancePolicyRule `json:"rules"`
 	Default MaintenancePolicyEntry  `json:"default"`
 }
+
+type notificationStateType string
+
+const (
+	NotificationPending   notificationStateType = "pending"
+	NotificationCreated   notificationStateType = "created"
+	NotificationCancelled notificationStateType = "cancelled"
+)

@@ -7,11 +7,13 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	"context"
 
 	"github.com/gorilla/mux"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/logger"
 )
 
 const (
@@ -24,7 +26,7 @@ const (
 type Server struct {
 	Addr   string
 	Router *mux.Router
-	Logger *logrus.Logger
+	Logger *zap.SugaredLogger
 }
 
 // Start starts the HTTP server and shut it down when stop channel is closed.
@@ -42,18 +44,23 @@ func (s *Server) Start() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.Logger.Fatalf("failed to start server, listen: %s\n", err)
+			s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).Fatal("start server")
 		}
-		s.Logger.Info("HTTP server stopped")
+		s.namedLogger().Info("HTTP server stopped")
 	}()
-	s.Logger.Infof("started HTTP server at %s", s.Addr)
+	s.namedLogger().Infof("started HTTP server at %s", s.Addr)
 
 	<-done
 	gracefulCtx, cancelShutdown := context.WithTimeout(context.Background(), serverStopTimeout)
 	defer cancelShutdown()
 
 	if err := server.Shutdown(gracefulCtx); err != nil {
-		s.Logger.Fatalf("shutdown error: %v\n", err)
+		s.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
+			Fatal("server is shutting down")
 	}
-	s.Logger.Infof("gracefully stopped\n")
+	s.namedLogger().Infof("server gracefully stopped")
+}
+
+func (s *Server) namedLogger() *zap.SugaredLogger {
+	return s.Logger.With("component", "kmc")
 }

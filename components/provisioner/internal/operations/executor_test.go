@@ -12,7 +12,10 @@ import (
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession/mocks"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,6 +52,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			Return(nil)
 		dbSession.On("UpdateOperationState", operationId, "Operation succeeded", model.Succeeded, mock.AnythingOfType("time.Time")).
 			Return(nil)
+		dbSession.On("UpdateOperationLastError", operationId, "", "", "").Return(nil)
 
 		mockStage := NewMockStep(model.WaitingForInstallation, model.FinishedStage, 10*time.Second, 10*time.Second)
 
@@ -70,11 +74,13 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 	t.Run("should requeue operation if error occurred", func(t *testing.T) {
 		// given
+		runErr := fmt.Errorf("error")
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
 		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
+		dbSession.On("UpdateOperationLastError", operationId, runErr.Error(), string(apperrors.ErrProvisionerInternal), string(apperrors.ErrProvisioner)).Return(nil)
 
-		mockStage := NewErrorStep(model.WaitingForClusterCreation, fmt.Errorf("error"), time.Second*10)
+		mockStage := NewErrorStep(model.WaitingForClusterCreation, runErr, time.Second*10)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
@@ -94,13 +100,15 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 	t.Run("should not requeue operation and run failure handler if NonRecoverable error occurred", func(t *testing.T) {
 		// given
+		runErr := NewNonRecoverableError(apperrors.External("gardener error").SetComponent(apperrors.ErrGardener).SetReason("ERR_INFRA_QUOTA_EXCEEDED").Append("something"))
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
 		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("UpdateOperationState", operationId, "error", model.Failed, mock.AnythingOfType("time.Time")).
+		dbSession.On("UpdateOperationState", operationId, "something, gardener error", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
+		dbSession.On("UpdateOperationLastError", operationId, "something, gardener error", "ERR_INFRA_QUOTA_EXCEEDED", string(apperrors.ErrGardener)).Return(nil)
 
-		mockStage := NewErrorStep(model.WaitingForClusterCreation, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
+		mockStage := NewErrorStep(model.WaitingForClusterCreation, runErr, 10*time.Second)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
@@ -124,13 +132,15 @@ func TestStagesExecutor_Execute(t *testing.T) {
 
 	t.Run("should not requeue operation and run failure handler if NonRecoverable error occurred but failed to update Director", func(t *testing.T) {
 		// given
+		runErr := NewNonRecoverableError(apperrors.External(errors.Wrap(fmt.Errorf("error"), "kyma installation").Error()).SetComponent(apperrors.ErrKymaInstaller).SetReason("istio"))
 		dbSession := &mocks.ReadWriteSession{}
 		dbSession.On("GetOperation", operationId).Return(operation, nil)
 		dbSession.On("GetCluster", clusterId).Return(cluster, nil)
-		dbSession.On("UpdateOperationState", operationId, "error", model.Failed, mock.AnythingOfType("time.Time")).
+		dbSession.On("UpdateOperationState", operationId, "kyma installation: error", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
+		dbSession.On("UpdateOperationLastError", operationId, "kyma installation: error", "istio", string(apperrors.ErrKymaInstaller)).Return(nil)
 
-		mockStage := NewErrorStep(model.WaitingForClusterCreation, NewNonRecoverableError(fmt.Errorf("error")), 10*time.Second)
+		mockStage := NewErrorStep(model.StartingInstallation, runErr, 10*time.Second)
 
 		installationStages := map[model.OperationStage]Step{
 			model.WaitingForInstallation: mockStage,
@@ -161,6 +171,7 @@ func TestStagesExecutor_Execute(t *testing.T) {
 			Return(nil)
 		dbSession.On("UpdateOperationState", operationId, "error: timeout while processing operation", model.Failed, mock.AnythingOfType("time.Time")).
 			Return(nil)
+		dbSession.On("UpdateOperationLastError", operationId, "error: timeout while processing operation", string(apperrors.ErrProvisionerTimeout), string(apperrors.ErrProvisioner)).Return(nil)
 
 		mockStage := NewMockStep(model.WaitingForInstallation, model.ConnectRuntimeAgent, 0, 0*time.Second)
 
@@ -241,4 +252,42 @@ type MockFailureHandler struct {
 func (m *MockFailureHandler) HandleFailure(operation model.Operation, cluster model.Cluster) error {
 	m.called = true
 	return nil
+}
+
+func TestConvertToAppError(t *testing.T) {
+	t.Run("should convert to app error", func(t *testing.T) {
+		//given
+		err1 := fmt.Errorf("err1")
+		err2 := apperrors.Internal("err2")
+		DbErr := dberrors.NotFound("db error")
+		nonRecoverableErr1 := NewNonRecoverableError(err1)
+		nonRecoverableErr2 := NewNonRecoverableError(err2)
+		nonRecoverableErr3 := NewNonRecoverableError(apperrors.Internal("timeout").SetReason(apperrors.ErrProvisionerTimeout))
+		k8sErr := util.K8SErrorToAppError(errors.Wrapf(err1, "failed to create %s ClusterRoleBinding", "crb.Name")).SetComponent(apperrors.ErrClusterK8SClient)
+
+		expectErr1 := apperrors.Internal("err1")
+		expectK8sErr := apperrors.Internal(errors.Wrapf(err1, "failed to create %s ClusterRoleBinding", "crb.Name").Error()).SetComponent(apperrors.ErrClusterK8SClient)
+
+		//when
+		apperr1 := ConvertToAppError(err1)
+		apperr2 := ConvertToAppError(err2)
+		apperrDbErr := ConvertToAppError(DbErr)
+		apperrNonRecovErr1 := ConvertToAppError(nonRecoverableErr1)
+		apperrNonRecovErr2 := ConvertToAppError(nonRecoverableErr2)
+		apperrNonRecovErr3 := ConvertToAppError(nonRecoverableErr3)
+		apperrK8sErr := ConvertToAppError(k8sErr)
+
+		//then
+		assert.Equal(t, expectErr1, apperr1)
+		assert.Equal(t, err2, apperr2)
+		assert.Equal(t, DbErr, apperrDbErr)
+		assert.Equal(t, apperrors.ErrDB, apperrDbErr.Component())
+		assert.Equal(t, dberrors.ErrDBNotFound, apperrDbErr.Reason())
+		assert.Equal(t, expectErr1, apperrNonRecovErr1)
+		assert.Equal(t, err2, apperrNonRecovErr2)
+		assert.Error(t, apperrNonRecovErr3, "timeout")
+		assert.Equal(t, apperrors.ErrProvisioner, apperrNonRecovErr3.Component())
+		assert.Equal(t, apperrors.ErrProvisionerTimeout, apperrNonRecovErr3.Reason())
+		assert.Equal(t, expectK8sErr, apperrK8sErr)
+	})
 }

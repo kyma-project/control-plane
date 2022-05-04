@@ -50,6 +50,8 @@ type Strategy interface {
 	Wait(executionID string)
 	// Cancel shutdowns a given execution.
 	Cancel(executionID string)
+	// Insert operations into the delaying queue of a given execution ID
+	Insert(execID string, operations []RuntimeOperation, strategySpec StrategySpec) error
 }
 
 func ConvertSliceOfDaysToMap(days []string) map[time.Weekday]bool {

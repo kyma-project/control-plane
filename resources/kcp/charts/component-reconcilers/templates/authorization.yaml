@@ -1,8 +1,6 @@
 {{ if .Values.global.component_reconcilers.authentication }}
 {{ $global := . }}
 {{- range $component := .Values.global.components }}
-{{ $subchart := printf "%s-component-reconciler" $component }}
-{{ if not (hasKey $global.Subcharts $subchart) }}
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -15,10 +13,12 @@ spec:
       kyma-project.io/component-reconciler: ""
       component: {{ $component }}
   rules:
+  - to:
+    - operation:
+        paths: ["/metrics"]
   - from:
     - source:
         principals: ["cluster.local/ns/{{ $global.Release.Namespace }}/sa/{{ $global.Values.global.mothership_reconciler.serviceAccountName }}"]
 ---
-{{- end }}
 {{- end }}
 {{- end }}

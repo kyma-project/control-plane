@@ -165,8 +165,8 @@ func (b *ServiceProviderBundle) configureServiceProviderSAMLType(serviceProvider
 }
 
 // ConfigureServiceProviderType sets SSO type, name and URLs based on provided URL for ServiceProvider
-func (b *ServiceProviderBundle) ConfigureServiceProviderType(consolePath string) error {
-	u, err := url.ParseRequestURI(consolePath)
+func (b *ServiceProviderBundle) ConfigureServiceProviderType(dashboardURL string) error {
+	u, err := url.ParseRequestURI(dashboardURL)
 	if err != nil {
 		return errors.Wrap(err, "while parsing path for IAS Type")
 	}

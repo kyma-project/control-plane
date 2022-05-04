@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	retry "github.com/avast/retry-go"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -18,6 +19,8 @@ const (
 	defaultDelay         = 2 * time.Second
 	backOffDirectorDelay = 1 * time.Second
 )
+
+var ErrKubeconfigNil = errors.New("cluster kubeconfig is nil")
 
 func NewExecutor(
 	session dbsession.ReadWriteSession,
@@ -74,6 +77,7 @@ func (e *Executor) Execute(operationID string) ProcessingResult {
 
 	if operation.Type == e.operation {
 		requeue, delay, err := e.process(operation, cluster, log)
+		e.updateOperationLastError(log, operation.ID, err)
 		if err != nil {
 			nonRecoverable := NonRecoverableError{}
 			if errors.As(err, &nonRecoverable) {
@@ -101,7 +105,8 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 	step, found := e.stages[operation.Stage]
 	if !found {
-		return false, 0, NewNonRecoverableError(fmt.Errorf("error: step %s not found in installation stages", operation.Stage))
+		msg := fmt.Sprintf("error: step %s not found in installation stages", operation.Stage)
+		return false, 0, NewNonRecoverableError(apperrors.Internal(msg).SetReason(apperrors.ErrProvisionerStepNotFound))
 	}
 
 	for operation.Stage != model.FinishedStage {
@@ -110,11 +115,15 @@ func (e *Executor) process(operation model.Operation, cluster model.Cluster, log
 
 		if e.timeoutReached(operation, step.TimeLimit()) {
 			log.Errorf("Timeout reached for operation")
-			return false, 0, NewNonRecoverableError(fmt.Errorf("error: timeout while processing operation"))
+			return false, 0, NewNonRecoverableError(apperrors.Internal("error: timeout while processing operation").SetReason(apperrors.ErrProvisionerTimeout))
 		}
 
 		result, err := step.Run(cluster, operation, log)
 		if err != nil {
+			if errors.Is(err, ErrKubeconfigNil) {
+				log.Warnf("Warning, the %s", err)
+				// break
+			}
 			log.Warnf("error while processing operation, stage failed: %s", err.Error())
 			return false, 0, err
 		}
@@ -172,6 +181,27 @@ func (e *Executor) updateOperationStatus(log logrus.FieldLogger, id, message str
 	}, retry.Attempts(5))
 	if err != nil {
 		log.Infof("Cannot set operation status to %s: %s", state, err.Error())
+	}
+}
+
+func (e *Executor) updateOperationLastError(log logrus.FieldLogger, id string, runErr error) {
+	var lastErr model.LastError
+
+	if runErr != nil {
+		appErr := ConvertToAppError(runErr)
+		lastErr = model.LastError{
+			ErrMessage: runErr.Error(),
+			Reason:     string(appErr.Reason()),
+			Component:  string(appErr.Component()),
+		}
+	}
+
+	err := retry.Do(func() error {
+		return e.dbSession.UpdateOperationLastError(id, lastErr.ErrMessage, lastErr.Reason, lastErr.Component)
+	}, retry.Attempts(5))
+
+	if err != nil {
+		log.Infof("Cannot set operation last error to %v: %s", lastErr, err.Error())
 	}
 }
 

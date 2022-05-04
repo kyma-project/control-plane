@@ -78,6 +78,8 @@ func TestServiceManagerOverridesStepSuccess(t *testing.T) {
 				Return(nil).Once()
 			inputCreatorMock.On("EnableOptionalComponent", mock.Anything).
 				Return(nil)
+			inputCreatorMock.On("DisableOptionalComponent", mock.Anything).
+				Return(nil)
 
 			factory := servicemanager.NewClientFactory(tC.overrideParams)
 			operation := internal.UpgradeKymaOperation{
@@ -111,7 +113,7 @@ func TestServiceManagerOverridesStepError(t *testing.T) {
 	}{
 		"return error when creds in request are not provided and overrides should not be applied": {
 			givenReqParams: internal.ProvisioningParameters{},
-			expErr:         "Service Manager Credentials are required to be send in provisioning request.",
+			expErr:         "unable to obtain SM credentials: Service Manager Credentials are required to be send in provisioning request.",
 		},
 	}
 	for tN, tC := range tests {

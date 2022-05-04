@@ -3,27 +3,24 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
-
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
-
 	log "github.com/sirupsen/logrus"
 
+	"github.com/hashicorp/go-version"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
-//go:generate mockery -name=Service
+//go:generate mockery --name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
 	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
@@ -36,16 +33,16 @@ type Service interface {
 	HibernateCluster(clusterID string) (*gqlschema.OperationStatus, apperrors.AppError)
 }
 
-//go:generate mockery -name=Provisioner
+//go:generate mockery --name=Provisioner
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
-	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
+	DeprovisionCluster(cluster model.Cluster, withoutInstallation bool, operationId string) (model.Operation, apperrors.AppError)
 	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	HibernateCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
-//go:generate mockery -name=KubernetesVersionProvider
+//go:generate mockery --name=KubernetesVersionProvider
 type KubernetesVersionProvider interface {
 	Get(runtimeID string, tenant string) (string, apperrors.AppError)
 }
@@ -55,6 +52,7 @@ type service struct {
 	graphQLConverter          GraphQLConverter
 	directorService           director.DirectorClient
 	kubernetesVersionProvider KubernetesVersionProvider
+	installationClient        installation.Service
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -77,6 +75,7 @@ func NewProvisioningService(
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
 	kubernetesVersionProvider KubernetesVersionProvider,
+	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
@@ -101,6 +100,7 @@ func NewProvisioningService(
 		shootUpgradeQueue:            shootUpgradeQueue,
 		hibernationQueue:             hibernationQueue,
 		kubernetesVersionProvider:    kubernetesVersionProvider,
+		installationClient:           installationClient,
 	}
 }
 
@@ -126,7 +126,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 
 	dbSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dberr != nil {
-		return nil, apperrors.Internal("Failed to start database transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
@@ -136,7 +136,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal(dberr.Error())
+		return nil, dberr
 	}
 
 	err = r.provisioner.ProvisionCluster(cluster, operation.ID)
@@ -148,7 +148,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	dberr = dbSession.Commit()
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
-		return nil, apperrors.Internal("Failed to commit transaction: %s", dberr.Error())
+		return nil, dberr
 	}
 
 	if withKymaConfig {
@@ -176,27 +176,29 @@ func (r *service) unregisterFailedRuntime(id, tenant string) {
 func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadWriteSession()
 
-	err := r.verifyLastOperationFinished(session, id)
-	if err != nil {
-		return "", err
+	appErr := r.verifyLastOperationFinished(session, id)
+	if appErr != nil {
+		return "", appErr
 	}
 
 	cluster, dberr := session.GetCluster(id)
 	if dberr != nil {
-		return "", apperrors.Internal("Failed to get cluster: %s", dberr.Error())
+		return "", dberr
 	}
 
-	operation, err := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
-	if err != nil {
-		return "", apperrors.Internal("Failed to start deprovisioning: %s", err.Error())
+	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
+
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
+	if appErr != nil {
+		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error()).SetComponent(appErr.Component()).SetReason(appErr.Reason())
 	}
 
 	dberr = session.InsertOperation(operation)
 	if dberr != nil {
-		return "", apperrors.Internal("Failed to insert operation to database: %s", dberr.Error())
+		return "", dberr
 	}
 
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+	if withoutUninstall {
 		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
 		r.deprovisioningNoInstallQueue.Add(operation.ID)
 	} else {
@@ -231,14 +233,17 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	// We need to fetch current Kubernetes version to be able to maintain consistency
 	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID, cluster.Tenant)
 	if err != nil {
-		return nil, err
+		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot kubernetes version")
 	}
 
 	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	if shootKubernetesVersion > gardenerConfig.KubernetesVersion {
+	shouldTakeShootKubernetesVersion, err := isVersionHigher(shootKubernetesVersion, gardenerConfig.KubernetesVersion)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
+	}
+	if shouldTakeShootKubernetesVersion {
 		log.Infof("Kubernetes version in shoot was higher than the version provided in UpgradeGardenerShoot. Version fetched from the shoot will be used :%s.", shootKubernetesVersion)
 		gardenerConfig.KubernetesVersion = shootKubernetesVersion
 	}
@@ -313,7 +318,7 @@ func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
-		return apperrors.Internal("failed to get last operation: %s", dberr.Error())
+		return dberr.Append("failed to get last operation")
 	}
 
 	if lastOperation.State == model.InProgress {
@@ -348,10 +353,9 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}
 
-	// We need to fetch current Kubernetes version to be able to maintain consistency
 	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId, cluster.Tenant)
 	if err != nil {
-		return nil, err
+		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot kubernetes version")
 	}
 
 	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
@@ -366,8 +370,11 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	}
 
 	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-
-	if shootKubernetesVersion > cluster.ClusterConfig.KubernetesVersion {
+	shouldTakeShootKubernetesVersion, err := isVersionHigher(shootKubernetesVersion, cluster.ClusterConfig.KubernetesVersion)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
+	}
+	if shouldTakeShootKubernetesVersion {
 		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shootKubernetesVersion)
 		dberr = txSession.UpdateKubernetesVersion(runtimeId, shootKubernetesVersion)
 		if dberr != nil {
@@ -392,7 +399,7 @@ func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) 
 func (r *service) RuntimeStatus(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
 	runtimeStatus, dberr := r.getRuntimeStatus(runtimeID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Status")
 	}
 
 	return r.graphQLConverter.RuntimeStatusToGraphQLStatus(runtimeStatus), nil
@@ -403,7 +410,7 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 
 	operation, dberr := readSession.GetOperation(operationID)
 	if dberr != nil {
-		return nil, apperrors.Internal("failed to get Runtime Operation Status: %s", dberr.Error())
+		return nil, dberr.Append("failed to get Runtime Operation Status")
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
@@ -451,7 +458,29 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	return r.RuntimeStatus(runtimeID)
 }
 
-func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, error) {
+func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool {
+
+	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
+		return true
+	}
+
+	if cluster.Kubeconfig == nil {
+		log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
+		return false
+	}
+
+	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
+	if err != nil {
+		log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
+		return false
+	}
+
+	//  When missing installation CR this is Kyma 2 upgraded from Kyma 1
+	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
+	return installationState.State == installationSDK.NoInstallationState
+}
+
+func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
 	operation, err := session.GetLastOperation(runtimeID)
@@ -597,4 +626,16 @@ func (r *service) setOperationStarted(
 	}
 
 	return operation, nil
+}
+
+func isVersionHigher(version1, version2 string) (bool, apperrors.AppError) {
+	parsedVersion1, err := version.NewVersion(version1)
+	if err != nil {
+		return false, apperrors.Internal("Failed to parse \"%s\" as a version", version1)
+	}
+	parsedVersion2, err := version.NewVersion(version2)
+	if err != nil {
+		return false, apperrors.Internal("Failed to parse \"%s\" as a version", version2)
+	}
+	return parsedVersion1.GreaterThan(parsedVersion2), nil
 }

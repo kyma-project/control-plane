@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -42,6 +43,8 @@ type UpdateEndpoint struct {
 	updatingQueue *process.Queue
 
 	planDefaults PlanDefaults
+
+	dashboardConfig dashboard.Config
 }
 
 func NewUpdate(cfg Config,
@@ -54,6 +57,7 @@ func NewUpdate(cfg Config,
 	queue *process.Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	dashboardConfig dashboard.Config,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
 		config:                    cfg,
@@ -66,6 +70,7 @@ func NewUpdate(cfg Config,
 		subAccountMovementEnabled: subAccountMovementEnabled,
 		updatingQueue:             queue,
 		planDefaults:              planDefaults,
+		dashboardConfig:           dashboardConfig,
 	}
 }
 
@@ -95,16 +100,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
-	var contextData map[string]interface{}
-	err = json.Unmarshal(details.RawContext, &contextData)
-	if err != nil {
-		logger.Errorf("unable to unmarshal context: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
-	}
-	logger.Infof("Context with keys:")
-	for k, _ := range contextData {
-		logger.Info(k)
-	}
+	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
@@ -128,6 +124,12 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 	}
 
+	dashboardURL := instance.DashboardURL
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+		instance.DashboardURL = dashboardURL
+	}
+
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
@@ -135,7 +137,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 
 		// NOTE: KEB currently can't process update parameters in one call along with context update
-		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
+		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
 		if !suspendStatusChange {
 			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
 		}
@@ -143,7 +145,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 	return domain.UpdateServiceSpec{
 		IsAsync:       false,
-		DashboardURL:  instance.DashboardURL,
+		DashboardURL:  dashboardURL,
 		OperationData: "",
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
@@ -185,6 +187,13 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		logger.Debugf("Updating with params: %+v", params)
 	}
 
+	if params.OIDC.IsProvided() {
+		if err := params.OIDC.Validate(); err != nil {
+			logger.Errorf("invalid OIDC parameters: %s", err.Error())
+			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
+		}
+	}
+
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
 
@@ -215,7 +224,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	}
 
 	var updateStorage []string
-	// update provisioning parameters in the instance
 	if params.OIDC.IsProvided() {
 		instance.Parameters.Parameters.OIDC = params.OIDC
 		updateStorage = append(updateStorage, "OIDC")
@@ -345,12 +353,6 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 	if err != nil {
 		return false, "", err
 	}
-	kv := ""
-	if s.KymaConfig.Version != "" {
-		kv = s.KymaConfig.Version
-	}
-	if s.ClusterSetup != nil && s.ClusterSetup.KymaConfig.Version != "" {
-		kv = s.ClusterSetup.KymaConfig.Version
-	}
+	kv := s.GetKymaVersion()
 	return internal.DetermineMajorVersion(kv) == 2, kv, nil
 }

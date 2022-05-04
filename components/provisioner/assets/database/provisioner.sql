@@ -42,6 +42,7 @@ CREATE TABLE gardener_config
     allow_privileged_containers boolean NOT NULL,
     exposure_class_name varchar(256),
     provider_specific_config jsonb,
+    shoot_networking_filter_disabled boolean,
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );
@@ -76,7 +77,10 @@ CREATE TABLE operation
     cluster_id uuid NOT NULL,
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE,
     stage varchar(256) NOT NULL,
-    last_transition timestamp without time zone
+    last_transition timestamp without time zone,
+    err_message text NOT NULL,
+    reason text NOT NULL,
+    component text NOT NULL
 );
 
 -- Kyma Release
@@ -178,4 +182,28 @@ CREATE TABLE signing_algorithms
     oidc_config_id uuid NOT NULL,
     algorithm text NOT NULL,
     foreign key (oidc_config_id) REFERENCES oidc_config (id) ON DELETE CASCADE
+);
+
+-- DNS config
+
+CREATE TABLE dns_config
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    domain varchar(256) NOT NULL,
+    gardener_config_id uuid NOT NULL,
+    unique(gardener_config_id),
+    foreign key (gardener_config_id) REFERENCES gardener_config (id) ON DELETE CASCADE
+);
+
+-- DNS provider
+
+CREATE TABLE dns_providers
+(
+    id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    dns_config_id uuid NOT NULL,
+    domains_include varchar(256) NOT NULL,
+    is_primary boolean NOT NULL,
+    secret_name varchar(256) NOT NULL,
+    type varchar(256) NOT NULL,
+    foreign key (dns_config_id) REFERENCES dns_config (id) ON DELETE CASCADE
 );

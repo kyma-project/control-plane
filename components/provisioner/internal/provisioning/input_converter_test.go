@@ -3,19 +3,15 @@ package provisioning
 import (
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-
-	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-
+	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -33,7 +29,6 @@ const (
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
-
 	releaseProvider := &realeaseMocks.Provider{}
 	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 	releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
@@ -50,14 +45,16 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
+				MachineImage:                      util.StringPtr("gardenlinux"),
+				MachineImageVersion:               util.StringPtr("25.0.0"),
 				Region:                            "region",
 				Provider:                          "GCP",
 				Purpose:                           util.StringPtr("testing"),
@@ -73,9 +70,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					GcpConfig: gcpGardenerProvider,
 				},
-				OidcConfig:        oidcInput(),
-				DNSConfig:         dnsInput(),
-				ExposureClassName: util.StringPtr("internet"),
+				OidcConfig:                    oidcInput(),
+				DNSConfig:                     dnsInput(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(true),
 			},
 			Administrators: []string{administrator},
 		},
@@ -92,8 +90,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Name:                                "verylon",
 			ProjectName:                         gardenerProject,
 			MachineType:                         "n1-standard-1",
+			MachineImage:                        util.StringPtr("gardenlinux"),
+			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			VolumeSizeGB:                        util.IntPtr(1024),
 			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "GCP",
@@ -113,6 +113,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
+			ShootNetworkingFilterDisabled:       util.BoolPtr(true),
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelProductionProfile),
@@ -126,12 +127,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			RuntimeInput: &gqlschema.RuntimeInput{
 				Name:        "runtimeName",
 				Description: nil,
-				Labels:      &gqlschema.Labels{},
+				Labels:      gqlschema.Labels{},
 			},
 			ClusterConfig: &gqlschema.ClusterConfigInput{
 				GardenerConfig: &gqlschema.GardenerConfigInput{
 					Name:                              "verylon",
-					KubernetesVersion:                 "version",
+					KubernetesVersion:                 "1.20.7",
 					VolumeSizeGb:                      util.IntPtr(1024),
 					MachineType:                       "n1-standard-1",
 					MachineImage:                      util.StringPtr("gardenlinux"),
@@ -164,7 +165,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	}
 
 	expectedGardenerAzureRuntimeConfig := func(zones []string) model.Cluster {
-
 		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr", Zones: zones})
 		require.NoError(t, err)
 
@@ -178,7 +178,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				MachineImage:                        util.StringPtr("gardenlinux"),
 				MachineImageVersion:                 util.StringPtr("25.0.0"),
 				Region:                              "region",
-				KubernetesVersion:                   "version",
+				KubernetesVersion:                   "1.20.7",
 				VolumeSizeGB:                        util.IntPtr(1024),
 				DiskType:                            util.StringPtr("ssd"),
 				Provider:                            "Azure",
@@ -236,14 +236,16 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				VolumeSizeGb:                      util.IntPtr(1024),
 				MachineType:                       "n1-standard-1",
+				MachineImage:                      util.StringPtr("gardenlinux"),
+				MachineImageVersion:               util.StringPtr("25.0.0"),
 				Region:                            "region",
 				Provider:                          "AWS",
 				Purpose:                           util.StringPtr("testing"),
@@ -259,9 +261,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					AwsConfig: awsGardenerProvider,
 				},
-				OidcConfig:        oidcInput(),
-				DNSConfig:         dnsInput(),
-				ExposureClassName: util.StringPtr("internet"),
+				OidcConfig:                    oidcInput(),
+				DNSConfig:                     dnsInput(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(false),
 			},
 			Administrators: []string{administrator},
 		},
@@ -278,8 +281,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Name:                                "verylon",
 			ProjectName:                         gardenerProject,
 			MachineType:                         "n1-standard-1",
+			MachineImage:                        util.StringPtr("gardenlinux"),
+			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			VolumeSizeGB:                        util.IntPtr(1024),
 			DiskType:                            util.StringPtr("ssd"),
 			Provider:                            "AWS",
@@ -299,6 +304,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
+			ShootNetworkingFilterDisabled:       util.BoolPtr(false),
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
@@ -318,13 +324,15 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "runtimeName",
 			Description: nil,
-			Labels:      &gqlschema.Labels{},
+			Labels:      gqlschema.Labels{},
 		},
 		ClusterConfig: &gqlschema.ClusterConfigInput{
 			GardenerConfig: &gqlschema.GardenerConfigInput{
 				Name:                              "verylon",
-				KubernetesVersion:                 "version",
+				KubernetesVersion:                 "1.20.7",
 				MachineType:                       "large.1n",
+				MachineImage:                      util.StringPtr("gardenlinux"),
+				MachineImageVersion:               util.StringPtr("25.0.0"),
 				Region:                            "region",
 				Provider:                          "Openstack",
 				Purpose:                           util.StringPtr("testing"),
@@ -339,9 +347,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 					OpenStackConfig: openstackGardenerProvider,
 				},
-				OidcConfig:        oidcInput(),
-				DNSConfig:         dnsInput(),
-				ExposureClassName: util.StringPtr("internet"),
+				OidcConfig:                    oidcInput(),
+				DNSConfig:                     dnsInput(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: nil,
 			},
 			Administrators: []string{administrator},
 		},
@@ -358,8 +367,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Name:                                "verylon",
 			ProjectName:                         gardenerProject,
 			MachineType:                         "large.1n",
+			MachineImage:                        util.StringPtr("gardenlinux"),
+			MachineImageVersion:                 util.StringPtr("25.0.0"),
 			Region:                              "region",
-			KubernetesVersion:                   "version",
+			KubernetesVersion:                   "1.20.7",
 			Provider:                            "Openstack",
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "ops-1",
@@ -377,6 +388,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
 			ExposureClassName:                   util.StringPtr("internet"),
+			ShootNetworkingFilterDisabled:       nil,
 		},
 		Kubeconfig:     nil,
 		KymaConfig:     fixKymaConfig(&modelEvaluationProfile),
@@ -431,7 +443,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 	for _, testCase := range configurations {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			uuidGeneratorMock.On("New").Return("id").Times(6)
 			uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
@@ -444,10 +456,10 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				defaultEnableMachineImageVersionAutoUpdate,
 				forceAllowPrivilegedContainers)
 
-			//when
+			// when
 			runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", testCase.input, tenant, subAccountId)
 
-			//then
+			// then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.expected, runtimeConfig)
 			uuidGeneratorMock.AssertExpectations(t)
@@ -525,7 +537,7 @@ func dnsInput() *gqlschema.DNSConfigInput {
 	return &gqlschema.DNSConfigInput{
 		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*gqlschema.DNSProviderInput{
-			&gqlschema.DNSProviderInput{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_inconverter",
@@ -539,7 +551,7 @@ func dnsConfig() *model.DNSConfig {
 	return &model.DNSConfig{
 		Domain: "verylon.devtest.kyma.ondemand.com",
 		Providers: []*model.DNSProvider{
-			&model.DNSProvider{
+			{
 				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 				Primary:        true,
 				SecretName:     "aws_dns_domain_secrets_test_inconverter",
@@ -562,8 +574,7 @@ func upgradedOidcConfig() *model.OIDCConfig {
 
 func TestConverter_ParseInput(t *testing.T) {
 	t.Run("should parse KymaConfig input", func(t *testing.T) {
-
-		//given
+		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
 		uuidGeneratorMock.On("New").Return("id").Times(6)
 		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
@@ -599,7 +610,6 @@ func TestConverter_ParseInput(t *testing.T) {
 }
 
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
-
 	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
 		// given
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
@@ -624,10 +634,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		uuidGeneratorMock.AssertExpectations(t)
 	})
@@ -644,10 +654,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "ClusterConfig not provided")
 	})
@@ -669,10 +679,10 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "GardenerConfig not provided")
 	})
@@ -697,14 +707,13 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 			defaultEnableMachineImageVersionAutoUpdate,
 			forceAllowPrivilegedContainers)
 
-		//when
+		// when
 		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
 
-		//then
+		// then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "provider config not specified")
 	})
-
 }
 
 func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
@@ -718,7 +727,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	upgradedGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a", "europe-west1-b"}})
 
 	initialAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1"}})
-	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}})
+	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}, EnableNatGateway: util.BoolPtr(true)})
 
 	casesWithNoErrors := []struct {
 		description    string
@@ -726,13 +735,16 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		initialConfig  model.GardenerConfig
 		upgradedConfig model.GardenerConfig
 	}{
-		{description: "regular GCP shoot upgrade",
+		{
+			description:  "regular GCP shoot upgrade",
 			upgradeInput: newGCPUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
 				KubernetesVersion:      "1.19",
 				VolumeSizeGB:           util.IntPtr(1),
 				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
+				MachineImage:           util.StringPtr("gardenlinux"),
+				MachineImageVersion:    util.StringPtr("25.0.0"),
 				Purpose:                &evaluationPurpose,
 				AutoScalerMin:          1,
 				AutoScalerMax:          2,
@@ -743,132 +755,163 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				ExposureClassName:      util.StringPtr("internet"),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion:      "1.19",
-				VolumeSizeGB:           util.IntPtr(50),
-				DiskType:               util.StringPtr("papyrus"),
-				MachineType:            "new-machine",
-				Purpose:                &testingPurpose,
-				AutoScalerMin:          2,
-				AutoScalerMax:          6,
-				MaxSurge:               2,
-				MaxUnavailable:         1,
-				GardenerProviderConfig: upgradedGCPProviderConfig,
-				OIDCConfig:             upgradedOidcConfig(),
-				ExposureClassName:      util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				VolumeSizeGB:                  util.IntPtr(50),
+				DiskType:                      util.StringPtr("papyrus"),
+				MachineType:                   "new-machine",
+				MachineImage:                  util.StringPtr("ubuntu"),
+				MachineImageVersion:           util.StringPtr("12.0.2"),
+				Purpose:                       &testingPurpose,
+				AutoScalerMin:                 2,
+				AutoScalerMax:                 6,
+				MaxSurge:                      2,
+				MaxUnavailable:                1,
+				GardenerProviderConfig:        upgradedGCPProviderConfig,
+				OIDCConfig:                    upgradedOidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(true),
 			},
 		},
-		{description: "regular Azure shoot upgrade",
+		{
+			description:  "regular Azure shoot upgrade",
 			upgradeInput: newAzureUpgradeShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:      "1.19",
-				VolumeSizeGB:           util.IntPtr(1),
-				DiskType:               util.StringPtr("ssd"),
-				MachineType:            "1",
-				Purpose:                &evaluationPurpose,
-				AutoScalerMin:          1,
-				AutoScalerMax:          2,
-				MaxSurge:               1,
-				MaxUnavailable:         1,
-				GardenerProviderConfig: initialAzureProviderConfig,
-				OIDCConfig:             oidcConfig(),
-				ExposureClassName:      util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				VolumeSizeGB:                  util.IntPtr(1),
+				DiskType:                      util.StringPtr("ssd"),
+				MachineType:                   "1",
+				MachineImage:                  util.StringPtr("gardenlinux"),
+				MachineImageVersion:           util.StringPtr("25.0.0"),
+				Purpose:                       &evaluationPurpose,
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 2,
+				MaxSurge:                      1,
+				MaxUnavailable:                1,
+				GardenerProviderConfig:        initialAzureProviderConfig,
+				OIDCConfig:                    oidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(true),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion:      "1.19",
-				VolumeSizeGB:           util.IntPtr(50),
-				DiskType:               util.StringPtr("papyrus"),
-				MachineType:            "new-machine",
-				Purpose:                &testingPurpose,
-				AutoScalerMin:          2,
-				AutoScalerMax:          6,
-				MaxSurge:               2,
-				MaxUnavailable:         1,
-				GardenerProviderConfig: upgradedAzureProviderConfig,
-				OIDCConfig:             upgradedOidcConfig(),
-				ExposureClassName:      util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				VolumeSizeGB:                  util.IntPtr(50),
+				DiskType:                      util.StringPtr("papyrus"),
+				MachineType:                   "new-machine",
+				MachineImage:                  util.StringPtr("ubuntu"),
+				MachineImageVersion:           util.StringPtr("12.0.2"),
+				Purpose:                       &testingPurpose,
+				AutoScalerMin:                 2,
+				AutoScalerMax:                 6,
+				MaxSurge:                      2,
+				MaxUnavailable:                1,
+				GardenerProviderConfig:        upgradedAzureProviderConfig,
+				OIDCConfig:                    upgradedOidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(true),
 			},
 		},
-		{description: "regular AWS shoot upgrade",
+		{
+			description:  "regular AWS shoot upgrade",
 			upgradeInput: newUpgradeShootInputAwsAzureGCP(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion: "1.19",
-				VolumeSizeGB:      util.IntPtr(1),
-				DiskType:          util.StringPtr("ssd"),
-				MachineType:       "1",
-				Purpose:           &evaluationPurpose,
-				AutoScalerMin:     1,
-				AutoScalerMax:     2,
-				MaxSurge:          1,
-				MaxUnavailable:    1,
-				OIDCConfig:        oidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				VolumeSizeGB:                  util.IntPtr(1),
+				DiskType:                      util.StringPtr("ssd"),
+				MachineType:                   "1",
+				MachineImage:                  util.StringPtr("gardenlinux"),
+				MachineImageVersion:           util.StringPtr("25.0.0"),
+				Purpose:                       &evaluationPurpose,
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 2,
+				MaxSurge:                      1,
+				MaxUnavailable:                1,
+				OIDCConfig:                    oidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(false),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "1.19",
-				VolumeSizeGB:      util.IntPtr(50),
-				DiskType:          util.StringPtr("papyrus"),
-				MachineType:       "new-machine",
-				Purpose:           &testingPurpose,
-				AutoScalerMin:     2,
-				AutoScalerMax:     6,
-				MaxSurge:          2,
-				MaxUnavailable:    1,
-				OIDCConfig:        upgradedOidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				VolumeSizeGB:                  util.IntPtr(50),
+				DiskType:                      util.StringPtr("papyrus"),
+				MachineType:                   "new-machine",
+				MachineImage:                  util.StringPtr("ubuntu"),
+				MachineImageVersion:           util.StringPtr("12.0.2"),
+				Purpose:                       &testingPurpose,
+				AutoScalerMin:                 2,
+				AutoScalerMax:                 6,
+				MaxSurge:                      2,
+				MaxUnavailable:                1,
+				OIDCConfig:                    upgradedOidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(true),
 			},
 		},
-		{description: "regular OpenStack shoot upgrade",
+		{
+			description:  "regular OpenStack shoot upgrade",
 			upgradeInput: newUpgradeOpenStackShootInput(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion: "1.19",
-				MachineType:       "1",
-				Purpose:           &evaluationPurpose,
-				AutoScalerMin:     1,
-				AutoScalerMax:     2,
-				MaxSurge:          1,
-				MaxUnavailable:    1,
-				OIDCConfig:        oidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				MachineType:                   "1",
+				MachineImage:                  util.StringPtr("gardenlinux"),
+				MachineImageVersion:           util.StringPtr("25.0.0"),
+				Purpose:                       &evaluationPurpose,
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 2,
+				MaxSurge:                      1,
+				MaxUnavailable:                1,
+				OIDCConfig:                    oidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: nil,
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "1.19",
-				MachineType:       "new-machine",
-				Purpose:           &testingPurpose,
-				AutoScalerMin:     2,
-				AutoScalerMax:     6,
-				MaxSurge:          2,
-				MaxUnavailable:    1,
-				OIDCConfig:        upgradedOidcConfig(),
-				ExposureClassName: util.StringPtr("internet"),
+				KubernetesVersion:             "1.19",
+				MachineType:                   "new-machine",
+				MachineImage:                  util.StringPtr("ubuntu"),
+				MachineImageVersion:           util.StringPtr("12.0.2"),
+				Purpose:                       &testingPurpose,
+				AutoScalerMin:                 2,
+				AutoScalerMax:                 6,
+				MaxSurge:                      2,
+				MaxUnavailable:                1,
+				OIDCConfig:                    upgradedOidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: nil,
 			},
 		},
-		{description: "shoot upgrade with nil values",
+		{
+			description:  "shoot upgrade with nil values",
 			upgradeInput: newUpgradeShootInputWithNilValues(),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion: "version",
-				VolumeSizeGB:      util.IntPtr(1),
-				DiskType:          util.StringPtr("ssd"),
-				MachineType:       "1",
-				Purpose:           &evaluationPurpose,
-				AutoScalerMin:     1,
-				AutoScalerMax:     2,
-				MaxSurge:          1,
-				MaxUnavailable:    1,
-				OIDCConfig:        oidcConfig(),
-				ExposureClassName: nil,
+				KubernetesVersion:             "1.20.7",
+				VolumeSizeGB:                  util.IntPtr(1),
+				DiskType:                      util.StringPtr("ssd"),
+				MachineType:                   "1",
+				MachineImage:                  util.StringPtr("gardenlinux"),
+				MachineImageVersion:           util.StringPtr("25.0.0"),
+				Purpose:                       &evaluationPurpose,
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 2,
+				MaxSurge:                      1,
+				MaxUnavailable:                1,
+				OIDCConfig:                    oidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(false),
 			},
 			upgradedConfig: model.GardenerConfig{
-				KubernetesVersion: "version",
-				VolumeSizeGB:      util.IntPtr(1),
-				DiskType:          util.StringPtr("ssd"),
-				MachineType:       "1",
-				Purpose:           &evaluationPurpose,
-				AutoScalerMin:     1,
-				AutoScalerMax:     2,
-				MaxSurge:          1,
-				MaxUnavailable:    1,
-				OIDCConfig:        upgradedOidcConfig(),
-				ExposureClassName: nil,
+				KubernetesVersion:             "1.20.7",
+				VolumeSizeGB:                  util.IntPtr(1),
+				DiskType:                      util.StringPtr("ssd"),
+				MachineType:                   "1",
+				MachineImage:                  util.StringPtr("gardenlinux"),
+				MachineImageVersion:           util.StringPtr("25.0.0"),
+				Purpose:                       &evaluationPurpose,
+				AutoScalerMin:                 1,
+				AutoScalerMax:                 2,
+				MaxSurge:                      1,
+				MaxUnavailable:                1,
+				OIDCConfig:                    upgradedOidcConfig(),
+				ExposureClassName:             util.StringPtr("internet"),
+				ShootNetworkingFilterDisabled: util.BoolPtr(false),
 			},
 		},
 	}
@@ -878,13 +921,16 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 		upgradeInput  gqlschema.UpgradeShootInput
 		initialConfig model.GardenerConfig
 	}{
-		{description: "should return error failed to convert provider specific config",
+		{
+			description:  "should return error failed to convert provider specific config",
 			upgradeInput: newUpgradeShootInputWithoutProviderConfig(testingPurpose),
 			initialConfig: model.GardenerConfig{
-				KubernetesVersion:      "version",
+				KubernetesVersion:      "1.20.7",
 				VolumeSizeGB:           util.IntPtr(1),
 				DiskType:               util.StringPtr("ssd"),
 				MachineType:            "1",
+				MachineImage:           util.StringPtr("gardenlinux"),
+				MachineImageVersion:    util.StringPtr("25.0.0"),
 				Purpose:                &evaluationPurpose,
 				AutoScalerMin:          1,
 				AutoScalerMax:          2,
@@ -898,7 +944,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 
 	for _, testCase := range casesWithNoErrors {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
@@ -909,10 +955,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				forceAllowPrivilegedContainers,
 			)
 
-			//when
+			// when
 			shootConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
 
-			//then
+			// then
 			require.NoError(t, err)
 			assert.Equal(t, testCase.upgradedConfig, shootConfig)
 			uuidGeneratorMock.AssertExpectations(t)
@@ -921,7 +967,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 
 	for _, testCase := range casesWithErrors {
 		t.Run(testCase.description, func(t *testing.T) {
-			//given
+			// given
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
@@ -932,10 +978,10 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 				forceAllowPrivilegedContainers,
 			)
 
-			//when
+			// when
 			_, err := inputConverter.UpgradeShootInputToGardenerConfig(*testCase.upgradeInput.GardenerConfig, testCase.initialConfig)
 
-			//then
+			// then
 			require.Error(t, err)
 			uuidGeneratorMock.AssertExpectations(t)
 		})
@@ -945,18 +991,21 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("1.19"),
-			Purpose:                &newPurpose,
-			MachineType:            util.StringPtr("new-machine"),
-			DiskType:               util.StringPtr("papyrus"),
-			VolumeSizeGb:           util.IntPtr(50),
-			AutoScalerMin:          util.IntPtr(2),
-			AutoScalerMax:          util.IntPtr(6),
-			MaxSurge:               util.IntPtr(2),
-			MaxUnavailable:         util.IntPtr(1),
-			ProviderSpecificConfig: nil,
-			OidcConfig:             upgradedOidcInput(),
-			ExposureClassName:      util.StringPtr("internet"),
+			KubernetesVersion:             util.StringPtr("1.19"),
+			Purpose:                       &newPurpose,
+			MachineType:                   util.StringPtr("new-machine"),
+			DiskType:                      util.StringPtr("papyrus"),
+			VolumeSizeGb:                  util.IntPtr(50),
+			AutoScalerMin:                 util.IntPtr(2),
+			AutoScalerMax:                 util.IntPtr(6),
+			MaxSurge:                      util.IntPtr(2),
+			MaxUnavailable:                util.IntPtr(1),
+			MachineImage:                  util.StringPtr("ubuntu"),
+			MachineImageVersion:           util.StringPtr("12.0.2"),
+			ProviderSpecificConfig:        nil,
+			OidcConfig:                    upgradedOidcInput(),
+			ExposureClassName:             util.StringPtr("internet"),
+			ShootNetworkingFilterDisabled: util.BoolPtr(true),
 		},
 		Administrators: []string{"test@test.pl"},
 	}
@@ -965,16 +1014,19 @@ func newUpgradeShootInputAwsAzureGCP(newPurpose string) gqlschema.UpgradeShootIn
 func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      util.StringPtr("1.19"),
-			Purpose:                &newPurpose,
-			MachineType:            util.StringPtr("new-machine"),
-			AutoScalerMin:          util.IntPtr(2),
-			AutoScalerMax:          util.IntPtr(6),
-			MaxSurge:               util.IntPtr(2),
-			MaxUnavailable:         util.IntPtr(1),
-			ProviderSpecificConfig: nil,
-			OidcConfig:             upgradedOidcInput(),
-			ExposureClassName:      util.StringPtr("internet"),
+			KubernetesVersion:             util.StringPtr("1.19"),
+			Purpose:                       &newPurpose,
+			MachineType:                   util.StringPtr("new-machine"),
+			AutoScalerMin:                 util.IntPtr(2),
+			AutoScalerMax:                 util.IntPtr(6),
+			MaxSurge:                      util.IntPtr(2),
+			MaxUnavailable:                util.IntPtr(1),
+			MachineImage:                  util.StringPtr("ubuntu"),
+			MachineImageVersion:           util.StringPtr("12.0.2"),
+			ProviderSpecificConfig:        nil,
+			OidcConfig:                    upgradedOidcInput(),
+			ExposureClassName:             util.StringPtr("internet"),
+			ShootNetworkingFilterDisabled: nil,
 		},
 	}
 }
@@ -982,18 +1034,21 @@ func newUpgradeOpenStackShootInput(newPurpose string) gqlschema.UpgradeShootInpu
 func newUpgradeShootInputWithNilValues() gqlschema.UpgradeShootInput {
 	return gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			KubernetesVersion:      nil,
-			Purpose:                nil,
-			MachineType:            nil,
-			DiskType:               nil,
-			VolumeSizeGb:           nil,
-			AutoScalerMin:          nil,
-			AutoScalerMax:          nil,
-			MaxSurge:               nil,
-			MaxUnavailable:         nil,
-			ProviderSpecificConfig: nil,
-			OidcConfig:             upgradedOidcInput(),
-			ExposureClassName:      nil,
+			KubernetesVersion:             nil,
+			Purpose:                       nil,
+			MachineType:                   nil,
+			DiskType:                      nil,
+			MachineImage:                  nil,
+			MachineImageVersion:           nil,
+			VolumeSizeGb:                  nil,
+			AutoScalerMin:                 nil,
+			AutoScalerMax:                 nil,
+			MaxSurge:                      nil,
+			MaxUnavailable:                nil,
+			ProviderSpecificConfig:        nil,
+			OidcConfig:                    upgradedOidcInput(),
+			ExposureClassName:             nil,
+			ShootNetworkingFilterDisabled: nil,
 		},
 	}
 }
@@ -1012,7 +1067,8 @@ func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	input := newUpgradeShootInputAwsAzureGCP(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
-			Zones: []string{"1", "2"},
+			Zones:            []string{"1", "2"},
+			EnableNatGateway: util.BoolPtr(true),
 		},
 	}
 	return input
