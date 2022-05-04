@@ -727,7 +727,7 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	upgradedGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a", "europe-west1-b"}})
 
 	initialAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1"}})
-	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}})
+	upgradedAzureProviderConfig, _ := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{Zones: []string{"1", "2"}, EnableNatGateway: util.BoolPtr(true)})
 
 	casesWithNoErrors := []struct {
 		description    string
@@ -1067,7 +1067,8 @@ func newAzureUpgradeShootInput(newPurpose string) gqlschema.UpgradeShootInput {
 	input := newUpgradeShootInputAwsAzureGCP(newPurpose)
 	input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{
 		AzureConfig: &gqlschema.AzureProviderConfigInput{
-			Zones: []string{"1", "2"},
+			Zones:            []string{"1", "2"},
+			EnableNatGateway: util.BoolPtr(true),
 		},
 	}
 	return input

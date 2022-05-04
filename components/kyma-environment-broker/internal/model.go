@@ -3,7 +3,6 @@ package internal
 import (
 	"database/sql"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -151,33 +149,10 @@ func (i *Instance) GetSubscriptionGlobalAccoundID() string {
 
 func (i *Instance) GetInstanceDetails() (InstanceDetails, error) {
 	result := i.InstanceDetails
-	if result.ShootName == "" {
-		logrus.Infof("extracting shoot name/domain from dashboard_url %s for instance %s", i.DashboardURL, i.InstanceID)
-		shoot, domain, e := i.extractShootNameAndDomain()
-		if e != nil {
-			logrus.Errorf("unable to extract shoot name: %s (instance %s)", e.Error(), i.InstanceID)
-			return result, e
-		}
-		result.ShootName = shoot
-		result.ShootDomain = domain
-	}
 	//overwrite RuntimeID in InstanceDetails with Instance.RuntimeID
 	//needed for runtimes suspended without clearing RuntimeID in deprovisioning operation
 	result.RuntimeID = i.RuntimeID
 	return result, nil
-}
-
-func (i *Instance) extractShootNameAndDomain() (string, string, error) {
-	parsed, err := url.Parse(i.DashboardURL)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", i.DashboardURL)
-	}
-
-	parts := strings.Split(parsed.Host, ".")
-	if len(parts) <= 1 {
-		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
-	}
-	return parts[1], parsed.Host[len(parts[0])+1:], nil
 }
 
 // OperationType defines the possible types of an asynchronous operation to a broker.

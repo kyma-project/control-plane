@@ -245,3 +245,7 @@ subaccountCleanup:
 serviceMonitor:
   scrapeTimeout: 10s
   interval: 30s
+
+dashboardConfig:
+  enabled: false
+  landscapeURL: "https://dashboard.dev.kyma.cloud.sap"

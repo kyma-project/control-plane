@@ -16,7 +16,7 @@ COPY . .
 RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.15.3
+FROM eu.gcr.io/kyma-project/external/alpine:3.15.4
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

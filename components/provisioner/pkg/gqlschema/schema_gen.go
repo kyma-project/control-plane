@@ -55,8 +55,10 @@ type ComplexityRoot struct {
 	}
 
 	AzureProviderConfig struct {
-		VnetCidr func(childComplexity int) int
-		Zones    func(childComplexity int) int
+		EnableNatGateway             func(childComplexity int) int
+		IdleConnectionTimeoutMinutes func(childComplexity int) int
+		VnetCidr                     func(childComplexity int) int
+		Zones                        func(childComplexity int) int
 	}
 
 	ComponentConfiguration struct {
@@ -268,6 +270,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AWSZone.WorkerCidr(childComplexity), true
+
+	case "AzureProviderConfig.enableNatGateway":
+		if e.complexity.AzureProviderConfig.EnableNatGateway == nil {
+			break
+		}
+
+		return e.complexity.AzureProviderConfig.EnableNatGateway(childComplexity), true
+
+	case "AzureProviderConfig.idleConnectionTimeoutMinutes":
+		if e.complexity.AzureProviderConfig.IdleConnectionTimeoutMinutes == nil {
+			break
+		}
+
+		return e.complexity.AzureProviderConfig.IdleConnectionTimeoutMinutes(childComplexity), true
 
 	case "AzureProviderConfig.vnetCidr":
 		if e.complexity.AzureProviderConfig.VnetCidr == nil {
@@ -1038,6 +1054,8 @@ type GCPProviderConfig {
 type AzureProviderConfig {
     vnetCidr: String
     zones: [String!]
+    enableNatGateway: Boolean
+    idleConnectionTimeoutMinutes: Int
 }
 
 type AWSProviderConfig {
@@ -1245,6 +1263,8 @@ input GCPProviderConfigInput {
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
     zones: [String!]      # Zones in which to create the cluster
+    enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
+    idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
 
 input AWSProviderConfigInput {
@@ -1792,6 +1812,68 @@ func (ec *executionContext) _AzureProviderConfig_zones(ctx context.Context, fiel
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureProviderConfig_enableNatGateway(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AzureProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableNatGateway, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureProviderConfig_idleConnectionTimeoutMinutes(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AzureProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IdleConnectionTimeoutMinutes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ComponentConfiguration_component(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
@@ -5747,6 +5829,18 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "enableNatGateway":
+			var err error
+			it.EnableNatGateway, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "idleConnectionTimeoutMinutes":
+			var err error
+			it.IdleConnectionTimeoutMinutes, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6592,6 +6686,10 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._AzureProviderConfig_vnetCidr(ctx, field, obj)
 		case "zones":
 			out.Values[i] = ec._AzureProviderConfig_zones(ctx, field, obj)
+		case "enableNatGateway":
+			out.Values[i] = ec._AzureProviderConfig_enableNatGateway(ctx, field, obj)
+		case "idleConnectionTimeoutMinutes":
+			out.Values[i] = ec._AzureProviderConfig_idleConnectionTimeoutMinutes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

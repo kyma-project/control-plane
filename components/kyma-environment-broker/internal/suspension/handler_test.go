@@ -187,37 +187,6 @@ func TestUnsuspensionForDeprovisioningInstance(t *testing.T) {
 	assertQueue(t, provisioning)
 }
 
-func TestUnsuspensionWithoutShootname(t *testing.T) {
-	// given
-	provisioning := NewDummyQueue()
-	deprovisioning := NewDummyQueue()
-	st := storage.NewMemoryStorage()
-
-	svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
-	instance := fixInstance(fixInactiveErsContext())
-	instance.InstanceDetails.ShootName = ""
-	instance.InstanceDetails.ShootDomain = ""
-	instance.DashboardURL = "https://console.c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com"
-
-	st.Instances().Insert(*instance)
-
-	// when
-	changed, err := svc.Handle(instance, fixActiveErsContext())
-	require.NoError(t, err)
-	assert.True(t, changed, "handler to change active flag")
-
-	// then
-	op, err := st.Operations().GetProvisioningOperationByInstanceID("instance-id")
-	require.NoError(t, err)
-	assertQueue(t, deprovisioning)
-	assertQueue(t, provisioning, op.ID)
-
-	assert.Equal(t, domain.LastOperationState(orchestration.Pending), op.State)
-	assert.Equal(t, instance.InstanceID, op.InstanceID)
-	assert.Equal(t, "c-7f1eb9e", op.ShootName)
-	assert.Equal(t, "c-7f1eb9e.kyma-dev.shoot.canary.k8s-hana.ondemand.com", op.ShootDomain)
-}
-
 func fixInstance(ersContext internal.ERSContext) *internal.Instance {
 	instance := fixture.FixInstance("instance-id")
 	instance.ServicePlanID = broker.TrialPlanID

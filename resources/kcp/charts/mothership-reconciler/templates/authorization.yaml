@@ -28,11 +28,11 @@ spec:
       {{- include "mothership-reconciler.labels" . | nindent 6 }}
   action: ALLOW
   rules:
-  # Allow /metrics
+  # Allow /metrics and /api/v1/metrics/prometheus for main metrics and fluentbit-sidecar metrics
   {{ if .Values.serviceMonitor.enabled }}
   - to:
     - operation:
-        paths: ["/metrics"]
+        paths: ["/metrics", "/api/v1/metrics/prometheus"]
   {{- end }}
   # external communication
   - to:
