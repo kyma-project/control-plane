@@ -25,6 +25,7 @@ type Manager struct {
 	log              logrus.FieldLogger
 	steps            map[int][]Step
 	operationStorage storage.Operations
+	operationManager *process.DeprovisionOperationManager
 
 	publisher event.Publisher
 }
@@ -35,6 +36,7 @@ func NewManager(storage storage.Operations, pub event.Publisher, logger logrus.F
 		operationStorage: storage,
 		steps:            make(map[int][]Step, 0),
 		publisher:        pub,
+		operationManager: process.NewDeprovisionOperationManager(storage),
 	}
 }
 
@@ -96,7 +98,9 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			Operation: operation,
 		})
 
-		return 0, err
+		_, duration, err := m.operationManager.OperationFailed(operation, "Error retrieving provisioning operation", err, log)
+
+		return duration, err
 	}
 
 	logOperation = logOperation.WithField("planID", provisioningOp.ProvisioningParameters.PlanID)

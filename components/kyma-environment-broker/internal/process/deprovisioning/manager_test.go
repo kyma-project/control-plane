@@ -98,6 +98,39 @@ func TestManager_Execute(t *testing.T) {
 			}))
 		})
 	}
+
+	t.Run("should fail operation when provisioning operation not found", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		operations := memoryStorage.Operations()
+		err := operations.InsertDeprovisioningOperation(fixDeprovisionOperation(operationIDSuccess))
+
+		assert.NoError(t, err)
+
+		eventBroker := event.NewPubSub(logrus.New())
+		eventCollector := &collectingEventHandler{}
+		eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, eventCollector.OnEvent)
+
+		manager := NewManager(operations, eventBroker, log)
+
+		// when
+		repeat, err := manager.Execute(operationIDSuccess)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Error(t, err)
+
+		// assert operation state as failed
+		operation, err := memoryStorage.Deprovisioning().
+			GetDeprovisioningOperationByID(operationIDSuccess)
+
+		assert.NoError(t, err)
+		assert.Equal(t, domain.Failed, operation.State)
+
+		assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
+			return len(eventCollector.Events) == 1, nil
+		}))
+	})
+
 }
 
 func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
