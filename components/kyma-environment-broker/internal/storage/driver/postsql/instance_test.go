@@ -286,8 +286,19 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "2"}),
 			*fixInstance(instanceData{val: "3"}),
 		}
-		for _, i := range fixInstances {
-			err = brokerStorage.Instances().Insert(i)
+		fixOperations := []internal.ProvisioningOperation{
+			fixture.FixProvisioningOperation("op1", "1"),
+			fixture.FixProvisioningOperation("op2", "2"),
+			fixture.FixProvisioningOperation("op3", "3"),
+		}
+		for i, v := range fixInstances {
+			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
+			fixInstances[i] = v
+			err = brokerStorage.Instances().Insert(v)
+			require.NoError(t, err)
+		}
+		for _, i := range fixOperations {
+			err = brokerStorage.Operations().InsertProvisioningOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -332,8 +343,19 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst2"}),
 			*fixInstance(instanceData{val: "inst3"}),
 		}
-		for _, i := range fixInstances {
-			err = brokerStorage.Instances().Insert(i)
+		fixOperations := []internal.ProvisioningOperation{
+			fixture.FixProvisioningOperation("op1", "inst1"),
+			fixture.FixProvisioningOperation("op2", "inst2"),
+			fixture.FixProvisioningOperation("op3", "inst3"),
+		}
+		for i, v := range fixInstances {
+			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
+			fixInstances[i] = v
+			err = brokerStorage.Instances().Insert(v)
+			require.NoError(t, err)
+		}
+		for _, i := range fixOperations {
+			err = brokerStorage.Operations().InsertProvisioningOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -387,7 +409,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"inst2"}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"Shoot-inst2"}})
 
 		// then
 		require.NoError(t, err)
