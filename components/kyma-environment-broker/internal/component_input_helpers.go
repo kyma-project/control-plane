@@ -23,7 +23,8 @@ const (
 	// BTP Operator overrides keys
 	BTPOperatorClientID     = "manager.secret.clientid"
 	BTPOperatorClientSecret = "manager.secret.clientsecret"
-	BTPOperatorURL          = "manager.secret.url"
+	BTPOperatorURL          = "manager.secret.url"    // deprecated, for btp-operator v0.2.0
+	BTPOperatorSMURL        = "manager.secret.sm_url" // for btp-operator v0.2.3
 	BTPOperatorTokenURL     = "manager.secret.tokenurl"
 )
 
@@ -52,6 +53,10 @@ func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredential
 		},
 		{
 			Key:   BTPOperatorURL,
+			Value: creds.ServiceManagerURL,
+		},
+		{
+			Key:   BTPOperatorSMURL,
 			Value: creds.ServiceManagerURL,
 		},
 		{

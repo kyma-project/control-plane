@@ -1226,6 +1226,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 					Secret: false,
 				},
 				{
+					Key:    "manager.secret.sm_url",
+					Value:  "https://service-manager.kyma.com",
+					Secret: false,
+				},
+				{
 					Key:    "manager.secret.tokenurl",
 					Value:  "https://test.auth.com",
 					Secret: false,
