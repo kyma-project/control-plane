@@ -65,6 +65,7 @@ func New() *cobra.Command {
 		NewMigrationAllCommand(log),
 		NewStatusCommand(),
 		NewLogsCommand(),
+		NewMetadataCommand(),
 	)
 
 	return cmd
