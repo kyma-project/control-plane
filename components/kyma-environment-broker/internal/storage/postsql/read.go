@@ -576,23 +576,18 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 
 	// Base select and order by created at
 	var stmt *dbr.SelectStmt
-	if len(filter.States) == 0 {
-		stmt = r.session.
-			Select("*").
-			From(InstancesTableName).
-			OrderBy(CreatedAtField)
-	} else {
-		// Find and join the last operation for each instance matching the state filter(s).
-		// Last operation is found with the greatest-n-per-group problem solved with OUTER JOIN, followed by a (INNER) JOIN to get instance columns.
-		stmt = r.session.
-			Select(fmt.Sprintf("%s.*", InstancesTableName)).
-			From(InstancesTableName).
-			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
-			Where("o2.created_at IS NULL").
-			Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending)).
-			OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
+	// Find and join the last operation for each instance matching the state filter(s).
+	// Last operation is found with the greatest-n-per-group problem solved with OUTER JOIN, followed by a (INNER) JOIN to get instance columns.
+	stmt = r.session.
+		Select(fmt.Sprintf("%s.*", InstancesTableName)).
+		From(InstancesTableName).
+		Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
+		Where("o2.created_at IS NULL").
+		Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending)).
+		OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
 
+	if len(filter.States) > 0 {
 		stateFilters := buildInstanceStateFilters("o1", filter)
 		stmt.Where(stateFilters)
 	}
@@ -625,17 +620,15 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 		Total int
 	}
 	var stmt *dbr.SelectStmt
-	if len(filter.States) == 0 {
-		stmt = r.session.Select("count(*) as total").From(InstancesTableName)
-	} else {
-		stmt = r.session.
-			Select("count(*) as total").
-			From(InstancesTableName).
-			Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-			LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
-			Where("o2.created_at IS NULL").
-			Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending))
+	stmt = r.session.
+		Select("count(*) as total").
+		From(InstancesTableName).
+		Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
+		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state <> '%s'", InstancesTableName, orchestration.Pending)).
+		Where("o2.created_at IS NULL").
+		Where(fmt.Sprintf("o1.state <> '%s'", orchestration.Pending))
 
+	if len(filter.States) > 0 {
 		stateFilters := buildInstanceStateFilters("o1", filter)
 		stmt.Where(stateFilters)
 	}
@@ -725,11 +718,8 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		stmt.Where("instances.service_plan_name IN ?", filter.Plans)
 	}
 	if len(filter.Domains) > 0 {
-		// Preceeding character is either a . or / (after protocol://)
-		// match subdomain inputs
-		// match any .upperdomain zero or more times
-		domainMatch := fmt.Sprintf(`[./](%s)(\.[0-9A-Za-z-]+)*$`, strings.Join(filter.Domains, "|"))
-		stmt.Where("instances.dashboard_url ~ ?", domainMatch)
+		shootNameMatch := fmt.Sprintf(`^(%s)$`, strings.Join(filter.Domains, "|"))
+		stmt.Where("o1.data::json->>'shoot_name' ~ ?", shootNameMatch)
 	}
 }
 
