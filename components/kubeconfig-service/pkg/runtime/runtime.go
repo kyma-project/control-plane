@@ -32,6 +32,8 @@ type SAInfo struct {
 const Namespace = "kyma-system"
 const RUNTIME_ADMIN = "runtimeAdmin"
 const RUNTIME_OPERATOR = "runtimeOperator"
+const SA = "SA"
+const ClusterRole = "ClusterRole"
 
 var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
 	RUNTIME_ADMIN: []rbacv1.PolicyRule{
@@ -47,6 +49,9 @@ var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
 //kubeconfig login skr, create sa, clusterrole and clusterrolebinding according to userID and roleType
 func GenerateSAToken(kubeConfig []byte, userID string, roleType string) (string, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
+	if err != nil {
+		return "", err
+	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return "", err
@@ -59,7 +64,7 @@ func GenerateSAToken(kubeConfig []byte, userID string, roleType string) (string,
 		Namespace:              Namespace,
 	}
 
-	rmObjects := map[string]bool{"SA": false, "ClusterRole": false}
+	rmObjects := map[string]bool{SA: false, ClusterRole: false}
 	defer removeObject(clientset, rmObjects, user)
 
 	err = createServiceAccount(clientset, user)
@@ -69,35 +74,36 @@ func GenerateSAToken(kubeConfig []byte, userID string, roleType string) (string,
 
 	err = createClusterRole(clientset, user.ClusterRoleName, roleType)
 	if err != nil {
-		rmObjects["SA"] = true
+		rmObjects[SA] = true
 		return "", err
 	}
 
 	saToken, err := getSecretToken(clientset, user)
 	if err != nil {
-		rmObjects["SA"] = true
-		rmObjects["ClusterRole"] = true
+		rmObjects[SA] = true
+		rmObjects[ClusterRole] = true
 		return "", err
 	}
 
 	crbErr := createClusterRoleBinding(clientset, user)
 	if crbErr != nil {
-		rmObjects["SA"] = true
-		rmObjects["ClusterRole"] = true
+		rmObjects[SA] = true
+		rmObjects[ClusterRole] = true
 		return "", crbErr
 	}
 	return string(saToken), nil
 }
 
 func removeObject(c kubernetes.Interface, rmObj map[string]bool, user SAInfo) {
-	if rmObj["SA"] {
-		err := deleteServiceAccount(c, user)
+	config := retryConfig{3, 1}
+	if rmObj[SA] {
+		_, err := retry(config.RetryAttempts, time.Duration(config.RetrySleep) * time.Millisecond, func() (bool, error) { return deleteServiceAccount(c, user) })
 		if err != nil {
 			log.Infof("Delete service account %s failed", user.ServiceAccountName)
 		}
 	}
-	if rmObj["ClusterRole"] {
-		err := deleteClusterRole(c, user.ClusterRoleName)
+	if rmObj[ClusterRole] {
+		_, err := retry(config.RetryAttempts, time.Duration(config.RetrySleep) * time.Millisecond, func() (bool, error) { return deleteClusterRole(c, user.ClusterRoleName) })
 		if err != nil {
 			log.Infof("Delete clusterrole %s failed", user.ServiceAccountName)
 		}
@@ -151,13 +157,19 @@ func createServiceAccount(c kubernetes.Interface, user SAInfo) error {
 	return err
 }
 
-func deleteServiceAccount(c kubernetes.Interface, user SAInfo) error {
+func deleteServiceAccount(c kubernetes.Interface, user SAInfo) (bool, error){
 	err := c.CoreV1().ServiceAccounts(user.Namespace).Delete(context.TODO(), user.ServiceAccountName, metav1.DeleteOptions{})
-	return err
+	if err == nil || errors.IsNotFound(err) {
+		return true, nil
+	}
+	return false, err
 }
 
 func deleteClusterRoleBinding(c kubernetes.Interface, user SAInfo) error {
 	err := c.RbacV1().ClusterRoleBindings().Delete(context.TODO(), user.ClusterRoleBindingName, metav1.DeleteOptions{})
+	if err == nil || errors.IsNotFound(err) {
+		return nil
+	}
 	return err
 }
 
@@ -168,18 +180,26 @@ func verifyClusterRoleBinding(c kubernetes.Interface, user SAInfo, roleRef rbacv
 			return true, nil
 		} else {
 			err = deleteClusterRoleBinding(c, user)
-			return false, err
+			if err == nil || errors.IsNotFound(err) {
+				return false, nil
+			} else {
+				return false, err
+			}
 		}
 	}
+
 	if errors.IsNotFound(err) {
 		return false, nil
 	}
 	return false, err
 }
 
-func deleteClusterRole(c kubernetes.Interface, clusterRoleName string) error {
+func deleteClusterRole(c kubernetes.Interface, clusterRoleName string) (bool, error) {
 	err := c.RbacV1().ClusterRoles().Delete(context.TODO(), clusterRoleName, metav1.DeleteOptions{})
-	return err
+	if err == nil || errors.IsNotFound(err) {
+		return true, nil
+	}
+	return false, err
 }
 
 func verifyClusterRole(c kubernetes.Interface, clusterRoleName string, roleType string) (bool, error) {
@@ -188,10 +208,15 @@ func verifyClusterRole(c kubernetes.Interface, clusterRoleName string, roleType 
 		if reflect.DeepEqual(cr.Rules, L2L3OperatorPolicyRule[roleType]) {
 			return true, nil
 		} else {
-			err = deleteClusterRole(c, clusterRoleName)
-			return false, err
+			_, err = deleteClusterRole(c, clusterRoleName)
+			if err == nil {
+				return false, nil
+			} else {
+				return false, err
+			}
 		}
 	}
+
 	if errors.IsNotFound(err) {
 		return false, nil
 	}
@@ -201,18 +226,15 @@ func verifyClusterRole(c kubernetes.Interface, clusterRoleName string, roleType 
 func verifyServiceAccount(c kubernetes.Interface, user SAInfo) (bool, error) {
 	sa, err := c.CoreV1().ServiceAccounts(user.Namespace).Get(context.TODO(), user.ServiceAccountName, metav1.GetOptions{})
 	if sa != nil && err == nil {
-		err = deleteServiceAccount(c, user)
-		if err != nil {
+		_, err = deleteServiceAccount(c, user)
+		if err == nil || errors.IsNotFound(err) {
 			return false, nil
 		} else {
 			return false, err
 		}
-
 	}
 	if errors.IsNotFound(err) {
 		return false, nil
-	} else {
-		fmt.Println(err)
 	}
 	return false, err
 }
@@ -229,26 +251,6 @@ func getSecretToken(c kubernetes.Interface, user SAInfo) ([]byte, error) {
 		return nil, err
 	}
 	return secret.Data["token"], err
-}
-
-func getSASecretName(attempts int, sleep int, c kubernetes.Interface, user SAInfo) (string, error) {
-	var err error
-	for i := 0; i < attempts; i++ {
-		log.Debugf("Get sa secret name %d attempt", i+1)
-		if i > 0 {
-			time.Sleep(time.Duration(sleep) * time.Second)
-			sleep *= i
-		}
-		sa, err := c.CoreV1().ServiceAccounts(user.Namespace).Get(context.TODO(), user.ServiceAccountName, metav1.GetOptions{})
-		if err != nil {
-			continue
-		}
-
-		if len(sa.Secrets) != 0 {
-			return sa.Secrets[0].Name, nil
-		}
-	}
-	return "", err
 }
 
 func prepareServiceAccount(user SAInfo) *corev1.ServiceAccount {
@@ -295,4 +297,34 @@ func prepareClusterRoleBinding(objectMeta metav1.ObjectMeta, roleRef rbacv1.Role
 		RoleRef:    roleRef,
 		Subjects:   subjects,
 	}
+}
+
+func retry[T any](attempts int, d time.Duration, f func() (T, error)) (result T, err error) {
+    for i := 0; i < attempts; i++ {
+        if i > 0 {
+			time.Sleep(d)
+        }
+        result, err = f()
+        if err == nil {
+            return result, nil
+        }
+    }
+    return result, fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+}
+
+func getSASecretName(attempts int, sleep int, c kubernetes.Interface, user SAInfo) (string, error) {
+	var err error
+	sa, err := retry(attempts, time.Duration(sleep) * time.Millisecond, func() (*corev1.ServiceAccount, error) { return getServiceAccount(c, user) })
+    if len(sa.Secrets) != 0 {
+		return sa.Secrets[0].Name, nil
+	}
+	return "", err
+}
+
+func getServiceAccount(c kubernetes.Interface, user SAInfo) (*corev1.ServiceAccount, error){
+	sa, err := c.CoreV1().ServiceAccounts(user.Namespace).Get(context.TODO(), user.ServiceAccountName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return sa, err
 }

@@ -24,6 +24,9 @@ const UNMARSHAL_TOKEN_FAILED = "Unmarshal token failed"
 const MALFORMED_TOKEN = "Malformed Token"
 const saRegex = "[^a-z0-9.-]+"
 const saCharset = "abcdefghijklmnopqrstuvwxyz0123456789"
+const login_name = "login_name"
+const exp = "exp"
+const groups = "groups"
 
 var L2L3OperatiorRoles = []string{"runtimeAdmin", "runtimeOperator"}
 
@@ -86,8 +89,8 @@ func ValidateToken(r *http.Request) (UserInfo, string, int) {
 
 func extractUserID(dat map[string]interface{}) string {
 	var userID string
-	if dat["login_name"] != nil {
-		rawLoginName := fmt.Sprintf("%s", dat["login_name"])
+	if dat[login_name] != nil {
+		rawLoginName := fmt.Sprintf("%s", dat[login_name])
 		reg, err := regexp.Compile(saRegex)
 		if err == nil {
 			userID = reg.ReplaceAllString(strings.ToLower(rawLoginName), "")
@@ -127,7 +130,6 @@ func dataAsString(t interface{}) string {
 			}
 			data = buffer.String()
 		}
-		fmt.Println(data)
 		return data
 
 	default:
@@ -137,10 +139,10 @@ func dataAsString(t interface{}) string {
 
 func extractExpiredData(dat map[string]interface{}) time.Time {
 	var tm time.Time
-	if dat["exp"] == nil {
+	if dat[exp] == nil {
 		return tm
 	}
-	switch iat := dat["exp"].(type) {
+	switch iat := dat[exp].(type) {
 	case float64:
 		tm = time.Unix(int64(iat), 0)
 	default:
@@ -150,11 +152,11 @@ func extractExpiredData(dat map[string]interface{}) time.Time {
 
 func extractRole(dat map[string]interface{}) (string, string, int) {
 	var role = ""
-	if dat["groups"] == nil {
+	if dat[groups] == nil {
 		return role, NO_GROUPS_IN_TOKEN, http.StatusForbidden
 	}
 
-	data := dataAsString(dat["groups"])
+	data := dataAsString(dat[groups])
 	if strings.Contains(data, L2L3OperatiorRoles[0]) {
 		role = L2L3OperatiorRoles[0]
 	} else if strings.Contains(data, L2L3OperatiorRoles[1]) {
