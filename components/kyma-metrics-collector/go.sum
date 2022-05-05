@@ -703,8 +703,8 @@ github.com/gardener/gardener-extension-provider-aws v1.35.0 h1:9sQJSa9y7H6CmmWkJ
 github.com/gardener/gardener-extension-provider-aws v1.35.0/go.mod h1:KXDUHTz5JsD6uFVeVQ4XBAfoheA/QSHd0/HaQReptuE=
 github.com/gardener/gardener-extension-provider-azure v1.26.3 h1:HrayB/xY/I4FMQK+WmhmwaYQkMy9wsblb/uw+Pa08fk=
 github.com/gardener/gardener-extension-provider-azure v1.26.3/go.mod h1:z+lv3weFbJ2CR+SAvII/mCj6Fwpm97capbWNMz1QJKY=
-github.com/gardener/gardener-extension-provider-gcp v1.21.3 h1:0OCQ9hf4V+47yiDtWHVtAi2AwfKZ5ZCDApsk4Uamtsw=
-github.com/gardener/gardener-extension-provider-gcp v1.21.3/go.mod h1:JVqCUmtn1QyAedwgEgx7l4rwNXq4zoQeuyNBMM1b6wg=
+github.com/gardener/gardener-extension-provider-gcp v1.22.0 h1:yOt0FCaVv80qBBBB1f5nbuyDUCq3j6laSGYgribfE0g=
+github.com/gardener/gardener-extension-provider-gcp v1.22.0/go.mod h1:JQso52ey4E2v4cSHqmXu7fd+jL8fLGB9HgrulhA4cW0=
 github.com/gardener/gardener-resource-manager v0.10.0/go.mod h1:0pKTHOhvU91eQB0EYr/6Ymd7lXc/5Hi8P8tF/gpV0VQ=
 github.com/gardener/gardener-resource-manager v0.13.1/go.mod h1:0No/XttYRUwDn5lSppq9EqlKdo/XJQ44aCZz5BVu3Vw=
 github.com/gardener/gardener-resource-manager v0.18.0/go.mod h1:k53Yw2iDAIpTxnChQY9qFHrRtuPQWJDNnCP9eE6TnWQ=
@@ -718,6 +718,7 @@ github.com/gardener/machine-controller-manager v0.27.0/go.mod h1:zlIxuLQMtRO+aXO
 github.com/gardener/machine-controller-manager v0.33.0/go.mod h1:jxxE+mGgXwg4iPlCHTG4GtUfK2CcHA6yYoIIowoxOZU=
 github.com/gardener/machine-controller-manager v0.41.0/go.mod h1:43OABkCemMS6b35z3OprbfaT3p2HxKAZkJekjCO2T48=
 github.com/gardener/machine-controller-manager v0.42.0/go.mod h1:43OABkCemMS6b35z3OprbfaT3p2HxKAZkJekjCO2T48=
+github.com/gardener/machine-controller-manager v0.44.1/go.mod h1:X3MKnVQ83ov7e8Ct0TxL+3PiTodGTc41klr6MbEuxxY=
 github.com/gardener/remedy-controller v0.6.0/go.mod h1:vh24JWDa9rjtCDGAI6hI7qvZYaMW/M21P2brKhkg47I=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/garyburd/redigo v1.6.3/go.mod h1:rTb6epsqigu3kYKBnaF028A7Tf/Aw5s0cqA47doKKqw=
