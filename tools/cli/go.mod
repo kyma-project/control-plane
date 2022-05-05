@@ -15,7 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/mod v0.5.1
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	gopkg.in/yaml.v2 v2.4.0
@@ -26,8 +26,7 @@ require (
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
-	github.com/99designs/gqlgen v0.17.3 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/99designs/gqlgen v0.17.5 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.1.0 // indirect
