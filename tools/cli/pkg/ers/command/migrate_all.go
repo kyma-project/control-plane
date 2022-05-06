@@ -164,6 +164,7 @@ type Worker struct {
 }
 
 func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Work) {
+	random := rand.New(rand.NewSource(time.Now().UnixMicro()))
 	for work := range workChannel {
 		work.ProcessedCnt++
 		start := time.Now()
