@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -119,6 +120,11 @@ func (c *MigrationAllCommand) Run() error {
 				Green, instance.Id, Reset)
 			continue
 		}
+		if instance.Migrated {
+			c.log.Infof("%sInstance %s marked as migrated, skipping %s",
+				Green, instance.Id, Reset)
+			continue
+		}
 
 		if !instance.IsUsable() {
 			c.log.Infof("%sInstance state %s, skipping%s",
@@ -158,6 +164,7 @@ type Worker struct {
 }
 
 func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Work) {
+	random := rand.New(rand.NewSource(time.Now().UnixMicro()))
 	for work := range workChannel {
 		work.ProcessedCnt++
 		start := time.Now()
@@ -173,6 +180,11 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		}
 
 		if c.isNil(workerId, refreshed) {
+			continue
+		}
+
+		if refreshed.Migrated {
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s is migrated, skipping%s", workerId, Green, instance.Id, Reset)
 			continue
 		}
 
@@ -204,7 +216,8 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-				break
+				time.Sleep(time.Second * 15)
+				continue
 			}
 
 			if c.isNil(workerId, refreshed) {
@@ -215,7 +228,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(10+rand.Intn(5)) * time.Second)
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
