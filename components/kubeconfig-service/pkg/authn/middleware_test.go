@@ -38,7 +38,7 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, response.Code)
 		})
 		t.Run("Then response body is "+MALFORMED_TOKEN, func(t *testing.T) {
-			assert.Equal(t, MALFORMED_TOKEN, parseResponseBody(response.Body))
+			assert.Equal(t, PARSING_OIDC_TOKEN+MALFORMED_TOKEN, parseResponseBody(response.Body))
 		})
 	})
 
@@ -60,7 +60,7 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, response.Code)
 		})
 		t.Run("Then response body is "+DECODE_TOKEN_FAILD, func(t *testing.T) {
-			assert.Equal(t, DECODE_TOKEN_FAILD, parseResponseBody(response.Body))
+			assert.Equal(t, PARSING_OIDC_TOKEN+DECODE_TOKEN_FAILD, parseResponseBody(response.Body))
 		})
 	})
 
@@ -82,7 +82,7 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, response.Code)
 		})
 		t.Run("Then repsonse body is "+DECODE_TOKEN_FAILD, func(t *testing.T) {
-			assert.Equal(t, DECODE_TOKEN_FAILD, parseResponseBody(response.Body))
+			assert.Equal(t, PARSING_OIDC_TOKEN+DECODE_TOKEN_FAILD, parseResponseBody(response.Body))
 		})
 	})
 
@@ -104,7 +104,7 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.Equal(t, http.StatusForbidden, response.Code)
 		})
 		t.Run("Then response body is "+NO_GROUPS_IN_TOKEN, func(t *testing.T) {
-			assert.Equal(t, NO_GROUPS_IN_TOKEN, parseResponseBody(response.Body))
+			assert.Equal(t, PARSING_OIDC_TOKEN+NO_GROUPS_IN_TOKEN, parseResponseBody(response.Body))
 		})
 	})
 
