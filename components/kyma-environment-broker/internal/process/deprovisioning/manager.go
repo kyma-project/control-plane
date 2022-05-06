@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -98,9 +99,12 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			Operation: operation,
 		})
 
-		_, duration, err := m.operationManager.OperationFailed(operation, "Error retrieving provisioning operation", err, log)
+		if dberr.IsNotFound(err) {
+			_, duration, err := m.operationManager.OperationFailed(operation, "Error retrieving provisioning operation - operation not found", err, log)
+			return duration, err
+		}
 
-		return duration, err
+		return 3 * time.Second, nil
 	}
 
 	logOperation = logOperation.WithField("planID", provisioningOp.ProvisioningParameters.PlanID)
