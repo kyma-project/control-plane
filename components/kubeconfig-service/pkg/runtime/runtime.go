@@ -83,11 +83,12 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 	return &RuntimeClient{clientset, user, L2L3OperatiorRole, RollbackE}, nil
 }
 
-//kubeconfig login skr, create sa, clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
+//kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
 func (rtc *RuntimeClient) Run() (string, error) {
+	var resultE error
 	defer func() {
 		if err := rtc.Cleaner(); err != nil {
-			errors.Wrapf(err, "while Cleaner")
+			resultE = errors.Wrapf(err, "while Cleaner")
 		}
 	}()
 
@@ -108,12 +109,12 @@ func (rtc *RuntimeClient) Run() (string, error) {
 		return "", errors.Wrapf(err, "while getSecretToken from %s", rtc.User.ServiceAccountName)
 	}
 
-	crbErr := rtc.createClusterRoleBinding()
-	if crbErr != nil {
+	err = rtc.createClusterRoleBinding()
+	if err != nil {
 		rtc.RollbackE.Data = append(append(rtc.RollbackE.Data, SA), ClusterRole)
-		return "", errors.Wrapf(crbErr, "while createClusterRoleBinding %s", rtc.User.ClusterRoleBindingName)
+		return "", errors.Wrapf(err, "while createClusterRoleBinding %s", rtc.User.ClusterRoleBindingName)
 	}
-	return string(saToken), nil
+	return string(saToken), resultE
 }
 
 func (rtc *RuntimeClient) createServiceAccount() error {
