@@ -17,11 +17,12 @@ import (
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 )
 
-const NO_GROUPS_IN_TOKEN = "No [groups] in oidc token"
-const NO_EXP_IN_TOKEN = "No [exp] in oidc token"
-const DECODE_TOKEN_FAILD = "Decode token failed"
-const UNMARSHAL_TOKEN_FAILED = "Unmarshal token failed"
-const MALFORMED_TOKEN = "Malformed Token"
+const PARSING_OIDC_TOKEN = "while parsing oidc token: "
+const NO_GROUPS_IN_TOKEN = "no [groups] in oidc token"
+const NO_EXP_IN_TOKEN = "no [exp] in oidc token"
+const DECODE_TOKEN_FAILD = "decode token failed"
+const UNMARSHAL_TOKEN_FAILED = "unmarshal token failed"
+const MALFORMED_TOKEN = "malformed Token"
 const saRegex = "[^a-z0-9.-]+"
 const saCharset = "abcdefghijklmnopqrstuvwxyz0123456789"
 const login_name = "login_name"
@@ -42,7 +43,7 @@ func AuthMiddleware(a authenticator.Request) func(http.Handler) http.Handler {
 
 			userInfo, errMsg, code := ValidateToken(r)
 			if errMsg != "" {
-				http.Error(w, errMsg, code)
+				http.Error(w, PARSING_OIDC_TOKEN+errMsg, code)
 				return
 			}
 

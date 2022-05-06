@@ -86,7 +86,12 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 		return nil, err
 	}
 
-	tc.SaToken, err = run.GenerateSAToken([]byte(rawConfig), userInfo.ID, userInfo.Role)
+	runtimeClient, err := run.NewRuntimeClient([]byte(rawConfig), userInfo.ID, userInfo.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	tc.SaToken, err = runtimeClient.Run()
 	if err != nil {
 		return nil, err
 	}
