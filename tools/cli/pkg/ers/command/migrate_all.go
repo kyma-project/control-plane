@@ -24,11 +24,11 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	}
 
 	cobraCmd := &cobra.Command{
-		Use:     `migrate-all`,
-		Short:   `Triggers full SC migration accepting json objects as input.`,
-		Long:    `Migrates all instances that are feed through stdin in the form of json objects`,
+		Use:   `migrate-all`,
+		Short: `Triggers full SC migration accepting json objects as input.`,
+		Long:  `Migrates all instances that are feed through stdin in the form of json objects`,
 		Example: `  ers migrate -w2 -d	Triggers migration starting two workers`,
-		Args:    cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			// for possible param validation
 			cmd.log = logger.New()
@@ -44,7 +44,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
-	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Use fake ERS client to test")
+	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Timeout for one migration, for example 60m")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
