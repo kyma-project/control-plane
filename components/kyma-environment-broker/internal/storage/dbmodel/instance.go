@@ -30,7 +30,7 @@ type InstanceFilter struct {
 	RuntimeIDs                   []string
 	Regions                      []string
 	Plans                        []string
-	Domains                      []string
+	Shoots                       []string
 	States                       []InstanceState
 }
 

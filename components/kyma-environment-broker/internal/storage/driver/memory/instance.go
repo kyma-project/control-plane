@@ -265,7 +265,7 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 			continue
 		}
 		// Match domains with dashboard url
-		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
+		if ok = matchFilter(v.DashboardURL, filter.Shoots, domainMatch); !ok {
 			continue
 		}
 		if ok = s.matchInstanceState(v.InstanceID, filter.States); !ok {

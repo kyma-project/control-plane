@@ -409,7 +409,7 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Domains: []string{"Shoot-inst2"}})
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Shoots: []string{"Shoot-inst2"}})
 
 		// then
 		require.NoError(t, err)
