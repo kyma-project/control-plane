@@ -85,7 +85,6 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 
 //kubeconfig login skr, create sa, clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
 func (rtc *RuntimeClient) Run() (string, error) {
-
 	defer func() {
 		if err := rtc.Cleaner(); err != nil {
 			errors.Wrapf(err, "while Cleaner")
