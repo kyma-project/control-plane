@@ -48,6 +48,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -78,6 +79,23 @@ type BrokerSuiteTest struct {
 
 	t                   *testing.T
 	inputBuilderFactory input.CreatorForPlan
+
+	componentProvider componentProviderDecorated
+}
+
+type componentProviderDecorated struct {
+	componentProvider input.ComponentListProvider
+	decorator         map[string]v1alpha1.KymaComponent
+}
+
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
+	all, err := s.componentProvider.AllComponents(kymaVersion)
+	for i, c := range all {
+		if dc, found := s.decorator[c.Name]; found {
+			all[i] = dc
+		}
+	}
+	return all, err
 }
 
 func (s *BrokerSuiteTest) TearDown() {
@@ -104,8 +122,12 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	componentListProvider := kebRuntime.NewComponentsListProvider(
 		path.Join("testdata", "managed-runtime-components.yaml"),
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
+	decoratedComponentListProvider := componentProviderDecorated{
+		componentProvider: componentListProvider,
+		decorator:         make(map[string]v1alpha1.KymaComponent),
+	}
 
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider, input.Config{
 		MachineImageVersion:         "253",
 		KubernetesVersion:           "1.18",
 		MachineImage:                "coreos",
@@ -158,7 +180,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
 	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
-		eventBroker, rvc, db.RuntimeStates(), componentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
+		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
@@ -179,6 +201,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 		router:              mux.NewRouter(),
 		t:                   t,
 		inputBuilderFactory: inputFactory,
+		componentProvider:   decoratedComponentListProvider,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
