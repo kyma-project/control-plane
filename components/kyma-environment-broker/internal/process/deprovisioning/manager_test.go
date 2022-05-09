@@ -150,7 +150,7 @@ func TestManager_Execute(t *testing.T) {
 
 		// when
 		repeat, err := manager.Execute(operationIDSuccess)
-		assert.Equal(t, 3*time.Second, repeat)
+		assert.Equal(t, retryAfterTime, repeat)
 		assert.NoError(t, err)
 
 		// assert operation state as failed
