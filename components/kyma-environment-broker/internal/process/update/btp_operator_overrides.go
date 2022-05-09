@@ -1,6 +1,7 @@
 package update
 
 import (
+	"reflect"
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -32,22 +33,38 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
-	for _, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
-		if c.Component == BTPOperatorComponentName {
-			// already exists
-			return operation, 0, nil
-		}
-	}
-	c, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
+	// get btp-operator component input and calculate overrides
+	ci, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion)
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
 	}
-	if err := s.setBTPOperatorOverrides(&c, operation); err != nil {
+	if err := s.setBTPOperatorOverrides(&ci, operation); err != nil {
 		logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)
 		return operation, 30 * time.Second, nil
 	}
-	operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, c)
-	operation.RequiresReconcilerUpdate = true
+
+	// find last btp-operator config if any
+	last := -1
+	for i, c := range operation.LastRuntimeState.ClusterSetup.KymaConfig.Components {
+		if c.Component == BTPOperatorComponentName {
+			last = i
+			break
+		}
+	}
+
+	// didn't find btp-operator in last runtime state, append components
+	if last == -1 {
+		operation.LastRuntimeState.ClusterSetup.KymaConfig.Components = append(operation.LastRuntimeState.ClusterSetup.KymaConfig.Components, ci)
+		operation.RequiresReconcilerUpdate = true
+		return operation, 0, nil
+	}
+
+	// found btp-operator in last runtime state but config isn't matching
+	l := operation.LastRuntimeState.ClusterSetup.KymaConfig.Components[last]
+	if !reflect.DeepEqual(l, ci) {
+		operation.RequiresReconcilerUpdate = true
+		operation.LastRuntimeState.ClusterSetup.KymaConfig.Components[last] = ci
+	}
 	return operation, 0, nil
 }
 
