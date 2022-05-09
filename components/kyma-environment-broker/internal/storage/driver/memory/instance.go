@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"sync"
 
@@ -233,13 +232,8 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 	equal := func(a, b string) bool {
 		return a == b
 	}
-	domainMatch := func(url, filter string) bool {
-		// Preceeding character is either a . or / (after protocol://)
-		// match subdomain inputs
-		// match any .upperdomain zero or more times
-		matchExpr := fmt.Sprintf(`[./]%s(\.[0-9A-Za-z-]+)*$`, filter)
-		matched, err := regexp.MatchString(matchExpr, url)
-		return err == nil && matched
+	shootMatch := func(shootName, filter string) bool {
+		return shootName == filter
 	}
 
 	for _, v := range s.instances {
@@ -264,9 +258,12 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 		if ok = matchFilter(v.ProviderRegion, filter.Regions, equal); !ok {
 			continue
 		}
-		// Match domains with dashboard url
-		if ok = matchFilter(v.DashboardURL, filter.Domains, domainMatch); !ok {
-			continue
+		if len(filter.Shoots) > 0 {
+			// required for shootName
+			lastOp, _ := s.operationsStorage.GetLastOperation(v.InstanceID)
+			if ok = matchFilter(lastOp.ShootName, filter.Shoots, shootMatch); !ok {
+				continue
+			}
 		}
 		if ok = s.matchInstanceState(v.InstanceID, filter.States); !ok {
 			continue
