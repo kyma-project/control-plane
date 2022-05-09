@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"sync"
 
@@ -234,9 +233,7 @@ func (s *instances) filterInstances(filter dbmodel.InstanceFilter) []internal.In
 		return a == b
 	}
 	shootMatch := func(shootName, filter string) bool {
-		matchExpr := fmt.Sprintf(`^(%s)$`, filter)
-		matched, err := regexp.MatchString(matchExpr, shootName)
-		return err == nil && matched
+		return shootName == filter
 	}
 
 	for _, v := range s.instances {
