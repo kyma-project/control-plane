@@ -17,6 +17,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	retryAfterTime = 1 * time.Minute
+)
+
 type Step interface {
 	Name() string
 	Run(operation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error)
@@ -79,7 +83,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	op, err := m.operationStorage.GetDeprovisioningOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch DeprovisioningOperation from storage: %s", err)
-		return 3 * time.Second, nil
+		return retryAfterTime, nil
 	}
 	operation := *op
 
@@ -104,7 +108,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			return duration, err
 		}
 
-		return 3 * time.Second, nil
+		return retryAfterTime, nil
 	}
 
 	logOperation = logOperation.WithField("planID", provisioningOp.ProvisioningParameters.PlanID)
