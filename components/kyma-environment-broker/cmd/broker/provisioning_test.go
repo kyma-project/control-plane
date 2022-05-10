@@ -215,6 +215,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 

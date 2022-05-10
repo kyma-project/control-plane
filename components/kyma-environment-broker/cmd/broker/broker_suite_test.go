@@ -1258,6 +1258,11 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 					Value:  "https://test.auth.com",
 					Secret: false,
 				},
+				{
+					Key:    "cluster.id",
+					Value:  "cluster_id",
+					Secret: false,
+				},
 			},
 		},
 	}
@@ -1269,5 +1274,7 @@ func mockBTPOperatorClusterID() {
 			return "cluster_id", nil
 		}
 	}
+	provisioning.ConfigMapGetter = mock
 	update.ConfigMapGetter = mock
+	upgrade_kyma.ConfigMapGetter = mock
 }

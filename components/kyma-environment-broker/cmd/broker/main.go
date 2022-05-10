@@ -677,7 +677,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		{
 			condition: provisioning.WhenBTPOperatorCredentialsProvided,
 			stage:     createRuntimeStageName,
-			step:      provisioning.NewBTPOperatorOverridesStep(),
+			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
 		},
 		{
 			condition: provisioning.ForKyma1,
@@ -956,7 +956,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsProvided,
-			step:   upgrade_kyma.NewBTPOperatorOverridesStep(),
+			step:   upgrade_kyma.NewBTPOperatorOverridesStep(db.Operations()),
 		},
 		{
 			weight: 4,
