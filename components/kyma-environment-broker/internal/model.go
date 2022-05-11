@@ -257,7 +257,8 @@ type InstanceDetails struct {
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
 
-	SCMigrationTriggered bool `json:"migration_triggered"`
+	SCMigrationTriggered    bool   `json:"migration_triggered"`
+	ServiceManagerClusterID string `json:"sm_cluster_id"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation

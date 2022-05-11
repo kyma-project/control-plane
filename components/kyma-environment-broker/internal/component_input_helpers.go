@@ -34,7 +34,7 @@ const (
 	BTPOperatorClusterID    = "cluster.id"
 )
 
-type ClusterIDGetter func() (string, error)
+type ClusterIDGetter func(string) (string, error)
 
 func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 	r.DisableOptionalComponent(SCMigrationComponentName)
@@ -45,7 +45,7 @@ func DisableServiceManagementComponents(r ProvisionerInputCreator) {
 	r.DisableOptionalComponent(BTPOperatorComponentName)
 }
 
-func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
+func GetBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
 		{
 			Key:    BTPOperatorClientID,
@@ -76,12 +76,8 @@ func getBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredential
 	}
 }
 
-func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) ([]reconcilerApi.Configuration, error) {
-	id, err := clusterIdGetter()
-	if err != nil {
-		return nil, err
-	}
-	overrides := getBTPOperatorProvisioningOverrides(creds, id)
+func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials, clusterID string) []reconcilerApi.Configuration {
+	overrides := GetBTPOperatorProvisioningOverrides(creds, clusterID)
 	var config []reconcilerApi.Configuration
 	for _, c := range overrides {
 		secret := false
@@ -91,50 +87,38 @@ func GetBTPOperatorReconcilerOverrides(creds *ServiceManagerOperatorCredentials,
 		rc := reconcilerApi.Configuration{Key: c.Key, Value: c.Value, Secret: secret}
 		config = append(config, rc)
 	}
-	return config, nil
+	return config
 }
 
-func CreateBTPOperatorProvisionInput(r ProvisionerInputCreator, creds *ServiceManagerOperatorCredentials, clusterIdGetter ClusterIDGetter) error {
-	id, err := clusterIdGetter()
+func GetClusterIDWithKubeconfig(kubeconfig string) (string, error) {
+	cfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
 	if err != nil {
-		return err
+		return "", err
 	}
-	overrides := getBTPOperatorProvisioningOverrides(creds, id)
-	r.AppendOverrides(BTPOperatorComponentName, overrides)
-	return nil
-}
-
-func GetClusterIDWithKubeconfig(kubeconfig string) ClusterIDGetter {
-	return func() (string, error) {
-		cfg, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
-		if err != nil {
-			return "", err
+	cs, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", err
+	}
+	cm, err := cs.CoreV1().ConfigMaps("kyma-system").Get(context.Background(), "cluster-info", metav1.GetOptions{})
+	if k8serrors.IsNotFound(err) {
+		cm = &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cluster-info",
+				Namespace: "kyma-system",
+			},
+			Data: map[string]string{
+				"id": uuid.NewString(),
+			},
 		}
-		cs, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return "", err
-		}
-		cm, err := cs.CoreV1().ConfigMaps("kyma-system").Get(context.Background(), "cluster-info", metav1.GetOptions{})
-		if k8serrors.IsNotFound(err) {
-			cm = &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cluster-info",
-					Namespace: "kyma-system",
-				},
-				Data: map[string]string{
-					"id": uuid.NewString(),
-				},
-			}
-			if cm, err = cs.CoreV1().ConfigMaps(cm.Namespace).Create(context.Background(), cm, metav1.CreateOptions{}); err != nil {
-				return "", err
-			}
-			return cm.Data["id"], nil
-		}
-		if err != nil {
+		if cm, err = cs.CoreV1().ConfigMaps(cm.Namespace).Create(context.Background(), cm, metav1.CreateOptions{}); err != nil {
 			return "", err
 		}
 		return cm.Data["id"], nil
 	}
+	if err != nil {
+		return "", err
+	}
+	return cm.Data["id"], nil
 }
 
 func CheckBTPCredsValid(clusterConfiguration reconcilerApi.Cluster) error {

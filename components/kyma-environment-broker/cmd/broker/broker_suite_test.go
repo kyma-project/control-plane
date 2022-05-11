@@ -1167,7 +1167,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 
 // fixExpectedComponentListWithSMOperator provides a fixed components list for Service Management 2.0 - when `sm_operator_credentials`
 // object is provided: btp-opeartor component should be installed
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []reconcilerApi.Component {
+func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smClusterID string) []reconcilerApi.Component {
 	return []reconcilerApi.Component{
 		{
 			URL:       "",
@@ -1260,7 +1260,7 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 				},
 				{
 					Key:    "cluster.id",
-					Value:  "cluster_id",
+					Value:  smClusterID,
 					Secret: false,
 				},
 			},
@@ -1269,12 +1269,9 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID string) []
 }
 
 func mockBTPOperatorClusterID() {
-	mock := func(string) internal.ClusterIDGetter {
-		return func() (string, error) {
-			return "cluster_id", nil
-		}
+	mock := func(string) (string, error) {
+		return "cluster_id", nil
 	}
-	provisioning.ConfigMapGetter = mock
 	update.ConfigMapGetter = mock
 	upgrade_kyma.ConfigMapGetter = mock
 }

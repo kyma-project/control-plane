@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
+var ConfigMapGetter internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
 
 type BTPOperatorOverridesStep struct {
 	operationManager *process.UpgradeKymaOperationManager
@@ -27,14 +27,24 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	if err := internal.CreateBTPOperatorProvisionInput(operation.InputCreator, operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, ConfigMapGetter(operation.InstanceDetails.Kubeconfig)); err != nil {
-		return s.operationManager.OperationFailed(operation, "failed to create BTP Operator input", err, log)
+	clusterID := operation.InstanceDetails.ServiceManagerClusterID
+	if clusterID == "" {
+		var err error
+		if clusterID, err = ConfigMapGetter(operation.InstanceDetails.Kubeconfig); err != nil {
+			return s.operationManager.OperationFailed(operation, "failed to create BTP Operator input", err, log)
+		}
 	}
+	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
+	overrides := internal.GetBTPOperatorProvisioningOverrides(creds, clusterID)
+	f := func(op *internal.UpgradeKymaOperation) {
+		op.InstanceDetails.ServiceManagerClusterID = clusterID
+	}
+	operation.InputCreator.AppendOverrides(internal.BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
-	return operation, 0, nil
+	return s.operationManager.UpdateOperation(operation, f, log)
 }

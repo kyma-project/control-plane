@@ -215,7 +215,6 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
-	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
@@ -259,11 +258,12 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
+	op, _ := suite.db.Operations().GetProvisioningOperationByID(opID)
 	suite.AssertClusterKymaConfig(opID, reconcilerApi.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMOperator(opID),
+		Components:     suite.fixExpectedComponentListWithSMOperator(opID, op.InstanceDetails.ServiceManagerClusterID),
 	})
 
 	suite.AssertClusterConfigWithKubeconfig(opID)
