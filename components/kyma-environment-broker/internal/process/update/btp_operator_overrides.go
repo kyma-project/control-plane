@@ -14,7 +14,7 @@ import (
 
 const BTPOperatorComponentName = "btp-operator"
 
-var ConfigMapGetter func(string) internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
+var ConfigMapGetter internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
 
 type BTPOperatorOverridesStep struct {
 	operationManager *process.UpdateOperationManager
@@ -38,9 +38,8 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
 	}
-	if err := s.setBTPOperatorOverrides(&ci, operation); err != nil {
-		logger.Errorf("failed to get cluster_id from in cluster ConfigMap kyma-system/cluster-info: %v. Retrying in 30s.", err)
-		return operation, 30 * time.Second, nil
+	if err := s.setBTPOperatorOverrides(&ci, operation, logger); err != nil {
+		return s.operationManager.OperationFailed(operation, "failed to create BTP Operator input", err, logger)
 	}
 
 	// find last btp-operator config if any
@@ -68,12 +67,23 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	return operation, 0, nil
 }
 
-func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Component, operation internal.UpdatingOperation) error {
+func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Component, operation internal.UpdatingOperation, logger logrus.FieldLogger) error {
+	clusterID := operation.InstanceDetails.ServiceManagerClusterID
+	if clusterID == "" {
+		var err error
+		if clusterID, err = ConfigMapGetter(operation.InstanceDetails.Kubeconfig); err != nil {
+			return err
+		}
+	}
+
 	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
-	config, err := internal.GetBTPOperatorReconcilerOverrides(creds, ConfigMapGetter(operation.InstanceDetails.Kubeconfig))
-	if err != nil {
+	c.Configuration = internal.GetBTPOperatorReconcilerOverrides(creds, clusterID)
+	if clusterID != operation.InstanceDetails.ServiceManagerClusterID {
+		f := func(op *internal.UpdatingOperation) {
+			op.InstanceDetails.ServiceManagerClusterID = clusterID
+		}
+		_, _, err := s.operationManager.UpdateOperation(operation, f, logger)
 		return err
 	}
-	c.Configuration = config
 	return nil
 }
