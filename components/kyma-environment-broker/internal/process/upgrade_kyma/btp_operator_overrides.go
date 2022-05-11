@@ -36,9 +36,6 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, 
 	}
 	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
 	overrides := internal.GetBTPOperatorProvisioningOverrides(creds, clusterID)
-	f := func(op *internal.UpgradeKymaOperation) {
-		op.InstanceDetails.ServiceManagerClusterID = clusterID
-	}
 	operation.InputCreator.AppendOverrides(internal.BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
@@ -46,5 +43,11 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, 
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
 	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
+	if clusterID == operation.InstanceDetails.ServiceManagerClusterID {
+		return operation, 0, nil
+	}
+	f := func(op *internal.UpgradeKymaOperation) {
+		op.InstanceDetails.ServiceManagerClusterID = clusterID
+	}
 	return s.operationManager.UpdateOperation(operation, f, log)
 }
