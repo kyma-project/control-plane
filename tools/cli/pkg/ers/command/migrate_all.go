@@ -45,6 +45,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
 	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Timeout for one migration, for example 60m")
+	cobraCmd.Flags().BoolVarP(&cmd.force, "force", "", false, "Run migration in migrated also")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
@@ -71,6 +72,7 @@ type MigrationAllCommand struct {
 	stats     *Stats
 
 	metadataStorage MetadataStorage
+	force           bool
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -104,6 +106,9 @@ func (c *MigrationAllCommand) Run() error {
 	}
 
 	fmt.Printf("Starting migration for %d instances\n", len(instances))
+	if c.force {
+		c.log.Infof("%sForce flag enabled, all migrated instances will be migrated again%s", Green, Reset)
+	}
 
 	for _, instance := range instances {
 
@@ -115,12 +120,12 @@ func (c *MigrationAllCommand) Run() error {
 			c.log.Warnf("Get %s Metadata error: %s", instance.Id, err.Error())
 			continue
 		}
-		if meta.KymaMigrated {
+		if meta.KymaMigrated && !c.force {
 			c.log.Infof("%sInstance %s already migrated, skipping %s",
 				Green, instance.Id, Reset)
 			continue
 		}
-		if instance.Migrated {
+		if instance.Migrated && !c.force {
 			c.log.Infof("%sInstance %s marked as migrated, skipping %s",
 				Green, instance.Id, Reset)
 			continue
@@ -182,7 +187,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			continue
 		}
 
-		if refreshed.Migrated {
+		if refreshed.Migrated && !c.force {
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s is migrated, skipping%s", workerId, Green, instance.Id, Reset)
 			continue
 		}
