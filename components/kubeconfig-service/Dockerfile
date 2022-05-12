@@ -25,7 +25,7 @@ WORKDIR /app
 #
 # Install certificates
 #
-RUN apk add openssl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
+RUN apk --no-cache add --update openssl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 
 RUN apk add --no-cache ca-certificates
 
