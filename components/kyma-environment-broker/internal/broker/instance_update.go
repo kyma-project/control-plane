@@ -302,7 +302,6 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 			logger.Errorf(msg)
 			return nil, false, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
 		}
-		b.operationStorage.GetLastOperation(instance.InstanceID)
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 
