@@ -678,7 +678,6 @@ github.com/gardener/etcd-druid v0.1.15/go.mod h1:BHXG8N04Dl4On7Ie6cErwmpvzncNrme
 github.com/gardener/etcd-druid v0.3.0/go.mod h1:uxZjZ57gIgpX554vGp495g2i8DByoS3OkVtiqsxtbwk=
 github.com/gardener/etcd-druid v0.5.0/go.mod h1:Ca2ZM9dyMdZI6k5RW4wu8CG8q5cNeF/HSE2P+hut0+g=
 github.com/gardener/etcd-druid v0.6.1-0.20211022081522-071746e9d0bd/go.mod h1:BukSWtT9sxjCa3H4q2biJMIo52o+57MuBBifzzZkhPo=
-github.com/gardener/etcd-druid v0.7.0/go.mod h1:mxKujGcT1iduAa9bos1LWMEJUIOlOL/TegicbsiH2Vk=
 github.com/gardener/etcd-druid v0.8.0/go.mod h1:EJF6z4Ghv2FGUe1UzZWOEF1MxCA186fxvjBO44oSJX4=
 github.com/gardener/external-dns-management v0.7.3/go.mod h1:Y3om11E865x4aQ7cmcHjknb8RMgCO153huRb/SvP+9o=
 github.com/gardener/external-dns-management v0.7.7/go.mod h1:egCe/FPOsUbXA4WV0ne3h7nAD/nLT09hNt/FQQXK+ec=
@@ -694,7 +693,6 @@ github.com/gardener/gardener v1.23.0/go.mod h1:xS/sYyzYsq2W0C79mT98G/qoOTvy/hHTf
 github.com/gardener/gardener v1.24.0/go.mod h1:Ka66bCr/+tUwkf2Ov4JDMEEvdeeGtHsCfUqw46k7w5A=
 github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G278DY720FI=
 github.com/gardener/gardener v1.36.0/go.mod h1:aVEbZy2WybsuwfXfUFNfOYz1JOmMjEOeYbv+sN9PzE0=
-github.com/gardener/gardener v1.40.2/go.mod h1:lIao8ImIqVztkLy7soQRZ/73+mvndN0XGhSfhaIU+Y8=
 github.com/gardener/gardener v1.44.0/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/gardener/gardener v1.46.0 h1:w4opfcUg/n6DdbRrefccVhQkhJhZYsEjSNrT5j4e/d0=
@@ -702,8 +700,6 @@ github.com/gardener/gardener v1.46.0/go.mod h1:BsQ9s0Ms5rU1IAS1doVceBGj4kNBhSMQK
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.35.0 h1:9sQJSa9y7H6CmmWkJu2rf9ooqpaGYSon7yTWPSWO84k=
 github.com/gardener/gardener-extension-provider-aws v1.35.0/go.mod h1:KXDUHTz5JsD6uFVeVQ4XBAfoheA/QSHd0/HaQReptuE=
-github.com/gardener/gardener-extension-provider-azure v1.26.3 h1:HrayB/xY/I4FMQK+WmhmwaYQkMy9wsblb/uw+Pa08fk=
-github.com/gardener/gardener-extension-provider-azure v1.26.3/go.mod h1:z+lv3weFbJ2CR+SAvII/mCj6Fwpm97capbWNMz1QJKY=
 github.com/gardener/gardener-extension-provider-azure v1.27.0 h1:xmfOcPzwRQ6NPXA7LY+pEFmsUgYaQ8IzUu6TGh2sS+g=
 github.com/gardener/gardener-extension-provider-azure v1.27.0/go.mod h1:mzDhG8VGAwro2z7Ny0HnaJlKi20GAtVeBD6dQQBIpYY=
 github.com/gardener/gardener-extension-provider-gcp v1.22.0 h1:yOt0FCaVv80qBBBB1f5nbuyDUCq3j6laSGYgribfE0g=
@@ -1413,8 +1409,6 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986/go.mod h1:/x7yd8gZei/mm/CgoxEToPvkkJIXKTb4DYVC8gcKn78=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220505103127-579766fa0061 h1:2XtpSJhWRUvQ5d3yxt4eSTEs60p1w5uws6kuVw5mYEQ=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220505103127-579766fa0061/go.mod h1:qZ6O1eRp3HWmnNmBQ0+Fy+AQsuM0fSDRPnQKmu7QeFw=
 github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220506145327-f6d66a68863d h1:fcbty1yFgEuqsM088K9rbQu9Pq8dhIVhqL48FLHV5uY=
 github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220506145327-f6d66a68863d/go.mod h1:qZ6O1eRp3HWmnNmBQ0+Fy+AQsuM0fSDRPnQKmu7QeFw=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8 h1:8im1YmVAcwDLVoLhvFFnqdQW8c2wsqX3uzdxS9GZkMc=
