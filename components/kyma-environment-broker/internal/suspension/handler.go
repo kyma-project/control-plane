@@ -114,9 +114,10 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 
 func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) error {
 	id := uuid.New().String()
-
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
 	operation.InstanceDetails, err = instance.GetInstanceDetails()
+	// do not perform migration for provisioning (unsuspension)
+	operation.InstanceDetails.SCMigrationTriggered = false
 	if err != nil {
 		h.log.Errorf("unable to extract shoot name: %s", err.Error())
 		return err
