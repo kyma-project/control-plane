@@ -32,42 +32,6 @@ func (s *ApplyClusterConfigurationStep) Name() string {
 	return "Apply_Cluster_Configuration"
 }
 
-func checkBTPCredsValid(clusterConfiguration reconcilerApi.Cluster) error {
-	vals := make(map[string]bool)
-	requiredKeys := []string{internal.BTPOperatorClientID, internal.BTPOperatorClientSecret, internal.BTPOperatorURL, internal.BTPOperatorTokenURL}
-	hasBTPOperator := false
-	var errs []string
-	for _, c := range clusterConfiguration.KymaConfig.Components {
-		if c.Component == internal.BTPOperatorComponentName {
-			hasBTPOperator = true
-			for _, cfg := range c.Configuration {
-				for _, key := range requiredKeys {
-					if cfg.Key == key {
-						vals[key] = true
-						if cfg.Value == nil {
-							errs = append(errs, fmt.Sprintf("missing required value for %v", key))
-						}
-						if val, ok := cfg.Value.(string); !ok || val == "" {
-							errs = append(errs, fmt.Sprintf("missing required value for %v", key))
-						}
-					}
-				}
-			}
-		}
-	}
-	if hasBTPOperator {
-		for _, key := range requiredKeys {
-			if !vals[key] {
-				errs = append(errs, fmt.Sprintf("missing required key %v", key))
-			}
-		}
-		if len(errs) != 0 {
-			return fmt.Errorf("BTP Operator is about to be installed but is missing required configuration: %v", strings.Join(errs, ", "))
-		}
-	}
-	return nil
-}
-
 func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	if operation.ClusterConfigurationApplied {
 		log.Infof("Cluster configuration already applied")
@@ -87,7 +51,7 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", err, log)
 	}
 
-	if err := checkBTPCredsValid(clusterConfiguration); err != nil {
+	if err := internal.CheckBTPCredsValid(clusterConfiguration); err != nil {
 		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
 	}

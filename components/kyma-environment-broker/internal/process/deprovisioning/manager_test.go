@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,9 +14,11 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/automock"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -98,6 +101,68 @@ func TestManager_Execute(t *testing.T) {
 			}))
 		})
 	}
+
+	t.Run("should fail operation when provisioning operation not found", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		operations := memoryStorage.Operations()
+		err := operations.InsertDeprovisioningOperation(fixDeprovisionOperation(operationIDSuccess))
+
+		assert.NoError(t, err)
+
+		eventBroker := event.NewPubSub(logrus.New())
+		eventCollector := &collectingEventHandler{}
+		eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, eventCollector.OnEvent)
+
+		manager := NewManager(operations, eventBroker, log)
+
+		// when
+		repeat, err := manager.Execute(operationIDSuccess)
+		assert.Equal(t, time.Duration(0), repeat)
+		assert.Error(t, err)
+
+		// assert operation state as failed
+		operation, err := memoryStorage.Deprovisioning().
+			GetDeprovisioningOperationByID(operationIDSuccess)
+
+		assert.NoError(t, err)
+		assert.Equal(t, domain.Failed, operation.State)
+
+		assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
+			return len(eventCollector.Events) == 1, nil
+		}))
+	})
+
+	t.Run("should repeat operation when provisioning operation error other than not found", func(t *testing.T) {
+		// given
+		log := logrus.New()
+		memoryStorage := mocks.Operations{}
+		operation := fixDeprovisionOperation(operationIDSuccess)
+		memoryStorage.On("GetDeprovisioningOperationByID", operationIDSuccess).Return(&operation, nil)
+		memoryStorage.On("GetProvisioningOperationByInstanceID", mock.Anything).Return(nil, errors.New("Error connecting to database"))
+
+		eventBroker := event.NewPubSub(logrus.New())
+		eventCollector := &collectingEventHandler{}
+		eventBroker.Subscribe(process.DeprovisioningStepProcessed{}, eventCollector.OnEvent)
+
+		manager := NewManager(&memoryStorage, eventBroker, log)
+
+		// when
+		repeat, err := manager.Execute(operationIDSuccess)
+		assert.Equal(t, retryAfterTime, repeat)
+		assert.NoError(t, err)
+
+		// assert operation state as failed
+		assert.NoError(t, err)
+		// assert.True(t, dberr.IsNotFound(err))
+		assert.Equal(t, domain.InProgress, operation.State)
+
+		assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 2*time.Second, func() (bool, error) {
+			return len(eventCollector.Events) == 1, nil
+		}))
+	})
+
 }
 
 func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {

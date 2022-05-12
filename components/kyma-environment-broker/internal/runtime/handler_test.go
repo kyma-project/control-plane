@@ -141,15 +141,23 @@ func TestRuntimeHandler(t *testing.T) {
 		testTime2 := time.Now().Add(time.Minute)
 		testInstance1 := fixInstance(testID1, testTime1)
 		testInstance2 := fixInstance(testID2, testTime2)
+		testInstance1.InstanceDetails = fixture.FixInstanceDetails(testID1)
+		testInstance2.InstanceDetails = fixture.FixInstanceDetails(testID2)
+		testOp1 := fixture.FixProvisioningOperation("op1", testID1)
+		testOp2 := fixture.FixProvisioningOperation("op2", testID2)
 
 		err := instances.Insert(testInstance1)
 		require.NoError(t, err)
 		err = instances.Insert(testInstance2)
 		require.NoError(t, err)
+		err = operations.InsertProvisioningOperation(testOp1)
+		require.NoError(t, err)
+		err = operations.InsertProvisioningOperation(testOp2)
+		require.NoError(t, err)
 
 		runtimeHandler := runtime.NewHandler(instances, operations, states, 2, "")
 
-		req, err := http.NewRequest("GET", fmt.Sprintf("/runtimes?account=%s&subaccount=%s&instance_id=%s&runtime_id=%s&region=%s&shoot=%s", testID1, testID1, testID1, testID1, testID1, testID1), nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("/runtimes?account=%s&subaccount=%s&instance_id=%s&runtime_id=%s&region=%s&shoot=%s", testID1, testID1, testID1, testID1, testID1, fmt.Sprintf("Shoot-%s", testID1)), nil)
 		require.NoError(t, err)
 
 		rr := httptest.NewRecorder()

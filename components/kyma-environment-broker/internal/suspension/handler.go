@@ -1,10 +1,6 @@
 package suspension
 
 import (
-	"fmt"
-	"net/url"
-	"strings"
-
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -12,7 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -138,17 +133,4 @@ func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus
 	}
 	h.provisioningQueue.Add(operation.ID)
 	return nil
-}
-
-func extractShootNameAndDomain(instance *internal.Instance) (string, string, error) {
-	parsed, err := url.Parse(instance.DashboardURL)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "while parsing dashboard url %s", instance.DashboardURL)
-	}
-
-	parts := strings.Split(parsed.Host, ".")
-	if len(parts) <= 1 {
-		return "", "", fmt.Errorf("host is too short: %s", parsed.Host)
-	}
-	return parts[1], parsed.Host[len(parts[0])+1:], nil
 }

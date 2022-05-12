@@ -10,6 +10,7 @@ import (
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1735,6 +1736,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
 					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
 					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
+					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
 					{Key: "cluster.id", Value: "cluster_id"},
 				},
@@ -1748,6 +1750,62 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	time.Sleep(5 * time.Millisecond)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+
+	// change component input (additional components) and see if it works with update operation
+	suite.componentProvider.decorator["btp-operator"] = v1alpha1.KymaComponent{
+		Name:      "btp-operator",
+		Namespace: "kyma-system",
+		Source:    &v1alpha1.ComponentSource{URL: "https://btp-operator/updated"},
+	}
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "john.smith@email.com",
+		"sm_operator_credentials": {
+			"clientid": "testClientID",
+			"clientsecret": "testClientSecret",
+			"sm_url": "https://service-manager.kyma.com",
+			"url": "https://test.auth.com",
+			"xsappname": "testXsappname"
+		},
+		"isMigration": true
+	}
+}`)
+
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	update2OperationID := suite.DecodeOperationID(resp)
+	time.Sleep(5 * time.Millisecond)
+	suite.FinishUpdatingOperationByReconciler(update2OperationID)
+	i, err = suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after second update")
+	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after second update")
+	rsu3, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime after second update")
+	assert.NotEqual(t, rsu2.ID, rsu3.ID, "runtime_state ID from second call should differ runtime_state ID from third call")
+	assert.Equal(t, update2OperationID, rsu3.OperationID, "runtime state second update operation ID")
+	assert.ElementsMatch(t, rsu3.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
+	assert.ElementsMatch(t, componentNames(rsu3.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
+	for _, c := range rsu3.ClusterSetup.KymaConfig.Components {
+		if c.Component == "btp-operator" {
+			exp := reconcilerApi.Component{
+				Component: "btp-operator",
+				Namespace: "kyma-system",
+				URL:       "https://btp-operator/updated",
+				Configuration: []reconcilerApi.Configuration{
+					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
+					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
+					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
+					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
+					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
+					{Key: "cluster.id", Value: "cluster_id"},
+				},
+			}
+			assert.Equal(t, exp, c)
+		}
+	}
+
 }
 
 func TestUpdateSCMigrationRejection(t *testing.T) {

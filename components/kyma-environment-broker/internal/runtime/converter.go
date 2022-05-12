@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"strings"
-
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
@@ -74,6 +72,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		Provider:                    string(instance.Provider),
 		ProviderRegion:              instance.ProviderRegion,
 		UserID:                      instance.Parameters.ErsContext.UserID,
+		ShootName:                   instance.InstanceDetails.ShootName,
 		Status: pkg.RuntimeStatus{
 			CreatedAt:  instance.CreatedAt,
 			ModifiedAt: instance.UpdatedAt,
@@ -81,11 +80,6 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 	}
 
 	c.setRegionOrDefault(instance, &toReturn)
-
-	urlSplitted := strings.Split(instance.DashboardURL, ".")
-	if len(urlSplitted) > 1 {
-		toReturn.ShootName = urlSplitted[1]
-	}
 
 	return toReturn, nil
 }

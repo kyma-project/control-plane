@@ -53,6 +53,10 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 		log.Errorf("Unable to create cluster configuration: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create cluster configuration", err, log)
 	}
+	if err := internal.CheckBTPCredsValid(clusterConfiguration); err != nil {
+		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
+		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
+	}
 
 	err = s.runtimeStateStorage.Insert(
 		internal.NewRuntimeStateWithReconcilerInput(clusterConfiguration.RuntimeID, operation.ID, &clusterConfiguration))

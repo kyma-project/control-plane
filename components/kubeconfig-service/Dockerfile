@@ -25,8 +25,9 @@ WORKDIR /app
 #
 # Install certificates
 #
+RUN apk --no-cache add --update openssl zlib busybox --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 
-RUN apk add --no-cache ca-certificates openssl
+RUN apk add --no-cache ca-certificates
 
 #
 # Copy binary

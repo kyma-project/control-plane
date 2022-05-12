@@ -258,11 +258,12 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		Region:          "eu-central-1",
 	})
 
+	op, _ := suite.db.Operations().GetProvisioningOperationByID(opID)
 	suite.AssertClusterKymaConfig(opID, reconcilerApi.KymaConfig{
 		Version:        "2.0",
 		Profile:        "Production",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMOperator(opID),
+		Components:     suite.fixExpectedComponentListWithSMOperator(opID, op.InstanceDetails.ServiceManagerClusterID),
 	})
 
 	suite.AssertClusterConfigWithKubeconfig(opID)
@@ -424,27 +425,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		})
 
 	}
-}
-
-func TestUnsuspensionWithoutShootName(t *testing.T) {
-	// given
-	suite := NewProvisioningSuite(t)
-
-	// when
-	// Create an instance, succeeded suspension operation in the past and a pending unsuspension operation
-	unsuspensionOperationID := suite.CreateUnsuspension(RuntimeOptions{})
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.InProgress)
-	suite.AssertProvisionerStartedProvisioning(unsuspensionOperationID)
-
-	// when
-	suite.FinishProvisioningOperationByProvisioner(unsuspensionOperationID)
-
-	// then
-	suite.WaitForProvisioningState(unsuspensionOperationID, domain.Succeeded)
-	suite.AssertAllStagesFinished(unsuspensionOperationID)
-	suite.AssertProvisioningRequest()
 }
 
 func TestProvisioning_RuntimeOverrides(t *testing.T) {

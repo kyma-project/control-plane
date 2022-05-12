@@ -61,3 +61,5 @@ docs/investigations/storage/postgres/sql/*.csv
 
 # Reconciler oapi
 components/reconciler/docs/external_api.yaml
+/tools/cli/pkg/ers/metadata/metadata/1234.json
+/tools/cli/pkg/ers/metadata/metadata/

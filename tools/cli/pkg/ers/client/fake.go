@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
@@ -13,6 +14,7 @@ type migrationInfo struct {
 }
 
 type Fake struct {
+	mu         sync.Mutex
 	migrations map[string]migrationInfo
 }
 
@@ -23,6 +25,8 @@ func NewFake() *Fake {
 }
 
 func (f *Fake) GetOne(id string) (*ers.Instance, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	fmt.Printf(">>> GetOne(%s)\n", id)
 	m, found := f.migrations[id]
 	if !found {
@@ -46,6 +50,8 @@ func (f *Fake) GetPaged(pageStart, pageSize int) ([]ers.Instance, error) {
 }
 
 func (f *Fake) Migrate(instanceID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	fmt.Printf(">>> Migrate(%s)\n", instanceID)
 	if _, found := f.migrations[instanceID]; found {
 		return nil
