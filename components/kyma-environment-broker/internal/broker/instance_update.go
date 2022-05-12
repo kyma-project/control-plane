@@ -293,15 +293,6 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 
 	if ersContext.IsMigration {
-		if k2, version, err := b.isKyma2(instance); err != nil {
-			msg := "failed to determine kyma version"
-			logger.Errorf("%v: %v", msg, err)
-			return nil, false, fmt.Errorf(msg)
-		} else if !k2 {
-			msg := fmt.Sprintf("performing btp-operator migration is supported only for kyma 2.x, current version: %v", version)
-			logger.Errorf(msg)
-			return nil, false, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
-		}
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 
