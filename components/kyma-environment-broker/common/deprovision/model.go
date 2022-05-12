@@ -19,5 +19,5 @@ type DeprovisionParameters struct {
 	EndpointURL  string
 	Shoot        string
 	InstanceID   string
-	ctx          context.Context
+	Context      context.Context
 }

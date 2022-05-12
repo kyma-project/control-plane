@@ -29,7 +29,7 @@ func NewDeprovisionClient(parameters DeprovisionParameters) *DeprovisionClient {
 		Scopes:       parameters.Scopes,
 		AuthStyle:    parameters.AuthStyle,
 	}
-	httpClientOAuth := cfg.Client(parameters.ctx)
+	httpClientOAuth := cfg.Client(parameters.Context)
 	httpClientOAuth.Timeout = 30 * time.Second
 
 	return &DeprovisionClient{
@@ -60,8 +60,4 @@ func (c DeprovisionClient) DeprovisionRuntime(runtimeID string) error {
 	}
 	c.log.Infof("Deprovisioning request returned code: " + response.Status)
 	return nil
-}
-
-func GetInstanceIDFromShootName(shootName string) string {
-	panic("Implement Me")
 }
