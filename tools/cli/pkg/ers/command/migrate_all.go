@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -43,7 +44,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
-	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Use fake ERS client to test")
+	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Timeout for one migration, for example 60m")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
@@ -119,6 +120,11 @@ func (c *MigrationAllCommand) Run() error {
 				Green, instance.Id, Reset)
 			continue
 		}
+		if instance.Migrated {
+			c.log.Infof("%sInstance %s marked as migrated, skipping %s",
+				Green, instance.Id, Reset)
+			continue
+		}
 
 		if !instance.IsUsable() {
 			c.log.Infof("%sInstance state %s, skipping%s",
@@ -176,6 +182,11 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			continue
 		}
 
+		if refreshed.Migrated {
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s is migrated, skipping%s", workerId, Green, instance.Id, Reset)
+			continue
+		}
+
 		if !refreshed.IsUsable() {
 			c.log.Infof("[Worker %d] Refreshed %sInstance %s state is %s, skipping%s",
 				workerId, Green, instance.Id, refreshed.State, Reset)
@@ -204,7 +215,8 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-				break
+				time.Sleep(time.Second * 15)
+				continue
 			}
 
 			if c.isNil(workerId, refreshed) {
@@ -215,7 +227,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(10+rand.Intn(5)) * time.Second)
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {

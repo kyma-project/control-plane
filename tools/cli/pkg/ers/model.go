@@ -45,7 +45,8 @@ type Instance struct {
 }
 
 func (i *Instance) IsUsable() bool {
-	return i.State != "CREATION_FAILED" && i.State != "DELETION_FAILED"
+	//return i.State != "CREATION_FAILED" && i.State != "DELETION_FAILED"
+	return true
 }
 
 type MigrationMetadata struct {
