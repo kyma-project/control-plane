@@ -10,11 +10,11 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220513064929-a28c60c6dbfc
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220513135217-f774e68b3bff
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	go.uber.org/zap v1.21.0
 	k8s.io/api v0.24.0
 	k8s.io/apimachinery v0.24.0
@@ -71,7 +71,7 @@ require (
 
 replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	k8s.io/api => k8s.io/api v0.22.8
