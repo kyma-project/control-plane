@@ -61,5 +61,3 @@ func (c DeprovisionClient) DeprovisionRuntime(runtimeID string) error {
 	c.log.Infof("Deprovisioning request returned code: " + response.Status)
 	return nil
 }
-
-}
