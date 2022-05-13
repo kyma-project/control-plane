@@ -57,6 +57,7 @@ type GlobalOptionsKey struct {
 	gardenerKubeconfig string
 	gardenerNamespace  string
 	username           string
+	oauth2URL          string
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys
@@ -71,6 +72,7 @@ var GlobalOpts = GlobalOptionsKey{
 	gardenerKubeconfig: "gardener-kubeconfig",
 	gardenerNamespace:  "gardener-namespace",
 	username:           "username",
+	oauth2URL:          "kcp-oauth2-url",
 }
 
 // SetGlobalOpts configures the global parameters on the given root command
