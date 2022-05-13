@@ -24,11 +24,11 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	}
 
 	cobraCmd := &cobra.Command{
-		Use:   `migrate-all`,
-		Short: `Triggers full SC migration accepting json objects as input.`,
-		Long:  `Migrates all instances that are feed through stdin in the form of json objects`,
+		Use:     `migrate-all`,
+		Short:   `Triggers full SC migration accepting json objects as input.`,
+		Long:    `Migrates all instances that are feed through stdin in the form of json objects`,
 		Example: `  ers migrate -w2 -d	Triggers migration starting two workers`,
-		Args: cobra.MaximumNArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			// for possible param validation
 			cmd.log = logger.New()
@@ -215,7 +215,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-				time.Sleep(time.Second * 15)
+				time.Sleep(time.Second * 45)
 				continue
 			}
 
@@ -227,7 +227,9 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
-			time.Sleep(time.Duration(10+rand.Intn(5)) * time.Second)
+
+			// 5 minutes plus random up to 90 sec
+			time.Sleep(time.Duration(300+rand.Intn(90)) * time.Second)
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
