@@ -215,7 +215,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-				time.Sleep(time.Second * 15)
+				time.Sleep(time.Second * 45)
 				continue
 			}
 
@@ -227,7 +227,9 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
-			time.Sleep(time.Duration(10+rand.Intn(5)) * time.Second)
+
+			// 4 minutes plus random up to 2 min
+			time.Sleep(time.Duration(240+rand.Intn(120)) * time.Second)
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
