@@ -40,6 +40,7 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	}
 
 	cobraCmd.Flags().IntVarP(&cmd.workers, "workers", "w", 2, "Number of workers for processing instances.")
+	cobraCmd.Flags().IntVarP(&cmd.limit, "limit", "", 0, "Process first n items (0 means no limit)")
 	cobraCmd.Flags().IntVarP(&cmd.buffer, "buffer", "b", 10, "Size of buffer for processed instances.")
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
@@ -71,6 +72,7 @@ type MigrationAllCommand struct {
 	stats     *Stats
 
 	metadataStorage MetadataStorage
+	limit           int
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -105,7 +107,13 @@ func (c *MigrationAllCommand) Run() error {
 
 	fmt.Printf("Starting migration for %d instances\n", len(instances))
 
+	i := 0
 	for _, instance := range instances {
+		i = i + 1
+		if c.limit < i && c.limit != 0 {
+			c.log.Infof("Took %d instances, limit reached", i)
+			break
+		}
 
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
