@@ -275,6 +275,12 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
+	// todo: remove the code below when we are sure the ERSContext contains required values.
+	// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+	existingSMOperatorCredentials := instance.Parameters.ErsContext.SMOperatorCredentials
+	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
+	// but do not change existing SM operator credentials
+	instance.Parameters.ErsContext.SMOperatorCredentials = existingSMOperatorCredentials
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
