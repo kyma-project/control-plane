@@ -277,7 +277,10 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 
 	// todo: remove the code below when we are sure the ERSContext contains required values.
 	// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+	existingSMOperatorCredentials := instance.Parameters.ErsContext.SMOperatorCredentials
 	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
+	// but do not change existing SM operator credentials
+	instance.Parameters.ErsContext.SMOperatorCredentials = existingSMOperatorCredentials
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
@@ -293,15 +296,6 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 
 	if ersContext.IsMigration {
-		if k2, version, err := b.isKyma2(instance); err != nil {
-			msg := "failed to determine kyma version"
-			logger.Errorf("%v: %v", msg, err)
-			return nil, false, fmt.Errorf(msg)
-		} else if !k2 {
-			msg := fmt.Sprintf("performing btp-operator migration is supported only for kyma 2.x, current version: %v", version)
-			logger.Errorf(msg)
-			return nil, false, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
-		}
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 
