@@ -24,11 +24,11 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	}
 
 	cobraCmd := &cobra.Command{
-		Use:   `migrate-all`,
-		Short: `Triggers full SC migration accepting json objects as input.`,
-		Long:  `Migrates all instances that are feed through stdin in the form of json objects`,
+		Use:     `migrate-all`,
+		Short:   `Triggers full SC migration accepting json objects as input.`,
+		Long:    `Migrates all instances that are feed through stdin in the form of json objects`,
 		Example: `  ers migrate -w2 -d	Triggers migration starting two workers`,
-		Args: cobra.MaximumNArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			// for possible param validation
 			cmd.log = logger.New()
@@ -214,7 +214,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		time.Sleep(10 * time.Second)
 
 		err = c.ersClient.Migrate(instance.Id)
-		if (err != nil) {
+		if err != nil {
 			c.log.Infof("[Worker %d] Instance %s, migration call failed with error %s", workerId, instance.Id, err)
 			c.tryFinish(work, err, workChannel)
 			continue
@@ -245,7 +245,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				break
 			}
 
-			if (previousModifiedAt != refreshed.ModifiedDate) {
+			if previousModifiedAt != refreshed.ModifiedDate {
 				c.log.Errorf("[Worker %d] Instance: %s modifiedAt has changed. Watch STOP. State: %s, StateMessage: %s",
 					workerId, instance.Id, instance.State, instance.StateMessage)
 				err = errors.New("Watch STOP. ModifiedAt has changed.")
@@ -265,7 +265,7 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		errSave := c.metadataStorage.Save(work.MigrationMetadata)
 		if errSave != nil {
 			c.log.Warnf("Unable to save metadata: %s", errSave.Error())
-			if (err == nil) {
+			if err == nil {
 				err = errSave
 			}
 		}
