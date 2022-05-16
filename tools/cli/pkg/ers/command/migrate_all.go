@@ -202,7 +202,12 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
-		c.ersClient.Migrate(instance.Id)
+		err = c.ersClient.Migrate(instance.Id)
+		if err != nil {
+			c.log.Errorf("[Worker %d] Error while invoking migration (instanceID=%s)",
+				workerId, instance.Id, err)
+			c.tryFinish(work, err, workChannel)
+		}
 
 		c.log.Infof("[Worker %d] Instance %s not yet migrated",
 			workerId, instance.Id)
