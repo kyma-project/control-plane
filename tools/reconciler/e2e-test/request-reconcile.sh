@@ -21,9 +21,11 @@ function send_reconciliation_request() {
   jq '.kubeconfig = "" | .metadata = ""' ${RECONCILE_PAYLOAD_FILE} > temp_body.json
   cat temp_body.json
   echo "sending reconciliation request to mothership-reconciler at: ${RECONCILE_API}"
-  statusURL=$(curl --request POST -sL \
-       --url "${RECONCILE_API}"\
-       --data @"${RECONCILE_PAYLOAD_FILE}" | jq -r .statusURL)
+  response=$(curl --request POST -sL \
+                    --url "${RECONCILE_API}"\
+                    --data @"${RECONCILE_PAYLOAD_FILE}" )
+  echo "Response: ${response}"
+  statusURL=$(echo "${response}" | jq -r .statusURL)
 
   export RECONCILE_STATUS_URL="${statusURL}"
 }
