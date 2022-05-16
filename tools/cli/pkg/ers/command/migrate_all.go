@@ -246,10 +246,12 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			}
 
 			if previousModifiedAt != refreshed.ModifiedDate {
-				c.log.Errorf("[Worker %d] Instance: %s modifiedAt has changed. Watch STOP. State: %s, StateMessage: %s",
-					workerId, instance.Id, instance.State, instance.StateMessage)
-				err = errors.New("Watch STOP. ModifiedAt has changed.")
-				break
+				if refreshed.State != "OK" && refreshed.State != "UPDATING" {
+					c.log.Errorf("[Worker %d] Instance: %s modifiedAt has changed. Watch STOP. State: %s, StateMessage: %s",
+						workerId, instance.Id, instance.State, instance.StateMessage)
+					err = errors.New("Watch STOP. ModifiedAt has changed.")
+					break
+				}
 			}
 			// 4 minutes plus random up to 2 min
 			time.Sleep(time.Duration(240+rand.Intn(120)) * time.Second)
