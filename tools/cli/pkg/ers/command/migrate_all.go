@@ -107,6 +107,7 @@ func (c *MigrationAllCommand) Run() error {
 
 	for _, instance := range instances {
 
+		time.Sleep(3 * time.Second)
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
 
@@ -210,6 +211,8 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
+		time.Sleep(10 * time.Second)
+
 		err = c.ersClient.Migrate(instance.Id)
 		if (err != nil) {
 			c.log.Infof("[Worker %d] Instance %s, migration call failed with error %s", workerId, instance.Id, err)
