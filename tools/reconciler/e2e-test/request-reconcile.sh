@@ -19,7 +19,7 @@ readonly RECONCILE_PAYLOAD_FILE="/tmp/body.json"
 function send_reconciliation_request() {
   echo "Request body:"
   jq '.kubeconfig = "" | .metadata = ""' ${RECONCILE_PAYLOAD_FILE} > temp_body.json
-  cat temp_body.json
+  cat RECONCILE_PAYLOAD_FILE
   echo "sending reconciliation request to mothership-reconciler at: ${RECONCILE_API}"
   response=$(curl --request POST -sL \
                     --url "${RECONCILE_API}"\
