@@ -35,7 +35,7 @@ function check_reconcile_status_url() {
   echo "RECONCILE_STATUS_URL: ${RECONCILE_STATUS_URL}"
   if [[ ! $RECONCILE_STATUS_URL ]] || [[ "$RECONCILE_STATUS_URL" == "null" ]]; then
     echo "reconciliation request failed: RECONCILE_STATUS_URL is invalid"
-    exit 1
+#    exit 1
   fi
 }
 
