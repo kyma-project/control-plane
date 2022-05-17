@@ -12,20 +12,18 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type operationDebugLogsOpts struct {
-	correlationID string
-	schedulingID  string
+type reconciliationDebugLogsOpts struct {
+	schedulingID string
 }
 
-type operationDebugLogsCmd struct {
+type reconciliationDebugLogsCmd struct {
 	reconcilerURL string
 	auth          oauth2.TokenSource
 	ctx           context.Context
-	opts          operationDebugLogsOpts
+	opts          reconciliationDebugLogsOpts
 }
 
-func (cmd operationDebugLogsCmd) Validate() error {
-
+func (cmd reconciliationDebugLogsCmd) Validate() error {
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
 	cmd.auth = CLICredentialManager(logger.New())
 
@@ -33,14 +31,10 @@ func (cmd operationDebugLogsCmd) Validate() error {
 		return errors.New("scheduling id cannot be empty")
 	}
 
-	if cmd.opts.correlationID == "" {
-		return errors.New("correlation id cannot be empty")
-	}
-
 	return nil
 }
 
-func (cmd operationDebugLogsCmd) Run() error {
+func (cmd reconciliationDebugLogsCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
@@ -50,38 +44,37 @@ func (cmd operationDebugLogsCmd) Run() error {
 		return errors.Wrap(err, "while creating mothership client")
 	}
 
-	response, err := client.PutOperationsSchedulingIDCorrelationIDDebug(ctx, cmd.opts.schedulingID, cmd.opts.correlationID)
+	response, err := client.PutReconciliationsSchedulingIDDebug(ctx, cmd.opts.schedulingID)
 	if err != nil {
-		return errors.Wrap(err, "while doing PUT request to operation debug endpoint")
+		return errors.Wrap(err, "while doing PUT request to reconciliation debug endpoint")
 	}
 
 	if response.StatusCode != http.StatusOK {
 		if response.StatusCode == http.StatusNotFound {
-			return errors.New("Operation not found")
+			return errors.New("Reconciliation not found")
 		}
 		var err error
-		mthshipErr, err := mothership.ReadErrResponse(response.Body)
+		mothershipErr, err := mothership.ReadErrResponse(response.Body)
 		if err != nil {
 			return errors.Wrap(err, "while reading response body")
 		}
-		return mthshipErr.ToError(response.StatusCode)
+		return mothershipErr.ToError(response.StatusCode)
 	}
 
 	return nil
 }
 
-func NewOperationDebugLogsCmd() *cobra.Command {
-	cmd := operationDebugLogsCmd{}
+func NewReconciliationDebugLogsCmd() *cobra.Command {
+	cmd := reconciliationDebugLogsCmd{}
 
 	cobraCmd := &cobra.Command{
 		Use:     "debug",
-		Short:   "enable debug logs for an operation",
-		Long:    "enable debug logs for an operation not in progress",
+		Short:   "enable debug logs for a reconciliation",
+		Long:    "enable debug logs for all -not in progress- operations that belong to a reconciliation",
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
 
-	cobraCmd.Flags().StringVarP(&cmd.opts.correlationID, "correlation-id", "c", "", "Correlation ID")
 	cobraCmd.Flags().StringVarP(&cmd.opts.schedulingID, "scheduling-id", "s", "", "Scheduling ID")
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {
