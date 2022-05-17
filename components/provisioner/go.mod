@@ -150,7 +150,7 @@ replace (
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220513210258-46612604a0f9
 	golang.org/x/text => golang.org/x/text v0.3.7
 	k8s.io/apimachinery => k8s.io/apimachinery v0.20.7
 	k8s.io/apiserver => k8s.io/apiserver v0.20.5
