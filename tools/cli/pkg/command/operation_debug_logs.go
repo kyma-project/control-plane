@@ -21,7 +21,7 @@ type operationDebugLogsCmd struct {
 	reconcilerURL string
 	auth          oauth2.TokenSource
 	ctx           context.Context
-	opts          operationDisableOpts
+	opts          operationDebugLogsOpts
 }
 
 func (cmd operationDebugLogsCmd) Validate() error {
@@ -54,6 +54,9 @@ func (cmd operationDebugLogsCmd) Run() error {
 	}
 
 	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusNotFound {
+			return errors.New("Operation not found")
+		}
 		var err error
 		mthshipErr, err := mothership.ReadErrResponse(response.Body)
 		if err != nil {
