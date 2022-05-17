@@ -2,13 +2,14 @@ package command
 
 import (
 	"context"
+	"net/http"
+
 	mothership "github.com/kyma-project/control-plane/components/reconciler/pkg"
 	reconciler "github.com/kyma-project/control-plane/components/reconciler/pkg/auth"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	"net/http"
 )
 
 type operationDebugLogsOpts struct {
