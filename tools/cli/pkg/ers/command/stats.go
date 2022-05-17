@@ -50,7 +50,6 @@ func (s *Stats) Err(id string, err error) {
 	s.err += 1
 	s.errStats[id] = err
 	s.mErr.Unlock()
-	s.PrintProgress()
 }
 
 func (s *Stats) PrintProgress() {
@@ -64,6 +63,6 @@ func (s *Stats) Print() {
 	}
 
 	for key, val := range s.errStats {
-		fmt.Printf("%s - %e\n", key, val)
+		fmt.Printf("%s - %s\n", key, val)
 	}
 }
