@@ -66,6 +66,7 @@ func New() *cobra.Command {
 		NewStatusCommand(),
 		NewLogsCommand(),
 		NewMetadataCommand(),
+		NewPreviewsCommand(),
 	)
 
 	return cmd
