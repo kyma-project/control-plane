@@ -6,7 +6,7 @@ require (
 	github.com/gardener/gardener v1.47.0
 	github.com/gardener/gardener-extension-provider-aws v1.35.0
 	github.com/gardener/gardener-extension-provider-azure v1.27.0
-	github.com/gardener/gardener-extension-provider-gcp v1.22.0
+	github.com/gardener/gardener-extension-provider-gcp v1.22.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
