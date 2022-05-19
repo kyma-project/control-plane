@@ -16,10 +16,12 @@ type Client struct {
 	ServerURL     string
 	OIDCIssuerURL string
 	OIDCClientID  string
+	SaToken       string
+	UserID        string
 }
 
 //NewClient Create new instance of TransformerClient
-func NewClient(rawKubeCfg string) (*Client, error) {
+func NewClient(rawKubeCfg string, userID string) (*Client, error) {
 	var kubeCfg kubeconfig
 	err := yaml.Unmarshal([]byte(rawKubeCfg), &kubeCfg)
 	if err != nil {
@@ -31,12 +33,14 @@ func NewClient(rawKubeCfg string) (*Client, error) {
 		ServerURL:     kubeCfg.Clusters[0].Cluster.Server,
 		OIDCClientID:  env.Config.OIDC.Kubeconfig.ClientID,
 		OIDCIssuerURL: env.Config.OIDC.Kubeconfig.IssuerURL,
+		SaToken:       "",
+		UserID:        userID,
 	}, nil
 }
 
 //TransformKubeconfig injects OIDC data into raw kubeconfig structure
-func (c *Client) TransformKubeconfig() ([]byte, error) {
-	out, err := c.parseTemplate()
+func (c *Client) TransformKubeconfig(template string) ([]byte, error) {
+	out, err := c.parseTemplate(template)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +48,10 @@ func (c *Client) TransformKubeconfig() ([]byte, error) {
 	return []byte(out), nil
 }
 
-func (c *Client) parseTemplate() (string, error) {
+func (c *Client) parseTemplate(templ string) (string, error) {
 	var result bytes.Buffer
 	t := template.New("kubeconfigParser")
-	t, err := t.Parse(kubeconfigTemplate)
+	t, err := t.Parse(templ)
 	if err != nil {
 		return "", err
 	}
