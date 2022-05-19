@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -43,7 +44,7 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 				fmt.Sprintf("while getting last operation from storage"))
 		}
 		return domain.LastOperation{
-			State:       lastOp.State,
+			State:       mapStateToOSBCompliantState(lastOp.State),
 			Description: lastOp.Description,
 		}, nil
 	}
@@ -66,7 +67,18 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 	}
 
 	return domain.LastOperation{
-		State:       operation.State,
+		State:       mapStateToOSBCompliantState(operation.State),
 		Description: operation.Description,
 	}, nil
+}
+
+func mapStateToOSBCompliantState(opState domain.LastOperationState) domain.LastOperationState {
+	switch {
+	case opState == orchestration.Pending || opState == orchestration.Retrying:
+		return domain.InProgress
+	case opState == orchestration.Canceled || opState == orchestration.Canceling:
+		return domain.Succeeded
+	default:
+		return opState
+	}
 }
