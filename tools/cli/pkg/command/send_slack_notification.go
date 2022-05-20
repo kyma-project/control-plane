@@ -36,15 +36,22 @@ const PROD_Postfix = "-prod"
 
 var upgradeOpts = []string{"parallel-workers", "schedule", "strategy",
 	"target", "target-exclude", "verbose", "version"}
+var orchestionOpts = []string{"state", "operation", "verbose"}
 
 // SendSlackNotification will post message including attachments to slackhookUrl.
-func SendSlackNotification(title string, cobraCmd *cobra.Command, output string) error {
-	slackhookUrl := GlobalOpts.SlackAPIURL()
-	text_msg := "New " + title + " is triggerred on " + getClusterType()
-	triggeredCmd := revertUpgradeOpts(title, cobraCmd)
+func SendSlackNotification(slackhookUrl string, title string, cobraCmd *cobra.Command, output string) error {
+	var text_msg, triggeredCmd string
+	if strings.Contains(title, "orchestration") {
+		text_msg = fmt.Sprintf("New orchestration is triggerred on %s", getClusterType())
+		triggeredCmd = revertOrchestrationOpts(title, cobraCmd)
+	} else if strings.Contains(title, "upgrade") {
+		text_msg = fmt.Sprintf("New %s is triggerred on %s", title, getClusterType())
+		triggeredCmd = revertUpgradeOpts(title, cobraCmd)
+	}
+
 	attachment := Attachment{
 		Color: SLACK_COLOR,
-		Text:  triggeredCmd + "\n" + output,
+		Text:  fmt.Sprintf("%s \n %s", triggeredCmd, output),
 	}
 
 	slackBody, _ := json.Marshal(SlackRequestBody{Text: text_msg, Icon_emoji: ICON_EMOJI, Username: SLACK_USER_NAME,
@@ -114,9 +121,29 @@ func revertUpgradeOpts(title string, cobraCmd *cobra.Command) string {
 					((flag.Name == "target" || flag.Name == "target-exclude") && flag.Value.String() == "[]") {
 					continue
 				} else if flag.Name == "target" || flag.Name == "target-exclude" {
-					commnd = commnd + " --" + flag.Name + " " + strings.Trim(flag.Value.String(), "[]")
+					commnd = fmt.Sprintf("%s --%s %s", commnd, flag.Name, strings.Trim(flag.Value.String(), "[]"))
 				} else {
-					commnd = commnd + " --" + flag.Name + " " + flag.Value.String()
+					commnd = fmt.Sprintf("%s --%s %s", commnd, flag.Name, flag.Value.String())
+				}
+			}
+		}
+	})
+	return commnd
+}
+
+func revertOrchestrationOpts(title string, cobraCmd *cobra.Command) string {
+	commnd := "kcp " + title
+	cobraCmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		for _, col := range orchestionOpts {
+
+			if flag.Name == col && flag.Value.String() != "" {
+				if ((flag.Name == "verbose") && flag.Value.String() == "0") || (flag.Name == "state") ||
+					(flag.Name == "operation" && flag.Value.String() == "[]") {
+					continue
+				} else if flag.Name == "operation" {
+					commnd = fmt.Sprintf("%s --%s %s", commnd, flag.Name, strings.Trim(flag.Value.String(), "[]"))
+				} else {
+					commnd = fmt.Sprintf("%s --%s %s", commnd, flag.Name, flag.Value.String())
 				}
 			}
 		}

@@ -2,9 +2,11 @@ package command
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -17,10 +19,19 @@ import (
 )
 
 const (
-	cancelCommand     = "cancel"
-	retryCommand      = "retry"
-	operationsCommand = "operations"
-	opsCommand        = "ops"
+	cancelCommand               = "cancel"
+	retryCommand                = "retry"
+	operationsCommand           = "operations"
+	opsCommand                  = "ops"
+	ERROR                       = "Error:"
+	GET_ORCHEST                 = "while getting orchestration"
+	ORCHEST_IS_ALREADY          = "Orchestration is already"
+	ORCHEST_IS_ALREADY_CANCELED = ORCHEST_IS_ALREADY + " canceled."
+	PARSE_RETRY_OCHEST_TEMPLATE = "while parsing retry orchestration response template"
+	PRINT_RETRY_ORCHEST_RESP    = "while printing retry orchestration response"
+	SEND_TO_SLACK               = "while sending notification to slack"
+	TRIGGER_RETRY_ORCHEST       = "while triggering retrying orchestration"
+	WANT_CONTINUE               = "Do you want to continue? (Y/N) "
 )
 
 // OrchestrationCommand represents an execution of the kcp orchestrations command
@@ -157,6 +168,11 @@ Old Operations:     {{ stringsJoin .OldOperations ", " }}
 Invalid Operations: {{ stringsJoin .InvalidOperations ", " }}
 Message:            {{ .Msg }}
 `
+
+type slackOutputInfo struct {
+	err    error
+	output string
+}
 
 // NewOrchestrationCmd constructs a new instance of OrchestrationCommand and configures it in terms of a cobra.Command
 func NewOrchestrationCmd() *cobra.Command {
@@ -404,60 +420,118 @@ func (cmd *OrchestrationCommand) showOperationsDetails(orchestrationID string) e
 }
 
 func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) error {
+	var slackInfo slackOutputInfo
+	defer func(slackInfo *slackOutputInfo) error {
+		return cmd.sendToSlack(orchestrationID, slackInfo)
+	}(&slackInfo)
+
 	sr, err := cmd.client.GetOrchestration(orchestrationID)
 	if err != nil {
-		return errors.Wrap(err, "while getting orchestration")
+		slackInfo.output = fmt.Sprintf("%s %s %s", ERROR, GET_ORCHEST, err.Error())
+		slackInfo.err = errors.Wrap(err, GET_ORCHEST)
+		return slackInfo.err
 	}
 	switch sr.State {
 	case orchestration.Canceling, orchestration.Canceled:
-		fmt.Println("Orchestration is already canceled.")
+		slackInfo.output = ORCHEST_IS_ALREADY_CANCELED
+		fmt.Println(slackInfo.output)
 		return nil
 	case orchestration.Failed, orchestration.Succeeded:
-		return fmt.Errorf("orchestration is already %s", sr.State)
+		errMsg := fmt.Sprintf("%s %s", ORCHEST_IS_ALREADY, sr.State)
+		slackInfo.output = ERROR + errMsg
+		fmt.Println(errMsg)
+		return fmt.Errorf(errMsg)
 	}
 
+	pop_msg := strconv.Itoa(sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying]) + " pending or retrying operations(s) will be canceled, " + strconv.Itoa(sr.OperationStats[orchestration.InProgress]) + " in progress operation(s) will still be completed.\n "
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
-	fmt.Print("Do you want to continue? (Y/N) ")
+	fmt.Println(pop_msg)
+	fmt.Print(WANT_CONTINUE)
+
 	scanner.Scan()
+	slackInfo.output = pop_msg + WANT_CONTINUE + scanner.Text()
 	if scanner.Text() != "Y" {
+		slackInfo.output = fmt.Sprintf("%s \n Aborted.", slackInfo.output)
 		fmt.Println("Aborted.")
 		return nil
 	}
 
-	return cmd.client.CancelOrchestration(orchestrationID)
+	err = cmd.client.CancelOrchestration(orchestrationID)
+	if err != nil {
+		slackInfo.output = ERROR + err.Error()
+		slackInfo.err = errors.Wrap(err, "while calling CancelOrchestration")
+		return slackInfo.err
+	}
+	return nil
+}
 
+func (cmd *OrchestrationCommand) sendToSlack(orchestrationID string, slackInfo *slackOutputInfo) error {
+	var err_msg string
+	if slackInfo.err != nil {
+		err_msg = fmt.Sprintf("%s \n", slackInfo.output)
+	}
+
+	if len(GlobalOpts.SlackAPIURL()) != 0 {
+		slack_title := fmt.Sprintf("orchestration %s retry", orchestrationID)
+		for _, slack_url := range GlobalOpts.SlackAPIURL() {
+			slack_err := SendSlackNotification(slack_url, slack_title, cmd.cobraCmd, slackInfo.output)
+			if slack_err != nil {
+				slack_e := errors.Wrap(slack_err, SEND_TO_SLACK)
+				err_msg = err_msg + slack_e.Error()
+			}
+		}
+	}
+	return errors.New(err_msg)
 }
 
 func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) error {
+	var slackInfo slackOutputInfo
+
+	defer func(slackInfo *slackOutputInfo) error {
+		return cmd.sendToSlack(orchestrationID, slackInfo)
+	}(&slackInfo)
+
 	sr, err := cmd.client.GetOrchestration(orchestrationID)
 	if err != nil {
-		return errors.Wrap(err, "while getting orchestration")
+		slackInfo.output = fmt.Sprintf("%s %s %s", ERROR, GET_ORCHEST, err.Error())
+		slackInfo.err = errors.Wrap(err, GET_ORCHEST)
+		return slackInfo.err
 	}
 	switch sr.State {
 	case orchestration.Canceling, orchestration.Canceled:
-		fmt.Println("Orchestration is already canceled.")
+		slackInfo.output = ORCHEST_IS_ALREADY_CANCELED
+		fmt.Println(slackInfo.output)
 		return nil
 	case orchestration.Retrying, orchestration.Pending, orchestration.Succeeded:
-		fmt.Printf("Orchestration is already %s.\n", sr.State)
+		slackInfo.output = fmt.Sprintf("%s %s", ORCHEST_IS_ALREADY, sr.State)
+		fmt.Println(slackInfo.output)
 		return nil
 	}
 
 	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
 	if err != nil {
-		return errors.Wrap(err, "while triggering retrying orchestration")
+		slackInfo.output = fmt.Sprintf("%s %s %s ", ERROR, TRIGGER_RETRY_ORCHEST, err.Error())
+		slackInfo.err = errors.Wrap(err, TRIGGER_RETRY_ORCHEST)
+		return slackInfo.err
 	}
 
 	// Print retry orchestration response via template
 	funcMap := template.FuncMap{"stringsJoin": strings.Join}
 	tmpl, err := template.New("retryOrchestration").Funcs(funcMap).Parse(retryOchestrationTpl)
 	if err != nil {
-		return errors.Wrap(err, "while parsing retry orchestration response template")
+		slackInfo.output = fmt.Sprintf("%s %s %s", ERROR, PARSE_RETRY_OCHEST_TEMPLATE, err.Error())
+		slackInfo.err = errors.Wrap(err, PARSE_RETRY_OCHEST_TEMPLATE)
+		return slackInfo.err
 	}
-	err = tmpl.Execute(os.Stdout, rr)
+	var buff bytes.Buffer
+	err = tmpl.Execute(&buff, rr)
 	if err != nil {
-		return errors.Wrap(err, "while printing retry orchestration response")
+		slackInfo.output = fmt.Sprintf("%s %s %s ", ERROR, PRINT_RETRY_ORCHEST_RESP, err.Error())
+		slackInfo.err = errors.Wrap(err, PRINT_RETRY_ORCHEST_RESP)
+		return slackInfo.err
 	}
+	fmt.Println(buff.String())
+	slackInfo.output = buff.String()
 
 	return nil
 }

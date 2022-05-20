@@ -59,11 +59,13 @@ func (cmd *UpgradeKymaCommand) Run() error {
 	}
 	fmt.Println("OrchestrationID:", ur.OrchestrationID)
 
-	if !cmd.orchestrationParams.DryRun && GlobalOpts.SlackAPIURL() != "" {
+	if !cmd.orchestrationParams.DryRun && len(GlobalOpts.SlackAPIURL()) != 0 {
 		slack_title := `upgrade kyma`
-		slack_err := SendSlackNotification(slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID)
-		if slack_err != nil {
-			return errors.Wrap(slack_err, "while sending notification to slack")
+		for _, slack_url := range GlobalOpts.SlackAPIURL() {
+			slack_err := SendSlackNotification(slack_url, slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID)
+			if slack_err != nil {
+				return errors.Wrap(slack_err, "while sending notification to slack")
+			}
 		}
 	}
 	return nil
@@ -87,7 +89,7 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 		cmd.orchestrationParams.Kyma.Version = cmd.version
 	}
 
-	if GlobalOpts.SlackAPIURL() == "" {
+	if len(GlobalOpts.SlackAPIURL()) == 0 {
 		fmt.Println("Note: Ignore sending slack notification when slackAPIURL is empty")
 	}
 
