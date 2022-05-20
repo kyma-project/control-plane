@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.25.1
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0
@@ -40,7 +41,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
