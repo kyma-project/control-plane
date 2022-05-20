@@ -164,29 +164,30 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	// when
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
-					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-					"context": {
-						"sm_platform_credentials": {
-							"url": "https://sm.url",
-							"credentials": {
-								"basic": {
-									"username":"smUsername",
-									"password":"smPassword"
-							  	}
-						}
-							},
-							"globalaccount_id": "g-account-id",
-							"subaccount_id": "sub-id",
-							"user_id": "john.smith@email.com"
-						},
-						"parameters": {
-							"name": "testing-cluster"
-						}
-			}`)
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"url": "https://sm.url",
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
 	suite.processReconcilingByOperationID(opID)
+	provisioningOp, _ := suite.db.Operations().GetProvisioningOperationByID(opID)
+	clusterID := provisioningOp.InstanceDetails.ServiceManagerClusterID
 
 	// then
 	suite.AssertProvider("aws")
@@ -207,7 +208,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Evaluation",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithoutSMProxy(opID),
+		Components:     suite.fixExpectedComponentListWithSMOperator(opID, clusterID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }

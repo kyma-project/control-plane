@@ -124,7 +124,6 @@ type Config struct {
 	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
-	EnableBTPOperatorMigration                 bool   `envconfig:"default=true"`
 	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
 
 	Broker          broker.Config
@@ -646,7 +645,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioner.ProvisioningTimeout, cfg.OperationTimeout, runtimeVerConfigurator),
+			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
 		},
 		{
 			stage: createRuntimeStageName,
@@ -725,26 +724,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
 	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
-	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
-		if cfg.EnableBTPOperatorMigration {
-			return c
-		}
-		return func(o internal.UpdatingOperation) bool {
-			return false
-		}
-	}
-	negation := func(c update.StepCondition) update.StepCondition {
-		return func(o internal.UpdatingOperation) bool {
-			v := c(o)
-			return !v
-		}
-	}
-
-	btpMigrationEnabled := func(o internal.UpdatingOperation) bool {
-		return cfg.EnableBTPOperatorMigration
-	}
-
-	manager.DefineStages([]string{"cluster", "migration", "migration-check", "remove-sc-migration", "remove-sc-migration-check", "check"})
+	manager.DefineStages([]string{"cluster", "btp-operator", "btp-operator-check", "check"})
 	updateSteps := []struct {
 		stage     string
 		step      update.Step
@@ -755,74 +735,36 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), runtimeVerConfigurator, inputFactory),
 		},
 		{
-			stage:     "cluster",
-			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
-			condition: negation(ifBTPMigrationEnabled(update.ForMigration)),
+			stage: "cluster",
+			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
 		},
 		{
-			stage:     "migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
-			condition: btpMigrationEnabled,
+			stage: "btp-operator",
+			step:  update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
 		},
 		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: update.ForBTPOperatorCredentialsProvided,
 		},
 		{
-			stage:     "migration",
-			step:      update.NewBTPOperatorCheckStep(db.Operations()),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
-		},
-		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewBTPOperatorOverridesStep(db.Operations(), runtimeProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: update.ForBTPOperatorCredentialsProvided,
 		},
 		{
-			stage:     "migration",
-			step:      update.NewSCMigrationStep(db.Operations(), runtimeProvider),
-			condition: ifBTPMigrationEnabled(update.ForMigration),
-		},
-		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdate),
+			condition: update.RequiresReconcilerUpdate,
 		},
 		{
-			stage:     "migration-check",
+			stage:     "btp-operator-check",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
+			condition: update.CheckReconcilerStatus,
 		},
 		{
-			stage:     "remove-sc-migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
-			condition: btpMigrationEnabled,
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForMigration),
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
-		},
-		{
-			stage:     "remove-sc-migration-check",
-			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
-		},
-		{
-			stage:     "check",
-			step:      update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
-			condition: negation(ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided)),
+			stage: "check",
+			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
 		},
 	}
 

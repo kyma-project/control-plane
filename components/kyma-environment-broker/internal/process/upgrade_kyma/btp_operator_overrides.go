@@ -38,11 +38,6 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, 
 	overrides := internal.GetBTPOperatorProvisioningOverrides(creds, clusterID)
 	operation.InputCreator.AppendOverrides(internal.BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
-	operation.InputCreator.DisableOptionalComponent(internal.ServiceManagerComponentName)
-	operation.InputCreator.DisableOptionalComponent(internal.HelmBrokerComponentName)
-	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogComponentName)
-	operation.InputCreator.DisableOptionalComponent(internal.ServiceCatalogAddonsComponentName)
-	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	if clusterID == operation.InstanceDetails.ServiceManagerClusterID {
 		return operation, 0, nil
 	}

@@ -47,7 +47,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	builder := &automock2.CreatorForPlan{}
 	builder.On("CreateProvisionInput", operation.ProvisioningParameters, *v).Return(ri, nil)
 
-	step := NewInitialisationStep(st.Operations(), st.Instances(), builder, time.Second, time.Second, rvc)
+	step := NewInitialisationStep(st.Operations(), st.Instances(), builder, rvc)
 
 	// when
 	op, retry, err := step.Run(operation, logrus.New())
