@@ -19,6 +19,7 @@ func NewOperationCmd() *cobra.Command {
 
 	cobraCmd.AddCommand(
 		NewOperationStopCmd(),
+		NewOperationDebugLogsCmd(),
 	)
 
 	if cobraCmd.Parent() != nil && cobraCmd.Parent().Context() != nil {

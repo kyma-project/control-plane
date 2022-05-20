@@ -6,6 +6,7 @@ import (
 	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	"github.com/pkg/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
+	apierr2 "k8s.io/apimachinery/pkg/api/meta"
 )
 
 const OperationTimeOutMsg string = "operation has reached the time limit"
@@ -26,12 +27,16 @@ type ErrorReporter interface {
 type ErrReason string
 
 const (
-	ErrKEBInternal             ErrReason = "err_keb_internal"
-	ErrKEBTimeOut              ErrReason = "err_keb_timeout"
-	ErrProvisionerNilLastError ErrReason = "err_provisioner_nil_last_error"
-	ErrHttpStatusCode          ErrReason = "err_http_status_code"
-	ErrReconcilerNilFailures   ErrReason = "err_reconciler_nil_failures"
-	ErrClusterNotFound         ErrReason = "err_cluster_not_found"
+	ErrKEBInternal              ErrReason = "err_keb_internal"
+	ErrKEBTimeOut               ErrReason = "err_keb_timeout"
+	ErrProvisionerNilLastError  ErrReason = "err_provisioner_nil_last_error"
+	ErrHttpStatusCode           ErrReason = "err_http_status_code"
+	ErrReconcilerNilFailures    ErrReason = "err_reconciler_nil_failures"
+	ErrClusterNotFound          ErrReason = "err_cluster_not_found"
+	ErrK8SUnexpectedServerError ErrReason = "err_k8s_unexpected_server_error"
+	ErrK8SUnexpectedObjectError ErrReason = "err_k8s_unexpected_object_error"
+	ErrK8SNoMatchError          ErrReason = "err_k8s_no_match_error"
+	ErrK8SAmbiguousError        ErrReason = "err_k8s_ambiguous_error"
 )
 
 type ErrComponent string
@@ -89,12 +94,9 @@ func ReasonForError(err error) LastError {
 
 	cause := errors.Cause(err)
 
-	if status := apierr.APIStatus(nil); errors.As(cause, &status) {
-		return LastError{
-			message:   err.Error(),
-			reason:    ErrReason(apierr.ReasonForError(cause)),
-			component: ErrK8SClient,
-		}
+	if lastErr := checkK8SError(cause); lastErr.component == ErrK8SClient {
+		lastErr.message = err.Error()
+		return lastErr
 	}
 
 	if status := ErrorReporter(nil); errors.As(cause, &status) {
@@ -138,4 +140,33 @@ func ReasonForError(err error) LastError {
 		reason:    ErrKEBInternal,
 		component: ErrKEB,
 	}
+}
+
+func checkK8SError(cause error) LastError {
+	lastErr := LastError{}
+	status := apierr.APIStatus(nil)
+
+	switch {
+	case errors.As(cause, &status):
+		if apierr.IsUnexpectedServerError(cause) {
+			lastErr.reason = ErrK8SUnexpectedServerError
+		} else {
+			// reason could be an empty unknown ""
+			lastErr.reason = ErrReason(apierr.ReasonForError(cause))
+		}
+		lastErr.component = ErrK8SClient
+		return lastErr
+	case apierr.IsUnexpectedObjectError(cause):
+		lastErr.reason = ErrK8SUnexpectedObjectError
+	case apierr2.IsAmbiguousError(cause):
+		lastErr.reason = ErrK8SAmbiguousError
+	case apierr2.IsNoMatchError(cause):
+		lastErr.reason = ErrK8SNoMatchError
+	}
+
+	if lastErr.reason != "" {
+		lastErr.component = ErrK8SClient
+	}
+
+	return lastErr
 }

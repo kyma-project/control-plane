@@ -5,9 +5,9 @@ go 1.18
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/99designs/gqlgen v0.17.5
-	github.com/Azure/azure-sdk-for-go v64.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.27
-	github.com/Azure/go-autorest/autorest/adal v0.9.19
+	github.com/Azure/go-autorest/autorest/adal v0.9.20
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Peripli/service-manager v0.23.4
@@ -24,12 +24,12 @@ require (
 	github.com/kyma-incubator/reconciler v0.0.0-20220419134630-9c42f9b41986
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220420073630-1208b41756a8
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
-	github.com/lib/pq v1.10.5
+	github.com/lib/pq v1.10.6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
 	github.com/pivotal-cf/brokerapi/v8 v8.2.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2
@@ -71,7 +71,7 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.14+incompatible // indirect
+	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
