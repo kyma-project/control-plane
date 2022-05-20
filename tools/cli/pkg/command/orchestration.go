@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -438,13 +437,14 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return nil
 	case orchestration.Failed, orchestration.Succeeded:
 		errMsg := fmt.Sprintf("%s %s", ORCHEST_IS_ALREADY, sr.State)
-		slackInfo.output = ERROR + errMsg
 		fmt.Println(errMsg)
+		slackInfo.output = ERROR + errMsg
+		slackInfo.err = errors.New(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	pop_msg := strconv.Itoa(sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying]) + " pending or retrying operations(s) will be canceled, " + strconv.Itoa(sr.OperationStats[orchestration.InProgress]) + " in progress operation(s) will still be completed.\n "
 	scanner := bufio.NewScanner(os.Stdin)
+	pop_msg := fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
 	fmt.Println(pop_msg)
 	fmt.Print(WANT_CONTINUE)
 
