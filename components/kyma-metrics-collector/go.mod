@@ -6,11 +6,11 @@ require (
 	github.com/gardener/gardener v1.47.0
 	github.com/gardener/gardener-extension-provider-aws v1.35.0
 	github.com/gardener/gardener-extension-provider-azure v1.27.0
-	github.com/gardener/gardener-extension-provider-gcp v1.22.0
+	github.com/gardener/gardener-extension-provider-gcp v1.22.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220513175218-46e4288313ec
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220518111804-77afbe8f4180
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -72,7 +72,7 @@ require (
 replace (
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
 	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	k8s.io/api => k8s.io/api v0.22.8
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.8
