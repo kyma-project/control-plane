@@ -705,8 +705,8 @@ github.com/gardener/gardener v1.47.0/go.mod h1:JgQDOhOe7E8r6L+he46JBM5/NUwCKwfQ3
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.35.0 h1:9sQJSa9y7H6CmmWkJu2rf9ooqpaGYSon7yTWPSWO84k=
 github.com/gardener/gardener-extension-provider-aws v1.35.0/go.mod h1:KXDUHTz5JsD6uFVeVQ4XBAfoheA/QSHd0/HaQReptuE=
-github.com/gardener/gardener-extension-provider-azure v1.27.0 h1:xmfOcPzwRQ6NPXA7LY+pEFmsUgYaQ8IzUu6TGh2sS+g=
-github.com/gardener/gardener-extension-provider-azure v1.27.0/go.mod h1:mzDhG8VGAwro2z7Ny0HnaJlKi20GAtVeBD6dQQBIpYY=
+github.com/gardener/gardener-extension-provider-azure v1.27.1 h1:Ik2hjZVshM1AnlmPyNHse6lJWMr8TEyvTqHYyjaY4lE=
+github.com/gardener/gardener-extension-provider-azure v1.27.1/go.mod h1:mzDhG8VGAwro2z7Ny0HnaJlKi20GAtVeBD6dQQBIpYY=
 github.com/gardener/gardener-extension-provider-gcp v1.22.1 h1:S57EKcx11t6OcfFkW+fqu3Ha6juxjXOh5hEFDZ8lBfs=
 github.com/gardener/gardener-extension-provider-gcp v1.22.1/go.mod h1:JQso52ey4E2v4cSHqmXu7fd+jL8fLGB9HgrulhA4cW0=
 github.com/gardener/gardener-resource-manager v0.10.0/go.mod h1:0pKTHOhvU91eQB0EYr/6Ymd7lXc/5Hi8P8tF/gpV0VQ=
