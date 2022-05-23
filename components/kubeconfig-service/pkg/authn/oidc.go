@@ -41,7 +41,7 @@ func NewOIDCAuthenticator(config *OIDCConfig) (CancelableAuthRequest, error) {
 	tokenAuthenticator, err := oidc.New(oidc.Options{
 		IssuerURL:            config.IssuerURL,
 		ClientID:             config.ClientID,
-		CAFile:               config.CAFilePath,
+		//CAFile:               config.CAFilePath,
 		UsernameClaim:        config.UsernameClaim,
 		UsernamePrefix:       config.UsernamePrefix,
 		GroupsClaim:          config.GroupsClaim,
