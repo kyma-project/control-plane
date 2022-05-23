@@ -24,7 +24,7 @@ type kubeconfig struct {
 	} `yaml:"users"`
 }
 
-const kubeconfigTemplate = `
+const KubeconfigSaTemplate = `
 ---
 apiVersion: v1
 kind: Config
@@ -38,27 +38,9 @@ contexts:
 - name: {{ .ContextName }}
   context:
     cluster: {{ .ContextName }}
-    user: {{ .ContextName }}
+    user: {{ .UserID }}
 users:
-- name: {{ .ContextName }}
+- name: {{ .UserID }}
   user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1beta1
-      args:
-      - get-token
-      - "--oidc-issuer-url={{ .OIDCIssuerURL }}"
-      - "--oidc-client-id={{ .OIDCClientID }}"
-      - "--oidc-extra-scope=email"
-      - "--oidc-extra-scope=openid"
-      command: kubectl-oidc_login
-      installHint: |
-        kubelogin plugin is required to proceed with authentication
-        # Homebrew (macOS and Linux)
-        brew install int128/kubelogin/kubelogin
-
-        # Krew (macOS, Linux, Windows and ARM)
-        kubectl krew install oidc-login
-
-        # Chocolatey (Windows)
-        choco install kubelogin
+    token: {{ .SaToken }}
 `
