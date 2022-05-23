@@ -34,20 +34,36 @@ type key struct {
 	runtimeVersion, plan string
 }
 
+type RequiredComponentsProvider interface {
+	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error)
+}
+
+type AdditionalComponentsProvider interface {
+	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error)
+}
+
+type defaultRequiredComponentsProvider struct {
+	httpClient HTTPDoer
+}
+
+type defaultAdditionalComponentsProvider struct {
+	k8sClient client.Client
+}
+
 // ComponentsProvider provides the list of required and additional components for creating a Kyma Runtime
 type ComponentsProvider struct {
-	httpClient HTTPDoer
-	k8sClient  client.Client
-	components map[key][]KymaComponent // runtimeversion -> plan -> components
-	mu         sync.Mutex
+	requiredComponentsProvider   RequiredComponentsProvider
+	additionalComponentsProvider AdditionalComponentsProvider
+	components                   map[key][]KymaComponent // runtimeversion -> plan -> components
+	mu                           sync.Mutex
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
 func NewComponentsProvider(k8sClient client.Client) *ComponentsProvider {
 	return &ComponentsProvider{
-		httpClient: http.DefaultClient,
-		k8sClient:  k8sClient,
-		components: make(map[key][]KymaComponent, 0),
+		requiredComponentsProvider:   &defaultRequiredComponentsProvider{httpClient: http.DefaultClient},
+		additionalComponentsProvider: &defaultAdditionalComponentsProvider{k8sClient: k8sClient},
+		components:                   make(map[key][]KymaComponent, 0),
 	}
 }
 
@@ -62,21 +78,21 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 		return cmps, nil
 	}
 
-	kymaComponents, err := p.getKymaComponents(kymaVersion)
+	kymaComponents, err := p.requiredComponentsProvider.RequiredComponents(kymaVersion)
 	if err != nil {
 		return nil, fmt.Errorf("while gettiny Kyma components: %w", err)
 	}
 
 }
 
-func (p *ComponentsProvider) getKymaComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
+func (p *defaultRequiredComponentsProvider) RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
 	if kymaVersion.MajorVersion == 2 {
 		return p.getComponentsFromComponentsYaml(kymaVersion.Version)
 	}
 	return nil, errors.New("unsupported Kyma version")
 }
 
-func (p *ComponentsProvider) getComponentsFromComponentsYaml(version string) ([]KymaComponent, error) {
+func (p *defaultRequiredComponentsProvider) getComponentsFromComponentsYaml(version string) ([]KymaComponent, error) {
 	yamlURL := p.getComponentsYamlURL(version)
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
@@ -127,7 +143,7 @@ func (p *ComponentsProvider) getComponentsFromComponentsYaml(version string) ([]
 	return requiredComponents, nil
 }
 
-func (p *ComponentsProvider) getComponentsYamlURL(kymaVersion string) string {
+func (p *defaultRequiredComponentsProvider) getComponentsYamlURL(kymaVersion string) string {
 	if p.isOnDemandRelease(kymaVersion) {
 		return fmt.Sprintf(onDemandComponentsURLFormat, kymaVersion)
 	}
@@ -141,13 +157,13 @@ func (p *ComponentsProvider) getComponentsYamlURL(kymaVersion string) string {
 //   For changes to the main branch: main-<commit_sha>
 //
 // source: https://github.com/kyma-project/test-infra/blob/main/docs/prow/prow-architecture.md#generate-development-artifacts
-func (p *ComponentsProvider) isOnDemandRelease(version string) bool {
+func (p *defaultRequiredComponentsProvider) isOnDemandRelease(version string) bool {
 	isOnDemandVersion := strings.HasPrefix(version, "PR-") ||
 		strings.HasPrefix(version, "main-")
 	return isOnDemandVersion
 }
 
-func (p *ComponentsProvider) checkStatusCode(resp *http.Response) error {
+func (p *defaultRequiredComponentsProvider) checkStatusCode(resp *http.Response) error {
 	if resp.StatusCode == http.StatusOK {
 		return nil
 	}
@@ -169,4 +185,8 @@ func (p *ComponentsProvider) checkStatusCode(resp *http.Response) error {
 	default:
 		return errors.New(msg)
 	}
+}
+
+func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+
 }
