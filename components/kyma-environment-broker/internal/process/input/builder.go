@@ -9,7 +9,6 @@ import (
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/vburenin/nsync"
 )
@@ -51,7 +50,7 @@ type (
 	}
 
 	ComponentListProvider interface {
-		AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error)
+		AllComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]runtime.KymaComponent, error)
 	}
 )
 
@@ -202,7 +201,7 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 }
 
 func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData) (internal.ComponentConfigurationInputList, error) {
-	allComponents, err := f.componentsProvider.AllComponents(version)
+	allComponents, err := f.componentsProvider.AllComponents(version, "")
 	if err != nil {
 		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
 	}
@@ -305,12 +304,12 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVe
 	}, nil
 }
 
-func mapToGQLComponentConfigurationInput(kymaComponents []v1alpha1.KymaComponent) internal.ComponentConfigurationInputList {
+func mapToGQLComponentConfigurationInput(kymaComponents []runtime.KymaComponent) internal.ComponentConfigurationInputList {
 	var input internal.ComponentConfigurationInputList
 	for _, component := range kymaComponents {
 		var sourceURL *string
-		if component.Source != nil {
-			sourceURL = &component.Source.URL
+		if component.Source != "" {
+			sourceURL = &component.Source
 		}
 
 		input = append(input, &gqlschema.ComponentConfigurationInput{

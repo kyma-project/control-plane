@@ -90,7 +90,7 @@ type componentProviderDecorated struct {
 }
 
 func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
-	all, err := s.componentProvider.AllComponents(kymaVersion)
+	all, err := s.componentProvider.AllComponents(kymaVersion, "")
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
 			all[i] = dc

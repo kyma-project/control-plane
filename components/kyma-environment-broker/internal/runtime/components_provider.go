@@ -20,10 +20,6 @@ const (
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
-type kymaComponentsProvider interface {
-	getKymaComponents()
-}
-
 type KymaComponent struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
@@ -189,4 +185,12 @@ func (p *defaultRequiredComponentsProvider) checkStatusCode(resp *http.Response)
 
 func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
 
+}
+
+func (p *ComponentsProvider) SetRequiredComponentsProvider(provider RequiredComponentsProvider) {
+	p.requiredComponentsProvider = provider
+}
+
+func (p *ComponentsProvider) SetAdditionalComponentsProvider(provider AdditionalComponentsProvider) {
+	p.additionalComponentsProvider = provider
 }
