@@ -46,7 +46,6 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
-
   components:
     - base
     - busola-migrator
@@ -61,7 +60,6 @@ global:
     - cluster-essentials
     - rma
     - sc-migration
-
   auditlog:
     configMapName: "kcp-auditlog-config"
     secretName: "kcp-auditlog-secret"
@@ -69,10 +67,8 @@ global:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
     disabled: false
-
   provisioning:
     enabled: false
-
   kyma_environment_broker:
     enabled: false
     serviceAccountName: "kcp-kyma-environment-broker"
@@ -81,14 +77,12 @@ global:
         name: kcp-kyma-environment-broker-credentials
     environmentsCleanup:
       enabled: false
-
   provisioner:
     graphql:
       port: 3000
     secrets:
       integrationSystemCredentials:
         name: kcp-provisioner-credentials
-
   compass:
     registration:
       enabled: true
@@ -99,14 +93,12 @@ global:
           host: compass-gateway-auth-oauth
     mtls:
       host: compass-gateway-mtls
-
   istio:
     gateway:
       name: "kyma-gateway"
       namespace: "kyma-system"
     proxy:
       port: 15020
-
   database:
     manageSecrets: true
     embedded:
@@ -117,7 +109,6 @@ global:
         name: "broker"
       reconciler:
         name: "reconciler"
-
       #TODO remove below after migration to separate user will be done
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
@@ -138,16 +129,13 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
-
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-
   kyma_metrics_collector:
     enabled: false
-
   mothership_reconciler:
     enabled: false
     expose: true
@@ -173,13 +161,10 @@ global:
   component_reconcilers:
     enabled: false
     authentication: true
-
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
-
 pairing-adapter:
   enabled: false
-
 migratorJobs:
   enabled: true
