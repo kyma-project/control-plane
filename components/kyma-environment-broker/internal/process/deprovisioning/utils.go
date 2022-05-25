@@ -12,7 +12,7 @@ func handleError(stepName string, operation internal.DeprovisioningOperation, er
 	log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 
 	if kebError.IsTemporaryError(err) {
-		if time.Since(operation.UpdatedAt) < 30*time.Minute {
+		if time.Since(operation.CreatedAt) < 30*time.Minute {
 			log.Errorf("%s: %s. Retry...", msg, err)
 			return operation, 10 * time.Second, nil
 		}
