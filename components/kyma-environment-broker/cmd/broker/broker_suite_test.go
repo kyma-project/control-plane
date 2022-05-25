@@ -150,7 +150,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping, nil)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
 	directorClient := director.NewFakeClient()
 	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
@@ -178,7 +178,7 @@ func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
-	rvc := runtimeversion.NewRuntimeVersionConfigurator("", "", nil, db.RuntimeStates())
+	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
 	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
 		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
 	updateQueue.SpeedUp(10000)
@@ -304,8 +304,8 @@ func (s *BrokerSuiteTest) CreateAPI(inputFactory broker.PlanValidator, cfg *Conf
 					Description: broker.AzurePlanName,
 					Metadata:    broker.PlanMetadata{},
 				},
-				broker.PreviewPlanID: {
-					Description: broker.PreviewPlanName,
+				broker.AWSPlanName: {
+					Description: broker.AWSPlanName,
 					Metadata:    broker.PlanMetadata{},
 				},
 			},
@@ -659,7 +659,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = wait.PollInfinite(pollingInterval, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
 			return true, nil

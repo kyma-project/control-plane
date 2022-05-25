@@ -24,19 +24,17 @@ import (
 )
 
 const (
-	poolingInterval           = 20 * time.Millisecond
-	defaultKymaVersion        = "1.24.5"
-	defaultKymaPreviewVersion = "2.0.0"
+	poolingInterval    = 20 * time.Millisecond
+	defaultKymaVersion = "1.24.5"
 )
 
 func TestUpgradeKymaManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
 	orchestrationConfig := internalOrchestration.Config{
-		KymaVersion:        defaultKymaVersion,
-		KubernetesVersion:  "1.22",
-		Namespace:          "default",
-		Name:               "policyConfig",
-		KymaPreviewVersion: defaultKymaPreviewVersion,
+		KymaVersion:       defaultKymaVersion,
+		KubernetesVersion: "1.22",
+		Namespace:         "default",
+		Name:              "policyConfig",
 	}
 
 	t.Run("Empty", func(t *testing.T) {

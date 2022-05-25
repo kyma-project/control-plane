@@ -157,7 +157,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
@@ -461,7 +461,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-free":         "true",
 				"overrides-plan-azure_ha":     "true",
 				"overrides-plan-aws_ha":       "true",
-				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 			},
@@ -483,7 +482,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-free":         "true",
 				"overrides-plan-azure_ha":     "true",
 				"overrides-plan-aws_ha":       "true",
-				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 				"component":                   "service-catalog2",
@@ -590,7 +588,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping, nil)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
@@ -939,13 +937,12 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                "1.24.7",
-		KymaPreviewVersion:         "2.0",
+		KymaVersion:                "2.0",
 		EnableOnDemandVersion:      true,
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial", "preview"},
+			EnablePlans: []string{"azure", "trial"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
