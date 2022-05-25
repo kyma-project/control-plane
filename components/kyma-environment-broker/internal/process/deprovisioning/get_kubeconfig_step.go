@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -53,6 +54,11 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
+		if s.isNotFoundErr(err) {
+			log.Infof("shoot not found, skipping step")
+			operation.IsServiceInstanceDeleted = true
+			return operation, 0, nil
+		}
 		return handleError(s.Name(), operation, err, log, "call to provisioner RuntimeStatus failed")
 	}
 
@@ -72,4 +78,8 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 	operation.K8sClient = cli
 
 	return operation, 0, nil
+}
+
+func (s *GetKubeconfigStep) isNotFoundErr(err error) bool {
+	return strings.Contains(err.Error(), "not found")
 }
