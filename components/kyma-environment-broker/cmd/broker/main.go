@@ -283,7 +283,7 @@ func main() {
 
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
-	runtimeProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath, cfg.NewAdditionalRuntimeComponentsYAMLFilePath)
+	componentsProvider := runtime.NewComponentsProvider(ctx, cli)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	cfg.Gardener.DNSProviders, err = gardener.ReadDNSProvidersValuesFromYAML(cfg.SkrDnsProvidersValuesYAMLFilePath)
@@ -301,7 +301,7 @@ func main() {
 	logs.Infof("Platform region mapping for trial: %v", regions)
 	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SkrOidcDefaultValuesYAMLFilePath)
 	fatalOnError(err)
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, runtimeProvider,
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentsProvider,
 		cfg.Provisioner, cfg.KymaVersion, regions, cfg.FreemiumProviders, oidcDefaultValues)
 	fatalOnError(err)
 
@@ -358,7 +358,7 @@ func main() {
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 20, db, inputFactory, provisionerClient, eventBroker, runtimeVerConfigurator, db.RuntimeStates(),
-		runtimeProvider, reconcilerClient, cfg, k8sClientProvider, logs)
+		componentsProvider, reconcilerClient, cfg, k8sClientProvider, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
