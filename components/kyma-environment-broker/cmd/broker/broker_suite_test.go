@@ -102,13 +102,16 @@ func (s *BrokerSuiteTest) TearDown() {
 	s.httpServer.Close()
 }
 
-func NewBrokerSuiteTest(t *testing.T) *BrokerSuiteTest {
+func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	ctx := context.Background()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, additionalKymaVersions)...).Build()
 	cfg := fixConfig()
+	if len(version) == 1 {
+		cfg.KymaVersion = version[0] // overriden to
+	}
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -433,7 +436,9 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	err = s.gardenerClient.Resource(gardener.ShootResource).Namespace(fixedGardenerNamespace).Delete(context.Background(), op.ShootName, v1.DeleteOptions{})
+	err = s.gardenerClient.Resource(gardener.ShootResource).
+		Namespace(fixedGardenerNamespace).
+		Delete(context.Background(), op.ShootName, v1.DeleteOptions{})
 	require.NoError(s.t, err)
 
 	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateSucceeded, op.RuntimeID)

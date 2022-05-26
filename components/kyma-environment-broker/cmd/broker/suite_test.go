@@ -937,7 +937,7 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                "2.0",
+		KymaVersion:                defaultKymaVer,
 		EnableOnDemandVersion:      true,
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
