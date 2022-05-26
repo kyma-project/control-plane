@@ -157,7 +157,7 @@ func TestProvisioning_HandleExistingOperation(t *testing.T) {
 
 func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	defer suite.TearDown()
 	iid := uuid.New().String()
 
