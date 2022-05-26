@@ -226,16 +226,23 @@ func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion i
 }
 
 func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapData(data map[string]string) (KymaComponent, error) {
-	encoded, err := json.Marshal(data)
+	dataForJSONEncoding := make(map[string]string, len(data))
+	for k, v := range data {
+		keySplit := strings.Split(k, ".")
+		dataForJSONEncoding[keySplit[len(keySplit)-1]] = v
+	}
+
+	encoded, err := json.Marshal(dataForJSONEncoding)
 	if err != nil {
 		return KymaComponent{}, fmt.Errorf("while marshalling data from ConfigMap to JSON: %w", err)
 	}
-	encoded = []byte(strings.ReplaceAll(string(encoded), "component.", ""))
+
 	var component KymaComponent
 	err = json.Unmarshal(encoded, &component)
 	if err != nil {
 		return KymaComponent{}, fmt.Errorf("while unmarshalling data from JSON to KymaComponent: %w", err)
 	}
+
 	return component, nil
 }
 
