@@ -18,7 +18,6 @@ const defaultPageSize = 100
 // Client is the interface to interact with the KEB /runtimes API as an HTTP client using OIDC ID token in JWT format.
 type Client interface {
 	ListRuntimes(params ListParameters) (RuntimesPage, error)
-	Deprovision(instanceId string) error
 }
 
 type client struct {
@@ -96,37 +95,6 @@ func (c *client) ListRuntimes(params ListParameters) (RuntimesPage, error) {
 	}
 
 	return runtimes, nil
-}
-
-func (c *client) Deprovision(instanceId string) error {
-	url := fmt.Sprintf("%s/v2/service_instances/%s", c.url, instanceId)
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return errors.Wrap(err, "while creating request")
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return errors.Wrapf(err, "while calling %s", req.URL.String())
-	}
-
-	// Drain response body and close, return error to context if there isn't any.
-	defer func() {
-		derr := drainResponseBody(resp.Body)
-		if err == nil {
-			err = derr
-		}
-		cerr := resp.Body.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("calling %s returned %d (%s) status", req.URL.String(), resp.StatusCode, resp.Status)
-	}
-
-	return nil
 }
 
 func setQuery(url *url.URL, params ListParameters) {

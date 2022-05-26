@@ -664,7 +664,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.PollInfinite(pollingInterval, func() (bool, error) {
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
 			return true, nil
