@@ -87,8 +87,19 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 
 	kymaComponents, err := p.requiredComponentsProvider.RequiredComponents(kymaVersion)
 	if err != nil {
-		return nil, fmt.Errorf("while gettiny Kyma components: %w", err)
+		return nil, fmt.Errorf("while getting Kyma components: %w", err)
 	}
+
+	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, plan)
+	if err != nil {
+		return nil, fmt.Errorf("while getting additional components: %w", err)
+	}
+
+	allComponents := append(kymaComponents, additionalComponents...)
+
+	p.components[key{runtimeVersion: kymaVersion.Version, plan: plan}] = allComponents
+
+	return allComponents, nil
 
 }
 
