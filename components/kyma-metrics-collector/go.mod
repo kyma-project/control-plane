@@ -5,12 +5,12 @@ go 1.17
 require (
 	github.com/gardener/gardener v1.47.0
 	github.com/gardener/gardener-extension-provider-aws v1.35.0
-	github.com/gardener/gardener-extension-provider-azure v1.27.0
+	github.com/gardener/gardener-extension-provider-azure v1.27.1
 	github.com/gardener/gardener-extension-provider-gcp v1.22.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220518111804-77afbe8f4180
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220520102227-40a402ed3c78
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

@@ -46,8 +46,8 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	}
 
 	if operation.K8sClient == nil {
-		log.Errorf("k8s client must be provided")
-		return s.operationManager.OperationFailed(operation, "k8s client must be provided", nil, log)
+		log.Errorf("k8s client is not provided, service instance %s may need manual removal", serviceInstanceName)
+		return operation, 0, nil
 	}
 
 	si, err := s.getServiceInstance(operation.K8sClient)
