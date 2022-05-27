@@ -357,9 +357,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"Production AWS": {
 			planID: broker.AWSPlanID,
 
-			expectedMinimalNumberOfNodes:        2,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
