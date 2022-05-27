@@ -76,8 +76,9 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
-
-	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
+	gardenerInput := gardenerUpgradeInputToConfigInput(input)
+	gardenerInput.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerInput)
 	rs.KymaVersion = operation.RuntimeVersion.Version
 	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {

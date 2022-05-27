@@ -218,6 +218,41 @@ type ERSContext struct {
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
 	IsMigration           bool                               `json:"isMigration"`
+	CommercialModel       *string                            `json:"commercial_model,omitempty"`
+	LicenseType           *string                            `json:"license_type,omitempty"`
+	Origin                *string                            `json:"origin,omitempty"`
+	Platform              *string                            `json:"platform,omitempty"`
+	Region                *string                            `json:"region,omitempty"`
+}
+
+func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
+	if e.LicenseType == nil {
+		return nil
+	}
+	switch *e.LicenseType {
+	case "CUSTOMER", "PARTNER", "TRIAL":
+		disable := true
+		return &disable
+	}
+	return nil
+}
+func (e ERSContext) ERSUpdate() bool {
+	if e.CommercialModel != nil {
+		return true
+	}
+	if e.LicenseType != nil {
+		return true
+	}
+	if e.Origin != nil {
+		return true
+	}
+	if e.Platform != nil {
+		return true
+	}
+	if e.Region != nil {
+		return true
+	}
+	return false
 }
 
 type ServiceManagerEntryDTO struct {
