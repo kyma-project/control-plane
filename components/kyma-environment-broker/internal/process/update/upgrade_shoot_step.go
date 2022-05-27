@@ -54,6 +54,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
+	input.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
@@ -76,9 +77,8 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	}
 
 	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
-	gardenerInput := gardenerUpgradeInputToConfigInput(input)
-	gardenerInput.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
-	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerInput)
+
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
 	rs.KymaVersion = operation.RuntimeVersion.Version
 	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {
@@ -143,6 +143,9 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 	}
 	if input.GardenerConfig.MaxUnavailable != nil {
 		result.MaxUnavailable = *input.GardenerConfig.MaxUnavailable
+	}
+	if input.GardenerConfig.ShootNetworkingFilterDisabled != nil {
+		result.ShootNetworkingFilterDisabled = input.GardenerConfig.ShootNetworkingFilterDisabled
 	}
 
 	return result
