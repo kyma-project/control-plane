@@ -3,6 +3,7 @@ package endpoints
 import (
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
@@ -16,6 +17,9 @@ const (
 	mimeTypeYaml = "application/x-yaml"
 	mimeTypeText = "text/plain"
 )
+
+//mutex to avoid critical section in config map deployment
+var mu sync.Mutex
 
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
@@ -87,7 +91,7 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 		return nil, err
 	}
 
-	runtimeClient, err := run.NewRuntimeClient([]byte(rawConfig), userInfo.ID, userInfo.Role)
+	runtimeClient, err := run.NewRuntimeClient([]byte(rawConfig), userInfo.ID, userInfo.Role, tenant)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +105,16 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 	if err != nil {
 		return nil, err
 	}
+
+	mu.Lock()
+	err = runtimeClient.DeployConfigMap(runtime, userInfo.Role)
+	mu.Unlock()
+	if err != nil {
+		log.Errorf("Cannot generate config map, %s", err.Error())
+		return nil, err
+	}
+
+	go runtimeClient.SetupTimer(run.ExpireTime, runtime)
 
 	return saKubeConfig, nil
 }

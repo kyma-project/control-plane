@@ -32,6 +32,7 @@ type SAInfo struct {
 	ClusterRoleBindingName string
 	Namespace              string
 	SecretName             string
+	TenantID               string
 }
 
 const SA = "SA"
@@ -58,12 +59,13 @@ type RollbackE struct {
 }
 type RuntimeClient struct {
 	K8s               kubernetes.Interface
+	KcpK8s            kubernetes.Interface
 	User              SAInfo
 	L2L3OperatiorRole string
 	RollbackE         RollbackE
 }
 
-func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string) (*RuntimeClient, error) {
+func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string, tenant string) (*RuntimeClient, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeConfig))
 	if err != nil {
 		return nil, err
@@ -73,14 +75,20 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 		return nil, err
 	}
 
+	coreClientset, err := GetK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
 	user := SAInfo{
 		ServiceAccountName:     userID,
 		ClusterRoleName:        userID,
 		ClusterRoleBindingName: userID,
 		Namespace:              Namespace,
+		TenantID:               tenant,
 	}
 	RollbackE := RollbackE{}
-	return &RuntimeClient{clientset, user, L2L3OperatiorRole, RollbackE}, nil
+	return &RuntimeClient{clientset, coreClientset, user, L2L3OperatiorRole, RollbackE}, nil
 }
 
 //kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
