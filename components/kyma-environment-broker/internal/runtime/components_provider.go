@@ -58,10 +58,10 @@ type defaultAdditionalComponentsProvider struct {
 // ComponentsProvider provides the list of required and additional components for creating a Kyma Runtime
 type ComponentsProvider struct {
 	ctx                          context.Context
+	mu                           sync.Mutex
 	requiredComponentsProvider   RequiredComponentsProvider
 	additionalComponentsProvider AdditionalComponentsProvider
 	components                   map[key][]KymaComponent // runtimeversion -> plan -> components
-	mu                           sync.Mutex
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
