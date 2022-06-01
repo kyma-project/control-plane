@@ -94,19 +94,23 @@ func (cmd *DeprovisionCommand) resolveRuntimeFromShootName(ctx context.Context, 
 	params := runtime.ListParameters{}
 	if cmd.shootName != "" {
 		params.Shoots = []string{cmd.shootName}
-		rp, err := rtClient.ListRuntimes(params)
-		if err != nil {
-			return err
-		}
-		if rp.Count < 1 {
-			return fmt.Errorf("no runtimes matched the input options")
-		}
-		if rp.Count > 1 {
-			return fmt.Errorf("multiple runtimes (%d) matched the input options", rp.Count)
-		}
-
-		cmd.runtimeID = rp.Data[0].RuntimeID
+	} else {
+		params.GlobalAccountIDs = []string{cmd.globalAccountID}
+		params.SubAccountIDs = []string{cmd.subAccountID}
 	}
+
+	rp, err := rtClient.ListRuntimes(params)
+	if err != nil {
+		return err
+	}
+	if rp.Count < 1 {
+		return fmt.Errorf("no runtimes matched the input options")
+	}
+	if rp.Count > 1 {
+		return fmt.Errorf("multiple runtimes (%d) matched the input options", rp.Count)
+	}
+
+	cmd.runtimeID = rp.Data[0].RuntimeID
 
 	return nil
 }
