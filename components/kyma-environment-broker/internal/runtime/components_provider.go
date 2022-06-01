@@ -41,12 +41,32 @@ type KymaComponent struct {
 	Source      *ComponentSource `json:"source,omitempty"`
 }
 
+type PlanNameProvider interface {
+	PlanName() string
+}
+
 type RequiredComponentsProvider interface {
 	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error)
 }
 
 type AdditionalComponentsProvider interface {
 	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error)
+}
+
+type PlanNameHolder struct {
+	planName string
+}
+
+func NewPlanNameHolder() *PlanNameHolder {
+	return &PlanNameHolder{}
+}
+
+func (p *PlanNameHolder) SetPlanName(planName string) {
+	p.planName = planName
+}
+
+func (p *PlanNameHolder) PlanName() string {
+	return p.planName
 }
 
 type defaultRequiredComponentsProvider struct {
@@ -63,15 +83,16 @@ type defaultAdditionalComponentsProvider struct {
 type ComponentsProvider struct {
 	ctx                          context.Context
 	mu                           sync.Mutex
+	planNameProvider             PlanNameProvider
 	requiredComponentsProvider   RequiredComponentsProvider
 	additionalComponentsProvider AdditionalComponentsProvider
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
-func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
+func NewComponentsProvider(ctx context.Context, k8sClient client.Client, planNameProvider PlanNameProvider,
 	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
 	return &ComponentsProvider{
-		ctx:                        ctx,
+		planNameProvider:           planNameProvider,
 		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: http.DefaultClient},
 		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
 			ctx:                                 ctx,
@@ -84,7 +105,7 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // ConfigMaps and merge them together
-func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -93,7 +114,7 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 		return nil, fmt.Errorf("while getting Kyma components: %w", err)
 	}
 
-	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, plan)
+	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, p.planNameProvider.PlanName())
 	if err != nil {
 		return nil, fmt.Errorf("while getting additional components: %w", err)
 	}
