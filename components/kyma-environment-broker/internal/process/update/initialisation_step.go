@@ -71,24 +71,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			}
 			return operation, time.Second, nil
 		}
-		if operation.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
-			instance.Parameters.ErsContext.SMOperatorCredentials = operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
-		}
-		if operation.ProvisioningParameters.ErsContext.CommercialModel != nil {
-			instance.Parameters.ErsContext.CommercialModel = operation.ProvisioningParameters.ErsContext.CommercialModel
-		}
-		if operation.ProvisioningParameters.ErsContext.LicenseType != nil {
-			instance.Parameters.ErsContext.LicenseType = operation.ProvisioningParameters.ErsContext.LicenseType
-		}
-		if operation.ProvisioningParameters.ErsContext.Origin != nil {
-			instance.Parameters.ErsContext.Origin = operation.ProvisioningParameters.ErsContext.Origin
-		}
-		if operation.ProvisioningParameters.ErsContext.Platform != nil {
-			instance.Parameters.ErsContext.Platform = operation.ProvisioningParameters.ErsContext.Platform
-		}
-		if operation.ProvisioningParameters.ErsContext.Region != nil {
-			instance.Parameters.ErsContext.Region = operation.ProvisioningParameters.ErsContext.Region
-		}
+		instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, operation.ProvisioningParameters.ErsContext)
 		if _, err := s.instanceStorage.Update(*instance); err != nil {
 			log.Errorf("unable to update the instance, retrying")
 			return operation, time.Second, err
