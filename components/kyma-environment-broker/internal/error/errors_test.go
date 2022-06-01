@@ -12,6 +12,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	apierr "k8s.io/apimachinery/pkg/api/errors"
+	apierr2 "k8s.io/apimachinery/pkg/api/meta"
 )
 
 func TestLastError(t *testing.T) {
@@ -134,8 +136,39 @@ func TestNotFoundError(t *testing.T) {
 	lastErr := kebError.ReasonForError(err)
 
 	// then
-	assert.EqualError(t, err, "something: not found")
+	assert.EqualError(t, lastErr, "something: not found")
 	assert.Equal(t, kebError.ErrClusterNotFound, lastErr.Reason())
 	assert.Equal(t, kebError.ErrReconciler, lastErr.Component())
 	assert.True(t, kebError.IsNotFoundError(err))
+}
+
+func TestK8SLastError(t *testing.T) {
+	// given
+	errBadReq := errors.Wrap(apierr.NewBadRequest("bad request here"), "something")
+	errUnexpObj := errors.Wrap(&apierr.UnexpectedObjectError{}, "something")
+	errAmbi := errors.Wrap(&apierr2.AmbiguousResourceError{}, "something")
+	errNoMatch := errors.Wrap(&apierr2.NoKindMatchError{}, "something")
+
+	// when
+	lastErrBadReq := kebError.ReasonForError(errBadReq)
+	lastErrUnexpObj := kebError.ReasonForError(errUnexpObj)
+	lastErrAmbi := kebError.ReasonForError(errAmbi)
+	lastErrNoMatch := kebError.ReasonForError(errNoMatch)
+
+	// then
+	assert.EqualError(t, lastErrBadReq, "something: bad request here")
+	assert.Equal(t, kebError.ErrReason("BadRequest"), lastErrBadReq.Reason())
+	assert.Equal(t, kebError.ErrK8SClient, lastErrBadReq.Component())
+
+	assert.ErrorContains(t, lastErrUnexpObj, "something: unexpected object: ")
+	assert.Equal(t, kebError.ErrK8SUnexpectedObjectError, lastErrUnexpObj.Reason())
+	assert.Equal(t, kebError.ErrK8SClient, lastErrUnexpObj.Component())
+
+	assert.ErrorContains(t, lastErrAmbi, "matches multiple resources or kinds")
+	assert.Equal(t, kebError.ErrK8SAmbiguousError, lastErrAmbi.Reason())
+	assert.Equal(t, kebError.ErrK8SClient, lastErrAmbi.Component())
+
+	assert.ErrorContains(t, lastErrNoMatch, "something: no matches for kind")
+	assert.Equal(t, kebError.ErrK8SNoMatchError, lastErrNoMatch.Reason())
+	assert.Equal(t, kebError.ErrK8SClient, lastErrNoMatch.Component())
 }

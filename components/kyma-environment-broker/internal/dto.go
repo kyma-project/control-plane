@@ -218,6 +218,67 @@ type ERSContext struct {
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
 	IsMigration           bool                               `json:"isMigration"`
+	CommercialModel       *string                            `json:"commercial_model,omitempty"`
+	LicenseType           *string                            `json:"license_type,omitempty"`
+	Origin                *string                            `json:"origin,omitempty"`
+	Platform              *string                            `json:"platform,omitempty"`
+	Region                *string                            `json:"region,omitempty"`
+}
+
+func UpdateERSContext(provisioning, lastOperation ERSContext) ERSContext {
+	if lastOperation.ServiceManager != nil {
+		provisioning.ServiceManager = lastOperation.ServiceManager
+	}
+	if lastOperation.SMOperatorCredentials != nil {
+		provisioning.SMOperatorCredentials = lastOperation.SMOperatorCredentials
+	}
+	if lastOperation.CommercialModel != nil {
+		provisioning.CommercialModel = lastOperation.CommercialModel
+	}
+	if lastOperation.LicenseType != nil {
+		provisioning.LicenseType = lastOperation.LicenseType
+	}
+	if lastOperation.Origin != nil {
+		provisioning.Origin = lastOperation.Origin
+	}
+	if lastOperation.Platform != nil {
+		provisioning.Platform = lastOperation.Platform
+	}
+	if lastOperation.Region != nil {
+		provisioning.Region = lastOperation.Region
+	}
+	return provisioning
+}
+
+func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
+	if e.LicenseType == nil {
+		return nil
+	}
+	switch *e.LicenseType {
+	case "CUSTOMER", "PARTNER", "TRIAL":
+		disable := true
+		return &disable
+	}
+	return nil
+}
+
+func (e ERSContext) ERSUpdate() bool {
+	if e.CommercialModel != nil {
+		return true
+	}
+	if e.LicenseType != nil {
+		return true
+	}
+	if e.Origin != nil {
+		return true
+	}
+	if e.Platform != nil {
+		return true
+	}
+	if e.Region != nil {
+		return true
+	}
+	return false
 }
 
 type ServiceManagerEntryDTO struct {

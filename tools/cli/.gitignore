@@ -1,3 +1,5 @@
 kcp-darwin
 kcp-linux
 kcp.exe
+/cmd/ers
+!/cmd/ers/main.go

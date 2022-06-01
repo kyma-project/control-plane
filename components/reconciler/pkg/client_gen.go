@@ -123,6 +123,9 @@ type ClientInterface interface {
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PutOperationsSchedulingIDCorrelationIDDebug request
+	PutOperationsSchedulingIDCorrelationIDDebug(ctx context.Context, schedulingID string, correlationID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostOperationsSchedulingIDCorrelationIDStop request with any body
 	PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -133,6 +136,9 @@ type ClientInterface interface {
 
 	// DeleteReconciliationsClusterRuntimeID request
 	DeleteReconciliationsClusterRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutReconciliationsSchedulingIDDebug request
+	PutReconciliationsSchedulingIDDebug(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetReconciliationsSchedulingIDInfo request
 	GetReconciliationsSchedulingIDInfo(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -282,6 +288,18 @@ func (c *Client) GetClustersRuntimeIDStatusChanges(ctx context.Context, runtimeI
 	return c.Client.Do(req)
 }
 
+func (c *Client) PutOperationsSchedulingIDCorrelationIDDebug(ctx context.Context, schedulingID string, correlationID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutOperationsSchedulingIDCorrelationIDDebugRequest(c.Server, schedulingID, correlationID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPostOperationsSchedulingIDCorrelationIDStopRequestWithBody(c.Server, schedulingID, correlationID, contentType, body)
 	if err != nil {
@@ -320,6 +338,18 @@ func (c *Client) GetReconciliations(ctx context.Context, params *GetReconciliati
 
 func (c *Client) DeleteReconciliationsClusterRuntimeID(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteReconciliationsClusterRuntimeIDRequest(c.Server, runtimeID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutReconciliationsSchedulingIDDebug(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutReconciliationsSchedulingIDDebugRequest(c.Server, schedulingID)
 	if err != nil {
 		return nil, err
 	}
@@ -732,6 +762,47 @@ func NewGetClustersRuntimeIDStatusChangesRequest(server string, runtimeID string
 	return req, nil
 }
 
+// NewPutOperationsSchedulingIDCorrelationIDDebugRequest generates requests for PutOperationsSchedulingIDCorrelationIDDebug
+func NewPutOperationsSchedulingIDCorrelationIDDebugRequest(server string, schedulingID string, correlationID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "schedulingID", runtime.ParamLocationPath, schedulingID)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "correlationID", runtime.ParamLocationPath, correlationID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/operations/%s/%s/debug", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPostOperationsSchedulingIDCorrelationIDStopRequest calls the generic PostOperationsSchedulingIDCorrelationIDStop builder with application/json body
 func NewPostOperationsSchedulingIDCorrelationIDStopRequest(server string, schedulingID string, correlationID string, body PostOperationsSchedulingIDCorrelationIDStopJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -931,6 +1002,40 @@ func NewDeleteReconciliationsClusterRuntimeIDRequest(server string, runtimeID st
 	return req, nil
 }
 
+// NewPutReconciliationsSchedulingIDDebugRequest generates requests for PutReconciliationsSchedulingIDDebug
+func NewPutReconciliationsSchedulingIDDebugRequest(server string, schedulingID string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "schedulingID", runtime.ParamLocationPath, schedulingID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/reconciliations/%s/debug", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetReconciliationsSchedulingIDInfoRequest generates requests for GetReconciliationsSchedulingIDInfo
 func NewGetReconciliationsSchedulingIDInfoRequest(server string, schedulingID string) (*http.Request, error) {
 	var err error
@@ -1041,6 +1146,9 @@ type ClientWithResponsesInterface interface {
 	// GetClustersRuntimeIDStatusChanges request
 	GetClustersRuntimeIDStatusChangesWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*GetClustersRuntimeIDStatusChangesResponse, error)
 
+	// PutOperationsSchedulingIDCorrelationIDDebug request
+	PutOperationsSchedulingIDCorrelationIDDebugWithResponse(ctx context.Context, schedulingID string, correlationID string, reqEditors ...RequestEditorFn) (*PutOperationsSchedulingIDCorrelationIDDebugResponse, error)
+
 	// PostOperationsSchedulingIDCorrelationIDStop request with any body
 	PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error)
 
@@ -1051,6 +1159,9 @@ type ClientWithResponsesInterface interface {
 
 	// DeleteReconciliationsClusterRuntimeID request
 	DeleteReconciliationsClusterRuntimeIDWithResponse(ctx context.Context, runtimeID string, reqEditors ...RequestEditorFn) (*DeleteReconciliationsClusterRuntimeIDResponse, error)
+
+	// PutReconciliationsSchedulingIDDebug request
+	PutReconciliationsSchedulingIDDebugWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*PutReconciliationsSchedulingIDDebugResponse, error)
 
 	// GetReconciliationsSchedulingIDInfo request
 	GetReconciliationsSchedulingIDInfoWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*GetReconciliationsSchedulingIDInfoResponse, error)
@@ -1276,6 +1387,30 @@ func (r GetClustersRuntimeIDStatusChangesResponse) StatusCode() int {
 	return 0
 }
 
+type PutOperationsSchedulingIDCorrelationIDDebugResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *HTTPErrorResponse
+	JSON404      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutOperationsSchedulingIDCorrelationIDDebugResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutOperationsSchedulingIDCorrelationIDDebugResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PostOperationsSchedulingIDCorrelationIDStopResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1342,6 +1477,30 @@ func (r DeleteReconciliationsClusterRuntimeIDResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteReconciliationsClusterRuntimeIDResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutReconciliationsSchedulingIDDebugResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *HTTPErrorResponse
+	JSON404      *HTTPErrorResponse
+	JSON500      *HTTPErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PutReconciliationsSchedulingIDDebugResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutReconciliationsSchedulingIDDebugResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1478,6 +1637,15 @@ func (c *ClientWithResponses) GetClustersRuntimeIDStatusChangesWithResponse(ctx 
 	return ParseGetClustersRuntimeIDStatusChangesResponse(rsp)
 }
 
+// PutOperationsSchedulingIDCorrelationIDDebugWithResponse request returning *PutOperationsSchedulingIDCorrelationIDDebugResponse
+func (c *ClientWithResponses) PutOperationsSchedulingIDCorrelationIDDebugWithResponse(ctx context.Context, schedulingID string, correlationID string, reqEditors ...RequestEditorFn) (*PutOperationsSchedulingIDCorrelationIDDebugResponse, error) {
+	rsp, err := c.PutOperationsSchedulingIDCorrelationIDDebug(ctx, schedulingID, correlationID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutOperationsSchedulingIDCorrelationIDDebugResponse(rsp)
+}
+
 // PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse request with arbitrary body returning *PostOperationsSchedulingIDCorrelationIDStopResponse
 func (c *ClientWithResponses) PostOperationsSchedulingIDCorrelationIDStopWithBodyWithResponse(ctx context.Context, schedulingID string, correlationID string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error) {
 	rsp, err := c.PostOperationsSchedulingIDCorrelationIDStopWithBody(ctx, schedulingID, correlationID, contentType, body, reqEditors...)
@@ -1511,6 +1679,15 @@ func (c *ClientWithResponses) DeleteReconciliationsClusterRuntimeIDWithResponse(
 		return nil, err
 	}
 	return ParseDeleteReconciliationsClusterRuntimeIDResponse(rsp)
+}
+
+// PutReconciliationsSchedulingIDDebugWithResponse request returning *PutReconciliationsSchedulingIDDebugResponse
+func (c *ClientWithResponses) PutReconciliationsSchedulingIDDebugWithResponse(ctx context.Context, schedulingID string, reqEditors ...RequestEditorFn) (*PutReconciliationsSchedulingIDDebugResponse, error) {
+	rsp, err := c.PutReconciliationsSchedulingIDDebug(ctx, schedulingID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutReconciliationsSchedulingIDDebugResponse(rsp)
 }
 
 // GetReconciliationsSchedulingIDInfoWithResponse request returning *GetReconciliationsSchedulingIDInfoResponse
@@ -1910,6 +2087,46 @@ func ParseGetClustersRuntimeIDStatusChangesResponse(rsp *http.Response) (*GetClu
 	return response, nil
 }
 
+// ParsePutOperationsSchedulingIDCorrelationIDDebugResponse parses an HTTP response from a PutOperationsSchedulingIDCorrelationIDDebugWithResponse call
+func ParsePutOperationsSchedulingIDCorrelationIDDebugResponse(rsp *http.Response) (*PutOperationsSchedulingIDCorrelationIDDebugResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutOperationsSchedulingIDCorrelationIDDebugResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePostOperationsSchedulingIDCorrelationIDStopResponse parses an HTTP response from a PostOperationsSchedulingIDCorrelationIDStopWithResponse call
 func ParsePostOperationsSchedulingIDCorrelationIDStopResponse(rsp *http.Response) (*PostOperationsSchedulingIDCorrelationIDStopResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -2017,6 +2234,46 @@ func ParseDeleteReconciliationsClusterRuntimeIDResponse(rsp *http.Response) (*De
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutReconciliationsSchedulingIDDebugResponse parses an HTTP response from a PutReconciliationsSchedulingIDDebugWithResponse call
+func ParsePutReconciliationsSchedulingIDDebugResponse(rsp *http.Response) (*PutReconciliationsSchedulingIDDebugResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutReconciliationsSchedulingIDDebugResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest HTTPErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest HTTPErrorResponse

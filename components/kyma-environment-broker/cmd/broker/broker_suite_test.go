@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -377,7 +378,7 @@ func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain
 		}
 		return op.State == state, nil
 	})
-	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s != %s. The existing operation %+v", state, op.State, op)
 }
 
 func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOperationState) string {
@@ -868,6 +869,53 @@ func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconcilerAp
 	clusterConfig := s.getClusterConfig(id)
 
 	assert.Equal(s.t, metadata, clusterConfig.Metadata)
+}
+
+func (s *BrokerSuiteTest) AssertDisabledNetworkFilter(val *bool) {
+	var got, exp string
+	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
+		input := s.provisionerClient.GetLatestProvisionRuntimeInput()
+		gc := input.ClusterConfig.GardenerConfig
+		if reflect.DeepEqual(val, gc.ShootNetworkingFilterDisabled) {
+			return true, nil
+		}
+		got = "<nil>"
+		if gc.ShootNetworkingFilterDisabled != nil {
+			got = fmt.Sprintf("%v", *gc.ShootNetworkingFilterDisabled)
+		}
+		exp = "<nil>"
+		if val != nil {
+			exp = fmt.Sprintf("%v", *val)
+		}
+		return false, nil
+	})
+	if err != nil {
+		err = fmt.Errorf("ShootNetworkingFilterDisabled expected %v, got %v", exp, got)
+	}
+	require.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertDisabledNetworkFilterRuntimeState(op string, val *bool) {
+	var got, exp string
+	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
+		rs, _ := s.db.RuntimeStates().GetByOperationID(op)
+		if reflect.DeepEqual(val, rs.ClusterConfig.ShootNetworkingFilterDisabled) {
+			return true, nil
+		}
+		got = "<nil>"
+		if rs.ClusterConfig.ShootNetworkingFilterDisabled != nil {
+			got = fmt.Sprintf("%v", *rs.ClusterConfig.ShootNetworkingFilterDisabled)
+		}
+		exp = "<nil>"
+		if val != nil {
+			exp = fmt.Sprintf("%v", *val)
+		}
+		return false, fmt.Errorf("ShootNetworkingFilterDisabled expected %v, got %v", exp, got)
+	})
+	if err != nil {
+		err = fmt.Errorf("ShootNetworkingFilterDisabled expected %v, got %v", exp, got)
+	}
+	require.NoError(s.t, err)
 }
 
 func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconcilerApi.Cluster {

@@ -119,9 +119,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
-			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
-				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
-			}
+			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
