@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -57,8 +58,9 @@ type defaultRequiredComponentsProvider struct {
 }
 
 type defaultAdditionalComponentsProvider struct {
-	ctx       context.Context
-	k8sClient client.Client
+	ctx                                 context.Context
+	k8sClient                           client.Client
+	defaultAdditionalComponentsYamlPath string
 }
 
 // ComponentsProvider provides the list of required and additional components for creating a Kyma Runtime
@@ -71,12 +73,17 @@ type ComponentsProvider struct {
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
-func NewComponentsProvider(ctx context.Context, k8sClient client.Client) *ComponentsProvider {
+func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
+	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
 	return &ComponentsProvider{
-		ctx:                          ctx,
-		requiredComponentsProvider:   &defaultRequiredComponentsProvider{httpClient: http.DefaultClient},
-		additionalComponentsProvider: &defaultAdditionalComponentsProvider{k8sClient: k8sClient},
-		components:                   make(map[key][]KymaComponent, 0),
+		ctx:                        ctx,
+		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: http.DefaultClient},
+		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
+			ctx:                                 ctx,
+			k8sClient:                           k8sClient,
+			defaultAdditionalComponentsYamlPath: defaultAdditionalRuntimeComponentsYAMLPath,
+		},
+		components: make(map[key][]KymaComponent, 0),
 	}
 }
 
@@ -110,7 +117,7 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 }
 
 func (p *defaultRequiredComponentsProvider) RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
-	if kymaVersion.MajorVersion == 2 {
+	if kymaVersion.MajorVersion >= 2 {
 		return p.getComponentsFromComponentsYaml(kymaVersion.Version)
 	}
 	return nil, errors.New("unsupported Kyma version")
@@ -212,11 +219,46 @@ func (p *defaultRequiredComponentsProvider) checkStatusCode(resp *http.Response)
 }
 
 func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+	if kymaVersion.MajorVersion >= 2 {
+		defaults, err := p.fetchDefaultAdditionalComponents()
+		if err != nil {
+			return nil, fmt.Errorf("while fetching default additional components: %w", err)
+		}
+
+		custom, err := p.fetchAdditionalComponentsForGivenVersionAndPlan(kymaVersion, plan)
+		if err != nil {
+			return nil, fmt.Errorf("while fetching additional components for version %s and plan %s: %w",
+				kymaVersion.Version, plan, err)
+		}
+
+		if custom == nil {
+			return defaults, nil
+		}
+
+		return custom, nil
+	}
+	return nil, errors.New("unsupported Kyma version")
+
+}
+
+func (p *defaultAdditionalComponentsProvider) fetchDefaultAdditionalComponents() ([]KymaComponent, error) {
+	yamlContents, err := p.readYaml(p.defaultAdditionalComponentsYamlPath)
+	if err != nil {
+		return nil, err
+	}
+	return p.getComponentsFromYaml(yamlContents)
+}
+
+func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenVersionAndPlan(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
 	cfgMaps := &coreV1.ConfigMapList{}
 	opts := configMapListOptions(kymaVersion.Version, plan)
 
 	if err := p.k8sClient.List(p.ctx, cfgMaps, opts...); err != nil {
 		return nil, fmt.Errorf("cannot fetch additional components ConfigMaps: %w", err)
+	}
+
+	if len(cfgMaps.Items) == 0 {
+		return nil, nil
 	}
 
 	additionalComponents := make([]KymaComponent, 0)
@@ -250,6 +292,27 @@ func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapDat
 	}
 
 	return component, nil
+}
+
+func (p *defaultAdditionalComponentsProvider) readYaml(yamlFilePath string) ([]byte, error) {
+	yamlContents, err := os.ReadFile(yamlFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("while reading YAML: %w", err)
+	}
+	return yamlContents, nil
+}
+
+func (p *defaultAdditionalComponentsProvider) getComponentsFromYaml(yamlContents []byte) ([]KymaComponent, error) {
+	var components struct {
+		Components []KymaComponent `json:"components"`
+	}
+
+	err := json.Unmarshal(yamlContents, &components)
+	if err != nil {
+		return nil, fmt.Errorf("while unmarshalling YAML file: %w", err)
+	}
+
+	return components.Components, nil
 }
 
 func configMapListOptions(version string, plan string) []client.ListOption {
