@@ -41,10 +41,6 @@ type KymaComponent struct {
 	Source      *ComponentSource `json:"source,omitempty"`
 }
 
-type key struct {
-	runtimeVersion, plan string
-}
-
 type RequiredComponentsProvider interface {
 	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error)
 }
@@ -69,7 +65,6 @@ type ComponentsProvider struct {
 	mu                           sync.Mutex
 	requiredComponentsProvider   RequiredComponentsProvider
 	additionalComponentsProvider AdditionalComponentsProvider
-	components                   map[key][]KymaComponent // runtimeversion -> plan -> components
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
@@ -83,7 +78,6 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 			k8sClient:                           k8sClient,
 			defaultAdditionalComponentsYamlPath: defaultAdditionalRuntimeComponentsYAMLPath,
 		},
-		components: make(map[key][]KymaComponent, 0),
 	}
 }
 
@@ -93,10 +87,6 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	if cmps, ok := p.components[key{kymaVersion.Version, plan}]; ok {
-		return cmps, nil
-	}
 
 	kymaComponents, err := p.requiredComponentsProvider.RequiredComponents(kymaVersion)
 	if err != nil {
@@ -109,8 +99,6 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 	}
 
 	allComponents := append(kymaComponents, additionalComponents...)
-
-	p.components[key{runtimeVersion: kymaVersion.Version, plan: plan}] = allComponents
 
 	return allComponents, nil
 

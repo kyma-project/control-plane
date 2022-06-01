@@ -57,6 +57,5 @@ func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client)
 		ctx:                          ctx,
 		requiredComponentsProvider:   &defaultRequiredComponentsProvider{httpClient: &fakeHTTPDoer{}},
 		additionalComponentsProvider: &defaultAdditionalComponentsProvider{k8sClient: fakeK8sClient},
-		components:                   make(map[key][]KymaComponent, 0),
 	}
 }
