@@ -10,7 +10,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -75,7 +74,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				tc.given.managedRuntimeComponentsYAMLPath,
 				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expAdditionalComponents := make([]v1alpha1.KymaComponent, 0)
+			expAdditionalComponents := make([]runtime.KymaComponent, 0)
 			if tc.given.kymaVersion.MajorVersion > 1 {
 				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
 			} else {
@@ -167,7 +166,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	}
 }
 
-func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []v1alpha1.KymaComponent) {
+func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []runtime.KymaComponent) {
 	t.Helper()
 
 	assert.NotPanics(t, func() {
@@ -178,14 +177,14 @@ func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedC
 	})
 }
 
-func readManagedComponentsFromFile(t *testing.T, path string) []v1alpha1.KymaComponent {
+func readManagedComponentsFromFile(t *testing.T, path string) []runtime.KymaComponent {
 	t.Helper()
 
 	yamlFile, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 
 	var managedList struct {
-		Components []v1alpha1.KymaComponent `json:"components"`
+		Components []runtime.KymaComponent `json:"components"`
 	}
 	err = yaml.Unmarshal(yamlFile, &managedList)
 	require.NoError(t, err)

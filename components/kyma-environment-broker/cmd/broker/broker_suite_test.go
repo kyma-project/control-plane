@@ -49,7 +49,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -86,11 +85,12 @@ type BrokerSuiteTest struct {
 
 type componentProviderDecorated struct {
 	componentProvider input.ComponentListProvider
-	decorator         map[string]v1alpha1.KymaComponent
+	decorator         map[string]kebRuntime.KymaComponent
 }
 
-func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
-	all, err := s.componentProvider.AllComponents(kymaVersion, "")
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData) ([]kebRuntime.KymaComponent,
+	error) {
+	all, err := s.componentProvider.AllComponents(kymaVersion)
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
 			all[i] = dc
@@ -128,7 +128,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 	decoratedComponentListProvider := componentProviderDecorated{
 		componentProvider: componentListProvider,
-		decorator:         make(map[string]v1alpha1.KymaComponent),
+		decorator:         make(map[string]kebRuntime.KymaComponent),
 	}
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider, input.Config{
