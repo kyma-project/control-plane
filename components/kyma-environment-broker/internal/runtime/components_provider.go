@@ -28,10 +28,16 @@ const (
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
+type ComponentSource struct {
+	URL string `json:"url"`
+}
+
+// KymaComponent represents single kyma component to be handled by the Kyma Operator
 type KymaComponent struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Source    string `json:"source,omitempty"`
+	Name        string           `json:"name"`
+	ReleaseName string           `json:"release"`
+	Namespace   string           `json:"namespace"`
+	Source      *ComponentSource `json:"source,omitempty"`
 }
 
 type key struct {

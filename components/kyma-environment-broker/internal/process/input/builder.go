@@ -311,8 +311,8 @@ func mapToGQLComponentConfigurationInput(kymaComponents []runtime.KymaComponent)
 	var input internal.ComponentConfigurationInputList
 	for _, component := range kymaComponents {
 		var sourceURL *string
-		if component.Source != "" {
-			sourceURL = &component.Source
+		if component.Source != nil {
+			sourceURL = &component.Source.URL
 		}
 
 		input = append(input, &gqlschema.ComponentConfigurationInput{

@@ -227,6 +227,6 @@ func getComponentInput(componentProvider input.ComponentListProvider, component 
 	return reconcilerApi.Component{
 		Component: c.Name,
 		Namespace: c.Namespace,
-		URL:       c.Source,
+		URL:       c.Source.URL,
 	}, nil
 }
