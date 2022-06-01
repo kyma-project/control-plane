@@ -53,12 +53,22 @@ type AdditionalComponentsProvider interface {
 	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error)
 }
 
+var (
+	lock                   *sync.Mutex = &sync.Mutex{}
+	planNameHolderInstance *PlanNameHolder
+)
+
 type PlanNameHolder struct {
 	planName string
 }
 
-func NewPlanNameHolder() *PlanNameHolder {
-	return &PlanNameHolder{}
+func GetPlanNameHolderInstance() *PlanNameHolder {
+	if planNameHolderInstance == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		planNameHolderInstance = &PlanNameHolder{}
+	}
+	return planNameHolderInstance
 }
 
 func (p *PlanNameHolder) SetPlanName(planName string) {

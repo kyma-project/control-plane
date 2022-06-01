@@ -71,10 +71,9 @@ type InputBuilderFactory struct {
 	oidcDefaultValues          internal.OIDCConfigDTO
 }
 
-func NewInputBuilderFactory(optComponentsSvc OptionalComponentService,
-	disabledComponentsProvider DisabledComponentsProvider, planNameProvider planNameHolder,
-	componentsListProvider ComponentListProvider, config Config,
-	defaultKymaVersion string, trialPlatformRegionMapping map[string]string, enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
+func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider,
+	componentsListProvider ComponentListProvider, config Config, defaultKymaVersion string, trialPlatformRegionMapping map[string]string,
+	enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
 
 	freemiumProviders := map[string]struct{}{}
 	for _, p := range enabledFreemiumProviders {
@@ -85,7 +84,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService,
 		kymaVersion:                defaultKymaVersion,
 		config:                     config,
 		optComponentsSvc:           optComponentsSvc,
-		planNameHolder:             planNameProvider,
+		planNameHolder:             runtime.GetPlanNameHolderInstance(),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,

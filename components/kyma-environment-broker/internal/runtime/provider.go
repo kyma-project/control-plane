@@ -235,7 +235,11 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 	var t Installation
 	for dec.Decode(&t) == nil {
 		if t.Kind == "Installation" {
-			return t.Spec.Components, nil
+			components := make([]KymaComponent, len(t.Spec.Components))
+			for i, cmp := range t.Spec.Components {
+				components[i] = r.v1alpha1ToKymaComponent(cmp)
+			}
+			return components, nil
 		}
 	}
 	return nil, errors.New("installer cr not found")
@@ -274,4 +278,18 @@ func (r *ComponentsListProvider) getComponentsFromYAML(yamlFileContents []byte) 
 		return nil, errors.Wrap(err, "while unmarshalling YAML file with additional components")
 	}
 	return components.Components, nil
+}
+
+func (r *ComponentsListProvider) v1alpha1ToKymaComponent(cmp v1alpha1.KymaComponent) KymaComponent {
+	var source *ComponentSource
+	if cmp.Source != nil {
+		source.URL = cmp.Source.URL
+	}
+
+	return KymaComponent{
+		Name:        cmp.Name,
+		ReleaseName: cmp.ReleaseName,
+		Namespace:   cmp.Namespace,
+		Source:      source,
+	}
 }
