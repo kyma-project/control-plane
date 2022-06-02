@@ -22,6 +22,7 @@ func (f *fakeHTTPDoer) Do(req *http.Request) (*http.Response, error) {
 		return &http.Response{
 			Status:     "404 Not Found",
 			StatusCode: 404,
+			Body:       http.NoBody,
 			Request:    req,
 		}, nil
 	}
@@ -32,6 +33,7 @@ func (f *fakeHTTPDoer) Do(req *http.Request) (*http.Response, error) {
 		return &http.Response{
 			Status:     "500 Internal Server Error",
 			StatusCode: 500,
+			Body:       http.NoBody,
 			Request:    req,
 		}, nil
 	}

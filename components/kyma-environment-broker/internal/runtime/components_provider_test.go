@@ -2,7 +2,9 @@ package runtime_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"path"
 	"testing"
 
@@ -18,8 +20,9 @@ import (
 )
 
 const (
-	kymaVersion              = "2.2.0"
-	additionalComponentsYaml = "additional-runtime-components.yaml"
+	kymaVersion                 = "2.2.0"
+	additionalComponentsYaml    = "additional-runtime-components.yaml"
+	requiredComponentsURLFormat = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-components.yaml"
 )
 
 func TestComponentsProviderSuccessFlow(t *testing.T) {
@@ -131,9 +134,56 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 }
 
 func TestComponentsProviderErrors(t *testing.T) {
-	t.Run("", func(t *testing.T) {
+	t.Run("should return unsupported Kyma version error", func(t *testing.T) {
+		// given
+		ctx := context.TODO()
+		k8sClient := fake.NewClientBuilder().Build()
+		planNameHolder := runtime.GetPlanNameHolderInstance()
+		planNameHolder.SetPlanName(broker.AzurePlanName)
+		yamlPath := path.Join("testdata", additionalComponentsYaml)
+		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+		expectedErr := throwError("unsupported Kyma version")
 
+		// when
+		_, err := componentsProvider.AllComponents(internal.RuntimeVersionData{
+			Version:      "1.1.0",
+			Origin:       internal.Parameters,
+			MajorVersion: 1,
+		})
+
+		// then
+		require.Error(t, err)
+		assert.Equal(t, expectedErr, errors.Unwrap(err))
 	})
+
+	t.Run("should return 404 Not Found when required components are not available for given Kyma version",
+		func(t *testing.T) {
+			// given
+			ctx := context.TODO()
+			k8sClient := fake.NewClientBuilder().Build()
+			planNameHolder := runtime.GetPlanNameHolderInstance()
+			planNameHolder.SetPlanName(broker.AzurePlanName)
+			yamlPath := path.Join("testdata", additionalComponentsYaml)
+			componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+
+			wrongVer := "test-2.2.0"
+
+			errMsg := fmt.Sprintf("while checking response status code for Kyma components list: "+
+				"got unexpected status code, want %d, got %d, url: %s, body: %s",
+				http.StatusOK, 404, fmt.Sprintf(requiredComponentsURLFormat, wrongVer), "")
+			expectedErr := throwError(errMsg)
+
+			// when
+			_, err := componentsProvider.AllComponents(internal.RuntimeVersionData{
+				Version:      wrongVer,
+				Origin:       internal.Parameters,
+				MajorVersion: 2,
+			})
+
+			// then
+			require.Error(t, err)
+			assert.Equal(t, expectedErr, errors.Unwrap(err))
+		})
 }
 
 func fixK8sResources() []k8sruntime.Object {
@@ -191,4 +241,8 @@ func fixK8sResources() []k8sruntime.Object {
 	}
 
 	return resources
+}
+
+func throwError(message string) error {
+	return errors.New(message)
 }
