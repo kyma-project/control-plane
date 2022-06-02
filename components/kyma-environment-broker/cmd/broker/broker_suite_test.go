@@ -649,6 +649,20 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 	assert.NoError(s.t, err)
 }
 
+func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID string) {
+	var upgradeOp *internal.UpgradeClusterOperation
+	err := wait.Poll(pollingInterval, 3*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetUpgradeClusterOperationByID(operationID)
+		if err != nil {
+			return false, nil
+		}
+		upgradeOp = op
+		return true, nil
+	})
+	assert.NoError(s.t, err)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, gqlschema.OperationStateSucceeded, upgradeOp.Operation.RuntimeID)
+}
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -876,7 +890,7 @@ func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconcilerAp
 	assert.Equal(s.t, metadata, clusterConfig.Metadata)
 }
 
-func (s *BrokerSuiteTest) AssertDisabledNetworkFilter(val *bool) {
+func (s *BrokerSuiteTest) AssertDisabledNetworkFilterForProvisioning(val *bool) {
 	var got, exp string
 	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
 		input := s.provisionerClient.GetLatestProvisionRuntimeInput()
@@ -900,22 +914,33 @@ func (s *BrokerSuiteTest) AssertDisabledNetworkFilter(val *bool) {
 	require.NoError(s.t, err)
 }
 
-func (s *BrokerSuiteTest) AssertDisabledNetworkFilterRuntimeState(op string, val *bool) {
+func (s *BrokerSuiteTest) AssertDisabledNetworkFilterRuntimeState(runtimeid, op string, val *bool) {
 	var got, exp string
-	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
-		rs, _ := s.db.RuntimeStates().GetByOperationID(op)
-		if reflect.DeepEqual(val, rs.ClusterConfig.ShootNetworkingFilterDisabled) {
-			return true, nil
-		}
-		got = "<nil>"
-		if rs.ClusterConfig.ShootNetworkingFilterDisabled != nil {
-			got = fmt.Sprintf("%v", *rs.ClusterConfig.ShootNetworkingFilterDisabled)
-		}
+	err := wait.Poll(pollingInterval, 10*time.Second, func() (bool, error) {
+		states, _ := s.db.RuntimeStates().ListByRuntimeID(runtimeid)
 		exp = "<nil>"
 		if val != nil {
 			exp = fmt.Sprintf("%v", *val)
 		}
-		return false, fmt.Errorf("ShootNetworkingFilterDisabled expected %v, got %v", exp, got)
+		for _, rs := range states {
+			if rs.OperationID != op {
+				// skip runtime states for different operations
+				continue
+			}
+			if rs.ClusterSetup != nil {
+				// skip reconciler runtime states, the test is interested only in provisioner rs
+				continue
+			}
+			if reflect.DeepEqual(val, rs.ClusterConfig.ShootNetworkingFilterDisabled) {
+				return true, nil
+			}
+			got = "<nil>"
+			if rs.ClusterConfig.ShootNetworkingFilterDisabled != nil {
+				got = fmt.Sprintf("%v", *rs.ClusterConfig.ShootNetworkingFilterDisabled)
+			}
+			return false, nil
+		}
+		return false, nil
 	})
 	if err != nil {
 		err = fmt.Errorf("ShootNetworkingFilterDisabled expected %v, got %v", exp, got)

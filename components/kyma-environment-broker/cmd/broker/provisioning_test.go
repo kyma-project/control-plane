@@ -730,7 +730,7 @@ func TestProvisioning_WithoutNetworkFilter(t *testing.T) {
 	instance := suite.GetInstance(iid)
 
 	// then
-	suite.AssertDisabledNetworkFilter(nil)
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
 	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
 }
 
@@ -765,6 +765,6 @@ func TestProvisioning_WithNetworkFilter(t *testing.T) {
 
 	// then
 	disabled := true
-	suite.AssertDisabledNetworkFilter(&disabled)
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance.Parameters.ErsContext.LicenseType)
 }
