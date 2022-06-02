@@ -139,7 +139,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		// NOTE: KEB currently can't process update parameters in one call along with context update
 		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
 		if !suspendStatusChange {
-			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
+			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext, logger)
 		}
 	}
 
@@ -153,15 +153,15 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}, nil
 }
 
-func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails) bool {
+func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ersContext internal.ERSContext) bool {
 	if len(details.RawParameters) != 0 {
 		return true
 	}
-	return instance.InstanceDetails.SCMigrationTriggered
+	return instance.InstanceDetails.SCMigrationTriggered || ersContext.ERSUpdate()
 }
 
-func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed, isMigration bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
-	if !shouldUpdate(instance, details) {
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, ersContext internal.ERSContext, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+	if !shouldUpdate(instance, details, ersContext) {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
 			IsAsync:       false,
@@ -172,7 +172,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 			},
 		}, nil
 	}
-
 	// asyncAllowed needed, see https://github.com/openservicebrokerapi/servicebroker/blob/v2.16/spec.md#updating-a-service-instance
 	if !asyncAllowed {
 		return domain.UpdateServiceSpec{}, apiresponses.ErrAsyncRequired
@@ -199,7 +198,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
-	operation.InstanceDetails.SCMigrationTriggered = isMigration
+	operation.InstanceDetails.SCMigrationTriggered = ersContext.IsMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -293,10 +292,22 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 	if ersContext.IsMigration {
 		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
-	}
-
-	if ersContext.IsMigration {
 		instance.InstanceDetails.SCMigrationTriggered = true
+	}
+	if ersContext.CommercialModel != nil {
+		instance.Parameters.ErsContext.CommercialModel = ersContext.CommercialModel
+	}
+	if ersContext.LicenseType != nil {
+		instance.Parameters.ErsContext.LicenseType = ersContext.LicenseType
+	}
+	if ersContext.Origin != nil {
+		instance.Parameters.ErsContext.Origin = ersContext.Origin
+	}
+	if ersContext.Platform != nil {
+		instance.Parameters.ErsContext.Platform = ersContext.Platform
+	}
+	if ersContext.Region != nil {
+		instance.Parameters.ErsContext.Region = ersContext.Region
 	}
 
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)

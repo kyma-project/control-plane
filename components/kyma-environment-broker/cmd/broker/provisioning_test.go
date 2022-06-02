@@ -700,3 +700,71 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 		suite.AssertRuntimeAdmins(expectedAdmins)
 	})
 }
+
+func TestProvisioning_WithoutNetworkFilter(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	instance := suite.GetInstance(iid)
+
+	// then
+	suite.AssertDisabledNetworkFilter(nil)
+	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
+}
+
+func TestProvisioning_WithNetworkFilter(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"license_type": "CUSTOMER",
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	instance := suite.GetInstance(iid)
+
+	// then
+	disabled := true
+	suite.AssertDisabledNetworkFilter(&disabled)
+	assert.Equal(suite.t, "CUSTOMER", *instance.Parameters.ErsContext.LicenseType)
+}
