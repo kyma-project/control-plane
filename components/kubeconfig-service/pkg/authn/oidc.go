@@ -39,8 +39,8 @@ func (car *cancelableAuthRequest) Cancel() {
 // CancelableAuthRequest alows users to cancel the authenticator once it's not used anymore.
 func NewOIDCAuthenticator(config *OIDCConfig) (CancelableAuthRequest, error) {
 	tokenAuthenticator, err := oidc.New(oidc.Options{
-		IssuerURL:            config.IssuerURL,
-		ClientID:             config.ClientID,
+		IssuerURL: config.IssuerURL,
+		ClientID:  config.ClientID,
 		//CAFile:               config.CAFilePath,
 		UsernameClaim:        config.UsernameClaim,
 		UsernamePrefix:       config.UsernamePrefix,
