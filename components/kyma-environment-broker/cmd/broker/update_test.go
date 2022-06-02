@@ -1810,7 +1810,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 
 func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	defer suite.TearDown()
 	id := uuid.New().String()
 
@@ -1881,7 +1881,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 
 func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := uuid.New().String()
@@ -1952,7 +1952,7 @@ func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 
 func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := uuid.New().String()
