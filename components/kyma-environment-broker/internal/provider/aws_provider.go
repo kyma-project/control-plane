@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"strings"
 
@@ -158,7 +157,7 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 			// AutoscalerMin = 3, ZonesCount = 1 -> 3 nodes per zone -> 3 total
 			// AutoscalerMin = 3, ZonesCount = 2 -> 2 nodes per zone -> 4 total
 			// AutoscalerMin = 3, ZonesCount = 3 -> 1 node per zone -> 3 total
-			input.GardenerConfig.AutoScalerMin = int(math.Ceil(float64(input.GardenerConfig.AutoScalerMin) / float64(*pp.Parameters.ZonesCount)))
+			// input.GardenerConfig.AutoScalerMin = int(math.Ceil(float64(input.GardenerConfig.AutoScalerMin) / float64(*pp.Parameters.ZonesCount)))
 			return
 		}
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
