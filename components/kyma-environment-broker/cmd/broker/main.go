@@ -283,8 +283,7 @@ func main() {
 
 	disabledComponentsProvider := runtime.NewDisabledComponentsProvider()
 
-	planNameProvider := runtime.GetPlanNameHolderInstance()
-	componentsProvider := runtime.NewComponentsProvider(ctx, cli, planNameProvider, cfg.NewAdditionalRuntimeComponentsYAMLFilePath)
+	componentsProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath, cfg.NewAdditionalRuntimeComponentsYAMLFilePath)
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	cfg.Gardener.DNSProviders, err = gardener.ReadDNSProvidersValuesFromYAML(cfg.SkrDnsProvidersValuesYAMLFilePath)
