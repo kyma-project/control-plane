@@ -303,13 +303,30 @@ func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapDat
 		return KymaComponent{}, fmt.Errorf("while marshalling data from ConfigMap to JSON: %w", err)
 	}
 
-	var component KymaComponent
-	err = json.Unmarshal(encoded, &component)
+	type tempComponent struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+		Source    string `json:"source,omitempty"`
+	}
+
+	var buffer tempComponent
+	err = json.Unmarshal(encoded, &buffer)
 	if err != nil {
 		return KymaComponent{}, fmt.Errorf("while unmarshalling data from JSON to KymaComponent: %w", err)
 	}
 
-	return component, nil
+	return KymaComponent{
+		Name:      buffer.Name,
+		Namespace: buffer.Namespace,
+		Source:    p.provideComponentSourceIfExists(buffer.Source),
+	}, err
+}
+
+func (p *defaultAdditionalComponentsProvider) provideComponentSourceIfExists(componentSource string) *ComponentSource {
+	if componentSource != "" {
+		return &ComponentSource{URL: componentSource}
+	}
+	return nil
 }
 
 func (p *defaultAdditionalComponentsProvider) readYaml(yamlFilePath string) ([]byte, error) {

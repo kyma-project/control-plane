@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,6 +58,56 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 		assert.Contains(t, allComponents, expectedPrerequisiteComponent)
 		assert.Contains(t, allComponents, expectedRequiredComponent)
 		assert.Contains(t, allComponents, expectedAdditionalComponent)
+	})
+
+	t.Run("should fetch required components and additional components overrides", func(t *testing.T) {
+		// given
+		ctx := context.TODO()
+		k8sClient := fake.NewClientBuilder().WithRuntimeObjects(fixK8sResources()...).Build()
+		planNameHolder := runtime.GetPlanNameHolderInstance()
+		planNameHolder.SetPlanName(broker.AzurePlanName)
+		yamlPath := path.Join("testdata", additionalComponentsYaml)
+		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+		expectedPrerequisiteComponent := runtime.KymaComponent{
+			Name:      "cluster-essentials",
+			Namespace: "kyma-system",
+		}
+		expectedRequiredComponent := runtime.KymaComponent{
+			Name:      "serverless",
+			Namespace: "kyma-system",
+		}
+		expectedAdditionalComponent1 := runtime.KymaComponent{
+			Name:      "test-component1",
+			Namespace: "kyma-system",
+		}
+		expectedAdditionalComponent2 := runtime.KymaComponent{
+			Name:      "test-component2",
+			Namespace: "compass-system",
+			Source: &runtime.ComponentSource{
+				URL: "https://test.local/test-component2.tgz"},
+		}
+		unexpectedAdditionalComponent := runtime.KymaComponent{
+			Name:      "new-component1",
+			Namespace: "kyma-system",
+			Source: &runtime.ComponentSource{
+				URL: "https://local.test/kyma-additional-components/new-component1.tgz"},
+		}
+
+		// when
+		allComponents, err := componentsProvider.AllComponents(internal.RuntimeVersionData{
+			Version:      kymaVersion,
+			Origin:       internal.Parameters,
+			MajorVersion: 2,
+		})
+		require.NoError(t, err)
+
+		// then
+		assert.NotEmpty(t, allComponents)
+		assert.Contains(t, allComponents, expectedPrerequisiteComponent)
+		assert.Contains(t, allComponents, expectedRequiredComponent)
+		assert.Contains(t, allComponents, expectedAdditionalComponent1)
+		assert.Contains(t, allComponents, expectedAdditionalComponent2)
+		assert.NotContains(t, allComponents, unexpectedAdditionalComponent)
 	})
 }
 
