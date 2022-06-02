@@ -44,6 +44,10 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Source: &runtime.ComponentSource{
 				URL: "https://local.test/kyma-additional-components/new-component1.tgz"},
 		}
+		unexpectedAdditionalComponent := runtime.KymaComponent{
+			Name:      "test-component1",
+			Namespace: "kyma-system",
+		}
 
 		// when
 		allComponents, err := componentsProvider.AllComponents(internal.RuntimeVersionData{
@@ -51,13 +55,14 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
 		})
-		require.NoError(t, err)
 
 		// then
+		require.NoError(t, err)
 		assert.NotEmpty(t, allComponents)
 		assert.Contains(t, allComponents, expectedPrerequisiteComponent)
 		assert.Contains(t, allComponents, expectedRequiredComponent)
 		assert.Contains(t, allComponents, expectedAdditionalComponent)
+		assert.NotContains(t, allComponents, unexpectedAdditionalComponent)
 	})
 
 	t.Run("should fetch required components and additional components overrides", func(t *testing.T) {
@@ -86,11 +91,23 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Source: &runtime.ComponentSource{
 				URL: "https://test.local/test-component2.tgz"},
 		}
-		unexpectedAdditionalComponent := runtime.KymaComponent{
+		unexpectedAdditionalComponent1 := runtime.KymaComponent{
 			Name:      "new-component1",
 			Namespace: "kyma-system",
 			Source: &runtime.ComponentSource{
 				URL: "https://local.test/kyma-additional-components/new-component1.tgz"},
+		}
+		unexpectedAdditionalComponent2 := runtime.KymaComponent{
+			Name:      "test-component3",
+			Namespace: "kyma-system",
+			Source: &runtime.ComponentSource{
+				URL: "https://test.local/test-component3.tgz"},
+		}
+		unexpectedAdditionalComponent3 := runtime.KymaComponent{
+			Name:      "test-component4",
+			Namespace: "kyma-system",
+			Source: &runtime.ComponentSource{
+				URL: "https://test.local/test-component4.tgz"},
 		}
 
 		// when
@@ -99,33 +116,59 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
 		})
-		require.NoError(t, err)
 
 		// then
+		require.NoError(t, err)
 		assert.NotEmpty(t, allComponents)
 		assert.Contains(t, allComponents, expectedPrerequisiteComponent)
 		assert.Contains(t, allComponents, expectedRequiredComponent)
 		assert.Contains(t, allComponents, expectedAdditionalComponent1)
 		assert.Contains(t, allComponents, expectedAdditionalComponent2)
-		assert.NotContains(t, allComponents, unexpectedAdditionalComponent)
+		assert.NotContains(t, allComponents, unexpectedAdditionalComponent1)
+		assert.NotContains(t, allComponents, unexpectedAdditionalComponent2)
+		assert.NotContains(t, allComponents, unexpectedAdditionalComponent3)
+	})
+}
+
+func TestComponentsProviderErrors(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+
 	})
 }
 
 func fixK8sResources() []k8sruntime.Object {
 	var resources []k8sruntime.Object
 	type additionalComponentData struct {
-		name, namespace, sourceURL string
+		name, namespace, sourceURL, planForLabel, versionForLabel string
 	}
 	additionalComponentsData := []additionalComponentData{
 		additionalComponentData{
-			name:      "test-component1",
-			namespace: "kyma-system",
-			sourceURL: "",
+			name:            "test-component1",
+			namespace:       "kyma-system",
+			sourceURL:       "",
+			planForLabel:    broker.AzurePlanName,
+			versionForLabel: kymaVersion,
 		},
 		additionalComponentData{
-			name:      "test-component2",
-			namespace: "compass-system",
-			sourceURL: "https://test.local/test-component2.tgz",
+			name:            "test-component2",
+			namespace:       "compass-system",
+			sourceURL:       "https://test.local/test-component2.tgz",
+			planForLabel:    broker.AzurePlanName,
+			versionForLabel: kymaVersion,
+		},
+		additionalComponentData{
+			name:            "test-component3",
+			namespace:       "kyma-system",
+			sourceURL:       "https://test.local/test-component3.tgz",
+			planForLabel:    broker.GCPPlanName,
+			versionForLabel: kymaVersion,
+		},
+		additionalComponentData{
+			name:            "test-component4",
+			namespace:       "kyma-system",
+			sourceURL:       "https://test.local/test-component4.tgz",
+			planForLabel:    broker.AzurePlanName,
+			versionForLabel: "2.1.0",
 		},
 	}
 	for _, cmp := range additionalComponentsData {
@@ -134,8 +177,8 @@ func fixK8sResources() []k8sruntime.Object {
 				Name:      fmt.Sprintf("additional-component-%s", cmp.name),
 				Namespace: "kcp-system",
 				Labels: map[string]string{
-					"add-cmp-plan-azure":    "true",
-					"add-cmp-version-2.2.0": "true",
+					fmt.Sprintf("add-cmp-plan-%s", cmp.planForLabel):       "true",
+					fmt.Sprintf("add-cmp-version-%s", cmp.versionForLabel): "true",
 				},
 			},
 			Data: map[string]string{
