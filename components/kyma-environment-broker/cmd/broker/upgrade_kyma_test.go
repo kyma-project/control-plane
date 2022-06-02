@@ -194,6 +194,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 	require.NoError(t, err)
 	found := suite.provisionerClient.IsRuntimeUpgraded(upgradeOp.InstanceDetails.RuntimeID, "2.0.0-rc4")
 	assert.False(t, found)
+	suite.WaitForOperationState(upgradeKymaOperationID, domain.Succeeded)
 }
 
 func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {

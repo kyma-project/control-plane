@@ -927,7 +927,7 @@ func fixConfig() *Config {
 			DeprovisioningTimeout: 2 * time.Minute,
 		},
 		Reconciler: reconciler.Config{
-			ProvisioningTimeout: 5 * time.Second,
+			ProvisioningTimeout: 2 * time.Minute,
 		},
 		Director: director.Config{},
 		Database: storage.Config{
