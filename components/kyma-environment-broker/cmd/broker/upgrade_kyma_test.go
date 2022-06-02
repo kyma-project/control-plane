@@ -318,7 +318,7 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 
 func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := "InstanceID-UpgradeAfterMigration"
