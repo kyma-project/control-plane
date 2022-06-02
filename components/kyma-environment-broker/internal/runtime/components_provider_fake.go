@@ -18,7 +18,7 @@ type fakeHTTPDoer struct{}
 
 func (f *fakeHTTPDoer) Do(req *http.Request) (*http.Response, error) {
 	urlPathSplit := strings.Split(req.URL.Path, "/")
-	if !isSupportedVersion(urlPathSplit[1]) {
+	if !isSupportedVersion(urlPathSplit[2]) {
 		return &http.Response{
 			Status:     "404 Not Found",
 			StatusCode: 404,
@@ -52,10 +52,15 @@ func isSupportedVersion(version string) bool {
 		strings.Split(version, ".")[0] == "2"
 }
 
-func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client) *ComponentsProvider {
+func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client, planNameProvider PlanNameProvider,
+	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
 	return &ComponentsProvider{
-		ctx:                          ctx,
-		requiredComponentsProvider:   &defaultRequiredComponentsProvider{httpClient: &fakeHTTPDoer{}},
-		additionalComponentsProvider: &defaultAdditionalComponentsProvider{k8sClient: fakeK8sClient},
+		planNameProvider:           planNameProvider,
+		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: &fakeHTTPDoer{}},
+		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
+			ctx:                                 ctx,
+			k8sClient:                           fakeK8sClient,
+			defaultAdditionalComponentsYamlPath: defaultAdditionalRuntimeComponentsYAMLPath,
+		},
 	}
 }

@@ -91,7 +91,6 @@ type defaultAdditionalComponentsProvider struct {
 
 // ComponentsProvider provides the list of required and additional components for creating a Kyma Runtime
 type ComponentsProvider struct {
-	ctx                          context.Context
 	mu                           sync.Mutex
 	planNameProvider             PlanNameProvider
 	requiredComponentsProvider   RequiredComponentsProvider
@@ -326,7 +325,7 @@ func (p *defaultAdditionalComponentsProvider) getComponentsFromYaml(yamlContents
 		Components []KymaComponent `json:"components"`
 	}
 
-	err := json.Unmarshal(yamlContents, &components)
+	err := yaml.Unmarshal(yamlContents, &components)
 	if err != nil {
 		return nil, fmt.Errorf("while unmarshalling YAML file: %w", err)
 	}
