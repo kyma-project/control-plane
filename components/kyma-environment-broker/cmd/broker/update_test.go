@@ -1810,14 +1810,14 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 
 func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	defer suite.TearDown()
 	id := uuid.New().String()
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
 		`{
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 					"context": {
 						"sm_operator_credentials": {
 							"clientid": "testClientID",
@@ -1881,7 +1881,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 
 func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := uuid.New().String()
@@ -1889,7 +1889,7 @@ func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
 		`{
 			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-			"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 			"context": {
 				"sm_platform_credentials": {
 					"url": "https://sm.url",
@@ -1952,7 +1952,7 @@ func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 
 func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := uuid.New().String()
@@ -1960,7 +1960,7 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
 		`{
 			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-			"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 			"context": {
 				"sm_operator_credentials": {
 					"clientid": "testClientID",

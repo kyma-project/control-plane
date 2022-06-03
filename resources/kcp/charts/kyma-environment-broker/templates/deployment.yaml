@@ -310,9 +310,7 @@ spec:
             - name: APP_AVS_REGION_TAG_CLASS_ID
               value: "{{ .Values.avs.regionTagClassId }}"
             - name: APP_KYMA_VERSION
-              value: {{ .Values.kymaVersion }}
-            - name: APP_KYMA_PREVIEW_VERSION
-              value: "{{ .Values.kymaPreviewVersion }}"
+              value: "{{ .Values.kymaVersion }}"
             - name: APP_ENABLE_ON_DEMAND_VERSION
               value: "{{ .Values.kymaVersionOnDemand }}"
             - name: APP_MANAGED_RUNTIME_COMPONENTS_YAML_FILE_PATH
