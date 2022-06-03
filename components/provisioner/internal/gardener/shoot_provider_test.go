@@ -12,8 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestKubernetesVersionProvider(t *testing.T) {
-	t.Run("Get kubernetes version when succeeded to find Runtime", func(t *testing.T) {
+func TestShootProvider(t *testing.T) {
+	t.Run("Get shoot", func(t *testing.T) {
 		// given
 		tenant := "tenant"
 		shootClient := &mocks.ShootClient{}
@@ -32,12 +32,21 @@ func TestKubernetesVersionProvider(t *testing.T) {
 			}}, nil)
 
 		// when
-		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID", tenant)
+		provider := NewShootProvider(shootClient)
+		shoot, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, "1.21", version)
+		assert.Equal(t, gardener_Types.Shoot{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{runtimeIDAnnotation: "runtimeID"},
+			},
+			Spec: gardener_Types.ShootSpec{
+				Kubernetes: gardener_Types.Kubernetes{
+					Version: "1.21",
+				},
+			},
+		}, shoot)
 
 	})
 
@@ -57,12 +66,12 @@ func TestKubernetesVersionProvider(t *testing.T) {
 			}}, nil)
 
 		// when
-		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID", tenant)
+		provider := NewShootProvider(shootClient)
+		shoot, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, "", version)
+		assert.Equal(t, gardener_Types.Shoot{}, shoot)
 	})
 
 	t.Run("Return error when failed to get shoot", func(t *testing.T) {
@@ -73,11 +82,11 @@ func TestKubernetesVersionProvider(t *testing.T) {
 		shootClient.On("List", mock.Anything, metav1.ListOptions{LabelSelector: "account=" + tenant}).Return(nil, errors.New("oh, no!"))
 
 		// when
-		provider := NewKubernetesVersionProvider(shootClient)
-		version, err := provider.Get("runtimeID", tenant)
+		provider := NewShootProvider(shootClient)
+		shoot, err := provider.Get("runtimeID", tenant)
 
 		// then
 		require.Error(t, err)
-		assert.Equal(t, "", version)
+		assert.Equal(t, gardener_Types.Shoot{}, shoot)
 	})
 }
