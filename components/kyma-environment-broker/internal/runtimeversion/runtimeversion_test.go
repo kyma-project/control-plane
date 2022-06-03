@@ -101,7 +101,6 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		require.Equal(t, internal.AccountMapping, ver.Origin)
 	})
 	t.Run("should return Kyma Version from ProvisioningParameters even when version provided", func(t *testing.T) {
-		// TODO: rename test above
 		// given
 		runtimeVer := "1.0.0"
 
