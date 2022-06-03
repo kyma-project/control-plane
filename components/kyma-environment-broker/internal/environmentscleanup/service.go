@@ -3,9 +3,10 @@ package environmentscleanup
 import (
 	"context"
 	"fmt"
-	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"strings"
 	"time"
+
+	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
