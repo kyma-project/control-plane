@@ -46,7 +46,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  3,
+			AutoScalerMin:  4,
 			AutoScalerMax:  20,
 			MaxSurge:       1,
 			MaxUnavailable: 0,
@@ -153,11 +153,6 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
 		if pp.Parameters.ZonesCount != nil {
 			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
-			// The minimum node count is lowered as the number of zones increases.
-			// AutoscalerMin = 3, ZonesCount = 1 -> 3 nodes per zone -> 3 total
-			// AutoscalerMin = 3, ZonesCount = 2 -> 2 nodes per zone -> 4 total
-			// AutoscalerMin = 3, ZonesCount = 3 -> 1 node per zone -> 3 total
-			// input.GardenerConfig.AutoScalerMin = int(math.Ceil(float64(input.GardenerConfig.AutoScalerMin) / float64(*pp.Parameters.ZonesCount)))
 			return
 		}
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
