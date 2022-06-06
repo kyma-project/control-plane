@@ -52,18 +52,12 @@ type (
 	ComponentListProvider interface {
 		AllComponents(kymaVersion internal.RuntimeVersionData) ([]runtime.KymaComponent, error)
 	}
-
-	planNameHolder interface {
-		SetPlanName(planName string)
-		PlanName() string
-	}
 )
 
 type InputBuilderFactory struct {
 	kymaVersion                string
 	config                     Config
 	optComponentsSvc           OptionalComponentService
-	planNameHolder             planNameHolder
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
 	trialPlatformRegionMapping map[string]string
@@ -84,7 +78,6 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		kymaVersion:                defaultKymaVersion,
 		config:                     config,
 		optComponentsSvc:           optComponentsSvc,
-		planNameHolder:             runtime.GetPlanNameHolderInstance(),
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
@@ -150,8 +143,8 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
-	planName := broker.PlanNamesMapping[pp.PlanID]
-	f.planNameHolder.SetPlanName(planName)
+	// use for new provider
+	// planName := broker.PlanNamesMapping[pp.PlanID]
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
@@ -258,8 +251,8 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
 	}
 
-	planName := broker.PlanNamesMapping[pp.PlanID]
-	f.planNameHolder.SetPlanName(planName)
+	// use for new provider
+	// planName := broker.PlanNamesMapping[pp.PlanID]
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {

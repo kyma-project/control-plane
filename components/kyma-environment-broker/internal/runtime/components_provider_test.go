@@ -30,9 +30,8 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 		// given
 		ctx := context.TODO()
 		k8sClient := fake.NewClientBuilder().Build()
-		planNameHolder := runtime.GetPlanNameHolderInstance()
 		yamlPath := path.Join("testdata", additionalComponentsYaml)
-		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
 		expectedPrerequisiteComponent := runtime.KymaComponent{
 			Name:      "cluster-essentials",
 			Namespace: "kyma-system",
@@ -57,7 +56,7 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Version:      kymaVersion,
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
-		})
+		}, "")
 
 		// then
 		require.NoError(t, err)
@@ -72,10 +71,8 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 		// given
 		ctx := context.TODO()
 		k8sClient := fake.NewClientBuilder().WithRuntimeObjects(fixK8sResources()...).Build()
-		planNameHolder := runtime.GetPlanNameHolderInstance()
-		planNameHolder.SetPlanName(broker.AzurePlanName)
 		yamlPath := path.Join("testdata", additionalComponentsYaml)
-		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
 		expectedPrerequisiteComponent := runtime.KymaComponent{
 			Name:      "cluster-essentials",
 			Namespace: "kyma-system",
@@ -118,7 +115,7 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Version:      kymaVersion,
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
-		})
+		}, broker.AzurePlanName)
 
 		// then
 		require.NoError(t, err)
@@ -138,10 +135,8 @@ func TestComponentsProviderErrors(t *testing.T) {
 		// given
 		ctx := context.TODO()
 		k8sClient := fake.NewClientBuilder().Build()
-		planNameHolder := runtime.GetPlanNameHolderInstance()
-		planNameHolder.SetPlanName(broker.AzurePlanName)
 		yamlPath := path.Join("testdata", additionalComponentsYaml)
-		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
 		expectedErr := throwError("unsupported Kyma version")
 
 		// when
@@ -149,7 +144,7 @@ func TestComponentsProviderErrors(t *testing.T) {
 			Version:      "1.1.0",
 			Origin:       internal.Parameters,
 			MajorVersion: 1,
-		})
+		}, broker.AzurePlanName)
 
 		// then
 		require.Error(t, err)
@@ -161,10 +156,8 @@ func TestComponentsProviderErrors(t *testing.T) {
 			// given
 			ctx := context.TODO()
 			k8sClient := fake.NewClientBuilder().Build()
-			planNameHolder := runtime.GetPlanNameHolderInstance()
-			planNameHolder.SetPlanName(broker.AzurePlanName)
 			yamlPath := path.Join("testdata", additionalComponentsYaml)
-			componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, planNameHolder, yamlPath)
+			componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
 
 			wrongVer := "test-2.2.0"
 
@@ -178,7 +171,7 @@ func TestComponentsProviderErrors(t *testing.T) {
 				Version:      wrongVer,
 				Origin:       internal.Parameters,
 				MajorVersion: 2,
-			})
+			}, broker.AzurePlanName)
 
 			// then
 			require.Error(t, err)

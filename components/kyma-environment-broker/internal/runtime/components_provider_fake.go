@@ -54,10 +54,9 @@ func isSupportedVersion(version string) bool {
 		strings.Split(version, ".")[0] == "2"
 }
 
-func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client, planNameProvider PlanNameProvider,
+func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client,
 	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
 	return &ComponentsProvider{
-		planNameProvider:           planNameProvider,
 		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: &fakeHTTPDoer{}},
 		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
 			ctx:                                 ctx,

@@ -21,7 +21,6 @@ import (
 
 const (
 	namespace                   = "kcp-system"
-	componentNameLabel          = "component"
 	componentVersionLabelPrefix = "add-cmp-version-"
 	componentPlanLabelPrefix    = "add-cmp-plan-"
 
@@ -41,42 +40,12 @@ type KymaComponent struct {
 	Source      *ComponentSource `json:"source,omitempty"`
 }
 
-type PlanNameProvider interface {
-	PlanName() string
-}
-
 type RequiredComponentsProvider interface {
 	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error)
 }
 
 type AdditionalComponentsProvider interface {
 	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error)
-}
-
-var (
-	lock                   *sync.Mutex = &sync.Mutex{}
-	planNameHolderInstance *PlanNameHolder
-)
-
-type PlanNameHolder struct {
-	planName string
-}
-
-func GetPlanNameHolderInstance() *PlanNameHolder {
-	if planNameHolderInstance == nil {
-		lock.Lock()
-		defer lock.Unlock()
-		planNameHolderInstance = &PlanNameHolder{}
-	}
-	return planNameHolderInstance
-}
-
-func (p *PlanNameHolder) SetPlanName(planName string) {
-	p.planName = planName
-}
-
-func (p *PlanNameHolder) PlanName() string {
-	return p.planName
 }
 
 type defaultRequiredComponentsProvider struct {
@@ -92,16 +61,14 @@ type defaultAdditionalComponentsProvider struct {
 // ComponentsProvider provides the list of required and additional components for creating a Kyma Runtime
 type ComponentsProvider struct {
 	mu                           sync.Mutex
-	planNameProvider             PlanNameProvider
 	requiredComponentsProvider   RequiredComponentsProvider
 	additionalComponentsProvider AdditionalComponentsProvider
 }
 
 // NewComponentsProvider returns new instance of the ComponentsProvider
-func NewComponentsProvider(ctx context.Context, k8sClient client.Client, planNameProvider PlanNameProvider,
+func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
 	return &ComponentsProvider{
-		planNameProvider:           planNameProvider,
 		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: http.DefaultClient},
 		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
 			ctx:                                 ctx,
@@ -114,7 +81,8 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client, planNam
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // ConfigMaps and merge them together
-func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
+func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]KymaComponent,
+	error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -123,7 +91,7 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 		return nil, fmt.Errorf("while getting Kyma components: %w", err)
 	}
 
-	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, p.planNameProvider.PlanName())
+	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, planName)
 	if err != nil {
 		return nil, fmt.Errorf("while getting additional components: %w", err)
 	}
@@ -268,6 +236,10 @@ func (p *defaultAdditionalComponentsProvider) fetchDefaultAdditionalComponents()
 }
 
 func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenVersionAndPlan(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+	if plan == "" {
+		return nil, nil
+	}
+
 	cfgMaps := &coreV1.ConfigMapList{}
 	opts := configMapListOptions(kymaVersion.Version, plan)
 
