@@ -23,6 +23,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 )
 
+const SAID_FOR_FORCED_AUTOSCALER_PARAMS = "bb50ea32-0ad8-4b16-b8e7-c50b59090e76"
+
 type ContextUpdateHandler interface {
 	Handle(instance *internal.Instance, newCtx internal.ERSContext) (bool, error)
 }
@@ -212,6 +214,10 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	if defaults.GardenerConfig != nil {
 		p := defaults.GardenerConfig
 		autoscalerMin, autoscalerMax = p.AutoScalerMin, p.AutoScalerMax
+	}
+	if instance.SubAccountID == SAID_FOR_FORCED_AUTOSCALER_PARAMS {
+		*operation.ProvisioningParameters.Parameters.AutoScalerParameters.AutoScalerMin = 2
+		*operation.ProvisioningParameters.Parameters.AutoScalerParameters.AutoScalerMax = 10
 	}
 	if err := operation.ProvisioningParameters.Parameters.AutoScalerParameters.Validate(autoscalerMin, autoscalerMax); err != nil {
 		logger.Errorf("invalid autoscaler parameters: %s", err.Error())
