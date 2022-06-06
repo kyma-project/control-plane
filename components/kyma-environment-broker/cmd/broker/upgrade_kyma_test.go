@@ -194,6 +194,7 @@ func TestKymaUpgrade_UpgradeTo2(t *testing.T) {
 	require.NoError(t, err)
 	found := suite.provisionerClient.IsRuntimeUpgraded(upgradeOp.InstanceDetails.RuntimeID, "2.0.0-rc4")
 	assert.False(t, found)
+	suite.WaitForOperationState(upgradeKymaOperationID, domain.Succeeded)
 }
 
 func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
@@ -313,10 +314,8 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 
 	assert.Equal(t, rsu1.ClusterConfig.Name, rsu2.ClusterConfig.Name)
-	suite.AssertDisabledNetworkFilter(nil)
 }
 
-/* TODO: disabling flaky test, should be fixed soon
 func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t, "2.0")
@@ -389,7 +388,7 @@ func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 
 	// ensure license type is persisted but network filter not enabled
 	instance2 := suite.GetInstance(id)
-	suite.AssertDisabledNetworkFilter(nil)
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 
 	// run upgrade
@@ -420,8 +419,10 @@ func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 	upgradeKymaOperationID, err := suite.DecodeLastUpgradeKymaOperationIDFromOrchestration(opResponse)
 	require.NoError(t, err)
 
+	suite.AssertReconcilerStartedReconcilingWhenUpgrading(id)
+	suite.WaitForOperationState(upgradeKymaOperationID, domain.InProgress)
 	suite.FinishUpgradeKymaOperationByReconciler(upgradeKymaOperationID)
-	//suite.WaitForOperationState(upgradeKymaOperationID, domain.Succeeded)
+	suite.WaitForOperationState(upgradeKymaOperationID, domain.Succeeded)
 	suite.AssertClusterConfigWithKubeconfig(opID)
 
 	_, err = suite.db.Operations().GetUpgradeKymaOperationByID(upgradeKymaOperationID)
@@ -439,8 +440,6 @@ func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 
 	assert.Equal(t, rsu1.ClusterConfig.Name, rsu2.ClusterConfig.Name)
 
-	// ensure license type still persisted and network filter disabled during upgrade
-	disabled := true
-	suite.AssertDisabledNetworkFilterRuntimeState(updateOperationID, &disabled)
+	// ensure license type still persisted
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
-}*/
+}
