@@ -248,6 +248,13 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		gardenerConfig.KubernetesVersion = shoot.Spec.Kubernetes.Version
 	}
 
+	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is modified manually, Provisioner should use the actual value.
+	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
+	if gardenerConfig.ShootNetworkingFilterDisabled == nil && shootNetworkingFilterDisabled != nil {
+		log.Warnf("ShootNetworkingFilter extension was different than the one provided in UpgradeGardenerShoot. Value fetched from the shoot will be used: %t.", *shootNetworkingFilterDisabled)
+		gardenerConfig.ShootNetworkingFilterDisabled = shootNetworkingFilterDisabled
+	}
+
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
@@ -379,6 +386,15 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		dberr = txSession.UpdateKubernetesVersion(runtimeId, shoot.Spec.Kubernetes.Version)
 		if dberr != nil {
 			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
+		}
+	}
+
+	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is changed manually, the actual version should be stored in the database.
+	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
+	if shootNetworkingFilterDisabled != nil && cluster.ClusterConfig.ShootNetworkingFilterDisabled != shootNetworkingFilterDisabled {
+		log.Warnf("ShootNetworkingFilter from the database is different than the one in the shoot. Value fetched from the shoot will be stored in the database: %t.", *shootNetworkingFilterDisabled)
+		if dberr = txSession.UpdateShootNetworkingFilterDisabled(runtimeId, shootNetworkingFilterDisabled); dberr != nil {
+			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot networking filter disabled: %s", dberr.Error())
 		}
 	}
 
@@ -638,4 +654,13 @@ func isVersionHigher(version1, version2 string) (bool, apperrors.AppError) {
 		return false, apperrors.Internal("Failed to parse \"%s\" as a version", version2)
 	}
 	return parsedVersion1.GreaterThan(parsedVersion2), nil
+}
+
+func getShootNetworkingFilterDisabled(extensions []gardener_Types.Extension) *bool {
+	for _, extension := range extensions {
+		if extension.Type == model.ShootNetworkingFilterExtensionType {
+			return extension.Disabled
+		}
+	}
+	return nil
 }

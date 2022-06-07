@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
@@ -840,6 +842,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		ActiveKymaConfigId: &activeKymaConfigId,
 		ClusterConfig: model.GardenerConfig{
 			KubernetesVersion: "1.19",
+			//ShootNetworkingFilterDisabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
 		},
 		Tenant: tenant,
 	}
@@ -865,6 +868,18 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	operationMatcher := getOperationMatcher(expectedOperation)
 
+	providedShoot := func(kubernetesVersion string) gardener_Types.Shoot {
+		return gardener_Types.Shoot{
+			Spec: gardener_Types.ShootSpec{
+				Kubernetes: gardener_Types.Kubernetes{Version: kubernetesVersion},
+				Extensions: []gardener_Types.Extension{{
+					Type:     model.ShootNetworkingFilterExtensionType,
+					Disabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
+				}},
+			},
+		}
+	}
+
 	for _, testCase := range []struct {
 		description string
 		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider, upgradeQueue *mocks.OperationQueue)
@@ -881,11 +896,12 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				shootProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
 			},
 		},
 		{
@@ -903,7 +919,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 	} {
@@ -954,9 +970,10 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				shootProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
 			},
 		},
 		{
@@ -976,7 +993,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
@@ -992,7 +1009,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				shootProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+				shootProvider.On("Get", runtimeID, tenant).Return(gardener_Types.Shoot{}, apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
@@ -1045,6 +1062,14 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		},
 	}
 
+	providedShoot := func(kubernetesVersion string) gardener_Types.Shoot {
+		return gardener_Types.Shoot{
+			Spec: gardener_Types.ShootSpec{
+				Kubernetes: gardener_Types.Kubernetes{Version: kubernetesVersion},
+			},
+		}
+	}
+
 	upgradeShootInput := newUpgradeShootInputAwsAzureGCP("testing")
 	upgradedConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, cluster.ClusterConfig)
 	require.NoError(t, err)
@@ -1081,7 +1106,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, newUpgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				shootProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
 			},
 		},
 		{
@@ -1099,7 +1124,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 	} {
@@ -1150,7 +1175,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
@@ -1166,7 +1191,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
@@ -1178,7 +1203,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
@@ -1188,7 +1213,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
-				shootProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
@@ -1219,7 +1244,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				shootProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+				shootProvider.On("Get", runtimeID, tenant).Return(gardener_Types.Shoot{}, apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
