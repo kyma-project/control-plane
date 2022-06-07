@@ -206,8 +206,8 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 }
 
 func getComponent(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData) (*runtime.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion, "")
+	kymaVersion internal.RuntimeVersionData, planName string) (*runtime.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +219,9 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 	return nil, fmt.Errorf("failed to find %v component in all component list", component)
 }
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconcilerApi.Component, error) {
-	c, err := getComponent(componentProvider, component, kymaVersion)
+func getComponentInput(componentProvider input.ComponentListProvider, component string,
+	kymaVersion internal.RuntimeVersionData, planName string) (reconcilerApi.Component, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion, planName)
 	if err != nil {
 		return reconcilerApi.Component{}, err
 	}

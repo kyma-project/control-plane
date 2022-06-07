@@ -32,7 +32,7 @@ type ComponentSource struct {
 	URL string `json:"url"`
 }
 
-// KymaComponent represents single kyma component to be handled by the Kyma Operator
+// KymaComponent represents single Kyma component
 type KymaComponent struct {
 	Name        string           `json:"name"`
 	ReleaseName string           `json:"release"`
