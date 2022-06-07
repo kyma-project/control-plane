@@ -943,11 +943,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight: 3,
-			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
-			step:   upgrade_kyma.NewServiceManagerOverridesStep(db.Operations()),
-		},
-		{
-			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsProvided,
 			step:   upgrade_kyma.NewBTPOperatorOverridesStep(db.Operations()),
 		},
