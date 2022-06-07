@@ -150,8 +150,8 @@ func (keys *GlobalOptionsKey) KubeconfigAPIURL() string {
 }
 
 // SlackAPIURL gets the slack-api-url global parameter
-func (keys *GlobalOptionsKey) SlackAPIURL() string {
-	return viper.GetString(keys.slackAPIURL)
+func (keys *GlobalOptionsKey) SlackAPIURL() []string {
+	return viper.GetStringSlice(keys.slackAPIURL)
 }
 
 // GardenerKubeconfig gets the gardener-kubeconfig global parameter
