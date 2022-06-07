@@ -391,7 +391,7 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 
 	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is changed manually, the actual version should be stored in the database.
 	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
-	if shootNetworkingFilterDisabled != nil && cluster.ClusterConfig.ShootNetworkingFilterDisabled != shootNetworkingFilterDisabled {
+	if shouldTakeShootNetworkingFilterDisabled(shootNetworkingFilterDisabled, cluster.ClusterConfig.ShootNetworkingFilterDisabled) {
 		log.Warnf("ShootNetworkingFilter from the database is different than the one in the shoot. Value fetched from the shoot will be stored in the database: %t.", *shootNetworkingFilterDisabled)
 		if dberr = txSession.UpdateShootNetworkingFilterDisabled(runtimeId, shootNetworkingFilterDisabled); dberr != nil {
 			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot networking filter disabled: %s", dberr.Error())
@@ -663,4 +663,9 @@ func getShootNetworkingFilterDisabled(extensions []gardener_Types.Extension) *bo
 		}
 	}
 	return nil
+}
+
+func shouldTakeShootNetworkingFilterDisabled(shootValue, databaseValue *bool) bool {
+	// It should when the shoot value is not nil and the values are not matching
+	return shootValue != nil && (databaseValue == nil || *shootValue != *databaseValue)
 }

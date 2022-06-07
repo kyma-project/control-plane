@@ -841,8 +841,8 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		},
 		ActiveKymaConfigId: &activeKymaConfigId,
 		ClusterConfig: model.GardenerConfig{
-			KubernetesVersion: "1.19",
-			//ShootNetworkingFilterDisabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
+			KubernetesVersion:             "1.19",
+			ShootNetworkingFilterDisabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
 		},
 		Tenant: tenant,
 	}
@@ -896,7 +896,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
-				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
+				//writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
@@ -970,7 +970,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
-				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
+				//writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
 				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
