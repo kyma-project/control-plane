@@ -1089,9 +1089,8 @@ func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
 }
 
-// fixExpectedComponentListWithSMProxy provides a fixed components list for Service Management 1.x - when `sm_platform_credentials`
-// object is provided: helm-broker, service-catalog, service-catalog-addons and service-manager-proxy components should be installed
-func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []reconcilerApi.Component {
+// fixExpectedComponentListWithoutSMProxy provides a fixed components list for Service Management without BTP operator credentials provided
+func (s *BrokerSuiteTest) fixExpectedComponentListWithoutSMProxy(opID string) []reconcilerApi.Component {
 	return []reconcilerApi.Component{
 		{
 			URL:       "",
@@ -1134,109 +1133,6 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMProxy(opID string) []rec
 					Key:    "global.booleanOverride.enabled",
 					Value:  false,
 					Secret: false,
-				},
-			},
-		},
-		{
-			URL:       "",
-			Component: "service-catalog",
-			Namespace: "kyma-system",
-			Configuration: []reconcilerApi.Configuration{
-				{
-					Key:    "global.domainName",
-					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
-					Secret: false,
-				},
-				{
-					Key:    "foo",
-					Value:  "bar",
-					Secret: false,
-				},
-				{
-					Key:    "global.booleanOverride.enabled",
-					Value:  false,
-					Secret: false,
-				},
-			},
-		},
-		{
-			URL:       "",
-			Component: "service-catalog-addons",
-			Namespace: "kyma-system",
-			Configuration: []reconcilerApi.Configuration{
-				{
-					Key:    "global.domainName",
-					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
-					Secret: false,
-				},
-				{
-					Key:    "foo",
-					Value:  "bar",
-					Secret: false,
-				},
-				{
-					Key:    "global.booleanOverride.enabled",
-					Value:  false,
-					Secret: false,
-				},
-			},
-		},
-		{
-			URL:       "",
-			Component: "helm-broker",
-			Namespace: "kyma-system",
-			Configuration: []reconcilerApi.Configuration{
-				{
-					Key:    "global.domainName",
-					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
-					Secret: false,
-				},
-				{
-					Key:    "foo",
-					Value:  "bar",
-					Secret: false,
-				},
-				{
-					Key:    "global.booleanOverride.enabled",
-					Value:  false,
-					Secret: false,
-				},
-			},
-		},
-		{
-			URL:       "https://sm-proxy",
-			Component: "service-manager-proxy",
-			Namespace: "kyma-system",
-			Configuration: []reconcilerApi.Configuration{
-				{
-					Key:    "global.domainName",
-					Value:  fmt.Sprintf("%s.kyma.sap.com", s.ShootName(opID)),
-					Secret: false,
-				},
-				{
-					Key:    "foo",
-					Value:  "bar",
-					Secret: false,
-				},
-				{
-					Key:    "global.booleanOverride.enabled",
-					Value:  false,
-					Secret: false,
-				},
-				{
-					Key:    "config.sm.url",
-					Value:  "https://sm.url",
-					Secret: false,
-				},
-				{
-					Key:    "sm.user",
-					Value:  "smUsername",
-					Secret: false,
-				},
-				{
-					Key:    "sm.password",
-					Value:  "smPassword",
-					Secret: true,
 				},
 			},
 		},
