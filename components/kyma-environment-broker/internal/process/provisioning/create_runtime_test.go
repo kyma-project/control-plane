@@ -280,7 +280,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}
 	componentsProvider := &inputAutomock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return(kymaComponentList, nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{

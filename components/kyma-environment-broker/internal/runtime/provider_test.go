@@ -82,7 +82,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			}
 
 			// when
-			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion)
+			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion, "")
 
 			// then
 			require.NoError(t, err)
@@ -156,7 +156,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 				WithHTTPClient(fakeHTTPClient)
 
 			// when
-			components, err := listProvider.AllComponents(tc.given.kymaVersion)
+			components, err := listProvider.AllComponents(tc.given.kymaVersion, "")
 
 			// then
 			assert.Nil(t, components)

@@ -16,13 +16,13 @@ type ComponentListProvider struct {
 	mock.Mock
 }
 
-// AllComponents provides a mock function with given fields: kymaVersion
-func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]runtime.KymaComponent, error) {
-	ret := _m.Called(kymaVersion)
+// AllComponents provides a mock function with given fields: kymaVersion, planName
+func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]runtime.KymaComponent, error) {
+	ret := _m.Called(kymaVersion, planName)
 
 	var r0 []runtime.KymaComponent
-	if rf, ok := ret.Get(0).(func(internal.RuntimeVersionData) []runtime.KymaComponent); ok {
-		r0 = rf(kymaVersion)
+	if rf, ok := ret.Get(0).(func(internal.RuntimeVersionData, string) []runtime.KymaComponent); ok {
+		r0 = rf(kymaVersion, planName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]runtime.KymaComponent)
@@ -30,8 +30,8 @@ func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(internal.RuntimeVersionData) error); ok {
-		r1 = rf(kymaVersion)
+	if rf, ok := ret.Get(1).(func(internal.RuntimeVersionData, string) error); ok {
+		r1 = rf(kymaVersion, planName)
 	} else {
 		r1 = ret.Error(1)
 	}
