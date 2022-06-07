@@ -207,7 +207,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Version:        "2.0",
 		Profile:        "Evaluation",
 		Administrators: []string{"john.smith@email.com"},
-		Components:     suite.fixExpectedComponentListWithSMProxy(opID),
+		Components:     suite.fixExpectedComponentListWithoutSMProxy(opID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
 }

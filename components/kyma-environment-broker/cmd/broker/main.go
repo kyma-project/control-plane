@@ -668,11 +668,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			condition: provisioning.WhenBTPOperatorCredentialsNotProvided,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewServiceManagerOverridesStep(db.Operations()),
-		},
-		{
 			condition: provisioning.WhenBTPOperatorCredentialsProvided,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
@@ -945,11 +940,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight: 1,
 			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
 			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
-			weight: 3,
-			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
-			step:   upgrade_kyma.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
 			weight: 3,

@@ -147,6 +147,7 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	creator, err := s.inputBuilder.CreateUpgradeInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
+		internal.DisableServiceManagementComponents(creator)
 		operation.InputCreator = creator
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):
