@@ -70,10 +70,6 @@ require (
 )
 
 replace (
-	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
-	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	k8s.io/api => k8s.io/api v0.22.8
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.8
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.8
@@ -88,16 +84,23 @@ replace (
 	k8s.io/controller-manager => k8s.io/controller-manager v0.22.8
 	k8s.io/cri-api => k8s.io/cri-api v0.22.8
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.22.8
-	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.8
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.22.8
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.22.8
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.22.8
 	k8s.io/kubectl => k8s.io/kubectl v0.22.8
 	k8s.io/kubelet => k8s.io/kubelet v0.22.8
-	k8s.io/kubernetes => k8s.io/kubernetes v1.20.11
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.22.8
 	k8s.io/metrics => k8s.io/metrics v0.22.8
 	k8s.io/mount-utils => k8s.io/mount-utils v0.22.8
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.8
+)
+
+replace (
+	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
+	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
+	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
+	k8s.io/kubernetes => k8s.io/kubernetes v1.20.11
 )
