@@ -427,13 +427,14 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 	for sAccID, recordObj := range p.Cache.Items() {
 		if _, ok := validSubAccounts[sAccID]; !ok {
 			record, ok := recordObj.Object.(kmccache.Record)
+			p.Cache.Delete(sAccID)
 			if !ok {
 				p.namedLogger().With(log.KeySubAccountID, sAccID).
 					Error("bad item from cache, could not cast to a record obj")
+			} else {
+				p.namedLogger().With(log.KeySubAccountID, sAccID).With(log.KeyRuntimeID, record.RuntimeID).
+					Debug("SubAccount is not trackable anymore hence deleting it from cache")
 			}
-			p.Cache.Delete(sAccID)
-			p.namedLogger().With(log.KeySubAccountID, sAccID).With(log.KeyRuntimeID, record.RuntimeID).
-				Debug("SubAccount is not trackable anymore hence deleting it from cache")
 		}
 	}
 }
