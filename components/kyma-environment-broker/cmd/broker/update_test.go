@@ -1879,6 +1879,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 }
 
+/* test disabled due to flakiness
 func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t, "2.0")
@@ -1981,6 +1982,7 @@ func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
 	disabled := true
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
 }
+*/
 
 func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// given
