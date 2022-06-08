@@ -443,5 +443,8 @@ func (p *Process) namedLogger() *zap.SugaredLogger {
 }
 
 func (p *Process) namedLoggerWithRuntime(record *kmccache.Record) *zap.SugaredLogger {
+	if record == nil {
+		return p.Logger.With("component", "kmc").With(log.KeyRuntimeID, "")
+	}
 	return p.Logger.With("component", "kmc").With(log.KeyRuntimeID, record.RuntimeID)
 }
