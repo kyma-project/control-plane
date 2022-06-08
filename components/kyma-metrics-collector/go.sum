@@ -733,8 +733,8 @@ github.com/gardener/gardener v1.48.0/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYX
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.35.0 h1:9sQJSa9y7H6CmmWkJu2rf9ooqpaGYSon7yTWPSWO84k=
 github.com/gardener/gardener-extension-provider-aws v1.35.0/go.mod h1:KXDUHTz5JsD6uFVeVQ4XBAfoheA/QSHd0/HaQReptuE=
-github.com/gardener/gardener-extension-provider-azure v1.27.1 h1:Ik2hjZVshM1AnlmPyNHse6lJWMr8TEyvTqHYyjaY4lE=
-github.com/gardener/gardener-extension-provider-azure v1.27.1/go.mod h1:mzDhG8VGAwro2z7Ny0HnaJlKi20GAtVeBD6dQQBIpYY=
+github.com/gardener/gardener-extension-provider-azure v1.28.0 h1:vTTPljwfrYgM0Ni7VqMhEd7eHSkt/NXTYjTgFpniKQE=
+github.com/gardener/gardener-extension-provider-azure v1.28.0/go.mod h1:vyTQPovpWMmqE8qw647CYRhdFA9eQWn8QcVEIhw4bHE=
 github.com/gardener/gardener-extension-provider-gcp v1.22.1 h1:S57EKcx11t6OcfFkW+fqu3Ha6juxjXOh5hEFDZ8lBfs=
 github.com/gardener/gardener-extension-provider-gcp v1.22.1/go.mod h1:JQso52ey4E2v4cSHqmXu7fd+jL8fLGB9HgrulhA4cW0=
 github.com/gardener/gardener-resource-manager v0.10.0/go.mod h1:0pKTHOhvU91eQB0EYr/6Ymd7lXc/5Hi8P8tF/gpV0VQ=
@@ -750,8 +750,8 @@ github.com/gardener/machine-controller-manager v0.27.0/go.mod h1:zlIxuLQMtRO+aXO
 github.com/gardener/machine-controller-manager v0.33.0/go.mod h1:jxxE+mGgXwg4iPlCHTG4GtUfK2CcHA6yYoIIowoxOZU=
 github.com/gardener/machine-controller-manager v0.41.0/go.mod h1:43OABkCemMS6b35z3OprbfaT3p2HxKAZkJekjCO2T48=
 github.com/gardener/machine-controller-manager v0.42.0/go.mod h1:43OABkCemMS6b35z3OprbfaT3p2HxKAZkJekjCO2T48=
-github.com/gardener/machine-controller-manager v0.43.1/go.mod h1:oMaIZMJ0pU6Z8j885v4a4+wxkzC1mpoqfqDUH34SQ58=
 github.com/gardener/machine-controller-manager v0.44.1/go.mod h1:X3MKnVQ83ov7e8Ct0TxL+3PiTodGTc41klr6MbEuxxY=
+github.com/gardener/machine-controller-manager v0.45.0/go.mod h1:+4j/6ab3jqbM6tM6FPtlajYgaJHM0xZ44ErOjCBlsP8=
 github.com/gardener/remedy-controller v0.6.0/go.mod h1:vh24JWDa9rjtCDGAI6hI7qvZYaMW/M21P2brKhkg47I=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/garyburd/redigo v1.6.3/go.mod h1:rTb6epsqigu3kYKBnaF028A7Tf/Aw5s0cqA47doKKqw=
@@ -3056,6 +3056,7 @@ k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd/go.mod h1:WOJ3KddDSol4tAG
 k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7/go.mod h1:wXW5VT87nVfh/iLV8FpR2uDvrFyomxbtb1KivDbvPTE=
 k8s.io/kube-openapi v0.0.0-20210421082810-95288971da7e/go.mod h1:vHXdDvt9+2spS2Rx9ql3I8tycm3H9FDfdUoIuKCefvw=
 k8s.io/kube-openapi v0.0.0-20211109043538-20434351676c/go.mod h1:vHXdDvt9+2spS2Rx9ql3I8tycm3H9FDfdUoIuKCefvw=
+k8s.io/kube-openapi v0.0.0-20211110012726-3cc51fd1e909/go.mod h1:wXW5VT87nVfh/iLV8FpR2uDvrFyomxbtb1KivDbvPTE=
 k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65/go.mod h1:sX9MT8g7NVZM5lVL/j8QyCCJe8YSMW30QvGZWaCIDIk=
 k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42/go.mod h1:Z/45zLw8lUo4wdiUkI+v/ImEGAvu3WatcZl3lPMR4Rk=
 k8s.io/kube-openapi v0.0.0-20220413171646-5e7f5fdc6da6 h1:nBQrWPlrNIiw0BsX6a6MKr1itkm0ZS0Nl97kNLitFfI=
