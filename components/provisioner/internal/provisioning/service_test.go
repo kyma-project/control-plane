@@ -841,8 +841,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		},
 		ActiveKymaConfigId: &activeKymaConfigId,
 		ClusterConfig: model.GardenerConfig{
-			KubernetesVersion:             "1.19",
-			ShootNetworkingFilterDisabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
+			KubernetesVersion: "1.19",
 		},
 		Tenant: tenant,
 	}
@@ -868,16 +867,19 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	operationMatcher := getOperationMatcher(expectedOperation)
 
-	providedShoot := func(kubernetesVersion string) gardener_Types.Shoot {
-		return gardener_Types.Shoot{
+	providedShoot := func(kubernetesVersion string, shootNetworkingFilterDisabled *bool) gardener_Types.Shoot {
+		shoot := gardener_Types.Shoot{
 			Spec: gardener_Types.ShootSpec{
 				Kubernetes: gardener_Types.Kubernetes{Version: kubernetesVersion},
-				Extensions: []gardener_Types.Extension{{
-					Type:     model.ShootNetworkingFilterExtensionType,
-					Disabled: util.BoolPtr(model.ShootNetworkingFilterDisabledDefault),
-				}},
 			},
 		}
+		if shootNetworkingFilterDisabled != nil {
+			shoot.Spec.Extensions = []gardener_Types.Extension{{
+				Type:     model.ShootNetworkingFilterExtensionType,
+				Disabled: shootNetworkingFilterDisabled,
+			}}
+		}
+		return shoot
 	}
 
 	for _, testCase := range []struct {
@@ -896,12 +898,12 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
-				//writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20", util.BoolPtr(true)), nil)
 			},
 		},
 		{
@@ -919,7 +921,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19", nil), nil)
 			},
 		},
 	} {
@@ -970,10 +972,10 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
-				//writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20", util.BoolPtr(true)), nil)
 			},
 		},
 		{
@@ -993,7 +995,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19", nil), nil)
 			},
 		},
 		{
@@ -1004,7 +1006,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 			},
 		},
 		{
-			description: "should fail to upgrade Runtime when failed to get Kubernetes version",
+			description: "should fail to upgrade Runtime when failed to get shoot",
 			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
