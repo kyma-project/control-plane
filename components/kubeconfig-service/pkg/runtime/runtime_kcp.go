@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
@@ -34,7 +35,9 @@ Data:map[string]string
 */
 
 const KcpNamespace string = "kcp-system"
-const ExpireTime time.Duration = 7 * 24 * time.Hour
+
+//const ExpireTime time.Duration = 7 * 24 * time.Hour
+const ExpireTime time.Duration = 5 * time.Minute
 
 type JsonPatchType struct {
 	Op    string `json:"op"`
@@ -57,26 +60,28 @@ func SetupConfigMap() error {
 		role := configMap.ObjectMeta.Annotations["role"]
 		tenantID := configMap.ObjectMeta.Annotations["tenant"]
 		for runtimeID, startTimeString := range configMap.Data {
-			c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
-			status, err := c.RuntimeStatus(runtimeID)
-			if err != nil {
-				log.Errorf("Failed to get runtime status.")
-				return err
+			if runtimeID != "RuntimeID" {
+				c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
+				status, err := c.RuntimeStatus(runtimeID)
+				if err != nil {
+					log.Errorf("Failed to get runtime status.")
+					return err
+				}
+				rawConfig := *status.RuntimeConfiguration.Kubeconfig
+				rtc, err := NewRuntimeClient([]byte(rawConfig), userID, role, tenantID)
+				if err != nil {
+					log.Errorf("Failed to create runtime client.")
+					return err
+				}
+				startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", startTimeString)
+				if err != nil {
+					log.Errorf("Failed to convert start time.")
+					return err
+				}
+				endTime := startTime.Add(ExpireTime)
+				duration := time.Until(endTime)
+				go rtc.SetupTimer(duration, runtimeID)
 			}
-			rawConfig := *status.RuntimeConfiguration.Kubeconfig
-			rtc, err := NewRuntimeClient([]byte(rawConfig), userID, role, tenantID)
-			if err != nil {
-				log.Errorf("Failed to create runtime client.")
-				return err
-			}
-			startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", startTimeString)
-			if err != nil {
-				log.Errorf("Failed to convert start time.")
-				return err
-			}
-			endTime := startTime.Add(ExpireTime)
-			duration := time.Until(endTime)
-			go rtc.SetupTimer(duration, runtimeID)
 		}
 	}
 
@@ -105,7 +110,8 @@ func GetK8sClient() (kubernetes.Interface, error) {
 	}
 	clientset, err := kubernetes.NewForConfig(k8sconfig)
 	if err != nil {
-		return nil, errors.Errorf("Failed to create k8s core client, %s", err.Error())
+		log.Errorf("Failed to create k8s core client, %s", err.Error())
+		return nil, err
 	}
 	return clientset, err
 }
@@ -113,9 +119,8 @@ func GetK8sClient() (kubernetes.Interface, error) {
 func (rtc *RuntimeClient) SetupTimer(duration time.Duration, runtimeID string) {
 	userID := rtc.User.ServiceAccountName
 	if duration >= 0 {
-		timer := time.AfterFunc(duration, func() {
-			log.Printf("The timer for runtime %s user %s finished.", runtimeID, userID)
-		})
+		timer := time.NewTimer(duration)
+		<-timer.C
 		defer timer.Stop()
 	}
 
@@ -144,11 +149,13 @@ func (rtc *RuntimeClient) UpdateConfigMap(runtimeID string) error {
 	patches = append(patches, patch)
 	payload, err := json.Marshal(patches)
 	if err != nil {
-		return errors.Errorf("Failed to marshal patch, %s", err.Error())
+		log.Errorf("Failed to marshal patch, %s", err.Error())
+		return err
 	}
 	_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
 	if err != nil {
-		return errors.Errorf("Failed to update config map, %s", err.Error())
+		log.Errorf("Failed to update config map, %s", err.Error())
+		return err
 	}
 	return nil
 }
@@ -158,7 +165,8 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 	tenantID := rtc.User.TenantID
 
 	log.Info("Checking if the user exists")
-	startTime := time.Now().String()
+	startTimeFull := time.Now().String()
+	startTime := strings.Split(startTimeFull, " m=")[0]
 	cm, err := rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		log.Info("User doens't exist. Trying to create configmap.")
@@ -169,14 +177,16 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": L2L3OperatorRole, "tenant": tenantID},
 			},
-			Data: map[string]string{runtimeID: startTime},
+			Data: map[string]string{"RuntimeID": "StartTime", runtimeID: startTime},
 		}
 		_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Create(context.Background(), configmap, metav1.CreateOptions{})
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			return errors.Errorf("Failed to create config map for user %s runtime %s", userID, runtimeID)
+			log.Errorf("Failed to create config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+			return err
 		}
 	} else if err != nil {
-		return errors.Errorf("Failed to get config map for user %s runtime %s", userID, runtimeID)
+		log.Errorf("Failed to get config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		return err
 	} else {
 		log.Info("User already exist. Trying to update configmap.")
 		var patches []*JsonPatchType
@@ -190,7 +200,7 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 				Value: startTime,
 			}
 		} else {
-			log.Info("Runtime not exiss. Trying to create new entry.")
+			log.Info("Runtime not exist. Trying to create new entry.")
 			patch = &JsonPatchType{
 				Op:    "add",
 				Path:  path,
@@ -200,11 +210,13 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 		patches = append(patches, patch)
 		payload, err := json.Marshal(patches)
 		if err != nil {
-			return errors.Errorf("Failed to marshal patch, %s", err.Error())
+			log.Errorf("Failed to marshal patch for user %s runtime %s, %s", userID, runtimeID, err.Error())
+			return err
 		}
 		_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
 		if err != nil {
-			return errors.Errorf("Failed to update config map, %s", err.Error())
+			log.Errorf("Failed to update config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+			return err
 		}
 	}
 
@@ -214,14 +226,16 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 func getConfigMapList() (*v1.ConfigMapList, error) {
 	coreClientset, err := GetK8sClient()
 	if err != nil {
-		return nil, errors.Errorf("Failed to get kcp k8s client.")
+		log.Errorf("Failed to get kcp k8s client.")
+		return nil, err
 	}
 	cmlist, err := coreClientset.CoreV1().ConfigMaps(KcpNamespace).List(context.Background(), metav1.ListOptions{LabelSelector: "service=kubeconfig"})
 	if k8serrors.IsNotFound(err) {
 		log.Info("All configmaps cleaned up.")
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Errorf("Failed to get config map list: %s", err.Error())
+		log.Errorf("Failed to get config map list: %s", err.Error())
+		return nil, err
 	}
 	return cmlist, nil
 }

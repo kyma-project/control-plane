@@ -2,11 +2,14 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -173,7 +176,7 @@ func TestCreateserviceaccount(t *testing.T) {
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
 			},
-			Data: map[string]string{"runtime1": "startTime1"},
+			Data: map[string]string{"RuntimeID": "StartTime", "runtime1": "startTime1"},
 		}
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
 		assert.NoError(t, err)
@@ -206,7 +209,7 @@ func TestCreateserviceaccount(t *testing.T) {
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
 			},
-			Data: map[string]string{"runtime1": "startTime1"},
+			Data: map[string]string{"RuntimeID": "StartTime", "runtime1": "startTime1"},
 		}
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
 		assert.NoError(t, err)
@@ -225,6 +228,51 @@ func TestCreateserviceaccount(t *testing.T) {
 		assert.Equal(t, expectedTenantID, cm.Annotations["tenant"])
 		assert.Equal(t, "startTime1", cm.Data["runtime1"])
 		assert.NotEmpty(t, cm.Data["runtime2"])
+	})
+
+	t.Run("If kcp config map deployed when user existed with runtime removed", func(t *testing.T) {
+		var runtimeName, namespaceName = "runtime1", "kcp-system"
+		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "runtimeOperator", "tenantID")
+		assert.NoError(t, err)
+
+		configmap := &corev1.ConfigMap{
+			ObjectMeta: v1.ObjectMeta{
+				Name:        "sa1",
+				Namespace:   "kcp-system",
+				Labels:      map[string]string{"service": "kubeconfig"},
+				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
+			},
+			Data: map[string]string{"RuntimeID": "StartTime", runtimeName: "startTime1"},
+		}
+		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
+		assert.NoError(t, err)
+		assert.NotNil(t, cm)
+
+		var patches []*JsonPatchType
+		patch := &JsonPatchType{
+			Op:   "remove",
+			Path: "/data/runtime1",
+		}
+		patches = append(patches, patch)
+		payload, err := json.Marshal(patches)
+		assert.NoError(t, err)
+		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Patch(context.Background(), "sa1", types.JSONPatchType, payload, metav1.PatchOptions{})
+		assert.NoError(t, err)
+		assert.Empty(t, cm.Data["runtime1"])
+
+		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator")
+		assert.NoError(t, err)
+
+		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Get(context.Background(), "sa1", v1.GetOptions{})
+		assert.NotNil(t, cm)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedSaName, cm.Name)
+		assert.Equal(t, namespaceName, cm.Namespace)
+		assert.Equal(t, "kubeconfig", cm.Labels["service"])
+		assert.Equal(t, "runtimeOperator", cm.Annotations["role"])
+		assert.Equal(t, expectedTenantID, cm.Annotations["tenant"])
+		assert.NotEmpty(t, cm.Data["runtime1"])
+		assert.NotEqual(t, "startTime1", cm.Data["runtime1"])
 	})
 
 }
