@@ -1681,7 +1681,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.Equal(t, opID, rs.OperationID, "runtime state provisioning operation ID")
 	assert.NoError(t, err, "getting runtime state after provisioning, before update")
 	assert.ElementsMatch(t, rs.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"service-catalog-addons", "ory", "monitoring", "helm-broker", "service-manager-proxy", "service-catalog"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring"})
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1808,58 +1808,249 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 
 }
 
-func TestUpdateSCMigrationRejection(t *testing.T) {
+func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0")
 	defer suite.TearDown()
-	id := "InstanceID-SCMigration"
+	id := uuid.New().String()
 
-	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
-{
-	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-	"context": {
-		"sm_platform_credentials": {
-			"url": "https://sm.url",
-			"credentials": {
-				"basic": {
-					"username": "u-name",
-					"password": "pass"
-				}
-			}
-		},
-		"globalaccount_id": "g-account-id",
-		"subaccount_id": "sub-id",
-		"user_id": "john.smith@email.com"
-	},
-	"parameters": {
-		"name": "testing-cluster"
-	}
-}`)
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_operator_credentials": {
+							"clientid": "testClientID",
+							"clientsecret": "testClientSecret",
+							"sm_url": "https://service-manager.kyma.com",
+							"url": "https://test.auth.com",
+							"xsappname": "testXsappname"
+						},
+						"license_type": "CUSTOMER",
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
+	instance := suite.GetInstance(id)
+
+	// then
+	disabled := true
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
+	assert.Equal(suite.t, "CUSTOMER", *instance.Parameters.ErsContext.LicenseType)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
-{
-	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-	"context": {
-		"globalaccount_id": "g-account-id",
-		"user_id": "john.smith@email.com",
-		"sm_operator_credentials": {
-			"clientid": "testClientID",
-			"clientsecret": "testClientSecret",
-			"sm_url": "https://service-manager.kyma.com",
-			"url": "https://test.auth.com",
-			"xsappname": "testXsappname"
-		},
-		"isMigration": true
-	}
-}`)
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"globalaccount_id": "g-account-id",
+				"user_id": "john.smith@email.com",
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname"
+				}
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
 
-	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
+	instance2 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+}
+
+func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t, "2.0")
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_platform_credentials": {
+					"url": "https://sm.url",
+					"credentials": {
+						"basic": {
+							"username": "u-name",
+							"password": "pass"
+						}
+					}
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	instance := suite.GetInstance(id)
+
+	// then
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
+	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"globalaccount_id": "g-account-id",
+				"user_id": "john.smith@email.com",
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname2"
+				},
+				"license_type": "CUSTOMER",
+				"isMigration": true
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByReconcilerBoth(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+	instance2 := suite.GetInstance(id)
+	// license_type should be stored in the instance table for ERS context and future upgrades
+	// but shouldn't be sent to provisioner when migration is triggered
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+
+	// when
+	// second update without triggering migration
+	// it should be fine if ERS omits license_type and KEB should reuse the last applied value
+	// because migration wasn't triggered, KEB should send payload to provisioner with network filter disabled
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"globalaccount_id": "g-account-id",
+				"user_id": "john.smith@email.com",
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname2"
+				}
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperation2ID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperation2ID)
+	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
+	instance3 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
+	disabled := true
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
+}
+
+func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t, "2.0")
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname2"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	instance := suite.GetInstance(id)
+
+	// then
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"globalaccount_id": "g-account-id",
+				"user_id": "john.smith@email.com",
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname"
+				},
+				"license_type": "CUSTOMER"
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
+	instance2 := suite.GetInstance(id)
+	// license_type should be stored in the instance table for ERS context and future upgrades
+	// as well as sent to provisioner because the migration has not been triggered
+	disabled := true
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
+	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }
 
 func componentNames(components []reconcilerApi.Component) []string {

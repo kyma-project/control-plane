@@ -46,8 +46,8 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	}
 
 	if operation.K8sClient == nil {
-		log.Errorf("k8s client must be provided")
-		return s.operationManager.OperationFailed(operation, "k8s client must be provided", nil, log)
+		log.Errorf("k8s client is not provided, service instance %s may need manual removal", serviceInstanceName)
+		return operation, 0, nil
 	}
 
 	si, err := s.getServiceInstance(operation.K8sClient)
@@ -58,7 +58,7 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 			return operation, 0, nil
 		}
 		log.Errorf("while getting %s service instance from the cluster: %s", serviceInstanceName, err)
-		return s.operationManager.OperationFailed(operation, "could not get service instance to be deleted", nil, log)
+		return s.operationManager.OperationFailed(operation, "could not get service instance to be deleted", err, log)
 	}
 
 	err = s.deleteServiceInstance(operation.K8sClient, si)
@@ -66,18 +66,18 @@ func (s *RemoveServiceInstanceStep) Run(operation internal.DeprovisioningOperati
 	switch err.(type) {
 	case *k8serrors.UnexpectedObjectError:
 		log.Errorf("could not delete %s service instance, unknown status: %s", serviceInstanceName, err)
-		return s.operationManager.OperationFailed(operation, "could not delete service instance", nil, log)
+		return s.operationManager.OperationFailed(operation, "could not delete service instance", err, log)
 	case *k8serrors.StatusError:
 		operation.Retries++
 		log.Warnf("could not delete %s service instance, status: %s", serviceInstanceName, err)
-		return s.retryOrFail(&operation, &log)
+		return s.retryOrFail(&operation, err, &log)
 	case nil:
 		operation.IsServiceInstanceDeleted = true
 		return operation, 0, nil
 	}
 
 	log.Errorf("could not delete %s service instance, %s", serviceInstanceName, err)
-	return s.operationManager.OperationFailed(operation, "could not delete service instance", nil, log)
+	return s.operationManager.OperationFailed(operation, "could not delete service instance", err, log)
 }
 
 func (s *RemoveServiceInstanceStep) getServiceInstance(k8sClient client.Client) (*unstructured.Unstructured, error) {
@@ -122,10 +122,10 @@ func (s *RemoveServiceInstanceStep) deleteServiceInstance(k8sClient client.Clien
 	return err
 }
 
-func (s *RemoveServiceInstanceStep) retryOrFail(operation *internal.DeprovisioningOperation, log *logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *RemoveServiceInstanceStep) retryOrFail(operation *internal.DeprovisioningOperation, err error, log *logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if operation.Retries > allowedRetries {
 		(*log).Errorf("could not delete %s service instance, timeout reached", serviceInstanceName)
-		return s.operationManager.OperationFailed(*operation, "could not delete service instance", nil, *log)
+		return s.operationManager.OperationFailed(*operation, "could not delete service instance", err, *log)
 	}
 	return *operation, time.Second * 20, nil
 }

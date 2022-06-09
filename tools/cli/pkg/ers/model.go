@@ -26,7 +26,7 @@ type Instance struct {
 	Labels          string
 	LandscapeLabel  string
 	// TODO: Date comes in different format than specified
-	// ModifiedDate      date.Date //2021-10-04T112314.137Z
+	ModifiedDate   int //2021-10-04T112314.137Z
 	Name           string
 	Operation      string
 	Parameters     interface{}

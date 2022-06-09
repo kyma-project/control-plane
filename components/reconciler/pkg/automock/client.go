@@ -415,6 +415,46 @@ func (mr *MockClientInterfaceMockRecorder) PutClustersWithBody(ctx, contentType,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutClustersWithBody", reflect.TypeOf((*MockClientInterface)(nil).PutClustersWithBody), varargs...)
 }
 
+// PutOperationsSchedulingIDCorrelationIDDebug mocks base method.
+func (m *MockClientInterface) PutOperationsSchedulingIDCorrelationIDDebug(ctx context.Context, schedulingID, correlationID string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, schedulingID, correlationID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PutOperationsSchedulingIDCorrelationIDDebug", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutOperationsSchedulingIDCorrelationIDDebug indicates an expected call of PutOperationsSchedulingIDCorrelationIDDebug.
+func (mr *MockClientInterfaceMockRecorder) PutOperationsSchedulingIDCorrelationIDDebug(ctx, schedulingID, correlationID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, schedulingID, correlationID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutOperationsSchedulingIDCorrelationIDDebug", reflect.TypeOf((*MockClientInterface)(nil).PutOperationsSchedulingIDCorrelationIDDebug), varargs...)
+}
+
+// PutReconciliationsSchedulingIDDebug mocks base method.
+func (m *MockClientInterface) PutReconciliationsSchedulingIDDebug(ctx context.Context, schedulingID string, reqEditors ...mothership.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, schedulingID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PutReconciliationsSchedulingIDDebug", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutReconciliationsSchedulingIDDebug indicates an expected call of PutReconciliationsSchedulingIDDebug.
+func (mr *MockClientInterfaceMockRecorder) PutReconciliationsSchedulingIDDebug(ctx, schedulingID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, schedulingID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutReconciliationsSchedulingIDDebug", reflect.TypeOf((*MockClientInterface)(nil).PutReconciliationsSchedulingIDDebug), varargs...)
+}
+
 // MockClientWithResponsesInterface is a mock of ClientWithResponsesInterface interface.
 type MockClientWithResponsesInterface struct {
 	ctrl     *gomock.Controller
@@ -776,4 +816,44 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) PutClustersWithResponse(
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutClustersWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).PutClustersWithResponse), varargs...)
+}
+
+// PutOperationsSchedulingIDCorrelationIDDebugWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) PutOperationsSchedulingIDCorrelationIDDebugWithResponse(ctx context.Context, schedulingID, correlationID string, reqEditors ...mothership.RequestEditorFn) (*mothership.PutOperationsSchedulingIDCorrelationIDDebugResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, schedulingID, correlationID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PutOperationsSchedulingIDCorrelationIDDebugWithResponse", varargs...)
+	ret0, _ := ret[0].(*mothership.PutOperationsSchedulingIDCorrelationIDDebugResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutOperationsSchedulingIDCorrelationIDDebugWithResponse indicates an expected call of PutOperationsSchedulingIDCorrelationIDDebugWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) PutOperationsSchedulingIDCorrelationIDDebugWithResponse(ctx, schedulingID, correlationID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, schedulingID, correlationID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutOperationsSchedulingIDCorrelationIDDebugWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).PutOperationsSchedulingIDCorrelationIDDebugWithResponse), varargs...)
+}
+
+// PutReconciliationsSchedulingIDDebugWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) PutReconciliationsSchedulingIDDebugWithResponse(ctx context.Context, schedulingID string, reqEditors ...mothership.RequestEditorFn) (*mothership.PutReconciliationsSchedulingIDDebugResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, schedulingID}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PutReconciliationsSchedulingIDDebugWithResponse", varargs...)
+	ret0, _ := ret[0].(*mothership.PutReconciliationsSchedulingIDDebugResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutReconciliationsSchedulingIDDebugWithResponse indicates an expected call of PutReconciliationsSchedulingIDDebugWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) PutReconciliationsSchedulingIDDebugWithResponse(ctx, schedulingID interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, schedulingID}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutReconciliationsSchedulingIDDebugWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).PutReconciliationsSchedulingIDDebugWithResponse), varargs...)
 }

@@ -31,8 +31,6 @@ const (
 	OpenStackPlanName = "openstack"
 	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
 	FreemiumPlanName  = "free"
-	PreviewPlanID     = "5cb3d976-b85c-42ea-a636-79cadda109a9"
-	PreviewPlanName   = "preview"
 )
 
 var PlanNamesMapping = map[string]string{
@@ -45,7 +43,6 @@ var PlanNamesMapping = map[string]string{
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
 	FreemiumPlanID:  FreemiumPlanName,
-	PreviewPlanID:   PreviewPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -58,7 +55,6 @@ var PlanIDsMapping = map[string]string{
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
 	FreemiumPlanName:  FreemiumPlanID,
-	PreviewPlanName:   PreviewPlanID,
 }
 
 type TrialCloudRegion string
@@ -263,7 +259,6 @@ func createSchemaWith(properties interface{}, update bool) *map[string]interface
 func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]domain.ServicePlan {
 	awsMachines := []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"}
 
-	awsSchema := AWSSchema(awsMachines, includeAdditionalParamsInSchema, false)
 	// awsHASchema := AWSHASchema(awsMachines, includeAdditionalParamsInSchema, false)
 
 	gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
@@ -289,7 +284,6 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 
 	outputPlans := map[string]domain.ServicePlan{
 		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
-		PreviewPlanID:   defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		AWSHAPlanID:     defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans, awsHACatalogSchema, AWSHASchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
 		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
@@ -364,15 +358,6 @@ func IsAzurePlan(planID string) bool {
 func IsFreemiumPlan(planID string) bool {
 	switch planID {
 	case FreemiumPlanID:
-		return true
-	default:
-		return false
-	}
-}
-
-func IsPreviewPlan(planID string) bool {
-	switch planID {
-	case PreviewPlanID:
 		return true
 	default:
 		return false

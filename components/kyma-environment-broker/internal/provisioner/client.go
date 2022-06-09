@@ -172,6 +172,8 @@ func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) 
 	wrapper := &graphQLResponseWrapper{Result: respDestination}
 	err := c.graphQLClient.Run(context.TODO(), req, wrapper)
 	switch {
+	case isNotFoundError(err):
+		return kebError.NotFoundError{}
 	case isClientError(err):
 		return err
 	case err != nil:
@@ -187,6 +189,18 @@ func isClientError(err error) bool {
 		if found {
 			errCode := code.(float64)
 			if errCode >= 400 && errCode < 500 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isNotFoundError(err error) bool {
+	if ee, ok := err.(gcli.ExtendedError); ok {
+		reason, found := ee.Extensions()["error_reason"]
+		if found {
+			if reason == "err_db_not_found" {
 				return true
 			}
 		}

@@ -39,7 +39,7 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-Security-Policy", "default-src 'self';")
+		w.Header().Set("Content-Security-Policy", "default-src 'none';")
 		_, err2 := w.Write([]byte(err.Error()))
 		log.Errorf("Error while processing the kubeconfig file: %s", err)
 		if err2 != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -54,6 +55,127 @@ func TestLastOperation_LastOperation(t *testing.T) {
 		assert.Equal(t, domain.LastOperation{
 			State:       domain.Succeeded,
 			Description: operationDescription,
+		}, response)
+	})
+	t.Run("Should convert operation's pending state to in progress", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		updateOp := fixture.FixUpdatingOperation(operationID, instID)
+		updateOp.State = orchestration.Pending
+		err := memoryStorage.Operations().InsertUpdatingOperation(updateOp)
+		assert.NoError(t, err)
+
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
+
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: ""})
+		assert.Error(t, err, "instance operation with instance_id %s not found", instID)
+
+		// then
+		assert.Equal(t, domain.LastOperation{}, response)
+
+		// when
+		response, err = lastOperationEndpoint.LastOperation(context.TODO(), instID,
+			domain.PollDetails{OperationData: operationID})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.InProgress,
+			Description: updateOp.Description,
+		}, response)
+	})
+	t.Run("Should convert operation's retrying state to in progress", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		updateOp := fixture.FixUpdatingOperation(operationID, instID)
+		updateOp.State = orchestration.Retrying
+		err := memoryStorage.Operations().InsertUpdatingOperation(updateOp)
+		assert.NoError(t, err)
+
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
+
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: ""})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.InProgress,
+			Description: updateOp.Description,
+		}, response)
+
+		// when
+		response, err = lastOperationEndpoint.LastOperation(context.TODO(), instID,
+			domain.PollDetails{OperationData: operationID})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.InProgress,
+			Description: updateOp.Description,
+		}, response)
+	})
+	t.Run("Should convert operation's canceling state to succeeded", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		updateOp := fixture.FixUpdatingOperation(operationID, instID)
+		updateOp.State = orchestration.Canceling
+		err := memoryStorage.Operations().InsertUpdatingOperation(updateOp)
+		assert.NoError(t, err)
+
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
+
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: ""})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: updateOp.Description,
+		}, response)
+
+		// when
+		response, err = lastOperationEndpoint.LastOperation(context.TODO(), instID,
+			domain.PollDetails{OperationData: operationID})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: updateOp.Description,
+		}, response)
+	})
+	t.Run("Should convert operation's canceled state to succeeded", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		updateOp := fixture.FixUpdatingOperation(operationID, instID)
+		updateOp.State = orchestration.Canceled
+		err := memoryStorage.Operations().InsertUpdatingOperation(updateOp)
+		assert.NoError(t, err)
+
+		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
+
+		// when
+		response, err := lastOperationEndpoint.LastOperation(context.TODO(), instID, domain.PollDetails{OperationData: ""})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: updateOp.Description,
+		}, response)
+
+		// when
+		response, err = lastOperationEndpoint.LastOperation(context.TODO(), instID,
+			domain.PollDetails{OperationData: operationID})
+		assert.NoError(t, err)
+
+		// then
+		assert.Equal(t, domain.LastOperation{
+			State:       domain.Succeeded,
+			Description: updateOp.Description,
 		}, response)
 	})
 }

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.25.1
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20201211152036-9bdabffd55fb
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0
@@ -26,7 +27,7 @@ require (
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
-	github.com/99designs/gqlgen v0.17.5 // indirect
+	github.com/99designs/gqlgen v0.17.9 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.1.0 // indirect
@@ -40,7 +41,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.2 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.4 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect

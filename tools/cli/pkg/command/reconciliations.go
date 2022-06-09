@@ -274,6 +274,7 @@ The command supports filtering Reconciliations based on`,
 		NewReconciliationStateCommand(),
 		NewOperationCmd(),
 		NewReconciliationPurgeCmd(),
+		NewReconciliationDebugLogsCmd(),
 	)
 
 	SetOutputOpt(cobraCmd, &cmd.output)
