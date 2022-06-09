@@ -39,7 +39,6 @@ func NewDeprovisionClient(parameters DeprovisionParameters) *DeprovisionClient {
 	}
 }
 
-//curl --no-progress-meter --location --request DELETE "$KEB_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true&service_id=faebbe18-0a84-11e5-ab14-d663bd873d97&plan_id=0c712d43-b1e6-470s-9fe5-8e1d552aa6a5" --header 'X-Broker-API-Version: 2.14' --header "Authorization: Bearer $KEB_ACCESS_TOKEN"
 func (c DeprovisionClient) DeprovisionRuntime(runtimeID string) error {
 	url := c.URL + "/oauth/v2/service_instances/" +
 		runtimeID + "?accepts_incomplete=true&service_id=faebbe18-0a84-11e5-ab14-d663bd873d97&plan_id=0c712d43-b1e6-470s-9fe5-8e1d552aa6a5"
@@ -55,9 +54,15 @@ func (c DeprovisionClient) DeprovisionRuntime(runtimeID string) error {
 		return errors.Wrapf(err, "while calling %s", request.URL.String())
 	}
 
+	cerr := response.Body.Close()
+	if err == nil {
+		err = cerr
+	}
+
 	if response.StatusCode != http.StatusOK {
 		return errors.Wrapf(err, "calling %s returned %d (%s) status", request.URL.String(), response.StatusCode, response.Status)
 	}
 	c.log.Infof("Deprovisioning request returned code: " + response.Status)
-	return nil
+
+	return err
 }
