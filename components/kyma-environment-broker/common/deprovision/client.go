@@ -1,11 +1,12 @@
 package deprovision
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
-	"net/http"
-	"time"
 )
 
 const defaultPageSize = 100
