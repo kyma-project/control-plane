@@ -4,13 +4,13 @@ go 1.17
 
 require (
 	github.com/gardener/gardener v1.48.0
-	github.com/gardener/gardener-extension-provider-aws v1.35.0
-	github.com/gardener/gardener-extension-provider-azure v1.27.1
-	github.com/gardener/gardener-extension-provider-gcp v1.22.1
+	github.com/gardener/gardener-extension-provider-aws v1.36.0
+	github.com/gardener/gardener-extension-provider-azure v1.28.0
+	github.com/gardener/gardener-extension-provider-gcp v1.23.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220603124914-048fca863f8b
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220608092104-91820e8e9e7c
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -46,6 +46,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.34.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.4 // indirect
