@@ -373,7 +373,7 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 20*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, err = s.db.Operations().GetOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -460,6 +460,27 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
+		if status.ID != nil {
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *BrokerSuiteTest) finishOperatioByOpIDnByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, operationID string) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetOperationByID(operationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to GetOperationsByID: %v", err))
+			return false, nil
+		}
+		status, err := s.provisionerClient.RuntimeOperationStatus("", op.ProvisionerOperationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to get RuntimeOperationStatus: %v", err))
+			return false, nil
+		}
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
 			return true, nil
@@ -677,8 +698,9 @@ func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, gqlschema.OperationStateSucceeded, upgradeOp.Operation.RuntimeID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, upgradeOp.Operation.ID)
 }
+
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -776,6 +798,33 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	err = json.Unmarshal(m, &operationsList)
 	require.NoError(s.t, err)
 
+	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+		return "", errors.New("no operations found for given orchestration")
+	}
+
+	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
+	var operationsList orchestration.OperationResponseList
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		resp := s.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", orchestrationID), "")
+		m, err := ioutil.ReadAll(resp.Body)
+		s.Log(string(m))
+		if err != nil {
+			return false, fmt.Errorf("failed to read response body: %v", err)
+		}
+		operationsList = orchestration.OperationResponseList{}
+		err = json.Unmarshal(m, &operationsList)
+		if err != nil {
+			return false, fmt.Errorf("failed to marshal: %v", err)
+		}
+		if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+	require.NoError(s.t, err)
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
 		return "", errors.New("no operations found for given orchestration")
 	}
