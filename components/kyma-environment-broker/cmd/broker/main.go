@@ -122,7 +122,6 @@ type Config struct {
 	ServiceManager servicemanager.Config
 
 	KymaVersion                                string
-	KymaPreviewVersion                         string
 	EnableOnDemandVersion                      bool `envconfig:"default=false"`
 	ManagedRuntimeComponentsYAMLFilePath       string
 	NewAdditionalRuntimeComponentsYAMLFilePath string
@@ -214,12 +213,11 @@ func main() {
 	fatalOnError(err)
 
 	// check default Kyma versions
-	err = checkDefaultVersions(cfg.KymaVersion, cfg.KymaPreviewVersion)
+	err = checkDefaultVersions(cfg.KymaVersion)
 	panicOnError(err)
 
 	cfg.OrchestrationConfig.KymaVersion = cfg.KymaVersion
 	cfg.OrchestrationConfig.KubernetesVersion = cfg.Provisioner.KubernetesVersion
-	cfg.OrchestrationConfig.KymaPreviewVersion = cfg.KymaPreviewVersion
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
@@ -346,7 +344,7 @@ func main() {
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, cfg.KymaPreviewVersion, accountVersionMapping, db.RuntimeStates())
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, db.RuntimeStates())
 
 	// run queues
 	const workersAmount = 5
@@ -670,11 +668,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			condition: provisioning.WhenBTPOperatorCredentialsNotProvided,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewServiceManagerOverridesStep(db.Operations()),
-		},
-		{
 			condition: provisioning.WhenBTPOperatorCredentialsProvided,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
@@ -947,11 +940,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight: 1,
 			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
 			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
-			weight: 3,
-			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsNotProvided,
-			step:   upgrade_kyma.NewServiceManagerOverridesStep(db.Operations()),
 		},
 		{
 			weight: 3,

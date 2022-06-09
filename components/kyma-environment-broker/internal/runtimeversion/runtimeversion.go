@@ -6,24 +6,25 @@ import (
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pkg/errors"
 )
 
 type RuntimeVersionConfigurator struct {
-	defaultVersion        string
-	defaultPreviewVersion string
-	accountMapping        *AccountVersionMapping
-	runtimeStateDB        storage.RuntimeStates
+	defaultVersion string
+	accountMapping *AccountVersionMapping
+	runtimeStateDB storage.RuntimeStates
 }
 
-func NewRuntimeVersionConfigurator(defaultVersion string, previewVersion string, accountMapping *AccountVersionMapping, runtimeStates storage.RuntimeStates) *RuntimeVersionConfigurator {
+func NewRuntimeVersionConfigurator(defaultVersion string, accountMapping *AccountVersionMapping, runtimeStates storage.RuntimeStates) *RuntimeVersionConfigurator {
+	if defaultVersion == "" {
+		panic("Default version not provided")
+	}
+
 	return &RuntimeVersionConfigurator{
-		defaultVersion:        defaultVersion,
-		defaultPreviewVersion: previewVersion,
-		accountMapping:        accountMapping,
-		runtimeStateDB:        runtimeStates,
+		defaultVersion: defaultVersion,
+		accountMapping: accountMapping,
+		runtimeStateDB: runtimeStates,
 	}
 }
 
@@ -43,31 +44,6 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 
 	pp := op.ProvisioningParameters
 
-	if broker.IsPreviewPlan(pp.PlanID) && rvc.defaultPreviewVersion != "" {
-
-		if pp.Parameters.KymaVersion != "" {
-			majorVer, err := determineMajorVersion(pp.Parameters.KymaVersion, rvc.defaultPreviewVersion)
-			if err != nil {
-				return nil, errors.Wrap(err, "while determining Kyma's major version")
-			}
-			return internal.NewRuntimeVersionFromParameters(pp.Parameters.KymaVersion, majorVer), nil
-		}
-
-		_, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
-		if err != nil {
-			return nil, err
-		}
-		if found {
-			majorVer, err := determineMajorVersion(rvc.defaultPreviewVersion, rvc.defaultPreviewVersion)
-			if err != nil {
-				return nil, errors.Wrap(err, "while determining Kyma's major version")
-			}
-			return internal.NewRuntimeVersionFromAccountMapping(rvc.defaultPreviewVersion, majorVer), nil
-		}
-
-		return internal.NewRuntimeVersionFromDefaults(rvc.defaultPreviewVersion), nil
-	}
-
 	if pp.Parameters.KymaVersion == "" {
 		version, found, err := rvc.accountMapping.Get(pp.ErsContext.GlobalAccountID, pp.ErsContext.SubAccountID)
 		if err != nil {
@@ -82,6 +58,7 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningO
 		}
 		return internal.NewRuntimeVersionFromDefaults(rvc.defaultVersion), nil
 	}
+
 	majorVer, err := determineMajorVersion(pp.Parameters.KymaVersion, rvc.defaultVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "while determining Kyma's major version")
@@ -115,7 +92,7 @@ func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperati
 		return nil, err
 	}
 	if found {
-		majorVer, err := determineMajorVersion(version, rvc.defaultPreviewVersion)
+		majorVer, err := determineMajorVersion(version, rvc.defaultVersion)
 		if err != nil {
 			return nil, errors.Wrap(err, "while determining Kyma's major version")
 		}

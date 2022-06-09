@@ -25,11 +25,10 @@ import (
 func TestUpgradeClusterManager_Execute(t *testing.T) {
 	k8sClient := fake.NewFakeClient()
 	orchestrationConfig := internalOrchestration.Config{
-		KymaVersion:        "1.24.5",
-		KubernetesVersion:  "1.22",
-		Namespace:          "default",
-		Name:               "policyConfig",
-		KymaPreviewVersion: defaultKymaPreviewVersion,
+		KymaVersion:       "1.24.5",
+		KubernetesVersion: "1.22",
+		Namespace:         "default",
+		Name:              "policyConfig",
 	}
 
 	t.Run("Empty", func(t *testing.T) {

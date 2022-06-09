@@ -274,6 +274,12 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
+	lastOp, err := b.operationStorage.GetLastOperation(instance.InstanceID)
+	if err != nil {
+		logger.Errorf("unable to get last operation: %s", err.Error())
+		return nil, false, errors.New("failed to process ERS context")
+	}
+
 	// todo: remove the code below when we are sure the ERSContext contains required values.
 	// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
 	existingSMOperatorCredentials := instance.Parameters.ErsContext.SMOperatorCredentials
@@ -284,30 +290,11 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
 	}
-	if ersContext.ServiceManager != nil {
-		instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
-	}
-	if ersContext.SMOperatorCredentials != nil {
-		instance.Parameters.ErsContext.SMOperatorCredentials = ersContext.SMOperatorCredentials
-	}
+	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, ersContext)
 	if ersContext.IsMigration {
 		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
 		instance.InstanceDetails.SCMigrationTriggered = true
-	}
-	if ersContext.CommercialModel != nil {
-		instance.Parameters.ErsContext.CommercialModel = ersContext.CommercialModel
-	}
-	if ersContext.LicenseType != nil {
-		instance.Parameters.ErsContext.LicenseType = ersContext.LicenseType
-	}
-	if ersContext.Origin != nil {
-		instance.Parameters.ErsContext.Origin = ersContext.Origin
-	}
-	if ersContext.Platform != nil {
-		instance.Parameters.ErsContext.Platform = ersContext.Platform
-	}
-	if ersContext.Region != nil {
-		instance.Parameters.ErsContext.Region = ersContext.Region
 	}
 
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
