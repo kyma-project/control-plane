@@ -94,8 +94,11 @@ func (cmd *DeprovisionCommand) resolveRuntimeFromShootName(ctx context.Context, 
 	params := runtime.ListParameters{}
 	if cmd.shootName != "" {
 		params.Shoots = []string{cmd.shootName}
-	} else {
+	}
+	if cmd.globalAccountID != "" {
 		params.GlobalAccountIDs = []string{cmd.globalAccountID}
+	}
+	if cmd.subAccountID != "" {
 		params.SubAccountIDs = []string{cmd.subAccountID}
 	}
 
