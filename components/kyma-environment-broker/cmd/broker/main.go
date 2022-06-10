@@ -384,8 +384,9 @@ func main() {
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(dynamicGardener, gardenerNamespace, runtimeLister, logs)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, internalEvalAssistant, reconcilerClient, serviceManagerClientFactory, notificationBuilder, fileSystem, logs, cli)
-	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeResolver, upgradeEvalManager, notificationBuilder, logs, cli, cfg)
+		&cfg, internalEvalAssistant, reconcilerClient, serviceManagerClientFactory, notificationBuilder, fileSystem, logs, cli, 1)
+	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory,
+		nil, time.Minute, runtimeResolver, upgradeEvalManager, notificationBuilder, logs, cli, cfg, 1)
 
 	// TODO: in case of cluster upgrade the same Azure Zones must be send to the Provisioner
 	orchestrationHandler := orchestrate.NewOrchestrationHandler(db, kymaQueue, clusterQueue, cfg.MaxPaginationPage, logs)
@@ -920,7 +921,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
 	cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client, smcf internal.SMClientFactory,
-	notificationBuilder notification.BundleBuilder, fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client) *process.Queue {
+	notificationBuilder notification.BundleBuilder, fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client, speedFactor int) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -988,7 +989,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 
 	orchestrateKymaManager := manager.NewUpgradeKymaManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeKymaManager, runtimeResolver, pollingInterval, smcf, logs.WithField("upgradeKyma", "orchestration"),
-		cli, &cfg.OrchestrationConfig, notificationBuilder)
+		cli, &cfg.OrchestrationConfig, notificationBuilder, speedFactor)
 	queue := process.NewQueue(orchestrateKymaManager, logs)
 
 	queue.Run(ctx.Done(), 3)
@@ -999,7 +1000,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, provisionerClient provisioner.Client,
 	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_cluster.TimeSchedule, pollingInterval time.Duration,
 	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, notificationBuilder notification.BundleBuilder, logs logrus.FieldLogger,
-	cli client.Client, cfg Config) *process.Queue {
+	cli client.Client, cfg Config, speedFactor int) *process.Queue {
 
 	upgradeClusterManager := upgrade_cluster.NewManager(db.Operations(), pub, logs.WithField("upgradeCluster", "manager"))
 	upgradeClusterInit := upgrade_cluster.NewInitialisationStep(db.Operations(), db.Orchestrations(), provisionerClient, inputFactory, upgradeEvalManager, icfg, notificationBuilder)
@@ -1028,7 +1029,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 	orchestrateClusterManager := manager.NewUpgradeClusterManager(db.Orchestrations(), db.Operations(), db.Instances(),
 		upgradeClusterManager, runtimeResolver, pollingInterval, logs.WithField("upgradeCluster", "orchestration"),
-		cli, cfg.OrchestrationConfig, notificationBuilder)
+		cli, cfg.OrchestrationConfig, notificationBuilder, speedFactor)
 	queue := process.NewQueue(orchestrateClusterManager, logs)
 
 	queue.Run(ctx.Done(), 3)
