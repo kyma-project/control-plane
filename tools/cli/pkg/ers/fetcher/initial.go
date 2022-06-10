@@ -34,6 +34,9 @@ func (e InitialFetcher) GetAllInstances() ([]ers.Instance, error) {
 
 		output = append(output, instances...)
 		instances, err = e.client.GetPaged(page, e.pageSize)
+		if err != nil {
+			break
+		}
 	}
 
 	return output, err
