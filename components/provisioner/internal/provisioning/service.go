@@ -250,7 +250,7 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 
 	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is modified manually, Provisioner should use the actual value.
 	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
-	if gardenerConfig.ShootNetworkingFilterDisabled == nil && shootNetworkingFilterDisabled != nil {
+	if input.GardenerConfig.ShootNetworkingFilterDisabled == nil && shootNetworkingFilterDisabled != nil {
 		log.Warnf("ShootNetworkingFilter extension was different than the one provided in UpgradeGardenerShoot. Value fetched from the shoot will be used: %t.", *shootNetworkingFilterDisabled)
 		gardenerConfig.ShootNetworkingFilterDisabled = shootNetworkingFilterDisabled
 	}
