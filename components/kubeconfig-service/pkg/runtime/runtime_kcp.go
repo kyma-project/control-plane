@@ -21,7 +21,7 @@ import (
 )
 
 /*
-config map example:
+ConfigMap example:
 Name:        "userID",
 Namespace:   "kcp-system",
 Label:       "service=kubeconfig",
@@ -59,27 +59,25 @@ func SetupConfigMap() error {
 		role := configMap.ObjectMeta.Annotations["role"]
 		tenantID := configMap.ObjectMeta.Annotations["tenant"]
 		for runtimeID, startTimeString := range configMap.Data {
-			if runtimeID != "RuntimeID" {
-				log.Infof("Found ConfigMap for runtime %s user %s.", runtimeID, userID)
-				c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
-				status, err := c.RuntimeStatus(runtimeID)
-				if err != nil {
-					log.Errorf("Failed to get runtime status.")
-					return err
-				}
-				rawConfig := *status.RuntimeConfiguration.Kubeconfig
-				rtc, err := NewRuntimeClient([]byte(rawConfig), userID, role, tenantID)
-				if err != nil {
-					log.Errorf("Failed to create runtime client.")
-					return err
-				}
-				startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", startTimeString)
-				if err != nil {
-					log.Errorf("Failed to convert start time.")
-					return err
-				}
-				go rtc.SetupTimer(startTime, runtimeID)
+			log.Infof("Found ConfigMap for runtime %s user %s.", runtimeID, userID)
+			c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
+			status, err := c.RuntimeStatus(runtimeID)
+			if err != nil {
+				log.Errorf("Failed to get runtime status.")
+				return err
 			}
+			rawConfig := *status.RuntimeConfiguration.Kubeconfig
+			rtc, err := NewRuntimeClient([]byte(rawConfig), userID, role, tenantID)
+			if err != nil {
+				log.Errorf("Failed to create runtime client.")
+				return err
+			}
+			startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", startTimeString)
+			if err != nil {
+				log.Errorf("Failed to convert start time.")
+				return err
+			}
+			go rtc.SetupTimer(startTime, runtimeID)
 		}
 	}
 
@@ -129,7 +127,7 @@ func (rtc *RuntimeClient) SetupTimer(startTime time.Time, runtimeID string) {
 	timeBefore := strings.Split(startTime.String(), " m=")[0]
 	cm, err := rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Failed to get config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 		return
 	}
 	timeAfter := cm.Data[runtimeID]
@@ -159,7 +157,7 @@ func (rtc *RuntimeClient) UpdateConfigMap(runtimeID string) error {
 	//checking configmap existance
 	cm, err := rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Failed to get config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 		return err
 	}
 	if len(cm.Data[runtimeID]) == 0 {
@@ -181,10 +179,27 @@ func (rtc *RuntimeClient) UpdateConfigMap(runtimeID string) error {
 	}
 	_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
 	if err != nil {
-		log.Errorf("Failed to update config map, %s", err.Error())
+		log.Errorf("Failed to update ConfigMap, %s", err.Error())
 		return err
 	}
 	log.Infof("Succeeded in cleaning up everything for runtime %s user %s", runtimeID, userID)
+
+	//remove user ConfigMap if no runtime left
+	cm, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		return err
+	}
+	if len(cm.Data) == 0 {
+		log.Infof("No runtime left for user %s, start to remove ConfigMap.", userID)
+		err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Delete(context.Background(), userID, metav1.DeleteOptions{})
+		if err != nil {
+			log.Errorf("Failed to delete ConfigMap for user %s", userID)
+			return err
+		}
+		log.Infof("Succeeded in removing ConfigMap for user %s.", userID)
+	}
+
 	return nil
 }
 
@@ -204,19 +219,19 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": L2L3OperatorRole, "tenant": tenantID},
 			},
-			Data: map[string]string{"RuntimeID": "StartTime", runtimeID: startTimeString},
+			Data: map[string]string{runtimeID: startTimeString},
 		}
 		_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Create(context.Background(), configmap, metav1.CreateOptions{})
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			log.Errorf("Failed to create config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+			log.Errorf("Failed to create ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 			return err
 		}
 		log.Infof("Configmap created for runtime %s user %s.", runtimeID, userID)
 	} else if err != nil {
-		log.Errorf("Failed to get config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 		return err
 	} else {
-		log.Info("User already exist. Trying to update configmap.")
+		log.Info("User already exist. Trying to update ConfigMap.")
 		var patches []*JsonPatchType
 		var patch *JsonPatchType
 		path := "/data/" + runtimeID
@@ -243,7 +258,7 @@ func (rtc *RuntimeClient) DeployConfigMap(runtimeID string, L2L3OperatorRole str
 		}
 		_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
 		if err != nil {
-			log.Errorf("Failed to update config map for user %s runtime %s, %s", userID, runtimeID, err.Error())
+			log.Errorf("Failed to update ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 			return err
 		}
 		log.Infof("Configmap updated for runtime %s user %s.", runtimeID, userID)
@@ -260,10 +275,10 @@ func getConfigMapList() (*v1.ConfigMapList, error) {
 	}
 	cmlist, err := coreClientset.CoreV1().ConfigMaps(KcpNamespace).List(context.Background(), metav1.ListOptions{LabelSelector: "service=kubeconfig"})
 	if k8serrors.IsNotFound(err) {
-		log.Info("All configmaps cleaned up.")
+		log.Info("All ConfigMap cleaned up.")
 		return nil, nil
 	} else if err != nil {
-		log.Errorf("Failed to get config map list: %s", err.Error())
+		log.Errorf("Failed to get ConfigMap list: %s", err.Error())
 		return nil, err
 	}
 	return cmlist, nil

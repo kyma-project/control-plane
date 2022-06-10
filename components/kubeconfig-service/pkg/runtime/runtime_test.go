@@ -2,15 +2,13 @@ package runtime
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -178,7 +176,7 @@ func TestCreateserviceaccount(t *testing.T) {
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
 			},
-			Data: map[string]string{"RuntimeID": "StartTime", "runtime1": "startTime1"},
+			Data: map[string]string{"runtime1": "startTime1"},
 		}
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
 		assert.NoError(t, err)
@@ -212,7 +210,7 @@ func TestCreateserviceaccount(t *testing.T) {
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
 			},
-			Data: map[string]string{"RuntimeID": "StartTime", "runtime1": "startTime1"},
+			Data: map[string]string{"runtime1": "startTime1"},
 		}
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
 		assert.NoError(t, err)
@@ -246,23 +244,30 @@ func TestCreateserviceaccount(t *testing.T) {
 				Labels:      map[string]string{"service": "kubeconfig"},
 				Annotations: map[string]string{"role": "runtimeOperator", "tenant": "tenantID"},
 			},
-			Data: map[string]string{"RuntimeID": "StartTime", runtimeName: "startTime1"},
+			Data: map[string]string{runtimeName: "startTime1"},
 		}
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Create(context.Background(), configmap, v1.CreateOptions{})
 		assert.NoError(t, err)
 		assert.NotNil(t, cm)
 
-		var patches []*JsonPatchType
-		patch := &JsonPatchType{
-			Op:   "remove",
-			Path: "/data/runtime1",
-		}
-		patches = append(patches, patch)
-		payload, err := json.Marshal(patches)
+		/*
+			var patches []*JsonPatchType
+			patch := &JsonPatchType{
+				Op:   "remove",
+				Path: "/data/runtime1",
+			}
+			patches = append(patches, patch)
+			payload, err := json.Marshal(patches)
+			assert.NoError(t, err)
+			cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Patch(context.Background(), "sa1", types.JSONPatchType, payload, metav1.PatchOptions{})
+			assert.NoError(t, err)
+			assert.Empty(t, cm.Data)
+		*/
+
+		err = rtc.UpdateConfigMap(runtimeName)
 		assert.NoError(t, err)
-		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Patch(context.Background(), "sa1", types.JSONPatchType, payload, metav1.PatchOptions{})
-		assert.NoError(t, err)
-		assert.Empty(t, cm.Data["runtime1"])
+		_, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Get(context.Background(), "sa1", v1.GetOptions{})
+		assert.True(t, k8serrors.IsNotFound(err))
 
 		startTime := time.Now()
 		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator", startTime)
