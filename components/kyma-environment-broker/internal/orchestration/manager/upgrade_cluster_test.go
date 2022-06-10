@@ -73,7 +73,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			resolver, 20*time.Millisecond, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -118,7 +118,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -154,7 +154,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		notificationBuilder.On("DisabledCheck").Return(false).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -227,7 +227,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -276,7 +276,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		bundle.On("CancelNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{}, resolver,
-			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -350,7 +350,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			upgradeType: orchestration.UpgradeClusterOrchestration,
 		}
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor, resolver,
-			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -424,7 +424,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			upgradeType: orchestration.UpgradeClusterOrchestration,
 		}
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor, resolver,
-			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder)
+			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
