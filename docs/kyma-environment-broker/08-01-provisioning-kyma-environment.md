@@ -73,11 +73,11 @@ If you need a BTP Operator component installed, please obtain [BTP Operator acce
            \"globalaccount_id\": \"$GLOBAL_ACCOUNT_ID\",
            \"user_id\": \"$USER_ID\",
            \"sm_operator_credentials\": {
-             \"clientid\": \"{clientid}\",
-			 \"clientsecret\": \"{clientsecret}\",
-			 \"sm_url\": \"{sm_url}\",
-			 \"url\": \"{url}\",
-			 \"xsappname\": \"{xsappname}\"
+             \"clientid\": \"$clientid\",
+             \"clientsecret\": \"$clientsecret\",
+             \"sm_url\": \"$sm_url\",
+             \"url\": \"$url\",
+             \"xsappname\": \"$xsappname\"
 		   },
        },
        \"parameters\": {
