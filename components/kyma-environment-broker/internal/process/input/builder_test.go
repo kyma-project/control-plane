@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -39,7 +38,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and ProvisionRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
@@ -66,7 +65,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.
+			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
@@ -88,7 +88,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with GA version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.
+			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
@@ -110,7 +111,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(),
@@ -129,8 +130,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with proper plan", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil).Once()
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
@@ -166,8 +167,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build UpgradeRuntimeInput with proper profile", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil)
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData")).Return([]v1alpha1.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]runtime.KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,

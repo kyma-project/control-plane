@@ -5,7 +5,11 @@ components:
     namespace: "compass-system"
   - name: "new-component1"
     namespace: "kyma-system"
+    source:
+      url: "https://local.test/kyma-additional-components/new-component1.tgz"
   - name: "new-component2"
     namespace: "kyma-system"
+    source:
+      url: "https://local.test/kyma-additional-components/new-component2.tgz"
   - name: "new-component3"
     namespace: "compass-system"
