@@ -22,6 +22,7 @@ type ParallelOrchestrationStrategy struct {
 	log             logrus.FieldLogger
 	rescheduleDelay time.Duration
 	scheduleNum     map[string]int
+	speedFactor     int
 }
 
 // NewParallelOrchestrationStrategy returns a new parallel orchestration strategy, which
@@ -35,9 +36,14 @@ func NewParallelOrchestrationStrategy(executor orchestration.OperationExecutor, 
 		log:             log,
 		rescheduleDelay: rescheduleDelay,
 		scheduleNum:     map[string]int{},
+		speedFactor:     1,
 	}
 
 	return strategy
+}
+
+func (p *ParallelOrchestrationStrategy) SpeedUp(factor int) {
+	p.speedFactor = factor
 }
 
 // Execute starts the parallel execution of operations.
@@ -178,7 +184,7 @@ func (p *ParallelOrchestrationStrategy) processOperation(execID string) {
 			when, err := p.executor.Execute(id)
 			if err == nil && when != 0 {
 				log.Infof("Adding %q item after %v", id, when)
-				p.pq[execID].AddAfter(item, when)
+				p.pq[execID].AddAfter(item, time.Duration(int64(when)/int64(p.speedFactor)))
 				return false
 			}
 			if err != nil {

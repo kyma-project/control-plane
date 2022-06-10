@@ -221,13 +221,13 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, inMemoryFs, logs, cli)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg, 1000)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
