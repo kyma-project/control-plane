@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
@@ -107,14 +108,15 @@ func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo aut
 	}
 
 	mu.Lock()
-	err = runtimeClient.DeployConfigMap(runtime, userInfo.Role)
+	startTime := time.Now()
+	err = runtimeClient.DeployConfigMap(runtime, userInfo.Role, startTime)
 	mu.Unlock()
 	if err != nil {
 		log.Errorf("Cannot generate config map, %s", err.Error())
 		return nil, err
 	}
 
-	go runtimeClient.SetupTimer(run.ExpireTime, runtime)
+	go runtimeClient.SetupTimer(startTime, runtime)
 
 	return saKubeConfig, nil
 }

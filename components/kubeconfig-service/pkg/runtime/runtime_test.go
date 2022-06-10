@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -150,7 +151,8 @@ func TestCreateserviceaccount(t *testing.T) {
 		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "runtimeOperator", "tenantID")
 		assert.NoError(t, err)
 
-		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator")
+		startTime := time.Now()
+		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator", startTime)
 		assert.NoError(t, err)
 
 		cm, err := rtc.KcpK8s.CoreV1().ConfigMaps(namespaceName).Get(context.Background(), "sa1", v1.GetOptions{})
@@ -182,7 +184,8 @@ func TestCreateserviceaccount(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, cm)
 
-		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator")
+		startTime := time.Now()
+		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator", startTime)
 		assert.NoError(t, err)
 
 		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Get(context.Background(), "sa1", v1.GetOptions{})
@@ -215,7 +218,8 @@ func TestCreateserviceaccount(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, cm)
 
-		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator")
+		startTime := time.Now()
+		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator", startTime)
 		assert.NoError(t, err)
 
 		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Get(context.Background(), "sa1", v1.GetOptions{})
@@ -260,7 +264,8 @@ func TestCreateserviceaccount(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, cm.Data["runtime1"])
 
-		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator")
+		startTime := time.Now()
+		err = rtc.DeployConfigMap(runtimeName, "runtimeOperator", startTime)
 		assert.NoError(t, err)
 
 		cm, err = rtc.KcpK8s.CoreV1().ConfigMaps("kcp-system").Get(context.Background(), "sa1", v1.GetOptions{})
