@@ -57,3 +57,41 @@ A successful call returns the operation ID:
    ```
 
 4. Check the operation status as described [here](08-03-operation-status.md).
+
+## BTP Operator
+
+If you need a BTP Operator component installed, please obtain [BTP Operator access credentials](https://github.com/SAP/sap-btp-service-operator/blob/v0.2.5/README.md#setup), then provide it in the provisioning request, for example:
+ ```bash
+   curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
+   --header 'X-Broker-API-Version: 2.14' \
+   --header 'Content-Type: application/json' \
+   --header "$AUTHORIZATION_HEADER" \
+   --data-raw "{
+       \"service_id\": \"47c9dcbf-ff30-448e-ab36-d3bad66ba281\",
+       \"plan_id\": \"4deee563-e5ec-4731-b9b1-53b42d855f0c\",
+       \"context\": {
+           \"globalaccount_id\": \"$GLOBAL_ACCOUNT_ID\",
+           \"user_id\": \"$USER_ID\",
+           \"sm_operator_credentials\": {
+             \"clientid\": \"{clientid}\",
+			 \"clientsecret\": \"{clientsecret}\",
+			 \"sm_url\": \"{sm_url}\",
+			 \"url\": \"{url}\",
+			 \"xsappname\": \"{xsappname}\"
+		   },
+       },
+       \"parameters\": {
+           \"name\": \"$NAME\"
+       }
+   }"
+   ```
+
+```json
+"sm_operator_credentials": {
+    "clientid": "testClientID",
+						  "clientsecret": "testClientSecret",
+						  "sm_url": "https://service-manager.kyma.com",
+						  "url": "https://test.auth.com",
+						  "xsappname": "testXsappname"
+						},
+```
