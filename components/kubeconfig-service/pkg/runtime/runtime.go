@@ -37,6 +37,7 @@ type SAInfo struct {
 
 const SA = "SA"
 const ClusterRole = "ClusterRole"
+const ClusterRoleBinding = "ClusterRoleBinding"
 const Namespace = "kyma-system"
 const RUNTIME_ADMIN = "runtimeAdmin"
 const RUNTIME_OPERATOR = "runtimeOperator"
@@ -360,6 +361,8 @@ func (rtc *RuntimeClient) Cleaner() error {
 			go rtc.RetryDeleteServiceAccount(&wg, errorCh)
 		case ClusterRole:
 			go rtc.RetryDeleteClusterRole(&wg, errorCh)
+		case ClusterRoleBinding:
+			go rtc.RetryDeleteClusterRoleBinding(&wg, errorCh)
 		default:
 			wg.Done()
 		}
@@ -430,4 +433,25 @@ func (rtc *RuntimeClient) RetryDeleteClusterRole(wg *sync.WaitGroup, errorCh cha
 		return
 	}
 	log.Infof(fmt.Sprintf("Cluster Role \"%s\" is removed", rtc.User.ClusterRoleName))
+}
+
+func (rtc *RuntimeClient) RetryDeleteClusterRoleBinding(wg *sync.WaitGroup, errorCh chan error) {
+	defer wg.Done()
+
+	err := retry.Do(func() error {
+		err := rtc.K8s.RbacV1().ClusterRoleBindings().Delete(context.TODO(), rtc.User.ClusterRoleBindingName, metav1.DeleteOptions{})
+
+		if err != nil && !apierr.IsNotFound(err) {
+			errorCh <- err
+		} else if apierr.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrapf(err, "Cluster Role Binding\"%s\" still exists", rtc.User.ClusterRoleName)
+	})
+	if err != nil {
+		errorCh <- err
+		return
+	}
+	log.Infof(fmt.Sprintf("Cluster Role Binding \"%s\" is removed", rtc.User.ClusterRoleName))
 }

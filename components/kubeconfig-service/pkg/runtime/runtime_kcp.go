@@ -137,6 +137,9 @@ func (rtc *RuntimeClient) SetupTimer(startTime time.Time, runtimeID string) {
 	}
 
 	log.Infof("Start to clean everything for runtime %s for user %s.", runtimeID, userID)
+	rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA)
+	rtc.RollbackE.Data = append(rtc.RollbackE.Data, ClusterRole)
+	rtc.RollbackE.Data = append(rtc.RollbackE.Data, ClusterRoleBinding)
 	err = rtc.Cleaner()
 	if err != nil {
 		log.Errorf("Failed to clean runtime %s for user %s.", runtimeID, userID)
