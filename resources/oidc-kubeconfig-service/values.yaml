@@ -15,7 +15,7 @@ replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
-  tag: "PR-1638"
+  tag: "PR-1744"
   pullPolicy: Always
 
 config:
@@ -41,6 +41,12 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+rbac:
+  ## Specifies whether a role and rolebinding should be created
+  create: true
+  ## The name of namespace used to store ConfigMap
+  namespace: "kcp-system"
 
 podSecurityContext: {}
   # fsGroup: 2000

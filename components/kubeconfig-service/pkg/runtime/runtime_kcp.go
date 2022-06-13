@@ -35,8 +35,7 @@ Data:map[string]string
 
 const KcpNamespace string = "kcp-system"
 
-//const ExpireTime time.Duration = 7 * 24 * time.Hour
-const ExpireTime time.Duration = 3 * time.Minute
+const ExpireTime time.Duration = 7 * 24 * time.Hour
 
 type JsonPatchType struct {
 	Op    string `json:"op"`
