@@ -42,7 +42,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -126,7 +125,8 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]kebRuntime.
+		KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
 
@@ -157,7 +157,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, "", runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
 
 	avsClient, _ := avs.NewClient(ctx, avs.Config{}, logs)
 	avsDel := avs.NewDelegator(avsClient, avs.Config{}, db.Operations())
@@ -173,13 +173,13 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg, 1000)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -461,7 +461,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-free":         "true",
 				"overrides-plan-azure_ha":     "true",
 				"overrides-plan-aws_ha":       "true",
-				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 			},
@@ -483,7 +482,6 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-free":         "true",
 				"overrides-plan-azure_ha":     "true",
 				"overrides-plan-aws_ha":       "true",
-				"overrides-plan-preview":      "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 				"component":                   "service-catalog2",
@@ -553,7 +551,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.Anything).Return([]v1alpha1.KymaComponent{}, nil)
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]kebRuntime.KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
 
@@ -590,7 +588,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
-	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, "", accountVersionMapping, nil)
+	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
 	iasFakeClient := ias.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
@@ -929,7 +927,7 @@ func fixConfig() *Config {
 			DeprovisioningTimeout: 2 * time.Minute,
 		},
 		Reconciler: reconciler.Config{
-			ProvisioningTimeout: 5 * time.Second,
+			ProvisioningTimeout: 2 * time.Minute,
 		},
 		Director: director.Config{},
 		Database: storage.Config{
@@ -939,13 +937,12 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                "1.24.7",
-		KymaPreviewVersion:         "2.0",
+		KymaVersion:                defaultKymaVer,
 		EnableOnDemandVersion:      true,
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial", "preview"},
+			EnablePlans: []string{"azure", "trial"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{

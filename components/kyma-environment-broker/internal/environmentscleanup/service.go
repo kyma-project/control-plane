@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -214,6 +216,10 @@ func (s *Service) cleanUpProvisionerInstances(runtimesToDelete []runtime, kebIns
 
 func (s *Service) triggerRuntimeDeprovisioning(runtime runtime) error {
 	operationID, err := s.provisionerClient.DeprovisionRuntime(runtime.AccountID, runtime.ID)
+	if error2.IsNotFoundError(err) {
+		s.logger.Warnf("Runtime %s does not exists in the provisioner, skipping", runtime.ID)
+		return nil
+	}
 	if err != nil {
 		s.logger.Error(errors.Wrap(err, "while deprovisioning runtime with Provisioner"))
 		return err

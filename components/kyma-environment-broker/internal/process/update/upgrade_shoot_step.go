@@ -54,7 +54,6 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create upgradeShoot input", err, log)
 	}
-	input.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 
 	var provisionerResponse gqlschema.OperationStatus
 	if operation.ProvisionerOperationID == "" {
@@ -113,6 +112,7 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 		},
 		Administrators: fullInput.Administrators,
 	}
+	result.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 
 	return result, nil
 }

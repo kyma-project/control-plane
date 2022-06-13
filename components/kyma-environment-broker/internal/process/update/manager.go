@@ -12,8 +12,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -205,8 +205,9 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 	}
 }
 
-func getComponent(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (*v1alpha1.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion)
+func getComponent(componentProvider input.ComponentListProvider, component string,
+	kymaVersion internal.RuntimeVersionData, planName string) (*runtime.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
 	if err != nil {
 		return nil, err
 	}
@@ -218,8 +219,9 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 	return nil, fmt.Errorf("failed to find %v component in all component list", component)
 }
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string, kymaVersion internal.RuntimeVersionData) (reconcilerApi.Component, error) {
-	c, err := getComponent(componentProvider, component, kymaVersion)
+func getComponentInput(componentProvider input.ComponentListProvider, component string,
+	kymaVersion internal.RuntimeVersionData, planName string) (reconcilerApi.Component, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion, planName)
 	if err != nil {
 		return reconcilerApi.Component{}, err
 	}

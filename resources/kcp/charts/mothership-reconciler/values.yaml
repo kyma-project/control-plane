@@ -139,6 +139,6 @@ serviceMonitor:
 cleanerScript:
   enabled: false
   reconMaxAge: 4
-  reconKeepCount: 150
+  reconKeepCount: 100
   inventoryMaxAge: 4
   purgeOlderThan: 96h

@@ -18,10 +18,8 @@ import (
 )
 
 const (
-	releaseInstallerURLFormat   = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
-	onDemandInstallerURLFormat  = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
-	releaseComponentsURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-components.yaml"
-	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
+	releaseInstallerURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
+	onDemandInstallerURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
 )
 
 // ComponentsListProvider provides the whole components list for creating a Kyma Runtime
@@ -29,7 +27,7 @@ type ComponentsListProvider struct {
 	managedRuntimeComponentsYAMLPath       string
 	newAdditionalRuntimeComponentsYAMLPath string
 	httpClient                             HTTPDoer
-	components                             map[string][]v1alpha1.KymaComponent
+	components                             map[string][]KymaComponent
 	mu                                     sync.Mutex
 }
 
@@ -43,14 +41,14 @@ func NewComponentsListProvider(managedRuntimeComponentsYAMLPath, newAdditionalRu
 		httpClient:                             http.DefaultClient,
 		managedRuntimeComponentsYAMLPath:       managedRuntimeComponentsYAMLPath,
 		newAdditionalRuntimeComponentsYAMLPath: newAdditionalRuntimeComponentsYAMLPath,
-		components:                             make(map[string][]v1alpha1.KymaComponent, 0),
+		components:                             make(map[string][]KymaComponent, 0),
 	}
 }
 
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // the file system and merge them together.
-func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]KymaComponent, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -74,14 +72,14 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersi
 	return allComponents, nil
 }
 
-func (r *ComponentsListProvider) getKymaComponents(kymaVersion internal.RuntimeVersionData) (comp []v1alpha1.KymaComponent, err error) {
+func (r *ComponentsListProvider) getKymaComponents(kymaVersion internal.RuntimeVersionData) (comp []KymaComponent, err error) {
 	if kymaVersion.MajorVersion > 1 {
 		return r.getComponentsFromComponentsYaml(kymaVersion.Version)
 	}
 	return r.getComponentsFromInstallerYaml(kymaVersion.Version)
 }
 
-func (r *ComponentsListProvider) getAdditionalComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getAdditionalComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
 	if kymaVersion.MajorVersion > 1 {
 		return r.getAdditionalComponentsForNewKyma()
 	}
@@ -104,9 +102,9 @@ type Installation struct {
 }
 
 type kymaComponents struct {
-	DefaultNamespace string                   `yaml:"defaultNamespace"`
-	Prerequisites    []v1alpha1.KymaComponent `yaml:"prerequisites"`
-	Components       []v1alpha1.KymaComponent `yaml:"components"`
+	DefaultNamespace string          `yaml:"defaultNamespace"`
+	Prerequisites    []KymaComponent `yaml:"prerequisites"`
+	Components       []KymaComponent `yaml:"components"`
 }
 
 func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
@@ -160,7 +158,7 @@ func (r *ComponentsListProvider) getComponentsYamlURL(kymaVersion string) string
 	return fmt.Sprintf(releaseComponentsURLFormat, kymaVersion)
 }
 
-func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion string) ([]KymaComponent, error) {
 	yamlURL := r.getComponentsYamlURL(kymaVersion)
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
@@ -193,7 +191,7 @@ func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion str
 		return nil, err
 	}
 
-	allKymaComponents := make([]v1alpha1.KymaComponent, 0)
+	allKymaComponents := make([]KymaComponent, 0)
 	allKymaComponents = append(allKymaComponents, kymaCmps.Prerequisites...)
 	allKymaComponents = append(allKymaComponents, kymaCmps.Components...)
 
@@ -206,7 +204,7 @@ func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion str
 	return allKymaComponents, nil
 }
 
-func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion string) ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion string) ([]KymaComponent, error) {
 	yamlURL := r.getInstallerYamlURL(kymaVersion)
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
@@ -237,13 +235,17 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 	var t Installation
 	for dec.Decode(&t) == nil {
 		if t.Kind == "Installation" {
-			return t.Spec.Components, nil
+			components := make([]KymaComponent, len(t.Spec.Components))
+			for i, cmp := range t.Spec.Components {
+				components[i] = r.v1alpha1ToKymaComponent(cmp)
+			}
+			return components, nil
 		}
 	}
 	return nil, errors.New("installer cr not found")
 }
 
-func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.newAdditionalRuntimeComponentsYAMLPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading YAML file with additional components for new Kyma")
@@ -251,7 +253,7 @@ func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]v1alpha1
 	return r.getComponentsFromYAML(yamlContents)
 }
 
-func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading YAML file with additional components")
@@ -267,13 +269,27 @@ func (r *ComponentsListProvider) readYAML(yamlFilePath string) ([]byte, error) {
 	return yamlContents, nil
 }
 
-func (r *ComponentsListProvider) getComponentsFromYAML(yamlFileContents []byte) ([]v1alpha1.KymaComponent, error) {
+func (r *ComponentsListProvider) getComponentsFromYAML(yamlFileContents []byte) ([]KymaComponent, error) {
 	var components struct {
-		Components []v1alpha1.KymaComponent `json:"components"`
+		Components []KymaComponent `json:"components"`
 	}
 	err := yaml.Unmarshal(yamlFileContents, &components)
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling YAML file with additional components")
 	}
 	return components.Components, nil
+}
+
+func (r *ComponentsListProvider) v1alpha1ToKymaComponent(cmp v1alpha1.KymaComponent) KymaComponent {
+	var source *ComponentSource
+	if cmp.Source != nil {
+		source.URL = cmp.Source.URL
+	}
+
+	return KymaComponent{
+		Name:        cmp.Name,
+		ReleaseName: cmp.ReleaseName,
+		Namespace:   cmp.Namespace,
+		Source:      source,
+	}
 }
