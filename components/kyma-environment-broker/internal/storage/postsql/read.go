@@ -104,7 +104,7 @@ func (r readSession) FindAllInstancesForSubAccounts(subAccountslist []string) ([
 
 func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, dberr.Error) {
 	inst := dbr.Eq("instance_id", instanceID)
-	state := dbr.Neq("state", []string{orchestration.Pending, orchestration.Canceled, orchestration.Retrying})
+	state := dbr.Neq("state", []string{orchestration.Pending, orchestration.Canceled})
 	condition := dbr.And(inst, state)
 	operation, err := r.getLastOperation(condition)
 	if err != nil {
@@ -582,9 +582,9 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 		Select(fmt.Sprintf("%s.*", InstancesTableName)).
 		From(InstancesTableName).
 		Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state NOT IN ('%s', '%s', '%s')", InstancesTableName, orchestration.Pending, orchestration.Canceled, orchestration.Retrying)).
+		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state NOT IN ('%s', '%s')", InstancesTableName, orchestration.Pending, orchestration.Canceled)).
 		Where("o2.created_at IS NULL").
-		Where(fmt.Sprintf("o1.state NOT IN ('%s', '%s', '%s')", orchestration.Pending, orchestration.Canceled, orchestration.Retrying)).
+		Where(fmt.Sprintf("o1.state NOT IN ('%s', '%s')", orchestration.Pending, orchestration.Canceled)).
 		OrderBy(fmt.Sprintf("%s.%s", InstancesTableName, CreatedAtField))
 
 	if len(filter.States) > 0 {
@@ -624,9 +624,9 @@ func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error
 		Select("count(*) as total").
 		From(InstancesTableName).
 		Join(dbr.I(OperationTableName).As("o1"), fmt.Sprintf("%s.instance_id = o1.instance_id", InstancesTableName)).
-		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state NOT IN ('%s', '%s', '%s')", InstancesTableName, orchestration.Pending, orchestration.Canceled, orchestration.Retrying)).
+		LeftJoin(dbr.I(OperationTableName).As("o2"), fmt.Sprintf("%s.instance_id = o2.instance_id AND o1.created_at < o2.created_at AND o2.state NOT IN ('%s', '%s')", InstancesTableName, orchestration.Pending, orchestration.Canceled)).
 		Where("o2.created_at IS NULL").
-		Where(fmt.Sprintf("o1.state NOT IN ('%s', '%s', '%s')", orchestration.Pending, orchestration.Canceled, orchestration.Retrying))
+		Where(fmt.Sprintf("o1.state NOT IN ('%s', '%s')", orchestration.Pending, orchestration.Canceled))
 
 	if len(filter.States) > 0 {
 		stateFilters := buildInstanceStateFilters("o1", filter)
