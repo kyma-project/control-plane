@@ -33,7 +33,7 @@ func (s *ExternalEvalStep) Run(operation internal.ProvisioningOperation, log log
 		return operation, 0, nil
 	}
 
-	targetURL := fmt.Sprintf("https://healthz.%s.%s/healthz/ready ", operation.ShootName, operation.ShootDomain)
+	targetURL := fmt.Sprintf("https://healthz.%s/healthz/ready ", operation.ShootDomain)
 	op, repeat, err := s.externalEvalCreator.createEval(operation, targetURL, log)
 	if err != nil || repeat != 0 {
 		return operation, repeat, err

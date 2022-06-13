@@ -3,36 +3,34 @@ global:
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
     reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:eeb6e71d"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:eeb6e71d"
-    mothership_reconciler_version: "eeb6e71d"
+    mothership_reconciler_version: "2f65df1f"
     components:
       base:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       busola-migrator:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       cleaner:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       connectivity-proxy:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       istio-configuration:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       istio:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       ory:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       rafter:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       eventing:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       serverless:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       cluster-essentials:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       rma:
-        version: "eeb6e71d"
+        version: "2f65df1f"
       sc-migration:
-        version: "eeb6e71d"
+        version: "2f65df1f"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -40,22 +38,22 @@ global:
       version: "4650dbfb"
     provisioner:
       dir:
-      version: "PR-1589"
+      version: "PR-1707"
     kyma_environment_broker:
       dir:
-      version: "PR-1600"
+      version: "PR-1738"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1600"
+      version: "PR-1749"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1600"
+      version: "PR-1651"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1600"
+      version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1620"
+      version: "PR-1768"
     tests:
       provisioner:
         dir:
@@ -83,10 +81,8 @@ global:
       configMapName: "kcp-auditlog-script"
     enableSeqHttp: false
     disabled: false
-
   provisioning:
     enabled: false
-
   kyma_environment_broker:
     enabled: false
     serviceAccountName: "kcp-kyma-environment-broker"
@@ -95,14 +91,12 @@ global:
         name: kcp-kyma-environment-broker-credentials
     environmentsCleanup:
       enabled: false
-
   provisioner:
     graphql:
       port: 3000
     secrets:
       integrationSystemCredentials:
         name: kcp-provisioner-credentials
-
   compass:
     registration:
       enabled: true
@@ -113,14 +107,12 @@ global:
           host: compass-gateway-auth-oauth
     mtls:
       host: compass-gateway-mtls
-
   istio:
     gateway:
       name: "kyma-gateway"
       namespace: "kyma-system"
     proxy:
       port: 15020
-
   database:
     manageSecrets: true
     embedded:
@@ -131,7 +123,6 @@ global:
         name: "broker"
       reconciler:
         name: "reconciler"
-
       #TODO remove below after migration to separate user will be done
       provisionerDBName: "provisioner"
       brokerDBName: "broker"
@@ -152,16 +143,13 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
-
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       provisionerDBName: ""
       brokerDBName: ""
-
   kyma_metrics_collector:
     enabled: false
-
   mothership_reconciler:
     enabled: false
     expose: true
@@ -187,13 +175,10 @@ global:
   component_reconcilers:
     enabled: false
     authentication: true
-
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
-
 pairing-adapter:
   enabled: false
-
 migratorJobs:
   enabled: true

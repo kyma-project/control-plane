@@ -2,10 +2,12 @@ package ers
 
 import (
 	"fmt"
+	"time"
 )
 
 type Work struct {
 	Instance           Instance
+	MigrationMetadata  MigrationMetadata
 	ProcessedTimestamp int64
 	ProcessedCnt       int64
 	MaxProcessedCnt    int64
@@ -24,7 +26,7 @@ type Instance struct {
 	Labels          string
 	LandscapeLabel  string
 	// TODO: Date comes in different format than specified
-	// ModifiedDate      date.Date //2021-10-04T112314.137Z
+	ModifiedDate   int //2021-10-04T112314.137Z
 	Name           string
 	Operation      string
 	Parameters     interface{}
@@ -40,6 +42,19 @@ type Instance struct {
 	Type           string // always "Provision"
 	Status         string // always "Processed"
 	Migrated       bool
+}
+
+func (i *Instance) IsUsable() bool {
+	//return i.State != "CREATION_FAILED" && i.State != "DELETION_FAILED"
+	return true
+}
+
+type MigrationMetadata struct {
+	Id                      string    `json:"id"`
+	KymaMigrated            bool      `json:"kymaMigrated"`
+	KymaSkipped             bool      `json:"kymaSkipped"`
+	KymaMigrationStartedAt  time.Time `json:"kymaMigrationStartedAt"`
+	KymaMigrationFinishedAt time.Time `json:"kymaMigrationFinishedAt"`
 }
 
 func (e Instance) String() string {

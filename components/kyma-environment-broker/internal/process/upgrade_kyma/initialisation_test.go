@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma/automock"
 	provisionerAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -192,7 +191,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		upgradeOperation := fixUpgradeKymaOperation()
 		upgradeOperation.ProvisionerOperationID = ""
-		upgradeOperation.InputCreator = &input.RuntimeInput{}
+		upgradeOperation.InputCreator = newInputCreator()
 		err = memoryStorage.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
 
@@ -202,7 +201,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
-		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(&input.RuntimeInput{}, nil)
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
 
 		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
 		defer rvc.AssertExpectations(t)

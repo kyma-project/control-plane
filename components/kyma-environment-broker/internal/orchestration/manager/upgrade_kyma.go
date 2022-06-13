@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -21,25 +20,23 @@ import (
 )
 
 type upgradeKymaFactory struct {
-	operationStorage          storage.Operations
-	smcf                      internal.SMClientFactory
-	defaultKymaVersion        string
-	defaultKymaPreviewVersion string
+	operationStorage   storage.Operations
+	smcf               internal.SMClientFactory
+	defaultKymaVersion string
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config, bundleBuilder notification.BundleBuilder) process.Executor {
+	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config, bundleBuilder notification.BundleBuilder, speedFactor int) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
 		instanceStorage:      instanceStorage,
 		resolver:             resolver,
 		factory: &upgradeKymaFactory{
-			operationStorage:          operationStorage,
-			smcf:                      smcf,
-			defaultKymaVersion:        cfg.KymaVersion,
-			defaultKymaPreviewVersion: cfg.KymaPreviewVersion,
+			operationStorage:   operationStorage,
+			smcf:               smcf,
+			defaultKymaVersion: cfg.KymaVersion,
 		},
 		executor:          kymaUpgradeExecutor,
 		pollingInterval:   pollingInterval,
@@ -50,6 +47,7 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		kymaVersion:       cfg.KymaVersion,
 		kubernetesVersion: cfg.KubernetesVersion,
 		bundleBuilder:     bundleBuilder,
+		speedFactor:       speedFactor,
 	}
 }
 
@@ -84,16 +82,9 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 		var majorVer int
 		var err error
 
-		if broker.IsPreviewPlan(i.ServicePlanID) {
-			majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaPreviewVersion)
-			if err != nil {
-				return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
-			}
-		} else {
-			majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaVersion)
-			if err != nil {
-				return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
-			}
+		majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaVersion)
+		if err != nil {
+			return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
 		}
 
 		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, majorVer)

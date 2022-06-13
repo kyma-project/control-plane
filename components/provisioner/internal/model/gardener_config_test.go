@@ -19,7 +19,7 @@ var purpose = gardener_types.ShootPurposeTesting
 func Test_NewGardenerConfigFromJSON(t *testing.T) {
 
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
-	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"]}`
+	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
 	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.250.0.0/19"}]}
 `
@@ -45,9 +45,9 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			jsonData:    azureConfigJSON,
 			expectedConfig: &AzureGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(azureConfigJSON),
-				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
+				input:                  &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}, EnableNatGateway: util.BoolPtr(true), IdleConnectionTimeoutMinutes: util.IntPtr(4)},
 			},
-			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}},
+			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255"), Zones: []string{"fix-az-zone-1", "fix-az-zone-2"}, EnableNatGateway: util.BoolPtr(true), IdleConnectionTimeoutMinutes: util.IntPtr(4)},
 		},
 		{
 			description: "should create Azure Gardener config when no zones passed",
@@ -141,10 +141,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 	gcpGardenerProvider, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
 
-	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones))
+	azureGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones, util.BoolPtr(true)))
 	require.NoError(t, err)
 
-	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil))
+	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil, util.BoolPtr(false)))
 	require.NoError(t, err)
 
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -256,7 +256,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
 						},
 						InfrastructureConfig: &apimachineryRuntime.RawExtension{
-							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255"},"zoned":true}`),
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"workers":"10.10.10.10/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},"zoned":true}`),
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker([]string{"fix-zone-1", "fix-zone-2"}),
@@ -490,7 +490,7 @@ func TestEditShootConfig(t *testing.T) {
 	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
 	require.NoError(t, err)
 
-	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones))
+	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones, nil))
 	require.NoError(t, err)
 
 	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
@@ -613,8 +613,8 @@ func fixGCPGardenerInput(zones []string) *gqlschema.GCPProviderConfigInput {
 	return &gqlschema.GCPProviderConfigInput{Zones: zones}
 }
 
-func fixAzureGardenerInput(zones []string) *gqlschema.AzureProviderConfigInput {
-	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones}
+func fixAzureGardenerInput(zones []string, enableNAT *bool) *gqlschema.AzureProviderConfigInput {
+	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones, EnableNatGateway: enableNAT, IdleConnectionTimeoutMinutes: util.IntPtr(4)}
 }
 
 func fixWorker(zones []string) gardener_types.Worker {

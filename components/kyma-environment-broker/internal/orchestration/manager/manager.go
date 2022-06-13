@@ -45,10 +45,15 @@ type orchestrationManager struct {
 	kymaVersion          string
 	kubernetesVersion    string
 	bundleBuilder        notification.BundleBuilder
+	speedFactor          int
 }
 
 const maintenancePolicyKeyName = "maintenancePolicy"
 const maintenanceWindowFormat = "150405-0700"
+
+func (m *orchestrationManager) SpeedUp(factor int) {
+	m.speedFactor = factor
+}
 
 func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, error) {
 	logger := m.log.WithField("orchestrationID", orchestrationID)
@@ -214,7 +219,11 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor orchestration.OperationExecutor, log logrus.FieldLogger) orchestration.Strategy {
 	switch sType {
 	case orchestration.ParallelStrategy:
-		return strategies.NewParallelOrchestrationStrategy(executor, log, 0)
+		s := strategies.NewParallelOrchestrationStrategy(executor, log, 0)
+		if m.speedFactor != 0 {
+			s.SpeedUp(m.speedFactor)
+		}
+		return s
 	}
 	return nil
 }

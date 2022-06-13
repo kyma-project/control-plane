@@ -101,8 +101,7 @@ skrOIDCDefaultValues: |-
 skrDNSProvidersValues: |-
   providers: []
 
-kymaVersion: "1.13.0"
-kymaPreviewVersion: "2.0"
+kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
@@ -245,3 +244,7 @@ subaccountCleanup:
 serviceMonitor:
   scrapeTimeout: 10s
   interval: 30s
+
+dashboardConfig:
+  enabled: false
+  landscapeURL: "https://dashboard.dev.kyma.cloud.sap"

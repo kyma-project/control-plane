@@ -112,6 +112,7 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOp
 		},
 		Administrators: fullInput.Administrators,
 	}
+	result.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 
 	return result, nil
 }
@@ -142,6 +143,9 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 	}
 	if input.GardenerConfig.MaxUnavailable != nil {
 		result.MaxUnavailable = *input.GardenerConfig.MaxUnavailable
+	}
+	if input.GardenerConfig.ShootNetworkingFilterDisabled != nil {
+		result.ShootNetworkingFilterDisabled = input.GardenerConfig.ShootNetworkingFilterDisabled
 	}
 
 	return result

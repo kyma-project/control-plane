@@ -16,5 +16,9 @@ spec:
       targetPort: {{ .Values.service.istioPort }}
       protocol: TCP
       name: istio-http
+    - port: {{ .Values.fluentbit.port }}
+      targetPort: fluentbit
+      protocol: TCP
+      name: fluentbit
   selector:
     {{- include "mothership-reconciler.selectorLabels" . | nindent 4 }}

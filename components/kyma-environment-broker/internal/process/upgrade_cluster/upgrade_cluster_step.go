@@ -131,6 +131,7 @@ func (s *UpgradeClusterStep) createUpgradeShootInput(operation internal.UpgradeC
 	if err != nil {
 		return input, errors.Wrap(err, "while building upgradeShootInput for provisioner")
 	}
+	input.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 
 	return input, nil
 }

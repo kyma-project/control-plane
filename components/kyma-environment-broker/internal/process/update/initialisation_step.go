@@ -71,9 +71,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			}
 			return operation, time.Second, nil
 		}
-		if operation.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
-			instance.Parameters.ErsContext.SMOperatorCredentials = operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
-		}
+		instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, operation.ProvisioningParameters.ErsContext)
 		if _, err := s.instanceStorage.Update(*instance); err != nil {
 			log.Errorf("unable to update the instance, retrying")
 			return operation, time.Second, err

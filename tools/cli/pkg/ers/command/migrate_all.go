@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/metadata"
 
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/ers/client"
@@ -16,7 +19,9 @@ import (
 )
 
 func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
-	cmd := &MigrationAllCommand{}
+	cmd := &MigrationAllCommand{
+		metadataStorage: &metadata.Storage{},
+	}
 
 	cobraCmd := &cobra.Command{
 		Use:   `migrate-all`,
@@ -39,12 +44,17 @@ func NewMigrationAllCommand(log logger.Logger) *cobra.Command {
 	cobraCmd.Flags().Int64VarP(&cmd.recheck, "recheck", "r", 10, "Time after 'in progress' instances should be rechecked again in seconds.")
 
 	cobraCmd.Flags().BoolVarP(&cmd.dryRun, "mock-ers", "", true, "Use fake ERS client to test")
-	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Use fake ERS client to test")
+	cobraCmd.Flags().DurationVarP(&cmd.timeout, "timeout", "t", 60*time.Minute, "Timeout for one migration, for example 60m")
 
 	cmd.corbaCmd = cobraCmd
 	cmd.stats = NewStats()
 
 	return cobraCmd
+}
+
+type MetadataStorage interface {
+	Get(id string) (ers.MigrationMetadata, error)
+	Save(m ers.MigrationMetadata) error
 }
 
 type MigrationAllCommand struct {
@@ -59,6 +69,8 @@ type MigrationAllCommand struct {
 	ersClient client.Client
 	dryRun    bool
 	stats     *Stats
+
+	metadataStorage MetadataStorage
 }
 
 func (c *MigrationAllCommand) Run() error {
@@ -95,20 +107,47 @@ func (c *MigrationAllCommand) Run() error {
 
 	for _, instance := range instances {
 
+		time.Sleep(3 * time.Second)
 		c.log.Debugf("Read: %s\n", instance)
 		c.log.Infof("Passing instance %s to workers", instance.Name)
 
-		if !instance.Migrated {
-			payloads <- ers.Work{instance, 0, 0, 1}
-			c.wg.Add(1)
-			c.stats.Add()
-		} else {
-			c.log.Infof("%sInstance %s already migrated%s",
-				Green, instance.Name, Reset)
+		meta, err := c.metadataStorage.Get(instance.Id)
+		if err != nil {
+			c.log.Warnf("Get %s Metadata error: %s", instance.Id, err.Error())
+			continue
+		}
+		if meta.KymaMigrated {
+			c.log.Infof("%sInstance %s already migrated, skipping %s",
+				Green, instance.Id, Reset)
+			continue
+		}
+		if instance.Migrated {
+			c.log.Infof("%sInstance %s marked as migrated, skipping %s",
+				Green, instance.Id, Reset)
+			continue
+		}
+
+		if !instance.IsUsable() {
+			c.log.Infof("%sInstance state %s, skipping%s",
+				Green, instance.State, instance.Id, Reset)
 			// just add to statistics as done
 			c.stats.Add()
 			c.stats.Done()
+
+			meta.KymaSkipped = true
+			c.metadataStorage.Save(meta)
+			continue
 		}
+
+		payloads <- ers.Work{
+			Instance:           instance,
+			MigrationMetadata:  meta,
+			ProcessedTimestamp: 0,
+			ProcessedCnt:       0,
+			MaxProcessedCnt:    1,
+		}
+		c.wg.Add(1)
+		c.stats.Add()
 	}
 
 	c.stats.PrintProgress()
@@ -137,7 +176,6 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		if err != nil {
 			c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
 			c.tryFinish(work, err, workChannel)
-
 			continue
 		}
 
@@ -146,25 +184,56 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 		}
 
 		if refreshed.Migrated {
-			c.log.Infof("[Worker %d] Refreshed %sInstance %s migrated%s",
-				workerId, Green, instance.Name, Reset)
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s is migrated, skipping%s", workerId, Green, instance.Id, Reset)
+
+			work.MigrationMetadata.KymaMigrated = true
+			work.MigrationMetadata.KymaSkipped = false
+			work.MigrationMetadata.KymaMigrationStartedAt = start
+			work.MigrationMetadata.KymaMigrationFinishedAt = time.Now()
+			err = c.metadataStorage.Save(work.MigrationMetadata)
+			c.tryFinish(work, nil, workChannel)
+			c.migrated(instance)
+			continue
+		}
+
+		if !refreshed.IsUsable() {
+			c.log.Infof("[Worker %d] Refreshed %sInstance %s state is %s, skipping%s",
+				workerId, Green, instance.Id, refreshed.State, Reset)
+
+			work.MigrationMetadata.KymaMigrated = false
+			work.MigrationMetadata.KymaSkipped = true
+			work.MigrationMetadata.KymaMigrationStartedAt = start
+			work.MigrationMetadata.KymaMigrationFinishedAt = time.Now()
+			err = c.metadataStorage.Save(work.MigrationMetadata)
+
 			c.tryFinish(work, nil, workChannel)
 			c.migrated(instance)
 			continue
 		}
 		c.log.Infof("[Worker %d] Triggering migration (instanceID=%s)", workerId, instance.Id)
-		c.ersClient.Migrate(instance.Id)
+		time.Sleep(10 * time.Second)
+
+		err = c.ersClient.Migrate(instance.Id)
+		if err != nil {
+			c.log.Infof("[Worker %d] Instance %s, migration call failed with error %s", workerId, instance.Id, err)
+			c.tryFinish(work, err, workChannel)
+			continue
+		}
 
 		c.log.Infof("[Worker %d] Instance %s not yet migrated",
-			workerId, instance.Name)
+			workerId, instance.Id)
 		c.log.Infof("[Worker %d] Instance %s - refreshing status",
-			workerId, instance.Name)
+			workerId, instance.Id)
+
+		time.Sleep(10 * time.Second)
 
 		for time.Since(start) < c.timeout {
+			previousModifiedAt := refreshed.ModifiedDate
 			refreshed, err = c.ersClient.GetOne(instance.Id)
 			if err != nil {
 				c.log.Warnf("[Worker %d] GetOne error: %s", workerId, err.Error())
-				break
+				time.Sleep(time.Second * 45)
+				continue
 			}
 
 			if c.isNil(workerId, refreshed) {
@@ -175,12 +244,34 @@ func (c *MigrationAllCommand) simpleWorker(workerId int, workChannel chan ers.Wo
 				c.log.Infof("[Worker %d] Migrated: %s", workerId, instance.Id)
 				break
 			}
-			time.Sleep(10 * time.Second)
+
+			if previousModifiedAt != refreshed.ModifiedDate {
+				if refreshed.State != "OK" && refreshed.State != "UPDATING" {
+					c.log.Errorf("[Worker %d] Instance: %s modifiedAt has changed. Watch STOP. State: %s, StateMessage: %s",
+						workerId, instance.Id, instance.State, instance.StateMessage)
+					err = errors.New("Watch STOP. ModifiedAt has changed.")
+					break
+				}
+			}
+			// 4 minutes plus random up to 2 min
+			time.Sleep(time.Duration(240+rand.Intn(120)) * time.Second)
 		}
 
 		if err == nil && time.Since(start) >= c.timeout && !refreshed.Migrated {
 			err = errors.New("Refreshing take too much time. Timeout triggered.")
 		}
+
+		work.MigrationMetadata.KymaMigrated = refreshed.Migrated && err == nil
+		work.MigrationMetadata.KymaMigrationStartedAt = start
+		work.MigrationMetadata.KymaMigrationFinishedAt = time.Now()
+		errSave := c.metadataStorage.Save(work.MigrationMetadata)
+		if errSave != nil {
+			c.log.Warnf("Unable to save metadata: %s", errSave.Error())
+			if err == nil {
+				err = errSave
+			}
+		}
+
 		c.tryFinish(work, err, workChannel)
 	}
 }
@@ -216,6 +307,7 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 		c.log.Infof("[Worker %d] Processing instance %s", id, work.Instance.Name)
 
 		instance := work.Instance
+
 		if instance.Migrated {
 			c.log.Infof("[Worker %d] %sInstance %s migrated%s",
 				id, Green, instance.Name, Reset)
@@ -246,7 +338,7 @@ func (c *MigrationAllCommand) worker(id int, workChannel chan ers.Work) {
 					c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
 
 					if err != nil {
-						c.log.Errorf("Error while loading the instance %s %e", instance.Name, err)
+						c.log.Errorf("Error while calling migration the instance %s %e", instance.Name, err)
 					} else {
 						c.log.Infof("[Worker %d] %sMigration request sent %s%s", id, Green, instance.Name, Reset)
 					}

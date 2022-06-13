@@ -56,6 +56,8 @@ type GCPProviderConfig {
 type AzureProviderConfig {
     vnetCidr: String
     zones: [String!]
+    enableNatGateway: Boolean
+    idleConnectionTimeoutMinutes: Int
 }
 
 type AWSProviderConfig {
@@ -263,6 +265,8 @@ input GCPProviderConfigInput {
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
     zones: [String!]      # Zones in which to create the cluster
+    enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
+    idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
 
 input AWSProviderConfigInput {

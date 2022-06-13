@@ -33,6 +33,10 @@ func (s *ApplyReconcilerConfigurationStep) Name() string {
 }
 
 func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+	if err := internal.CheckBTPCredsValid(*operation.LastRuntimeState.ClusterSetup); err != nil {
+		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
+		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
+	}
 	cluster := operation.LastRuntimeState.ClusterSetup
 	if err := s.runtimeStateStorage.Insert(internal.NewRuntimeStateWithReconcilerInput(cluster.RuntimeID, operation.ID, cluster)); err != nil {
 		log.Errorf("cannot insert runtimeState with reconciler payload: %s", err)

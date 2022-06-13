@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -42,6 +43,8 @@ type UpdateEndpoint struct {
 	updatingQueue *process.Queue
 
 	planDefaults PlanDefaults
+
+	dashboardConfig dashboard.Config
 }
 
 func NewUpdate(cfg Config,
@@ -54,6 +57,7 @@ func NewUpdate(cfg Config,
 	queue *process.Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
+	dashboardConfig dashboard.Config,
 ) *UpdateEndpoint {
 	return &UpdateEndpoint{
 		config:                    cfg,
@@ -66,6 +70,7 @@ func NewUpdate(cfg Config,
 		subAccountMovementEnabled: subAccountMovementEnabled,
 		updatingQueue:             queue,
 		planDefaults:              planDefaults,
+		dashboardConfig:           dashboardConfig,
 	}
 }
 
@@ -119,6 +124,12 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 	}
 
+	dashboardURL := instance.DashboardURL
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+		instance.DashboardURL = dashboardURL
+	}
+
 	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
@@ -126,15 +137,15 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		}
 
 		// NOTE: KEB currently can't process update parameters in one call along with context update
-		// this block makes it that KEB ignores any parameters upadtes if context update changed suspension state
+		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
 		if !suspendStatusChange {
-			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext.IsMigration, logger)
+			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext, logger)
 		}
 	}
 
 	return domain.UpdateServiceSpec{
 		IsAsync:       false,
-		DashboardURL:  instance.DashboardURL,
+		DashboardURL:  dashboardURL,
 		OperationData: "",
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
@@ -142,15 +153,15 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}, nil
 }
 
-func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails) bool {
+func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ersContext internal.ERSContext) bool {
 	if len(details.RawParameters) != 0 {
 		return true
 	}
-	return instance.InstanceDetails.SCMigrationTriggered
+	return instance.InstanceDetails.SCMigrationTriggered || ersContext.ERSUpdate()
 }
 
-func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed, isMigration bool, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
-	if !shouldUpdate(instance, details) {
+func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, ersContext internal.ERSContext, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
+	if !shouldUpdate(instance, details, ersContext) {
 		logger.Debugf("Parameters not provided, skipping processing update parameters")
 		return domain.UpdateServiceSpec{
 			IsAsync:       false,
@@ -161,7 +172,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 			},
 		}, nil
 	}
-
 	// asyncAllowed needed, see https://github.com/openservicebrokerapi/servicebroker/blob/v2.16/spec.md#updating-a-service-instance
 	if !asyncAllowed {
 		return domain.UpdateServiceSpec{}, apiresponses.ErrAsyncRequired
@@ -188,7 +198,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
-	operation.InstanceDetails.SCMigrationTriggered = isMigration
+	operation.InstanceDetails.SCMigrationTriggered = ersContext.IsMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -264,33 +274,26 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
+	lastOp, err := b.operationStorage.GetLastOperation(instance.InstanceID)
+	if err != nil {
+		logger.Errorf("unable to get last operation: %s", err.Error())
+		return nil, false, errors.New("failed to process ERS context")
+	}
+
 	// todo: remove the code below when we are sure the ERSContext contains required values.
 	// This code is done because the PATCH request contains only some of fields and that requests made the ERS context empty in the past.
+	existingSMOperatorCredentials := instance.Parameters.ErsContext.SMOperatorCredentials
 	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
+	// but do not change existing SM operator credentials
+	instance.Parameters.ErsContext.SMOperatorCredentials = existingSMOperatorCredentials
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
 	}
-	if ersContext.ServiceManager != nil {
-		instance.Parameters.ErsContext.ServiceManager = ersContext.ServiceManager
-	}
-	if ersContext.SMOperatorCredentials != nil {
-		instance.Parameters.ErsContext.SMOperatorCredentials = ersContext.SMOperatorCredentials
-	}
+	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, ersContext)
 	if ersContext.IsMigration {
 		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
-	}
-
-	if ersContext.IsMigration {
-		if k2, version, err := b.isKyma2(instance); err != nil {
-			msg := "failed to determine kyma version"
-			logger.Errorf("%v: %v", msg, err)
-			return nil, false, fmt.Errorf(msg)
-		} else if !k2 {
-			msg := fmt.Sprintf("performing btp-operator migration is supported only for kyma 2.x, current version: %v", version)
-			logger.Errorf(msg)
-			return nil, false, apiresponses.NewFailureResponse(fmt.Errorf(msg), http.StatusUnprocessableEntity, msg)
-		}
 		instance.InstanceDetails.SCMigrationTriggered = true
 	}
 

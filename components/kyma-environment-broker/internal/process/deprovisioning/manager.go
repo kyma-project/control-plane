@@ -12,8 +12,13 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	retryAfterTime = 1 * time.Minute
 )
 
 type Step interface {
@@ -25,6 +30,7 @@ type Manager struct {
 	log              logrus.FieldLogger
 	steps            map[int][]Step
 	operationStorage storage.Operations
+	operationManager *process.DeprovisionOperationManager
 
 	publisher event.Publisher
 }
@@ -35,6 +41,7 @@ func NewManager(storage storage.Operations, pub event.Publisher, logger logrus.F
 		operationStorage: storage,
 		steps:            make(map[int][]Step, 0),
 		publisher:        pub,
+		operationManager: process.NewDeprovisionOperationManager(storage),
 	}
 }
 
@@ -76,7 +83,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	op, err := m.operationStorage.GetDeprovisioningOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch DeprovisioningOperation from storage: %s", err)
-		return 3 * time.Second, nil
+		return retryAfterTime, nil
 	}
 	operation := *op
 
@@ -96,7 +103,12 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			Operation: operation,
 		})
 
-		return 0, err
+		if dberr.IsNotFound(err) {
+			_, duration, err := m.operationManager.OperationFailed(operation, "Error retrieving provisioning operation - operation not found", err, log)
+			return duration, err
+		}
+
+		return retryAfterTime, nil
 	}
 
 	logOperation = logOperation.WithField("planID", provisioningOp.ProvisioningParameters.PlanID)
