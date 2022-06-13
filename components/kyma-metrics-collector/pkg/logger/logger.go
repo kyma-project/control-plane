@@ -23,6 +23,9 @@ const (
 	// KeySubAccountID is used as a named key for a log message with subaccount ID.
 	KeySubAccountID = "SubAccountID"
 
+	// KeyRuntimeID is used as a named key for a log message with runtime ID.
+	KeyRuntimeID = "RuntimeID"
+
 	// KeyWorkerID is used as a named key for a log message with worker ID.
 	KeyWorkerID = "WorkerID"
 

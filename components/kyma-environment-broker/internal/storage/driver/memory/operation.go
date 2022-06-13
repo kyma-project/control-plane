@@ -413,6 +413,13 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 		}
 	}
 	for _, opID := range opIdList {
+		for _, op := range s.updateOperations {
+			if op.Operation.ID == opID {
+				ops = append(ops, op.Operation)
+			}
+		}
+	}
+	for _, opID := range opIdList {
 		for _, op := range s.upgradeClusterOperations {
 			if op.Operation.ID == opID {
 				ops = append(ops, op.Operation)
