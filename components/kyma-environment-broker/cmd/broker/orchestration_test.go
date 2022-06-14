@@ -1,9 +1,8 @@
 package main
 
 import (
-	"testing"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
+	"testing"
 )
 
 func TestKymaUpgrade_OneRuntimeHappyPath(t *testing.T) {
@@ -18,18 +17,18 @@ func TestKymaUpgrade_OneRuntimeHappyPath(t *testing.T) {
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.InProgress)
 
 	// when
-	suite.FinishUpgradeOperationByProvisioner(runtimeID)
+	suite.FinishUpgradeOperationByReconciler(runtimeID)
 
 	// then
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.Succeeded)
 
-	suite.AssertRuntimeUpgraded(runtimeID, "")
+	suite.AssertRuntimeUpgraded(runtimeID, "2.0.3")
 	suite.AssertRuntimeNotUpgraded(otherRuntimeID)
 }
 
 func TestKymaUpgrade_VersionParameter(t *testing.T) {
 	// given
-	givenVersion := "1.19.2"
+	givenVersion := "2.0.0-rc5"
 	suite := NewOrchestrationSuite(t, []string{givenVersion})
 	runtimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
 	otherRuntimeID := suite.CreateProvisionedRuntime(RuntimeOptions{})
@@ -40,7 +39,7 @@ func TestKymaUpgrade_VersionParameter(t *testing.T) {
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.InProgress)
 
 	// when
-	suite.FinishUpgradeOperationByProvisioner(runtimeID)
+	suite.FinishUpgradeOperationByReconciler(runtimeID)
 
 	// then
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.Succeeded)

@@ -184,9 +184,9 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	// ensure component list after update is correct
 	i, err := suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after update")
-	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
 	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime after update")
+	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
 	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, componentNames(rsu1.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 
@@ -213,7 +213,8 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	}
 }`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
-	suite.AssertReconcilerStartedReconcilingWhenUpgrading(id)
+	// wait for orchestration to be processed and operations created for that orchestration
+	time.Sleep(250 * time.Millisecond)
 	opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
 	upgradeKymaOperationID, err := suite.DecodeLastUpgradeKymaOperationIDFromOrchestration(opResponse)
 	require.NoError(t, err)
