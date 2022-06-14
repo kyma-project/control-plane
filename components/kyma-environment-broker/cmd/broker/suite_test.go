@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
