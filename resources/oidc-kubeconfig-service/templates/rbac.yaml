@@ -5,7 +5,6 @@ metadata:
   name: {{ include "oidc-kubeconfig-service.fullname" . }}
   labels:
 {{ include "oidc-kubeconfig-service.labels" . | indent 4 }}
-  namespace: {{ .Values.rbac.namespace }}
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
@@ -19,7 +18,6 @@ metadata:
   name: {{ include "oidc-kubeconfig-service.fullname" . }}
   labels:
 {{ include "oidc-kubeconfig-service.labels" . | indent 4 }}
-  namespace: {{ .Values.rbac.namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -27,5 +25,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ template "oidc-kubeconfig-service.serviceAccountName" . }}
-    namespace: {{ .Values.global.istio.gateway.namespace }}
+    namespace: {{ .Release.Namespace }}
 {{- end -}}

@@ -45,8 +45,6 @@ serviceAccount:
 rbac:
   ## Specifies whether a role and rolebinding should be created
   create: true
-  ## The name of namespace used to store ConfigMap
-  namespace: "kcp-system"
 
 podSecurityContext: {}
   # fsGroup: 2000
