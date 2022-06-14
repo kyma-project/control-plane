@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	operationID = "operation-id-001"
+	instanceID  = "instance-id-001"
+	runtimeID   = "runtime-id-001"
+)
+
 func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
