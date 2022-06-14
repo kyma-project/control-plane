@@ -483,8 +483,6 @@ func TestEditShootConfig(t *testing.T) {
 				WithMaxUnavailable(1).
 				WithZones("fix-zone-1", "fix-zone-2").
 				ToWorker()).
-		WithExtensions(
-			[]gardener_types.Extension{{Type: ShootNetworkingFilterExtensionType, Disabled: util.BoolPtr(true)}}).
 		ToShoot()
 
 	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -524,6 +522,22 @@ func TestEditShootConfig(t *testing.T) {
 			upgradeConfig: fixGardenerConfig("gcp", gcpProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
 			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should update shoot networking extension",
+			provider: "gcp",
+			upgradeConfig: func(config GardenerConfig) GardenerConfig {
+				config.ShootNetworkingFilterDisabled = util.BoolPtr(true)
+				return config
+			}(fixGardenerConfig("gcp", gcpProviderConfig)),
+			initialShoot: initialShoot.DeepCopy(),
+			expectedShoot: func(s *gardener_types.Shoot) *gardener_types.Shoot {
+				shoot := s.DeepCopy()
+				shoot.Spec.Extensions = append(shoot.Spec.Extensions, gardener_types.Extension{
+					Type:     ShootNetworkingFilterExtensionType,
+					Disabled: util.BoolPtr(true),
+				})
+				return shoot
+			}(expectedShoot),
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -591,7 +605,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),
-		ShootNetworkingFilterDisabled:       util.BoolPtr(true),
+		ShootNetworkingFilterDisabled:       nil,
 	}
 }
 
