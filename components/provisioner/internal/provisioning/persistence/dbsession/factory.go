@@ -55,6 +55,7 @@ type WriteSession interface {
 	UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error
 	InsertRelease(artifacts model.Release) dberrors.Error
 	UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error
+	UpdateShootNetworkingFilterDisabled(runtimeID string, shootNetworkingFilterDisabled *bool) dberrors.Error
 }
 
 //go:generate mockery -name=ReadWriteSession

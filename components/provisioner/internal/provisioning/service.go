@@ -3,11 +3,9 @@ package provisioning
 import (
 	"time"
 
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-	log "github.com/sirupsen/logrus"
-
+	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-version"
+	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
@@ -17,7 +15,9 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
+	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate mockery --name=Service
@@ -42,17 +42,17 @@ type Provisioner interface {
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
-//go:generate mockery --name=KubernetesVersionProvider
-type KubernetesVersionProvider interface {
-	Get(runtimeID string, tenant string) (string, apperrors.AppError)
+//go:generate mockery --name=ShootProvider
+type ShootProvider interface {
+	Get(runtimeID string, tenant string) (gardener_Types.Shoot, apperrors.AppError)
 }
 
 type service struct {
-	inputConverter            InputConverter
-	graphQLConverter          GraphQLConverter
-	directorService           director.DirectorClient
-	kubernetesVersionProvider KubernetesVersionProvider
-	installationClient        installation.Service
+	inputConverter     InputConverter
+	graphQLConverter   GraphQLConverter
+	directorService    director.DirectorClient
+	shootProvider      ShootProvider
+	installationClient installation.Service
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -74,7 +74,7 @@ func NewProvisioningService(
 	factory dbsession.Factory,
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
-	kubernetesVersionProvider KubernetesVersionProvider,
+	shootProvider ShootProvider,
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	provisioningNoInstallQueue queue.OperationQueue,
@@ -99,7 +99,7 @@ func NewProvisioningService(
 		upgradeQueue:                 upgradeQueue,
 		shootUpgradeQueue:            shootUpgradeQueue,
 		hibernationQueue:             hibernationQueue,
-		kubernetesVersionProvider:    kubernetesVersionProvider,
+		shootProvider:                shootProvider,
 		installationClient:           installationClient,
 	}
 }
@@ -233,19 +233,26 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		return &gqlschema.OperationStatus{}, err.Append("Failed to convert GardenerClusterUpgradeConfig: %s", err.Error())
 	}
 
-	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeID, cluster.Tenant)
+	shoot, err := r.shootProvider.Get(runtimeID, cluster.Tenant)
 	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot kubernetes version")
+		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot")
 	}
 
 	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	shouldTakeShootKubernetesVersion, err := isVersionHigher(shootKubernetesVersion, gardenerConfig.KubernetesVersion)
+	shouldTakeShootKubernetesVersion, err := isVersionHigher(shoot.Spec.Kubernetes.Version, gardenerConfig.KubernetesVersion)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
 	}
 	if shouldTakeShootKubernetesVersion {
-		log.Infof("Kubernetes version in shoot was higher than the version provided in UpgradeGardenerShoot. Version fetched from the shoot will be used :%s.", shootKubernetesVersion)
-		gardenerConfig.KubernetesVersion = shootKubernetesVersion
+		log.Infof("Kubernetes version in shoot was higher than the version provided in UpgradeGardenerShoot. Version fetched from the shoot will be used :%s.", shoot.Spec.Kubernetes.Version)
+		gardenerConfig.KubernetesVersion = shoot.Spec.Kubernetes.Version
+	}
+
+	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is modified manually, Provisioner should use the actual value.
+	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
+	if input.GardenerConfig.ShootNetworkingFilterDisabled == nil && shootNetworkingFilterDisabled != nil {
+		log.Warnf("ShootNetworkingFilter extension was different than the one provided in UpgradeGardenerShoot. Value fetched from the shoot will be used: %t.", *shootNetworkingFilterDisabled)
+		gardenerConfig.ShootNetworkingFilterDisabled = shootNetworkingFilterDisabled
 	}
 
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
@@ -353,9 +360,9 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
 	}
 
-	shootKubernetesVersion, err := r.kubernetesVersionProvider.Get(runtimeId, cluster.Tenant)
+	shoot, err := r.shootProvider.Get(runtimeId, cluster.Tenant)
 	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot kubernetes version")
+		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot")
 	}
 
 	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
@@ -370,15 +377,24 @@ func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntim
 	}
 
 	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	shouldTakeShootKubernetesVersion, err := isVersionHigher(shootKubernetesVersion, cluster.ClusterConfig.KubernetesVersion)
+	shouldTakeShootKubernetesVersion, err := isVersionHigher(shoot.Spec.Kubernetes.Version, cluster.ClusterConfig.KubernetesVersion)
 	if err != nil {
 		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
 	}
 	if shouldTakeShootKubernetesVersion {
-		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shootKubernetesVersion)
-		dberr = txSession.UpdateKubernetesVersion(runtimeId, shootKubernetesVersion)
+		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shoot.Spec.Kubernetes.Version)
+		dberr = txSession.UpdateKubernetesVersion(runtimeId, shoot.Spec.Kubernetes.Version)
 		if dberr != nil {
 			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
+		}
+	}
+
+	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is changed manually, the actual version should be stored in the database.
+	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
+	if shouldTakeShootNetworkingFilterDisabled(shootNetworkingFilterDisabled, cluster.ClusterConfig.ShootNetworkingFilterDisabled) {
+		log.Warnf("ShootNetworkingFilter from the database is different than the one in the shoot. Value fetched from the shoot will be stored in the database: %t.", *shootNetworkingFilterDisabled)
+		if dberr = txSession.UpdateShootNetworkingFilterDisabled(runtimeId, shootNetworkingFilterDisabled); dberr != nil {
+			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot networking filter disabled: %s", dberr.Error())
 		}
 	}
 
@@ -638,4 +654,18 @@ func isVersionHigher(version1, version2 string) (bool, apperrors.AppError) {
 		return false, apperrors.Internal("Failed to parse \"%s\" as a version", version2)
 	}
 	return parsedVersion1.GreaterThan(parsedVersion2), nil
+}
+
+func getShootNetworkingFilterDisabled(extensions []gardener_Types.Extension) *bool {
+	for _, extension := range extensions {
+		if extension.Type == model.ShootNetworkingFilterExtensionType {
+			return extension.Disabled
+		}
+	}
+	return nil
+}
+
+func shouldTakeShootNetworkingFilterDisabled(shootValue, databaseValue *bool) bool {
+	// It should when the shoot value is not nil and the values are not matching
+	return shootValue != nil && (databaseValue == nil || *shootValue != *databaseValue)
 }
