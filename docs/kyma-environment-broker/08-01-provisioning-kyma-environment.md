@@ -60,7 +60,7 @@ A successful call returns the operation ID:
 
 ## BTP Operator
 
-If you need a BTP Operator component installed, please obtain [BTP Operator access credentials](https://github.com/SAP/sap-btp-service-operator/blob/v0.2.5/README.md#setup), then provide it in the provisioning request, for example:
+If you need a BTP Operator component installed, obtain [BTP Operator access credentials](https://github.com/SAP/sap-btp-service-operator/blob/v0.2.5/README.md#setup) and provide them in the provisioning request. See the following example:
  ```bash
    curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
    --header 'X-Broker-API-Version: 2.14' \
