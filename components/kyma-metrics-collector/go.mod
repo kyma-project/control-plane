@@ -3,14 +3,14 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
-	github.com/gardener/gardener v1.48.1
+	github.com/gardener/gardener v1.48.3
 	github.com/gardener/gardener-extension-provider-aws v1.36.0
 	github.com/gardener/gardener-extension-provider-azure v1.28.0
-	github.com/gardener/gardener-extension-provider-gcp v1.23.0
+	github.com/gardener/gardener-extension-provider-gcp v1.23.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220609083303-1ef90c83d868
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220615085737-d766302c1b14
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -22,7 +22,7 @@ require (
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.9 // indirect
+	github.com/99designs/gqlgen v0.17.10 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.4 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
