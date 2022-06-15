@@ -208,11 +208,9 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 	}
 
 	if dto.Status.Suspension != nil && dto.Status.Suspension.Count > 0 {
-		if dto.Status.Unsuspension != nil &&
-			dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.After(dto.Status.Suspension.Data[0].CreatedAt) {
-			// unsuspending or unsespended
-			dto.Status.State = pkg.StateSucceeded
-		} else {
+		// there is no unsuspension operation or the suspension is started after last unsuspension
+		if dto.Status.Unsuspension == nil ||
+			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
 			dto.Status.State = pkg.StateSuspended // or suspending
 			if dto.Status.Suspension.Data[0].State == string(domain.InProgress) {
