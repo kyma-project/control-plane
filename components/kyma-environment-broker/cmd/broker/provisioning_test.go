@@ -34,7 +34,7 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 	// when
-	suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+	suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 	// then
 	suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -68,7 +68,7 @@ func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// then
 	suite.AssertAWSRegionAndZone("eu-west-1")
@@ -99,7 +99,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// then
 	suite.AssertAWSRegionAndZone("eu-west-1")
@@ -409,13 +409,13 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 			// when
-			suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+			suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 			// then
 			suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
 			suite.AssertAllStagesFinished(provisioningOperationID)
 
-			suite.AssertKymaProfile(tc.expectedProfile)
+			suite.AssertKymaProfile(provisioningOperationID, tc.expectedProfile)
 			suite.AssertProvider(tc.expectedProvider)
 			suite.AssertMinimalNumberOfNodes(tc.expectedMinimalNumberOfNodes)
 			suite.AssertMaximumNumberOfNodes(tc.expectedMaximumNumberOfNodes)
@@ -425,62 +425,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		})
 
 	}
-}
-
-func TestProvisioning_RuntimeOverrides(t *testing.T) {
-
-	t.Run("should apply overrides to default runtime version", func(t *testing.T) {
-		// given
-		suite := NewProvisioningSuite(t)
-
-		// when
-		provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
-			OverridesVersion: "1.19",
-		})
-
-		// then
-		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
-		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
-
-		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-
-		// then
-		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
-		suite.AssertAllStagesFinished(provisioningOperationID)
-		suite.AssertProvisioningRequest()
-		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
-			{Key: "foo", Value: "bar"},
-			{Key: "global.booleanOverride.enabled", Value: "false"},
-		})
-	})
-
-	t.Run("should apply overrides to custom runtime version", func(t *testing.T) {
-		// given
-		suite := NewProvisioningSuite(t)
-
-		// when
-		provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
-			KymaVersion:      "1.22",
-			OverridesVersion: "1.19",
-		})
-
-		// then
-		suite.WaitForProvisioningState(provisioningOperationID, domain.InProgress)
-		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
-
-		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
-
-		// then
-		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
-		suite.AssertAllStagesFinished(provisioningOperationID)
-		suite.AssertProvisioningRequest()
-		suite.AssertOverrides([]*gqlschema.ConfigEntryInput{
-			{Key: "foo", Value: "bar"},
-			{Key: "global.booleanOverride.enabled", Value: "false"},
-		})
-	})
 }
 
 func TestProvisioning_OIDCValues(t *testing.T) {
@@ -506,7 +450,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -539,7 +483,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -577,7 +521,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -612,7 +556,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -639,7 +583,7 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -665,7 +609,7 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
@@ -691,7 +635,7 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 		suite.AssertProvisionerStartedProvisioning(provisioningOperationID)
 
 		// when
-		suite.FinishProvisioningOperationByProvisioner(provisioningOperationID)
+		suite.FinishProvisioningOperationByProvisionerAndReconciler(provisioningOperationID)
 
 		// then
 		suite.WaitForProvisioningState(provisioningOperationID, domain.Succeeded)
