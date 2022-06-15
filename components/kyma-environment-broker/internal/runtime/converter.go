@@ -178,7 +178,6 @@ func (c *converter) ApplyUpdateOperations(dto *pkg.RuntimeDTO, oprs []internal.U
 }
 
 func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
-
 	lastOp := dto.LastOperation()
 	switch lastOp.State {
 	case string(domain.Succeeded):
@@ -212,7 +211,7 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 		if dto.Status.Unsuspension == nil ||
 			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
-			dto.Status.State = pkg.StateSuspended // or suspending
+			dto.Status.State = pkg.StateSuspended
 			if dto.Status.Suspension.Data[0].State == string(domain.InProgress) {
 				dto.Status.State = pkg.StateDeprovisioning
 			}
