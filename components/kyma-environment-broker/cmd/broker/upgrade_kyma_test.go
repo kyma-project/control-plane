@@ -213,8 +213,19 @@ func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	}
 }`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
+
 	// wait for orchestration to be processed and operations created for that orchestration
-	time.Sleep(250 * time.Millisecond)
+	wait.Poll(time.Millisecond*10, time.Second, func() (bool, error) {
+		op, err := suite.db.Operations().GetLastOperation(instanceID)
+		if err != nil {
+			return false, nil // poll again
+		}
+		if op.Type == "upgradeKyma" {
+			return true, nil // it got created
+		}
+		return false, nil // last operation != kyma upgrade, poll again
+	})
+
 	opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
 	upgradeKymaOperationID, err := suite.DecodeLastUpgradeKymaOperationIDFromOrchestration(opResponse)
 	require.NoError(t, err)

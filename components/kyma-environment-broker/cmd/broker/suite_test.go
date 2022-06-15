@@ -788,7 +788,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconcile
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err, "timeout waiting for the operation with Cluster COnfiguration Version. The existing operation %+v", op)
+	assert.NoError(s.t, err, "timeout waiting for the operation with Cluster Configuration Version. The existing operation %+v", op)
 
 	s.finishOperationByReconciler(op)
 }
