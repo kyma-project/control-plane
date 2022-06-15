@@ -3,6 +3,7 @@ package runtime
 import (
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 )
 
 type Converter interface {
@@ -38,6 +39,7 @@ func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *intern
 	if pOpr != nil {
 		dto.Status.Provisioning = &pkg.Operation{}
 		c.applyOperation(&pOpr.Operation, dto.Status.Provisioning)
+		c.adjustRuntimeState(dto)
 	}
 }
 
@@ -45,6 +47,7 @@ func (c *converter) ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *inte
 	if dOpr != nil {
 		dto.Status.Deprovisioning = &pkg.Operation{}
 		c.applyOperation(&dOpr.Operation, dto.Status.Deprovisioning)
+		c.adjustRuntimeState(dto)
 	}
 }
 
@@ -97,6 +100,7 @@ func (c *converter) ApplyUpgradingKymaOperations(dto *pkg.RuntimeDTO, oprs []int
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.UpgradingKyma.Data = append(dto.Status.UpgradingKyma.Data, op)
 	}
+	c.adjustRuntimeState(dto)
 }
 
 func (c *converter) ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []internal.UpgradeClusterOperation, totalCount int) {
@@ -112,6 +116,7 @@ func (c *converter) ApplyUpgradingClusterOperations(dto *pkg.RuntimeDTO, oprs []
 	}
 	dto.Status.UpgradingCluster.TotalCount = totalCount
 	dto.Status.UpgradingCluster.Count = len(dto.Status.UpgradingCluster.Data)
+	c.adjustRuntimeState(dto)
 }
 
 func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.DeprovisioningOperation) {
@@ -134,6 +139,7 @@ func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []intern
 	if suspension.Count > 0 {
 		dto.Status.Suspension = suspension
 	}
+	c.adjustRuntimeState(dto)
 }
 
 func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []internal.ProvisioningOperation) {
@@ -151,6 +157,7 @@ func (c *converter) ApplyUnsuspensionOperations(dto *pkg.RuntimeDTO, oprs []inte
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.Unsuspension.Data = append(dto.Status.Unsuspension.Data, op)
 	}
+	c.adjustRuntimeState(dto)
 }
 
 func (c *converter) ApplyUpdateOperations(dto *pkg.RuntimeDTO, oprs []internal.UpdatingOperation, totalCount int) {
@@ -167,4 +174,51 @@ func (c *converter) ApplyUpdateOperations(dto *pkg.RuntimeDTO, oprs []internal.U
 		c.applyOperation(&o.Operation, &op)
 		dto.Status.Update.Data = append(dto.Status.Update.Data, op)
 	}
+	c.adjustRuntimeState(dto)
+}
+
+func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
+
+	lastOp := dto.LastOperation()
+	switch lastOp.State {
+	case string(domain.Succeeded):
+		dto.Status.State = pkg.StateSucceeded
+		if lastOp.Type == pkg.Suspension {
+			dto.Status.State = pkg.StateSuspended
+		}
+	case string(domain.Failed):
+		dto.Status.State = pkg.StateFailed
+		switch lastOp.Type {
+		case pkg.UpgradeKyma, pkg.UpgradeCluster, pkg.Update:
+			dto.Status.State = pkg.StateError
+		}
+	case string(domain.InProgress):
+		switch lastOp.Type {
+		case pkg.Provision, pkg.Unsuspension:
+			dto.Status.State = pkg.StateProvisioning
+		case pkg.Deprovision, pkg.Suspension:
+			dto.Status.State = pkg.StateDeprovisioning
+		case pkg.UpgradeKyma, pkg.UpgradeCluster:
+			dto.Status.State = pkg.StateUpgrading
+		case pkg.Update:
+			dto.Status.State = pkg.StateUpdating
+		}
+	default:
+		dto.Status.State = pkg.StateSucceeded
+	}
+
+	if dto.Status.Suspension != nil && dto.Status.Suspension.Count > 0 {
+		if dto.Status.Unsuspension != nil &&
+			dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.After(dto.Status.Suspension.Data[0].CreatedAt) {
+			// unsuspending or unsespended
+			dto.Status.State = pkg.StateSucceeded
+		} else {
+
+			dto.Status.State = pkg.StateSuspended // or suspending
+			if dto.Status.Suspension.Data[0].State == string(domain.InProgress) {
+				dto.Status.State = pkg.StateDeprovisioning
+			}
+		}
+	}
+
 }
