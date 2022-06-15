@@ -21,13 +21,13 @@ func TestConflict(t *testing.T) {
 
 	t.Run("Conflict Operations", func(t *testing.T) {
 		t.Run("Provisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 			require.NoError(t, err)
-			defer containerCleanupFunc()
 
 			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
-			require.NoError(t, err)
 			defer tablesCleanupFunc()
+			defer containerCleanupFunc()
+			require.NoError(t, err)
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
 			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
@@ -71,7 +71,7 @@ func TestConflict(t *testing.T) {
 		})
 
 		t.Run("Deprovisioning", func(t *testing.T) {
-			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 			require.NoError(t, err)
 			defer containerCleanupFunc()
 
@@ -120,7 +120,7 @@ func TestConflict(t *testing.T) {
 	})
 
 	t.Run("Conflict Instances", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
