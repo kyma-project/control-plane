@@ -15,11 +15,16 @@ import (
 )
 
 const (
-	namespace                   = "kcp-system"
-	componentNameLabel          = "component"
-	overridesVersionLabelPrefix = "overrides-version-"
-	overridesPlanLabelPrefix    = "overrides-plan-"
-	overridesSecretLabel        = "runtime-override"
+	namespace                      = "kcp-system"
+	componentNameLabel             = "component"
+	overridesVersionLabelPrefix    = "overrides-version-"
+	overridesPlanLabelPrefix       = "overrides-plan-"
+	overridesAccountLabelPrefix    = "overrides-account-"
+	overridesSubaccountLabelPrefix = "overrides-subaccount-"
+	overridesSecretLabel           = "runtime-override"
+	PLANNAME                       = "planeName"
+	ACCOUNT                        = "account"
+	SUBACCOUNT                     = "subaccount"
 )
 
 type InputAppender interface {
@@ -39,7 +44,7 @@ func NewRuntimeOverrides(ctx context.Context, cli client.Client) *runtimeOverrid
 	}
 }
 
-func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersion string) error {
+func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersion, account, subaccount string) error {
 	{
 		componentsOverrides, globalOverrides, err := ro.collectFromSecrets()
 		if err != nil {
@@ -50,7 +55,7 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersi
 	}
 
 	{
-		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion)
+		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion, account, subaccount)
 		if err != nil {
 			return err
 		}
@@ -99,35 +104,37 @@ func (ro *runtimeOverrides) collectFromSecrets() (map[string][]*gqlschema.Config
 	return componentsOverrides, globalOverrides, nil
 }
 
-func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion string) (map[string][]*gqlschema.ConfigEntryInput, []*gqlschema.ConfigEntryInput, error) {
+func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, account, subaccount string) (map[string][]*gqlschema.ConfigEntryInput, []*gqlschema.ConfigEntryInput, error) {
 	componentsOverrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
 
-	configMaps := &coreV1.ConfigMapList{}
-	listOpts := configMapListOptions(planName, overridesVersion)
+	overrideList := map[string]string{PLANNAME: planName, ACCOUNT: account, SUBACCOUNT: subaccount}
+	for overType, override := range overrideList {
+		configMaps := &coreV1.ConfigMapList{}
+		listOpts := configMapListOptions(overType, override, overridesVersion)
 
-	if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
-		errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
-		return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
-	}
+		if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
+			errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
+			return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
+		}
 
-	for _, cm := range configMaps.Items {
-		component, global := getComponent(cm.Labels)
-		for key, value := range cm.Data {
-			if global {
-				globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
-					Key:   key,
-					Value: value,
-				})
-			} else {
-				componentsOverrides[component] = append(componentsOverrides[component], &gqlschema.ConfigEntryInput{
-					Key:   key,
-					Value: value,
-				})
+		for _, cm := range configMaps.Items {
+			component, global := getComponent(cm.Labels)
+			for key, value := range cm.Data {
+				if global {
+					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
+						Key:   key,
+						Value: value,
+					})
+				} else {
+					componentsOverrides[component] = append(componentsOverrides[component], &gqlschema.ConfigEntryInput{
+						Key:   key,
+						Value: value,
+					})
+				}
 			}
 		}
 	}
-
 	return componentsOverrides, globalOverrides, nil
 }
 
@@ -142,15 +149,34 @@ func secretListOptions() []client.ListOption {
 	}
 }
 
-func configMapListOptions(plan string, version string) []client.ListOption {
-	planLabel := overridesPlanLabelPrefix + plan
-	versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
+func configMapListOptions(overType string, value string, version string) []client.ListOption {
+	var label map[string]string
+	switch overType {
+	case "planeName":
+		planLabel := overridesPlanLabelPrefix + value
+		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
 
-	label := map[string]string{
-		planLabel:    "true",
-		versionLabel: "true",
+		label = map[string]string{
+			planLabel:    "true",
+			versionLabel: "true",
+		}
+	case "account":
+		accountLabel := overridesAccountLabelPrefix + value
+		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
+
+		label = map[string]string{
+			accountLabel: "true",
+			versionLabel: "true",
+		}
+	case "subaccount":
+		subaccountLabel := overridesSubaccountLabelPrefix + value
+		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
+
+		label = map[string]string{
+			subaccountLabel: "true",
+			versionLabel:    "true",
+		}
 	}
-
 	return []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(label),

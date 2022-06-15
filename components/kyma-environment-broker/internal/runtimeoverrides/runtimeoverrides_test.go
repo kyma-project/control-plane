@@ -28,23 +28,32 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			},
 			Data: map[string]string{"test1": "test1abc"},
 		}
+
+		cm2 := &coreV1.ConfigMap{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      "overrides2",
+				Namespace: namespace,
+				Labels: map[string]string{
+					"overrides-version-1.15.1": "true",
+					"overrides-account-1234":   "true",
+				},
+			},
+			Data: map[string]string{"test2": "test2abc"},
+		}
 		sch := runtime.NewScheme()
 		require.NoError(t, coreV1.AddToScheme(sch))
-		client := fake.NewFakeClientWithScheme(sch, cm)
+		client := fake.NewFakeClientWithScheme(sch, cm, cm2)
 
 		inputAppenderMock := &automock.InputAppender{}
 		defer inputAppenderMock.AssertExpectations(t)
 		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "test1",
-				Value: "test1abc",
-			},
+			{Key: "test1", Value: "test1abc"},
+			{Key: "test2", Value: "test2abc"},
 		}).Return(nil).Once()
-
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
 
 		// THEN
 		require.NoError(t, err)
@@ -96,7 +105,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
 
 		// THEN
 		require.NoError(t, err)
@@ -138,16 +147,13 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			},
 		}).Return(nil).Once()
 		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
-			{
-				Key:   "test7",
-				Value: "test7abc",
-			},
+			{Key: "test7", Value: "test7abc"},
 		}).Return(nil).Once()
 
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
 
 		// THEN
 		require.NoError(t, err)
@@ -165,7 +171,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
 
 		// THEN
 		require.Error(t, err, "no global overrides for plan 'foo' and Kyma version '1.15.1'")
@@ -265,6 +271,5 @@ func fixResources() []runtime.Object {
 		},
 		Data: map[string]string{"test8": "test8abc"},
 	})
-
 	return resources
 }
