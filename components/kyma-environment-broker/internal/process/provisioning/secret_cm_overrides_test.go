@@ -18,6 +18,8 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 		// Given
 		planName := "gcp"
 		kymaVersion := "1.15.0"
+		globalAccount := "12344567890"
+		subAccount := "9876543210"
 
 		memoryStorage := storage.NewMemoryStorage()
 
@@ -26,13 +28,18 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)
-		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
+		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion, globalAccount, subAccount).Return(nil).Once()
 
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID:     "ca6e5357-707f-4565-bbbd-b3ab732597c6",
-					Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion}},
+					Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion},
+					ErsContext: internal.ERSContext{
+						GlobalAccountID: globalAccount,
+						SubAccountID:    subAccount,
+					},
+				},
 			},
 			InputCreator: inputCreatorMock,
 		}
@@ -57,6 +64,8 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		// Given
 		planName := "gcp"
 		kymaVersion := "1.15.0"
+		globalAccount := "12344567890"
+		subAccount := "9876543210"
 
 		memoryStorage := storage.NewMemoryStorage()
 
@@ -65,11 +74,16 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)
-		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
+		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion, globalAccount, subAccount).Return(nil).Once()
 
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"},
+				ProvisioningParameters: internal.ProvisioningParameters{
+					PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6",
+					ErsContext: internal.ERSContext{
+						GlobalAccountID: globalAccount,
+						SubAccountID:    subAccount,
+					}},
 			},
 			InputCreator: inputCreatorMock,
 			RuntimeVersion: internal.RuntimeVersionData{

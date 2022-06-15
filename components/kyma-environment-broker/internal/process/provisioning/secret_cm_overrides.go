@@ -15,7 +15,7 @@ import (
 )
 
 type RuntimeOverridesAppender interface {
-	Append(input runtimeoverrides.InputAppender, planName, overridesVersion string) error
+	Append(input runtimeoverrides.InputAppender, planName, overridesVersion, account, subAccount string) error
 }
 
 //go:generate mockery --name=RuntimeVersionConfiguratorForProvisioning --output=automock --outpkg=automock --case=underscore
@@ -49,6 +49,13 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", nil, log)
 	}
 
+	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
+	if globalAccountID == "" || subAccountID == "" {
+		log.Errorf("cannot find global accountID '%s' or subAccountID '%s' ", globalAccountID, subAccountID)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters on globalAccount/subAccount", nil, log)
+	}
+
 	overridesVersion := s.getOverridesVersion(operation)
 
 	if overridesVersion == "" { // if no overrides version number specified explicitly we read the RuntimeVersion
@@ -64,7 +71,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 
 	log.Infof("runtime overrides version: %s", overridesVersion)
 
-	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion); err != nil {
+	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion, globalAccountID, subAccountID); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s", operation.ID)
 		log.Error(fmt.Sprintf("%s: %s", errMsg, err.Error()))
 		return s.operationManager.RetryOperation(operation, errMsg, err, 10*time.Second, 30*time.Minute, log)

@@ -14,7 +14,7 @@ import (
 )
 
 type RuntimeOverridesAppender interface {
-	Append(input runtimeoverrides.InputAppender, planID, kymaVersion string) error
+	Append(input runtimeoverrides.InputAppender, planID, kymaVersion, accountID, subAccountID string) error
 }
 
 //go:generate mockery --name=RuntimeVersionConfiguratorForUpgrade --output=automock --outpkg=automock --case=underscore
@@ -48,12 +48,19 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters", nil, log)
 	}
 
+	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
+	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
+	if globalAccountID == "" || subAccountID == "" {
+		log.Errorf("cannot find global accountID '%s' or subAccountID '%s' ", globalAccountID, subAccountID)
+		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters on globalAccount/subAccount", nil, log)
+	}
+
 	version, err := s.getRuntimeVersion(operation)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 5*time.Minute, log)
 	}
 
-	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version); err != nil {
+	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version, globalAccountID, subAccountID); err != nil {
 		log.Errorf(err.Error())
 		return s.operationManager.RetryOperation(operation, "error while appending runtime overrides", err, 10*time.Second, 30*time.Minute, log)
 	}

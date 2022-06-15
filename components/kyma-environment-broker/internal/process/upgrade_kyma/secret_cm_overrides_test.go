@@ -26,7 +26,7 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)
-		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
+		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion, fixGlobalAccountID, fixSubAccountID).Return(nil).Once()
 
 		operation := internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
@@ -62,7 +62,7 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 
 		runtimeOverridesMock := &automock.RuntimeOverridesAppender{}
 		defer runtimeOverridesMock.AssertExpectations(t)
-		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
+		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion, fixGlobalAccountID, fixSubAccountID).Return(nil).Once()
 
 		operation := internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
