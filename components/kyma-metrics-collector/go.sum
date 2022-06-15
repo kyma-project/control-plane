@@ -731,6 +731,8 @@ github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb
 github.com/gardener/gardener v1.48.0/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
 github.com/gardener/gardener v1.48.2 h1:z3YXGTv6Y95VTIkNPjXTw0R/gT1Ya5iPVd4C+hDlXZ8=
 github.com/gardener/gardener v1.48.2/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
+github.com/gardener/gardener v1.48.3 h1:dpKY5NVaqn/8FJs2zhy5D9HUgvRgqoGagnEPGLQDXT0=
+github.com/gardener/gardener v1.48.3/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.36.0 h1:vBlCGtMNZVT5hh4W6erC1wc/IobGv9mgw7GCn+J2ilY=
 github.com/gardener/gardener-extension-provider-aws v1.36.0/go.mod h1:ZvBuRrUhzj/VzXjU3VbFRAT4yi7FJvv4JhHwj1JY+3U=
@@ -1479,6 +1481,8 @@ github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/g
 github.com/kyma-incubator/reconciler v0.0.0-20220530112659-7c7730de8709/go.mod h1:Q2H0j8bODb1kn/e37Bv/pmZVixPokr6VvneuVHgb/7I=
 github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220614060221-32a357e20de6 h1:ktBujWm/b8ytF/o8Xw/H/NLZBdCE2DIrrbdgLIt/qmY=
 github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220614060221-32a357e20de6/go.mod h1:xgnTi1lxcO/Ymo/nQtbNbsKX9il1PtO5Za4YiEc5Kwc=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220615085737-d766302c1b14 h1:829PG7Q1TmErL1M5rtSwzUA3j28XsmdtKCr0irFL5E0=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220615085737-d766302c1b14/go.mod h1:xgnTi1lxcO/Ymo/nQtbNbsKX9il1PtO5Za4YiEc5Kwc=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220603085229-28da147ebbd5 h1:z4nKY/qrnFnHzzhv/N4abdOScL96g5YoWs8HNrSmIAA=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220603085229-28da147ebbd5/go.mod h1:PULtwdOm9SEX3gRUY9GoiHmNBOoq4tOg4BEUh3cY+SU=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
