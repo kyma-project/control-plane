@@ -123,7 +123,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 		for _, cm := range configMaps.Items {
 			component, global := getComponent(cm.Labels)
-			fmt.Printf("component , global: %s %s\n", component, global)
+			fmt.Println("component , global: %s %s", component, global)
 			for key, value := range cm.Data {
 				fmt.Printf("overType key value : %s %s %s\n", overType, key, value)
 				if global {
