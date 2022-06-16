@@ -26,7 +26,16 @@ const (
 	PLANNAME                       = "planeName"
 	ACCOUNT                        = "account"
 	SUBACCOUNT                     = "subaccount"
+	LEVEL1                         = 1
+	LEVEL2                         = 2
+	LEVEL3                         = 3
 )
+
+var OverridesMapping = map[int]string{
+	LEVEL1: PLANNAME,
+	LEVEL2: ACCOUNT,
+	LEVEL3: SUBACCOUNT,
+}
 
 type InputAppender interface {
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator
@@ -113,11 +122,14 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 	componentsOverrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
 
-	overrideList := map[string]string{PLANNAME: planName, ACCOUNT: account, SUBACCOUNT: subaccount}
-	for overType, override := range overrideList {
-		ro.log.Infof("collectFromConfigMaps() overType %s account %s subaccount %s\n", overType, account, subaccount)
+	//map int index guaranteed to be the same result from one iteration to the next
+	overrideList := map[int]string{1: planName, 2: account, 3: subaccount}
+
+	for k, overrideValue := range overrideList {
+		overrideType := OverridesMapping[k]
+		ro.log.Infof("collectFromConfigMaps() overrideType %s on account %s subaccount %s\n", overrideType, account, subaccount)
 		configMaps := &coreV1.ConfigMapList{}
-		listOpts := configMapListOptions(overType, override, overridesVersion)
+		listOpts := configMapListOptions(overrideType, overrideValue, overridesVersion)
 
 		if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
 			errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
@@ -128,7 +140,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 			component, global := getComponent(cm.Labels)
 			ro.log.Infof("component , global: %s %s", component, global)
 			for key, value := range cm.Data {
-				ro.log.Infof("overType key value : %s %s %s", overType, key, value)
+				ro.log.Infof("overrideType key value : %s %s %s", overrideType, key, value)
 				if global {
 					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
 						Key:   key,
