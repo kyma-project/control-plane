@@ -130,8 +130,8 @@ github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb0
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Peripli/service-manager v0.23.2/go.mod h1:BORpNM8+9Mvqy2stSFyY/c9sW8r7NlAiwG63kNbvm5Y=
-github.com/Peripli/service-manager v0.23.5 h1:Z1S2VIQOYgu3RgGzGENGv96aZCgKIDTtkMHGuxdFb4Q=
-github.com/Peripli/service-manager v0.23.5/go.mod h1:W+fBcRNS66+NxJyO7KyleJVTJBzv0p0LrxI9iM2HWBg=
+github.com/Peripli/service-manager v0.23.6 h1:V1FUKtgOKdN2WamHSnP/8h29xIBRaiKmTXvUMuHZr+M=
+github.com/Peripli/service-manager v0.23.6/go.mod h1:KmonTqYVrATSgi0eoIMPqyXuLUNdSc2CxUUqT8MhstU=
 github.com/Peripli/service-manager-cli v1.11.14 h1:AbricBel1g4JZm2u0tQaPoBfLh7PaRAZ+OTO7VkpFZQ=
 github.com/Peripli/service-manager-cli v1.11.14/go.mod h1:fZD1nTDs8KZl+LQ0V/215KDpGdOvONesXvNt7gnItBk=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
