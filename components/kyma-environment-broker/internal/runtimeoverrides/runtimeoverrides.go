@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -34,12 +35,14 @@ type InputAppender interface {
 
 type runtimeOverrides struct {
 	ctx       context.Context
+	log       logrus.FieldLogger
 	k8sClient client.Client
 }
 
-func NewRuntimeOverrides(ctx context.Context, cli client.Client) *runtimeOverrides {
+func NewRuntimeOverrides(ctx context.Context, log logrus.FieldLogger, cli client.Client) *runtimeOverrides {
 	return &runtimeOverrides{
 		ctx:       ctx,
+		log:       log,
 		k8sClient: cli,
 	}
 }
@@ -112,7 +115,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 	overrideList := map[string]string{PLANNAME: planName, ACCOUNT: account, SUBACCOUNT: subaccount}
 	for overType, override := range overrideList {
-		fmt.Printf("collectFromConfigMaps() overType %s account %s subaccount %s\n", overType, account, subaccount)
+		ro.log.Infof("collectFromConfigMaps() overType %s account %s subaccount %s\n", overType, account, subaccount)
 		configMaps := &coreV1.ConfigMapList{}
 		listOpts := configMapListOptions(overType, override, overridesVersion)
 
@@ -123,9 +126,9 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 		for _, cm := range configMaps.Items {
 			component, global := getComponent(cm.Labels)
-			fmt.Println("component , global: %s %s", component, global)
+			ro.log.Infof("component , global: %s %s", component, global)
 			for key, value := range cm.Data {
-				fmt.Printf("overType key value : %s %s %s\n", overType, key, value)
+				ro.log.Infof("overType key value : %s %s %s", overType, key, value)
 				if global {
 					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
 						Key:   key,

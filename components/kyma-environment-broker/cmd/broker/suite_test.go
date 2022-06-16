@@ -159,7 +159,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	eventBroker := event.NewPubSub(logs)
 
-	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, logrus.New().WithField("client", "runtimeoverrides"), cli)
 
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(kymaVer, runtimeversion.NewAccountVersionMapping(ctx, cli, defaultNamespace, kymaVersionsConfigName, logs), nil)
 
@@ -600,7 +600,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	externalEvalCreator := provisioning.NewExternalEvalCreator(avsDel, cfg.Avs.Disabled, externalEvalAssistant)
 	internalEvalUpdater := provisioning.NewInternalEvalUpdater(avsDel, internalEvalAssistant, cfg.Avs)
 
-	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, logrus.New().WithField("client", "runtimeoverrides"), cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 

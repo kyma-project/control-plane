@@ -333,7 +333,7 @@ func main() {
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
 
 	//setup runtime overrides appender
-	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, logs.WithField("service", "runtimeOverrides"), cli)
 
 	// define steps
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)

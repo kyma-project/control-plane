@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides/automock"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +51,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			{Key: "test1", Value: "test1abc"},
 			{Key: "test2", Value: "test2abc"},
 		}).Return(nil).Once()
-		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
 		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
@@ -102,7 +103,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			},
 		}).Return(nil).Once()
 
-		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
 		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
@@ -150,7 +151,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			{Key: "test7", Value: "test7abc"},
 		}).Return(nil).Once()
 
-		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
 		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
@@ -168,7 +169,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		inputAppenderMock := &automock.InputAppender{}
 		defer inputAppenderMock.AssertExpectations(t)
 
-		runtimeOverrides := NewRuntimeOverrides(context.TODO(), client)
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
 		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")

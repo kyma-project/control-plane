@@ -151,7 +151,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	provisionerClient := provisioner.NewFakeClientWithGardener(gardenerClient, "kcp-system")
 	eventBroker := event.NewPubSub(logs)
 
-	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
+	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, logrus.New().WithField("client", "runtimeoverrides"), cli)
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
