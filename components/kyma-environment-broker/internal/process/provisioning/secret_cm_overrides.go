@@ -69,7 +69,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 		overridesVersion = runtimeVersion.Version
 	}
 
-	log.Infof("runtime overrides version: %s", overridesVersion)
+	log.Infof("runtime overrides version: %s globalAccountID %s subAccountID %s", overridesVersion, globalAccountID, subAccountID)
 
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion, globalAccountID, subAccountID); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s", operation.ID)

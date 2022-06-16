@@ -271,5 +271,6 @@ func fixResources() []runtime.Object {
 		},
 		Data: map[string]string{"test8": "test8abc"},
 	})
+
 	return resources
 }

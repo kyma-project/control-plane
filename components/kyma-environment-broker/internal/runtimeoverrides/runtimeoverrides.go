@@ -46,6 +46,7 @@ func NewRuntimeOverrides(ctx context.Context, cli client.Client) *runtimeOverrid
 
 func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersion, account, subaccount string) error {
 	{
+		fmt.Println("start to call ro.collectFromSecrets()")
 		componentsOverrides, globalOverrides, err := ro.collectFromSecrets()
 		if err != nil {
 			return err
@@ -55,6 +56,7 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersi
 	}
 
 	{
+		fmt.Println("start to call ro.collectFromConfigMaps()")
 		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion, account, subaccount)
 		if err != nil {
 			return err
@@ -110,6 +112,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 	overrideList := map[string]string{PLANNAME: planName, ACCOUNT: account, SUBACCOUNT: subaccount}
 	for overType, override := range overrideList {
+		fmt.Printf("collectFromConfigMaps() overType %s account %s subaccount %s\n", overType, account, subaccount)
 		configMaps := &coreV1.ConfigMapList{}
 		listOpts := configMapListOptions(overType, override, overridesVersion)
 
@@ -120,7 +123,9 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 		for _, cm := range configMaps.Items {
 			component, global := getComponent(cm.Labels)
+			fmt.Printf("component , global: %s %s\n", component, global)
 			for key, value := range cm.Data {
+				fmt.Printf("overType key value : %s %s %s\n", overType, key, value)
 				if global {
 					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
 						Key:   key,
