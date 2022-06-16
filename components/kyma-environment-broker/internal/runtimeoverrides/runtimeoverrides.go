@@ -122,14 +122,19 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 	componentsOverrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
 
-	//map int index guaranteed to be the same result from one iteration to the next
 	overrideList := map[int]string{1: planName, 2: account, 3: subaccount}
 
-	for k, overrideValue := range overrideList {
+	//to guaranteed the same result from one iteration to the next
+	var keys []int
+	for k := range overrideList {
+		keys = append(keys, k)
+	}
+
+	for _, k := range keys {
 		overrideType := OverridesMapping[k]
 		ro.log.Infof("collectFromConfigMaps() overrideType %s on account %s subaccount %s\n", overrideType, account, subaccount)
 		configMaps := &coreV1.ConfigMapList{}
-		listOpts := configMapListOptions(overrideType, overrideValue, overridesVersion)
+		listOpts := configMapListOptions(overrideType, overrideList[k], overridesVersion)
 
 		if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
 			errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
