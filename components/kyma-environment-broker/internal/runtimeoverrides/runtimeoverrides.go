@@ -143,9 +143,8 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 
 		for _, cm := range configMaps.Items {
 			component, global := getComponent(cm.Labels)
-			ro.log.Infof("component , global: %s %s", component, global)
 			for key, value := range cm.Data {
-				ro.log.Infof("overrideType key value : %s %s %s", overrideType, key, value)
+				ro.log.Infof("collectFromConfigMaps() component , global: %s %s overrideType key value : %s %s %s", component, global, overrideType, key, value)
 				if global {
 					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
 						Key:   key,

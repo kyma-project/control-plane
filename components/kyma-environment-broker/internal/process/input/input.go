@@ -171,11 +171,13 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 		for i, o1 := range r.globalOverrides {
 			if o1.Key == o2.Key {
 				found = true
+				fmt.Printf("AppendGlobalOverrides o1.key, o2.Secret o2.Value: %s %v %v\n", o2.Key, o2.Secret, o2.Value)
 				r.globalOverrides[i].Secret = o2.Secret
 				r.globalOverrides[i].Value = o2.Value
 			}
 		}
 		if !found {
+			fmt.Printf("AppendGlobalOverrides o2.key, o2.Secret o2.Value: %s %v %v\n", o2.Key, o2.Secret, o2.Value)
 			r.globalOverrides = append(r.globalOverrides, o2)
 		}
 	}
