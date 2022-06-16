@@ -30,26 +30,14 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			Data: map[string]string{"test1": "test1abc"},
 		}
 
-		cm2 := &coreV1.ConfigMap{
-			ObjectMeta: metaV1.ObjectMeta{
-				Name:      "overrides2",
-				Namespace: namespace,
-				Labels: map[string]string{
-					"overrides-version-1.15.1": "true",
-					"overrides-account-1234":   "true",
-				},
-			},
-			Data: map[string]string{"test2": "test2abc"},
-		}
 		sch := runtime.NewScheme()
 		require.NoError(t, coreV1.AddToScheme(sch))
-		client := fake.NewFakeClientWithScheme(sch, cm, cm2)
+		client := fake.NewFakeClientWithScheme(sch, cm)
 
 		inputAppenderMock := &automock.InputAppender{}
 		defer inputAppenderMock.AssertExpectations(t)
 		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
 			{Key: "test1", Value: "test1abc"},
-			{Key: "test2", Value: "test2abc"},
 		}).Return(nil).Once()
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
