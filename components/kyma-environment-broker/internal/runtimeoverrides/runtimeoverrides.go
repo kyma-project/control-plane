@@ -3,6 +3,7 @@ package runtimeoverrides
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -125,7 +126,11 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 	overrideList := map[int]string{1: planName, 2: account, 3: subaccount}
 
 	//to guaranteed the same result from one iteration to the next
-	keys := []int{1, 2, 3}
+	var keys []int
+	for k := range overrideList {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
 
 	for _, k := range keys {
 		overrideType := OverridesMapping[k]

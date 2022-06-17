@@ -29,7 +29,68 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 			},
 			Data: map[string]string{"test1": "test1abc"},
 		}
+		sch := runtime.NewScheme()
+		require.NoError(t, coreV1.AddToScheme(sch))
+		client := fake.NewFakeClientWithScheme(sch, cm)
 
+		inputAppenderMock := &automock.InputAppender{}
+		defer inputAppenderMock.AssertExpectations(t)
+		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
+			{Key: "test1", Value: "test1abc"},
+		}).Return(nil).Once()
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
+
+		// WHEN
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Success when there is ConfigMap with overrides for given global account and Kyma version", func(t *testing.T) {
+		// GIVEN
+		cm := &coreV1.ConfigMap{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      "overrides2",
+				Namespace: namespace,
+				Labels: map[string]string{
+					"overrides-version-1.15.1": "true",
+					"overrides-account-1234":   "true",
+				},
+			},
+			Data: map[string]string{"test1": "test1abc"},
+		}
+		sch := runtime.NewScheme()
+		require.NoError(t, coreV1.AddToScheme(sch))
+		client := fake.NewFakeClientWithScheme(sch, cm)
+
+		inputAppenderMock := &automock.InputAppender{}
+		defer inputAppenderMock.AssertExpectations(t)
+		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
+			{Key: "test1", Value: "test1abc"},
+		}).Return(nil).Once()
+		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
+
+		// WHEN
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Success when there is ConfigMap with overrides for given subAccount and Kyma version", func(t *testing.T) {
+		// GIVEN
+		cm := &coreV1.ConfigMap{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      "overrides2",
+				Namespace: namespace,
+				Labels: map[string]string{
+					"overrides-version-1.15.1":  "true",
+					"overrides-subaccount-5678": "true",
+				},
+			},
+			Data: map[string]string{"test1": "test1abc"},
+		}
 		sch := runtime.NewScheme()
 		require.NoError(t, coreV1.AddToScheme(sch))
 		client := fake.NewFakeClientWithScheme(sch, cm)
@@ -137,6 +198,14 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		}).Return(nil).Once()
 		inputAppenderMock.On("AppendGlobalOverrides", []*gqlschema.ConfigEntryInput{
 			{Key: "test7", Value: "test7abc"},
+			{Key: "test7", Value: "test9abc"},
+			{Key: "test10", Value: "test10abc"},
+		}).Return(nil).Once()
+		inputAppenderMock.On("AppendOverrides", "helm", []*gqlschema.ConfigEntryInput{
+			{
+				Key:   "test11",
+				Value: "test11abc",
+			},
 		}).Return(nil).Once()
 
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
@@ -259,6 +328,40 @@ func fixResources() []runtime.Object {
 			},
 		},
 		Data: map[string]string{"test8": "test8abc"},
+	})
+	resources = append(resources, &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "configmap#5",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"overrides-version-1.15.1": "true",
+				"overrides-account-1234":   "true",
+			},
+		},
+		Data: map[string]string{"test7": "test9abc"},
+	})
+	resources = append(resources, &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "configmap#6",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"overrides-version-1.15.1":  "true",
+				"overrides-subaccount-5678": "true",
+			},
+		},
+		Data: map[string]string{"test10": "test10abc"},
+	})
+	resources = append(resources, &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "configmap#7",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"overrides-version-1.15.1":  "true",
+				"overrides-subaccount-5678": "true",
+				"component":                 "helm",
+			},
+		},
+		Data: map[string]string{"test11": "test11abc"},
 	})
 
 	return resources
