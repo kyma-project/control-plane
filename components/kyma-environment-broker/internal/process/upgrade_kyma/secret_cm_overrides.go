@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -38,10 +39,11 @@ func NewOverridesFromSecretsAndConfigStep(os storage.Operations, runtimeOverride
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Name() string {
-	return "Overrides_From_Secrets_And_Config_Step"
+	return "Overrides_From_Secrets_And_Config_Step_upgrade"
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	fmt.Printf("execute upgrade_kyma secret_cm_ovrrides.go Run()")
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
