@@ -11,6 +11,7 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 host: "kyma-env-broker"
+istioHost: "keb"
 manageSecrets: true
 
 broker:
@@ -28,6 +29,9 @@ service:
 
 swagger:
   virtualService:
+    enabled: true
+
+istio:
     enabled: true
 
 resources:

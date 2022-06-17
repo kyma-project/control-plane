@@ -1,0 +1,15 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-auth-keb
+  namespace: kcp-system
+spec:
+  jwtRules:
+  - issuer: https://oauth2.{{ .Values.global.ingress.domainName }}/
+    jwksUri: https://oauth2.{{ .Values.global.ingress.domainName }}/.well-known/jwks.json
+  - issuer: {{ tpl .Values.oidc.issuer $ }}
+    jwksUri: {{ tpl .Values.oidc.keysURL $ }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
