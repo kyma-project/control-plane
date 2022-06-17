@@ -98,6 +98,7 @@ replace (
 )
 
 replace (
+	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0 //this fixes cve-2022-1996
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
