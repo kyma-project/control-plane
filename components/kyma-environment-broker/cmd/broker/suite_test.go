@@ -13,9 +13,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
-	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -179,7 +177,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		StatusCheck:        20 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 2 * time.Millisecond,
@@ -299,13 +297,6 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		ErsContext: internal.ERSContext{
 			SubAccountID:    subAccountID,
 			GlobalAccountID: globalAccountID,
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{BasicAuth: internal.ServiceManagerBasicAuth{
-					Username: "username321",
-					Password: "password321",
-				}},
-				URL: "https://sm.sap",
-			},
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
@@ -620,8 +611,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	accountProvider := fixAccountProvider()
 
-	smcf := fixServiceManagerFactory()
-
 	directorClient := director.NewFakeClient()
 
 	reconcilerClient := reconciler.NewFakeClient()
@@ -631,7 +620,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -656,15 +645,6 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
 			UserID:          options.ProvideUserID(),
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				URL: "sm_url",
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "sm_username",
-						Password: "sm_password",
-					},
-				},
-			},
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
@@ -712,15 +692,6 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				URL: "sm_url",
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "sm_username",
-						Password: "sm_password",
-					},
-				},
-			},
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
@@ -1035,24 +1006,6 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
-}
-
-func fixServiceManagerFactory() provisioning.SMClientFactory {
-	smcf := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{{
-		ID:        "id-001",
-		Name:      "xsuaa",
-		CatalogID: "off-cat-id-001",
-		BrokerID:  brokerID,
-	},
-	}, []types.ServicePlan{{
-		ID:        "xsuaa-plan-id",
-		Name:      "application",
-		CatalogID: "xsuaa",
-	},
-	})
-	smcf.SynchronousProvisioning()
-
-	return smcf
 }
 
 func createInMemFS() (afero.Fs, error) {

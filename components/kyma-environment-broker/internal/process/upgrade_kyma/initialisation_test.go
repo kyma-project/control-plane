@@ -159,7 +159,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			nil, evalManager, nil, nil, nil, notificationBuilder)
+			nil, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -229,7 +229,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, rvc, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		op, repeat, err := step.Run(upgradeOperation, log)
@@ -280,7 +280,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), nil,
-			nil, evalManager, nil, nil, nil, notificationBuilder)
+			nil, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -346,7 +346,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -415,7 +415,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -484,7 +484,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -554,7 +554,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -624,7 +624,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -695,7 +695,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -766,7 +766,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManagerInvalid, nil, nil, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -849,7 +849,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, nil, notificationBuilder)
+			inputBuilder, evalManagerInvalid, nil, nil, notificationBuilder)
 
 		// when invalid client request, this should be delayed
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)

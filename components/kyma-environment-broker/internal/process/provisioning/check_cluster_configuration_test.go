@@ -36,10 +36,6 @@ const (
 	runtimeID                     = "2498c8ee-803a-43c2-8194-6d6dd0354c30"
 	autoUpdateKubernetesVersion   = true
 	autoUpdateMachineImageVersion = true
-
-	serviceManagerURL      = "http://sm.com"
-	serviceManagerUser     = "admin"
-	serviceManagerPassword = "admin123"
 )
 
 var shootPurpose = "evaluation"
@@ -162,15 +158,6 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: serviceManagerUser,
-						Password: serviceManagerPassword,
-					},
-				},
-				URL: serviceManagerURL,
-			},
 		},
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String(region),
