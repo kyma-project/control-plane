@@ -334,12 +334,20 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 	}
 
 	dbImage := "postgres:11"
-	reader, err := cli.ImagePull(context.Background(), dbImage, types.ImagePullOptions{})
-	io.Copy(os.Stdout, reader)
-	defer reader.Close()
 
-	if err != nil {
-		return nil, Config{}, errors.Wrap(err, "while pulling dbImage")
+	filterBy := filters.NewArgs()
+	filterBy.Add("name", dbImage)
+	image, err := cli.ImageList(context.Background(), types.ImageListOptions{Filters: filterBy})
+
+	if image == nil || err != nil {
+		log("Image not found... pulling...")
+		reader, err := cli.ImagePull(context.Background(), dbImage, types.ImagePullOptions{})
+		io.Copy(os.Stdout, reader)
+		defer reader.Close()
+
+		if err != nil {
+			return nil, Config{}, errors.Wrap(err, "while pulling dbImage")
+		}
 	}
 
 	body, err := cli.ContainerCreate(context.Background(),
