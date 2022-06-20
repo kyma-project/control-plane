@@ -153,7 +153,7 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: {{ template "fullname" . }}
+  name: istio-{{ template "fullname" . }}
 spec:
   gateways:
   - {{ .Values.global.istio.gateway.namespace }}/{{ .Values.global.istio.gateway.name }}
@@ -173,7 +173,9 @@ spec:
         regex: /oauth/([^/]+/)?v2/.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
+        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -186,7 +188,9 @@ spec:
         regex: /info/runtimes
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
+        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 80
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -199,7 +203,9 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
+          host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          port:
+            number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -212,7 +218,9 @@ spec:
         regex: /orchestrations.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
+        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -225,5 +233,7 @@ spec:
         regex: /upgrade/.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:80
+        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        port:
+          number: 80
 {{ end }}

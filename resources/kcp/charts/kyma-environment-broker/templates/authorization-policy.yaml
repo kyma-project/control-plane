@@ -78,7 +78,7 @@ spec:
     when:
     - key: request.auth.claims[scope]
       values:
-      - runtimeOperator
+      - {{ .Values.oidc.groups.admin }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
@@ -107,7 +107,7 @@ spec:
     when:
     - key: request.auth.claims[scope]
       values:
-      - orchestrationsAdmin
+      - {{ .Values.oidc.groups.orchestrations }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
@@ -134,7 +134,7 @@ spec:
     when:
     - key: request.auth.claims[scope]
       values:
-      - orchestrationsAdmin
+      - {{ .Values.oidc.groups.orchestrations }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
