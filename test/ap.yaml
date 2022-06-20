@@ -1,0 +1,159 @@
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-info-runtimes
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /info/runtimes
+    from:
+      - source:
+          requestPrincipals:
+          - https://oauth2.cp.dev.kyma.cloud.sap/*
+    when:
+    - key: request.auth.claims[scp]
+      values:
+      - cld:read
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker
+      app.kubernetes.io/instance: kcp
+---
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-oauth2
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+        paths:
+        - /oauth/.*
+    from:
+      - source:
+          requestPrincipals:
+          - https://oauth2.cp.dev.kyma.cloud.sap/*
+    when:
+    - key: request.auth.claims[scp]
+      values:
+      - broker:write
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker
+      app.kubernetes.io/instance: kcp
+---
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-runtimes
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /runtimes
+    from:
+      - source:
+          requestPrincipals:
+          - https://kymatest.accounts400.ondemand.com/*
+    when:
+    - key: request.auth.claims[scope]
+      values:
+      - runtimeAdmin
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker
+      app.kubernetes.io/instance: kcp
+---
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-orchestrations
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        - PUT
+        - POST
+        paths:
+        - /orchestrations.*
+    from:
+      - source:
+          requestPrincipals:
+          - https://kymatest.accounts400.ondemand.com/*
+    when:
+    - key: request.auth.claims[scope]
+      values:
+      - orchestrationsAdmin
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker
+      app.kubernetes.io/instance: kcp
+---
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-upgrade
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - POST
+        paths:
+        - /upgrade/.*
+    from:
+      - source:
+          requestPrincipals:
+          - https://kymatest.accounts400.ondemand.com/*
+    when:
+    - key: request.auth.claims[scope]
+      values:
+      - orchestrationsAdmin
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kyma-environment-broker
+      app.kubernetes.io/instance: kcp
+---
+# Source: kyma-environment-broker/templates/authorization-policy.yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: oathkeeper-passthrough
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/kyma-system/sa/oathkeeper-maester-account"
+---
