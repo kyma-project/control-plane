@@ -396,7 +396,7 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 		return cleanupFunc, Config{}, errors.Wrap(err, "while waiting for DB readiness")
 	}
 
-	filterBy := filters.NewArgs()
+	filterBy = filters.NewArgs()
 	filterBy.Add("id", body.ID)
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{Filters: filterBy})
 
