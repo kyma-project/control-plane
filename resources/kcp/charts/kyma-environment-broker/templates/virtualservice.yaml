@@ -173,7 +173,7 @@ spec:
         regex: /oauth/([^/]+/)?v2/.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
           number: 80
   - corsPolicy:
@@ -188,7 +188,7 @@ spec:
         regex: /info/runtimes
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
           number: 80
   - corsPolicy:
@@ -203,7 +203,7 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
   - corsPolicy:
@@ -218,7 +218,7 @@ spec:
         regex: /orchestrations.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
           number: 80
   - corsPolicy:
@@ -233,7 +233,22 @@ spec:
         regex: /upgrade/.*
     route:
     - destination:
-        host: http://{{ include "kyma-env-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
           number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          regex: /kubeconfig/.*
+    route:
+      - destination:
+          host: kcp-kyma-environment-broker
+          port:
+            number: 8
 {{ end }}
