@@ -16,32 +16,31 @@ type ShootClient interface {
 	List(ctx context.Context, opts metav1.ListOptions) (*gardener_Types.ShootList, error)
 }
 
-type KubernetesVersionProvider struct {
+type ShootProvider struct {
 	shootClient ShootClient
 }
 
-func NewKubernetesVersionProvider(shootClient ShootClient) KubernetesVersionProvider {
-	return KubernetesVersionProvider{
+func NewShootProvider(shootClient ShootClient) ShootProvider {
+	return ShootProvider{
 		shootClient: shootClient,
 	}
 }
 
-func (k KubernetesVersionProvider) Get(runtimeID string, tenant string) (string, apperrors.AppError) {
+func (s ShootProvider) Get(runtimeID string, tenant string) (gardener_Types.Shoot, apperrors.AppError) {
 	labelSelector := fmt.Sprintf("%s=%s", model.AccountLabel, tenant)
 
-	shoots, err := k.shootClient.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
+	shoots, err := s.shootClient.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
-		return "", apperrors.Internal("failed to list shoots: %s", err.Error())
+		return gardener_Types.Shoot{}, apperrors.Internal("failed to list shoots: %s", err.Error())
 	}
 
 	for _, shoot := range shoots.Items {
 		id := shoot.Annotations[runtimeIDAnnotation]
 
 		if id == runtimeID {
-			return shoot.Spec.Kubernetes.Version, nil
+			return shoot, nil
 		}
 	}
 
-	return "", apperrors.Internal("failed to find shoot for Runtime %s", runtimeID)
-
+	return gardener_Types.Shoot{}, apperrors.Internal("failed to find shoot for Runtime %s", runtimeID)
 }

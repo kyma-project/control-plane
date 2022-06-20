@@ -43,8 +43,8 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 code.cloudfoundry.org/lager v2.0.0+incompatible h1:WZwDKDB2PLd/oL+USK4b4aEjUymIej9My2nUQ9oWEwQ=
 code.cloudfoundry.org/lager v2.0.0+incompatible/go.mod h1:O2sS7gKP3HM2iemG+EnwvyNQK7pTSC6Foi4QiMp9sSk=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github.com/99designs/gqlgen v0.17.9 h1:0XvE3nMaTaLYq7XbBz1MY0t9BFcntydlt1zzNa4eY+4=
-github.com/99designs/gqlgen v0.17.9/go.mod h1:PThAZAK9t2pAat7g8QdSI4dCBMOhBO+t2qj+0jvDqps=
+github.com/99designs/gqlgen v0.17.10 h1:+JtGPZ6jqL0IcmLopq4iaEbh5Ggye+NiutU57w82xvk=
+github.com/99designs/gqlgen v0.17.10/go.mod h1:tjgUrZGpynt+w38zmgTn5QGgd3EUhkHa4VRcX6/AyGo=
 github.com/AlekSi/gocov-xml v1.0.0/go.mod h1:J0qYeZ6tDg4oZubW9mAAgxlqw39PDfoEkzB3HXSbEuA=
 github.com/Azure/azure-sdk-for-go v16.2.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v38.2.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
@@ -126,8 +126,8 @@ github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb0
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Peripli/service-manager v0.23.2/go.mod h1:BORpNM8+9Mvqy2stSFyY/c9sW8r7NlAiwG63kNbvm5Y=
-github.com/Peripli/service-manager v0.23.5 h1:Z1S2VIQOYgu3RgGzGENGv96aZCgKIDTtkMHGuxdFb4Q=
-github.com/Peripli/service-manager v0.23.5/go.mod h1:W+fBcRNS66+NxJyO7KyleJVTJBzv0p0LrxI9iM2HWBg=
+github.com/Peripli/service-manager v0.23.6 h1:V1FUKtgOKdN2WamHSnP/8h29xIBRaiKmTXvUMuHZr+M=
+github.com/Peripli/service-manager v0.23.6/go.mod h1:KmonTqYVrATSgi0eoIMPqyXuLUNdSc2CxUUqT8MhstU=
 github.com/Peripli/service-manager-cli v1.11.14 h1:AbricBel1g4JZm2u0tQaPoBfLh7PaRAZ+OTO7VkpFZQ=
 github.com/Peripli/service-manager-cli v1.11.14/go.mod h1:fZD1nTDs8KZl+LQ0V/215KDpGdOvONesXvNt7gnItBk=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
@@ -1136,8 +1136,8 @@ github.com/valyala/fasthttp v1.34.0/go.mod h1:epZA5N+7pY6ZaEKRmstzOuYJx9HI8DI1oa
 github.com/valyala/tcplisten v1.0.0/go.mod h1:T0xQ8SeCZGxckz9qRXTfG43PvQ/mcWh7FwZEA7Ioqkc=
 github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410 h1:NcdnJbCrXag4rJ1eoXgYKVgsm/1eHlZPzBNRybiPCE4=
 github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410/go.mod h1:J5O5BmZ9QYZGTELKzppJxisaWthI0I/HkbhAYn3qsZM=
-github.com/vektah/gqlparser/v2 v2.4.4 h1:rh9hwZ5Jx9cCq88zXz2YHKmuQBuwY1JErHU8GywFdwE=
-github.com/vektah/gqlparser/v2 v2.4.4/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
+github.com/vektah/gqlparser/v2 v2.4.5 h1:C02NsyEsL4TXJB7ndonqTfuQOL4XPIu0aAWugdmTgmc=
+github.com/vektah/gqlparser/v2 v2.4.5/go.mod h1:flJWIR04IMQPGz+BXLrORkrARBxv/rtyIAFvd/MceW0=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
