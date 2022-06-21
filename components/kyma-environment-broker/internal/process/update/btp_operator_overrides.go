@@ -1,7 +1,6 @@
 package update
 
 import (
-	"reflect"
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -62,7 +61,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 
 	// found btp-operator in last runtime state but config isn't matching
 	l := operation.LastRuntimeState.ClusterSetup.KymaConfig.Components[last]
-	if !reflect.DeepEqual(l, ci) {
+	if !internal.CheckBTPCredsMatching(l, ci) {
 		operation.RequiresReconcilerUpdate = true
 		operation.LastRuntimeState.ClusterSetup.KymaConfig.Components[last] = ci
 	}
