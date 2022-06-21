@@ -99,7 +99,7 @@ func InitTestDBContainer(log func(format string, args ...interface{}), ctx conte
 func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
-		t.Logf("Cannot connect to database with URL %s", connectionURL)
+		t.Logf("Cannot connect to database with URL - reload test - %s", connectionURL)
 		return nil, errors.Wrap(err, "while waiting for database access")
 	}
 
@@ -145,7 +145,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
-		log.Printf("Cannot connect to database with URL %s", connectionURL)
+		log.Printf("Cannot connect to database with URL - reload test - %s", connectionURL)
 		return nil, errors.Wrap(err, "while connecting to databse")
 	}
 
