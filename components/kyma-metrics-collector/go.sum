@@ -196,7 +196,7 @@ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAE
 github.com/Peripli/service-manager v0.19.0/go.mod h1:FtRJlibH3yLD1v/JCp6yTBx+m2GDpodxnwmawl756Fo=
 github.com/Peripli/service-manager v0.19.9/go.mod h1:FtRJlibH3yLD1v/JCp6yTBx+m2GDpodxnwmawl756Fo=
 github.com/Peripli/service-manager v0.23.2/go.mod h1:BORpNM8+9Mvqy2stSFyY/c9sW8r7NlAiwG63kNbvm5Y=
-github.com/Peripli/service-manager v0.23.5/go.mod h1:W+fBcRNS66+NxJyO7KyleJVTJBzv0p0LrxI9iM2HWBg=
+github.com/Peripli/service-manager v0.23.6/go.mod h1:KmonTqYVrATSgi0eoIMPqyXuLUNdSc2CxUUqT8MhstU=
 github.com/Peripli/service-manager-cli v1.11.14/go.mod h1:fZD1nTDs8KZl+LQ0V/215KDpGdOvONesXvNt7gnItBk=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
 github.com/ProtonMail/go-crypto v0.0.0-20220407094043-a94812496cf5/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
@@ -711,6 +711,7 @@ github.com/gardener/etcd-druid v0.3.0/go.mod h1:uxZjZ57gIgpX554vGp495g2i8DByoS3O
 github.com/gardener/etcd-druid v0.5.0/go.mod h1:Ca2ZM9dyMdZI6k5RW4wu8CG8q5cNeF/HSE2P+hut0+g=
 github.com/gardener/etcd-druid v0.6.1-0.20211022081522-071746e9d0bd/go.mod h1:BukSWtT9sxjCa3H4q2biJMIo52o+57MuBBifzzZkhPo=
 github.com/gardener/etcd-druid v0.8.0/go.mod h1:EJF6z4Ghv2FGUe1UzZWOEF1MxCA186fxvjBO44oSJX4=
+github.com/gardener/etcd-druid v0.9.0/go.mod h1:EJF6z4Ghv2FGUe1UzZWOEF1MxCA186fxvjBO44oSJX4=
 github.com/gardener/external-dns-management v0.7.3/go.mod h1:Y3om11E865x4aQ7cmcHjknb8RMgCO153huRb/SvP+9o=
 github.com/gardener/external-dns-management v0.7.7/go.mod h1:egCe/FPOsUbXA4WV0ne3h7nAD/nLT09hNt/FQQXK+ec=
 github.com/gardener/external-dns-management v0.7.18/go.mod h1:oHhauLQ3/sop0c1urS6n304Wqv/WM4me0geLn9nTAcY=
@@ -727,8 +728,8 @@ github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G
 github.com/gardener/gardener v1.36.0/go.mod h1:aVEbZy2WybsuwfXfUFNfOYz1JOmMjEOeYbv+sN9PzE0=
 github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/gardener/gardener v1.48.0/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
-github.com/gardener/gardener v1.48.3 h1:dpKY5NVaqn/8FJs2zhy5D9HUgvRgqoGagnEPGLQDXT0=
-github.com/gardener/gardener v1.48.3/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
+github.com/gardener/gardener v1.49.0 h1:ZNSTzmS537b96J7K/EDGvpTf/R2MAZlCe1HIdpLYfiI=
+github.com/gardener/gardener v1.49.0/go.mod h1:KjwWPaH8ZkeHQtRyL35/Z3KoiZnj6Z4DkKCqbVGYD8M=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.36.0 h1:vBlCGtMNZVT5hh4W6erC1wc/IobGv9mgw7GCn+J2ilY=
 github.com/gardener/gardener-extension-provider-aws v1.36.0/go.mod h1:ZvBuRrUhzj/VzXjU3VbFRAT4yi7FJvv4JhHwj1JY+3U=
@@ -1475,8 +1476,8 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f/go.mod h1:/qouJL+g8Tsllh/VcxK1Li6NCyuqyXSlq1i9InKSZJk=
 github.com/kyma-incubator/reconciler v0.0.0-20220530112659-7c7730de8709/go.mod h1:Q2H0j8bODb1kn/e37Bv/pmZVixPokr6VvneuVHgb/7I=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220615085737-d766302c1b14 h1:829PG7Q1TmErL1M5rtSwzUA3j28XsmdtKCr0irFL5E0=
-github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220615085737-d766302c1b14/go.mod h1:xgnTi1lxcO/Ymo/nQtbNbsKX9il1PtO5Za4YiEc5Kwc=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220617160451-bf75e4f4f701 h1:+zIG1/aEaWxFkVwA+FDnID8tGKUguRxpZyXjWu25VbI=
+github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220617160451-bf75e4f4f701/go.mod h1:FGd+2OEZVAR7BIGAyJvRMq5jdREOWD0I2WMV5VGOYwc=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220603085229-28da147ebbd5 h1:z4nKY/qrnFnHzzhv/N4abdOScL96g5YoWs8HNrSmIAA=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220603085229-28da147ebbd5/go.mod h1:PULtwdOm9SEX3gRUY9GoiHmNBOoq4tOg4BEUh3cY+SU=
 github.com/kyma-project/kyma/components/application-operator v0.0.0-20200818080816-8c81ea09adc7/go.mod h1:LUlTpeBF6hz7DyOtROez1IjluZOrFFgJH9vx8/me5p8=
