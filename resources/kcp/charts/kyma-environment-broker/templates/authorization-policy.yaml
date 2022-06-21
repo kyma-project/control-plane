@@ -3,6 +3,46 @@
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  name: oathkeeper-passthrough
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/kyma-system/sa/oathkeeper-maester-account"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-kubeconfig
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces:
+              - istio-system
+      to:
+        - operation:
+            methods:
+              - GET
+            paths:
+              - /kubeconfig*
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
   name: istio-info-runtimes
   namespace: kcp-system
 spec:
@@ -135,38 +175,6 @@ spec:
     - key: request.auth.claims[scope]
       values:
       - {{ .Values.oidc.groups.orchestrations }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: oathkeeper-passthrough
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-    - from:
-        - source:
-            principals:
-              - "cluster.local/ns/kyma-system/sa/oathkeeper-maester-account"
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: istio-kubeconfig
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-    - to:
-        - operation:
-            methods:
-              - GET
-            paths:
-              - /kubeconfig/*
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
