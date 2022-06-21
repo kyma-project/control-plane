@@ -1,3 +1,4 @@
+{{ if .Values.istio.enabled}}
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -13,3 +14,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+{{ end }}
