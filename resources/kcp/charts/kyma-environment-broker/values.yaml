@@ -32,7 +32,7 @@ swagger:
     enabled: true
 
 istio:
-    enabled: true
+    enabled: false
 
 resources:
   {}
