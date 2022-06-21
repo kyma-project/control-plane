@@ -99,5 +99,5 @@ spec:
       - destination:
           host: kcp-kyma-environment-broker
           port:
-            number: 8
+            number: 80
 {{ end }}
