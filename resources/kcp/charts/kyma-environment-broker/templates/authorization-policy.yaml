@@ -3,146 +3,6 @@
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: istio-info-runtimes
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods:
-        - GET
-        paths:
-        - /info/runtimes
-    from:
-      - source:
-          requestPrincipals:
-          - https://oauth2.{{ .Values.global.ingress.domainName }}/*
-    when:
-    - key: request.auth.claims[scp]
-      values:
-      - cld:read
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: istio-oauth2
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods:
-        - GET
-        - PUT
-        - PATCH
-        - DELETE
-        paths:
-        - /oauth/*
-    from:
-      - source:
-          requestPrincipals:
-          - https://oauth2.{{ .Values.global.ingress.domainName }}/*
-    when:
-    - key: request.auth.claims[scp]
-      values:
-      - broker:write
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: istio-runtimes
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods:
-        - GET
-        paths:
-        - /runtimes
-    from:
-      - source:
-          requestPrincipals:
-          - {{ tpl .Values.oidc.issuer $ }}/*
-    when:
-    - key: request.auth.claims[scope]
-      values:
-      - {{ .Values.oidc.groups.admin }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: istio-orchestrations
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods:
-        - GET
-        - PUT
-        - POST
-        paths:
-        - /orchestrations*
-    from:
-      - source:
-          requestPrincipals:
-          - {{ tpl .Values.oidc.issuer $ }}/*
-    when:
-    - key: request.auth.claims[scope]
-      values:
-      - {{ .Values.oidc.groups.orchestrations }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: istio-upgrade
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods:
-        - POST
-        paths:
-        - /upgrade/*
-    from:
-      - source:
-          requestPrincipals:
-          - {{ tpl .Values.oidc.issuer $ }}/*
-    when:
-    - key: request.auth.claims[scope]
-      values:
-      - {{ .Values.oidc.groups.orchestrations }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
   name: oathkeeper-passthrough
   namespace: kcp-system
 spec:
@@ -161,12 +21,16 @@ metadata:
 spec:
   action: ALLOW
   rules:
-    - to:
+    - from:
+        - source:
+            namespaces:
+              - istio-system
+      to:
         - operation:
             methods:
               - GET
             paths:
-              - /kubeconfig/*
+              - /kubeconfig*
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
