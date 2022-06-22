@@ -41,19 +41,19 @@ spec:
           number: 80
   - corsPolicy:
       allowHeaders:
-        - Authorization
-        - Content-Type
-      allowMethods: ["GET"]
+      - Authorization
+      - Content-Type
+      allowMethods: ["POST"]
       allowOrigins:
       - regex: ".*"
     match:
-      - uri:
-          regex: /runtimes
+    - uri:
+        regex: /upgrade/.*
     route:
-      - destination:
-          host: {{ include "kyma-env-broker.fullname" . }}
-          port:
-            number: 80
+    - destination:
+        host: {{ include "kyma-env-broker.fullname" . }}
+        port:
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -71,19 +71,20 @@ spec:
           number: 80
   - corsPolicy:
       allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["POST"]
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
       allowOrigins:
       - regex: ".*"
     match:
-    - uri:
-        regex: /upgrade/.*
+      - uri:
+          regex: /runtimes
     route:
-    - destination:
-        host: {{ include "kyma-env-broker.fullname" . }}
-        port:
-          number: 80
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  # kubeconfig endpoint exposed without authorization
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -96,7 +97,7 @@ spec:
           regex: /kubeconfig/.*
     route:
       - destination:
-          host: kcp-kyma-environment-broker
+          host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
   {{- if .Values.swagger.virtualService.enabled }}
