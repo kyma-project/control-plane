@@ -56,6 +56,7 @@ spec:
         - source:
             namespaces:
               - monitoring-system
+              - kcp-system
       to:
         - operation:
             methods:
