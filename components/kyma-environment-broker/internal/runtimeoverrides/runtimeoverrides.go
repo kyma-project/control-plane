@@ -59,7 +59,6 @@ func NewRuntimeOverrides(ctx context.Context, log logrus.FieldLogger, cli client
 
 func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersion, account, subaccount string) error {
 	{
-		fmt.Println("start to call ro.collectFromSecrets()")
 		componentsOverrides, globalOverrides, err := ro.collectFromSecrets()
 		if err != nil {
 			return err
@@ -69,7 +68,6 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersi
 	}
 
 	{
-		fmt.Println("start to call ro.collectFromConfigMaps()")
 		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion, account, subaccount)
 		if err != nil {
 			return err
