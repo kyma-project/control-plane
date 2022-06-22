@@ -100,4 +100,52 @@ spec:
           host: kcp-kyma-environment-broker
           port:
             number: 80
+  {{- if .Values.swagger.virtualService.enabled }}
+  # swagger exposed without authorization on root endpoint also needs access to static resources placed under /swagger folder
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          exact: /
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          regex: /swagger.*
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          regex: /schema.*
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
+  {{- end }}
 {{ end }}

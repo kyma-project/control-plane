@@ -35,6 +35,11 @@ spec:
               - GET
             paths:
               - /kubeconfig*
+              {{- if .Values.swagger.virtualService.enabled }}
+              - /
+              - /swagger*
+              - /schema*
+              {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
