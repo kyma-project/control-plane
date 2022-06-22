@@ -147,4 +147,4 @@ spec:
           host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
-  {{- end }}
+  {{ end }}
