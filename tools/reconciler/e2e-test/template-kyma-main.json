@@ -124,36 +124,6 @@
         ]
       },
       {
-        "component": "service-catalog",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "service-catalog-addons",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "helm-broker",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "cluster-users",
         "namespace": "kyma-system",
         "configuration": [
