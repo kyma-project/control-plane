@@ -11,7 +11,6 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 host: "kyma-env-broker"
-istioHost: "keb"
 manageSecrets: true
 
 broker:

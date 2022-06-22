@@ -1,3 +1,4 @@
+{{ if .Values.istio.enabled}}
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -21,9 +22,9 @@ spec:
         regex: /oauth/([^/]+/)?v2/.*
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -36,39 +37,9 @@ spec:
         regex: /info/runtimes
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["POST"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: /upgrade/.*
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
-  - corsPolicy:
-      allowHeaders:
-      - Authorization
-      - Content-Type
-      allowMethods: ["GET", "PUT"]
-      allowOrigins:
-      - regex: ".*"
-    match:
-    - uri:
-        regex: /orchestrations.*
-    route:
-    - destination:
-        host: {{ .Values.global.oathkeeper.host }}
-        port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -81,10 +52,39 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: {{ .Values.global.oathkeeper.host }}
+          host: {{ include "kyma-env-broker.fullname" . }}
           port:
-            number: {{ .Values.global.oathkeeper.port }}
-  # kubeconfig endpoint exposed without authorization
+            number: 80
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["GET", "PUT"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+    - uri:
+        regex: /orchestrations.*
+    route:
+    - destination:
+        host: {{ include "kyma-env-broker.fullname" . }}
+        port:
+          number: 80
+  - corsPolicy:
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      allowMethods: ["POST"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+    - uri:
+        regex: /upgrade/.*
+    route:
+    - destination:
+        host: {{ include "kyma-env-broker.fullname" . }}
+        port:
+          number: 80
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -97,7 +97,7 @@ spec:
           regex: /kubeconfig/.*
     route:
       - destination:
-          host: {{ include "kyma-env-broker.fullname" . }}
+          host: kcp-kyma-environment-broker
           port:
             number: 80
   {{- if .Values.swagger.virtualService.enabled }}
@@ -147,4 +147,5 @@ spec:
           host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
-  {{ end }}
+  {{- end }}
+{{ end }}
