@@ -1,21 +1,3 @@
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: oathkeeper-passthrough
-  namespace: kcp-system
-spec:
-  action: ALLOW
-  rules:
-    - from:
-        - source:
-            principals:
-              - "cluster.local/ns/kyma-system/sa/oathkeeper-maester-account"
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
----
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
