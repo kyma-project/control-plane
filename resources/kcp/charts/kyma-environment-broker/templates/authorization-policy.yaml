@@ -1,0 +1,185 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-passthrough
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces:
+              - istio-system
+      to:
+        - operation:
+            methods:
+              - GET
+            paths:
+              - /kubeconfig*
+              {{- if .Values.swagger.virtualService.enabled }}
+              - /
+              - /swagger*
+              - /schema*
+              {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-monitoring
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths:
+              - /metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-info-runtimes
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /info/runtimes
+    from:
+      - source:
+          requestPrincipals:
+          - https://oauth2.{{ .Values.global.ingress.domainName }}/*
+    when:
+    - key: request.auth.claims[scp]
+      values:
+      - cld:read
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-oauth2
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+        paths:
+        - /oauth/*
+    from:
+      - source:
+          requestPrincipals:
+          - https://oauth2.{{ .Values.global.ingress.domainName }}/*
+    when:
+    - key: request.auth.claims[scp]
+      values:
+      - broker:write
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-runtimes
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /runtimes
+    from:
+      - source:
+          requestPrincipals:
+          - {{ tpl .Values.oidc.issuer $ }}/*
+    when:
+    - key: request.auth.claims[groups]
+      values:
+      - {{ .Values.oidc.groups.admin }}
+      - {{ .Values.oidc.groups.operator }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-orchestrations
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        - PUT
+        - POST
+        paths:
+        - /orchestrations*
+    from:
+      - source:
+          requestPrincipals:
+          - {{ tpl .Values.oidc.issuer $ }}/*
+    when:
+    - key: request.auth.claims[groups]
+      values:
+      - {{ .Values.oidc.groups.orchestrations }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: istio-upgrade
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - POST
+        paths:
+        - /upgrade/*
+    from:
+      - source:
+          requestPrincipals:
+          - {{ tpl .Values.oidc.issuer $ }}/*
+    when:
+    - key: request.auth.claims[groups]
+      values:
+      - {{ .Values.oidc.groups.orchestrations }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}

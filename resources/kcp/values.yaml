@@ -163,9 +163,6 @@ global:
   component_reconcilers:
     enabled: false
     authentication: true
-  oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
-    port: 4455
 pairing-adapter:
   enabled: false
 migratorJobs:

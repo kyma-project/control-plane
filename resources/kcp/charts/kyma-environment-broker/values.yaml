@@ -222,8 +222,8 @@ notification:
   disabled: true
 
 oidc:
-  issuer: https://dex.{{ .Values.global.ingress.domainName }}
-  keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
+  issuer: https://kymatest.accounts400.ondemand.com
+  keysURL: https://kymatest.accounts400.ondemand.com/oauth2/certs
   groups:
     admin: runtimeAdmin
     operator: runtimeOperator
