@@ -1,6 +1,7 @@
 package update
 
 import (
+	"crypto/sha256"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -57,6 +58,13 @@ func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus
 	if status.RuntimeConfiguration.Kubeconfig == nil {
 		log.Errorf("kubeconfig is not provided")
 		return operation, 1 * time.Minute, nil
+	}
+	k := *status.RuntimeConfiguration.Kubeconfig
+	hash := sha256.Sum256([]byte(k))
+	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
+	if len(k) < 10 {
+		log.Errorf("kubeconfig suspiciously small, requeueing after 30s")
+		return operation, 30 * time.Second, nil
 	}
 	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)
 	if err != nil {
