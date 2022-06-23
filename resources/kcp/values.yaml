@@ -3,34 +3,34 @@ global:
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
     reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
-    mothership_reconciler_version: "0c3a856d"
+    mothership_reconciler_version: "c070b5ec"
     components:
       base:
-        version: "0c3a856d"
+        version: "c070b5ec"
       busola-migrator:
-        version: "0c3a856d"
+        version: "c070b5ec"
       cleaner:
-        version: "0c3a856d"
+        version: "c070b5ec"
       connectivity-proxy:
-        version: "0c3a856d"
+        version: "c070b5ec"
       istio-configuration:
-        version: "0c3a856d"
+        version: "c070b5ec"
       istio:
-        version: "0c3a856d"
+        version: "c070b5ec"
       ory:
-        version: "0c3a856d"
+        version: "c070b5ec"
       rafter:
-        version: "0c3a856d"
+        version: "c070b5ec"
       eventing:
-        version: "0c3a856d"
+        version: "c070b5ec"
       serverless:
-        version: "0c3a856d"
+        version: "c070b5ec"
       cluster-essentials:
-        version: "0c3a856d"
+        version: "c070b5ec"
       rma:
-        version: "0c3a856d"
+        version: "c070b5ec"
       sc-migration:
-        version: "0c3a856d"
+        version: "c070b5ec"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
