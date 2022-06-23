@@ -32,7 +32,7 @@ const (
 	DbUser            = "admin"
 	DbPass            = "nimda"
 	DbName            = "broker"
-	DbPort            = "5432/tcp"
+	DbPort            = "5432"
 	DockerUserNetwork = "test_network"
 	EnvPipelineBuild  = "PIPELINE_BUILD"
 )
@@ -350,12 +350,14 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 		}
 	}
 
+	_, parsedPortSpecs, err := nat.ParsePortSpecs([]string{DbPort})
+	if err != nil {
+		return nil, Config{}, errors.Wrap(err, "while parsing ports specs")
+	}
+
 	body, err := cli.ContainerCreate(context.Background(),
 		&container.Config{
 			Image: dbImage,
-			ExposedPorts: nat.PortSet{
-				DbPort: struct{}{},
-			},
 			Env: []string{
 				fmt.Sprintf("POSTGRES_USER=%s", DbUser),
 				fmt.Sprintf("POSTGRES_PASSWORD=%s", DbPass),
@@ -363,8 +365,9 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 			},
 		},
 		&container.HostConfig{
-			NetworkMode:     DockerUserNetwork,
-			PublishAllPorts: true,
+			NetworkMode:     "default",
+			PublishAllPorts: false,
+			PortBindings:    parsedPortSpecs,
 		},
 		&network.NetworkingConfig{
 			EndpointsConfig: map[string]*network.EndpointSettings{
