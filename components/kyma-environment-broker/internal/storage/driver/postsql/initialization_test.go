@@ -16,7 +16,7 @@ func TestInitialization(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Should initialize database when schema not applied", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -32,7 +32,7 @@ func TestInitialization(t *testing.T) {
 	})
 
 	t.Run("Should return error when failed to connect to the database", func(t *testing.T) {
-		containerCleanupFunc, _, err := storage.InitTestDBContainer(t, ctx, "test_DB_3")
+		containerCleanupFunc, _, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_3")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 

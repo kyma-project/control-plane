@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,13 +13,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -70,139 +78,29 @@ func closeDBConnection(connection *dbr.Connection) {
 	}
 }
 
-func InitTestDBContainer(t *testing.T, ctx context.Context, hostname string) (func(), Config, error) {
+func InitTestDBContainer(log func(format string, args ...interface{}), ctx context.Context, hostname string) (func(), Config, error) {
 	_, err := isDockerTestNetworkPresent(ctx)
 	if err != nil {
-		return nil, Config{}, err
+		return nil, Config{}, errors.Wrap(err, "while testing docker network")
 	}
 
 	isAvailable, dbCfg, err := isDBContainerAvailable(hostname, mappedPort)
 	if err != nil {
-		return nil, Config{}, err
+		return nil, Config{}, errors.Wrap(err, "while checking db container")
 	} else if !isAvailable {
-		t.Log("cannot connect to DB container. Creating new Postgres container...")
+		log("cannot connect to DB container. Creating new Postgres container...")
 	} else if isAvailable {
 		return func() {}, dbCfg, nil
 	}
 
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:11",
-		SkipReaper:   true,
-		ExposedPorts: []string{fmt.Sprintf("%s", DbPort)},
-		Networks:     []string{DockerUserNetwork},
-		NetworkAliases: map[string][]string{
-			DockerUserNetwork: {hostname},
-		},
-		Env: map[string]string{
-			"POSTGRES_USER":     DbUser,
-			"POSTGRES_PASSWORD": DbPass,
-			"POSTGRES_DB":       DbName,
-		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections"),
-	}
-
-	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-
-	if err != nil {
-		t.Logf("Failed to create contianer: %s", err.Error())
-		return nil, Config{}, err
-	}
-
-	port, err := postgresContainer.MappedPort(ctx, DbPort)
-	if err != nil {
-		t.Logf("Failed to get mapped port for container %s : %s", postgresContainer.GetContainerID(), err.Error())
-		errTerminate := postgresContainer.Terminate(ctx)
-		if errTerminate != nil {
-			t.Logf("Failed to terminate container %s after failing of getting mapped port: %s", postgresContainer.GetContainerID(), err.Error())
-		}
-		return nil, Config{}, err
-	}
-
-	cleanupFunc := func() {
-		err := postgresContainer.Terminate(ctx)
-		assert.NoError(t, err)
-		time.Sleep(1 * time.Second)
-	}
-
-	dbCfg = makeConnectionString(hostname, port.Port())
-	mappedPort = port.Port()
-
-	return cleanupFunc, dbCfg, nil
-}
-
-func SetupTestDBContainer(ctx context.Context, hostname string) (cleanupFunc func(), dbCfg Config, err error) {
-	_, err = isDockerTestNetworkPresent(ctx)
-	if err != nil {
-		return nil, Config{}, err
-	}
-
-	isAvailable, dbCfg, err := isDBContainerAvailable(hostname, mappedPort)
-	if err != nil {
-		return nil, Config{}, err
-	} else if !isAvailable {
-		log.Print("cannot connect to DB container. Creating new Postgres container...")
-	} else if isAvailable {
-		return func() {}, dbCfg, nil
-	}
-
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:11",
-		SkipReaper:   true,
-		ExposedPorts: []string{fmt.Sprintf("%s", DbPort)},
-		Networks:     []string{DockerUserNetwork},
-		NetworkAliases: map[string][]string{
-			DockerUserNetwork: {hostname},
-		},
-		Env: map[string]string{
-			"POSTGRES_USER":     DbUser,
-			"POSTGRES_PASSWORD": DbPass,
-			"POSTGRES_DB":       DbName,
-		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections"),
-	}
-
-	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-
-	if err != nil {
-		errors.Wrap(err, "failed to create DB contianer")
-		return nil, Config{}, err
-	}
-
-	port, err := postgresContainer.MappedPort(ctx, DbPort)
-	if err != nil {
-		log.Printf("Failed to get mapped port for container %s : %s", postgresContainer.GetContainerID(), err)
-		errTerminate := postgresContainer.Terminate(ctx)
-		if errTerminate != nil {
-			log.Printf("Failed to terminate container %s after failing of getting mapped port: %s", postgresContainer.GetContainerID(), err)
-		}
-		return nil, Config{}, err
-	}
-
-	cleanupFunc = func() {
-		err = postgresContainer.Terminate(ctx)
-		if err != nil {
-			errors.Wrap(err, "failed to remove docker DB container...")
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	dbCfg = makeConnectionString(hostname, port.Port())
-	mappedPort = port.Port()
-
-	return cleanupFunc, dbCfg, err
+	return createDbContainer(log, hostname)
 }
 
 func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
-		t.Logf("Cannot connect to database with URL %s", connectionURL)
-		return nil, err
+		t.Logf("Cannot connect to database with URL - reload test 2 - %s", connectionURL)
+		return nil, errors.Wrap(err, "while waiting for database access")
 	}
 
 	cleanupFunc := func() {
@@ -215,7 +113,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	initialized, err := postsql.CheckIfDatabaseInitialized(connection)
 	if err != nil {
 		CloseDatabase(t, connection)
-		return nil, err
+		return nil, errors.Wrap(err, "while checking DB initialization")
 	} else if initialized {
 		return cleanupFunc, nil
 	}
@@ -224,7 +122,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		log.Printf("Cannot read files from directory %s", dirPath)
-		return nil, err
+		return nil, errors.Wrap(err, "while reading migration data")
 	}
 
 	for _, file := range files {
@@ -235,7 +133,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 			}
 			if _, err = connection.Exec(string(v)); err != nil {
 				log.Printf("Cannot apply file %s", file.Name())
-				return nil, err
+				return nil, errors.Wrap(err, "while applying migration files")
 			}
 		}
 	}
@@ -247,8 +145,8 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
-		log.Printf("Cannot connect to database with URL %s", connectionURL)
-		return nil, err
+		log.Printf("Cannot connect to database with URL - reload test 3 - %s", connectionURL)
+		return nil, errors.Wrap(err, "while connecting to databse")
 	}
 
 	cleanupFunc = func() {
@@ -261,7 +159,7 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	initialized, err := postsql.CheckIfDatabaseInitialized(connection)
 	if err != nil {
 		closeDBConnection(connection)
-		return nil, err
+		return nil, errors.Wrap(err, "while executing migration")
 	} else if initialized {
 		return cleanupFunc, nil
 	}
@@ -270,7 +168,7 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		log.Printf("Cannot read files from directory %s", dirPath)
-		return nil, err
+		return nil, errors.Wrap(err, "while reading files from directory")
 	}
 
 	for _, file := range files {
@@ -281,7 +179,7 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 			}
 			if _, err = connection.Exec(string(v)); err != nil {
 				log.Printf("Cannot apply file %s", file.Name())
-				return nil, err
+				return nil, errors.Wrap(err, "while executing migration")
 			}
 		}
 	}
@@ -291,43 +189,44 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 }
 
 func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
-	netReq := testcontainers.NetworkRequest{
-		Name:   DockerUserNetwork,
-		Driver: "bridge",
-	}
-	provider, err := testcontainers.NewDockerProvider()
 
-	if err != nil || provider == nil {
-		return false, errors.Wrap(err, "Failed to use Docker provider to access network information")
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return false, errors.Wrap(err, "while creating docker client")
 	}
 
-	_, err = provider.GetNetwork(ctx, netReq)
+	filterBy := filters.NewArgs()
+	filterBy.Add("name", DockerUserNetwork)
+	filterBy.Add("driver", "bridge")
+	list, err := cli.NetworkList(context.Background(), types.NetworkListOptions{Filters: filterBy})
 
 	if err == nil {
-		return true, nil
+		return len(list) == 1, nil
 	}
 
-	return false, nil
+	return false, errors.Wrapf(err, "while testing network availbility")
 }
 
-func createTestNetworkForDB(ctx context.Context) (testcontainers.Network, error) {
-	netReq := testcontainers.NetworkRequest{
-		Name:   DockerUserNetwork,
-		Driver: "bridge",
-	}
-	provider, err := testcontainers.NewDockerProvider()
-
-	if err != nil || provider == nil {
-		return nil, errors.Wrap(err, "Failed to use Docker provider to access network information")
+func createTestNetworkForDB(ctx context.Context) (*types.NetworkResource, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create a Docker client")
 	}
 
-	createdNetwork, err := provider.CreateNetwork(ctx, netReq)
-
+	createdNetworkResponse, err := cli.NetworkCreate(context.Background(), DockerUserNetwork, types.NetworkCreate{Driver: "bridge"})
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create docker user network")
 	}
 
-	return createdNetwork, nil
+	filterBy := filters.NewArgs()
+	filterBy.Add("id", createdNetworkResponse.ID)
+	list, err := cli.NetworkList(context.Background(), types.NetworkListOptions{Filters: filterBy})
+
+	if err != nil || len(list) != 1 {
+		return nil, errors.Wrap(err, "network not found or not created")
+	}
+
+	return &list[0], nil
 }
 
 func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
@@ -345,11 +244,16 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 	createdNetwork, err := createTestNetworkForDB(ctx)
 
 	if err != nil {
-		return func() {}, err
+		return func() {}, errors.Wrap(err, "while creating test network")
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create a Docker client")
 	}
 
 	cleanupFunc := func() {
-		err = createdNetwork.Remove(ctx)
+		err = cli.NetworkRemove(ctx, createdNetwork.ID)
 		assert.NoError(t, err)
 		time.Sleep(1 * time.Second)
 	}
@@ -372,18 +276,22 @@ func SetupTestNetworkForDB(ctx context.Context) (cleanupFunc func(), err error) 
 	createdNetwork, err := createTestNetworkForDB(ctx)
 
 	if err != nil {
-		return func() {}, err
+		return func() {}, errors.Wrap(err, "while creating test network")
 	}
 
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create a Docker client")
+	}
 	cleanupFunc = func() {
-		err = createdNetwork.Remove(ctx)
+		err = cli.NetworkRemove(ctx, createdNetwork.ID)
 		if err != nil {
 			errors.Wrap(err, "failed to remove docker network:"+DockerUserNetwork)
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	return cleanupFunc, err
+	return cleanupFunc, errors.Wrap(err, "while DB setup")
 }
 
 func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Config, err error) {
@@ -406,7 +314,7 @@ func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Conf
 		return true, dbCfg, nil
 	}
 
-	return false, Config{}, err
+	return false, Config{}, errors.Wrap(err, "while checking container availbility")
 }
 
 func clearDBQuery() string {
@@ -416,4 +324,124 @@ func clearDBQuery() string {
 		postsql.OrchestrationTableName,
 		postsql.RuntimeStateTableName,
 	)
+}
+
+func createDbContainer(log func(format string, args ...interface{}), hostname string) (func(), Config, error) {
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, Config{}, errors.Wrap(err, "while creating docker client")
+	}
+
+	dbImage := "postgres:11"
+
+	filterBy := filters.NewArgs()
+	filterBy.Add("name", dbImage)
+	image, err := cli.ImageList(context.Background(), types.ImageListOptions{Filters: filterBy})
+
+	if image == nil || err != nil {
+		log("Image not found... pulling...")
+		reader, err := cli.ImagePull(context.Background(), dbImage, types.ImagePullOptions{})
+		io.Copy(os.Stdout, reader)
+		defer reader.Close()
+
+		if err != nil {
+			return nil, Config{}, errors.Wrap(err, "while pulling dbImage")
+		}
+	}
+
+	_, parsedPortSpecs, err := nat.ParsePortSpecs([]string{DbPort})
+	if err != nil {
+		return nil, Config{}, errors.Wrap(err, "while parsing ports specs")
+	}
+
+	body, err := cli.ContainerCreate(context.Background(),
+		&container.Config{
+			Image: dbImage,
+			Env: []string{
+				fmt.Sprintf("POSTGRES_USER=%s", DbUser),
+				fmt.Sprintf("POSTGRES_PASSWORD=%s", DbPass),
+				fmt.Sprintf("POSTGRES_DB=%s", DbName),
+			},
+		},
+		&container.HostConfig{
+			NetworkMode:     "default",
+			PublishAllPorts: false,
+			PortBindings:    parsedPortSpecs,
+		},
+		&network.NetworkingConfig{
+			EndpointsConfig: map[string]*network.EndpointSettings{
+				DockerUserNetwork: {
+					Aliases: []string{
+						hostname,
+					},
+				},
+			},
+		},
+		&v1.Platform{},
+		"")
+
+	if err != nil {
+		return nil, Config{}, errors.Wrap(err, "during container creation")
+	}
+
+	cleanupFunc := func() {
+		cli.ContainerRemove(context.Background(), body.ID, types.ContainerRemoveOptions{RemoveVolumes: true, RemoveLinks: true, Force: true})
+	}
+
+	if err := cli.ContainerStart(context.Background(), body.ID, types.ContainerStartOptions{}); err != nil {
+		return cleanupFunc, Config{}, errors.Wrap(err, "during container startup")
+	}
+
+	err = waitFor(cli, body.ID, "database system is ready to accept connections")
+	if err != nil {
+		log("Failed to query container's logs: %s", err)
+		return cleanupFunc, Config{}, errors.Wrap(err, "while waiting for DB readiness")
+	}
+
+	filterBy = filters.NewArgs()
+	filterBy.Add("id", body.ID)
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{Filters: filterBy})
+
+	if err != nil || len(containers) == 0 {
+		log("no containers found: %s", err)
+		return cleanupFunc, Config{}, errors.Wrap(err, "while loading containers")
+	}
+
+	var container *types.Container = &containers[0]
+
+	if container == nil {
+		log("no container found: %s", err)
+		return cleanupFunc, Config{}, errors.Wrap(err, "while searching for a container")
+	}
+
+	ports := container.Ports
+	if len(ports) != 1 {
+		log("more or less then one binding found")
+		return cleanupFunc, Config{}, errors.New("more or less then one binding found")
+	}
+
+	dbCfg := makeConnectionString(hostname, fmt.Sprint(ports[0].PublicPort))
+
+	return cleanupFunc, dbCfg, nil
+}
+
+func waitFor(cli *client.Client, containerId string, text string) error {
+	return wait.PollImmediate(3*time.Second, 10*time.Second, func() (done bool, err error) {
+		out, err := cli.ContainerLogs(context.Background(), containerId, types.ContainerLogsOptions{ShowStdout: true})
+		if err != nil {
+			return true, errors.Wrap(err, "while loading logs")
+		}
+
+		bufReader := bufio.NewReader(out)
+		defer out.Close()
+
+		for line, isPrefix, err := bufReader.ReadLine(); err == nil; line, isPrefix, err = bufReader.ReadLine() {
+			if !isPrefix && strings.Contains(string(line), text) {
+				return true, nil
+			}
+		}
+
+		return false, errors.Wrap(err, "while waiting for a container")
+	})
 }

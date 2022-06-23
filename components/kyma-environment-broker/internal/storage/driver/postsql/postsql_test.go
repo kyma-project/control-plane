@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	}
 	defer cleanupNetwork()
 
-	containerCleanupFunc, cfg, err := storage.SetupTestDBContainer(ctx, "test_DB_1")
+	containerCleanupFunc, cfg, err := storage.InitTestDBContainer(log.Printf, ctx, "test_DB_1")
 	if err != nil {
 		log.Fatal(err)
 	}
