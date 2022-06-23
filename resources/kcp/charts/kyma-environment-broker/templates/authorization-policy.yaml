@@ -38,9 +38,6 @@ spec:
         - operation:
             paths:
               - /metrics
-      from:
-        - source:
-            principals: ["cluster.local*"]
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
