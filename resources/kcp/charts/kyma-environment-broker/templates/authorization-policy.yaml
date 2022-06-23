@@ -39,6 +39,7 @@ spec:
             namespaces:
               - monitoring-system
               - kcp-system
+              - kyma-system
       to:
         - operation:
             methods:
