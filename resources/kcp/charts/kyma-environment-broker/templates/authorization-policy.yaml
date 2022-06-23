@@ -36,8 +36,7 @@ spec:
   rules:
     - from:
         - source:
-            - source:
-                principals: ["cluster.local/*"]
+            principals: ["cluster.local/*"]
       to:
         - operation:
             methods:
