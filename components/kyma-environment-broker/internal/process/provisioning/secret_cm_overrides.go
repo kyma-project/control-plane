@@ -51,11 +51,6 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
-	if globalAccountID == "" || subAccountID == "" {
-		log.Errorf("cannot find global accountID '%s' or subAccountID '%s' ", globalAccountID, subAccountID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters on globalAccount/subAccount", nil, log)
-	}
-
 	overridesVersion := s.getOverridesVersion(operation)
 
 	if overridesVersion == "" { // if no overrides version number specified explicitly we read the RuntimeVersion

@@ -1,7 +1,6 @@
 package upgrade_kyma
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -43,7 +42,6 @@ func (s *OverridesFromSecretsAndConfigStep) Name() string {
 }
 
 func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	fmt.Printf("execute upgrade_kyma secret_cm_ovrrides.go Run()")
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
@@ -52,11 +50,6 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
-	if globalAccountID == "" || subAccountID == "" {
-		log.Errorf("cannot find global accountID '%s' or subAccountID '%s' ", globalAccountID, subAccountID)
-		return s.operationManager.OperationFailed(operation, "invalid operation provisioning parameters on globalAccount/subAccount", nil, log)
-	}
-
 	version, err := s.getRuntimeVersion(operation)
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 5*time.Minute, log)

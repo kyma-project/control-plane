@@ -3,7 +3,6 @@ package runtimeoverrides
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -13,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	coreV1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,16 +27,7 @@ const (
 	PLANNAME                       = "planeName"
 	ACCOUNT                        = "account"
 	SUBACCOUNT                     = "subaccount"
-	LEVEL1                         = 1
-	LEVEL2                         = 2
-	LEVEL3                         = 3
 )
-
-var OverridesMapping = map[int]string{
-	LEVEL1: PLANNAME,
-	LEVEL2: ACCOUNT,
-	LEVEL3: SUBACCOUNT,
-}
 
 type InputAppender interface {
 	AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator
@@ -120,31 +111,28 @@ func (ro *runtimeOverrides) collectFromSecrets() (map[string][]*gqlschema.Config
 func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, account, subaccount string) (map[string][]*gqlschema.ConfigEntryInput, []*gqlschema.ConfigEntryInput, error) {
 	componentsOverrides := make(map[string][]*gqlschema.ConfigEntryInput, 0)
 	globalOverrides := make([]*gqlschema.ConfigEntryInput, 0)
+	OverrideTypeLabelKeys := []string{overridesPlanLabelPrefix + planName, overridesAccountLabelPrefix + account, overridesSubaccountLabelPrefix + subaccount}
 
-	overrideList := map[int]string{1: planName, 2: account, 3: subaccount}
-
-	//to guaranteed the same result from one iteration to the next
-	var keys []int
-	for k := range overrideList {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-
-	for _, k := range keys {
-		overrideType := OverridesMapping[k]
-		ro.log.Infof("collectFromConfigMaps() overrideType %s on account %s subaccount %s\n", overrideType, account, subaccount)
+	for _, labelKey := range OverrideTypeLabelKeys {
+		ro.log.Debugf("collectFromConfigMaps() labelKey %s on account %s subaccount %s\n", labelKey, account, subaccount)
 		configMaps := &coreV1.ConfigMapList{}
-		listOpts := configMapListOptions(overrideType, overrideList[k], overridesVersion)
+		listOpts := configMapListOptions(labelKey, overridesVersion)
 
 		if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
-			errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
-			return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
+			switch labelKey {
+			case overridesPlanLabelPrefix + planName:
+				return componentsOverrides, globalOverrides, printOverrideError(err)
+			default:
+				if !apiErrors.IsNotFound(err) {
+					return componentsOverrides, globalOverrides, printOverrideError(err)
+				}
+			}
 		}
 
 		for _, cm := range configMaps.Items {
 			component, global := getComponent(cm.Labels)
 			for key, value := range cm.Data {
-				ro.log.Infof("collectFromConfigMaps() component , global: %s %s overrideType key value : %s %s %s", component, global, overrideType, key, value)
+				ro.log.Debugf("collectFromConfigMaps() component , global: %s %s overrideType key value : %s %s %s", component, global, labelKey, key, value)
 				if global {
 					globalOverrides = append(globalOverrides, &gqlschema.ConfigEntryInput{
 						Key:   key,
@@ -162,6 +150,11 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion, ac
 	return componentsOverrides, globalOverrides, nil
 }
 
+func printOverrideError(err error) error {
+	errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
+	return errors.Wrap(err, errMsg)
+}
+
 func secretListOptions() []client.ListOption {
 	label := map[string]string{
 		overridesSecretLabel: "true",
@@ -173,33 +166,13 @@ func secretListOptions() []client.ListOption {
 	}
 }
 
-func configMapListOptions(overType string, value string, version string) []client.ListOption {
+func configMapListOptions(labelkey string, version string) []client.ListOption {
 	var label map[string]string
-	switch overType {
-	case "planeName":
-		planLabel := overridesPlanLabelPrefix + value
-		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
+	versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
 
-		label = map[string]string{
-			planLabel:    "true",
-			versionLabel: "true",
-		}
-	case "account":
-		accountLabel := overridesAccountLabelPrefix + value
-		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
-
-		label = map[string]string{
-			accountLabel: "true",
-			versionLabel: "true",
-		}
-	case "subaccount":
-		subaccountLabel := overridesSubaccountLabelPrefix + value
-		versionLabel := overridesVersionLabelPrefix + strings.ToLower(version)
-
-		label = map[string]string{
-			subaccountLabel: "true",
-			versionLabel:    "true",
-		}
+	label = map[string]string{
+		labelkey:     "true",
+		versionLabel: "true",
 	}
 	return []client.ListOption{
 		client.InNamespace(namespace),
