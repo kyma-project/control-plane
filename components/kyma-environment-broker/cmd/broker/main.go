@@ -672,23 +672,12 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
 		},
 		{
-			condition: provisioning.ForKyma1,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
-		},
-		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			condition: provisioning.ForKyma1,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateRuntimeStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
-		},
-		{
-			condition: provisioning.ForKyma2,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		// check the runtime status
 		{
@@ -696,19 +685,16 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
 		},
 		{
-			condition: provisioning.ForKyma2,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 		},
 		{
-			condition: provisioning.ForKyma2,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			stage: createRuntimeStageName,
+			step:  provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
 		},
 		{
-			condition: provisioning.ForKyma2,
-			stage:     checkKymaStageName,
-			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
+			stage: checkKymaStageName,
+			step:  provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 		},
 		// post actions
 		{
@@ -950,18 +936,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight: 5,
-			step:   upgrade_kyma.NewAuditLogOverridesStep(fileSystem, db.Operations(), cfg.AuditLog),
-			cnd:    upgrade_kyma.ForKyma1,
-		},
-		{
 			weight: 6,
 			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
-		},
-		{
-			weight: 8,
-			step:   upgrade_kyma.NewUpgradeKymaStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
-			cnd:    upgrade_kyma.ForKyma1,
 		},
 		{
 			weight:   8,

@@ -84,6 +84,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
 			}
+			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 		}, log)
 		if delay != 0 {
 			log.Errorf("unable to update the operation (move to 'in progress'), retrying")

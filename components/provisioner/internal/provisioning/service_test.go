@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+
 	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pkg/errors"
@@ -865,13 +867,28 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	operationMatcher := getOperationMatcher(expectedOperation)
 
+	providedShoot := func(kubernetesVersion string, shootNetworkingFilterDisabled *bool) gardener_Types.Shoot {
+		shoot := gardener_Types.Shoot{
+			Spec: gardener_Types.ShootSpec{
+				Kubernetes: gardener_Types.Kubernetes{Version: kubernetesVersion},
+			},
+		}
+		if shootNetworkingFilterDisabled != nil {
+			shoot.Spec.Extensions = []gardener_Types.Extension{{
+				Type:     model.ShootNetworkingFilterExtensionType,
+				Disabled: shootNetworkingFilterDisabled,
+			}}
+		}
+		return shoot
+	}
+
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider, upgradeQueue *mocks.OperationQueue)
 	}{
 		{
 			description: "should fail to upgrade Runtime when failed to commit transaction",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider, upgradeQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -881,16 +898,17 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20", util.BoolPtr(true)), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Runtime without Kyma config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeQueue *mocks.OperationQueue) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider, upgradeQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -903,7 +921,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("RollbackUnlessCommitted").Return()
 				upgradeQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19", nil), nil)
 			},
 		},
 	} {
@@ -917,11 +935,11 @@ func TestService_UpgradeRuntime(t *testing.T) {
 			deprovisioningQueue := &mocks.OperationQueue{}
 			upgradeQueue := &mocks.OperationQueue{}
 			upgradeShootQueue := &mocks.OperationQueue{}
-			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+			shootProvider := &mocks2.ShootProvider{}
 
-			testCase.mockFunc(sessionFactory, writeSession, readSession, kubernetesVersionProvider, upgradeQueue)
+			testCase.mockFunc(sessionFactory, writeSession, readSession, shootProvider, upgradeQueue)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, kubernetesVersionProvider, nil, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, shootProvider, nil, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
 
 			// when
 			operationStatus, err := service.UpgradeRuntime(runtimeID, upgradeInput)
@@ -940,11 +958,11 @@ func TestService_UpgradeRuntime(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider)
 	}{
 		{
 			description: "should fail to upgrade Runtime when failed to commit transaction",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -954,14 +972,15 @@ func TestService_UpgradeRuntime(t *testing.T) {
 				writeSession.On("SetActiveKymaConfig", runtimeID, mock.AnythingOfType("string")).Return(nil)
 				writeSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 				writeSession.On("UpdateKubernetesVersion", runtimeID, "1.20").Return(nil)
+				writeSession.On("UpdateShootNetworkingFilterDisabled", runtimeID, mock.AnythingOfType("*bool")).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20", util.BoolPtr(true)), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Runtime without Kyma config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(clusterWithNoKymaConfig, nil)
@@ -969,30 +988,30 @@ func TestService_UpgradeRuntime(t *testing.T) {
 		},
 		{
 			description: "should fail to upgrade Runtime when failed to insert new Kyma Config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("InsertKymaConfig", mock.AnythingOfType("model.KymaConfig")).Return(dberrors.Internal("error"))
 				writeSession.On("RollbackUnlessCommitted").Return()
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19", nil), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Runtime when last operation is in progress",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
 			},
 		},
 		{
-			description: "should fail to upgrade Runtime when failed to get Kubernetes version",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			description: "should fail to upgrade Runtime when failed to get shoot",
+			mockFunc: func(sessionFactory *sessionMocks.Factory, writeSession *sessionMocks.WriteSessionWithinTransaction, readSession *sessionMocks.ReadSession, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession, nil)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+				shootProvider.On("Get", runtimeID, tenant).Return(gardener_Types.Shoot{}, apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
@@ -1006,11 +1025,11 @@ func TestService_UpgradeRuntime(t *testing.T) {
 			deprovisioningQueue := &mocks.OperationQueue{}
 			upgradeQueue := &mocks.OperationQueue{}
 			upgradeShootQueue := &mocks.OperationQueue{}
-			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+			shootProvider := &mocks2.ShootProvider{}
 
-			testCase.mockFunc(sessionFactory, writeSession, readSession, kubernetesVersionProvider)
+			testCase.mockFunc(sessionFactory, writeSession, readSession, shootProvider)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, kubernetesVersionProvider, nil, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, nil, uuidGenerator, shootProvider, nil, provisioningQueue, nil, deprovisioningQueue, nil, upgradeQueue, upgradeShootQueue, nil)
 
 			// when
 			_, err := service.UpgradeRuntime(runtimeID, upgradeInput)
@@ -1045,6 +1064,14 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		},
 	}
 
+	providedShoot := func(kubernetesVersion string) gardener_Types.Shoot {
+		return gardener_Types.Shoot{
+			Spec: gardener_Types.ShootSpec{
+				Kubernetes: gardener_Types.Kubernetes{Version: kubernetesVersion},
+			},
+		}
+	}
+
 	upgradeShootInput := newUpgradeShootInputAwsAzureGCP("testing")
 	upgradedConfig, err := inputConverter.UpgradeShootInputToGardenerConfig(*upgradeShootInput.GardenerConfig, cluster.ClusterConfig)
 	require.NoError(t, err)
@@ -1060,11 +1087,11 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider, upgradeShootQueue *mocks.OperationQueue)
 	}{
 		{
 			description: "should start runtime provisioning of Gardener cluster, update Kubernetes version and return operation ID",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider, upgradeShootQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -1081,12 +1108,12 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, newUpgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.20", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.20"), nil)
 			},
 		},
 		{
 			description: "should start runtime provisioning of Gardener cluster and return operation ID",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider, upgradeShootQueue *mocks.OperationQueue) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider, upgradeShootQueue *mocks.OperationQueue) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -1099,7 +1126,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(nil)
 				upgradeShootQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 	} {
@@ -1112,11 +1139,11 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			provisioner := &mocks2.Provisioner{}
 			upgradeShootQueue := &mocks.OperationQueue{}
 
-			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+			shootProvider := &mocks2.ShootProvider{}
 
-			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, kubernetesVersionProvider, upgradeShootQueue)
+			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider, upgradeShootQueue)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, kubernetesVersionProvider, nil, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
 
 			// when
 			operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
@@ -1134,11 +1161,11 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 	for _, testCase := range []struct {
 		description string
-		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider)
+		mockFunc    func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider)
 	}{
 		{
 			description: "should fail to upgrade Shoot when failed to commit shoot update",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -1150,12 +1177,12 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(nil)
 				writeSession.On("Commit").Return(dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to upgrade cluster",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
@@ -1166,34 +1193,34 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 				writeSession.On("InsertAdministrators", runtimeID, mock.Anything).Return(nil)
 				provisioner.On("setOperationStarted", writeSession, runtimeID, model.UpgradeShoot, model.WaitingForShootNewVersion, nil, nil).Return(mock.MatchedBy(operationMatcher), nil)
 				provisioner.On("UpgradeCluster", runtimeID, upgradedConfig).Return(apperrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to update gardener cluster config",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(writeSession, nil)
 				writeSession.On("RollbackUnlessCommitted").Return()
 				writeSession.On("UpdateGardenerClusterConfig", upgradedConfig).Return(dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to create write session",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
 				sessionFactory.On("NewSessionWithinTransaction").Return(nil, dberrors.Internal("error"))
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("1.19", nil)
+				shootProvider.On("Get", runtimeID, tenant).Return(providedShoot("1.19"), nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to get cluster",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("error"))
@@ -1201,25 +1228,25 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to get last operation",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("error"))
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when last operation is in progress",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(model.Operation{State: model.InProgress}, nil)
 			},
 		},
 		{
 			description: "should fail to upgrade Shoot when failed to get Kubernetes version",
-			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, kubernetesVersionProvider *mocks2.KubernetesVersionProvider) {
+			mockFunc: func(sessionFactory *sessionMocks.Factory, readSession *sessionMocks.ReadSession, writeSession *sessionMocks.WriteSessionWithinTransaction, provisioner *mocks2.Provisioner, shootProvider *mocks2.ShootProvider) {
 				sessionFactory.On("NewReadSession").Return(readSession)
 				readSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 				readSession.On("GetCluster", runtimeID).Return(cluster, nil)
-				kubernetesVersionProvider.On("Get", runtimeID, tenant).Return("", apperrors.Internal("oh, no!"))
+				shootProvider.On("Get", runtimeID, tenant).Return(gardener_Types.Shoot{}, apperrors.Internal("oh, no!"))
 			},
 		},
 	} {
@@ -1232,11 +1259,11 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 			provisioner := &mocks2.Provisioner{}
 			upgradeShootQueue := &mocks.OperationQueue{}
 
-			kubernetesVersionProvider := &mocks2.KubernetesVersionProvider{}
+			shootProvider := &mocks2.ShootProvider{}
 
-			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, kubernetesVersionProvider)
+			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, kubernetesVersionProvider, nil, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, nil, nil, nil, nil, upgradeShootQueue, nil)
 
 			// when
 			_, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)

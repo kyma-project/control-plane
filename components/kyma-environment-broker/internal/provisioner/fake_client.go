@@ -77,11 +77,6 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 			return status
 		}
 	}
-	for _, status := range c.operations {
-		if *status.RuntimeID == runtimeID && status.Operation == operationType {
-			return status
-		}
-	}
 	return schema.OperationStatus{}
 }
 

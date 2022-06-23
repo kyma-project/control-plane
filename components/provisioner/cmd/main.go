@@ -258,7 +258,7 @@ func main() {
 		releaseProvider,
 		directorClient,
 		installationService,
-		gardener.NewKubernetesVersionProvider(shootClient),
+		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
 		provisioningNoInstallQueue,
 		deprovisioningQueue,

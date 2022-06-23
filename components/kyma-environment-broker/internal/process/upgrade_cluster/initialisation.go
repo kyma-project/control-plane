@@ -100,6 +100,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 		}
 
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
+			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
@@ -113,7 +114,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 		return s.initializeUpgradeShootRequest(operation, log)
 	}
 
-	log.Infof("runtime being upgraded, check operation status")
+	log.Infof("runtime being upgraded, check operation status for provisioner operation id: %v", operation.ProvisionerOperationID)
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeOperation.RuntimeID))
 }
 

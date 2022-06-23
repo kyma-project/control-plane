@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/reload"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 
 	"github.com/gorilla/mux"
@@ -31,6 +32,11 @@ func main() {
 
 	if err != nil {
 		log.Fatalf("Cannot create OIDC Authenticator, %v", err)
+	}
+
+	err = runtime.SetupConfigMap()
+	if err != nil {
+		log.Fatalf("Cannot initialize Config Map, %v", err)
 	}
 
 	ec := endpoints.NewEndpointClient(env.Config.GraphqlURL)

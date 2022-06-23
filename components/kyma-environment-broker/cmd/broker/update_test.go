@@ -45,7 +45,7 @@ func TestUpdate(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -161,7 +161,7 @@ func TestUpdateDeprovisioningInstance(t *testing.T) {
 				}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// deprovision
 	resp = suite.CallAPI("DELETE", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
@@ -218,7 +218,7 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 				}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -277,7 +277,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -344,7 +344,7 @@ func TestUpdateContext(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	// OSB update
@@ -449,7 +449,7 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -468,6 +468,7 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
+	suite.FinishDeprovisioningByReconciler(suspensionOpID)
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
 
@@ -487,7 +488,7 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
        
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	suite.processProvisioningByInstanceID(iid)
+	suite.processReconciliationByInstanceID(iid)
 
 	// check that the region and zone is set
 	suite.AssertAWSRegionAndZone("us-east-1")
@@ -524,7 +525,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -543,6 +544,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
+	suite.FinishDeprovisioningByReconciler(suspensionOpID)
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
 
@@ -588,8 +590,9 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
    }`)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.DecodeOperationID(resp)
 	// WHEN
-	suite.processProvisioningByInstanceID(iid)
+	suite.processReconciliationByInstanceID(iid)
 
 	// THEN
 	instance = suite.GetInstance(iid)
@@ -627,7 +630,7 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 	// provisioning done, let's start an update
 
 	// when
@@ -669,7 +672,7 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -738,7 +741,7 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -803,7 +806,7 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -876,7 +879,7 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -944,7 +947,7 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1011,7 +1014,7 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1082,7 +1085,7 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1150,7 +1153,7 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1225,7 +1228,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
    }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1336,7 +1339,7 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1413,7 +1416,7 @@ func TestUpdateAutoscalerWrongParams(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1461,7 +1464,7 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1599,7 +1602,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processProvisioningByOperationID(opID)
+	suite.processReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -1622,6 +1625,7 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suspensionOpID := suite.WaitForLastOperation(iid, domain.InProgress)
 
+	suite.FinishDeprovisioningByReconciler(suspensionOpID)
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
 
@@ -1704,11 +1708,11 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
 	time.Sleep(5 * time.Millisecond)
+	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime mid update")
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 
 	// check first call to reconciler installing BTP-Operator and sc-migration, disabling SVCAT
-	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
-	assert.NoError(t, err, "getting runtime mid update")
 	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
 	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
 	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
@@ -2053,6 +2057,82 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+}
+
+func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t, "2.0")
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname2"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	instance := suite.GetInstance(id)
+
+	// then
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
+	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"context": {
+				"license_type": "CUSTOMER"
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+	instance2 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"context":{},
+			"parameters":{
+			    "name":"$instance",
+			    "administrators":["jan.wozniak@sap.com", "wozniak.jan@gmail.com", "jan@kubermatic.com"]
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperation2ID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperation2ID)
+	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
+	instance3 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
+	disabled := true
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
 }
 
 func componentNames(components []reconcilerApi.Component) []string {

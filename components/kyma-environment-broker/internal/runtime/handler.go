@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 )
 
@@ -81,7 +80,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		err = h.setRuntimeStateByOperationState(&dto)
+		err = h.determineStatusModifiedAt(&dto)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return
@@ -133,36 +132,7 @@ func (h *Handler) takeLastNonDryRunClusterOperations(oprs []internal.UpgradeClus
 	return toReturn, totalCount
 }
 
-func (h *Handler) setRuntimeStateByOperationState(dto *pkg.RuntimeDTO) error {
-	// Determine runtime state based on the last operation of the runtime
-	lastOp := dto.LastOperation()
-	switch lastOp.State {
-	case string(domain.Succeeded):
-		dto.Status.State = pkg.StateSucceeded
-		if lastOp.Type == pkg.Suspension {
-			dto.Status.State = pkg.StateSuspended
-		}
-	case string(domain.Failed):
-		dto.Status.State = pkg.StateFailed
-		switch lastOp.Type {
-		case pkg.UpgradeKyma, pkg.UpgradeCluster, pkg.Update:
-			dto.Status.State = pkg.StateError
-		}
-	case string(domain.InProgress):
-		switch lastOp.Type {
-		case pkg.Provision, pkg.Unsuspension:
-			dto.Status.State = pkg.StateProvisioning
-		case pkg.Deprovision, pkg.Suspension:
-			dto.Status.State = pkg.StateDeprovisioning
-		case pkg.UpgradeKyma, pkg.UpgradeCluster:
-			dto.Status.State = pkg.StateUpgrading
-		case pkg.Update:
-			dto.Status.State = pkg.StateUpdating
-		}
-	default:
-		dto.Status.State = pkg.StateSucceeded
-	}
-
+func (h *Handler) determineStatusModifiedAt(dto *pkg.RuntimeDTO) error {
 	// Determine runtime modifiedAt timestamp based on the last operation of the runtime
 	last, err := h.operationsDb.GetLastOperation(dto.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
