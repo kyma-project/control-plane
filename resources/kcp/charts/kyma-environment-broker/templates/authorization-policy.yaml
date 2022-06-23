@@ -36,10 +36,8 @@ spec:
   rules:
     - from:
         - source:
-            namespaces:
-              - monitoring-system
-              - kcp-system
-              - kyma-system
+            - source:
+                principals: ["cluster.local/*"]
       to:
         - operation:
             methods:
