@@ -158,6 +158,8 @@ global:
     features: |-
       - name: "LOG_ISTIO_OPERATOR"
         value: "false"
+      - name: "DEBUG_LOGGING_FOR_SPECIFIC_OPERATIONS"
+        value: "true"
   component_reconcilers:
     enabled: false
     authentication: true

@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,8 +62,21 @@ func SetupConfigMap() error {
 			log.Infof("Found ConfigMap for runtime %s user %s.", runtimeID, userID)
 			c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
 			status, err := c.RuntimeStatus(runtimeID)
-			if err != nil {
-				log.Errorf("Failed to get runtime status.")
+			if strings.Contains(fmt.Sprint(err), "not found") && strings.Contains(fmt.Sprint(err), "error getting Shoot") {
+				//delete ConfigMap if shoot no longer exists
+				coreClientset, err := GetK8sClient()
+				if err != nil {
+					log.Errorf("Failed to create core client set.")
+					return err
+				}
+				err = cleanConfigMap(coreClientset, userID, runtimeID)
+				if err != nil {
+					log.Errorf("Failed to clean ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
+					return err
+				}
+				continue
+			} else if err != nil {
+				log.Errorf("Failed to fetch runtime status.")
 				return err
 			}
 			rawConfig := *status.RuntimeConfiguration.Kubeconfig
@@ -167,39 +181,10 @@ func (rtc *RuntimeClient) UpdateConfigMap(runtimeID string) error {
 		return nil
 	}
 
-	var patches []*JsonPatchType
-	path := "/data/" + runtimeID
-	patch := &JsonPatchType{
-		Op:   "remove",
-		Path: path,
-	}
-	patches = append(patches, patch)
-	payload, err := json.Marshal(patches)
+	err = cleanConfigMap(rtc.KcpK8s, userID, runtimeID)
 	if err != nil {
-		log.Errorf("Failed to marshal patch, %s", err.Error())
+		log.Errorf("Failed to clean ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
 		return err
-	}
-	_, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
-	if err != nil {
-		log.Errorf("Failed to update ConfigMap, %s", err.Error())
-		return err
-	}
-	log.Infof("Succeeded in cleaning up everything for runtime %s user %s", runtimeID, userID)
-
-	//remove user ConfigMap if no runtime left
-	cm, err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
-	if err != nil {
-		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
-		return err
-	}
-	if len(cm.Data) == 0 {
-		log.Infof("No runtime left for user %s, start to remove ConfigMap.", userID)
-		err = rtc.KcpK8s.CoreV1().ConfigMaps(KcpNamespace).Delete(context.Background(), userID, metav1.DeleteOptions{})
-		if err != nil {
-			log.Errorf("Failed to delete ConfigMap for user %s", userID)
-			return err
-		}
-		log.Infof("Succeeded in removing ConfigMap for user %s.", userID)
 	}
 
 	return nil
@@ -284,4 +269,42 @@ func getConfigMapList() (*v1.ConfigMapList, error) {
 		return nil, err
 	}
 	return cmlist, nil
+}
+
+func cleanConfigMap(coreClientset kubernetes.Interface, userID string, runtimeID string) error {
+	var patches []*JsonPatchType
+	path := "/data/" + runtimeID
+	patch := &JsonPatchType{
+		Op:   "remove",
+		Path: path,
+	}
+	patches = append(patches, patch)
+	payload, err := json.Marshal(patches)
+	if err != nil {
+		log.Errorf("Failed to marshal patch, %s", err.Error())
+		return err
+	}
+	_, err = coreClientset.CoreV1().ConfigMaps(KcpNamespace).Patch(context.Background(), userID, types.JSONPatchType, payload, metav1.PatchOptions{})
+	if err != nil {
+		log.Errorf("Failed to update ConfigMap, %s", err.Error())
+		return err
+	}
+	log.Infof("Succeeded in cleaning up everything for runtime %s user %s", runtimeID, userID)
+
+	//remove user ConfigMap if no runtime left
+	cm, err := coreClientset.CoreV1().ConfigMaps(KcpNamespace).Get(context.Background(), userID, metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("Failed to get ConfigMap for user %s runtime %s, %s", userID, runtimeID, err.Error())
+		return err
+	}
+	if len(cm.Data) == 0 {
+		log.Infof("No runtime left for user %s, start to remove ConfigMap.", userID)
+		err = coreClientset.CoreV1().ConfigMaps(KcpNamespace).Delete(context.Background(), userID, metav1.DeleteOptions{})
+		if err != nil {
+			log.Errorf("Failed to delete ConfigMap for user %s", userID)
+			return err
+		}
+		log.Infof("Succeeded in removing ConfigMap for user %s.", userID)
+	}
+	return nil
 }

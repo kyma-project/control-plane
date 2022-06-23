@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"crypto/sha256"
 	"strings"
 	"time"
 
@@ -66,6 +67,13 @@ func (s *GetKubeconfigStep) Run(operation internal.DeprovisioningOperation, log 
 		log.Infof("kubeconfig is not provided, skipping step")
 		operation.IsServiceInstanceDeleted = true
 		return operation, 0, nil
+	}
+	k := *status.RuntimeConfiguration.Kubeconfig
+	hash := sha256.Sum256([]byte(k))
+	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
+	if len(k) < 10 {
+		log.Errorf("kubeconfig suspiciously small, requeueing after 30s")
+		return operation, 30 * time.Second, nil
 	}
 
 	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)

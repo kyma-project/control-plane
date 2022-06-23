@@ -2059,6 +2059,82 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }
 
+func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t, "2.0")
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
+		`{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "testClientID",
+					"clientsecret": "testClientSecret",
+					"sm_url": "https://service-manager.kyma.com",
+					"url": "https://test.auth.com",
+					"xsappname": "testXsappname2"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	instance := suite.GetInstance(id)
+
+	// then
+	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
+	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"context": {
+				"license_type": "CUSTOMER"
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+	instance2 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+
+	// when
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+		{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"context":{},
+			"parameters":{
+			    "name":"$instance",
+			    "administrators":["jan.wozniak@sap.com", "wozniak.jan@gmail.com", "jan@kubermatic.com"]
+			}
+		}`)
+
+	// then
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperation2ID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperation2ID)
+	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
+	instance3 := suite.GetInstance(id)
+	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
+	disabled := true
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
+}
+
 func componentNames(components []reconcilerApi.Component) []string {
 	names := make([]string, 0, len(components))
 	for _, c := range components {
