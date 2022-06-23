@@ -34,13 +34,8 @@ metadata:
 spec:
   action: ALLOW
   rules:
-    - from:
-        - source:
-            principals: ["cluster.local/*"]
-      to:
+    - to:
         - operation:
-            methods:
-              - GET
             paths:
               - /metrics
   selector:
