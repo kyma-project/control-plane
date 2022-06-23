@@ -227,7 +227,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
-    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
 }
 
 input OIDCConfigInput {

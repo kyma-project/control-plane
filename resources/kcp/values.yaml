@@ -3,34 +3,34 @@ global:
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.0-alpine-979d1ebd
     reconciler_repo: "eu.gcr.io/kyma-project/incubator/reconciler"
-    mothership_reconciler_version: "2f65df1f"
+    mothership_reconciler_version: "0c3a856d"
     components:
       base:
-        version: "2f65df1f"
+        version: "0c3a856d"
       busola-migrator:
-        version: "2f65df1f"
+        version: "0c3a856d"
       cleaner:
-        version: "2f65df1f"
+        version: "0c3a856d"
       connectivity-proxy:
-        version: "2f65df1f"
+        version: "0c3a856d"
       istio-configuration:
-        version: "2f65df1f"
+        version: "0c3a856d"
       istio:
-        version: "2f65df1f"
+        version: "0c3a856d"
       ory:
-        version: "2f65df1f"
+        version: "0c3a856d"
       rafter:
-        version: "2f65df1f"
+        version: "0c3a856d"
       eventing:
-        version: "2f65df1f"
+        version: "0c3a856d"
       serverless:
-        version: "2f65df1f"
+        version: "0c3a856d"
       cluster-essentials:
-        version: "2f65df1f"
+        version: "0c3a856d"
       rma:
-        version: "2f65df1f"
+        version: "0c3a856d"
       sc-migration:
-        version: "2f65df1f"
+        version: "0c3a856d"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -38,10 +38,10 @@ global:
       version: "4650dbfb"
     provisioner:
       dir:
-      version: "PR-1707"
+      version: "PR-1746"
     kyma_environment_broker:
       dir:
-      version: "PR-1738"
+      version: "PR-1793"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1749"
@@ -53,7 +53,7 @@ global:
       version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1768"
+      version: "PR-1791"
     tests:
       provisioner:
         dir:
@@ -172,6 +172,8 @@ global:
     features: |-
       - name: "LOG_ISTIO_OPERATOR"
         value: "false"
+      - name: "DEBUG_LOGGING_FOR_SPECIFIC_OPERATIONS"
+        value: "true"
   component_reconcilers:
     enabled: false
     authentication: true

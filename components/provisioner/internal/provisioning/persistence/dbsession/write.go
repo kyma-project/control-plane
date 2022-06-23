@@ -492,6 +492,19 @@ func (ws writeSession) UpdateKubernetesVersion(runtimeID string, version string)
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update Kubernetes version in %s cluster: %s", runtimeID, err))
 }
 
+func (ws writeSession) UpdateShootNetworkingFilterDisabled(runtimeID string, shootNetworkingFilterDisabled *bool) dberrors.Error {
+	res, err := ws.update("gardener_config").
+		Where(dbr.Eq("cluster_id", runtimeID)).
+		Set("shoot_networking_filter_disabled", shootNetworkingFilterDisabled).
+		Exec()
+
+	if err != nil {
+		return dberrors.Internal("Failed to update shoot networking filter disabled in %s cluster: %s", runtimeID, err)
+	}
+
+	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update shoot networking filter disabled in %s cluster: %s", runtimeID, err))
+}
+
 func (ws writeSession) MarkClusterAsDeleted(runtimeID string) dberrors.Error {
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).

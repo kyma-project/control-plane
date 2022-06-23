@@ -1,0 +1,29 @@
+{{- if .Values.rbac.create -}}
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "oidc-kubeconfig-service.fullname" . }}
+  labels:
+{{ include "oidc-kubeconfig-service.labels" . | indent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["*"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "oidc-kubeconfig-service.fullname" . }}
+  labels:
+{{ include "oidc-kubeconfig-service.labels" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "oidc-kubeconfig-service.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "oidc-kubeconfig-service.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end -}}

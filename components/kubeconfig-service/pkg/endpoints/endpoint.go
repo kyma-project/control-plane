@@ -1,12 +1,16 @@
 package endpoints
 
 import (
+	"errors"
 	"net/http"
-
-	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
+	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
 	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/caller"
+	run "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/runtime"
+	"github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/transformer"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,6 +18,9 @@ const (
 	mimeTypeYaml = "application/x-yaml"
 	mimeTypeText = "text/plain"
 )
+
+//mutex to avoid critical section in config map deployment
+var mu sync.Mutex
 
 //EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
@@ -33,9 +40,16 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	tenant := vars["tenantID"]
 	runtime := vars["runtimeID"]
 
-	log.Infof("Generating kubeconfig for %s/%s", tenant, runtime)
+	var err error
+	var kubeConfig []byte
+	userInfo, ok := req.Context().Value("userInfo").(authn.UserInfo)
+	if ok {
+		log.Infof("Generating kubeconfig for %s/%s %s", tenant, runtime, userInfo)
+		kubeConfig, err = ec.generateKubeConfig(tenant, runtime, userInfo)
+	} else {
+		err = errors.New("User info is null")
+	}
 
-	kubeConfig, err := ec.generateKubeConfig(tenant, runtime)
 	if err != nil {
 		w.Header().Add("Content-Type", mimeTypeText)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -67,18 +81,42 @@ func (ec EndpointClient) callGQL(tenantID, runtimeID string) (string, error) {
 	return *status.RuntimeConfiguration.Kubeconfig, nil
 }
 
-func (ec EndpointClient) generateKubeConfig(tenant, runtime string) ([]byte, error) {
+func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo authn.UserInfo) ([]byte, error) {
 	rawConfig, err := ec.callGQL(tenant, runtime)
 	if err != nil || rawConfig == "" {
 		return nil, err
 	}
-	tc, err := transformer.NewClient(rawConfig)
+
+	tc, err := transformer.NewClient(rawConfig, userInfo.ID)
 	if err != nil {
 		return nil, err
 	}
-	kubeConfig, err := tc.TransformKubeconfig()
+
+	runtimeClient, err := run.NewRuntimeClient([]byte(rawConfig), userInfo.ID, userInfo.Role, tenant)
 	if err != nil {
 		return nil, err
 	}
-	return kubeConfig, nil
+
+	tc.SaToken, err = runtimeClient.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	saKubeConfig, err := tc.TransformKubeconfig(transformer.KubeconfigSaTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	mu.Lock()
+	startTime := time.Now()
+	err = runtimeClient.DeployConfigMap(runtime, userInfo.Role, startTime)
+	mu.Unlock()
+	if err != nil {
+		log.Errorf("Cannot generate config map, %s", err.Error())
+		return nil, err
+	}
+
+	go runtimeClient.SetupTimer(startTime, runtime)
+
+	return saKubeConfig, nil
 }
