@@ -94,10 +94,15 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		operation.ProvisioningParameters = op.ProvisioningParameters
 		return operation, time.Minute, nil
 	}
+	lastOp, err := s.operationStorage.GetLastOperation(operation.InstanceID)
+	if err != nil {
+		return operation, time.Minute, nil
+	}
 	operation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
 		setAvsIds(operation, op, log)
 		operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
 		operation.ProvisioningParameters = op.ProvisioningParameters
+		operation.ProvisioningParameters.ErsContext = internal.UpdateERSContext(operation.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 	}, log)
 	if repeat != 0 {
 		return operation, time.Second, nil
