@@ -1,0 +1,4 @@
+global:
+  images:
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:0c3a856d"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:0c3a856d"
