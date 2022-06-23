@@ -1,6 +1,7 @@
 package upgrade_kyma
 
 import (
+	"crypto/sha256"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -52,6 +53,13 @@ func (s *GetKubeconfigStep) Run(operation internal.UpgradeKymaOperation, log log
 		return operation, 1 * time.Minute, nil
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
+	k := *status.RuntimeConfiguration.Kubeconfig
+	hash := sha256.Sum256([]byte(k))
+	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
+	if len(k) < 10 {
+		log.Errorf("kubeconfig suspiciously small, requeueing after 30s")
+		return operation, 30 * time.Second, nil
+	}
 
 	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig

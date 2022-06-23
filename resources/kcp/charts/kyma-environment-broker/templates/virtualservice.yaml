@@ -21,9 +21,9 @@ spec:
         regex: /oauth/([^/]+/)?v2/.*
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -36,9 +36,9 @@ spec:
         regex: /info/runtimes
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -51,9 +51,9 @@ spec:
         regex: /upgrade/.*
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
       - Authorization
@@ -66,9 +66,9 @@ spec:
         regex: /orchestrations.*
     route:
     - destination:
-        host: {{ .Values.global.oathkeeper.host }}
+        host: {{ include "kyma-env-broker.fullname" . }}
         port:
-          number: {{ .Values.global.oathkeeper.port }}
+          number: 80
   - corsPolicy:
       allowHeaders:
         - Authorization
@@ -81,9 +81,9 @@ spec:
           regex: /runtimes
     route:
       - destination:
-          host: {{ .Values.global.oathkeeper.host }}
+          host: {{ include "kyma-env-broker.fullname" . }}
           port:
-            number: {{ .Values.global.oathkeeper.port }}
+            number: 80
   # kubeconfig endpoint exposed without authorization
   - corsPolicy:
       allowHeaders:

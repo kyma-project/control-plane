@@ -41,7 +41,7 @@ global:
       version: "PR-1746"
     kyma_environment_broker:
       dir:
-      version: "PR-1793"
+      version: "PR-1785"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1749"
@@ -177,9 +177,6 @@ global:
   component_reconcilers:
     enabled: false
     authentication: true
-  oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
-    port: 4455
 pairing-adapter:
   enabled: false
 migratorJobs:
