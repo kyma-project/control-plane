@@ -175,8 +175,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				},
 			},
 			Networking: gardener_types.Networking{
-				Type:  "calico",                        // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: util.StringPtr("10.250.0.0/19"), // TODO: it is required - provide configuration in API (when Hydroform will support it)
+				Type:  "calico", // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
 			},
 			Purpose:           purpose,
 			ExposureClassName: exposureClassName,
@@ -252,6 +252,7 @@ func (c ProviderSpecificConfig) RawJSON() string {
 
 type GardenerProviderConfig interface {
 	RawJSON() string
+	NodeCIDR(gardenerConfig GardenerConfig) string
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
 	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
@@ -282,7 +283,7 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 					Name:         singleZoneAwsProviderConfig.Zone,
 					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
 					InternalCidr: singleZoneAwsProviderConfig.InternalCidr,
-					WorkerCidr:   "10.250.0.0/19",
+					WorkerCidr:   singleZoneAwsProviderConfig.VpcCidr,
 				},
 			},
 		}
@@ -324,6 +325,10 @@ func NewGCPGardenerConfig(input *gqlschema.GCPProviderConfigInput) (*GCPGardener
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
+}
+
+func (c GCPGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+	return gardenerConfig.WorkerCidr
 }
 
 func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
@@ -379,8 +384,31 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 	}, nil
 }
 
+func (c AzureGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+	return c.input.VnetCidr
+}
+
 func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
-	return gqlschema.AzureProviderConfig{VnetCidr: &c.input.VnetCidr, Zones: c.input.Zones, EnableNatGateway: c.input.EnableNatGateway, IdleConnectionTimeoutMinutes: c.input.IdleConnectionTimeoutMinutes}
+	var zones []*gqlschema.AzureZone = nil
+	if len(c.input.AzureZones) > 0 {
+		zones = make([]*gqlschema.AzureZone, 0)
+	}
+
+	for _, inputZone := range c.input.AzureZones {
+		zone := &gqlschema.AzureZone{
+			Name: inputZone.Name,
+			Cidr: inputZone.Cidr,
+		}
+		zones = append(zones, zone)
+	}
+
+	return gqlschema.AzureProviderConfig{
+		VnetCidr:                     &c.input.VnetCidr,
+		Zones:                        c.input.Zones,
+		AzureZones:                   zones,
+		EnableNatGateway:             c.input.EnableNatGateway,
+		IdleConnectionTimeoutMinutes: c.input.IdleConnectionTimeoutMinutes,
+	}
 }
 
 type AWSGardenerConfig struct {
@@ -389,7 +417,11 @@ type AWSGardenerConfig struct {
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	err := updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	zoneNames := c.input.Zones
+	if len(c.input.AzureZones) > 0 {
+		zoneNames = getAzureZonesNames(c.input.AzureZones)
+	}
+	err := updateShootConfig(gardenerConfig, shoot, zoneNames)
 	if err != nil {
 		return err
 	}
@@ -399,11 +431,24 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		if err != nil {
 			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
 		}
-		if *c.input.EnableNatGateway {
-			infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
-			infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+		if len(c.input.AzureZones) == 0 {
+			if *c.input.EnableNatGateway {
+				infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+			} else {
+				infra.Networks.NatGateway = nil
+			}
 		} else {
-			infra.Networks.NatGateway = nil
+			for i := range infra.Networks.Zones {
+				zone := infra.Networks.Zones[i]
+				if *c.input.EnableNatGateway {
+					zone.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
+				} else {
+					zone.NatGateway = nil
+				}
+				infra.Networks.Zones[i] = zone
+			}
 		}
 		infra.Networks.VNet.CIDR = util.StringPtr(c.input.VnetCidr)
 		jsonData, err := json.Marshal(infra)
@@ -418,7 +463,11 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "az"
 
-	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, c.input.Zones)}
+	zoneNames := c.input.Zones
+	if len(c.input.AzureZones) > 0 {
+		zoneNames = getAzureZonesNames(c.input.AzureZones)
+	}
+	workers := []gardener_types.Worker{getWorkerConfig(gardenerConfig, zoneNames)}
 
 	azInfra := NewAzureInfrastructure(gardenerConfig.WorkerCidr, c)
 	jsonData, err := json.Marshal(azInfra)
@@ -426,7 +475,7 @@ func (c AzureGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, sh
 		return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
 	}
 
-	azureControlPlane := NewAzureControlPlane(c.input.Zones)
+	azureControlPlane := NewAzureControlPlane(zoneNames)
 	jsonCPData, err := json.Marshal(azureControlPlane)
 	if err != nil {
 		return apperrors.Internal("error encoding control plane config: %s", err.Error())
@@ -452,6 +501,10 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
+}
+
+func (c AWSGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+	return c.input.VpcCidr
 }
 
 func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
@@ -522,6 +575,10 @@ func NewOpenStackGardenerConfig(input *gqlschema.OpenStackProviderConfigInput) (
 		ProviderSpecificConfig: ProviderSpecificConfig(config),
 		input:                  input,
 	}, nil
+}
+
+func (c OpenStackGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+	return gardenerConfig.WorkerCidr
 }
 
 func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
@@ -679,6 +736,15 @@ func getAWSZonesNames(zones []*gqlschema.AWSZoneInput) []string {
 
 	for _, zone := range zones {
 		zoneNames = append(zoneNames, zone.Name)
+	}
+	return zoneNames
+}
+
+func getAzureZonesNames(zones []*gqlschema.AzureZoneInput) []string {
+	zoneNames := make([]string, 0)
+
+	for _, zone := range zones {
+		zoneNames = append(zoneNames, fmt.Sprint(zone.Name))
 	}
 	return zoneNames
 }
