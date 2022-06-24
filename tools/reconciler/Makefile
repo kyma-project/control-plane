@@ -5,6 +5,7 @@ NAMESPACE = reconciler
 deploy-reconciler:
 	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
 	helm template $(NAME) --namespace $(NAMESPACE) --set global.mothership_reconciler.enabled=true \
+		-f ../../resources/kcp/values.yaml -f ../../resources/kcp/values-reconciler-image.yaml \
 		--set global.mothership_reconciler.authentication=false --set global.mothership_reconciler.expose=false \
 		--set global.component_reconcilers.enabled=true --set global.component_reconcilers.authentication=false \
 		--set compass.enabled=false --set mothership-reconciler.db.encryptionKey=5bc19d3a2032fb8795cd86e08b473a351631505d2522991266b1fb85f89bad5f \

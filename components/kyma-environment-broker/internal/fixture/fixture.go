@@ -65,7 +65,6 @@ func FixERSContext(id string) internal.ERSContext {
 		TenantID:        tenantID,
 		SubAccountID:    subAccountId,
 		GlobalAccountID: GlobalAccountId,
-		ServiceManager:  FixServiceManagerEntryDTO(),
 		Active:          ptr.Bool(true),
 		UserID:          userID,
 	}
@@ -107,33 +106,9 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	var (
 		runtimeId    = fmt.Sprintf("Runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
-		bindingId    = fmt.Sprintf("Binding-%s", id)
-		brokerId     = fmt.Sprintf("Broker-%s", id)
 		shootName    = fmt.Sprintf("Shoot-%s", id)
 		shootDomain  = fmt.Sprintf("shoot-%s.domain.com", id)
 	)
-
-	serviceManagerInstanceInfo := internal.ServiceManagerInstanceInfo{
-		BrokerID:                brokerId,
-		ServiceID:               ServiceId,
-		PlanID:                  PlanId,
-		InstanceID:              id,
-		Provisioned:             false,
-		ProvisioningTriggered:   false,
-		DeprovisioningTriggered: false,
-	}
-
-	xsuaaData := internal.XSUAAData{
-		Instance:  serviceManagerInstanceInfo,
-		XSAppname: XSUAADataXSAppName,
-		BindingID: bindingId,
-	}
-
-	emsData := internal.EmsData{
-		Instance:  serviceManagerInstanceInfo,
-		BindingID: bindingId,
-		Overrides: "Overrides",
-	}
 
 	monitoringData := internal.MonitoringData{
 		Username: MonitoringUsername,
@@ -148,8 +123,6 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootName:         shootName,
 		ShootDomain:       shootDomain,
 		ShootDNSProviders: FixDNSProvidersConfig(),
-		XSUAA:             xsuaaData,
-		Ems:               emsData,
 		Monitoring:        monitoringData,
 	}
 }
@@ -222,9 +195,8 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
-		InputCreator:    FixInputCreator(internal.Azure),
-		SMClientFactory: nil,
-		DashboardURL:    "https://console.kyma.org",
+		InputCreator: FixInputCreator(internal.Azure),
+		DashboardURL: "https://console.kyma.org",
 	}
 }
 
@@ -252,17 +224,15 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
-		InputCreator:    FixInputCreator(provider),
-		SMClientFactory: nil,
-		DashboardURL:    "https://console.kyma.org",
+		InputCreator: FixInputCreator(provider),
+		DashboardURL: "https://console.kyma.org",
 	}
 }
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		Operation:       FixOperation(operationId, instanceId, internal.OperationTypeDeprovision),
-		SMClientFactory: nil,
-		Temporary:       false,
+		Operation: FixOperation(operationId, instanceId, internal.OperationTypeDeprovision),
+		Temporary: false,
 	}
 }
 
@@ -300,7 +270,6 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 			Version: KymaVersion,
 			Origin:  internal.Defaults,
 		},
-		SMClientFactory: nil,
 	}
 }
 
