@@ -192,6 +192,10 @@ type SingleZoneAWSGardenerConfig struct {
 	input *model.SingleZoneAWSProviderConfigInput `db:"-"`
 }
 
+func (c SingleZoneAWSGardenerConfig) NodeCIDR(model.GardenerConfig) string {
+	return c.input.VpcCidr
+}
+
 func (c SingleZoneAWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return nil
 }

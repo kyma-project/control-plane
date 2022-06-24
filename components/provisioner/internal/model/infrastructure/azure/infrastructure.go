@@ -26,10 +26,12 @@ type NetworkConfig struct {
 	// VNet indicates whether to use an existing VNet or create a new one.
 	VNet VNet `json:"vnet"`
 	// Workers is the worker subnet range to create (used for the VMs).
-	Workers string `json:"workers"`
+	// +optional
+	Workers *string `json:"workers,omitempty"`
 	// ServiceEndpoints is a list of Azure ServiceEndpoints which should be associated with the worker subnet.
 	ServiceEndpoints []string    `json:"serviceEndpoints,omitempty"`
 	NatGateway       *NatGateway `json:"natGateway,omitempty"`
+	Zones            []Zone      `json:"zones,omitempty"`
 }
 
 // VNet contains information about the VNet and some related resources.
@@ -54,4 +56,17 @@ type NatGateway struct {
 	Enabled                      bool `json:"enabled"`
 	IdleConnectionTimeoutMinutes int  `json:"idleConnectionTimeoutMinutes"`
 	Zone                         int  `json:"zone,omitempty"`
+}
+
+type Zone struct {
+	// Name is the name of the zone and should match with the name the infrastructure provider is using for the zone.
+	Name int `json:"name"`
+	// CIDR is the CIDR range used for the zone's subnet.
+	CIDR string `json:"cidr"`
+	// ServiceEndpoints is a list of Azure ServiceEndpoints which should be associated with the zone's subnet.
+	// +optional
+	ServiceEndpoints []string `json:"serviceEndpoints,omitempty"`
+	// NatGateway contains the configuration for the NatGateway associated with this subnet.
+	// +optional
+	NatGateway *NatGateway `json:"natGateway,omitempty"`
 }
