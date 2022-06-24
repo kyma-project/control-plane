@@ -9,7 +9,7 @@ Kyma Control Plane (KCP) is a central system to manage Kyma Runtimes.
 For more information on KCP and its components, read the [documentation](https://kyma-project.io/docs/control-plane/).
 
 ## Prerequisites
-
+ 
 - [Docker](https://www.docker.com/get-started)
 - [Minikube](https://github.com/kubernetes/minikube) 1.6.2
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
