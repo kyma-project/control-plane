@@ -42,12 +42,12 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
+			MachineType:    "m5.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  2,
-			AutoScalerMax:  10,
+			AutoScalerMin:  4,
+			AutoScalerMax:  20,
 			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
@@ -151,6 +151,10 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
+		if pp.Parameters.ZonesCount != nil {
+			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
+			return
+		}
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
 	}
 }
