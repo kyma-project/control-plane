@@ -23,7 +23,7 @@ func TestOperation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Provisioning", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -127,7 +127,7 @@ func TestOperation(t *testing.T) {
 	})
 
 	t.Run("Deprovisioning", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -198,7 +198,7 @@ func TestOperation(t *testing.T) {
 	})
 
 	t.Run("Upgrade Kyma", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -272,7 +272,7 @@ func TestOperation(t *testing.T) {
 	})
 
 	t.Run("Upgrade Cluster", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 

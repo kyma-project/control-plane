@@ -46,7 +46,6 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          nil,
 			},
 		},
@@ -76,12 +75,6 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
-	inst, err := st.Instances().GetByID(instanceID)
-	require.NoError(t, err)
-	// check if original ERS context is set again in the Instance entity
-	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
-	// check if the handler was called
-	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
 
 	assert.Equal(t, internal.ERSContext{
 		Active: ptr.Bool(false),
@@ -103,7 +96,6 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          nil,
 			},
 		},
@@ -131,12 +123,6 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	}, true)
 
 	// then
-	inst, err := st.Instances().GetByID(instanceID)
-	require.NoError(t, err)
-	// check if original ERS context is set again in the Instance entity
-	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
-	// check if the handler was called
-	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
 
 	assert.Equal(t, internal.ERSContext{
 		Active: ptr.Bool(true),
@@ -167,7 +153,6 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          ptr.Bool(false),
 			},
 		},
@@ -193,11 +178,6 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	}, true)
 
 	// then
-	inst, _ := st.Instances().GetByID(instanceID)
-	// check if original ERS context is set again in the Instance entity
-	assert.NotEmpty(t, inst.Parameters.ErsContext.ServiceManager.Credentials.BasicAuth.Password)
-	// check if the handler was called
-	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
 	assert.Equal(t, internal.ERSContext{
 		Active: ptr.Bool(false),
 	}, handler.ersContext)
@@ -233,14 +213,12 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(id, instanceID)
-	provisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
 
 	return provisioningOperation
 }
 
 func fixSuspensionOperation() internal.DeprovisioningOperation {
 	deprovisioningOperation := fixture.FixDeprovisioningOperation("id", instanceID)
-	deprovisioningOperation.ProvisioningParameters.ErsContext.ServiceManager.URL = ""
 	deprovisioningOperation.Temporary = true
 
 	return deprovisioningOperation
@@ -258,7 +236,6 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          nil,
 			},
 		},
@@ -293,8 +270,6 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	require.NoError(t, err)
 	// Check if SubscriptionGlobalAccountID is not empty
 	assert.NotEmpty(t, inst.SubscriptionGlobalAccountID)
-	// check if the handler was called
-	assertServiceManagerCreds(t, handler.Instance.Parameters.ErsContext.ServiceManager)
 
 	// Check if SubscriptionGlobalAccountID is now the same as GlobalAccountID
 	assert.Equal(t, inst.GlobalAccountID, newGlobalAccountID)
@@ -427,7 +402,6 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          nil,
 			},
 		},
@@ -483,7 +457,6 @@ func TestUpdateEndpoint_UpdateWithDisabledDashboard(t *testing.T) {
 				TenantID:        "",
 				SubAccountID:    "",
 				GlobalAccountID: "",
-				ServiceManager:  nil,
 				Active:          nil,
 			},
 		},

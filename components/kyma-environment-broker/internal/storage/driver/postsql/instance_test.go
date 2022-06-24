@@ -26,7 +26,7 @@ func TestInstance(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Should create and update instance", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -106,7 +106,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instance statistics", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -151,7 +151,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instances along with their operations", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -227,7 +227,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should fetch instances based on subaccount list", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -267,7 +267,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should list instances based on page and page size", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -324,7 +324,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should list instances based on filters", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -430,7 +430,7 @@ func TestInstance(t *testing.T) {
 	})
 
 	t.Run("Should list instances based on state filters", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 

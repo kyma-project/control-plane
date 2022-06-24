@@ -79,7 +79,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, 20*time.Millisecond, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, 20*time.Millisecond, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -124,7 +124,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -160,7 +160,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		notificationBuilder.On("DisabledCheck").Return(false).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -233,7 +233,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -281,7 +281,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		bundle.On("CancelNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &testExecutor{},
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -355,7 +355,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			upgradeType: orchestration.UpgradeKymaOrchestration,
 		}
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)
@@ -429,7 +429,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			upgradeType: orchestration.UpgradeKymaOrchestration,
 		}
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
-			resolver, poolingInterval, nil, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
 
 		// when
 		_, err = svc.Execute(id)

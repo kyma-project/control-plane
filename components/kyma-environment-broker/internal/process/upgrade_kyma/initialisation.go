@@ -35,21 +35,20 @@ const (
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
 type InitialisationStep struct {
-	operationManager            *process.UpgradeKymaOperationManager
-	operationStorage            storage.Operations
-	orchestrationStorage        storage.Orchestrations
-	instanceStorage             storage.Instances
-	provisionerClient           provisioner.Client
-	inputBuilder                input.CreatorForPlan
-	evaluationManager           *avs.EvaluationManager
-	timeSchedule                TimeSchedule
-	runtimeVerConfigurator      RuntimeVersionConfiguratorForUpgrade
-	serviceManagerClientFactory internal.SMClientFactory
-	bundleBuilder               notification.BundleBuilder
+	operationManager       *process.UpgradeKymaOperationManager
+	operationStorage       storage.Operations
+	orchestrationStorage   storage.Orchestrations
+	instanceStorage        storage.Instances
+	provisionerClient      provisioner.Client
+	inputBuilder           input.CreatorForPlan
+	evaluationManager      *avs.EvaluationManager
+	timeSchedule           TimeSchedule
+	runtimeVerConfigurator RuntimeVersionConfiguratorForUpgrade
+	bundleBuilder          notification.BundleBuilder
 }
 
 func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
-	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, smcf internal.SMClientFactory, bundleBuilder notification.BundleBuilder) *InitialisationStep {
+	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, bundleBuilder notification.BundleBuilder) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
 		ts = &TimeSchedule{
@@ -59,17 +58,16 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is
 		}
 	}
 	return &InitialisationStep{
-		operationManager:            process.NewUpgradeKymaOperationManager(os),
-		operationStorage:            os,
-		orchestrationStorage:        ors,
-		instanceStorage:             is,
-		provisionerClient:           pc,
-		inputBuilder:                b,
-		evaluationManager:           em,
-		timeSchedule:                *ts,
-		runtimeVerConfigurator:      rvc,
-		serviceManagerClientFactory: smcf,
-		bundleBuilder:               bundleBuilder,
+		operationManager:       process.NewUpgradeKymaOperationManager(os),
+		operationStorage:       os,
+		orchestrationStorage:   ors,
+		instanceStorage:        is,
+		provisionerClient:      pc,
+		inputBuilder:           b,
+		evaluationManager:      em,
+		timeSchedule:           *ts,
+		runtimeVerConfigurator: rvc,
+		bundleBuilder:          bundleBuilder,
 	}
 }
 
@@ -78,7 +76,6 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation.SMClientFactory = s.serviceManagerClientFactory
 
 	// Check concurrent deprovisioning (or suspension) operation (launched after target resolution)
 	// Terminate (preempt) upgrade immediately with succeeded

@@ -22,7 +22,7 @@ func TestRuntimeState(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("should insert and fetch RuntimeState", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -58,7 +58,7 @@ func TestRuntimeState(t *testing.T) {
 	})
 
 	t.Run("should insert and fetch RuntimeState with Reconciler input", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -99,7 +99,7 @@ func TestRuntimeState(t *testing.T) {
 	})
 
 	t.Run("should distinguish between latest RuntimeStates with and without Reconciler input", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -166,7 +166,7 @@ func TestRuntimeState(t *testing.T) {
 	})
 
 	t.Run("should fetch latest RuntimeState with Kyma version", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -229,7 +229,7 @@ func TestRuntimeState(t *testing.T) {
 	})
 
 	t.Run("should fetch latest RuntimeState with Kyma version stored only in the kyma_version field", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_2")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_2")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
@@ -286,7 +286,7 @@ func TestRuntimeState(t *testing.T) {
 	})
 
 	t.Run("should fetch latest RuntimeState with OIDC config", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 
