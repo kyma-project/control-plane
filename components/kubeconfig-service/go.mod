@@ -71,8 +71,11 @@ require (
 )
 
 replace (
-	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	github.com/docker/distribution => github.com/docker/distribution v2.8.1+incompatible //CVE-2021-41190
+	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0 // CVE-2022-1996
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.3 // CVE-2021-43784
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.11.1 // CVE-2022-21698
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // CVE-2022-27191
 	k8s.io/api => k8s.io/api v0.23.8
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.8
 	k8s.io/apimachinery => k8s.io/apimachinery v0.23.8
