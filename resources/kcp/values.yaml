@@ -158,12 +158,11 @@ global:
     features: |-
       - name: "LOG_ISTIO_OPERATOR"
         value: "false"
+      - name: "DEBUG_LOGGING_FOR_SPECIFIC_OPERATIONS"
+        value: "true"
   component_reconcilers:
     enabled: false
     authentication: true
-  oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
-    port: 4455
 pairing-adapter:
   enabled: false
 migratorJobs:
