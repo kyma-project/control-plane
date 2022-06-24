@@ -21,13 +21,12 @@ import (
 
 type upgradeKymaFactory struct {
 	operationStorage   storage.Operations
-	smcf               internal.SMClientFactory
 	defaultKymaVersion string
 }
 
 func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operationStorage storage.Operations, instanceStorage storage.Instances,
 	kymaUpgradeExecutor orchestration.OperationExecutor, resolver orchestration.RuntimeResolver, pollingInterval time.Duration,
-	smcf internal.SMClientFactory, log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config, bundleBuilder notification.BundleBuilder, speedFactor int) process.Executor {
+	log logrus.FieldLogger, cli client.Client, cfg *internalOrchestration.Config, bundleBuilder notification.BundleBuilder, speedFactor int) process.Executor {
 	return &orchestrationManager{
 		orchestrationStorage: orchestrationStorage,
 		operationStorage:     operationStorage,
@@ -35,7 +34,6 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 		resolver:             resolver,
 		factory: &upgradeKymaFactory{
 			operationStorage:   operationStorage,
-			smcf:               smcf,
 			defaultKymaVersion: cfg.KymaVersion,
 		},
 		executor:          kymaUpgradeExecutor,
@@ -76,7 +74,6 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			Runtime: r,
 			DryRun:  o.Parameters.DryRun,
 		},
-		SMClientFactory: u.smcf,
 	}
 	if o.Parameters.Kyma.Version != "" {
 		var majorVer int

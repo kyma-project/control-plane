@@ -6,8 +6,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
@@ -27,31 +25,23 @@ const (
 	CheckStatusTimeout = 5 * time.Hour
 )
 
-type SMClientFactory interface {
-	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(req servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(req servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
-}
-
 type InitialisationStep struct {
-	operationManager            *process.DeprovisionOperationManager
-	operationStorage            storage.Operations
-	instanceStorage             storage.Instances
-	provisionerClient           provisioner.Client
-	accountProvider             hyperscaler.AccountProvider
-	serviceManagerClientFactory SMClientFactory
-	operationTimeout            time.Duration
+	operationManager  *process.DeprovisionOperationManager
+	operationStorage  storage.Operations
+	instanceStorage   storage.Instances
+	provisionerClient provisioner.Client
+	accountProvider   hyperscaler.AccountProvider
+	operationTimeout  time.Duration
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, smcf SMClientFactory, operationTimeout time.Duration) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, pc provisioner.Client, accountProvider hyperscaler.AccountProvider, operationTimeout time.Duration) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:            process.NewDeprovisionOperationManager(os),
-		operationStorage:            os,
-		instanceStorage:             is,
-		provisionerClient:           pc,
-		accountProvider:             accountProvider,
-		serviceManagerClientFactory: smcf,
-		operationTimeout:            operationTimeout,
+		operationManager:  process.NewDeprovisionOperationManager(os),
+		operationStorage:  os,
+		instanceStorage:   is,
+		provisionerClient: pc,
+		accountProvider:   accountProvider,
+		operationTimeout:  operationTimeout,
 	}
 }
 
@@ -105,7 +95,6 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		return operation, time.Minute, nil
 	}
 	operation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.DeprovisioningOperation) {
-		operation.SMClientFactory = s.serviceManagerClientFactory
 		setAvsIds(operation, op, log)
 		operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
 		operation.ProvisioningParameters = op.ProvisioningParameters
