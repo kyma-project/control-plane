@@ -53,7 +53,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
-	golang.org/x/sys v0.0.0-20211109184856-51b60fd695b3 // indirect
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
@@ -73,8 +73,8 @@ require (
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v2.8.1+incompatible //CVE-2021-41190
 	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0 // CVE-2022-1996
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.3 // CVE-2021-43784
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.11.1 // CVE-2022-21698
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.3 // CVE-2021-43784
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1 // CVE-2022-21698
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // CVE-2022-27191
 	k8s.io/api => k8s.io/api v0.23.8
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.8
