@@ -106,7 +106,7 @@ func (s *UpgradeClusterStep) Run(operation internal.UpgradeClusterOperation, log
 		return operation, s.timeSchedule.StatusCheck, nil
 	}
 	log = log.WithField("runtimeID", *provisionerResponse.RuntimeID)
-	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
+	log.Infof("call to provisioner for upgrade succeeded, got operation ID %q", *provisionerResponse.ID)
 
 	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
 	err = s.runtimeStateStorage.Insert(rs)
@@ -165,6 +165,7 @@ func gardenerUpgradeInputToConfigInput(input gqlschema.UpgradeShootInput) *gqlsc
 	if input.GardenerConfig.MaxUnavailable != nil {
 		result.MaxUnavailable = *input.GardenerConfig.MaxUnavailable
 	}
+	result.ShootNetworkingFilterDisabled = input.GardenerConfig.ShootNetworkingFilterDisabled
 
 	return result
 }

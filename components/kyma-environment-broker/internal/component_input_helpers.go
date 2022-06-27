@@ -3,9 +3,11 @@ package internal
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/reconciler/pkg/keb"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -33,6 +35,8 @@ const (
 	BTPOperatorTokenURL     = "manager.secret.tokenurl"
 	BTPOperatorClusterID    = "cluster.id"
 )
+
+var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID}
 
 type ClusterIDGetter func(string) (string, error)
 
@@ -123,14 +127,13 @@ func GetClusterIDWithKubeconfig(kubeconfig string) (string, error) {
 
 func CheckBTPCredsValid(clusterConfiguration reconcilerApi.Cluster) error {
 	vals := make(map[string]bool)
-	requiredKeys := []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID}
 	hasBTPOperator := false
 	var errs []string
 	for _, c := range clusterConfiguration.KymaConfig.Components {
 		if c.Component == BTPOperatorComponentName {
 			hasBTPOperator = true
 			for _, cfg := range c.Configuration {
-				for _, key := range requiredKeys {
+				for _, key := range btpOperatorRequiredKeys {
 					if cfg.Key == key {
 						vals[key] = true
 						if cfg.Value == nil {
@@ -145,7 +148,7 @@ func CheckBTPCredsValid(clusterConfiguration reconcilerApi.Cluster) error {
 		}
 	}
 	if hasBTPOperator {
-		for _, key := range requiredKeys {
+		for _, key := range btpOperatorRequiredKeys {
 			if !vals[key] {
 				errs = append(errs, fmt.Sprintf("missing required key %v", key))
 			}
@@ -155,4 +158,30 @@ func CheckBTPCredsValid(clusterConfiguration reconcilerApi.Cluster) error {
 		}
 	}
 	return nil
+}
+
+func CheckBTPCredsMatching(a, b keb.Component) bool {
+	if a.URL != b.URL {
+		return false
+	}
+	if a.Version != b.Version {
+		return false
+	}
+	if a.Namespace != b.Namespace {
+		return false
+	}
+	ma := make(map[string]keb.Configuration)
+	for _, aa := range a.Configuration {
+		ma[aa.Key] = aa
+	}
+	mb := make(map[string]keb.Configuration)
+	for _, bb := range b.Configuration {
+		mb[bb.Key] = bb
+	}
+	for _, key := range btpOperatorRequiredKeys {
+		if !reflect.DeepEqual(ma[key], mb[key]) {
+			return false
+		}
+	}
+	return true
 }

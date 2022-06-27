@@ -75,7 +75,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 		}
 	}
 
-	log.Infof("call to provisioner succeeded, got operation ID %q", *provisionerResponse.ID)
+	log.Infof("call to provisioner succeeded for update, got operation ID %q", *provisionerResponse.ID)
 
 	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
 	rs.KymaVersion = operation.RuntimeVersion.Version
