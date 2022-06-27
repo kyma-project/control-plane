@@ -186,6 +186,8 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		resultValue = resultSucceeded
 	case domain.Failed, Canceling, Canceled:
 		resultValue = resultFailed
+	default:
+		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
