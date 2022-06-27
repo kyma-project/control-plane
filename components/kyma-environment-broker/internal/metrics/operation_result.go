@@ -180,11 +180,11 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 
 	var resultValue float64
 	switch stepProcessed.Operation.State {
-	case domain.InProgress:
+	case domain.InProgress, Pending, Retrying:
 		resultValue = resultInProgress
 	case domain.Succeeded:
 		resultValue = resultSucceeded
-	case domain.Failed:
+	case domain.Failed, Canceling, Canceled:
 		resultValue = resultFailed
 	}
 	op := stepProcessed.Operation
