@@ -41,7 +41,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.NoError(t, err)
@@ -54,8 +54,8 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 				Name:      "overrides2",
 				Namespace: namespace,
 				Labels: map[string]string{
-					"overrides-version-1.15.1": "true",
-					"overrides-account-1234":   "true",
+					"overrides-version-1.15.1":                               "true",
+					"overrides-account-d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06": "true",
 				},
 			},
 			Data: map[string]string{"test1": "test1abc"},
@@ -72,7 +72,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.NoError(t, err)
@@ -85,8 +85,8 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 				Name:      "overrides2",
 				Namespace: namespace,
 				Labels: map[string]string{
-					"overrides-version-1.15.1":  "true",
-					"overrides-subaccount-5678": "true",
+					"overrides-version-1.15.1":                                  "true",
+					"overrides-subaccount-39ba9a66-2c1a-4fe4-a28e-4e8fb434253s": "true",
 				},
 			},
 			Data: map[string]string{"test1": "test1abc"},
@@ -103,7 +103,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.NoError(t, err)
@@ -211,7 +211,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.NoError(t, err)
@@ -229,7 +229,7 @@ func TestRuntimeOverrides_Append(t *testing.T) {
 		runtimeOverrides := NewRuntimeOverrides(context.TODO(), logrus.New().WithField("client", "runtimeoverrides"), client)
 
 		// WHEN
-		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "1234", "5678")
+		err := runtimeOverrides.Append(inputAppenderMock, "foo", "1.15.1", "d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06", "39ba9a66-2c1a-4fe4-a28e-4e8fb434253s")
 
 		// THEN
 		require.Error(t, err, "no global overrides for plan 'foo' and Kyma version '1.15.1'")
@@ -334,8 +334,8 @@ func fixResources() []runtime.Object {
 			Name:      "configmap#5",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"overrides-version-1.15.1": "true",
-				"overrides-account-1234":   "true",
+				"overrides-version-1.15.1":                               "true",
+				"overrides-account-d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06": "true",
 			},
 		},
 		Data: map[string]string{"test7": "test9abc"},
@@ -345,8 +345,8 @@ func fixResources() []runtime.Object {
 			Name:      "configmap#6",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"overrides-version-1.15.1":  "true",
-				"overrides-subaccount-5678": "true",
+				"overrides-version-1.15.1":                                  "true",
+				"overrides-subaccount-39ba9a66-2c1a-4fe4-a28e-4e8fb434253s": "true",
 			},
 		},
 		Data: map[string]string{"test10": "test10abc"},
@@ -356,9 +356,9 @@ func fixResources() []runtime.Object {
 			Name:      "configmap#7",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"overrides-version-1.15.1":  "true",
-				"overrides-subaccount-5678": "true",
-				"component":                 "helm",
+				"overrides-version-1.15.1":                                  "true",
+				"overrides-subaccount-39ba9a66-2c1a-4fe4-a28e-4e8fb434253s": "true",
+				"component": "helm",
 			},
 		},
 		Data: map[string]string{"test11": "test11abc"},
