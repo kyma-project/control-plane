@@ -24,9 +24,6 @@ const (
 	overridesAccountLabelPrefix    = "overrides-account-"
 	overridesSubaccountLabelPrefix = "overrides-subaccount-"
 	overridesSecretLabel           = "runtime-override"
-	PLANNAME                       = "planeName"
-	ACCOUNT                        = "account"
-	SUBACCOUNT                     = "subaccount"
 )
 
 type InputAppender interface {
