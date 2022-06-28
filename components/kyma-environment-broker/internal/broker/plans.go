@@ -261,7 +261,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 
 	// awsHASchema := AWSHASchema(awsMachines, includeAdditionalParamsInSchema, false)
 
-	gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
+	gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32"}
 	gcpSchema := GCPSchema(gcpMachines, includeAdditionalParamsInSchema, false)
 
 	openStackMachines := []string{"m2.xlarge", "m1.2xlarge"}
