@@ -6,7 +6,10 @@ You can set overrides to customize your Kyma Runtime. To provision a cluster wit
 
 ## ConfigMap
 
-The overrides mechanism selects ConfigMaps by filtering the resources using labels. You can prepare overrides for a given plan and Kyma version using the `overrides-plan-{PLAN_NAME}: "true"` and `overrides-version-{KYMA_VERSION}: "true"` labels.
+The overrides mechanism selects ConfigMaps by filtering the resources using labels. You can prepare overrides for three kinds of combination:
+1. a given plan and Kyma version using the `overrides-plan-{PLAN_NAME}: "true"` and `overrides-version-{KYMA_VERSION}: "true"` labels.
+2. a given global account ID and Kyma version using the `overrides-account-{GLOBAL_ACCOUNT_ID}: "true"` and `overrides-version-{KYMA_VERSION}: "true"` labels.
+3. a given subaccount ID and Kyma version using the  `overrides-account-{SUB_ACCOUNT_ID}: "true"` and `overrides-version-{KYMA_VERSION}: "true"` labels.
 
 > **NOTE:** Each ConfigMap that defines overrides must have both labels assigned.
 
@@ -14,7 +17,8 @@ Optionally, you can narrow the scope of the overrides to a specific component. U
 
 The overrides lookup mechanism requires at least one ConfigMap present for each plan and version pair. Otherwise, it fails.
 
-See the example of a ConfigMap with global overrides for the `trial` plan and versions `1.15.1` and `1.16.0`:
+See the examples of a ConfigMap：
+1. Configmap with global overrides for the `trial` plan and versions `1.15.1` and `1.16.0`:
 
 ```yaml
 apiVersion: v1
@@ -23,6 +27,36 @@ metadata:
   labels:
     overrides-plan-trial: "true"
     overrides-version-1.15.1: "true"
+    overrides-version-1.16.0: "true"
+  name: global-overrides
+  namespace: kcp-system
+data:
+  global.disableLegacyConnectivity: "true"
+```
+
+2. Configmap with global overrides for the `global account` ID and versions `1.15.1` and `1.16.0`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    overrides-account-d9994f8f-7e46-42a8-b2c1-1cddd9d2ef06: "true"
+    overrides-version-1.15.1: "true"
+  name: global-overrides
+  namespace: kcp-system
+data:
+  global.disableLegacyConnectivity: "true"
+```
+
+2. Configmap with global overrides for the `subaccount` ID and versions `1.16.0`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    overrides-subaccount-39ba9a66-2c1a-4fe4-a28e-4e8fb434253s: "true"
     overrides-version-1.16.0: "true"
   name: global-overrides
   namespace: kcp-system
