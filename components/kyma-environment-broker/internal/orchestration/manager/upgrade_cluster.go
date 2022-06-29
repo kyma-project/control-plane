@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -15,6 +16,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -47,7 +49,7 @@ func NewUpgradeClusterManager(orchestrationStorage storage.Orchestrations, opera
 	}
 }
 
-func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error) {
+func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance, state domain.LastOperationState) (orchestration.RuntimeOperation, error) {
 	id := uuid.New().String()
 	op := internal.UpgradeClusterOperation{
 		Operation: internal.Operation{
@@ -57,7 +59,7 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 			UpdatedAt:              time.Now(),
 			Type:                   internal.OperationTypeUpgradeCluster,
 			InstanceID:             r.InstanceID,
-			State:                  orchestration.Pending,
+			State:                  state,
 			Description:            "Operation created",
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
@@ -128,26 +130,7 @@ func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule
 	}
 
 	for _, op := range ops {
-		if updateMWindow {
-			windowBegin := time.Time{}
-			windowEnd := time.Time{}
-			days := []string{}
-
-			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
-			}
-			op.MaintenanceWindowBegin = windowBegin
-			op.MaintenanceWindowEnd = windowEnd
-			op.MaintenanceDays = days
-		}
-
-		runtimeop, err := u.updateRetryingOperation(op)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, runtimeop)
+		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op=", op)
 	}
 
 	return result, nil

@@ -1,25 +1,24 @@
 package manager_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
-
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestUpgradeClusterManager_Execute(t *testing.T) {
@@ -300,6 +299,11 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
 
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: nil,
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{}, nil)
+
 		id := "id"
 		opId := "op-" + id
 		err := store.Orchestrations().Insert(internal.Orchestration{
@@ -352,11 +356,14 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor, resolver,
 			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+		fmt.Println("upgrade_cluster_test.go o.State =", o.State)
 		// when
 		_, err = svc.Execute(id)
 		require.NoError(t, err)
 
-		o, err := store.Orchestrations().GetByID(id)
+		o, err = store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
 		assert.Equal(t, orchestration.Succeeded, o.State)
@@ -364,7 +371,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		op, err := store.Operations().GetUpgradeClusterOperationByID(opId)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Succeeded, string(op.State))
+		assert.Equal(t, orchestration.Retrying, string(op.State))
 	})
 
 	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {

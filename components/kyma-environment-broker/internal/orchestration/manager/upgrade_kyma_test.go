@@ -305,6 +305,11 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
 
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: nil,
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{}, nil)
+
 		id := "id"
 		opId := "op-" + id
 		err := store.Orchestrations().Insert(internal.Orchestration{
@@ -369,7 +374,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Succeeded, string(op.State))
+		assert.Equal(t, orchestration.Retrying, string(op.State))
 	})
 
 	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {
