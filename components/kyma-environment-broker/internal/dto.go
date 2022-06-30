@@ -213,7 +213,6 @@ type ERSContext struct {
 	TenantID              string                             `json:"tenant_id"`
 	SubAccountID          string                             `json:"subaccount_id"`
 	GlobalAccountID       string                             `json:"globalaccount_id"`
-	ServiceManager        *ServiceManagerEntryDTO            `json:"sm_platform_credentials,omitempty"`
 	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
@@ -226,9 +225,6 @@ type ERSContext struct {
 }
 
 func UpdateERSContext(provisioning, lastOperation ERSContext) ERSContext {
-	if lastOperation.ServiceManager != nil {
-		provisioning.ServiceManager = lastOperation.ServiceManager
-	}
 	if lastOperation.SMOperatorCredentials != nil {
 		provisioning.SMOperatorCredentials = lastOperation.SMOperatorCredentials
 	}

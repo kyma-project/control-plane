@@ -12,10 +12,6 @@ func RequiresReconcilerUpdateForMigration(op internal.UpdatingOperation) bool {
 	return ForMigration(op) && op.RequiresReconcilerUpdate
 }
 
-func ForPlatformCredentialsProvided(op internal.UpdatingOperation) bool {
-	return op.ProvisioningParameters.ErsContext.ServiceManager != nil
-}
-
 func ForBTPOperatorCredentialsProvided(op internal.UpdatingOperation) bool {
 	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil
 }

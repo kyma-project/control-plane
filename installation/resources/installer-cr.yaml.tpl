@@ -15,4 +15,4 @@ spec:
     - name: "kcp"
       namespace: "kcp-system"
     - name: "oidc-kubeconfig-service"
-      namespace: "kyma-system"
+      namespace: "kcp-system"

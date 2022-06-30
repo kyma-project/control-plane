@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 
-	"github.com/Peripli/service-manager-cli/pkg/types"
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -64,7 +64,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "1.24.7"
+	defaultKymaVer         = "2.0"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -93,6 +93,7 @@ type OrchestrationSuite struct {
 	clusterQueue      *process.Queue
 	storage           storage.BrokerStorage
 	gardenerClient    dynamic.Interface
+	reconcilerClient  *reconciler.FakeClient
 
 	t *testing.T
 }
@@ -114,6 +115,9 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		KymaVersion:       "",
 		KubernetesVersion: "",
 	}
+	cfg.Reconciler = reconciler.Config{
+		ProvisioningTimeout: time.Second,
+	}
 
 	//auditLog create file here.
 	inMemoryFs, err := createInMemFS()
@@ -130,7 +134,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
 
-	kymaVer := "1.15.1"
+	kymaVer := "2.0.3"
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
 		MachineImageVersion:         "coreos",
 		KubernetesVersion:           "1.18",
@@ -169,15 +173,15 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	notificationBundleBuilder := notification.NewBundleBuilder(notificationFakeClient, cfg.Notification)
 
 	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, &upgrade_kyma.TimeSchedule{
-		Retry:              10 * time.Millisecond,
-		StatusCheck:        100 * time.Millisecond,
+		Retry:              2 * time.Millisecond,
+		StatusCheck:        20 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, fixServiceManagerFactory(), notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
-		Retry:                 10 * time.Millisecond,
-		StatusCheck:           100 * time.Millisecond,
+		Retry:                 2 * time.Millisecond,
+		StatusCheck:           20 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, cfg, 1000)
 
@@ -191,6 +195,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		clusterQueue:      clusterQueue,
 		storage:           db,
 		gardenerClient:    gardenerClient,
+		reconcilerClient:  reconcilerClient,
 
 		t: t,
 	}
@@ -292,13 +297,6 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 		ErsContext: internal.ERSContext{
 			SubAccountID:    subAccountID,
 			GlobalAccountID: globalAccountID,
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				Credentials: internal.ServiceManagerCredentials{BasicAuth: internal.ServiceManagerBasicAuth{
-					Username: "username321",
-					Password: "password321",
-				}},
-				URL: "https://sm.sap",
-			},
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
@@ -414,8 +412,20 @@ func (s *OrchestrationSuite) finishOperationByProvisioner(operationType gqlschem
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
-func (s *OrchestrationSuite) FinishUpgradeOperationByProvisioner(runtimeID string) {
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, runtimeID)
+func (s *OrchestrationSuite) FinishUpgradeOperationByReconciler(runtimeID string) {
+	err := wait.Poll(time.Millisecond*20, 2*time.Second, func() (bool, error) {
+		c, err := s.reconcilerClient.GetLatestCluster(runtimeID)
+		if err != nil {
+			return false, nil
+		}
+		if c.ConfigurationVersion == 0 {
+			return false, nil
+		}
+		s.reconcilerClient.ChangeClusterState(runtimeID, c.ConfigurationVersion, reconcilerApi.StatusReady)
+		return true, nil
+	})
+
+	assert.NoError(s.t, err, "timeout waiting for reconciler cluster to exist")
 }
 
 func (s *OrchestrationSuite) FinishUpgradeShootOperationByProvisioner(runtimeID string) {
@@ -432,11 +442,14 @@ func (s *OrchestrationSuite) WaitForOrchestrationState(orchestrationID string, s
 }
 
 func (s *OrchestrationSuite) AssertRuntimeUpgraded(runtimeID string, version string) {
-	assert.True(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, version), "The runtime %s expected to be upgraded", runtimeID)
+	c, _ := s.reconcilerClient.LastClusterConfig(runtimeID)
+	assert.Equal(s.t, version, c.KymaConfig.Version, "The runtime %s expected to be upgraded", runtimeID)
 }
 
 func (s *OrchestrationSuite) AssertRuntimeNotUpgraded(runtimeID string) {
-	assert.False(s.t, s.provisionerClient.IsRuntimeUpgraded(runtimeID, ""), "The runtime %s expected to be not upgraded", runtimeID)
+	_, err := s.reconcilerClient.LastClusterConfig(runtimeID)
+	// error means not found
+	assert.Error(s.t, err)
 }
 
 func (s *OrchestrationSuite) AssertShootUpgraded(runtimeID string) {
@@ -528,8 +541,9 @@ type ProvisioningSuite struct {
 	storage             storage.BrokerStorage
 	directorClient      *director.FakeClient
 
-	t         *testing.T
-	avsServer *avs.MockAvsServer
+	t                *testing.T
+	avsServer        *avs.MockAvsServer
+	reconcilerClient *reconciler.FakeClient
 }
 
 func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
@@ -597,8 +611,6 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 
 	accountProvider := fixAccountProvider()
 
-	smcf := fixServiceManagerFactory()
-
 	directorClient := director.NewFakeClient()
 
 	reconcilerClient := reconciler.NewFakeClient()
@@ -608,7 +620,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -620,6 +632,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 		storage:             db,
 		directorClient:      directorClient,
 		avsServer:           server,
+		reconcilerClient:    reconcilerClient,
 
 		t: t,
 	}
@@ -632,15 +645,6 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
 			UserID:          options.ProvideUserID(),
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				URL: "sm_url",
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "sm_username",
-						Password: "sm_password",
-					},
-				},
-			},
 		},
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
@@ -688,15 +692,6 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 		ErsContext: internal.ERSContext{
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    options.ProvideSubAccountID(),
-			ServiceManager: &internal.ServiceManagerEntryDTO{
-				URL: "sm_url",
-				Credentials: internal.ServiceManagerCredentials{
-					BasicAuth: internal.ServiceManagerBasicAuth{
-						Username: "sm_username",
-						Password: "sm_password",
-					},
-				},
-			},
 		},
 		PlatformRegion: options.ProvidePlatformRegion(),
 		Parameters: internal.ProvisioningParametersDTO{
@@ -744,7 +739,7 @@ func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state d
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
-func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID string) {
+func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconciler(operationID string) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
@@ -756,6 +751,17 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisioner(operationID
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
+
+	err = wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		if op.ClusterConfigurationVersion != 0 {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with Cluster Configuration Version. The existing operation %+v", op)
+
+	s.finishOperationByReconciler(op)
 }
 
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
@@ -792,6 +798,22 @@ func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	}
 }
 
+func (s *ProvisioningSuite) finishOperationByReconciler(op *internal.ProvisioningOperation) {
+	time.Sleep(50 * time.Millisecond)
+	err := wait.Poll(pollingInterval, 10*time.Second, func() (bool, error) {
+		state, err := s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusReady)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
 func (s *ProvisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
@@ -813,10 +835,12 @@ func (s *ProvisioningSuite) AssertProvisioningRequest() {
 	assert.NotEmpty(s.t, input.ClusterConfig.GardenerConfig.Name)
 }
 
-func (s *ProvisioningSuite) AssertKymaProfile(expectedProfile gqlschema.KymaProfile) {
-	input := s.fetchProvisionInput()
+func (s *ProvisioningSuite) AssertKymaProfile(opID string, expectedProfile gqlschema.KymaProfile) {
+	operation, _ := s.storage.Operations().GetProvisioningOperationByID(opID)
+	s.fetchProvisionInput()
+	c, _ := s.reconcilerClient.LastClusterConfig(operation.RuntimeID)
 
-	assert.Equal(s.t, expectedProfile, *input.KymaConfig.Profile)
+	assert.Equal(s.t, string(expectedProfile), c.KymaConfig.Profile)
 }
 
 func (s *ProvisioningSuite) AssertProvider(provider string) {
@@ -848,7 +872,7 @@ func (s *ProvisioningSuite) AssertMachineType(machineType string) {
 	assert.Equal(s.t, machineType, input.ClusterConfig.GardenerConfig.MachineType)
 }
 
-func (s *ProvisioningSuite) AssertOverrides(overrides []*gqlschema.ConfigEntryInput) {
+func (s *ProvisioningSuite) AssertOverrides(opID string, overrides []*gqlschema.ConfigEntryInput) {
 	input := s.fetchProvisionInput()
 
 	// values in arrays need to be sorted, because globalOverrides are coming from a map and map's elements' order is not deterministic
@@ -927,7 +951,7 @@ func fixConfig() *Config {
 			DeprovisioningTimeout: 2 * time.Minute,
 		},
 		Reconciler: reconciler.Config{
-			ProvisioningTimeout: 2 * time.Minute,
+			ProvisioningTimeout: 5 * time.Second,
 		},
 		Director: director.Config{},
 		Database: storage.Config{
@@ -982,24 +1006,6 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
-}
-
-func fixServiceManagerFactory() provisioning.SMClientFactory {
-	smcf := servicemanager.NewFakeServiceManagerClientFactory([]types.ServiceOffering{{
-		ID:        "id-001",
-		Name:      "xsuaa",
-		CatalogID: "off-cat-id-001",
-		BrokerID:  brokerID,
-	},
-	}, []types.ServicePlan{{
-		ID:        "xsuaa-plan-id",
-		Name:      "application",
-		CatalogID: "xsuaa",
-	},
-	})
-	smcf.SynchronousProvisioning()
-
-	return smcf
 }
 
 func createInMemFS() (afero.Fs, error) {

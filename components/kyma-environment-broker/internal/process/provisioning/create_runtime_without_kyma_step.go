@@ -15,6 +15,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// the time after which the operation is marked as expired
+	CreateRuntimeTimeout = 1 * time.Hour
+
+	brokerKeyPrefix = "broker_"
+	globalKeyPrefix = "global_"
+)
+
 type CreateRuntimeWithoutKymaStep struct {
 	operationManager    *process.ProvisionOperationManager
 	instanceStorage     storage.Instances

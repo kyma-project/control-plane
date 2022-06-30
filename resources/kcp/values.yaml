@@ -2,8 +2,8 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.1-alpine-3cba814e
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:2f65df1f"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:2f65df1f"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:0c3a856d"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:0c3a856d"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -14,7 +14,7 @@ global:
       version: "PR-1746"
     kyma_environment_broker:
       dir:
-      version: "PR-1738"
+      version: "PR-1788"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1749"
@@ -26,7 +26,7 @@ global:
       version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1768"
+      version: "PR-1791"
     tests:
       provisioner:
         dir:
@@ -158,12 +158,11 @@ global:
     features: |-
       - name: "LOG_ISTIO_OPERATOR"
         value: "false"
+      - name: "DEBUG_LOGGING_FOR_SPECIFIC_OPERATIONS"
+        value: "true"
   component_reconcilers:
     enabled: false
     authentication: true
-  oathkeeper:
-    host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
-    port: 4455
 pairing-adapter:
   enabled: false
 migratorJobs:

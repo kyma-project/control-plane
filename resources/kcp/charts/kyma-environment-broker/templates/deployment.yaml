@@ -192,25 +192,6 @@ spec:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-sslMode
-            - name: APP_SERVICE_MANAGER_SUBACCOUNT_WITH_REQUEST_CREDENTIALS
-              value: "{{ .Values.serviceManager.subaccountWithRequestCredentials }}"
-            - name: APP_SERVICE_MANAGER_OVERRIDE_MODE
-              value: "{{ .Values.serviceManager.overrideMode }}"
-            - name: APP_SERVICE_MANAGER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.serviceManager.secretName }}
-                  key: url
-            - name: APP_SERVICE_MANAGER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.serviceManager.secretName }}
-                  key: password
-            - name: APP_SERVICE_MANAGER_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.serviceManager.secretName }}
-                  key: username
             - name: APP_AVS_OAUTH_TOKEN_ENDPOINT
               valueFrom:
                 secretKeyRef:

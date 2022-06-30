@@ -10,12 +10,16 @@ global:
     gateway:
       name: "kyma-gateway"
       namespace: "kyma-system"
+  livenessProbe:
+    initialDelaySeconds: 180
+    timeoutSeconds: 1
+    periodSeconds: 10
 
 replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
-  tag: "PR-1638"
+  tag: "PR-1795"
   pullPolicy: Always
 
 config:
@@ -41,6 +45,10 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+rbac:
+  ## Specifies whether a role and rolebinding should be created
+  create: true
 
 podSecurityContext: {}
   # fsGroup: 2000

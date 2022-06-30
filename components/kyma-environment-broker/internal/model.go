@@ -15,10 +15,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
@@ -231,12 +229,6 @@ type InstanceWithOperation struct {
 	IsSuspensionOp bool
 }
 
-type SMClientFactory interface {
-	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(request servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
-}
-
 type InstanceDetails struct {
 	Avs      AvsLifecycleData `json:"avs"`
 	EventHub EventHub         `json:"eh"`
@@ -247,13 +239,9 @@ type InstanceDetails struct {
 	ShootDomain       string                    `json:"shoot_domain"`
 	ClusterName       string                    `json:"clusterName"`
 	ShootDNSProviders gardener.DNSProvidersData `json:"shoot_dns_providers"`
-	XSUAA             XSUAAData                 `json:"xsuaa"`
-	Ems               EmsData                   `json:"ems"`
-	Connectivity      ConnectivityData          `json:"connectivity"`
 	Monitoring        MonitoringData            `json:"monitoring"`
 	EDPCreated        bool                      `json:"edp_created"`
 
-	// used for kyma 2.x
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
 
@@ -270,39 +258,6 @@ type ProvisioningOperation struct {
 
 	// following fields are not stored in the storage
 	InputCreator ProvisionerInputCreator `json:"-"`
-
-	SMClientFactory SMClientFactory `json:"-"`
-}
-
-type ServiceManagerInstanceInfo struct {
-	BrokerID                string `json:"brokerId"`
-	ServiceID               string `json:"serviceId"`
-	PlanID                  string `json:"planId"` // it is a plan.CatalogID from the Service Manager perspective
-	InstanceID              string `json:"instanceId"`
-	Provisioned             bool   `json:"provisioned"`
-	ProvisioningTriggered   bool   `json:"provisioningTriggered"`
-	DeprovisioningTriggered bool   `json:"deprovisioningTriggered"`
-}
-
-type XSUAAData struct {
-	Instance ServiceManagerInstanceInfo `json:"instance"`
-
-	XSAppname string `json:"xsappname"`
-	BindingID string `json:"bindingId"`
-}
-
-type EmsData struct {
-	Instance ServiceManagerInstanceInfo `json:"instance"`
-
-	BindingID string `json:"bindingId"`
-	Overrides string `json:"overrides"`
-}
-
-type ConnectivityData struct {
-	Instance ServiceManagerInstanceInfo `json:"instance"`
-
-	BindingID string `json:"bindingId"`
-	Overrides string `json:"overrides"`
 }
 
 type MonitoringData struct {
@@ -310,20 +265,9 @@ type MonitoringData struct {
 	Password string `json:"password"`
 }
 
-func (s *ServiceManagerInstanceInfo) InstanceKey() servicemanager.InstanceKey {
-	return servicemanager.InstanceKey{
-		BrokerID:   s.BrokerID,
-		InstanceID: s.InstanceID,
-		ServiceID:  s.ServiceID,
-		PlanID:     s.PlanID,
-	}
-}
-
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation
-
-	SMClientFactory SMClientFactory `json:"-"`
 
 	// Temporary indicates that this deprovisioning operation must not remove the instance
 	Temporary                   bool          `json:"temporary"`
@@ -368,8 +312,6 @@ type UpgradeKymaOperation struct {
 	InputCreator                   ProvisionerInputCreator `json:"-"`
 
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
-
-	SMClientFactory SMClientFactory `json:"-"`
 
 	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
@@ -590,14 +532,6 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 	}
 }
 
-func (po *ProvisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
-	return po.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
-}
-
-func (po *ProvisioningOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
-	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
-}
-
 func (o *Operation) FinishStage(stageName string) {
 	o.FinishedStages[stageName] = struct{}{}
 }
@@ -605,18 +539,6 @@ func (o *Operation) FinishStage(stageName string) {
 func (o *Operation) IsStageFinished(stage string) bool {
 	_, found := o.FinishedStages[stage]
 	return found
-}
-
-func (do *DeprovisioningOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
-	return do.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(do.ProvisioningParameters), log)
-}
-
-func (uko *UpgradeKymaOperation) ServiceManagerClient(log logrus.FieldLogger) (servicemanager.Client, error) {
-	return uko.SMClientFactory.ForCustomerCredentials(serviceManagerRequestCreds(uko.ProvisioningParameters), log)
-}
-
-func (po *UpgradeKymaOperation) ProvideServiceManagerCredentials(log logrus.FieldLogger) (*servicemanager.Credentials, error) {
-	return po.SMClientFactory.ProvideCredentials(serviceManagerRequestCreds(po.ProvisioningParameters), log)
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
@@ -644,39 +566,4 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		})
 	}
 	return copiedList
-}
-
-func serviceManagerRequestCreds(parameters ProvisioningParameters) servicemanager.RequestContext {
-	var creds *servicemanager.Credentials
-
-	sm := parameters.ErsContext.ServiceManager
-	if sm != nil {
-		creds = &servicemanager.Credentials{
-			Username: sm.Credentials.BasicAuth.Username,
-			Password: sm.Credentials.BasicAuth.Password,
-			URL:      sm.URL,
-		}
-	}
-
-	return servicemanager.RequestContext{
-		SubaccountID: parameters.ErsContext.SubAccountID,
-		Credentials:  creds,
-	}
-}
-
-func (i *ServiceManagerInstanceInfo) ToProvisioningInput() *servicemanager.ProvisioningInput {
-	var input servicemanager.ProvisioningInput
-
-	input.ID = i.InstanceID
-	input.ServiceID = i.ServiceID
-	input.PlanID = i.PlanID
-	input.SpaceGUID = uuid.New().String()
-	input.OrganizationGUID = uuid.New().String()
-
-	input.Context = map[string]interface{}{
-		"platform": "kubernetes",
-	}
-	input.Parameters = map[string]interface{}{}
-
-	return &input
 }
