@@ -312,52 +312,12 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 			// handle the retrying ops during in progress orchestration
 			// use the existing resolved policy in op
 			numberOfNotFinished += numberOfRetrying
-
-			result := []orchestration.RuntimeOperation{}
-			fmt.Println("manager.go resolveOperations() o.Parameters = ", o.Parameters)
-			runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
-			if err != nil {
-				return false, errors.Wrap(err, "resolving target sh")
-			}
-
-			for _, r := range runtimes {
-				windowBegin := time.Time{}
-				windowEnd := time.Time{}
-				days := []string{}
-
-				if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-					windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, orchestration.MaintenancePolicy{})
-				}
-				r.MaintenanceWindowBegin = windowBegin
-				r.MaintenanceWindowEnd = windowEnd
-				r.MaintenanceDays = days
-
-				inst, err := m.instanceStorage.GetByID(r.InstanceID)
-				if err != nil {
-					return false, errors.Wrapf(err, "while getting instance %s", r.InstanceID)
-				}
-
-				op, err := m.factory.NewOperation(*o, r, *inst, orchestration.Retrying)
-				if err != nil {
-					return false, errors.Wrapf(err, "while creating new operation for runtime id %q", r.RuntimeID)
-				}
-
-				result = append(result, op)
-			}
-
-			if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
-				o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
-			}
-			if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
-				o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
-			}
-
-			_, err = m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, orchestration.MaintenancePolicy{}, false)
+			ops, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, orchestration.MaintenancePolicy{}, false)
 			if err != nil {
 				// don't block the polling and cancel signal
 				log.Errorf("while handling retrying operations: %v", err)
 			} else {
-				err := strategy.Insert(execID, result, o.Parameters.Strategy)
+				err := strategy.Insert(execID, ops, o.Parameters.Strategy)
 				if err != nil {
 					return false, errors.Wrap(err, "while inserting operations to queue")
 				}
