@@ -56,10 +56,11 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	err = r.OperationsStateUpdate(ops)
+	//not change current ops to "queued for retrying" and make it failed
+	/*err = r.OperationsStateUpdate(ops)
 	if err != nil {
 		return resp, err
-	}
+	}*/
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
 	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)
