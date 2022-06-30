@@ -317,6 +317,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				// don't block the polling and cancel signal
 				log.Errorf("while handling retrying operations: %v", err)
 			} else {
+				m.log.Info("waitForCompletion() RetryOperations")
 				err := strategy.Insert(execID, ops, o.Parameters.Strategy)
 				if err != nil {
 					return false, errors.Wrap(err, "while inserting operations to queue")

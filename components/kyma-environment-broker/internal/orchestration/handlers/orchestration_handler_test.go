@@ -536,7 +536,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -612,7 +612,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -683,7 +683,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		op, err := db.Operations().GetOperationByID("id-0")
 		require.NoError(t, err)
 		// if "id-4" is canceled
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 		// if "Orchestration-id-4" is failed
 		// assert.Equal(t, orchestration.Failed, string(op.State))
 
@@ -693,7 +693,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -763,7 +763,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err := db.Operations().GetOperationByID("id-0")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-1")
 		require.NoError(t, err)
@@ -771,7 +771,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -832,7 +832,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err := db.Operations().GetOperationByID("id-0")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-1")
 		require.NoError(t, err)
@@ -840,7 +840,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
@@ -903,7 +903,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		op, err = db.Operations().GetOperationByID("id-2")
 		require.NoError(t, err)
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 
 		op, err = db.Operations().GetOperationByID("id-3")
 		require.NoError(t, err)
