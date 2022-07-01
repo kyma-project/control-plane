@@ -466,7 +466,7 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 			}
 		}
 		if failedFound && !invalidFailed {
-			result[Failed] = +1
+			result[Failed] += 1
 		}
 	}
 
