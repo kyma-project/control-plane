@@ -100,23 +100,7 @@ func (c *OperationResultCollector) OnUpgradeKymaStepProcessed(ctx context.Contex
 		return fmt.Errorf("expected UpgradeKymaStepProcessed but got %+v", ev)
 	}
 
-	var resultValue float64
-	switch stepProcessed.Operation.State {
-	case domain.InProgress:
-		resultValue = resultInProgress
-	case domain.Succeeded:
-		resultValue = resultSucceeded
-	case domain.Failed:
-		resultValue = resultFailed
-	case Pending:
-		resultValue = resultPending
-	case Canceling:
-		resultValue = resultCanceling
-	case Canceled:
-		resultValue = resultCanceled
-	case Retrying:
-		resultValue = resultRetrying
-	}
+	resultValue := c.mapResult(stepProcessed.Operation.State)
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
 	c.upgradeKymaResultGauge.
@@ -132,23 +116,7 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 		return fmt.Errorf("expected UpgradeClusterStepProcessed but got %+v", ev)
 	}
 
-	var resultValue float64
-	switch stepProcessed.Operation.State {
-	case domain.InProgress:
-		resultValue = resultInProgress
-	case domain.Succeeded:
-		resultValue = resultSucceeded
-	case domain.Failed:
-		resultValue = resultFailed
-	case Pending:
-		resultValue = resultPending
-	case Canceling:
-		resultValue = resultCanceling
-	case Canceled:
-		resultValue = resultCanceled
-	case Retrying:
-		resultValue = resultRetrying
-	}
+	resultValue := c.mapResult(stepProcessed.Operation.State)
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
 	c.upgradeClusterResultGauge.
@@ -178,17 +146,7 @@ func (c *OperationResultCollector) OnProvisioningStepProcessed(ctx context.Conte
 		return fmt.Errorf("expected ProvisioningStepProcessed but got %+v", ev)
 	}
 
-	var resultValue float64
-	switch stepProcessed.Operation.State {
-	case domain.InProgress, Pending, Retrying:
-		resultValue = resultInProgress
-	case domain.Succeeded:
-		resultValue = resultSucceeded
-	case domain.Failed, Canceling, Canceled:
-		resultValue = resultFailed
-	default:
-		resultValue = resultFailed
-	}
+	resultValue := c.mapResult(stepProcessed.Operation.State)
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
 	err := op.LastError
@@ -209,19 +167,8 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 	if !ok {
 		return fmt.Errorf("expected DeprovisioningStepProcessed but got %+v", ev)
 	}
-	var resultValue float64
-	switch stepProcessed.Operation.State {
-	case domain.InProgress:
-		resultValue = resultInProgress
-	case domain.Succeeded:
-		resultValue = resultSucceeded
-	case domain.Failed:
-		resultValue = resultFailed
-	case Pending:
-		resultValue = resultPending
-	default:
-		resultValue = resultUnimplemented
-	}
+
+	resultValue := c.mapResult(stepProcessed.Operation.State)
 	op := stepProcessed.Operation
 	pp := op.ProvisioningParameters
 	err := op.LastError
@@ -234,4 +181,26 @@ func (c *OperationResultCollector) OnDeprovisioningStepProcessed(ctx context.Con
 			string(err.Component()),
 			string(err.Reason())).Set(resultValue)
 	return nil
+}
+
+func (c *OperationResultCollector) mapResult(state domain.LastOperationState) float64 {
+	resultValue := resultUnimplemented
+	switch state {
+	case domain.InProgress:
+		resultValue = resultInProgress
+	case domain.Succeeded:
+		resultValue = resultSucceeded
+	case domain.Failed:
+		resultValue = resultFailed
+	case Pending:
+		resultValue = resultPending
+	case Canceling:
+		resultValue = resultCanceling
+	case Canceled:
+		resultValue = resultCanceled
+	case Retrying:
+		resultValue = resultRetrying
+	}
+
+	return resultValue
 }
