@@ -437,16 +437,18 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 
 	for _, entry := range entries {
 		resultPerInstanceID[entry.InstanceID] = append(resultPerInstanceID[entry.InstanceID], entry.State)
-		fmt.Println(entry.InstanceID, resultPerInstanceID[entry.InstanceID])
+		fmt.Println("set resultPerInstanceID", entry.InstanceID, resultPerInstanceID[entry.InstanceID])
 	}
 
+	fmt.Println("show resultPerInstanceID", resultPerInstanceID)
 	var invalidFailed bool
 	for instanceID, statuses := range resultPerInstanceID {
-		fmt.Println(instanceID, statuses)
+		fmt.Println("loop resultPerInstanceID", instanceID, statuses)
 
 		invalidFailed = false
 		for _, status := range statuses {
 			if status == "succeed" || status == "retrying" {
+				fmt.Println("found invalidFailed status:=", status)
 				invalidFailed = true
 			}
 		}
@@ -459,6 +461,7 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	for _, entry := range entries {
 		if entry.State != "failed" {
 			result[entry.State] += 1
+			fmt.Println("loop entries", entry.State, result[entry.State])
 		}
 	}
 	return result, nil
