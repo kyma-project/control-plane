@@ -59,6 +59,7 @@ func (cmd *DeprovisionCommand) Run() error {
 		ClientSecret: GlobalOpts.oidcClientSecret,
 		TokenURL:     GlobalOpts.oauth2URL,
 		Context:      cmd.cobraCmd.Context(),
+		EndpointURL:  GlobalOpts.kebAPIURL,
 	}
 	client := deprovision.NewDeprovisionClient(param)
 
