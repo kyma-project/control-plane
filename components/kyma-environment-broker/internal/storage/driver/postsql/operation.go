@@ -18,6 +18,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const (
+	Retrying  = "retrying" // to signal a retry sign before marking it to pending
+	Succeeded = "succeeded"
+	Failed    = "failed"
+)
+
 type operations struct {
 	postsql.Factory
 	cipher Cipher
@@ -451,21 +457,21 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		invalidFailed = false
 		failedFound = false
 		for _, status := range statuses {
-			if status == "failed" {
+			if status == Failed {
 				failedFound = true
 			}
-			if status == "succeed" || status == "retrying" {
+			if status == Succeeded || status == Retrying {
 				fmt.Println("found invalidFailed status:=", status)
 				invalidFailed = true
 			}
 		}
 		if failedFound && !invalidFailed {
-			result["failed"] = +1
+			result[Failed] = +1
 		}
 	}
 
 	for _, entry := range entries {
-		if entry.State != "failed" {
+		if entry.State != Failed {
 			result[entry.State] += 1
 			fmt.Println("loop entries", entry.State, result[entry.State])
 		}
