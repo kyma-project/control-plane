@@ -433,8 +433,33 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		return map[string]int{}, err
 	}
 	result := make(map[string]int)
+	resultPerInstanceID := make(map[string][]string)
+
 	for _, entry := range entries {
-		result[entry.State] += 1
+		resultPerInstanceID[entry.InstanceID] = append(resultPerInstanceID[entry.InstanceID], entry.State)
+		fmt.Println(entry.InstanceID, resultPerInstanceID[entry.InstanceID])
+	}
+
+	var invalidFailed bool
+	for instanceID, statuses := range resultPerInstanceID {
+		fmt.Println(instanceID, statuses)
+
+		invalidFailed = false
+		for _, status := range statuses {
+			if status == "succeed" || status == "retrying" {
+				invalidFailed = true
+			}
+		}
+		if !invalidFailed {
+			result["failed"] = +1
+		}
+
+	}
+
+	for _, entry := range entries {
+		if entry.State != "failed" {
+			result[entry.State] += 1
+		}
 	}
 	return result, nil
 }
