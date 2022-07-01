@@ -255,6 +255,11 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 		gardenerConfig.ShootNetworkingFilterDisabled = shootNetworkingFilterDisabled
 	}
 
+	// Validate provider specific changes to the shoot
+	err = gardenerConfig.GardenerProviderConfig.ValidateShootConfigChange(&shoot)
+	if err != nil {
+		return &gqlschema.OperationStatus{}, err.Append("Invalid gardener provider config change")
+	}
 	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
 	if dbErr != nil {
 		return &gqlschema.OperationStatus{}, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())

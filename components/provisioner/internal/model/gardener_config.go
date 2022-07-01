@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -256,6 +256,7 @@ type GardenerProviderConfig interface {
 	AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig
 	ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
 	EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError
+	ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError
 }
 
 func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig, apperrors.AppError) { //TODO: change to detect Provider correctly
@@ -339,6 +340,10 @@ func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
 }
 
+func (c GCPGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+	return nil
+}
+
 func (c GCPGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	shoot.Spec.CloudProfileName = "gcp"
 
@@ -414,6 +419,33 @@ func (c AzureGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecif
 type AWSGardenerConfig struct {
 	ProviderSpecificConfig
 	input *gqlschema.AWSProviderConfigInput `db:"-"`
+}
+
+func (c AzureGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+	// Check if the zone is already configured. Deny change to CIDR. Deny new zones (no support for extension of zones).
+	infra := azure.InfrastructureConfig{}
+	if c.input.AzureZones != nil {
+		err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.Raw, &infra)
+		if err != nil {
+			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
+		}
+	}
+	for _, inputZone := range c.input.AzureZones {
+		zoneFound := false
+		for _, zone := range infra.Networks.Zones {
+			if inputZone.Name == zone.Name {
+				zoneFound = true
+				if inputZone.Cidr != zone.CIDR {
+					return apperrors.BadRequest("cannot change shoot network zone CIDR from %s to %s", zone.CIDR, inputZone.Cidr)
+				}
+			}
+		}
+		if !zoneFound {
+			return apperrors.BadRequest("extension of shoot network zones is not supported")
+		}
+	}
+
+	return nil
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -526,6 +558,37 @@ func (c AWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 	}
 }
 
+func (c AWSGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+	infra := aws.InfrastructureConfig{}
+	err := json.Unmarshal(shoot.Spec.Provider.InfrastructureConfig.Raw, &infra)
+	if err != nil {
+		return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
+	}
+	for _, inputZone := range c.input.AwsZones {
+		zoneFound := false
+		for _, zone := range infra.Networks.Zones {
+			if inputZone.Name == zone.Name {
+				zoneFound = true
+				if inputZone.WorkerCidr != zone.Workers {
+					return apperrors.BadRequest("cannot change shoot network zone workers CIDR from %s to %s", zone.Workers, inputZone.WorkerCidr)
+				}
+				if inputZone.InternalCidr != zone.Internal {
+					return apperrors.BadRequest("cannot change shoot network zone internal CIDR from %s to %s", zone.Internal, inputZone.InternalCidr)
+				}
+				if inputZone.PublicCidr != zone.Public {
+					return apperrors.BadRequest("cannot change shoot network zone internal CIDR from %s to %s", zone.Public, inputZone.PublicCidr)
+				}
+			}
+		}
+
+		if !zoneFound {
+			return apperrors.BadRequest("extension of shoot network zones is not supported")
+		}
+	}
+
+	return nil
+}
+
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 	zoneNames := getAWSZonesNames(c.input.AwsZones)
 	return updateShootConfig(gardenerConfig, shoot, zoneNames)
@@ -588,6 +651,10 @@ func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSp
 		CloudProfileName:     c.input.CloudProfileName,
 		LoadBalancerProvider: c.input.LoadBalancerProvider,
 	}
+}
+
+func (c OpenStackGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+	return nil
 }
 
 func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {

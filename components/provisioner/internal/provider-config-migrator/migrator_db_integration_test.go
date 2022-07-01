@@ -207,3 +207,7 @@ func (c SingleZoneAWSGardenerConfig) EditShootConfig(_ model.GardenerConfig, _ *
 func (c SingleZoneAWSGardenerConfig) ExtendShootConfig(_ model.GardenerConfig, _ *gardener_types.Shoot) apperrors.AppError {
 	return nil
 }
+
+func (c SingleZoneAWSGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+	return nil
+}
