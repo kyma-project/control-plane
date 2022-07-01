@@ -432,6 +432,8 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	if err != nil {
 		return map[string]int{}, err
 	}
+	fmt.Println("GetOperationStatsForOrchestration entries:", entries)
+
 	result := make(map[string]int)
 	resultPerInstanceID := make(map[string][]string)
 
@@ -441,21 +443,25 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	}
 
 	fmt.Println("show resultPerInstanceID", resultPerInstanceID)
-	var invalidFailed bool
+	var invalidFailed, failedFound bool
+
 	for instanceID, statuses := range resultPerInstanceID {
 		fmt.Println("loop resultPerInstanceID", instanceID, statuses)
 
 		invalidFailed = false
+		failedFound = false
 		for _, status := range statuses {
+			if status == "failed" {
+				failedFound = true
+			}
 			if status == "succeed" || status == "retrying" {
 				fmt.Println("found invalidFailed status:=", status)
 				invalidFailed = true
 			}
 		}
-		if !invalidFailed {
+		if failedFound && !invalidFailed {
 			result["failed"] = +1
 		}
-
 	}
 
 	for _, entry := range entries {
