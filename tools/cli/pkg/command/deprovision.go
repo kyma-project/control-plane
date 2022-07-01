@@ -21,6 +21,7 @@ type DeprovisionCommand struct {
 	subAccountID    string
 	runtimeID       string
 	outputPath      string
+	instanceID      string
 }
 
 func NewDeprovisionCmd() *cobra.Command {
@@ -42,7 +43,6 @@ By default, the deprovision file is saved to the current directory. The output f
 	}
 	cmd.cobraCmd = cobraCmd
 
-	cobraCmd.Flags().StringVarP(&cmd.outputPath, "output", "o", "", "Path to the file to save the downloaded kubeconfig to. Defaults to {CLUSTER NAME}.yaml in the current directory if not specified.")
 	cobraCmd.Flags().StringVarP(&cmd.globalAccountID, "account", "g", "", "Global account ID of the specific Kyma Runtime.")
 	cobraCmd.Flags().StringVarP(&cmd.subAccountID, "subaccount", "s", "", "Subccount ID of the specific Kyma Runtime.")
 	cobraCmd.Flags().StringVarP(&cmd.runtimeID, "runtime-id", "r", "", "Runtime ID of the specific Kyma Runtime.")
@@ -52,7 +52,6 @@ By default, the deprovision file is saved to the current directory. The output f
 }
 
 func (cmd *DeprovisionCommand) Run() error {
-	// TODO: Ask the user if they are sure about the deprovision operation.
 	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
 	param := deprovision.DeprovisionParameters{ // TODO: What to choose for AuthStyle and Scope?
@@ -66,29 +65,27 @@ func (cmd *DeprovisionCommand) Run() error {
 	if cmd.runtimeID != "" {
 		client.DeprovisionRuntime(cmd.runtimeID)
 	} else {
-		err := cmd.resolveRuntimeFromShootName(cmd.cobraCmd.Context(), cred)
+		err := cmd.resolveInstanceID(cmd.cobraCmd.Context(), cred)
 		if err != nil {
 			errors.Wrap(err, "while resolving runtime from shootName")
 		}
-		client.DeprovisionRuntime(cmd.runtimeID)
+		client.DeprovisionRuntime(cmd.instanceID)
 	}
 	return nil
 }
 
 func (cmd *DeprovisionCommand) Validate() error {
 	if cmd.globalAccountID != "" && (cmd.subAccountID != "" || cmd.runtimeID != "") || cmd.shootName != "" {
+		if !promptUser(fmt.Sprintf("Runtime: '%s' will be deprovisioned. Are you sure you want to continue? ", cmd.shootName)) {
+			return errors.New("deprovision command aborted")
+		}
 		return nil
+	} else {
+		return errors.New("at least one of the following options have to be specified: account/subaccount, account/runtime-id, shoot")
 	}
-	return errors.New("at least one of the following options have to be specified: account/subaccount, account/runtime-id, shoot")
-
-	if !promptUser(fmt.Sprintf("Runtime: '%s' will be deprovisioned. Are you sure you want to continue? ", cmd.runtimeID)) {
-		return errors.New("deprovision command aborted")
-	}
-
-	return nil
 }
 
-func (cmd *DeprovisionCommand) resolveRuntimeFromShootName(ctx context.Context, cred credential.Manager) error {
+func (cmd *DeprovisionCommand) resolveInstanceID(ctx context.Context, cred credential.Manager) error {
 	httpClient := oauth2.NewClient(ctx, cred)
 	rtClient := runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
 	params := runtime.ListParameters{}
@@ -112,8 +109,7 @@ func (cmd *DeprovisionCommand) resolveRuntimeFromShootName(ctx context.Context, 
 	if rp.Count > 1 {
 		return fmt.Errorf("multiple runtimes (%d) matched the input options", rp.Count)
 	}
-
-	cmd.runtimeID = rp.Data[0].RuntimeID
+	cmd.instanceID = rp.Data[0].InstanceID
 
 	return nil
 }
