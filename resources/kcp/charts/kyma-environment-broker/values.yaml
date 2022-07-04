@@ -222,6 +222,9 @@ oidc:
 kebClient:
   scope: "broker:write cld:read"
 
+runtimeAllowedPrincipals: |-
+  - cluster.local/ns/kcp-system/sa/kcp-kyma-metrics-collector
+
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
