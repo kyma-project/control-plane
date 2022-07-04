@@ -23,7 +23,7 @@ type reconciliationDebugLogsCmd struct {
 	opts          reconciliationDebugLogsOpts
 }
 
-func (cmd reconciliationDebugLogsCmd) Validate() error {
+func (cmd *reconciliationDebugLogsCmd) Validate() error {
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
 	cmd.auth = CLICredentialManager(logger.New())
 
@@ -34,7 +34,7 @@ func (cmd reconciliationDebugLogsCmd) Validate() error {
 	return nil
 }
 
-func (cmd reconciliationDebugLogsCmd) Run() error {
+func (cmd *reconciliationDebugLogsCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 
