@@ -192,6 +192,10 @@ type SingleZoneAWSGardenerConfig struct {
 	input *model.SingleZoneAWSProviderConfigInput `db:"-"`
 }
 
+func (c SingleZoneAWSGardenerConfig) NodeCIDR(model.GardenerConfig) string {
+	return c.input.VpcCidr
+}
+
 func (c SingleZoneAWSGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecificConfig {
 	return nil
 }
@@ -201,5 +205,9 @@ func (c SingleZoneAWSGardenerConfig) EditShootConfig(_ model.GardenerConfig, _ *
 }
 
 func (c SingleZoneAWSGardenerConfig) ExtendShootConfig(_ model.GardenerConfig, _ *gardener_types.Shoot) apperrors.AppError {
+	return nil
+}
+
+func (c SingleZoneAWSGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
 	return nil
 }

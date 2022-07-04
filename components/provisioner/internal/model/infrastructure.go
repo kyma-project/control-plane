@@ -46,14 +46,13 @@ func NewGCPControlPlane(zones []string) *gcp.ControlPlaneConfig {
 }
 
 func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *azure.InfrastructureConfig {
-	isZoned := len(azConfig.input.Zones) > 0
+	isZoned := len(azConfig.input.Zones) > 0 || len(azConfig.input.AzureZones) > 0
 	azureConfig := &azure.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: azureAPIVersion,
 		},
 		Networks: azure.NetworkConfig{
-			Workers: workerCIDR,
 			VNet: azure.VNet{
 				CIDR: &azConfig.input.VnetCidr,
 			},
@@ -61,14 +60,40 @@ func NewAzureInfrastructure(workerCIDR string, azConfig AzureGardenerConfig) *az
 		Zoned: isZoned,
 	}
 
-	if isZoned && azConfig.input.EnableNatGateway != nil && *azConfig.input.EnableNatGateway {
+	if len(azConfig.input.AzureZones) == 0 {
+		workers := workerCIDR
+		azureConfig.Networks.Workers = &workers
+	}
+	if isZoned && len(azConfig.input.AzureZones) == 0 && azConfig.input.EnableNatGateway != nil && *azConfig.input.EnableNatGateway {
 		natGateway := azure.NatGateway{
 			Enabled:                      *azConfig.input.EnableNatGateway,
 			IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(azConfig.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
 		}
 		azureConfig.Networks.NatGateway = &natGateway
 	}
+	azureConfig.Networks.Zones = createAzureZones(azConfig.input)
+
 	return azureConfig
+}
+
+func createAzureZones(input *gqlschema.AzureProviderConfigInput) []azure.Zone {
+	zones := make([]azure.Zone, 0)
+
+	for _, inputZone := range input.AzureZones {
+		zone := azure.Zone{
+			Name: inputZone.Name,
+			CIDR: inputZone.Cidr,
+		}
+		if input.EnableNatGateway != nil && *input.EnableNatGateway {
+			zone.NatGateway = &azure.NatGateway{
+				Enabled:                      true,
+				IdleConnectionTimeoutMinutes: util.UnwrapIntOrDefault(input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes),
+			}
+		}
+		zones = append(zones, zone)
+	}
+
+	return zones
 }
 
 func NewAzureControlPlane(zones []string) *azure.ControlPlaneConfig {

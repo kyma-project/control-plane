@@ -123,6 +123,19 @@ spec:
       values:
       - {{ .Values.oidc.groups.admin }}
       - {{ .Values.oidc.groups.operator }}
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /runtimes
+    from:
+    - source:
+        principals:
+{{- with .Values.runtimeAllowedPrincipals }}
+{{ tpl . $ | indent 10 }}
+{{- end }}
+
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
