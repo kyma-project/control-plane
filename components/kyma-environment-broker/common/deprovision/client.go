@@ -45,7 +45,7 @@ func (c DeprovisionClient) DeprovisionRuntime(instanceID string) error {
 	url := c.URL + "/oauth/v2/service_instances/" +
 		instanceID + "?accepts_incomplete=true&service_id=faebbe18-0a84-11e5-ab14-d663bd873d97&plan_id=0c712d43-b1e6-470s-9fe5-8e1d552aa6a5"
 
-	logrus.Info("url: %s", url)
+	logrus.Infof("url: %s", url)
 	request, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return errors.Wrapf(err, "while creating the HTTP Delete request for deprovisioning")
