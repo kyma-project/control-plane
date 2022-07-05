@@ -3,26 +3,26 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
-	github.com/gardener/gardener v1.48.0
+	github.com/gardener/gardener v1.49.0
 	github.com/gardener/gardener-extension-provider-aws v1.36.0
 	github.com/gardener/gardener-extension-provider-azure v1.28.0
-	github.com/gardener/gardener-extension-provider-gcp v1.23.0
+	github.com/gardener/gardener-extension-provider-gcp v1.23.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220608092104-91820e8e9e7c
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220617160451-bf75e4f4f701
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	go.uber.org/zap v1.21.0
-	k8s.io/api v0.24.1
-	k8s.io/apimachinery v0.24.1
+	k8s.io/api v0.24.2
+	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.9 // indirect
+	github.com/99designs/gqlgen v0.17.10 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.4 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
@@ -98,6 +98,7 @@ replace (
 )
 
 replace (
+	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0 //this fixes cve-2022-1996
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898

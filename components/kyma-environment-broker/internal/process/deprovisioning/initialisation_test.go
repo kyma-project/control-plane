@@ -57,7 +57,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: nil,
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, time.Hour)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)
@@ -108,7 +108,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 			},
 		}, nil)
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, time.Hour)
 
 		// when
 		operation, _, err = step.Run(operation, log)
@@ -144,7 +144,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 
-		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, nil, time.Hour)
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient, accountProviderMock, time.Hour)
 
 		// when
 		operation, repeat, err := step.Run(operation, log)

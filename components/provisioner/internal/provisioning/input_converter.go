@@ -27,22 +27,24 @@ func NewInputConverter(
 	forceAllowPrivilegedContainers bool) InputConverter {
 
 	return &converter{
-		uuidGenerator:                              uuidGenerator,
-		releaseProvider:                            releaseProvider,
-		gardenerProject:                            gardenerProject,
-		defaultEnableKubernetesVersionAutoUpdate:   defaultEnableKubernetesVersionAutoUpdate,
-		defaultEnableMachineImageVersionAutoUpdate: defaultEnableMachineImageVersionAutoUpdate,
-		forceAllowPrivilegedContainers:             forceAllowPrivilegedContainers,
+		uuidGenerator:                                    uuidGenerator,
+		releaseProvider:                                  releaseProvider,
+		gardenerProject:                                  gardenerProject,
+		defaultEnableKubernetesVersionAutoUpdate:         defaultEnableKubernetesVersionAutoUpdate,
+		defaultEnableMachineImageVersionAutoUpdate:       defaultEnableMachineImageVersionAutoUpdate,
+		defaultProvisioningShootNetworkingFilterDisabled: true,
+		forceAllowPrivilegedContainers:                   forceAllowPrivilegedContainers,
 	}
 }
 
 type converter struct {
-	uuidGenerator                              uuid.UUIDGenerator
-	releaseProvider                            release.Provider
-	gardenerProject                            string
-	defaultEnableKubernetesVersionAutoUpdate   bool
-	defaultEnableMachineImageVersionAutoUpdate bool
-	forceAllowPrivilegedContainers             bool
+	uuidGenerator                                    uuid.UUIDGenerator
+	releaseProvider                                  release.Provider
+	gardenerProject                                  string
+	defaultEnableKubernetesVersionAutoUpdate         bool
+	defaultEnableMachineImageVersionAutoUpdate       bool
+	defaultProvisioningShootNetworkingFilterDisabled bool
+	forceAllowPrivilegedContainers                   bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
@@ -65,6 +67,10 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
 		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers, tillerYaml)
+
+	if input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled == nil {
+		input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = util.BoolPtr(c.defaultProvisioningShootNetworkingFilterDisabled)
+	}
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
 		runtimeID,

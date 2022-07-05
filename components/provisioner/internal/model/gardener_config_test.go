@@ -21,7 +21,8 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	gcpConfigJSON := `{"zones":["fix-gcp-zone-1", "fix-gcp-zone-2"]}`
 	azureConfigJSON := `{"vnetCidr":"10.10.11.11/255", "zones":["fix-az-zone-1", "fix-az-zone-2"], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
 	azureNoZonesConfigJSON := `{"vnetCidr":"10.10.11.11/255"}`
-	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.250.0.0/19"}]}
+	azureZoneSubnetsConfigJSON := `{"vnetCidr":"10.10.11.11/255", "azureZones":[{"name":1,"cidr":"10.10.11.12/255"}, {"name":2,"cidr":"10.10.11.13/255"}], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
+	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.10.11.11/255"}]}
 `
 	singleZoneAwsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
@@ -59,6 +60,42 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{VnetCidr: util.StringPtr("10.10.11.11/255")},
 		},
 		{
+			description: "should create Azure Gardener config when subnets per zone input passed",
+			jsonData:    azureZoneSubnetsConfigJSON,
+			expectedConfig: &AzureGardenerConfig{
+				ProviderSpecificConfig: ProviderSpecificConfig(azureZoneSubnetsConfigJSON),
+				input: &gqlschema.AzureProviderConfigInput{
+					VnetCidr: "10.10.11.11/255",
+					AzureZones: []*gqlschema.AzureZoneInput{
+						{
+							Name: 1,
+							Cidr: "10.10.11.12/255",
+						},
+						{
+							Name: 2,
+							Cidr: "10.10.11.13/255",
+						},
+					},
+					EnableNatGateway:             util.BoolPtr(true),
+					IdleConnectionTimeoutMinutes: util.IntPtr(4),
+				},
+			},
+			expectedProviderSpecificConfig: gqlschema.AzureProviderConfig{
+				VnetCidr: util.StringPtr("10.10.11.11/255"),
+				AzureZones: []*gqlschema.AzureZone{
+					{
+						Name: 1,
+						Cidr: "10.10.11.12/255",
+					},
+					{
+						Name: 2,
+						Cidr: "10.10.11.13/255",
+					},
+				},
+				EnableNatGateway:             util.BoolPtr(true),
+				IdleConnectionTimeoutMinutes: util.IntPtr(4)},
+		},
+		{
 			description: "should create AWS Gardener config",
 			jsonData:    awsConfigJSON,
 			expectedConfig: &AWSGardenerConfig{
@@ -69,7 +106,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 							Name:         "zone",
 							PublicCidr:   "10.10.11.12/255",
 							InternalCidr: "10.10.11.13/255",
-							WorkerCidr:   "10.250.0.0/19",
+							WorkerCidr:   "10.10.11.11/255",
 						},
 					},
 					VpcCidr: "10.10.11.11/255",
@@ -81,7 +118,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 						Name:         util.StringPtr("zone"),
 						PublicCidr:   util.StringPtr("10.10.11.12/255"),
 						InternalCidr: util.StringPtr("10.10.11.13/255"),
-						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
+						WorkerCidr:   util.StringPtr("10.10.11.11/255"),
 					},
 				},
 				VpcCidr: util.StringPtr("10.10.11.11/255"),
@@ -98,7 +135,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 							Name:         "zone",
 							PublicCidr:   "10.10.11.12/255",
 							InternalCidr: "10.10.11.13/255",
-							WorkerCidr:   "10.250.0.0/19",
+							WorkerCidr:   "10.10.11.11/255",
 						},
 					},
 					VpcCidr: "10.10.11.11/255",
@@ -110,7 +147,7 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 						Name:         util.StringPtr("zone"),
 						PublicCidr:   util.StringPtr("10.10.11.12/255"),
 						InternalCidr: util.StringPtr("10.10.11.13/255"),
-						WorkerCidr:   util.StringPtr("10.250.0.0/19"),
+						WorkerCidr:   util.StringPtr("10.10.11.11/255"),
 					},
 				},
 				VpcCidr: util.StringPtr("10.10.11.11/255"),
@@ -147,6 +184,9 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil, util.BoolPtr(false)))
 	require.NoError(t, err)
 
+	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput())
+	require.NoError(t, err)
+
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
 	require.NoError(t, err)
 
@@ -173,7 +213,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "gcp",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: util.StringPtr("10.250.0.0/19"),
+						Nodes: util.StringPtr("10.10.10.10/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -245,7 +285,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "az",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: util.StringPtr("10.250.0.0/19"),
+						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -317,7 +357,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "az",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: util.StringPtr("10.250.0.0/19"),
+						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -332,6 +372,78 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						},
 						Workers: []gardener_types.Worker{
 							fixWorker(nil),
+						},
+					},
+					Purpose:           &purpose,
+					ExposureClassName: util.StringPtr("internet"),
+					Kubernetes: gardener_types.Kubernetes{
+						AllowPrivilegedContainers: util.BoolPtr(false),
+						Version:                   "1.15",
+						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
+							EnableBasicAuthentication: util.BoolPtr(false),
+							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
+						},
+					},
+					Maintenance: &gardener_types.Maintenance{
+						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
+							KubernetesVersion:   true,
+							MachineImageVersion: false,
+						},
+					},
+					DNS: gardenerDnsConfig(dnsConfig()),
+					Extensions: []gardener_types.Extension{
+						{
+							Type: "shoot-dns-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.dns.extensions.gardener.cloud/v1alpha1","dnsProviderReplication":{"enabled":true},"kind":"DNSConfig"}`),
+							},
+						},
+						{
+							Type: "shoot-cert-service",
+							ProviderConfig: &apimachineryRuntime.RawExtension{
+								Raw: []byte(`{"apiVersion":"service.cert.extensions.gardener.cloud/v1alpha1","shootIssuers":{"enabled":true},"kind":"CertConfig"}`),
+							},
+						},
+						{
+							Type:     ShootNetworkingFilterExtensionType,
+							Disabled: util.BoolPtr(true),
+						},
+					},
+				},
+			},
+		},
+		{description: "should convert to Shoot template with Azure provider when subnets per zone passed",
+			provider:       "az",
+			providerConfig: azureZoneSubnetsGardenerProvider,
+			expectedShootTemplate: &gardener_types.Shoot{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "cluster",
+					Namespace: "gardener-namespace",
+					Labels: map[string]string{
+						"account":    "account",
+						"subaccount": "sub-account",
+					},
+					Annotations: map[string]string{},
+				},
+				Spec: gardener_types.ShootSpec{
+					CloudProfileName: "az",
+					Networking: gardener_types.Networking{
+						Type:  "calico",
+						Nodes: util.StringPtr("10.10.11.11/255"),
+					},
+					SeedName:          util.StringPtr("eu"),
+					SecretBindingName: "gardener-secret",
+					Region:            "eu",
+					Provider: gardener_types.Provider{
+						Type: "azure",
+						ControlPlaneConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"ControlPlaneConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1"}`),
+						},
+						InfrastructureConfig: &apimachineryRuntime.RawExtension{
+							Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"azure.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"zones":[{"name":1,"cidr":"10.10.11.12/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},{"name":2,"cidr":"10.10.11.13/255","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}}]},"zoned":true}`),
+						},
+						Workers: []gardener_types.Worker{
+							fixWorker([]string{"1", "2"}),
 						},
 					},
 					Purpose:           &purpose,
@@ -389,7 +501,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					CloudProfileName: "aws",
 					Networking: gardener_types.Networking{
 						Type:  "calico",
-						Nodes: util.StringPtr("10.250.0.0/19"),
+						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: "gardener-secret",
@@ -483,8 +595,6 @@ func TestEditShootConfig(t *testing.T) {
 				WithMaxUnavailable(1).
 				WithZones("fix-zone-1", "fix-zone-2").
 				ToWorker()).
-		WithExtensions(
-			[]gardener_types.Extension{{Type: ShootNetworkingFilterExtensionType, Disabled: util.BoolPtr(true)}}).
 		ToShoot()
 
 	awsProviderConfig, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -524,6 +634,22 @@ func TestEditShootConfig(t *testing.T) {
 			upgradeConfig: fixGardenerConfig("gcp", gcpProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
 			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should update shoot networking extension",
+			provider: "gcp",
+			upgradeConfig: func(config GardenerConfig) GardenerConfig {
+				config.ShootNetworkingFilterDisabled = util.BoolPtr(true)
+				return config
+			}(fixGardenerConfig("gcp", gcpProviderConfig)),
+			initialShoot: initialShoot.DeepCopy(),
+			expectedShoot: func(s *gardener_types.Shoot) *gardener_types.Shoot {
+				shoot := s.DeepCopy()
+				shoot.Spec.Extensions = append(shoot.Spec.Extensions, gardener_types.Extension{
+					Type:     ShootNetworkingFilterExtensionType,
+					Disabled: util.BoolPtr(true),
+				})
+				return shoot
+			}(expectedShoot),
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -591,7 +717,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),
-		ShootNetworkingFilterDisabled:       util.BoolPtr(true),
+		ShootNetworkingFilterDisabled:       nil,
 	}
 }
 
@@ -615,6 +741,24 @@ func fixGCPGardenerInput(zones []string) *gqlschema.GCPProviderConfigInput {
 
 func fixAzureGardenerInput(zones []string, enableNAT *bool) *gqlschema.AzureProviderConfigInput {
 	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones, EnableNatGateway: enableNAT, IdleConnectionTimeoutMinutes: util.IntPtr(4)}
+}
+
+func fixAzureZoneSubnetsInput() *gqlschema.AzureProviderConfigInput {
+	return &gqlschema.AzureProviderConfigInput{
+		VnetCidr:                     "10.10.11.11/255",
+		EnableNatGateway:             util.BoolPtr(true),
+		IdleConnectionTimeoutMinutes: util.IntPtr(4),
+		AzureZones: []*gqlschema.AzureZoneInput{
+			{
+				Name: 1,
+				Cidr: "10.10.11.12/255",
+			},
+			{
+				Name: 2,
+				Cidr: "10.10.11.13/255",
+			},
+		},
+	}
 }
 
 func fixWorker(zones []string) gardener_types.Worker {

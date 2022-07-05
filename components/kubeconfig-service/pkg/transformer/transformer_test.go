@@ -18,7 +18,7 @@ func TestSpec(t *testing.T) {
 		Convey("when given correct raw KubeConfig", func() {
 			Convey("Should return a Client", func() {
 				//given, when
-				c, err := transformer.NewClient(testInputRawKubeconfig)
+				c, err := transformer.NewClient(testInputRawKubeconfig, testUserID)
 				//then
 				So(err, ShouldBeNil)
 				So(c.ContextName, ShouldEqual, "test--aa1234b")
@@ -33,10 +33,11 @@ func TestSpec(t *testing.T) {
 	Convey("client.TransformKubeconfig()", t, func() {
 		Convey("Should return transformed kubeconfig", func() {
 			//given
-			c, err := transformer.NewClient(testInputRawKubeconfig)
+			c, err := transformer.NewClient(testInputRawKubeconfig, testUserID)
+			c.SaToken = "abcdef"
 			So(err, ShouldBeNil)
 			//when
-			res, err := c.TransformKubeconfig()
+			res, err := c.TransformKubeconfig(transformer.KubeconfigSaTemplate)
 			//then
 			So(err, ShouldBeNil)
 			So(string(res), ShouldEqual, expectedTransformedKubeconfig)
@@ -48,6 +49,7 @@ const (
 	testClientID     = "testClientId"
 	testClientSecret = "testClientSecret"
 	testIssuerURL    = "testIssuerURL"
+	testUserID       = "i123456"
 
 	testInputRawKubeconfig = `
 apiVersion: v1
@@ -83,28 +85,10 @@ contexts:
 - name: test--aa1234b
   context:
     cluster: test--aa1234b
-    user: test--aa1234b
+    user: i123456
 users:
-- name: test--aa1234b
+- name: i123456
   user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1beta1
-      args:
-      - get-token
-      - "--oidc-issuer-url=testIssuerURL"
-      - "--oidc-client-id=testClientId"
-      - "--oidc-extra-scope=email"
-      - "--oidc-extra-scope=openid"
-      command: kubectl-oidc_login
-      installHint: |
-        kubelogin plugin is required to proceed with authentication
-        # Homebrew (macOS and Linux)
-        brew install int128/kubelogin/kubelogin
-
-        # Krew (macOS, Linux, Windows and ARM)
-        kubectl krew install oidc-login
-
-        # Chocolatey (Windows)
-        choco install kubelogin
+    token: abcdef
 `
 )

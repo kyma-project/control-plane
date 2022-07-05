@@ -49,7 +49,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
@@ -86,11 +85,11 @@ type BrokerSuiteTest struct {
 
 type componentProviderDecorated struct {
 	componentProvider input.ComponentListProvider
-	decorator         map[string]v1alpha1.KymaComponent
+	decorator         map[string]kebRuntime.KymaComponent
 }
 
-func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData) ([]v1alpha1.KymaComponent, error) {
-	all, err := s.componentProvider.AllComponents(kymaVersion)
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]kebRuntime.KymaComponent, error) {
+	all, err := s.componentProvider.AllComponents(kymaVersion, planName)
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
 			all[i] = dc
@@ -128,7 +127,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 	decoratedComponentListProvider := componentProviderDecorated{
 		componentProvider: componentListProvider,
-		decorator:         make(map[string]v1alpha1.KymaComponent),
+		decorator:         make(map[string]kebRuntime.KymaComponent),
 	}
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider, input.Config{
@@ -159,7 +158,6 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	directorClient := director.NewFakeClient()
 	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
 
-	smcf := fixServiceManagerFactory()
 	iasFakeClient := ias.NewFakeClient()
 	reconcilerClient := reconciler.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
@@ -172,7 +170,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -190,7 +188,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
-		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
+		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
 		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
 
@@ -221,13 +219,13 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, inMemoryFs, logs, cli)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
 		StatusCheck:           100 * time.Millisecond,
 		UpgradeClusterTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg)
+	}, 250*time.Millisecond, runtimeResolver, upgradeEvaluationManager, notificationBundleBuilder, logs, cli, *cfg, 1000)
 
 	kymaQueue.SpeedUp(1000)
 	clusterQueue.SpeedUp(1000)
@@ -374,7 +372,7 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 20*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, err = s.db.Operations().GetOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -470,6 +468,27 @@ func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.O
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
+func (s *BrokerSuiteTest) finishOperatioByOpIDnByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, operationID string) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetOperationByID(operationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to GetOperationsByID: %v", err))
+			return false, nil
+		}
+		status, err := s.provisionerClient.RuntimeOperationStatus("", op.ProvisionerOperationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to get RuntimeOperationStatus: %v", err))
+			return false, nil
+		}
+		if status.ID != nil {
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
 func (s *BrokerSuiteTest) MarkClustertConfigurationDeleted(iid string) {
 	op, _ := s.db.Operations().GetDeprovisioningOperationByInstanceID(iid)
 	s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleted)
@@ -541,6 +560,23 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisionerAndReconciler(oper
 	assert.NoError(s.t, err)
 }
 
+func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
+
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetDeprovisioningOperationByID(opID)
+		if err != nil {
+			return false, nil
+		}
+		_, err = s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleted)
+		return true, nil
+	})
+	assert.NoError(s.t, err)
+}
+
 func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
 	op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
 	assert.NoError(s.t, err)
@@ -576,7 +612,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID st
 
 	var state *reconcilerApi.HTTPClusterResponse
 	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
-		err = wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {
+		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
 			if err != nil {
 				return false, err
@@ -661,8 +697,9 @@ func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, gqlschema.OperationStateSucceeded, upgradeOp.Operation.RuntimeID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, upgradeOp.Operation.ID)
 }
+
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -690,25 +727,20 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.Equal(s.t, reconcilerApi.StatusReconcilePending, state.Status)
 }
 
-func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(instanceID string) {
+func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(opID string) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
-	var upgradeKymaOp *internal.Operation
+	var upgradeKymaOp *internal.UpgradeKymaOperation
 	err := wait.Poll(pollingInterval, time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetLastOperation(instanceID)
-		if err != nil {
-			return false, nil
-		}
-		if op.InstanceDetails.ClusterConfigurationVersion != 0 {
-			upgradeKymaOp = op
-			return true, nil
-		}
-		return false, nil
+		op, err := s.db.Operations().GetUpgradeKymaOperationByID(opID)
+		upgradeKymaOp = op
+		return err == nil && op != nil, nil
 	})
 	assert.NoError(s.t, err)
-	assert.NotNil(s.t, upgradeKymaOp)
+
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
+	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		fmt.Println(upgradeKymaOp)
+		state, err := s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
 		}
@@ -765,6 +797,33 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	err = json.Unmarshal(m, &operationsList)
 	require.NoError(s.t, err)
 
+	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+		return "", errors.New("no operations found for given orchestration")
+	}
+
+	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
+	var operationsList orchestration.OperationResponseList
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		resp := s.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", orchestrationID), "")
+		m, err := ioutil.ReadAll(resp.Body)
+		s.Log(string(m))
+		if err != nil {
+			return false, fmt.Errorf("failed to read response body: %v", err)
+		}
+		operationsList = orchestration.OperationResponseList{}
+		err = json.Unmarshal(m, &operationsList)
+		if err != nil {
+			return false, fmt.Errorf("failed to marshal: %v", err)
+		}
+		if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+	require.NoError(s.t, err)
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
 		return "", errors.New("no operations found for given orchestration")
 	}

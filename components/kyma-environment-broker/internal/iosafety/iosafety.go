@@ -2,7 +2,6 @@ package iosafety
 
 import (
 	"io"
-	"io/ioutil"
 )
 
 // DrainReader reads and discards the remaining part in reader (for example response body data)
@@ -11,6 +10,6 @@ func DrainReader(reader io.Reader) error {
 	if reader == nil {
 		return nil
 	}
-	_, drainError := io.Copy(ioutil.Discard, io.LimitReader(reader, 4096))
+	_, drainError := io.Copy(io.Discard, io.LimitReader(reader, 4096))
 	return drainError
 }

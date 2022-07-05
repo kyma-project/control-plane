@@ -17,10 +17,6 @@ const (
 	operationID     = "fd5cee4d-0eeb-40d0-a7a7-0708e5eba470"
 	subAccountID    = "12df5747-3efb-4df6-ad6f-4414bb661ce3"
 	globalAccountID = "80ac17bd-33e8-4ffa-8d56-1d5367755723"
-
-	serviceManagerURL      = "http://sm.com"
-	serviceManagerUser     = "admin"
-	serviceManagerPassword = "admin123"
 )
 
 func TestSkipForTrialPlanStepShouldSkip(t *testing.T) {
@@ -69,14 +65,5 @@ func fixOperationWithPlanID(planID string) internal.DeprovisioningOperation {
 	deprovisioningOperation.Operation.ProvisioningParameters.PlanID = planID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.GlobalAccountID = globalAccountID
 	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.SubAccountID = subAccountID
-	deprovisioningOperation.Operation.ProvisioningParameters.ErsContext.ServiceManager = &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
-			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: serviceManagerUser,
-				Password: serviceManagerPassword,
-			},
-		},
-		URL: serviceManagerURL,
-	}
 	return deprovisioningOperation
 }
