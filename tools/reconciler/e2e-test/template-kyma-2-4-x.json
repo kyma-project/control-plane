@@ -124,16 +124,6 @@
         ]
       },
       {
-        "component": "rafter",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "cluster-users",
         "namespace": "kyma-system",
         "configuration": [
