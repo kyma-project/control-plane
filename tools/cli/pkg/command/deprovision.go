@@ -35,8 +35,6 @@ The Runtime can be specified by one of the following:
   - Global account / Runtime ID pair with the --account and --runtime-id options
   - Shoot cluster name with the --shoot option.
 
-By default, the deprovision file is saved to the current directory. The output file name can be specified using the --output option.`,
-		Example: `  kcp deprovision -g GAID -r RUNTIMEID                    Deprovisions the SKR using Runtime ID.
   kcp deprovision -c c-178e034                            Deprovisions the SKR using a Shoot cluster name.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
@@ -54,13 +52,14 @@ By default, the deprovision file is saved to the current directory. The output f
 func (cmd *DeprovisionCommand) Run() error {
 	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
-	param := deprovision.DeprovisionParameters{ // TODO: What to choose for AuthStyle and Scope?
-		ClientID:     GlobalOpts.oidcClientID,
-		ClientSecret: GlobalOpts.oidcClientSecret,
-		TokenURL:     GlobalOpts.oauth2URL,
+	param := deprovision.DeprovisionParameters{
+		ClientID:     GlobalOpts.OIDCClientID(),
+		ClientSecret: GlobalOpts.OIDCClientSecret(),
+		TokenURL:     GlobalOpts.OIDCIssuerURL(),
 		Context:      cmd.cobraCmd.Context(),
-		EndpointURL:  GlobalOpts.kebAPIURL,
+		EndpointURL:  GlobalOpts.KEBAPIURL(),
 	}
+
 	client := deprovision.NewDeprovisionClient(param)
 
 	if cmd.runtimeID != "" {
