@@ -34,8 +34,7 @@ data:
   global.disableLegacyConnectivity: "true"
 ```
 
-- ConfigMap with global overrides for the `global account` ID and versions `1.15.1` and `1.16.0`:
-
+- ConfigMap with global overrides for the global account ID and versions `1.15.1` and `1.16.0`
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -49,8 +48,7 @@ data:
   global.disableLegacyConnectivity: "true"
 ```
 
-- ConfigMap global overrides for the `subaccount` ID and versions `1.16.0`:
-
+- ConfigMap with global overrides for the subaccount ID and version `1.16.0`:
 ```yaml
 apiVersion: v1
 kind: ConfigMap
