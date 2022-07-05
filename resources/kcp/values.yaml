@@ -12,15 +12,6 @@ global:
     provisioner:
       dir:
       version: "PR-1815"
-    kyma_environment_broker:
-      dir:
-      version: "PR-1788"
-    kyma_environments_cleanup_job:
-      dir:
-      version: "PR-1749"
-    kyma_environments_subaccount_cleanup_job:
-      dir:
-      version: "PR-1651"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1651"
