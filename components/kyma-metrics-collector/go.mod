@@ -101,8 +101,7 @@ replace (
 	github.com/emicklei/go-restful => github.com/emicklei/go-restful/v3 v3.8.0 //this fixes cve-2022-1996
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
-	golang.org/x/net => golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/net => golang.org/x/net v0.0.0-20220630215102-69896b714898
 	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
-	k8s.io/kubernetes => k8s.io/kubernetes v1.20.11
 )
