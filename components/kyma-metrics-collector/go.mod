@@ -104,4 +104,5 @@ replace (
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/net => golang.org/x/net v0.0.0-20220630215102-69896b714898
 	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
+	k8s.io/kubernetes => k8s.io/kubernetes v1.20.11
 )
