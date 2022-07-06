@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	Retrying  = "retrying" // to signal a retry sign before marking it to pending
-	Succeeded = "succeeded"
-	Failed    = "failed"
+	Retrying   = "retrying" // to signal a retry sign before marking it to pending
+	Succeeded  = "succeeded"
+	Failed     = "failed"
+	InProgress = "in progress"
 )
 
 type operations struct {
@@ -460,7 +461,8 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 			if status == Failed {
 				failedFound = true
 			}
-			if status == Succeeded || status == Retrying {
+			//In Progress/Retrying/Succeeded means new operation for same instance_id is ongoing/succeeded.
+			if status == Succeeded || status == Retrying || status == InProgress {
 				fmt.Println("found invalidFailed status:=", status)
 				invalidFailed = true
 			}
