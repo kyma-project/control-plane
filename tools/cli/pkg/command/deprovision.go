@@ -53,11 +53,14 @@ func (cmd *DeprovisionCommand) Run() error {
 	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
 	param := deprovision.DeprovisionParameters{
-		ClientID:     GlobalOpts.OIDCClientID(),
-		ClientSecret: GlobalOpts.OIDCClientSecret(),
-		TokenURL:     GlobalOpts.OIDCIssuerURL(),
-		Context:      cmd.cobraCmd.Context(),
-		EndpointURL:  GlobalOpts.KEBAPIURL(),
+		ClientID:           GlobalOpts.OIDCClientID(),
+		ClientSecret:       GlobalOpts.OIDCClientSecret(),
+		TokenURL:           GlobalOpts.OIDCIssuerURL(),
+		Context:            cmd.cobraCmd.Context(),
+		EndpointURL:        GlobalOpts.KEBAPIURL(),
+		Oauth2IssuerURL:    GlobalOpts.OAUTH2IssuerURL(),
+		Oauth2ClientID:     GlobalOpts.OAUTH2ClientID(),
+		Oauth2ClientSecret: GlobalOpts.OAUTH2ClientSecret(),
 	}
 
 	client := deprovision.NewDeprovisionClient(param)

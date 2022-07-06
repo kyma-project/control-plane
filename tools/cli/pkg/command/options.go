@@ -57,7 +57,9 @@ type GlobalOptionsKey struct {
 	gardenerKubeconfig string
 	gardenerNamespace  string
 	username           string
-	oauth2URL          string
+	oauth2IssuerURL    string
+	oauth2ClientID     string
+	oauth2ClientSecret string
 }
 
 // GlobalOpts is the convenience object for storing the fixed global conifguration (parameter) keys
@@ -72,7 +74,9 @@ var GlobalOpts = GlobalOptionsKey{
 	gardenerKubeconfig: "gardener-kubeconfig",
 	gardenerNamespace:  "gardener-namespace",
 	username:           "username",
-	oauth2URL:          "kcp-oauth2-url",
+	oauth2IssuerURL:    "oauth2-issuer-url",
+	oauth2ClientID:     "oauth2-client-id",
+	oauth2ClientSecret: "oauth2-client-secret",
 }
 
 // SetGlobalOpts configures the global parameters on the given root command
@@ -103,11 +107,21 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().String(GlobalOpts.gardenerNamespace, "", "Gardener Namespace (project) to use. Can also be set using the KCP_GARDENER_NAMESPACE environment variable.")
 	viper.BindPFlag(GlobalOpts.gardenerNamespace, cmd.PersistentFlags().Lookup(GlobalOpts.gardenerNamespace))
+
+	cmd.PersistentFlags().String(GlobalOpts.oauth2IssuerURL, "", "Oauth2 authentication server URL to use for login.")
+	viper.BindPFlag(GlobalOpts.oauth2IssuerURL, cmd.PersistentFlags().Lookup(GlobalOpts.oauth2IssuerURL))
+
+	cmd.PersistentFlags().String(GlobalOpts.oauth2ClientID, "", "OAUTH2 client ID to use for login.")
+	viper.BindPFlag(GlobalOpts.oauth2ClientID, cmd.PersistentFlags().Lookup(GlobalOpts.oauth2ClientID))
+
+	cmd.PersistentFlags().String(GlobalOpts.oauth2ClientSecret, "", "OAUTH2 client secret to use for login.")
+	viper.BindPFlag(GlobalOpts.oauth2ClientSecret, cmd.PersistentFlags().Lookup(GlobalOpts.oauth2ClientSecret))
 }
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
 func ValidateGlobalOpts() error {
-	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL, GlobalOpts.mothershipAPIURL}
+	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL,
+		GlobalOpts.mothershipAPIURL, GlobalOpts.oauth2IssuerURL, GlobalOpts.oauth2ClientID, GlobalOpts.oauth2ClientSecret}
 	var missingGlobalOpts []string
 	for _, opt := range reqGlobalOpts {
 		if viper.GetString(opt) == "" {
@@ -169,6 +183,21 @@ func (keys *GlobalOptionsKey) GardenerNamespace() string {
 // Username gets the username to use for auth
 func (keys *GlobalOptionsKey) Username() string {
 	return viper.GetString(keys.username)
+}
+
+// OAUTH2IssuerURL gets the oauth2-issuer-url global parameter
+func (keys *GlobalOptionsKey) OAUTH2IssuerURL() string {
+	return viper.GetString(keys.oauth2IssuerURL)
+}
+
+// OAUTH2ClientID gets the oauth2-client-id global parameter
+func (keys *GlobalOptionsKey) OAUTH2ClientID() string {
+	return viper.GetString(keys.oauth2ClientID)
+}
+
+// OAUTH2ClientSecret gets the oauth2-client-secret global parameter
+func (keys *GlobalOptionsKey) OAUTH2ClientSecret() string {
+	return viper.GetString(keys.oauth2ClientSecret)
 }
 
 // SetOutputOpt configures the optput type option on the given command
