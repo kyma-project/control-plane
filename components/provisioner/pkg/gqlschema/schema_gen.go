@@ -1258,7 +1258,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
-    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
 }
 
 input OIDCConfigInput {
@@ -1296,7 +1296,7 @@ input GCPProviderConfigInput {
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
     zones: [String!]      # Zones in which to create the cluster. DEPRECATED
-    azureZones: [AzureZoneInput!]! # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
+    azureZones: [AzureZoneInput!] # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
     enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
     idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
@@ -5969,7 +5969,7 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 			}
 		case "azureZones":
 			var err error
-			it.AzureZones, err = ec.unmarshalNAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx, v)
+			it.AzureZones, err = ec.unmarshalOAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7901,26 +7901,6 @@ func (ec *executionContext) unmarshalNAzureZoneInput2githubᚗcomᚋkymaᚑproje
 	return ec.unmarshalInputAzureZoneInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx context.Context, v interface{}) ([]*AzureZoneInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*AzureZoneInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNAzureZoneInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 func (ec *executionContext) unmarshalNAzureZoneInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx context.Context, v interface{}) (*AzureZoneInput, error) {
 	if v == nil {
 		return nil, nil
@@ -8456,6 +8436,26 @@ func (ec *executionContext) marshalOAzureZone2ᚕᚖgithubᚗcomᚋkymaᚑprojec
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalOAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx context.Context, v interface{}) ([]*AzureZoneInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AzureZoneInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAzureZoneInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

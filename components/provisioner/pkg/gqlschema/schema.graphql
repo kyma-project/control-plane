@@ -271,7 +271,7 @@ input GCPProviderConfigInput {
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
     zones: [String!]      # Zones in which to create the cluster. DEPRECATED
-    azureZones: [AzureZoneInput!]! # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
+    azureZones: [AzureZoneInput!] # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
     enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
     idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
