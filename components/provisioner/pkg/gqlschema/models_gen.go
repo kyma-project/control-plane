@@ -39,19 +39,31 @@ type AWSZoneInput struct {
 }
 
 type AzureProviderConfig struct {
-	VnetCidr                     *string  `json:"vnetCidr"`
-	Zones                        []string `json:"zones"`
-	EnableNatGateway             *bool    `json:"enableNatGateway"`
-	IdleConnectionTimeoutMinutes *int     `json:"idleConnectionTimeoutMinutes"`
+	VnetCidr                     *string      `json:"vnetCidr"`
+	Zones                        []string     `json:"zones"`
+	AzureZones                   []*AzureZone `json:"azureZones"`
+	EnableNatGateway             *bool        `json:"enableNatGateway"`
+	IdleConnectionTimeoutMinutes *int         `json:"idleConnectionTimeoutMinutes"`
 }
 
 func (AzureProviderConfig) IsProviderSpecificConfig() {}
 
 type AzureProviderConfigInput struct {
-	VnetCidr                     string   `json:"vnetCidr"`
-	Zones                        []string `json:"zones"`
-	EnableNatGateway             *bool    `json:"enableNatGateway"`
-	IdleConnectionTimeoutMinutes *int     `json:"idleConnectionTimeoutMinutes"`
+	VnetCidr                     string            `json:"vnetCidr"`
+	Zones                        []string          `json:"zones"`
+	AzureZones                   []*AzureZoneInput `json:"azureZones"`
+	EnableNatGateway             *bool             `json:"enableNatGateway"`
+	IdleConnectionTimeoutMinutes *int              `json:"idleConnectionTimeoutMinutes"`
+}
+
+type AzureZone struct {
+	Name int    `json:"name"`
+	Cidr string `json:"cidr"`
+}
+
+type AzureZoneInput struct {
+	Name int    `json:"name"`
+	Cidr string `json:"cidr"`
 }
 
 type ClusterConfigInput struct {

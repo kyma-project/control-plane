@@ -56,6 +56,7 @@ type GCPProviderConfig {
 type AzureProviderConfig {
     vnetCidr: String
     zones: [String!]
+    azureZones: [AzureZone!]
     enableNatGateway: Boolean
     idleConnectionTimeoutMinutes: Int
 }
@@ -70,6 +71,11 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type AzureZone {
+    name: Int!
+    cidr: String!
 }
 
 type AWSZone {
@@ -264,7 +270,8 @@ input GCPProviderConfigInput {
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
-    zones: [String!]      # Zones in which to create the cluster
+    zones: [String!]      # Zones in which to create the cluster. DEPRECATED
+    azureZones: [AzureZoneInput!] # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
     enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
     idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
@@ -286,6 +293,11 @@ input AWSZoneInput {
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
     workerCidr: String!     # Classless Inter-Domain Routing range for the nodes
+}
+
+input AzureZoneInput {
+    name: Int!                        # Name of the zone. Should match with the name the infrastructure provider is using for the zone.
+    cidr: String!                     # CIDR range used for the zone's subnet.
 }
 
 input KymaConfigInput {

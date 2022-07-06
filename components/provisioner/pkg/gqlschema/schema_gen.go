@@ -55,10 +55,16 @@ type ComplexityRoot struct {
 	}
 
 	AzureProviderConfig struct {
+		AzureZones                   func(childComplexity int) int
 		EnableNatGateway             func(childComplexity int) int
 		IdleConnectionTimeoutMinutes func(childComplexity int) int
 		VnetCidr                     func(childComplexity int) int
 		Zones                        func(childComplexity int) int
+	}
+
+	AzureZone struct {
+		Cidr func(childComplexity int) int
+		Name func(childComplexity int) int
 	}
 
 	ComponentConfiguration struct {
@@ -271,6 +277,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AWSZone.WorkerCidr(childComplexity), true
 
+	case "AzureProviderConfig.azureZones":
+		if e.complexity.AzureProviderConfig.AzureZones == nil {
+			break
+		}
+
+		return e.complexity.AzureProviderConfig.AzureZones(childComplexity), true
+
 	case "AzureProviderConfig.enableNatGateway":
 		if e.complexity.AzureProviderConfig.EnableNatGateway == nil {
 			break
@@ -298,6 +311,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AzureProviderConfig.Zones(childComplexity), true
+
+	case "AzureZone.cidr":
+		if e.complexity.AzureZone.Cidr == nil {
+			break
+		}
+
+		return e.complexity.AzureZone.Cidr(childComplexity), true
+
+	case "AzureZone.name":
+		if e.complexity.AzureZone.Name == nil {
+			break
+		}
+
+		return e.complexity.AzureZone.Name(childComplexity), true
 
 	case "ComponentConfiguration.component":
 		if e.complexity.ComponentConfiguration.Component == nil {
@@ -1054,6 +1081,7 @@ type GCPProviderConfig {
 type AzureProviderConfig {
     vnetCidr: String
     zones: [String!]
+    azureZones: [AzureZone!]
     enableNatGateway: Boolean
     idleConnectionTimeoutMinutes: Int
 }
@@ -1068,6 +1096,11 @@ type OpenStackProviderConfig {
     floatingPoolName: String!
     cloudProfileName: String!
     loadBalancerProvider: String!
+}
+
+type AzureZone {
+    name: Int!
+    cidr: String!
 }
 
 type AWSZone {
@@ -1225,7 +1258,7 @@ input GardenerConfigInput {
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
-    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled
+    shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
 }
 
 input OIDCConfigInput {
@@ -1262,7 +1295,8 @@ input GCPProviderConfigInput {
 
 input AzureProviderConfigInput {
     vnetCidr: String!   # Classless Inter-Domain Routing for the Azure Virtual Network
-    zones: [String!]      # Zones in which to create the cluster
+    zones: [String!]      # Zones in which to create the cluster. DEPRECATED
+    azureZones: [AzureZoneInput!] # Zones in which to create the cluster, with dedicated subnet and NAT Gateway per zone configuration
     enableNatGateway: Boolean # Enables NAT Gateway. Set to false by default
     idleConnectionTimeoutMinutes: Int # timeout for NAT Gateway. Used only if enableNatGateway is set to true. Default is 4 minutes
 }
@@ -1284,6 +1318,11 @@ input AWSZoneInput {
     publicCidr: String!     # Classless Inter-Domain Routing for the public subnet
     internalCidr: String!   # Classless Inter-Domain Routing for the private subnet
     workerCidr: String!     # Classless Inter-Domain Routing range for the nodes
+}
+
+input AzureZoneInput {
+    name: Int!                        # Name of the zone. Should match with the name the infrastructure provider is using for the zone.
+    cidr: String!                     # CIDR range used for the zone's subnet.
 }
 
 input KymaConfigInput {
@@ -1814,6 +1853,37 @@ func (ec *executionContext) _AzureProviderConfig_zones(ctx context.Context, fiel
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _AzureProviderConfig_azureZones(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AzureProviderConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AzureZones, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*AzureZone)
+	fc.Result = res
+	return ec.marshalOAzureZone2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _AzureProviderConfig_enableNatGateway(ctx context.Context, field graphql.CollectedField, obj *AzureProviderConfig) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1874,6 +1944,74 @@ func (ec *executionContext) _AzureProviderConfig_idleConnectionTimeoutMinutes(ct
 	res := resTmp.(*int)
 	fc.Result = res
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureZone_name(ctx context.Context, field graphql.CollectedField, obj *AzureZone) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AzureZone",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AzureZone_cidr(ctx context.Context, field graphql.CollectedField, obj *AzureZone) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AzureZone",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ComponentConfiguration_component(ctx context.Context, field graphql.CollectedField, obj *ComponentConfiguration) (ret graphql.Marshaler) {
@@ -5829,6 +5967,12 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "azureZones":
+			var err error
+			it.AzureZones, err = ec.unmarshalOAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "enableNatGateway":
 			var err error
 			it.EnableNatGateway, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -5838,6 +5982,30 @@ func (ec *executionContext) unmarshalInputAzureProviderConfigInput(ctx context.C
 		case "idleConnectionTimeoutMinutes":
 			var err error
 			it.IdleConnectionTimeoutMinutes, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputAzureZoneInput(ctx context.Context, obj interface{}) (AzureZoneInput, error) {
+	var it AzureZoneInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "cidr":
+			var err error
+			it.Cidr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6686,10 +6854,44 @@ func (ec *executionContext) _AzureProviderConfig(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._AzureProviderConfig_vnetCidr(ctx, field, obj)
 		case "zones":
 			out.Values[i] = ec._AzureProviderConfig_zones(ctx, field, obj)
+		case "azureZones":
+			out.Values[i] = ec._AzureProviderConfig_azureZones(ctx, field, obj)
 		case "enableNatGateway":
 			out.Values[i] = ec._AzureProviderConfig_enableNatGateway(ctx, field, obj)
 		case "idleConnectionTimeoutMinutes":
 			out.Values[i] = ec._AzureProviderConfig_idleConnectionTimeoutMinutes(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var azureZoneImplementors = []string{"AzureZone"}
+
+func (ec *executionContext) _AzureZone(ctx context.Context, sel ast.SelectionSet, obj *AzureZone) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, azureZoneImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AzureZone")
+		case "name":
+			out.Values[i] = ec._AzureZone_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cidr":
+			out.Values[i] = ec._AzureZone_cidr(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7681,6 +7883,32 @@ func (ec *executionContext) unmarshalNAWSZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑp
 	return res, nil
 }
 
+func (ec *executionContext) marshalNAzureZone2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZone(ctx context.Context, sel ast.SelectionSet, v AzureZone) graphql.Marshaler {
+	return ec._AzureZone(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAzureZone2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZone(ctx context.Context, sel ast.SelectionSet, v *AzureZone) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AzureZone(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAzureZoneInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx context.Context, v interface{}) (AzureZoneInput, error) {
+	return ec.unmarshalInputAzureZoneInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNAzureZoneInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx context.Context, v interface{}) (*AzureZoneInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNAzureZoneInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -8168,6 +8396,66 @@ func (ec *executionContext) unmarshalOAzureProviderConfigInput2ᚖgithubᚗcom�
 	}
 	res, err := ec.unmarshalOAzureProviderConfigInput2githubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureProviderConfigInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOAzureZone2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneᚄ(ctx context.Context, sel ast.SelectionSet, v []*AzureZone) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAzureZone2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZone(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAzureZoneInput2ᚕᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInputᚄ(ctx context.Context, v interface{}) ([]*AzureZoneInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*AzureZoneInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNAzureZoneInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐAzureZoneInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
