@@ -24,9 +24,9 @@ type DeprovisionClient struct {
 
 func NewDeprovisionClient(parameters DeprovisionParameters) *DeprovisionClient {
 	cfg := clientcredentials.Config{
-		ClientID:     parameters.ClientID,
-		ClientSecret: parameters.ClientSecret,
-		TokenURL:     parameters.TokenURL,
+		ClientID:     parameters.Oauth2ClientID,
+		ClientSecret: parameters.Oauth2ClientSecret,
+		TokenURL:     parameters.Oauth2IssuerURL,
 		Scopes:       parameters.Scopes,
 		AuthStyle:    parameters.AuthStyle,
 	}
