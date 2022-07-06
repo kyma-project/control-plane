@@ -194,8 +194,9 @@ func TestClient_UpgradeKyma(t *testing.T) {
 				},
 			},
 			Strategy: StrategySpec{
-				Type:     ParallelStrategy,
-				Schedule: MaintenanceWindow,
+				Type:              ParallelStrategy,
+				Schedule:          time.Now().Format(time.RFC3339),
+				MaintenanceWindow: true,
 				Parallel: ParallelStrategySpec{
 					Workers: 2,
 				},

@@ -51,10 +51,5 @@ func defaultOrchestrationStrategy(spec *orchestration.StrategySpec) {
 		spec.Type = orchestration.ParallelStrategy
 	}
 
-	switch spec.Schedule {
-	case orchestration.MaintenanceWindow:
-	case orchestration.Immediate:
-	default:
-		spec.Schedule = orchestration.Immediate
-	}
+	spec.Schedule = string(orchestration.Immediate)
 }

@@ -17,7 +17,7 @@ type UpgradeCommand struct {
 	targetExcludeInputs []string
 	strategy            string
 	schedule            string
-	scheduleAfter       string
+	maintenancewindow   bool
 	orchestrationParams orchestration.Parameters
 }
 
@@ -25,6 +25,7 @@ var scheduleInputToParam = map[string]orchestration.ScheduleType{
 	"":                  "",
 	"immediate":         "immediate",
 	"maintenancewindow": "maintenanceWindow",
+	"now":               "now",
 }
 
 // NewUpgradeCmd constructs the upgrade command and all subcommands under the upgrade command
@@ -46,6 +47,7 @@ func (cmd *UpgradeCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	SetRuntimeTargetOpts(cobraCmd, &cmd.targetInputs, &cmd.targetExcludeInputs)
 	cobraCmd.Flags().StringVar(&cmd.strategy, "strategy", string(orchestration.ParallelStrategy), "Orchestration strategy to use.")
 	cobraCmd.Flags().IntVar(&cmd.orchestrationParams.Strategy.Parallel.Workers, "parallel-workers", 0, "Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.")
+	cobraCmd.Flags().BoolVarP(&cmd.maintenancewindow, "maintenancewindow", "", false, "Schedule the upgrade in the next possible maintenancewindow. (default: false)")
 	cobraCmd.Flags().StringVar(&cmd.schedule, "schedule", "", "Orchestration schedule to use. Possible values: \"immediate\", \"maintenancewindow\". By default the schedule will be auto-selected on control plane server side.")
 	cobraCmd.Flags().StringVar(&cmd.scheduleAfter, "scheduleAfter", "", "If schedule is \"maintenancewindow\", a window after this date (2006-01-01) is picked.")
 	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrade operations for the Runtimes. The details can be obtained using the \"kcp orchestrations\" command.")
@@ -60,7 +62,13 @@ func (cmd *UpgradeCommand) ValidateTransformUpgradeOpts() error {
 
 	// Validate schedule
 	if scheduleParam, ok := scheduleInputToParam[cmd.schedule]; ok {
-		cmd.orchestrationParams.Strategy.Schedule = scheduleParam
+		// TODO Remove schedule type maintenancewindow
+		if scheduleParam == scheduleInputToParam["maintenancewindow"] {
+			return fmt.Errorf("the schedule type '%s' is deprecated, please use the option '--maintenancewindow' instead", scheduleParam)
+		}
+		cmd.orchestrationParams.Strategy.Schedule = cmd.schedule
+	} else if _, err := time.Parse(time.RFC3339, cmd.schedule); err == nil {
+		cmd.orchestrationParams.Strategy.Schedule = cmd.schedule
 	} else {
 		return fmt.Errorf("invalid value for schedule: %s. Check kcp upgrade --help for more information", cmd.schedule)
 	}

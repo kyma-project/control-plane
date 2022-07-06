@@ -119,7 +119,7 @@ func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 }
 
 // get current retrying operations, update state to pending and update other required params to storage
-func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool, updateAfter time.Time) ([]orchestration.RuntimeOperation, error) {
+func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule time.Time, maintenanceWindow bool, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
 	if err != nil {
@@ -133,8 +133,8 @@ func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule
 			days := []string{}
 
 			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy, updateAfter)
+			if maintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy, schedule)
 			}
 			op.MaintenanceWindowBegin = windowBegin
 			op.MaintenanceWindowEnd = windowEnd

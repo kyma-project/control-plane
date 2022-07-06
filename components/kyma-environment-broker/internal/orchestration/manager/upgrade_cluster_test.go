@@ -99,7 +99,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
 					Type:     orchestration.ParallelStrategy,
-					Schedule: orchestration.Immediate,
+					Schedule: time.Now().Format(time.RFC3339),
 				},
 			},
 		})
@@ -208,7 +208,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
 					Type:     orchestration.ParallelStrategy,
-					Schedule: orchestration.Immediate,
+					Schedule: time.Now().Format(time.RFC3339),
 				}},
 		}
 		err = store.Orchestrations().Insert(givenO)
@@ -252,7 +252,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			State:           orchestration.Canceling,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
+				Schedule: time.Now().Format(time.RFC3339),
 			}},
 		})
 
@@ -308,7 +308,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
+				Schedule: time.Now().Format(time.RFC3339),
 				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 			}},
 		})
@@ -382,7 +382,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
 				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
+				Schedule: time.Now().Format(time.RFC3339),
 				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 			}},
 		})

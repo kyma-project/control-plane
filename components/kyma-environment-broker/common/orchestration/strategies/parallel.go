@@ -198,8 +198,7 @@ func (p *ParallelOrchestrationStrategy) updateMaintenanceWindow(execID string, o
 	var duration time.Duration
 	id := op.ID
 
-	switch strategy.Schedule {
-	case orchestration.MaintenanceWindow:
+	if strategy.MaintenanceWindow {
 		// if time window for this operation has finished, we requeue and reprocess on next time window
 		if !op.MaintenanceWindowEnd.IsZero() && op.MaintenanceWindowEnd.Before(time.Now()) {
 			if p.rescheduleDelay > 0 {
@@ -221,8 +220,9 @@ func (p *ParallelOrchestrationStrategy) updateMaintenanceWindow(execID string, o
 		}
 
 		duration = time.Until(op.MaintenanceWindowBegin)
-
-	case orchestration.Immediate:
+	} else {
+		p.executor.Reschedule(id, strategy.ScheduleTime, strategy.ScheduleTime)
+		duration = time.Until(strategy.ScheduleTime)
 	}
 
 	return duration, nil

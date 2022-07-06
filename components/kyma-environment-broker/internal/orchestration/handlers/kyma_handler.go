@@ -74,6 +74,22 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// validate deprecated parameteter `maintenanceWindow`
+	err = h.ValidateDeprecatedParameters(params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
+
+	// validate `schedule` field
+	err = h.ValidateScheduleParameter(&params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
+
 	// defaults strategy if not specified to Parallel with Immediate schedule
 	defaultOrchestrationStrategy(&params.Strategy)
 
@@ -145,5 +161,30 @@ func (h *kymaHandler) ValidateKymaVersion(version string) error {
 		return errors.Wrapf(err, "invalid Kyma version, version %s not found", version)
 	}
 
+	return nil
+}
+
+// ValidateDeprecatedParameters cheks if `maintenanceWindow` parameter is used as schedule.
+func (h *kymaHandler) ValidateDeprecatedParameters(params orchestration.Parameters) error {
+	if params.Strategy.Schedule == string(orchestration.MaintenanceWindow) {
+		return fmt.Errorf("{\"strategy\":{\"schedule\": \"maintenanceWindow\"} is deprecated use {\"strategy\":{\"MaintenanceWindow\": true} instead")
+	}
+	return nil
+}
+
+// ValidateScheduleParameter cheks if the schedule parameter is valid.
+func (h *kymaHandler) ValidateScheduleParameter(params *orchestration.Parameters) error {
+	switch params.Strategy.Schedule {
+	case "immediate":
+	case "now":
+		params.Strategy.ScheduleTime = time.Now()
+	default:
+		parsedTime, err := time.Parse(time.RFC3339, params.Strategy.Schedule)
+		if err == nil {
+			params.Strategy.ScheduleTime = parsedTime
+		} else {
+			return fmt.Errorf("the schedule filed does not contain `imediate`/`now` nor is a date: %w", err)
+		}
+	}
 	return nil
 }

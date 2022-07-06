@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -444,6 +445,74 @@ func TestKymaUpgrade_UpgradeAfterMigrationWithNetworkPolicy(t *testing.T) {
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 }
 
+func TestKymaUpgrade_ScheduleFuture(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := "InstanceID-UpgradeMaintenanceWindow"
+
+	// provision Kyma 2.0
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+	"context": {
+		"sm_platform_credentials": {
+			"url": "https://sm.url",
+			"credentials": {
+			"basic": {
+					"username":"smUsername",
+					"password":"smPassword"
+	  			}
+			}
+		},
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster",
+		"kymaVersion": "2.0.0-rc4"
+	}
+}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	// run upgrade
+	nextWeek := time.Now().AddDate(0, 0, 7)
+	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma", fmt.Sprintf(`
+{
+	"strategy": {
+		"type": "parallel",
+		"schedule": "%s",
+		"parallel": {
+			"workers": 1
+		}
+	},
+	"dryRun": false,
+	"targets": {
+		"include": [
+			{
+				"subAccount": "sub-id"
+			}
+		]
+	},
+	"kyma": {
+		"version": "2.0.0"
+	}
+}`, nextWeek.Format("2006-01-02T15:04:05Z07:00")))
+
+	oID := suite.DecodeOrchestrationID(orchestrationResp)
+	suite.AssertReconcilerStatusReconcilingWhenUpgrading(id, reconcilerApi.StatusReady)
+	opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
+	upgradeKymaOperation, err := suite.DecodeLastUpgradeKymaOperationFromOrchestration(opResponse)
+	require.NoError(t, err)
+
+	assert.GreaterOrEqual(t, upgradeKymaOperation.MaintenanceWindowBegin, nextWeek.Truncate(time.Second))
+}
+
 func TestKymaUpgrade_UpgradeMaintenanceWindow(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
@@ -485,8 +554,8 @@ func TestKymaUpgrade_UpgradeMaintenanceWindow(t *testing.T) {
 {
 	"strategy": {
 		"type": "parallel",
-		"schedule": "maintenanceWindow",
-		"scheduleAfter":"%s",
+		"schedule": "%s",
+		"maintenanceWindow":true,
 		"parallel": {
 			"workers": 1
 		}
@@ -511,4 +580,75 @@ func TestKymaUpgrade_UpgradeMaintenanceWindow(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.GreaterOrEqual(t, upgradeKymaOperation.MaintenanceWindowEnd, nextWeek)
+}
+
+func TestKymaUpgrade_UpgradeMaintenanceWindowDEPRECATED(t *testing.T) {
+	// run upgrade
+	nextWeek := time.Now().AddDate(0, 0, 7)
+	orchestrationResp := ScheduleMaintenence(t, fmt.Sprintf(`
+{
+	"strategy": {
+		"type": "parallel",
+		"schedule": "maintenanceWindow",
+		"scheduleAfter":"%s",
+		"parallel": {
+			"workers": 1
+		}
+	},
+	"dryRun": false,
+	"targets": {
+		"include": [
+			{
+				"subAccount": "sub-id"
+			}
+		]
+	},
+	"kyma": {
+		"version": "2.0.0"
+	}
+}`, nextWeek.Format("2006-01-02T15:04:05Z07:00")))
+
+	assert.Equal(t, 400, orchestrationResp.StatusCode, "Wrong status code.")
+	msg, err := ioutil.ReadAll(orchestrationResp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, "{\"error\":\"found deprecated value: {\\\"strategy\\\":{\\\"schedule\\\": \\\"maintenanceWindow\\\"} is deprecated use {\\\"strategy\\\":{\\\"MaintenanceWindow\\\": true} instead\"}", string(msg))
+}
+
+func ScheduleMaintenence(t *testing.T, upgradePayload string) *http.Response {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := "InstanceID-UpgradeMaintenanceWindow"
+
+	// provision Kyma 2.0
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+	"context": {
+		"sm_platform_credentials": {
+			"url": "https://sm.url",
+			"credentials": {
+			"basic": {
+					"username":"smUsername",
+					"password":"smPassword"
+	  			}
+			}
+		},
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster",
+		"kymaVersion": "2.0.0-rc4"
+	}
+}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	// run upgrade
+	return suite.CallAPI("POST", "upgrade/kyma", upgradePayload)
 }

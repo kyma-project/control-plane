@@ -93,6 +93,7 @@ type ScheduleType string
 
 const (
 	Immediate         ScheduleType = "immediate"
+	Now               ScheduleType = "now"
 	MaintenanceWindow ScheduleType = "maintenanceWindow"
 )
 
@@ -103,10 +104,11 @@ type ParallelStrategySpec struct {
 
 // StrategySpec is the strategy part common for all orchestration trigger/status API
 type StrategySpec struct {
-	Type          StrategyType         `json:"type"`
-	Schedule      ScheduleType         `json:"schedule,omitempty"`
-	ScheduleAfter time.Time            `json:"scheduleAfter,omitempty"`
-	Parallel      ParallelStrategySpec `json:"parallel,omitempty"`
+	Type              StrategyType `json:"type"`
+	Schedule          string       `json:"schedule,omitempty"`
+	ScheduleTime      time.Time
+	MaintenanceWindow bool                 `json:"maintenanceWindow,omitempty"`
+	Parallel          ParallelStrategySpec `json:"parallel,omitempty"`
 }
 
 // TargetSpec is the targets part common for all orchestration trigger/status API

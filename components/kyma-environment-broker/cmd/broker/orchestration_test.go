@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 )
@@ -78,7 +79,7 @@ func fixOrchestrationParams(runtimeID string) orchestration.Parameters {
 		},
 		Strategy: orchestration.StrategySpec{
 			Type:     orchestration.ParallelStrategy,
-			Schedule: orchestration.Immediate,
+			Schedule: time.Now().Format(time.RFC3339),
 			Parallel: orchestration.ParallelStrategySpec{Workers: 1},
 		},
 		DryRun:     false,
