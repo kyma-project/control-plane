@@ -158,7 +158,6 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	directorClient := director.NewFakeClient()
 	avsDel, externalEvalCreator, internalEvalUpdater, internalEvalAssistant, externalEvalAssistant := createFakeAvsDelegator(t, db, cfg)
 
-	smcf := fixServiceManagerFactory()
 	iasFakeClient := ias.NewFakeClient()
 	reconcilerClient := reconciler.NewFakeClient()
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
@@ -171,7 +170,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, smcf, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -189,7 +188,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 
 	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
-		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant, smcf,
+		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
 		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
 
@@ -220,7 +219,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
 	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, smcf, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -373,7 +372,7 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 20*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, err = s.db.Operations().GetOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -460,6 +459,27 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
+		if status.ID != nil {
+			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *BrokerSuiteTest) finishOperatioByOpIDnByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, operationID string) {
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetOperationByID(operationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to GetOperationsByID: %v", err))
+			return false, nil
+		}
+		status, err := s.provisionerClient.RuntimeOperationStatus("", op.ProvisionerOperationID)
+		if err != nil {
+			s.Log(fmt.Sprintf("failed to get RuntimeOperationStatus: %v", err))
+			return false, nil
+		}
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
 			return true, nil
@@ -677,8 +697,9 @@ func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID
 	})
 	assert.NoError(s.t, err)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgrade, gqlschema.OperationStateSucceeded, upgradeOp.Operation.RuntimeID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, upgradeOp.Operation.ID)
 }
+
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -776,6 +797,33 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	err = json.Unmarshal(m, &operationsList)
 	require.NoError(s.t, err)
 
+	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+		return "", errors.New("no operations found for given orchestration")
+	}
+
+	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
+	var operationsList orchestration.OperationResponseList
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		resp := s.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", orchestrationID), "")
+		m, err := ioutil.ReadAll(resp.Body)
+		s.Log(string(m))
+		if err != nil {
+			return false, fmt.Errorf("failed to read response body: %v", err)
+		}
+		operationsList = orchestration.OperationResponseList{}
+		err = json.Unmarshal(m, &operationsList)
+		if err != nil {
+			return false, fmt.Errorf("failed to marshal: %v", err)
+		}
+		if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+	require.NoError(s.t, err)
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
 		return "", errors.New("no operations found for given orchestration")
 	}

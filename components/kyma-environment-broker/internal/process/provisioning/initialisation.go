@@ -3,8 +3,6 @@ package provisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/servicemanager"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -30,36 +28,27 @@ type KymaVersionConfigurator interface {
 	ForGlobalAccount(string) (string, bool, error)
 }
 
-type SMClientFactory interface {
-	ForCredentials(credentials *servicemanager.Credentials) servicemanager.Client
-	ForCustomerCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (servicemanager.Client, error)
-	ProvideCredentials(reqCredentials servicemanager.RequestContext, log logrus.FieldLogger) (*servicemanager.Credentials, error)
-}
-
 type InitialisationStep struct {
-	operationManager            *process.ProvisionOperationManager
-	inputBuilder                input.CreatorForPlan
-	operationTimeout            time.Duration
-	provisioningTimeout         time.Duration
-	runtimeVerConfigurator      RuntimeVersionConfiguratorForProvisioning
-	serviceManagerClientFactory SMClientFactory
-	instanceStorage             storage.Instances
+	operationManager       *process.ProvisionOperationManager
+	inputBuilder           input.CreatorForPlan
+	operationTimeout       time.Duration
+	provisioningTimeout    time.Duration
+	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
+	instanceStorage        storage.Instances
 }
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances,
 	b input.CreatorForPlan,
 	provisioningTimeout time.Duration,
 	operationTimeout time.Duration,
-	rvc RuntimeVersionConfiguratorForProvisioning,
-	smcf SMClientFactory) *InitialisationStep {
+	rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:            process.NewProvisionOperationManager(os),
-		inputBuilder:                b,
-		operationTimeout:            operationTimeout,
-		provisioningTimeout:         provisioningTimeout,
-		runtimeVerConfigurator:      rvc,
-		serviceManagerClientFactory: smcf,
-		instanceStorage:             is,
+		operationManager:       process.NewProvisionOperationManager(os),
+		inputBuilder:           b,
+		operationTimeout:       operationTimeout,
+		provisioningTimeout:    provisioningTimeout,
+		runtimeVerConfigurator: rvc,
+		instanceStorage:        is,
 	}
 }
 
@@ -68,8 +57,6 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-	operation.SMClientFactory = s.serviceManagerClientFactory
-
 	// configure the Kyma version to use
 	err := s.configureKymaVersion(&operation, log)
 	if err != nil {

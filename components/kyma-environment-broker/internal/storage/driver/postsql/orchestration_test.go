@@ -19,7 +19,7 @@ func TestOrchestration(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Orchestrations", func(t *testing.T) {
-		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t, ctx, "test_DB_1")
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
 

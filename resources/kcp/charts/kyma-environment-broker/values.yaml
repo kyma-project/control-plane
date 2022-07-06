@@ -1,3 +1,15 @@
+global:
+  images:
+    kyma_environment_broker:
+      dir:
+      version: "PR-1788"
+    kyma_environments_cleanup_job:
+      dir:
+      version: "PR-1749"
+    kyma_environments_subaccount_cleanup_job:
+      dir:
+      version: "PR-1651"
+
 deployment:
   replicaCount: 1
   image:
@@ -134,16 +146,6 @@ kubeconfig:
   clientID: "TBD"
   allowOrigins: "*"
 
-# It is used to provide own creds for Service Manager instead of using the one provided by external system
-# who execute provision call on Kyma Environment Broker. You can define `overrideMode` to be one of: Always, WhenNotSentInRequest, Never
-serviceManager:
-  overrideMode: "Never" # possible values: Always, WhenNotSentInRequest, Never
-  secretName: "service-manager-creds"
-  url: "TBD"
-  username: "TBD"
-  password: "TBD"
-  subaccountWithRequestCredentials: "TBD"
-
 avs:
   secretName: "avs-creds"
   apiEndpoint: "TBD"
@@ -222,8 +224,8 @@ notification:
   disabled: true
 
 oidc:
-  issuer: https://dex.{{ .Values.global.ingress.domainName }}
-  keysURL: http://dex-service.kyma-system.svc.cluster.local:5556/keys
+  issuer: https://kymatest.accounts400.ondemand.com
+  keysURL: https://kymatest.accounts400.ondemand.com/oauth2/certs
   groups:
     admin: runtimeAdmin
     operator: runtimeOperator
@@ -231,6 +233,9 @@ oidc:
 
 kebClient:
   scope: "broker:write cld:read"
+
+runtimeAllowedPrincipals: |-
+  - cluster.local/ns/kcp-system/sa/kcp-kyma-metrics-collector
 
 environmentsCleanup:
   schedule: "0 0 * * *"
