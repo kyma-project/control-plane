@@ -7,10 +7,10 @@ import (
 )
 
 func TestGetEC2Instances(t *testing.T) {
-	// Test data is from sap-aws-skr-dev-cust-00003 secretbinding from gardener.
+	// Before running the test, please search for a development aws account credentials
 	test_secret_data := map[string][]byte{
-		"accessKeyID":     []byte("AKIA4ETQQISWL3EDKTJ2"),
-		"secretAccessKey": []byte("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"),
+		"accessKeyID":     []byte(""),
+		"secretAccessKey": []byte(""),
 	}
 
 	// Act & Assert
