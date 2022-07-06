@@ -74,8 +74,21 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// defaults strategy if not specified to Parallel with Immediate schedule
-	defaultOrchestrationStrategy(&params.Strategy)
+	// validate deprecated parameteter `maintenanceWindow`
+	err = ValidateDeprecatedParameters(params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
+
+	// validate `schedule` field
+	err = ValidateScheduleParameter(&params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
 
 	now := time.Now()
 	o := internal.Orchestration{

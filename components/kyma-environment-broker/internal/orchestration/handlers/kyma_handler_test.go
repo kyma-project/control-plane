@@ -42,6 +42,9 @@ func TestKymaHandler_AttachRoutes(t *testing.T) {
 			Kyma: &orchestration.KymaParameters{
 				Version: "",
 			},
+			Strategy: orchestration.StrategySpec{
+				Schedule: "now",
+			},
 		}
 		p, err := json.Marshal(&params)
 		require.NoError(t, err)

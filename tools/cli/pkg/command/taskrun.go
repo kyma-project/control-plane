@@ -133,7 +133,7 @@ func (cmd *TaskRunCommand) Run(args []string) error {
 	strategy := strategies.NewParallelOrchestrationStrategy(mgr, cmd.log, 0)
 	execID, err := strategy.Execute(operations, orchestration.StrategySpec{
 		Type:     orchestration.ParallelStrategy,
-		Schedule: orchestration.Immediate,
+		Schedule: string(orchestration.Immediate),
 		Parallel: orchestration.ParallelStrategySpec{Workers: cmd.parallelism},
 	})
 	if err != nil {

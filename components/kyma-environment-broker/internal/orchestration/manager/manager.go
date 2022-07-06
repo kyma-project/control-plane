@@ -177,11 +177,11 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			windowEnd := time.Time{}
 			days := []string{}
 
-			if o.State == orchestration.Pending && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleAfter)
+			if o.State == orchestration.Pending && o.Parameters.Strategy.MaintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleTime)
 			}
-			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleAfter)
+			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate && o.Parameters.Strategy.MaintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleTime)
 			}
 
 			r.MaintenanceWindowBegin = windowBegin
@@ -528,7 +528,7 @@ func (m *orchestrationManager) sendNotificationCreate(o *internal.Orchestration,
 			for _, op := range operations {
 				startDate := ""
 				endDate := ""
-				if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+				if o.Parameters.Strategy.MaintenanceWindow {
 					startDate = op.Runtime.MaintenanceWindowBegin.String()
 					endDate = op.Runtime.MaintenanceWindowEnd.String()
 				} else {

@@ -154,8 +154,8 @@ func TestKymaUpgradeScheduledToFutureMaintenanceWindow(t *testing.T) {
 {
 	"strategy": {
 		"type": "parallel",
-		"schedule": "maintenanceWindow",
-		"scheduleAfter":"%s",
+		"schedule": "%s",
+		"maintenanceWindow":true,
 		"parallel": {
 			"workers": 1
 		}
