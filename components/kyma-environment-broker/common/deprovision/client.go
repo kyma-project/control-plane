@@ -65,6 +65,7 @@ func (c DeprovisionClient) DeprovisionRuntime(instanceID string) error {
 	if response.StatusCode != http.StatusOK {
 		return errors.Wrapf(err, "calling %s returned %d (%s) status", request.URL.String(), response.StatusCode, response.Status)
 	}
+	logrus.Infof("Deprovisioning request returned code: " + response.Status)
 	c.log.Infof("Deprovisioning request returned code: " + response.Status)
 
 	return err
