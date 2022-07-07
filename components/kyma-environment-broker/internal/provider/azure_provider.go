@@ -49,6 +49,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
+
 					VnetCidr: "10.250.0.0/19",
 					Zones:    generateDefaultAzureZones(),
 				},
