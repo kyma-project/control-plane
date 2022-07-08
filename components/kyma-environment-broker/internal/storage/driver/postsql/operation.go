@@ -562,7 +562,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 			return nil, -1, -1, errors.Wrapf(err, "while GetOperationStatsForOrchestration()")
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
-		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:%v", operations)
+		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", operations)
 	}
 
 	ret, err := s.toUpgradeKymaOperationList(operations)
@@ -605,13 +605,13 @@ func (s *operations) ListOperationsByOrchestrationID(orchestrationID string, fil
 
 func listFailedOperations(entries []dbmodel.OperationStatEntry, operations []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int, int) {
 	failedOps, _ := calFailedStatusForOrchestration(entries)
-	fmt.Println("listFailedOperations() instance_id list: %v", failedOps)
+	fmt.Println("listFailedOperations() instance_id list:", failedOps)
 
 	var colOps []dbmodel.OperationDTO
 	for _, ops := range operations {
-		fmt.Println("listFailedOperations() ops.Operation.InstanceID: %s", ops.InstanceID)
+		fmt.Println("listFailedOperations() ops.Operation.InstanceID:", ops.InstanceID)
 		for _, failedOp := range failedOps {
-			fmt.Println("listFailedOperations() failedOp: %s", failedOp)
+			fmt.Println("listFailedOperations() failedOp:", failedOp)
 			if ops.InstanceID == failedOp {
 				colOps = append(colOps, ops)
 				break
