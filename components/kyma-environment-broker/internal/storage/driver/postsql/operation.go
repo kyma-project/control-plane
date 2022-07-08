@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-	"github.com/prometheus/common/log"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
