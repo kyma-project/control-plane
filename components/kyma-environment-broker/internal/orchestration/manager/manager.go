@@ -146,15 +146,15 @@ func (m *orchestrationManager) getMaintenancePolicy() (orchestration.Maintenance
 //result contains the operations which from `kcp o *** retry` and its label are retrying, runtimes from target parameter
 func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtimes []orchestration.Runtime, result []orchestration.RuntimeOperation) []orchestration.Runtime {
 	logger := m.log.WithField("OrchestrationID state", o.State)
-	logger.Debugf("extractRuntimes() runtimes : %v", runtimes)
+	logger.Infof("extractRuntimes() runtimes : %v", runtimes)
 	var fileterRuntimes []orchestration.Runtime
 	if o.State == orchestration.Pending {
 		fileterRuntimes = runtimes
 	} else if o.State == orchestration.Retrying {
 		for _, retryOp := range result {
-			logger.Debugf("extractRuntimes() retryOp.Runtime.InstanceID %s", retryOp.Runtime.InstanceID)
+			logger.Infof("extractRuntimes() retryOp.Runtime.InstanceID %s", retryOp.Runtime.InstanceID)
 			for _, r := range runtimes {
-				logger.Debugf("extractRuntimes() r.InstanceID %s", r.InstanceID)
+				logger.Infof("extractRuntimes() r.InstanceID %s", r.InstanceID)
 				if retryOp.Runtime.InstanceID == r.InstanceID {
 					fileterRuntimes = append(fileterRuntimes, r)
 					break

@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
+	"github.com/prometheus/common/log"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
@@ -563,7 +564,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
 		for i, op := range operations {
-			fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.Operation.InstanceID)
+			log.Info("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.InstanceID)
 		}
 	}
 
@@ -808,7 +809,7 @@ func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestration
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
 		for i, op := range operations {
-			fmt.Println("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.Operation.InstanceID)
+			log.Info("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.InstanceID)
 		}
 	}
 
