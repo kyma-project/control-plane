@@ -104,14 +104,14 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 			AutoScalerMin: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Default:     2,
+				Default:     4,
 				Description: "Specifies the minimum number of virtual machines to create",
 			},
 			AutoScalerMax: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Maximum:     40,
-				Default:     10,
+				Maximum:     80,
+				Default:     20,
 				Description: "Specifies the maximum number of virtual machines to create",
 			},
 		},
@@ -123,6 +123,13 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 		MachineType: &Type{
 			Type: "string",
 			Enum: ToInterfaceSlice(machineTypes),
+		},
+		ZonesCount: &Type{
+			Type:        "integer",
+			Minimum:     1,
+			Maximum:     3,
+			Default:     1,
+			Description: "Specifies the number of availability zones to use",
 		},
 	}
 

@@ -23,12 +23,12 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:          nil,
-			MachineType:       "m2.xlarge",
+			MachineType:       "g_c4_m16",
 			Region:            DefaultOpenStackRegion,
 			Provider:          "openstack",
 			WorkerCidr:        "10.250.0.0/19",
-			AutoScalerMin:     2,
-			AutoScalerMax:     4,
+			AutoScalerMin:     4,
+			AutoScalerMax:     8,
 			MaxSurge:          1,
 			MaxUnavailable:    0,
 			ExposureClassName: ptr.String(DefaultExposureClass),

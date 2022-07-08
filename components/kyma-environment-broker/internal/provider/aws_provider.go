@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	DefaultAWSRegion       = "eu-central-1"
-	DefaultAWSTrialRegion  = "eu-west-1"
-	DefaultAWSHAZonesCount = 3
+	DefaultAWSRegion      = "eu-central-1"
+	DefaultAWSTrialRegion = "eu-west-1"
 )
 
 var europeAWS = "eu-west-1"
@@ -30,7 +29,6 @@ var toAWSSpecific = map[string]string{
 
 type (
 	AWSInput      struct{}
-	AWSHAInput    struct{}
 	AWSTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
@@ -45,10 +43,10 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			MachineType:    "m5.xlarge",
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
-			WorkerCidr:     "10.250.0.0/19",
+			WorkerCidr:     "10.250.0.0/16",
 			AutoScalerMin:  4,
 			AutoScalerMax:  20,
-			MaxSurge:       1,
+			MaxSurge:       2,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
@@ -116,8 +114,7 @@ func MultipleZonesForAWSRegion(region string, zonesCount int) []string {
 	return generatedZones
 }
 
-func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZoneInput {
-	generatedZones := MultipleZonesForAWSRegion(region, zonesCount)
+func generateMultipleAWSZones(zoneNames []string) []*gqlschema.AWSZoneInput {
 	var zones []*gqlschema.AWSZoneInput
 
 	// generate subnets - the subnets in AZ must be inside of the cidr block and non overlapping. example values:
@@ -125,24 +122,25 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 	//cidr: 10.250.0.0/16
 	//zones:
 	//	- name: eu-central-1a
-	//workers: 10.250.0.0/22
-	//public: 10.250.20.0/22
-	//internal: 10.250.40.0/22
+	//workers: 10.250.0.0/19
+	//public: 10.250.32.0/20
+	//internal: 10.250.48.0/20
 	//	- name: eu-central-1b
-	//workers: 10.250.4.0/22
-	//public: 10.250.24.0/22
-	//internal: 10.250.44.0/22
+	//workers: 10.250.64.0/19
+	//public: 10.250.96.0/20
+	//internal: 10.250.112.0/20
 	//	- name: eu-central-1c
-	//workers: 10.250.8.0/22
-	//public: 10.250.28.0/22
-	//internal: 10.250.48.0/22
-	subnetFmt := "10.250.%d.0/22"
-	for i, genZone := range generatedZones {
+	//workers: 10.250.128.0/19
+	//public: 10.250.160.0/20
+	//internal: 10.250.176.0/20
+	workerSubnetFmt := "10.250.%d.0/19"
+	lbSubnetFmt := "10.250.%d.0/20"
+	for i, name := range zoneNames {
 		zones = append(zones, &gqlschema.AWSZoneInput{
-			Name:         genZone,
-			PublicCidr:   fmt.Sprintf(subnetFmt, 4*i+20),
-			InternalCidr: fmt.Sprintf(subnetFmt, 4*i+40),
-			WorkerCidr:   fmt.Sprintf(subnetFmt, 4*i),
+			Name:         name,
+			WorkerCidr:   fmt.Sprintf(workerSubnetFmt, 64*i),
+			PublicCidr:   fmt.Sprintf(lbSubnetFmt, 64*i+32),
+			InternalCidr: fmt.Sprintf(lbSubnetFmt, 64*i+48),
 		})
 	}
 
@@ -150,57 +148,24 @@ func generateMultipleAWSZones(region string, zonesCount int) []*gqlschema.AWSZon
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
-		if pp.Parameters.ZonesCount != nil {
-			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
-			return
-		}
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(*pp.Parameters.Region)
+	zonesCount := 1
+	if pp.Parameters.ZonesCount != nil {
+		zonesCount = *pp.Parameters.ZonesCount
+	}
+	switch {
+	// explicit zones list is provided
+	case len(pp.Parameters.Zones) > 0:
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(pp.Parameters.Zones)
+	// region is provided, with or without zonesCount
+	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, zonesCount))
+	// region is not provided, zonesCount is provided
+	case zonesCount > 1:
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount))
 	}
 }
 
 func (p *AWSInput) Profile() gqlschema.KymaProfile {
-	return gqlschema.KymaProfileProduction
-}
-
-func (p *AWSHAInput) Provider() internal.CloudProvider {
-	return internal.AWS
-}
-
-func (p *AWSHAInput) Defaults() *gqlschema.ClusterConfigInput {
-	return &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       ptr.String("gp2"),
-			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "m5.2xlarge",
-			Region:         DefaultAWSRegion,
-			Provider:       "aws",
-			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  1,
-			AutoScalerMax:  10,
-			MaxSurge:       1,
-			MaxUnavailable: 0,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr:  "10.250.0.0/16",
-					AwsZones: generateMultipleAWSZones(DefaultAWSRegion, DefaultAWSHAZonesCount),
-				},
-			},
-		},
-	}
-}
-
-func (p *AWSHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
-		if pp.Parameters.ZonesCount != nil {
-			input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, *pp.Parameters.ZonesCount)
-			return
-		}
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(*pp.Parameters.Region, DefaultAzureHAZonesCount)
-	}
-}
-
-func (p *AWSHAInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileProduction
 }
 

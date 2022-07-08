@@ -167,7 +167,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 					"context": {
-						"sm_platform_credentials": {	
+						"sm_platform_credentials": {
 							"url": "https://sm.url",
 							"credentials": {
 								"basic": {
@@ -323,32 +323,21 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"Production Azure": {
 			planID: broker.AzurePlanID,
 
-			expectedMinimalNumberOfNodes:        2,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
+			expectedMinimalNumberOfNodes:        4,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "azure",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
-		"HA Azure - provided zonesCount": {
-			planID:     broker.AzureHAPlanID,
+		"Production Azure - provided zonesCount": {
+			planID:     broker.AzurePlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
-			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "azure",
-			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
-		},
-		"HA Azure - default zonesCount": {
-			planID: broker.AzureHAPlanID,
-
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
+			expectedMinimalNumberOfNodes:        4,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "azure",
 			expectedSharedSubscription:          false,
@@ -365,30 +354,42 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
-		"HA AWS - provided zonesCount": {
-			planID:     broker.AWSHAPlanID,
+		"Production AWS - provided zonesCount": {
+			planID:     broker.AWSPlanID,
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedMinimalNumberOfNodes:        4,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
-		"HA AWS - default zonesCount": {
-			planID: broker.AWSHAPlanID,
-			region: "eu-central-1",
+		"Production GCP": {
+			planID: broker.GCPPlanID,
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedMinimalNumberOfNodes:        4,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "n2-standard-4",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "aws",
+			expectedProvider:                    "gcp",
 			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
+			expectedSubscriptionHyperscalerType: hyperscaler.GCP,
+		},
+		"Production GCP - provided zonesCount": {
+			planID:     broker.GCPPlanID,
+			zonesCount: ptr.Integer(3),
+			region:     "us-central1",
+
+			expectedMinimalNumberOfNodes:        4,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "n2-standard-4",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "gcp",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.GCP,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {

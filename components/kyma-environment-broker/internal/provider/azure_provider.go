@@ -1,6 +1,10 @@
 package provider
 
 import (
+	"fmt"
+	"math/rand"
+	"strconv"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
@@ -8,8 +12,7 @@ import (
 )
 
 const (
-	DefaultAzureRegion       = "eastus"
-	DefaultAzureHAZonesCount = 3
+	DefaultAzureRegion = "eastus"
 )
 
 var europeAzure = "westeurope"
@@ -31,7 +34,6 @@ type (
 		PlatformRegionMapping map[string]string
 	}
 	AzureFreemiumInput struct{}
-	AzureHAInput       struct{}
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
@@ -39,18 +41,23 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "Standard_D8_v3",
+			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  2,
-			AutoScalerMax:  10,
-			MaxSurge:       1,
+			WorkerCidr:     "10.250.0.0/16",
+			AutoScalerMin:  4,
+			AutoScalerMax:  20,
+			MaxSurge:       2,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
-					Zones:    generateDefaultAzureZones(),
+					VnetCidr: "10.250.0.0/16",
+					AzureZones: []*gqlschema.AzureZoneInput{
+						{
+							Name: generateRandomAzureZone(),
+							Cidr: "10.250.0.0/19",
+						},
+					},
 				},
 			},
 		},
@@ -58,7 +65,23 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
+	switch {
+	// explicit zones list is provided
+	case len(pp.Parameters.Zones) > 0:
+		zones := []int{}
+		for _, inputZone := range pp.Parameters.Zones {
+			zone, err := strconv.Atoi(inputZone)
+			if err != nil || zone < 1 || zone > 3 {
+				continue
+			}
+			zones = append(zones, zone)
+		}
+		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateMultipleAzureZones(zones)
+
+	// zonesCount is provided
+	case pp.Parameters.ZonesCount != nil && *pp.Parameters.ZonesCount > 1:
+		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateMultipleAzureZones(generateRandomAzureZones(*pp.Parameters.ZonesCount))
+	}
 }
 
 func (p *AzureInput) Profile() gqlschema.KymaProfile {
@@ -85,7 +108,12 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    generateDefaultAzureZones(),
+					AzureZones: []*gqlschema.AzureZoneInput{
+						{
+							Name: generateRandomAzureZone(),
+							Cidr: "10.250.0.0/19",
+						},
+					},
 				},
 			},
 		},
@@ -93,7 +121,6 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
 }
 
 func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
@@ -125,7 +152,12 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr: "10.250.0.0/19",
-					Zones:    generateDefaultAzureZones(),
+					AzureZones: []*gqlschema.AzureZoneInput{
+						{
+							Name: generateRandomAzureZone(),
+							Cidr: "10.250.0.0/19",
+						},
+					},
 				},
 			},
 		},
@@ -147,50 +179,9 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 	if params.Region != nil && *params.Region != "" {
 		updateString(&input.GardenerConfig.Region, toAzureSpecific[*params.Region])
 	}
-
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, params.Zones)
 }
 
 func (p *AzureTrialInput) Provider() internal.CloudProvider {
-	return internal.Azure
-}
-
-func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
-	return &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       ptr.String("Standard_LRS"),
-			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "Standard_D8_v3",
-			Region:         DefaultAzureRegion,
-			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  1,
-			AutoScalerMax:  10,
-			MaxSurge:       1,
-			MaxUnavailable: 0,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/19",
-					Zones:    generateMultipleAzureZones(DefaultAzureHAZonesCount),
-				},
-			},
-		},
-	}
-}
-
-func (p *AzureHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Zones == nil && pp.Parameters.ZonesCount != nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, generateMultipleAzureZones(*pp.Parameters.ZonesCount))
-		return
-	}
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
-}
-
-func (p *AzureHAInput) Profile() gqlschema.KymaProfile {
-	return gqlschema.KymaProfileProduction
-}
-
-func (p *AzureHAInput) Provider() internal.CloudProvider {
 	return internal.Azure
 }
 
@@ -212,4 +203,41 @@ func (p *AzureFreemiumInput) Profile() gqlschema.KymaProfile {
 
 func (p *AzureFreemiumInput) Provider() internal.CloudProvider {
 	return internal.Azure
+}
+
+func generateRandomAzureZone() int {
+	const (
+		min = 1
+		max = 3
+	)
+
+	// generates random number from 1-3 range
+	getRandomNumber := func() int {
+		return rand.Intn(max-min+1) + min
+	}
+
+	return getRandomNumber()
+}
+
+func generateRandomAzureZones(zonesCount int) []int {
+	zones := []int{1, 2, 3}
+	if zonesCount > 3 {
+		zonesCount = 3
+	}
+
+	rand.Shuffle(len(zones), func(i, j int) { zones[i], zones[j] = zones[j], zones[i] })
+	return zones[:zonesCount]
+}
+
+func generateMultipleAzureZones(zoneNames []int) []*gqlschema.AzureZoneInput {
+	subnetFmt := "10.250.%d.0/19"
+	zones := []*gqlschema.AzureZoneInput{}
+	for i, zone := range zoneNames {
+		zones = append(zones, &gqlschema.AzureZoneInput{
+			Name: zone,
+			Cidr: fmt.Sprintf(subnetFmt, i*32),
+		})
+	}
+
+	return zones
 }

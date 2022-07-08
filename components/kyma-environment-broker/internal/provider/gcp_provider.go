@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
@@ -13,7 +14,7 @@ import (
 
 const (
 	DefaultGCPRegion      = "europe-west3"
-	DefaultGCPMachineType = "n2-standard-8"
+	DefaultGCPMachineType = "n2-standard-4"
 )
 
 var europeGcp = "europe-west3"
@@ -42,13 +43,13 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  2,
-			AutoScalerMax:  10,
-			MaxSurge:       1,
+			AutoScalerMin:  4,
+			AutoScalerMax:  20,
+			MaxSurge:       2,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: ZonesForGCPRegion(DefaultGCPRegion),
+					Zones: ZonesForGCPRegion(DefaultGCPRegion, 1),
 				},
 			},
 		},
@@ -56,11 +57,21 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region))
+	zonesCount := 1
+	if pp.Parameters.ZonesCount != nil {
+		zonesCount = *pp.Parameters.ZonesCount
 	}
-
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, pp.Parameters.Zones)
+	switch {
+	// explicit zones list is provided
+	case len(pp.Parameters.Zones) > 0:
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, pp.Parameters.Zones)
+	// region is provided, with or without zonesCount
+	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region, zonesCount))
+	// region is not provided, zonesCount is provided
+	case zonesCount > 1:
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(DefaultGCPRegion, zonesCount))
+	}
 }
 
 func (p *GcpInput) Profile() gqlschema.KymaProfile {
@@ -76,7 +87,7 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("pd-standard"),
 			VolumeSizeGb:   ptr.Integer(30),
-			MachineType:    "n1-standard-4",
+			MachineType:    "n2-standard-4",
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",
@@ -86,7 +97,7 @@ func (p *GcpTrialInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: ZonesForGCPRegion(DefaultGCPRegion),
+					Zones: ZonesForGCPRegion(DefaultGCPRegion, 1),
 				},
 			},
 		},
@@ -111,13 +122,10 @@ func (p *GcpTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp 
 	}
 
 	// region is not empty - it means override the default one
-	var zones []string
 	if region != "" {
 		updateString(&input.GardenerConfig.Region, &region)
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(region))
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(region, 1))
 	}
-
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, zones)
 }
 
 func (p *GcpTrialInput) Profile() gqlschema.KymaProfile {
@@ -128,11 +136,13 @@ func (p *GcpTrialInput) Provider() internal.CloudProvider {
 	return internal.GCP
 }
 
-func ZonesForGCPRegion(region string) []string {
+func ZonesForGCPRegion(region string, zonesCount int) []string {
+	zoneCodes := []string{"a", "b", "c"}
 	var zones []string
+	rand.Shuffle(len(zoneCodes), func(i, j int) { zoneCodes[i], zoneCodes[j] = zoneCodes[j], zoneCodes[i] })
 
-	for _, name := range []string{"a"} {
-		zones = append(zones, fmt.Sprintf("%s-%s", region, name))
+	for i := 0; i < zonesCount && i < len(zoneCodes); i++ {
+		zones = append(zones, fmt.Sprintf("%s-%s", region, zoneCodes[i]))
 	}
 
 	return zones

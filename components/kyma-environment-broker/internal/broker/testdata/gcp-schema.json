@@ -5,25 +5,27 @@
     "region",
     "machineType",
     "autoScalerMin",
-    "autoScalerMax"
+    "autoScalerMax",
+    "zonesCount"
   ],
   "_show_form_view": true,
   "properties": {
     "autoScalerMax": {
-      "default": 10,
+      "default": 20,
       "description": "Specifies the maximum number of virtual machines to create",
-      "maximum": 40,
+      "maximum": 80,
       "minimum": 2,
       "type": "integer"
     },
     "autoScalerMin": {
-      "default": 2,
+      "default": 4,
       "description": "Specifies the minimum number of virtual machines to create",
       "minimum": 2,
       "type": "integer"
     },
     "machineType": {
       "enum": [
+        "n2-standard-4",
         "n2-standard-8",
         "n2-standard-16",
         "n2-standard-32",
@@ -49,6 +51,13 @@
         "us-central1"
       ],
       "type": "string"
+    },
+    "zonesCount": {
+      "default": 1,
+      "description": "Specifies the number of availability zones to use",
+      "maximum": 3,
+      "minimum": 1,
+      "type": "integer"
     }
   },
   "required": [

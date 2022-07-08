@@ -35,7 +35,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	kebRuntime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeoverrides"
@@ -472,8 +471,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-trial":        "true",
 				"overrides-plan-aws":          "true",
 				"overrides-plan-free":         "true",
-				"overrides-plan-azure_ha":     "true",
-				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-gcp":          "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 			},
@@ -493,8 +491,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-trial":        "true",
 				"overrides-plan-aws":          "true",
 				"overrides-plan-free":         "true",
-				"overrides-plan-azure_ha":     "true",
-				"overrides-plan-aws_ha":       "true",
+				"overrides-plan-gcp":          "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 				"component":                   "service-catalog2",
@@ -519,7 +516,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		Data: map[string]string{
 			"maintenancePolicy": `{
 	      "rules": [
-	        
+
 	      ],
 	      "default": {
 	        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -890,20 +887,26 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 	provisionInput := s.fetchProvisionInput()
 
 	switch planID {
-	case broker.AzureHAPlanID:
+	case broker.AzurePlanID:
 		if zonesCount != nil {
 			// zonesCount was provided in provisioning request
-			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
 			break
 		}
 		// zonesCount was not provided, should use default value
-		assert.Equal(s.t, provider.DefaultAzureHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
-	case broker.AWSHAPlanID:
+		assert.Equal(s.t, 1, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+	case broker.AWSPlanID:
 		if zonesCount != nil {
 			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
 			break
 		}
-		assert.Equal(s.t, provider.DefaultAWSHAZonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+		assert.Equal(s.t, 1, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+	case broker.GCPPlanID:
+		if zonesCount != nil {
+			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones))
+			break
+		}
+		assert.Equal(s.t, 1, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones))
 	default:
 	}
 }

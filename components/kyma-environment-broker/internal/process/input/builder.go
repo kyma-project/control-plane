@@ -93,8 +93,8 @@ func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) 
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.AWSPlanID, broker.AWSHAPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
-		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.AzureHAPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
+		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
 		return true
 	default:
 		return false
@@ -124,14 +124,10 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
-	case broker.AzureHAPlanID:
-		provider = &cloudProvider.AzureHAInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(parametersProvider)
 	case broker.AWSPlanID:
 		provider = &cloudProvider.AWSInput{}
-	case broker.AWSHAPlanID:
-		provider = &cloudProvider.AWSHAInput{}
 		// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
