@@ -43,3 +43,8 @@ type InstanceByGlobalAccountIDStatEntry struct {
 	GlobalAccountID string
 	Total           int
 }
+
+type InstanceERSContextStatsEntry struct {
+	LicenseType string
+	Total       int
+}
