@@ -150,6 +150,9 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
+		for i, ops := range allOps {
+			fmt.Println("UpgradeKymaOrchestration ", i, ops.Operation.InstanceID)
+		}
 		response, err = h.kymaRetryer.orchestrationRetry(o, allOps, operationIDs)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
@@ -164,6 +167,9 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
+		for i, ops := range allOps {
+			fmt.Println("UpgradeClusterOrchestration ", i, ops.Operation.InstanceID)
+		}
 		response, err = h.clusterRetryer.orchestrationRetry(o, allOps, operationIDs)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)

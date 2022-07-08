@@ -562,7 +562,9 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 			return nil, -1, -1, errors.Wrapf(err, "while GetOperationStatsForOrchestration()")
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
-		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", operations)
+		for i, op := range operations {
+			fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.Operation.InstanceID)
+		}
 	}
 
 	ret, err := s.toUpgradeKymaOperationList(operations)
@@ -798,6 +800,18 @@ func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestration
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
+
+	if len(filter.States) == 1 && strings.Contains(filter.States[0], Failed) {
+		entries, err := s.NewReadSession().GetOperationStatsForOrchestration(orchestrationID)
+		if err != nil {
+			return nil, -1, -1, errors.Wrapf(err, "while GetOperationStatsForOrchestration()")
+		}
+		operations, count, totalCount = listFailedOperations(entries, operations)
+		for i, op := range operations {
+			fmt.Println("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.Operation.InstanceID)
+		}
+	}
+
 	ret, err := s.toUpgradeClusterOperationList(operations)
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
