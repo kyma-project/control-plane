@@ -149,8 +149,25 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 	if err != nil {
 		return result, o, len(runtimes), errors.Wrap(err, "while resolving targets")
 	}
+	fmt.Println("NewOperationForPendingRetrying() runtimes is ", runtimes)
 
-	for _, r := range runtimes {
+	var fileterRuntimes []orchestration.Runtime
+	if o.State == orchestration.Pending {
+		fileterRuntimes = runtimes
+	} else if o.State == orchestration.Retrying {
+		for _, retryOp := range result {
+			fmt.Println("NewOperationForPendingRetrying() retryOp.Runtime.InstanceID", retryOp.Runtime.InstanceID)
+			for _, r := range runtimes {
+				fmt.Println("NewOperationForPendingRetrying() r.InstanceID", r.InstanceID)
+				if retryOp.Runtime.InstanceID == r.InstanceID {
+					fileterRuntimes = append(fileterRuntimes, r)
+					break
+				}
+			}
+		}
+	}
+
+	for _, r := range fileterRuntimes {
 		windowBegin := time.Time{}
 		windowEnd := time.Time{}
 		days := []string{}
@@ -205,13 +222,13 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		fmt.Println("manager.go resolveOperations() o.Parameters = ", o.Parameters)
 
 		// look for the ops with retrying state, if ops not exit return error
-		_, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, policy, true)
+		retryRuntimes, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, policy, true)
 		if err != nil {
-			return result, errors.Wrap(err, "while resolving retrying orchestration")
+			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
 		}
 
 		var runtTimesNum int
-		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, result)
+		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
 		}

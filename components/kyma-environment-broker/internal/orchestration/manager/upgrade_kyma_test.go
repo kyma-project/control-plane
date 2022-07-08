@@ -374,7 +374,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Retrying, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
 	})
 
 	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {

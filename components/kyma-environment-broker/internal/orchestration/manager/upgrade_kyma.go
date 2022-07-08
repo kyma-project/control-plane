@@ -168,9 +168,28 @@ func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule or
 
 	for _, op := range ops {
 		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
+		runtimeop, err := u.restoreRetryingOperation(op)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, runtimeop)
 	}
 
 	return result, nil
+}
+
+// update storage in corresponding upgrade factory to avoid too many storage read and write
+func (u *upgradeKymaFactory) restoreRetryingOperation(op internal.UpgradeKymaOperation) (orchestration.RuntimeOperation, error) {
+	op.UpdatedAt = time.Now()
+	op.State = orchestration.Failed
+	op.Description = "Operation restore to failed"
+	opUpdated, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
+	if err != nil {
+		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
+	}
+
+	return opUpdated.RuntimeOperation, nil
 }
 
 // update storage in corresponding upgrade factory to avoid too many storage read and write
