@@ -475,6 +475,20 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	return result, nil
 }
 
+func (s *Instance) GetERSContextStats() (internal.ERSContextStats, error) {
+	entries, err := s.NewReadSession().GetERSContextStats()
+	if err != nil {
+		return internal.ERSContextStats{}, err
+	}
+	result := internal.ERSContextStats{
+		LicenseType: make(map[string]int),
+	}
+	for _, e := range entries {
+		result.LicenseType[e.LicenseType] += e.Total
+	}
+	return result, nil
+}
+
 func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	dtos, count, totalCount, err := s.NewReadSession().ListInstances(filter)
 	if err != nil {

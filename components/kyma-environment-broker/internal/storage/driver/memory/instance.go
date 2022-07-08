@@ -200,6 +200,10 @@ func (s *instances) GetInstanceStats() (internal.InstanceStats, error) {
 	return internal.InstanceStats{}, fmt.Errorf("not implemented")
 }
 
+func (s *instances) GetERSContextStats() (internal.ERSContextStats, error) {
+	return internal.ERSContextStats{}, fmt.Errorf("not implemented")
+}
+
 func (s *instances) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

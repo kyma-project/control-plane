@@ -15,6 +15,7 @@ type Instances interface {
 	Update(instance internal.Instance) (*internal.Instance, error)
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
+	GetERSContextStats() (internal.ERSContextStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	List(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 
