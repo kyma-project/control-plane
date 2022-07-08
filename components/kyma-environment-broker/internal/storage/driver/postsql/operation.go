@@ -564,7 +564,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
 		for i, op := range operations {
-			log.Info("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.InstanceID)
+			fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.InstanceID)
 		}
 	}
 
@@ -809,7 +809,7 @@ func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestration
 		}
 		operations, count, totalCount = listFailedOperations(entries, operations)
 		for i, op := range operations {
-			log.Info("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.InstanceID)
+			fmt.Println("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.InstanceID)
 		}
 	}
 
