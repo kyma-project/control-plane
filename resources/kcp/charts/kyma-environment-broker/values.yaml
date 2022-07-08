@@ -8,7 +8,7 @@ global:
       version: "PR-1749"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1651"
+      version: "22cb2b4e"
 
 deployment:
   replicaCount: 1
