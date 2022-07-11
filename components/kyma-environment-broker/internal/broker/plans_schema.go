@@ -104,7 +104,7 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 			AutoScalerMin: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Default:     4,
+				Default:     3,
 				Description: "Specifies the minimum number of virtual machines to create",
 			},
 			AutoScalerMax: &Type{

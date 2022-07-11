@@ -159,6 +159,16 @@ func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProvid
 		{{- if .Zones }}
 		zones: {{.Zones | marshal }},
 		{{- end }}
+		{{- with .AzureZones }}
+		azureZones: [
+			{{- range . }}
+			{
+				name: {{ .Name }},
+				cidr: "{{ .Cidr }}",
+			}
+			{{- end }}
+		]
+		{{- end }}
 	}`)
 }
 

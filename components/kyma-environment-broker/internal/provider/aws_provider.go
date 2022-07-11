@@ -44,9 +44,9 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultAWSRegion,
 			Provider:       "aws",
 			WorkerCidr:     "10.250.0.0/16",
-			AutoScalerMin:  4,
+			AutoScalerMin:  3,
 			AutoScalerMax:  20,
-			MaxSurge:       2,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{

@@ -17,7 +17,7 @@
       "type": "integer"
     },
     "autoScalerMin": {
-      "default": 4,
+      "default": 3,
       "description": "Specifies the minimum number of virtual machines to create",
       "minimum": 2,
       "type": "integer"

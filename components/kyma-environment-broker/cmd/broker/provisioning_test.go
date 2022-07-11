@@ -323,7 +323,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"Production Azure": {
 			planID: broker.AzurePlanID,
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
@@ -335,7 +335,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			planID:     broker.AzurePlanID,
 			zonesCount: ptr.Integer(3),
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
@@ -346,7 +346,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"Production AWS": {
 			planID: broker.AWSPlanID,
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
@@ -359,7 +359,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
@@ -370,7 +370,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		"Production GCP": {
 			planID: broker.GCPPlanID,
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "n2-standard-4",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
@@ -383,7 +383,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			zonesCount: ptr.Integer(3),
 			region:     "us-central1",
 
-			expectedMinimalNumberOfNodes:        4,
+			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
 			expectedMachineType:                 "n2-standard-4",
 			expectedProfile:                     gqlschema.KymaProfileProduction,

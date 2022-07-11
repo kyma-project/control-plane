@@ -43,9 +43,9 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			Region:         DefaultGCPRegion,
 			Provider:       "gcp",
 			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  4,
+			AutoScalerMin:  3,
 			AutoScalerMax:  20,
-			MaxSurge:       2,
+			MaxSurge:       1,
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
