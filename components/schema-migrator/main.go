@@ -41,6 +41,7 @@ func main() {
 		dbName = fmt.Sprintf("%s?sslmode=%s", dbName, os.Getenv("DB_SSL"))
 	}
 
+        // IPv6 not supported in construction of network address.
 	connectionString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		os.Getenv("DB_USER"),
