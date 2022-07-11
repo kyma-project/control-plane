@@ -2,6 +2,7 @@ package caller
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -47,6 +48,8 @@ func (c Caller) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 
 	var response schema.RuntimeStatus
 	err := c.executeRequest(req, &response)
+	fmt.Println("RuntimeStatus and repsonse are: ", runtimeID, response)
+	fmt.Println("RuntimeStatus and erro are: ", runtimeID, err)
 	if err != nil {
 		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
 	}

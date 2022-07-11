@@ -62,6 +62,7 @@ func SetupConfigMap() error {
 			log.Infof("Found ConfigMap for runtime %s user %s.", runtimeID, userID)
 			c := caller.NewCaller(env.Config.GraphqlURL, tenantID)
 			status, err := c.RuntimeStatus(runtimeID)
+			fmt.Println("after call RuntimeStatus() ", err)
 			if strings.Contains(fmt.Sprint(err), "not found") && strings.Contains(fmt.Sprint(err), "error getting Shoot") {
 				//delete ConfigMap if shoot no longer exists
 				coreClientset, err := GetK8sClient()
