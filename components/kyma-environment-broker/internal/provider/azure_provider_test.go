@@ -115,7 +115,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		input := svc.Defaults()
 
 		//then
-		assert.Equal(t, true, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+		assert.Equal(t, false, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
 	})
 }
 
