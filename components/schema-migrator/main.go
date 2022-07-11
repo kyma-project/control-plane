@@ -24,12 +24,12 @@ func main() {
 	}
 
 	direction := os.Getenv("DIRECTION")
-
-	if direction == "up" {
+	switch direction {
+	case "up":
 		fmt.Println("Migration UP")
-	} else if direction == "down" {
+	case "down":
 		fmt.Println("Migration DOWN")
-	} else {
+	default:
 		fmt.Println("ERROR: DIRECTION variable accepts only two values: up or down")
 		os.Exit(1)
 	}
@@ -86,9 +86,13 @@ func main() {
 	m.Log = &Logger{}
 
 	if direction == "up" {
-		m.Up()
+		err = m.Up()
 	} else if direction == "down" {
-		m.Down()
+		err = m.Down()
+	}
+
+	if err != nil {
+		fmt.Printf("Error during migration, %s\n", err)
 	}
 }
 
