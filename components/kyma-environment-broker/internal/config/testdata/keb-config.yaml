@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keb-config
+  namespace: kcp-system
+  labels:
+    keb-config: "true"
+    runtime-version-2.4.0: "true"
+data:
+  default: |-
+    additional-components:
+      - name: "additional-component1"
+        namespace: "kyma-system"
+      - name: "additional-component2"
+        namespace: "test-system"
+      - name: "additional-component3"
+        namespace: "kyma-system"
+        source:
+          url: "https://test.local/artifacts/additional-component3-0.0.1.tgz"
+  azure: |-
+    additional-components:
+      - name: "additional-component1"
+        namespace: "kyma-system"
+      - name: "additional-component2"
+        namespace: "test-system"
+      # no additional-component3
+      - name: "azure-component"
+        namespace: "azure-system"
+        source:
+          url: "https://azure.domain/component/azure-component.git"
+  gcp: |-
+    additional-components:
+      - name: "additional-component1"
+        namespace: "kyma-system"
+      # no additional-component2
+      - name: "additional-component3"
+        namespace: "kyma-system"
+        source:
+          url: "https://test.local/artifacts/additional-component3-0.0.1.tgz"
+      - name: "gcp-component"
+        namespace: "kyma-system"
+        source:
+          url: "https://gcp.domain/component/gcp-component.git"
+  trial: |-
+    additional-components:
+      # no components
