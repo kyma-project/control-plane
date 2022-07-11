@@ -1,10 +1,11 @@
-package internal
+package config
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/sirupsen/logrus"
 	coreV1 "k8s.io/api/core/v1"
@@ -35,7 +36,7 @@ func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus
 	}
 }
 
-func (r *ConfigReader) ReadConfig(kymaVersion RuntimeVersionData, planName string) (string, error) {
+func (r *ConfigReader) ReadConfig(kymaVersion internal.RuntimeVersionData, planName string) (string, error) {
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
 		return "", err
@@ -59,7 +60,7 @@ func (r *ConfigReader) ReadConfig(kymaVersion RuntimeVersionData, planName strin
 	return cfgString, nil
 }
 
-func (r *ConfigReader) getConfigMapList(kymaVersion RuntimeVersionData) (*coreV1.ConfigMapList, error) {
+func (r *ConfigReader) getConfigMapList(kymaVersion internal.RuntimeVersionData) (*coreV1.ConfigMapList, error) {
 	cfgMapList := &coreV1.ConfigMapList{}
 	listOptions := configMapListOptions(kymaVersion.Version)
 	if err := r.k8sClient.List(r.ctx, cfgMapList, listOptions...); err != nil {
