@@ -78,14 +78,29 @@ func main() {
 	m, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
 		"postgres", driver)
-
 	if err != nil {
 		fmt.Printf("Error during migration initialization, %s\n", err)
 	}
+
+	defer m.Close()
+	m.Log = &Logger{}
 
 	if direction == "up" {
 		m.Up()
 	} else if direction == "down" {
 		m.Down()
 	}
+}
+
+type Logger struct {
+}
+
+// Printf is like fmt.Printf
+func (l *Logger) Printf(format string, v ...interface{}) {
+	fmt.Printf(format, v...)
+}
+
+// Verbose should return true when verbose logging output is wanted
+func (l *Logger) Verbose() bool {
+	return false
 }
