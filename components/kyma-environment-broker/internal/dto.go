@@ -224,26 +224,26 @@ type ERSContext struct {
 	Region                *string                            `json:"region,omitempty"`
 }
 
-func UpdateERSContext(provisioning, lastOperation ERSContext) ERSContext {
-	if lastOperation.SMOperatorCredentials != nil {
-		provisioning.SMOperatorCredentials = lastOperation.SMOperatorCredentials
+func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext {
+	if currentOperation.SMOperatorCredentials == nil {
+		currentOperation.SMOperatorCredentials = previousOperation.SMOperatorCredentials
 	}
-	if lastOperation.CommercialModel != nil {
-		provisioning.CommercialModel = lastOperation.CommercialModel
+	if currentOperation.CommercialModel == nil {
+		currentOperation.CommercialModel = previousOperation.CommercialModel
 	}
-	if lastOperation.LicenseType != nil {
-		provisioning.LicenseType = lastOperation.LicenseType
+	if currentOperation.LicenseType == nil {
+		currentOperation.LicenseType = previousOperation.LicenseType
 	}
-	if lastOperation.Origin != nil {
-		provisioning.Origin = lastOperation.Origin
+	if currentOperation.Origin == nil {
+		currentOperation.Origin = previousOperation.Origin
 	}
-	if lastOperation.Platform != nil {
-		provisioning.Platform = lastOperation.Platform
+	if currentOperation.Platform == nil {
+		currentOperation.Platform = previousOperation.Platform
 	}
-	if lastOperation.Region != nil {
-		provisioning.Region = lastOperation.Region
+	if currentOperation.Region == nil {
+		currentOperation.Region = previousOperation.Region
 	}
-	return provisioning
+	return currentOperation
 }
 
 func (e ERSContext) DisableEnterprisePolicyFilter() *bool {

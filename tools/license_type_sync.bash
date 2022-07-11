@@ -13,6 +13,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 KEB=localhost:8080
 KUBECTL_PORT_FORWARD_KEB=true
+READ_ONLY=false
 
 for i in "$@"; do
     case $i in
@@ -32,6 +33,14 @@ for i in "$@"; do
             KUBECTL_PORT_FORWARD_KEB="$2"
             shift 2
             ;;
+        -r=*|-readonly=*|--readonly=*)
+            READ_ONLY="${i#*=}"
+            shift
+            ;;
+        -r|-readonly|--readonly)
+            READ_ONLY="$2"
+            shift 2
+            ;;
     esac
 done
 
@@ -43,10 +52,13 @@ function patch_license() {
     local instance=$1
     local license_type=${2//$'\n'/}
     echo "patching instance '$instance' to license type '$license_type'"
-    curl -XPATCH "$KEB/oauth/v2/service_instances/$instance?accepts_incomplete=true" -i \
-        -H "X-Broker-API-Version: 2.14" \
-        -H "Content-Type: application/json" \
-        --data-binary @- << EOF
+    if [[ $READ_ONLY == true ]]; then
+        echo "readonly"
+    else
+        curl -XPATCH "$KEB/oauth/v2/service_instances/$instance?accepts_incomplete=true" -i \
+            -H "X-Broker-API-Version: 2.14" \
+            -H "Content-Type: application/json" \
+            --data-binary @- << EOF
 {
    "service_id":"47c9dcbf-ff30-448e-ab36-d3bad66ba281",
    "context":{
@@ -54,6 +66,7 @@ function patch_license() {
    }
 }
 EOF
+    fi
 }
 
 if [[ "$KUBECTL_PORT_FORWARD_KEB" == true ]]; then
@@ -66,6 +79,6 @@ fi
 
 while read line; do
     echo reading $line
-    readarray -d : -t split <<< ${line}
-    patch_license "${split[0]}" "${split[1]}"
+    readarray -d , -t split <<< ${line}
+    patch_license "${split[0]}" "${split[6]}"
 done
