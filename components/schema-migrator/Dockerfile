@@ -5,7 +5,7 @@ COPY main.go /program/main.go
 
 WORKDIR /program
 RUN go mod tidy && go mod vendor && \
-    CGO_ENABLED=0 go build -o /bin/program /program/main.go
+    CGO_ENABLED=0 go build -ldflags="-s -w" -o /bin/program /program/main.go
 
 WORKDIR /migrate
 
