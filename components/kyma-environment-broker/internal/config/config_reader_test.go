@@ -7,44 +7,55 @@ import (
 	"path"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const kebConfigYaml = "keb-config.yaml"
+const (
+	kebConfigYaml = "keb-config.yaml"
+	kymaVersion   = "2.4.0"
+)
 
 func TestConfigReaderSuccessFlow(t *testing.T) {
-	t.Run("should read KEB config for 2.4.0 runtime version", func(t *testing.T) {
+	t.Run("should read KEB config for Kyma version 2.4.0", func(t *testing.T) {
 		// given
 		ctx := context.TODO()
-		fakeK8sClientBuilder := fake.NewClientBuilder()
-		cfgMapObj, err := fixConfigMap()
+		cfgMap, err := fixConfigMap()
 		if err != nil {
 			t.Fatal("error while creating configmap from yaml")
 		}
-		fakeK8sClient := fakeK8sClientBuilder.WithRuntimeObjects(cfgMapObj).Build()
+		fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 		logger := logrus.New()
 		logger.SetFormatter(&logrus.JSONFormatter{})
-		_ = config.NewConfigReader(ctx, fakeK8sClient, logger)
+		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+
+		// then
+		assert.Equal(t, cfgMap.Data[broker.AzurePlanName], rawCfg)
 	})
 }
 
-func fixConfigMap() (runtime.Object, error) {
+func fixConfigMap() (*coreV1.ConfigMap, error) {
 	yamlFilePath := path.Join("testdata", kebConfigYaml)
 	contents, err := os.ReadFile(yamlFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("while reading configmap")
 	}
+
 	var tempCfgMap tempConfigMap
 	err = yaml.Unmarshal(contents, &tempCfgMap)
 	if err != nil {
 		return nil, fmt.Errorf("while unmarshalling configmap")
 	}
+
 	return tempCfgMap.toConfigMap(), nil
 }
 

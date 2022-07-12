@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/sirupsen/logrus"
 	coreV1 "k8s.io/api/core/v1"
@@ -36,7 +35,7 @@ func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus
 	}
 }
 
-func (r *ConfigReader) ReadConfig(kymaVersion internal.RuntimeVersionData, planName string) (string, error) {
+func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) {
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
 		return "", err
@@ -44,28 +43,28 @@ func (r *ConfigReader) ReadConfig(kymaVersion internal.RuntimeVersionData, planN
 
 	if err = r.verifyConfigMapExistence(cfgMapList); err != nil {
 		return "", fmt.Errorf("while verifying configuration configmap existence for Kyma version %v: %w",
-			kymaVersion.Version, err)
+			kymaVersion, err)
 	}
 	r.logger.Infof("found configmap with configuration for Kyma version: %v. Checking plan existence...",
-		kymaVersion.Version)
+		kymaVersion)
 
 	cfgMap := cfgMapList.Items[0]
 	cfgString, err := r.verifyPlanEntryExistence(&cfgMap, planName)
 	if err != nil {
 		return "", fmt.Errorf("while verifying configuration existence for Kyma version %v and plan %v"+
-			": %w", kymaVersion.Version, planName, err)
+			": %w", kymaVersion, planName, err)
 	}
 	r.logger.Infof("found configuration for plan %v", planName)
 
 	return cfgString, nil
 }
 
-func (r *ConfigReader) getConfigMapList(kymaVersion internal.RuntimeVersionData) (*coreV1.ConfigMapList, error) {
+func (r *ConfigReader) getConfigMapList(kymaVersion string) (*coreV1.ConfigMapList, error) {
 	cfgMapList := &coreV1.ConfigMapList{}
-	listOptions := configMapListOptions(kymaVersion.Version)
+	listOptions := configMapListOptions(kymaVersion)
 	if err := r.k8sClient.List(r.ctx, cfgMapList, listOptions...); err != nil {
 		return nil, fmt.Errorf("while fetching configmaps with configuration for Kyma version %v: %w",
-			kymaVersion.Version, err)
+			kymaVersion, err)
 	}
 	return cfgMapList, nil
 }
