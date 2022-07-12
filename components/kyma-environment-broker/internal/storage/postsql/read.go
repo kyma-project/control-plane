@@ -559,6 +559,24 @@ func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStat
 	return rows, err
 }
 
+func (r readSession) GetERSContextStats() ([]dbmodel.InstanceERSContextStatsEntry, error) {
+	var rows []dbmodel.InstanceERSContextStatsEntry
+	// group existing instances by license_Type from the last operation that is not pending or canceled
+	_, err := r.session.SelectBySql(`
+SELECT license_type, count(1)
+FROM (
+    SELECT DISTINCT ON (instances.instance_id) instances.instance_id, operations.id, state, type, (operations.provisioning_parameters->'ers_context'->'license_type')::VARCHAR AS license_type
+    FROM operations
+    INNER JOIN instances
+    ON operations.instance_id = instances.instance_id
+    WHERE operations.state != 'pending' OR operations.state != 'canceled'
+    ORDER BY instance_id, operations.created_at DESC
+) t
+GROUP BY license_type;
+`).Load(&rows)
+	return rows, err
+}
+
 func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
 	var res struct {
 		Total int
