@@ -185,6 +185,8 @@ func (u *upgradeKymaFactory) restoreRetryingOperation(op internal.UpgradeKymaOpe
 	op.UpdatedAt = time.Now()
 	op.State = orchestration.Failed
 	op.Description = "Operation restore to failed"
+	op.ProvisionerOperationID = ""
+
 	opUpdated, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
 	if err != nil {
 		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
