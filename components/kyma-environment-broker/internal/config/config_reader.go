@@ -15,6 +15,7 @@ const (
 	namespace                 = "kcp-system"
 	runtimeVersionLabelPrefix = "runtime-version-"
 	kebConfigLabel            = "keb-config"
+	defaultConfigKey          = "default"
 )
 
 type ConfigReader struct {
@@ -49,12 +50,11 @@ func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) 
 		kymaVersion)
 
 	cfgMap := cfgMapList.Items[0]
-	cfgString, err := r.verifyPlanEntryExistence(&cfgMap, planName)
+	cfgString, err := r.getRawConfigForPlanOrDefaults(&cfgMap, planName)
 	if err != nil {
-		return "", fmt.Errorf("while verifying configuration existence for Kyma version %v and plan %v"+
+		return "", fmt.Errorf("while getting configuration for Kyma version %v and plan %v"+
 			": %w", kymaVersion, planName, err)
 	}
-	r.logger.Infof("found configuration for plan %v", planName)
 
 	return cfgString, nil
 }
@@ -94,10 +94,15 @@ func (r *ConfigReader) verifyConfigMapExistence(cfgMapList *coreV1.ConfigMapList
 	}
 }
 
-func (r *ConfigReader) verifyPlanEntryExistence(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
+func (r *ConfigReader) getRawConfigForPlanOrDefaults(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
 	cfgString, exists := cfgMap.Data[planName]
 	if !exists {
-		return "", fmt.Errorf("configuration for plan %v does not exist", planName)
+		r.logger.Infof("configuration for plan %v does not exist. Using default values", planName)
+		cfgString, exists = cfgMap.Data[defaultConfigKey]
+		if !exists {
+			return "", fmt.Errorf("default configuration does not exist")
+		}
 	}
+	r.logger.Infof("found configuration for plan %v", planName)
 	return cfgString, nil
 }
