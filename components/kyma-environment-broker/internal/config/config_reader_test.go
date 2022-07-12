@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -37,12 +38,40 @@ func fixConfigMap() (runtime.Object, error) {
 	yamlFilePath := path.Join("testdata", kebConfigYaml)
 	contents, err := os.ReadFile(yamlFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("while reading configuration yaml")
+		return nil, fmt.Errorf("while reading configmap")
 	}
-	cfgMap := &coreV1.ConfigMap{}
-	err = yaml.Unmarshal(contents, cfgMap)
+	var tempCfgMap tempConfigMap
+	err = yaml.Unmarshal(contents, &tempCfgMap)
 	if err != nil {
-		return nil, fmt.Errorf("while unmarshalling configuration yaml")
+		return nil, fmt.Errorf("while unmarshalling configmap")
 	}
-	return cfgMap, nil
+	return tempCfgMap.toConfigMap(), nil
+}
+
+type tempConfigMap struct {
+	APIVersion string            `yaml:"apiVersion,omitempty"`
+	Kind       string            `yaml:"kind,omitempty"`
+	Metadata   tempMetadata      `yaml:"metadata,omitempty"`
+	Data       map[string]string `yaml:"data,omitempty"`
+}
+
+type tempMetadata struct {
+	Name      string            `yaml:"name,omitempty"`
+	Namespace string            `yaml:"namespace,omitempty"`
+	Labels    map[string]string `yaml:"labels,omitempty"`
+}
+
+func (m *tempConfigMap) toConfigMap() *coreV1.ConfigMap {
+	return &coreV1.ConfigMap{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       m.Kind,
+			APIVersion: m.APIVersion,
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      m.Metadata.Name,
+			Namespace: m.Metadata.Namespace,
+			Labels:    m.Metadata.Labels,
+		},
+		Data: m.Data,
+	}
 }
