@@ -166,16 +166,17 @@ func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule or
 		return nil, errors.Wrap(err, "while listing retrying operations")
 	}
 
+	fmt.Println("RetryOperations()", ops)
 	for _, op := range ops {
 		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
 		runtimeop, err := u.restoreRetryingOperation(op)
 		if err != nil {
 			return nil, err
 		}
-
+		fmt.Println("RetryOperations() append", runtimeop)
 		result = append(result, runtimeop)
 	}
-
+	fmt.Println("RetryOperations() result", result)
 	return result, nil
 }
 

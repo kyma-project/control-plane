@@ -627,6 +627,8 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		}
 		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() failedOperations: ", len(failedOperations))
 		operations = append(operations, failedOperations...)
+		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() failedOperations", operations)
+		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations", operations)
 		count = count + failedCount
 		totalCount = totalCount + failedtotalCount
 	}

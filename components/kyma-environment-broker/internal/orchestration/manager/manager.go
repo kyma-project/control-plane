@@ -233,6 +233,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
 		}
 
+		fmt.Println("resolveOperations() retryRuntimes", retryRuntimes)
 		var runtTimesNum int
 		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes)
 		if err != nil {
