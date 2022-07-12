@@ -475,7 +475,7 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 	if err != nil {
 		return map[string]int{}, err
 	}
-	log.Debug("GetOperationStatsForOrchestration entries:", entries)
+	fmt.Println("GetOperationStatsForOrchestration entries:", entries)
 
 	result := make(map[string]int)
 	_, failedNum := calFailedStatusForOrchestration(entries)

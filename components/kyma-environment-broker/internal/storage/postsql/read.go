@@ -580,6 +580,8 @@ func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) (
 	var rows []dbmodel.OperationStatEntry
 	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, instance_id, provisioning_parameters ->> 'plan_id' AS plan_id from %s where orchestration_id='%s'",
 		OperationTableName, orchestrationID)).Load(&rows)
+	fmt.Sprintf("GetOperationStatsForOrchestration() select type, state, instance_id, provisioning_parameters ->> 'plan_id' AS plan_id from %s where orchestration_id='%s'", OperationTableName, orchestrationID)
+	fmt.Println("GetOperationStatsForOrchestration()", rows)
 	return rows, err
 }
 
