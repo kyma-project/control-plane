@@ -922,6 +922,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			cnd:    upgrade_kyma.ForKyma2,
 		},
 		{
+			weight: 2,
+			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+		},
+		{
 			weight: 3,
 			cnd:    upgrade_kyma.WhenBTPOperatorCredentialsProvided,
 			step:   upgrade_kyma.NewBTPOperatorOverridesStep(db.Operations()),
@@ -940,14 +944,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Notification.Disabled,
 		},
 		{
-			weight: 9,
-			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
-			cnd:    upgrade_kyma.ForKyma2,
-		},
-		{
 			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.ForKyma2,
 		},
 	}
 	for _, step := range upgradeKymaSteps {
