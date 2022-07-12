@@ -533,7 +533,45 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	return result, size, total, err
 }
 
-func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
+func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int, int) {
+	resPerInstanceID := make(map[string][]dbmodel.OperationDTO)
+	for _, entry := range entries {
+		resPerInstanceID[entry.InstanceID] = append(resPerInstanceID[entry.InstanceID], entry)
+		fmt.Println(entry.InstanceID, resPerInstanceID[entry.InstanceID])
+	}
+
+	var failedDatas []dbmodel.OperationDTO
+	for instanceID, datas := range resPerInstanceID {
+		fmt.Println("loop resultPerInstanceID", instanceID, datas)
+
+		var invalidFailed bool
+		var failedFound bool
+		var faildEntry dbmodel.OperationDTO
+		for _, data := range datas {
+
+			if data.State == Succeeded || data.State == Retrying || data.State == InProgress {
+				fmt.Println("found invalidFailed status:=", data.State)
+				invalidFailed = true
+				break
+			}
+			if data.State == Failed {
+				failedFound = true
+				if faildEntry.InstanceID == "" {
+					faildEntry = data
+				} else if faildEntry.CreatedAt.Before(data.CreatedAt) {
+					faildEntry = data
+				}
+			}
+		}
+		if failedFound && !invalidFailed {
+			failedDatas = append(failedDatas, faildEntry)
+		}
+	}
+	fmt.Println(len(failedDatas))
+	return failedDatas, len(failedDatas), len(failedDatas)
+}
+
+func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
 	session := s.NewReadSession()
 	var (
 		operations        = make([]dbmodel.OperationDTO, 0)
@@ -556,17 +594,40 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
 
-	if len(filter.States) == 1 && strings.Contains(filter.States[0], Failed) {
-		entries, err := s.NewReadSession().GetOperationStatsForOrchestration(orchestrationID)
-		if err != nil {
-			return nil, -1, -1, errors.Wrapf(err, "while GetOperationStatsForOrchestration()")
-		}
-		operations, count, totalCount = listFailedOperations(entries, operations)
-		for i, op := range operations {
-			fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() operations:", i, op.InstanceID)
-		}
+	failedFilterFound, _ := s.searchFilter(filter, Failed)
+	if failedFilterFound {
+		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
+	}
+	return operations, count, totalCount, nil
+}
+
+func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.UpgradeKymaOperation, int, int, error) {
+	var (
+		operations        = make([]dbmodel.OperationDTO, 0)
+		err               error
+		count, totalCount int
+	)
+	states, filterFailedFound := s.excludeFailedInFilterStates(filter, Failed)
+	filter.States = states
+
+	//excluded "failed" states
+	operations, count, totalCount, err = s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
 	}
 
+	//only for "failed" states
+	if filterFailedFound {
+		filter.States = []string{Failed}
+		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
+		if err != nil {
+			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
+		}
+		fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() failedOperations: ", len(failedOperations))
+		operations = append(operations, failedOperations...)
+		count = count + failedCount
+		totalCount = totalCount + failedtotalCount
+	}
 	ret, err := s.toUpgradeKymaOperationList(operations)
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
@@ -605,22 +666,30 @@ func (s *operations) ListOperationsByOrchestrationID(orchestrationID string, fil
 	return ret, count, totalCount, nil
 }
 
-func listFailedOperations(entries []dbmodel.OperationStatEntry, operations []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int, int) {
-	failedOps, _ := calFailedStatusForOrchestration(entries)
-	fmt.Println("listFailedOperations() instance_id list:", failedOps)
+func (s *operations) excludeFailedInFilterStates(filter dbmodel.OperationFilter, state string) ([]string, bool) {
+	failedFilterFound, failedFilterIndex := s.searchFilter(filter, state)
 
-	var colOps []dbmodel.OperationDTO
-	for _, ops := range operations {
-		fmt.Println("listFailedOperations() ops.Operation.InstanceID:", ops.InstanceID)
-		for _, failedOp := range failedOps {
-			fmt.Println("listFailedOperations() failedOp:", failedOp)
-			if ops.InstanceID == failedOp {
-				colOps = append(colOps, ops)
-				break
-			}
+	if failedFilterFound {
+		filter.States = s.removeIndex(filter.States, failedFilterIndex)
+	}
+	return filter.States, failedFilterFound
+}
+
+func (s *operations) searchFilter(filter dbmodel.OperationFilter, state string) (bool, int) {
+	var filterFound bool
+	var filterIndex int
+	for index, state := range filter.States {
+		if strings.Contains(state, state) {
+			filterFound = true
+			filterIndex = index
+			break
 		}
 	}
-	return colOps, len(colOps), len(colOps)
+	return filterFound, filterIndex
+}
+
+func (s *operations) removeIndex(arr []string, index int) []string {
+	return append(arr[:index], arr[index+1:]...)
 }
 
 func (s *operations) InsertUpdatingOperation(operation internal.UpdatingOperation) error {
@@ -800,18 +869,6 @@ func (s *operations) ListUpgradeClusterOperationsByOrchestrationID(orchestration
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
-
-	if len(filter.States) == 1 && strings.Contains(filter.States[0], Failed) {
-		entries, err := s.NewReadSession().GetOperationStatsForOrchestration(orchestrationID)
-		if err != nil {
-			return nil, -1, -1, errors.Wrapf(err, "while GetOperationStatsForOrchestration()")
-		}
-		operations, count, totalCount = listFailedOperations(entries, operations)
-		for i, op := range operations {
-			fmt.Println("ListUpgradeClusterOperationsByOrchestrationID() operations:", i, op.InstanceID)
-		}
-	}
-
 	ret, err := s.toUpgradeClusterOperationList(operations)
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
