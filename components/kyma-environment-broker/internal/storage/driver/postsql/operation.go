@@ -610,12 +610,13 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		count, totalCount int
 	)
 	states, filterFailedFound := s.excludeFailedInFilterStates(filter, Failed)
-	filter.States = states
-
+	if filterFailedFound {
+		filter.States = states
+	}
 	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filter.States", filter.States)
 
 	//excluded "failed" states
-	if len(filter.States) > 0 {
+	if !filterFailedFound || (filterFailedFound && len(filter.States) > 0) {
 		operations, count, totalCount, err = s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
