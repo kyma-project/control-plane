@@ -440,14 +440,13 @@ func calFailedStatusForOrchestration(entries []dbmodel.OperationStatEntry) ([]st
 
 	for _, entry := range entries {
 		resultPerInstanceID[entry.InstanceID] = append(resultPerInstanceID[entry.InstanceID], entry.State)
-		fmt.Println("set resultPerInstanceID", entry.InstanceID, resultPerInstanceID[entry.InstanceID])
 	}
 
-	fmt.Println("show resultPerInstanceID", resultPerInstanceID)
+	fmt.Println("calFailedStatusForOrchestration() show resultPerInstanceID", resultPerInstanceID)
 	var invalidFailed, failedFound bool
 
 	for instanceID, statuses := range resultPerInstanceID {
-		fmt.Println("loop resultPerInstanceID", instanceID, statuses)
+		fmt.Println("calFailedStatusForOrchestration() loop resultPerInstanceID", instanceID, statuses)
 
 		invalidFailed = false
 		failedFound = false
@@ -462,10 +461,12 @@ func calFailedStatusForOrchestration(entries []dbmodel.OperationStatEntry) ([]st
 			}
 		}
 		if failedFound && !invalidFailed {
+			fmt.Println("calFailedStatusForOrchestration() append ", instanceID)
 			result = append(result, instanceID)
 		}
 	}
 
+	fmt.Println("calFailedStatusForOrchestration() result", result)
 	return result, len(result)
 }
 
@@ -542,7 +543,7 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 
 	var failedDatas []dbmodel.OperationDTO
 	for instanceID, datas := range resPerInstanceID {
-		fmt.Println("loop resultPerInstanceID", instanceID, datas)
+		fmt.Println("fetchFailedStatusForOrchestration() loop resultPerInstanceID", instanceID, datas)
 
 		var invalidFailed bool
 		var failedFound bool
@@ -550,12 +551,13 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 		for _, data := range datas {
 
 			if data.State == Succeeded || data.State == Retrying || data.State == InProgress {
-				fmt.Println("found invalidFailed status:=", data.State)
+				fmt.Println("fetchFailedStatusForOrchestration() found invalidFailed status:=", data.State)
 				invalidFailed = true
 				break
 			}
 			if data.State == Failed {
 				failedFound = true
+				fmt.Println("fetchFailedStatusForOrchestration() failed found", data.InstanceID)
 				if faildEntry.InstanceID == "" {
 					faildEntry = data
 				} else if faildEntry.CreatedAt.Before(data.CreatedAt) {
@@ -567,7 +569,7 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 			failedDatas = append(failedDatas, faildEntry)
 		}
 	}
-	fmt.Println(len(failedDatas))
+	fmt.Println("fetchFailedStatusForOrchestration", failedDatas)
 	return failedDatas, len(failedDatas), len(failedDatas)
 }
 
