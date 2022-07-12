@@ -686,11 +686,11 @@ func (s *operations) excludeFailedInFilterStates(filter dbmodel.OperationFilter,
 	return filter.States, failedFilterFound
 }
 
-func (s *operations) searchFilter(filter dbmodel.OperationFilter, state string) (bool, int) {
+func (s *operations) searchFilter(filter dbmodel.OperationFilter, inputState string) (bool, int) {
 	var filterFound bool
 	var filterIndex int
 	for index, state := range filter.States {
-		if strings.Contains(state, state) {
+		if strings.Contains(state, inputState) {
 			filterFound = true
 			filterIndex = index
 			break
