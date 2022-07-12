@@ -18,12 +18,32 @@ import (
 )
 
 const (
-	kebConfigYaml = "keb-config.yaml"
-	kymaVersion   = "2.4.0"
+	kebConfigYaml    = "keb-config.yaml"
+	kymaVersion      = "2.4.0"
+	defaultConfigKey = "default"
 )
 
 func TestConfigReaderSuccessFlow(t *testing.T) {
-	t.Run("should read KEB config for Kyma version 2.4.0", func(t *testing.T) {
+	t.Run("should read KEB config for Kyma version 2.4.0 (defaults)", func(t *testing.T) {
+		// given
+		ctx := context.TODO()
+		cfgMap, err := fixConfigMap()
+		if err != nil {
+			t.Fatal("error while creating configmap from yaml")
+		}
+		fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
+		logger := logrus.New()
+		logger.SetFormatter(&logrus.JSONFormatter{})
+		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AWSPlanName)
+
+		// then
+		assert.Equal(t, cfgMap.Data[defaultConfigKey], rawCfg)
+	})
+
+	t.Run("should read KEB config for Kyma version 2.4.0 and azure plan", func(t *testing.T) {
 		// given
 		ctx := context.TODO()
 		cfgMap, err := fixConfigMap()

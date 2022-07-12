@@ -37,23 +37,20 @@ func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus
 }
 
 func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) {
+	r.logger.Infof("getting configuration for Kyma version %v and plan %v", kymaVersion, planName)
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
 		return "", err
 	}
 
 	if err = r.verifyConfigMapExistence(cfgMapList); err != nil {
-		return "", fmt.Errorf("while verifying configuration configmap existence for Kyma version %v: %w",
-			kymaVersion, err)
+		return "", fmt.Errorf("while verifying configuration configmap existence: %w", err)
 	}
-	r.logger.Infof("found configmap with configuration for Kyma version: %v. Checking plan existence...",
-		kymaVersion)
 
 	cfgMap := cfgMapList.Items[0]
 	cfgString, err := r.getRawConfigForPlanOrDefaults(&cfgMap, planName)
 	if err != nil {
-		return "", fmt.Errorf("while getting configuration for Kyma version %v and plan %v"+
-			": %w", kymaVersion, planName, err)
+		return "", fmt.Errorf("while getting configuration string : %w", err)
 	}
 
 	return cfgString, nil
@@ -63,7 +60,7 @@ func (r *ConfigReader) getConfigMapList(kymaVersion string) (*coreV1.ConfigMapLi
 	cfgMapList := &coreV1.ConfigMapList{}
 	listOptions := configMapListOptions(kymaVersion)
 	if err := r.k8sClient.List(r.ctx, cfgMapList, listOptions...); err != nil {
-		return nil, fmt.Errorf("while fetching configmaps with configuration for Kyma version %v: %w",
+		return nil, fmt.Errorf("while fetching configmap with configuration for Kyma version %v: %w",
 			kymaVersion, err)
 	}
 	return cfgMapList, nil
@@ -103,6 +100,5 @@ func (r *ConfigReader) getRawConfigForPlanOrDefaults(cfgMap *coreV1.ConfigMap, p
 			return "", fmt.Errorf("default configuration does not exist")
 		}
 	}
-	r.logger.Infof("found configuration for plan %v", planName)
 	return cfgString, nil
 }
