@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,42 +25,42 @@ const (
 )
 
 func TestConfigReaderSuccessFlow(t *testing.T) {
-	t.Run("should read KEB config for Kyma version 2.4.0 (defaults)", func(t *testing.T) {
-		// given
-		ctx := context.TODO()
-		cfgMap, err := fixConfigMap()
-		if err != nil {
-			t.Fatal("error while creating configmap from yaml")
-		}
-		fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
-		logger := logrus.New()
-		logger.SetFormatter(&logrus.JSONFormatter{})
-		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+	// setup
+	ctx := context.TODO()
+	cfgMap, err := fixConfigMap()
+	if err != nil {
+		t.Fatal("error while creating configmap from yaml")
+	}
+	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
 
+	t.Run("should read default KEB config for Kyma version 2.4.0", func(t *testing.T) {
 		// when
 		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AWSPlanName)
 
 		// then
+		require.NoError(t, err)
 		assert.Equal(t, cfgMap.Data[defaultConfigKey], rawCfg)
 	})
 
 	t.Run("should read KEB config for Kyma version 2.4.0 and azure plan", func(t *testing.T) {
-		// given
-		ctx := context.TODO()
-		cfgMap, err := fixConfigMap()
-		if err != nil {
-			t.Fatal("error while creating configmap from yaml")
-		}
-		fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
-		logger := logrus.New()
-		logger.SetFormatter(&logrus.JSONFormatter{})
-		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
-
 		// when
 		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
 
 		// then
+		require.NoError(t, err)
 		assert.Equal(t, cfgMap.Data[broker.AzurePlanName], rawCfg)
+	})
+
+	t.Run("should read KEB config for Kyma version 2.4.0 and trial plan", func(t *testing.T) {
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.TrialPlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cfgMap.Data[broker.TrialPlanName], rawCfg)
 	})
 }
 

@@ -37,7 +37,7 @@ func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus
 }
 
 func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) {
-	r.logger.Infof("getting configuration for Kyma version %v and plan %v", kymaVersion, planName)
+	r.logger.Infof("getting configuration for Kyma version %v and %v plan", kymaVersion, planName)
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
 		return "", err
