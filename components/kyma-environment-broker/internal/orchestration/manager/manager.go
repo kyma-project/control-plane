@@ -318,6 +318,30 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		numberOfRetrying, found := stats[orchestration.Retrying]
 		if found {
 			numberOfNotFinished += numberOfRetrying
+			ops, err := m.factory.RetryOperations(o.OrchestrationID)
+			if err != nil {
+				// don't block the polling and cancel signal
+				log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
+			} else {
+				var runttimesNum int
+				result, o, runttimesNum, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
+
+				//search ops with retrying state and restore to `failed` state
+				_, resetErr := m.factory.RestoreOperations(o.OrchestrationID)
+				if resetErr != nil {
+					log.Errorf("PollImmediateInfinite() while resolving restore operations to failed in operation db: %v", err)
+				}
+
+				if err != nil {
+					log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
+				}
+				o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runttimesNum))
+
+				err = strategy.Insert(execID, result, o.Parameters.Strategy)
+				if err != nil {
+					return false, errors.Wrap(err, "while inserting operations to queue")
+				}
+			}
 		}
 
 		// don't wait for pending operations if orchestration was canceled
