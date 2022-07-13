@@ -14,23 +14,28 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
-	kebConfigYaml    = "keb-config.yaml"
-	kymaVersion      = "2.4.0"
-	defaultConfigKey = "default"
+	kebConfigYaml             = "keb-config.yaml"
+	namespace                 = "kcp-system"
+	runtimeVersionLabelPrefix = "runtime-version-"
+	kebConfigLabel            = "keb-config"
+	kymaVersion               = "2.4.0"
+	defaultConfigKey          = "default"
 )
 
 func TestConfigReaderSuccessFlow(t *testing.T) {
 	// setup
 	ctx := context.TODO()
 	cfgMap, err := fixConfigMap()
-	if err != nil {
-		t.Fatal("error while creating configmap from yaml")
-	}
+	require.NoError(t, err)
+
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
@@ -61,6 +66,89 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, cfgMap.Data[broker.TrialPlanName], rawCfg)
+	})
+}
+
+func TestConfigReaderErrors(t *testing.T) {
+	// setup
+	ctx := context.TODO()
+	redundantCfgMap := &coreV1.ConfigMap{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "redundant-configmap",
+			Namespace: namespace,
+			Labels: map[string]string{
+				fmt.Sprintf("%s%s", runtimeVersionLabelPrefix, kymaVersion): "true",
+				kebConfigLabel: "true",
+			},
+		},
+	}
+	cfgMap, err := fixConfigMap()
+	require.NoError(t, err)
+
+	mockK8sClient := mockK8sClient{}
+	fakeK8sClient := fake.NewClientBuilder().Build()
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
+	t.Run("should return error while fetching configmap on List() of K8s client", func(t *testing.T) {
+		// given
+		cfgReader := config.NewConfigReader(ctx, mockK8sClient, logger)
+
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+
+		// then
+		require.Error(t, err)
+		logger.Error(err)
+		assert.Equal(t, "", rawCfg)
+	})
+
+	t.Run("should return error while verifying configuration configmap existence", func(t *testing.T) {
+		// given
+		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+
+		// then
+		require.Error(t, err)
+		logger.Error(err)
+		assert.Equal(t, "", rawCfg)
+
+		// given
+		err = fakeK8sClient.Create(ctx, cfgMap)
+		require.NoError(t, err)
+
+		err = fakeK8sClient.Create(ctx, redundantCfgMap)
+		require.NoError(t, err)
+
+		// when
+		rawCfg, err = cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+
+		// then
+		require.Error(t, err)
+		logger.Error(err)
+		assert.Equal(t, "", rawCfg)
+	})
+
+	t.Run("should return error while getting config string for a plan", func(t *testing.T) {
+		// given
+		err = fakeK8sClient.Delete(ctx, cfgMap)
+		require.NoError(t, err)
+
+		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+
+		// when
+		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+
+		// then
+		require.Error(t, err)
+		logger.Error(err)
+		assert.Equal(t, "", rawCfg)
 	})
 }
 
@@ -106,4 +194,46 @@ func (m *tempConfigMap) toConfigMap() *coreV1.ConfigMap {
 		},
 		Data: m.Data,
 	}
+}
+
+type mockK8sClient struct{}
+
+func (m mockK8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (m mockK8sClient) Status() client.StatusWriter {
+	panic("not implemented")
+}
+
+func (m mockK8sClient) Scheme() *runtime.Scheme {
+	panic("not implemented")
+}
+
+func (m mockK8sClient) RESTMapper() meta.RESTMapper {
+	panic("not implemented")
 }

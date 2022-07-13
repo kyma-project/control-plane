@@ -50,7 +50,7 @@ func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) 
 	cfgMap := cfgMapList.Items[0]
 	cfgString, err := r.getRawConfigForPlanOrDefaults(&cfgMap, planName)
 	if err != nil {
-		return "", fmt.Errorf("while getting configuration string : %w", err)
+		return "", fmt.Errorf("while getting configuration string: %w", err)
 	}
 
 	return cfgString, nil
