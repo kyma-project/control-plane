@@ -28,7 +28,8 @@ type OperationFactory interface {
 	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance, state domain.LastOperationState) (orchestration.RuntimeOperation, error)
 	ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
 	CancelOperations(orchestrationID string) error
-	RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error)
+	RetryOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
+	RestoreOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
 }
 
 type orchestrationManager struct {
@@ -228,7 +229,14 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		fmt.Println("manager.go resolveOperations() o.Parameters = ", o.Parameters)
 
 		// look for the ops with retrying state, if ops not exit return error
-		retryRuntimes, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, policy, true)
+		retryRuntimes, err := m.factory.RetryOperations(o.OrchestrationID)
+
+		//look for the ops with retrying state and restore to `failed` state
+		_, resetErr := m.factory.RestoreOperations(o.OrchestrationID)
+		if resetErr != nil {
+			return nil, errors.Wrap(err, "while resolving restore operations to failed in operation db")
+		}
+
 		if err != nil {
 			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
 		}

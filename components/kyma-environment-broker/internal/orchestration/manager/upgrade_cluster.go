@@ -121,8 +121,29 @@ func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 	return nil
 }
 
+// get current retrying operations
+func (u *upgradeClusterFactory) RetryOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
+	result := []orchestration.RuntimeOperation{}
+	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing retrying operations")
+	}
+
+	for _, op := range ops {
+		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op=", op)
+		runtimeop, err := u.operationStorage.GetUpgradeClusterOperationByID(op.Operation.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while geting (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
+
+		}
+		result = append(result, runtimeop.RuntimeOperation)
+	}
+
+	return result, nil
+}
+
 // get current retrying operations, update state from retrying to failed and update other required params to storage
-func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+func (u *upgradeClusterFactory) RestoreOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
 	if err != nil {

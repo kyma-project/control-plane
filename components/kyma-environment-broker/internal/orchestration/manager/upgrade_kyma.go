@@ -158,25 +158,43 @@ func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 	return nil
 }
 
-// get current retrying operations, update state to pending and update other required params to storage
-func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+// get current retrying operations
+func (u *upgradeKymaFactory) RetryOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing retrying operations")
 	}
 
-	fmt.Println("RetryOperations()", ops)
+	for _, op := range ops {
+		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
+		runtimeop, err := u.operationStorage.GetUpgradeKymaOperationByID(op.Operation.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while geting (retrying) upgrade kyma operation %s in storage", op.Operation.ID)
+		}
+
+		result = append(result, runtimeop.RuntimeOperation)
+	}
+
+	return result, nil
+}
+
+// get current retrying operations, update state to pending and update other required params to storage
+func (u *upgradeKymaFactory) RestoreOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error) {
+	result := []orchestration.RuntimeOperation{}
+	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing retrying operations")
+	}
+
 	for _, op := range ops {
 		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
 		runtimeop, err := u.restoreRetryingOperation(op)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("RetryOperations() append", runtimeop)
 		result = append(result, runtimeop)
 	}
-	fmt.Println("RetryOperations() result", result)
 	return result, nil
 }
 
