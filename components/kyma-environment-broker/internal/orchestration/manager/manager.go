@@ -324,6 +324,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
 			} else {
 				var runttimesNum int
+				o.State = orchestration.Retrying
 				result, o, runttimesNum, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
 
 				//search ops with retrying state and restore to `failed` state

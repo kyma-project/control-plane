@@ -199,7 +199,7 @@ func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrati
 	}
 
 	o.UpdatedAt = time.Now()
-	if state == commonOrchestration.Failed || state == commonOrchestration.InProgress {
+	if state == commonOrchestration.Failed {
 		o.Description += ", retrying"
 		o.State = commonOrchestration.Retrying
 	}
