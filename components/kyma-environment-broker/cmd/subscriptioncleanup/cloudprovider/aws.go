@@ -3,7 +3,9 @@ package cloudprovider
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -11,10 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
-const defaultRegion string = "eu-central-1"
-
 type awsResourceCleaner struct {
-	ec2Client   ec2.Client
 	credentials awsCredentialsConfig
 }
 
@@ -31,74 +30,66 @@ func NewAwsResourcesCleaner(secretData map[string][]byte) (ResourceCleaner, erro
 	}
 
 	awsResourceCleaner.credentials = awsConfig
-	awsEC2Client, err := awsResourceCleaner.newAwsEC2Client(awsConfig, defaultRegion)
-	if err != nil {
-		return nil, err
-	}
-
-	awsResourceCleaner.ec2Client = awsEC2Client
 	return awsResourceCleaner, nil
 }
 
 func (ac awsResourceCleaner) Do() error {
-	all_regions := ac.getAllRegions()
+	all_regions, err := ac.getAllRegions()
+	if err != nil {
+		return err
+	}
 
-	// Iterate through all regions
 	for _, region := range all_regions.Regions {
-		log.Printf("Switching to region %v", *region.RegionName)
-		newEc2, err := ac.newAwsEC2Client(ac.credentials, *region.RegionName)
-		ac.ec2Client = newEc2
-
-		// Iterate through volumes
-		volumes, err := ac.ec2Client.DescribeVolumes(context.TODO(), &ec2.DescribeVolumesInput{})
+		logrus.Printf("Switching to region %v", *region.RegionName)
+		ec2Client, err := ac.newAwsEC2Client(ac.credentials, *region.RegionName)
 		if err != nil {
 			return err
 		}
 
-		log.Println("Listing Volumes:")
-		for _, volume := range volumes.Volumes {
-			log.Printf("Volume ID: %v", *volume.VolumeId)
+		err = ac.deleteVolumes(ec2Client)
+		if err != nil {
+			return err
 		}
-
-		ac.deleteVolumes()
 	}
 
 	return nil
 }
 
-func (ac awsResourceCleaner) deleteVolumes() error {
-	volumes, err := ac.ec2Client.DescribeVolumes(context.TODO(), &ec2.DescribeVolumesInput{})
+func (ac awsResourceCleaner) deleteVolumes(ec2Client ec2.Client) error {
+	volumes, err := ec2Client.DescribeVolumes(context.TODO(), &ec2.DescribeVolumesInput{})
 	if err != nil {
 		return err
 	}
 
 	for _, volume := range volumes.Volumes {
-		log.Printf("Deleting volume with id: %v", *volume.VolumeId)
 		if volume.State == types.VolumeStateInUse {
-			log.Printf("Volume is in-use, detaching it first: ")
-			ac.ec2Client.DetachVolume(context.TODO(), &ec2.DetachVolumeInput{
-				VolumeId: volume.VolumeId,
-			})
+			return errors.New(fmt.Sprintf("There is an EC2 instance which uses this volume with id: %v", *volume.VolumeId))
 		}
+	}
 
-		log.Printf("Deleting volume %v", *volume.VolumeId)
-		ac.ec2Client.DeleteVolume(context.TODO(), &ec2.DeleteVolumeInput{
+	for _, volume := range volumes.Volumes {
+		logrus.Printf("Deleting volume with id %v", *volume.VolumeId)
+		ec2Client.DeleteVolume(context.TODO(), &ec2.DeleteVolumeInput{
 			VolumeId: volume.VolumeId,
 		})
-
 	}
 
 	return nil
 }
 
-func (ac awsResourceCleaner) getAllRegions() ec2.DescribeRegionsOutput {
+func (ac awsResourceCleaner) getAllRegions() (ec2.DescribeRegionsOutput, error) {
 	allRegions := false
-	regionOutput, err := ac.ec2Client.DescribeRegions(context.TODO(), &ec2.DescribeRegionsInput{AllRegions: &allRegions})
+	ec2Client, err := ac.newAwsEC2Client(ac.credentials, "eu-central-1")
 	if err != nil {
-		return ec2.DescribeRegionsOutput{}
+		return ec2.DescribeRegionsOutput{}, err
 	}
 
-	return *regionOutput
+	regionOutput, err := ec2Client.DescribeRegions(context.TODO(), &ec2.DescribeRegionsInput{AllRegions: &allRegions})
+	if err != nil {
+		return ec2.DescribeRegionsOutput{}, err
+	}
+
+	return *regionOutput, nil
 }
 
 func (ac awsResourceCleaner) toAwsConfig(secretData map[string][]byte) (awsCredentialsConfig, error) {
