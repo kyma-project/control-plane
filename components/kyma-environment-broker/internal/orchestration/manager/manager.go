@@ -283,6 +283,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 	canceled := false
 	var err error
 	var stats map[string]int
+	execIDs := []string{execID}
 	err = wait.PollImmediateInfinite(m.pollingInterval, func() (bool, error) {
 		// check if orchestration wasn't canceled
 		o, err = m.orchestrationStorage.GetByID(orchestrationID)
@@ -338,10 +339,12 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				}
 				o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runttimesNum))
 
-				err = strategy.Insert(execID, result, o.Parameters.Strategy)
+				fmt.Println("execute retrying in waitForCompletion()")
+				retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
 				if err != nil {
-					return false, errors.Wrap(err, "while inserting operations to queue")
+					return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
 				}
+				execIDs = append(execIDs, retryExecID)
 			}
 		}
 
@@ -356,16 +359,18 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		return nil, errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
-	return m.resolveOrchestration(o, strategy, execID, stats)
+	return m.resolveOrchestration(o, strategy, execIDs, stats)
 }
 
-func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execID string, stats map[string]int) (*internal.Orchestration, error) {
+func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execIDs []string, stats map[string]int) (*internal.Orchestration, error) {
 	if o.State == orchestration.Canceling {
 		err := m.factory.CancelOperations(o.OrchestrationID)
 		if err != nil {
 			return nil, errors.Wrap(err, "while resolving canceled operations")
 		}
-		strategy.Cancel(execID)
+		for _, execID := range execIDs {
+			strategy.Cancel(execID)
+		}
 		// Send customer notification for cancel
 		if !m.bundleBuilder.DisabledCheck() {
 			err := m.sendNotificationCancel(o)
