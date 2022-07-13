@@ -627,7 +627,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 
 	//only for "failed" states
 	if filterFailedFound {
-		filter.States = []string{Failed}
+		filter.States = []string{}
 		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
