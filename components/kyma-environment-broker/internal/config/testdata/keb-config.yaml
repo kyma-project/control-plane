@@ -44,3 +44,5 @@ data:
   trial: |-
     additional-components:
       # no components
+  wrong: |-
+    optional-field: "optional"

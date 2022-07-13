@@ -25,7 +25,7 @@ type ConfigReader struct {
 }
 
 type ConfigForPlan struct {
-	AdditionalComponents []runtime.KymaComponent `json:"additional-components"`
+	AdditionalComponents []runtime.KymaComponent `json:"additional-components" yaml:"additional-components"`
 }
 
 func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus.FieldLogger) *ConfigReader {
