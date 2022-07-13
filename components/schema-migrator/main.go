@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -41,13 +42,15 @@ func main() {
 		dbName = fmt.Sprintf("%s?sslmode=%s", dbName, os.Getenv("DB_SSL"))
 	}
 
-        // IPv6 not supported in construction of network address.
+	hostPort := net.JoinHostPort(
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"))
+
 	connectionString := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s/%s",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
+		hostPort,
 		dbName,
 	)
 
@@ -100,12 +103,10 @@ func main() {
 type Logger struct {
 }
 
-// Printf is like fmt.Printf
 func (l *Logger) Printf(format string, v ...interface{}) {
 	fmt.Printf(format, v...)
 }
 
-// Verbose should return true when verbose logging output is wanted
 func (l *Logger) Verbose() bool {
 	return false
 }
