@@ -20,6 +20,7 @@ import (
 const (
 	fixKymaVersion                   = "1.19.0"
 	fixKubernetesVersion             = "1.17.16"
+	fixMachineType                   = "Standard_D8_v3"
 	fixMachineImage                  = "gardenlinux"
 	fixMachineImageVersion           = "184.0.0"
 	fixAutoUpdateKubernetesVersion   = true
@@ -60,6 +61,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
+			MachineType:                         ptr.String(fixMachineType),
 			MachineImage:                        ptr.String(fixMachineImage),
 			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
 			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,

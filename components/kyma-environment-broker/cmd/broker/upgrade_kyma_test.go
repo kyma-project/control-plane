@@ -82,7 +82,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 					  "subAccount": "sub-id"
 					}
 				  ]
-				}	
+				}
 				}`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
 
@@ -100,6 +100,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 	suite.AssertShootUpgrade(upgradeKymaOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String("1.18"),
+			MachineType:         ptr.String("Standard_D4_v3"),
 			MachineImage:        ptr.String("coreos"),
 			MachineImageVersion: ptr.String("253"),
 
