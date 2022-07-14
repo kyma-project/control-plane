@@ -262,6 +262,9 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
 		{{- if .KubernetesVersion }}
 		kubernetesVersion: "{{.KubernetesVersion}}",
 		{{- end }}
+		{{- if .MachineType }}
+		machineType: "{{ .MachineType }}",
+		{{- end}}
 		{{- if .MachineImage }}
 		machineImage: "{{.MachineImage}}",
 		{{- end}}

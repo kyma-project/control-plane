@@ -477,6 +477,7 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
+	updateString(r.upgradeShootInput.GardenerConfig.MachineType, r.provisioningParameters.Parameters.MachineType)
 
 	return nil
 }

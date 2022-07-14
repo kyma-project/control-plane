@@ -367,6 +367,7 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	}
 
 	// sync with the autoscaler and maintenance settings
+	input.GardenerConfig.MachineType = &provider.Defaults().GardenerConfig.MachineType
 	input.GardenerConfig.AutoScalerMin = &provider.Defaults().GardenerConfig.AutoScalerMin
 	input.GardenerConfig.AutoScalerMax = &provider.Defaults().GardenerConfig.AutoScalerMax
 	input.GardenerConfig.MaxSurge = &provider.Defaults().GardenerConfig.MaxSurge

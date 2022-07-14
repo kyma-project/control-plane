@@ -553,6 +553,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	exp := `{
 	gardenerConfig: {
 		kubernetesVersion: "1.18.0",
+		machineType: "m5.xlarge",
 		machineImage: "gardenlinux",
 		machineImageVersion: "184.0.0",
 		autoScalerMin: 2,
@@ -577,6 +578,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	got, err := sut.UpgradeShootInputToGraphQL(gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   strPrt("1.18.0"),
+			MachineType:                         strPrt("m5.xlarge"),
 			MachineImage:                        strPrt("gardenlinux"),
 			MachineImageVersion:                 strPrt("184.0.0"),
 			EnableKubernetesVersionAutoUpdate:   boolPtr(true),
