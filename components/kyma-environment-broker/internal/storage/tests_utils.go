@@ -97,6 +97,10 @@ func InitTestDBContainer(log func(format string, args ...interface{}), ctx conte
 }
 
 func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
+	return InitTestDBTablesWithPath(t, connectionURL, "./../../../../../schema-migrator/migrations/kyma-environment-broker/")
+}
+
+func InitTestDBTablesWithPath(t *testing.T, connectionURL string, scriptsPath string) (func(), error) {
 	connection, err := postsql.WaitForDatabaseAccess(connectionURL, 10, 100*time.Millisecond, logrus.New())
 	if err != nil {
 		t.Logf("Cannot connect to database with URL - reload test 2 - %s", connectionURL)
@@ -118,7 +122,7 @@ func InitTestDBTables(t *testing.T, connectionURL string) (func(), error) {
 		return cleanupFunc, nil
 	}
 
-	dirPath := "./../../../../../schema-migrator/migrations/kyma-environment-broker/"
+	dirPath := scriptsPath
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		log.Printf("Cannot read files from directory %s", dirPath)
