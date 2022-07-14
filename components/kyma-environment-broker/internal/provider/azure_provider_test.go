@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,7 +115,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		input := svc.Defaults()
 
 		//then
-		assert.Equal(t, ptr.Bool(false), input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+		assert.Equal(t, false, *input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
 	})
 }
 
@@ -131,5 +130,5 @@ func TestAzureHAInput_Defaults(t *testing.T) {
 	assert.Equal(t, 1, input.GardenerConfig.AutoScalerMin)
 	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
 	assert.Equal(t, 3, len(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
-	assert.Equal(t, ptr.Bool(true), input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+	assert.Equal(t, true, *input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
 }
