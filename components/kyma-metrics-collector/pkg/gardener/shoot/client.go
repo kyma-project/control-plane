@@ -3,15 +3,16 @@ package shoot
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 
 	gardenerv1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/kyma-metrics-collector/options"
 	gardenercommons "github.com/kyma-project/control-plane/components/kyma-metrics-collector/pkg/gardener/commons"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 )
 
 type Client struct {
@@ -32,12 +33,17 @@ func NewClient(opts *options.Options) (*Client, error) {
 
 func (c Client) Get(ctx context.Context, shootName string) (*gardenerv1beta1.Shoot, error) {
 	unstructuredShoot, err := c.ResourceClient.Get(ctx, shootName, metaV1.GetOptions{})
-	if err != nil {
-		gardenercommons.TotalCalls.WithLabelValues(gardenercommons.FailureStatusLabel, shootName, gardenercommons.FailedGettingShootLabel).Inc()
-		return nil, err
+
+	if err == nil {
+		gardenercommons.TotalCalls.WithLabelValues(gardenercommons.SuccessStatusLabel, shootName, gardenercommons.SuccessGettingShootLabel).Inc()
+		return convertRuntimeObjToShoot(unstructuredShoot)
 	}
-	gardenercommons.TotalCalls.WithLabelValues(gardenercommons.SuccessStatusLabel, shootName, gardenercommons.SuccessGettingShootLabel).Inc()
-	return convertRuntimeObjToShoot(unstructuredShoot)
+
+	if !errors.IsNotFound(err) {
+		gardenercommons.TotalCalls.WithLabelValues(gardenercommons.FailureStatusLabel, shootName, gardenercommons.FailedGettingShootLabel).Inc()
+	}
+
+	return nil, err
 }
 
 func convertRuntimeObjToShoot(shootUnstructured *unstructured.Unstructured) (*gardenerv1beta1.Shoot, error) {
