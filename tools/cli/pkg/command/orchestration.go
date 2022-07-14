@@ -246,8 +246,14 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
+			if !PromptUser(fmt.Sprintf("Orchestration %s will be cancelled. Are you sure you want to continue?", args[0])) {
+				return errors.New("Cancel command aborted")
+			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
+			if !PromptUser(fmt.Sprintf("Orchestration %s will be retried. Are you sure you want to continue?", args[0])) {
+				return errors.New("Retry command aborted")
+			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
