@@ -125,7 +125,8 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		PlatformProvider: platformProvider,
 	}
 
-	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s", parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region)
+	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s, ProvisioningParameterts.Region=%s, ProvisioningParameterts.MachineType=%s",
+		parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region, valueOfPtr(parameters.Region), valueOfPtr(parameters.MachineType))
 	logger.Infof("Runtime parameters: %+v", parameters)
 
 	// check if operation with instance ID already created
@@ -194,6 +195,13 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
+func valueOfPtr(ptr *string) string {
+	if ptr == nil {
+		return ""
+	}
+	return *ptr
+}
+
 func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
@@ -255,6 +263,13 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {
+		_, valid := validRegionsForTrial[TrialCloudRegion(*parameters.Region)]
+		if !valid {
+			return ersContext, parameters, errors.Errorf("Invalid region specified in request for trial.")
+		}
 	}
 
 	if IsTrialPlan(details.PlanID) && b.config.OnlySingleTrialPerGA {
