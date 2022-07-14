@@ -580,6 +580,10 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 		lastErr           error
 		count, totalCount int
 	)
+	failedFilterFound, _ := s.searchFilter(filter, Failed)
+	if failedFilterFound {
+		filter.States = []string{}
+	}
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
 		if lastErr != nil {
@@ -595,8 +599,6 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
-
-	failedFilterFound, _ := s.searchFilter(filter, Failed)
 	if failedFilterFound {
 		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
 	}
@@ -627,7 +629,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 
 	//only for "failed" states
 	if filterFailedFound {
-		filter.States = []string{}
+		filter.States = []string{Failed}
 		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
