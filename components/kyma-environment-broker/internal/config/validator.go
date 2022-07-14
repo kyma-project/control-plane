@@ -9,9 +9,15 @@ import (
 
 const requiredFields = "additional-components"
 
-func Validate(cfgString string) error {
+type ConfigMapKeysValidator struct{}
+
+func NewConfigMapKeysValidator() *ConfigMapKeysValidator {
+	return &ConfigMapKeysValidator{}
+}
+
+func (v *ConfigMapKeysValidator) Validate(cfgString string) error {
 	reqs := strings.Split(requiredFields, ",")
-	keys := getKeysFromConfigString(cfgString)
+	keys := v.getKeysFromConfigString(cfgString)
 	sort.Strings(reqs)
 	sort.Strings(keys)
 
@@ -29,7 +35,7 @@ func Validate(cfgString string) error {
 	return nil
 }
 
-func getKeysFromConfigString(cfgString string) []string {
+func (v *ConfigMapKeysValidator) getKeysFromConfigString(cfgString string) []string {
 	keys := make([]string, 0)
 	s1 := strings.Split(cfgString, "\n")
 	for _, entry := range s1 {

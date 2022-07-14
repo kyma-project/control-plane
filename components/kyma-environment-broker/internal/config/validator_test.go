@@ -26,15 +26,16 @@ func TestValidate(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
-	cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+	cfgValidator := config.NewConfigMapKeysValidator()
 
 	t.Run("should validate whether config contains required fields", func(t *testing.T) {
 		// given
-		cfgString, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		cfgString, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
 		require.NoError(t, err)
 
 		// when
-		err = config.Validate(cfgString)
+		err = cfgValidator.Validate(cfgString)
 
 		// then
 		require.NoError(t, err)
@@ -42,11 +43,11 @@ func TestValidate(t *testing.T) {
 
 	t.Run("should return error indicating missing required fields", func(t *testing.T) {
 		// given
-		cfgString, err := cfgReader.ReadConfig(kymaVersion, planWithWrongConfig)
+		cfgString, err := cfgReader.Read(kymaVersion, planWithWrongConfig)
 		require.NoError(t, err)
 
 		// when
-		err = config.Validate(cfgString)
+		err = cfgValidator.Validate(cfgString)
 
 		// then
 		require.Error(t, err)

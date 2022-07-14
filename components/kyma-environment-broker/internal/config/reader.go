@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/sirupsen/logrus"
 	coreV1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,25 +17,21 @@ const (
 	defaultConfigKey          = "default"
 )
 
-type ConfigReader struct {
+type ConfigMapReader struct {
 	ctx       context.Context
 	k8sClient client.Client
 	logger    logrus.FieldLogger
 }
 
-type ConfigForPlan struct {
-	AdditionalComponents []runtime.KymaComponent `json:"additional-components" yaml:"additional-components"`
-}
-
-func NewConfigReader(ctx context.Context, k8sClient client.Client, logger logrus.FieldLogger) *ConfigReader {
-	return &ConfigReader{
+func NewConfigMapReader(ctx context.Context, k8sClient client.Client, logger logrus.FieldLogger) *ConfigMapReader {
+	return &ConfigMapReader{
 		ctx:       ctx,
 		k8sClient: k8sClient,
 		logger:    logger,
 	}
 }
 
-func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) {
+func (r *ConfigMapReader) Read(kymaVersion, planName string) (string, error) {
 	r.logger.Infof("getting configuration for Kyma version %v and %v plan", kymaVersion, planName)
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
@@ -56,7 +51,7 @@ func (r *ConfigReader) ReadConfig(kymaVersion, planName string) (string, error) 
 	return cfgString, nil
 }
 
-func (r *ConfigReader) getConfigMapList(kymaVersion string) (*coreV1.ConfigMapList, error) {
+func (r *ConfigMapReader) getConfigMapList(kymaVersion string) (*coreV1.ConfigMapList, error) {
 	cfgMapList := &coreV1.ConfigMapList{}
 	listOptions := configMapListOptions(kymaVersion)
 	if err := r.k8sClient.List(r.ctx, cfgMapList, listOptions...); err != nil {
@@ -80,7 +75,7 @@ func configMapListOptions(version string) []client.ListOption {
 	}
 }
 
-func (r *ConfigReader) verifyConfigMapExistence(cfgMapList *coreV1.ConfigMapList) error {
+func (r *ConfigMapReader) verifyConfigMapExistence(cfgMapList *coreV1.ConfigMapList) error {
 	switch n := len(cfgMapList.Items); n {
 	case 1:
 		return nil
@@ -91,7 +86,7 @@ func (r *ConfigReader) verifyConfigMapExistence(cfgMapList *coreV1.ConfigMapList
 	}
 }
 
-func (r *ConfigReader) getRawConfigForPlanOrDefaults(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
+func (r *ConfigMapReader) getRawConfigForPlanOrDefaults(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
 	cfgString, exists := cfgMap.Data[planName]
 	if !exists {
 		r.logger.Infof("configuration for plan %v does not exist. Using default values", planName)

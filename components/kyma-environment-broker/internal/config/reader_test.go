@@ -39,11 +39,11 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
-	cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
 
 	t.Run("should read default KEB config for Kyma version 2.4.0", func(t *testing.T) {
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AWSPlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.AWSPlanName)
 
 		// then
 		require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 
 	t.Run("should read KEB config for Kyma version 2.4.0 and azure plan", func(t *testing.T) {
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
 
 		// then
 		require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 
 	t.Run("should read KEB config for Kyma version 2.4.0 and trial plan", func(t *testing.T) {
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.TrialPlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.TrialPlanName)
 
 		// then
 		require.NoError(t, err)
@@ -96,10 +96,10 @@ func TestConfigReaderErrors(t *testing.T) {
 
 	t.Run("should return error while fetching configmap on List() of K8s client", func(t *testing.T) {
 		// given
-		cfgReader := config.NewConfigReader(ctx, mockK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, mockK8sClient, logger)
 
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
 
 		// then
 		require.Error(t, err)
@@ -109,10 +109,10 @@ func TestConfigReaderErrors(t *testing.T) {
 
 	t.Run("should return error while verifying configuration configmap existence", func(t *testing.T) {
 		// given
-		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
 
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
 
 		// then
 		require.Error(t, err)
@@ -127,7 +127,7 @@ func TestConfigReaderErrors(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		rawCfg, err = cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		rawCfg, err = cfgReader.Read(kymaVersion, broker.AzurePlanName)
 
 		// then
 		require.Error(t, err)
@@ -140,10 +140,10 @@ func TestConfigReaderErrors(t *testing.T) {
 		err = fakeK8sClient.Delete(ctx, cfgMap)
 		require.NoError(t, err)
 
-		cfgReader := config.NewConfigReader(ctx, fakeK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
 
 		// when
-		rawCfg, err := cfgReader.ReadConfig(kymaVersion, broker.AzurePlanName)
+		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
 
 		// then
 		require.Error(t, err)
