@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"unicode"
+
+	"gopkg.in/yaml.v2"
 )
 
 const requiredFields = "additional-components"
@@ -17,7 +18,10 @@ func NewConfigMapKeysValidator() *ConfigMapKeysValidator {
 
 func (v *ConfigMapKeysValidator) Validate(cfgString string) error {
 	reqs := strings.Split(requiredFields, ",")
-	keys := v.getKeysFromConfigString(cfgString)
+	keys, err := v.getKeysFromConfigString(cfgString)
+	if err != nil {
+		return err
+	}
 	sort.Strings(reqs)
 	sort.Strings(keys)
 
@@ -35,16 +39,16 @@ func (v *ConfigMapKeysValidator) Validate(cfgString string) error {
 	return nil
 }
 
-func (v *ConfigMapKeysValidator) getKeysFromConfigString(cfgString string) []string {
-	keys := make([]string, 0)
-	s1 := strings.Split(cfgString, "\n")
-	for _, entry := range s1 {
-		r := []rune(entry)[0]
-		if unicode.IsSpace(r) || unicode.IsPunct(r) {
-			continue
-		}
-		entry = strings.ReplaceAll(entry, " ", "")
-		keys = append(keys, strings.Split(entry, ":")[0])
+func (v *ConfigMapKeysValidator) getKeysFromConfigString(cfgString string) ([]string, error) {
+	keysAndValues := make(map[string]interface{}, 0)
+	if err := yaml.Unmarshal([]byte(cfgString), keysAndValues); err != nil {
+		return nil, err
 	}
-	return keys
+
+	keys := make([]string, 0)
+	for k, _ := range keysAndValues {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
 }
