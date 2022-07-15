@@ -118,6 +118,20 @@ func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, 
 	return operation, nil
 }
 
+func (r readSession) GetOperationByInstanceID(instanceId string) (dbmodel.OperationDTO, dberr.Error) {
+	condition := dbr.Eq("instance_id", instanceId)
+	operation, err := r.getOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return dbmodel.OperationDTO{}, dberr.NotFound("for instance_id: %s %s", instanceId, err)
+		default:
+			return dbmodel.OperationDTO{}, err
+		}
+	}
+	return operation, nil
+}
+
 func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error) {
 	condition := dbr.Eq("id", opID)
 	operation, err := r.getOperation(condition)
@@ -130,6 +144,23 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 		}
 	}
 	return operation, nil
+}
+
+func (r readSession) ListOperationsNoFilter() ([]dbmodel.OperationDTO, error) {
+	var operations []dbmodel.OperationDTO
+
+	stmt := r.session.Select("*").
+		From(OperationTableName).
+		OrderBy(CreatedAtField)
+
+	_, err := stmt.Load(&operations)
+
+	_, err = r.getOperationCountNoFilter()
+	if err != nil {
+		return nil, err
+	}
+
+	return operations, nil
 }
 
 func (r readSession) ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
@@ -283,6 +314,23 @@ func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType intern
 	return operations, nil
 }
 
+func (r readSession) GetOperationsByInstanceID(inID string) ([]dbmodel.OperationDTO, dberr.Error) {
+	idCondition := dbr.Eq("instance_id", inID)
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(idCondition).
+		OrderDesc(CreatedAtField).
+		Load(&operations)
+
+	if err != nil {
+		return []dbmodel.OperationDTO{}, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
 func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.OperationDTO, dberr.Error) {
 	var operations []dbmodel.OperationDTO
 
@@ -290,6 +338,20 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 		Select("*").
 		From(OperationTableName).
 		Where("id IN ?", opIDlist).
+		Load(&operations)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
+// TODO: Not efficient
+func (r readSession) ListOperationsNoType() ([]dbmodel.OperationDTO, dberr.Error) {
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(OperationTableName).
 		Load(&operations)
 	if err != nil {
 		return nil, dberr.Internal("Failed to get operations: %s", err)
@@ -754,6 +816,17 @@ func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	if len(filter.States) > 0 {
 		stmt.Where("state IN ?", filter.States)
 	}
+}
+
+func (r readSession) getOperationCountNoFilter() (int, error) {
+	var res struct {
+		Total int
+	}
+	stmt := r.session.Select("count(*) as total").
+		From(OperationTableName)
+	err := stmt.LoadOne(&res)
+
+	return res.Total, err
 }
 
 func (r readSession) getOperationCount(filter dbmodel.OperationFilter) (int, error) {

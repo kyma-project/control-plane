@@ -17,6 +17,7 @@ import (
 type operations struct {
 	mu sync.Mutex
 
+	operations               map[string]internal.Operation
 	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
@@ -27,6 +28,7 @@ type operations struct {
 // NewOperation creates in-memory storage for OSB operations.
 func NewOperation() *operations {
 	return &operations{
+		operations:               make(map[string]internal.Operation, 0),
 		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
@@ -45,6 +47,19 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 	}
 
 	s.provisioningOperations[id] = operation
+	return nil
+}
+
+func (s *operations) InsertOperation(operation internal.Operation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := operation.ID
+	if _, exists := s.provisioningOperations[id]; exists {
+		return dberr.AlreadyExists("instance operation with id %s already exist", id)
+	}
+
+	s.operations[id] = operation
 	return nil
 }
 
@@ -78,6 +93,25 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
 }
 
+func (s *operations) GetOperationByInstanceID(instanceID string) (*internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var result []internal.Operation
+
+	for _, op := range s.operations {
+		if op.InstanceID == instanceID {
+			result = append(result, op)
+		}
+	}
+	if len(result) != 0 {
+		s.sortOperationsByCreatedAtDesc(result)
+		return &result[0], nil
+	}
+
+	return nil, dberr.NotFound("instance provisioning operation with instanceID %s not found", instanceID)
+}
+
 func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperation) (*internal.ProvisioningOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -95,6 +129,23 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	return &op, nil
 }
 
+func (s *operations) UpdateOperation(op internal.Operation) (*internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldOp, exists := s.operations[op.ID]
+	if !exists {
+		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
+	}
+	if oldOp.Version != op.Version {
+		return nil, dberr.Conflict("unable to update operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
+	}
+	op.Version = op.Version + 1
+	s.operations[op.ID] = op
+
+	return &op, nil
+}
+
 func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -108,6 +159,25 @@ func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) (
 
 	if len(operations) != 0 {
 		s.sortProvisioningByCreatedAtDesc(operations)
+		return operations, nil
+	}
+
+	return nil, dberr.NotFound("instance provisioning operations with instanceID %s not found", instanceID)
+}
+
+func (s *operations) ListOperationsByInstanceID(instanceID string) ([]internal.Operation, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	operations := make([]internal.Operation, 0)
+	for _, op := range s.operations {
+		if op.InstanceID == instanceID {
+			operations = append(operations, op)
+		}
+	}
+
+	if len(operations) != 0 {
+		s.sortOperationsByCreatedAtDesc(operations)
 		return operations, nil
 	}
 
@@ -563,6 +633,26 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		nil
 }
 
+func (s *operations) ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result := make([]internal.Operation, 0)
+	offset := pagination.ConvertPageAndPageSizeToOffset(filter.PageSize, filter.Page)
+
+	operations := s.filterOperations(orchestrationID, filter)
+	s.sortByCreatedAt(operations)
+
+	for i := offset; (filter.PageSize < 1 || i < offset+filter.PageSize) && i < len(operations); i++ {
+		result = append(result, s.operations[operations[i].ID])
+	}
+
+	return result,
+		len(result),
+		len(operations),
+		nil
+}
+
 func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -706,6 +796,12 @@ func (s *operations) sortProvisioningByCreatedAtDesc(operations []internal.Provi
 	})
 }
 
+func (s *operations) sortOperationsByCreatedAtDesc(operations []internal.Operation) {
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].CreatedAt.After(operations[j].CreatedAt)
+	})
+}
+
 func (s *operations) sortDeprovisioningByCreatedAtDesc(operations []internal.DeprovisioningOperation) {
 	sort.Slice(operations, func(i, j int) bool {
 		return operations[i].CreatedAt.After(operations[j].CreatedAt)
@@ -757,6 +853,22 @@ func (s *operations) filterAll(filter dbmodel.OperationFilter) ([]internal.Opera
 func (s *operations) filterUpgradeKyma(orchestrationID string, filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
 	operations := make([]internal.UpgradeKymaOperation, 0, len(s.upgradeKymaOperations))
 	for _, v := range s.upgradeKymaOperations {
+		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
+			continue
+		}
+		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
+			continue
+		}
+
+		operations = append(operations, v)
+	}
+
+	return operations
+}
+
+func (s *operations) filterOperations(orchestrationID string, filter dbmodel.OperationFilter) []internal.Operation {
+	operations := make([]internal.Operation, 0, len(s.operations))
+	for _, v := range s.operations {
 		if orchestrationID != "" && orchestrationID != v.OrchestrationID {
 			continue
 		}
