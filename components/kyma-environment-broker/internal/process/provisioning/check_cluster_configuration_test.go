@@ -1,27 +1,33 @@
 package provisioning
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	inputAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/stretchr/testify/mock"
-
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -204,12 +210,18 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
-		KubernetesVersion:             k8sVersion,
-		DefaultGardenerShootPurpose:   shootPurpose,
-		AutoUpdateKubernetesVersion:   autoUpdateKubernetesVersion,
-		AutoUpdateMachineImageVersion: autoUpdateMachineImageVersion,
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
+	cli := fake.NewClientBuilder().WithRuntimeObjects(fixConfigMap(kymaVersion)).Build()
+	configProvider := kebConfig.NewConfigProvider(
+		kebConfig.NewConfigMapReader(context.TODO(), cli, logrus.New()),
+		kebConfig.NewConfigMapKeysValidator(),
+		kebConfig.NewConfigMapConverter())
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,
+		configProvider, input.Config{
+			KubernetesVersion:             k8sVersion,
+			DefaultGardenerShootPurpose:   shootPurpose,
+			AutoUpdateKubernetesVersion:   autoUpdateKubernetesVersion,
+			AutoUpdateMachineImageVersion: autoUpdateMachineImageVersion,
+		}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{
@@ -233,4 +245,24 @@ func fixTrialRegionMapping() map[string]string {
 
 func fixFreemiumProviders() []string {
 	return []string{"azure", "aws"}
+}
+
+func fixConfigMap(defaultKymaVersion string) k8sruntime.Object {
+	kebCfg := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "keb-config",
+			Namespace: "kcp-system",
+			Labels: map[string]string{
+				"keb-config": "true",
+				fmt.Sprintf("runtime-version-%s", defaultKymaVersion): "true",
+			},
+		},
+		Data: map[string]string{
+			"default": `additional-components:
+  - name: "additional-component1"
+    namespace: "kyma-system"`,
+		},
+	}
+
+	return kebCfg
 }
