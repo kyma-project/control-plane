@@ -166,13 +166,14 @@ func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtim
 	return fileterRuntimes
 }
 
-func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, result []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+	result := []orchestration.RuntimeOperation{}
 	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
 	if err != nil {
 		return result, o, len(runtimes), errors.Wrap(err, "while resolving targets")
 	}
 
-	fileterRuntimes := m.extractRuntimes(o, runtimes, result)
+	fileterRuntimes := m.extractRuntimes(o, runtimes, retryRT)
 
 	for _, r := range fileterRuntimes {
 		windowBegin := time.Time{}
@@ -252,7 +253,6 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
 	} else {
 		// Resume processing of not finished upgrade operations after restart
-		fmt.Println("manager.go others")
 		var err error
 		result, err = m.factory.ResumeOperations(o.OrchestrationID)
 		if err != nil {
