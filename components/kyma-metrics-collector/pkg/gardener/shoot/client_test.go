@@ -43,10 +43,10 @@ func TestGet(t *testing.T) {
 	g.Expect(err).ShouldNot(gomega.BeNil())
 	g.Expect(k8sErrors.IsNotFound(err)).To(gomega.BeTrue())
 	// Test metric
-	g.Expect(testutil.CollectAndCount(gardenercommons.TotalCalls, metricName)).Should(gomega.Equal(2))
+	g.Expect(testutil.CollectAndCount(gardenercommons.TotalCalls, metricName)).Should(gomega.Equal(1))
 	callsFailure, err := gardenercommons.TotalCalls.GetMetricWithLabelValues(gardenercommons.FailureStatusLabel, nonexistentShoot, gardenercommons.FailedGettingShootLabel)
 	g.Expect(err).Should(gomega.BeNil())
-	g.Expect(testutil.ToFloat64(callsFailure)).Should(gomega.Equal(float64(1)))
+	g.Expect(testutil.ToFloat64(callsFailure)).Should(gomega.Equal(float64(0)))
 }
 
 func NewFakeClient(shoot *gardenerv1beta1.Shoot) (dynamic.ResourceInterface, error) {
