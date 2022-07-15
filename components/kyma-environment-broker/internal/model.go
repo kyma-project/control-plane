@@ -33,6 +33,7 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+	Configuration() *ConfigForPlan
 
 	CreateClusterConfiguration() (reconcilerApi.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)

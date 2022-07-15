@@ -52,6 +52,10 @@ type (
 	ComponentListProvider interface {
 		AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error)
 	}
+
+	ConfigurationProvider interface {
+		ProvideForGivenVersionAndPlan(kymaVersion, planName string) (*internal.ConfigForPlan, error)
+	}
 )
 
 type InputBuilderFactory struct {
@@ -60,13 +64,15 @@ type InputBuilderFactory struct {
 	optComponentsSvc           OptionalComponentService
 	componentsProvider         ComponentListProvider
 	disabledComponentsProvider DisabledComponentsProvider
+	configProvider             ConfigurationProvider
 	trialPlatformRegionMapping map[string]string
 	enabledFreemiumProviders   map[string]struct{}
 	oidcDefaultValues          internal.OIDCConfigDTO
 }
 
 func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledComponentsProvider DisabledComponentsProvider,
-	componentsListProvider ComponentListProvider, config Config, defaultKymaVersion string, trialPlatformRegionMapping map[string]string,
+	componentsListProvider ComponentListProvider, configProvider ConfigurationProvider,
+	config Config, defaultKymaVersion string, trialPlatformRegionMapping map[string]string,
 	enabledFreemiumProviders []string, oidcValues internal.OIDCConfigDTO) (CreatorForPlan, error) {
 
 	freemiumProviders := map[string]struct{}{}
@@ -80,6 +86,7 @@ func NewInputBuilderFactory(optComponentsSvc OptionalComponentService, disabledC
 		optComponentsSvc:           optComponentsSvc,
 		componentsProvider:         componentsListProvider,
 		disabledComponentsProvider: disabledComponentsProvider,
+		configProvider:             configProvider,
 		trialPlatformRegionMapping: trialPlatformRegionMapping,
 		enabledFreemiumProviders:   freemiumProviders,
 		oidcDefaultValues:          oidcValues,
@@ -146,6 +153,8 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 
 	planName := broker.PlanNamesMapping[pp.PlanID]
 
+	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
+
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during creating provision input")
@@ -168,6 +177,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		labels:                    make(map[string]string),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
+		config:                    cfg,
 		hyperscalerInputProvider:  provider,
 		optionalComponentsService: f.optComponentsSvc,
 		provisioningParameters:    pp,

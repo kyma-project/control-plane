@@ -70,6 +70,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
+		operation.Configuration = creator.Configuration()
 		internal.DisableServiceManagementComponents(operation.InputCreator)
 
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
