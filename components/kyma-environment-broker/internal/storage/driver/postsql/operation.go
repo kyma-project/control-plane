@@ -355,7 +355,7 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 	if err != nil {
 		return nil, errors.New("unable to unmarshall operation data")
 	}
-	op, err = s.toOperation(&operation, op.InstanceDetails)
+	op, err = s.toOperation(&operation, op)
 	if err != nil {
 		return nil, err
 	}
@@ -370,14 +370,14 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 		return nil, err
 	}
 
+	op, err = s.toOperation(dto, op)
+	if err != nil {
+		return nil, err
+	}
+
 	err = json.Unmarshal([]byte(dto.Data), &op)
 	if err != nil {
 		return nil, errors.New("unable to unmarshall operation data")
-	}
-
-	op, err = s.toOperation(dto, op.InstanceDetails)
-	if err != nil {
-		return nil, err
 	}
 	return &op, nil
 }
@@ -758,10 +758,10 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 	}, nil
 }
 
-func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails internal.InstanceDetails) (internal.Operation, error) {
+func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.Operation) (internal.Operation, error) {
 	pp := internal.ProvisioningParameters{}
-	if op.ProvisioningParameters.Valid {
-		err := json.Unmarshal([]byte(op.ProvisioningParameters.String), &pp)
+	if dto.ProvisioningParameters.Valid {
+		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &pp)
 		if err != nil {
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
@@ -772,37 +772,37 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 	}
 
 	stages := make(map[string]struct{})
-	for _, s := range strings.Split(storage.SQLNullStringToString(op.FinishedStages), ",") {
+	for _, s := range strings.Split(storage.SQLNullStringToString(dto.FinishedStages), ",") {
 		stages[s] = struct{}{}
 	}
-	return internal.Operation{
-		ID:                     op.ID,
-		CreatedAt:              op.CreatedAt,
-		UpdatedAt:              op.UpdatedAt,
-		Type:                   op.Type,
-		ProvisionerOperationID: op.TargetOperationID,
-		State:                  domain.LastOperationState(op.State),
-		InstanceID:             op.InstanceID,
-		Description:            op.Description,
-		Version:                op.Version,
-		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
-		ProvisioningParameters: pp,
-		InstanceDetails:        instanceDetails,
-		FinishedStages:         stages,
-	}, nil
+
+	existingOp.ID = dto.ID
+	existingOp.CreatedAt = dto.CreatedAt
+	existingOp.UpdatedAt = dto.UpdatedAt
+	existingOp.Type = dto.Type
+	existingOp.ProvisionerOperationID = dto.TargetOperationID
+	existingOp.State = domain.LastOperationState(dto.State)
+	existingOp.InstanceID = dto.InstanceID
+	existingOp.Description = dto.Description
+	existingOp.Version = dto.Version
+	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
+	existingOp.ProvisioningParameters = pp
+	existingOp.FinishedStages = stages
+
+	return existingOp, nil
 }
 
 func (s *operations) toOperations(op []dbmodel.OperationDTO) ([]internal.Operation, error) {
 	operations := make([]internal.Operation, 0)
 	for _, o := range op {
 		operation := internal.Operation{}
-		err := json.Unmarshal([]byte(o.Data), &operation)
-		if err != nil {
-			return nil, errors.New("unable to unmarshall provisioning data")
-		}
-		operation, err = s.toOperation(&o, operation.InstanceDetails)
+		operation, err := s.toOperation(&o, operation)
 		if err != nil {
 			return nil, err
+		}
+		err = json.Unmarshal([]byte(o.Data), &operation)
+		if err != nil {
+			return nil, errors.New("unable to unmarshall operation data")
 		}
 		operations = append(operations, operation)
 	}
@@ -819,7 +819,7 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -895,7 +895,7 @@ func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*inter
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -928,7 +928,7 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -1002,7 +1002,7 @@ func (s *operations) toUpgradeClusterOperation(op *dbmodel.OperationDTO) (*inter
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -1070,7 +1070,7 @@ func (s *operations) toUpdateOperation(op *dbmodel.OperationDTO) (*internal.Upda
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}

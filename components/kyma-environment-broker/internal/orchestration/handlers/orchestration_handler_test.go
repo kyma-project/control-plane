@@ -92,9 +92,9 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 				},
-			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID: fixID,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: fixID,
+				},
 			},
 		})
 		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
@@ -135,9 +135,9 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 				},
-			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID: fixID,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: fixID,
+				},
 			},
 		})
 		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{
@@ -212,9 +212,9 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID: "4deee563-e5ec-4731-b9b1-53b42d855f0c",
 				},
-			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID: fixID,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: fixID,
+				},
 			},
 		})
 		require.NoError(t, err)
@@ -336,9 +336,9 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID: broker.AzurePlanID,
 				},
-			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID: upgradeKymaOp1ID,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: upgradeKymaOp1ID,
+				},
 			},
 		}
 

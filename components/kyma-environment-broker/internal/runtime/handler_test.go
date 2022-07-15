@@ -326,8 +326,8 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testID1,
+				Temporary:  true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -449,8 +449,8 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testInstance1.InstanceID,
+				Temporary:  true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -461,8 +461,8 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now().Add(1 * time.Hour),
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testInstance1.InstanceID,
+				Temporary:  false,
 			},
-			Temporary: false,
 		})
 		require.NoError(t, err)
 

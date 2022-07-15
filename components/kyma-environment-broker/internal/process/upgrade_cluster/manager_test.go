@@ -103,12 +103,12 @@ func TestManager_Execute(t *testing.T) {
 func fixOperation(ID string) internal.UpgradeClusterOperation {
 	return internal.UpgradeClusterOperation{
 		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
+			ID:               ID,
+			State:            domain.InProgress,
+			InstanceID:       "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			Description:      "",
+			RuntimeOperation: orchestration.RuntimeOperation{},
 		},
-		RuntimeOperation: orchestration.RuntimeOperation{},
 	}
 }
 
