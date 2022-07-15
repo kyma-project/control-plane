@@ -43,7 +43,7 @@ func (r *ConfigMapReader) Read(kymaVersion, planName string) (string, error) {
 	}
 
 	cfgMap := cfgMapList.Items[0]
-	cfgString, err := r.getRawConfigForPlanOrDefaults(&cfgMap, planName)
+	cfgString, err := r.getConfigStringForPlanOrDefaults(&cfgMap, planName)
 	if err != nil {
 		return "", fmt.Errorf("while getting configuration string: %w", err)
 	}
@@ -86,7 +86,7 @@ func (r *ConfigMapReader) verifyConfigMapExistence(cfgMapList *coreV1.ConfigMapL
 	}
 }
 
-func (r *ConfigMapReader) getRawConfigForPlanOrDefaults(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
+func (r *ConfigMapReader) getConfigStringForPlanOrDefaults(cfgMap *coreV1.ConfigMap, planName string) (string, error) {
 	cfgString, exists := cfgMap.Data[planName]
 	if !exists {
 		r.logger.Infof("configuration for plan %v does not exist. Using default values", planName)

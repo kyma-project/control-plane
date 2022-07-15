@@ -28,6 +28,10 @@ type (
 	}
 )
 
+func NewConfigProvider(reader ConfigReader, validator ConfigValidator, converter ConfigConverter) *ConfigProvider {
+	return &ConfigProvider{Reader: reader, Validator: validator, Converter: converter}
+}
+
 func (p *ConfigProvider) ProvideForGivenVersionAndPlan(kymaVersion, planName string) (*ConfigForPlan, error) {
 	cfgString, err := p.Reader.Read(kymaVersion, planName)
 	if err != nil {
