@@ -53,26 +53,31 @@ func (cmd *DeprovisionCommand) Run() error {
 	cmd.log = logger.New()
 	cred := CLICredentialManager(cmd.log)
 	param := deprovision.DeprovisionParameters{
-		ClientID:           GlobalOpts.OIDCClientID(),
-		ClientSecret:       GlobalOpts.OIDCClientSecret(),
-		TokenURL:           GlobalOpts.OIDCIssuerURL(),
 		Context:            cmd.cobraCmd.Context(),
 		EndpointURL:        GlobalOpts.KEBAPIURL(),
 		Oauth2IssuerURL:    GlobalOpts.OAUTH2IssuerURL(),
 		Oauth2ClientID:     GlobalOpts.OAUTH2ClientID(),
 		Oauth2ClientSecret: GlobalOpts.OAUTH2ClientSecret(),
+		AuthStyle:          oauth2.AuthStyleInHeader,
+		Scopes:             []string{"broker:write"},
 	}
 
 	client := deprovision.NewDeprovisionClient(param)
 
 	if cmd.runtimeID != "" {
-		client.DeprovisionRuntime(cmd.runtimeID)
+		err := client.DeprovisionRuntime(cmd.runtimeID)
+		if err != nil {
+			errors.Wrap(err, "while calling deprovision endpoint")
+		}
 	} else {
 		err := cmd.resolveInstanceID(cmd.cobraCmd.Context(), cred)
 		if err != nil {
 			errors.Wrap(err, "while resolving runtime from shootName")
 		}
-		client.DeprovisionRuntime(cmd.instanceID)
+		err = client.DeprovisionRuntime(cmd.instanceID)
+		if err != nil {
+			errors.Wrap(err, "while calling deprovision endpoint with resolved instanceID")
+		}
 	}
 	return nil
 }
