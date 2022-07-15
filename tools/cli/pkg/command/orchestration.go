@@ -455,6 +455,7 @@ func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) erro
 	if err != nil {
 		return errors.Wrap(err, "while parsing retry orchestration response template")
 	}
+	fmt.Println("retryOrchestration() response is:", rr)
 	err = tmpl.Execute(os.Stdout, rr)
 	if err != nil {
 		return errors.Wrap(err, "while printing retry orchestration response")

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"time"
 
 	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -52,9 +53,12 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 
 	for _, op := range ops {
+		fmt.Println("resp.RetryShoots shoot", op.Operation.InstanceDetails.ShootName)
 		resp.RetryShoots = append(resp.RetryShoots, op.Operation.InstanceDetails.ShootName)
 		resp.RetryOperations = append(resp.RetryOperations, op.Operation.ID)
 	}
+
+	fmt.Println("resp.RetryShoots are:", resp.RetryShoots)
 	resp.Msg = "retry operations are queued for processing"
 
 	//The retryOperation() will restore it and make it failed
