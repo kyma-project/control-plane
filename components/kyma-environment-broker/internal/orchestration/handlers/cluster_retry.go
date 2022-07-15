@@ -52,6 +52,7 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 
 	for _, op := range ops {
+		resp.RetryShoots = append(resp.RetryShoots, op.Operation.InstanceDetails.ShootName)
 		resp.RetryOperations = append(resp.RetryOperations, op.Operation.ID)
 	}
 	resp.Msg = "retry operations are queued for processing"

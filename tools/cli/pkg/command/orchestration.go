@@ -152,6 +152,7 @@ Kyma Version:       {{with .KymaConfig}}{{.Version}}{{end}}
 `
 
 var retryOchestrationTpl = `Orchestration ID:   {{.OrchestrationID}}
+Retry Shoots:       {{ stringsJoin .RetryShoots ", " }}
 Retry Operations:   {{ stringsJoin .RetryOperations ", " }}
 Old Operations:     {{ stringsJoin .OldOperations ", " }}
 Invalid Operations: {{ stringsJoin .InvalidOperations ", " }}

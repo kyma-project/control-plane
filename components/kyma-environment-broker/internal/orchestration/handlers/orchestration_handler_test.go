@@ -505,6 +505,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID: orchestrationID,
+			RetryShoots:     []string{"Shoot-instance-id-2"},
 			// if "Orchestration-id-4" is failed
 			RetryOperations: []string{"id-2"},
 			OldOperations:   []string{"id-0"},
@@ -588,6 +589,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
+			RetryShoots:       []string{"Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-2"},
 			OldOperations:     []string{"id-0"},
 			InvalidOperations: []string{"id-1", "id-3", "id-10"},
@@ -666,6 +668,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 			// RetryOperations: []string{"id-2"},
 			// OldOperations:   []string{"id-0"},
 			// if "id-4" is canceled
+			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
@@ -747,6 +750,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
+			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
@@ -816,6 +820,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
+			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
@@ -879,6 +884,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		var out orchestration.RetryResponse
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
+			RetryShoots:       []string{"Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,

@@ -227,30 +227,28 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 
 		o.Description = fmt.Sprintf("Scheduled %d operations", runtTimesNum)
 	} else if o.State == orchestration.Retrying {
-		fmt.Println("manager.go resolveOperations() o.Parameters = ", o.Parameters)
-
-		// look for the ops with retrying state, if ops not exit return error
+		//search the ops with retrying state, if ops not exit return error
 		retryRuntimes, err := m.factory.RetryOperations(o.OrchestrationID)
-
-		//look for the ops with retrying state and restore to `failed` state
-		_, resetErr := m.factory.RestoreOperations(o.OrchestrationID)
-		if resetErr != nil {
-			return nil, errors.Wrap(err, "while resolving restore operations to failed in operation db")
-		}
-
 		if err != nil {
 			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
 		}
 
-		fmt.Println("resolveOperations() retryRuntimes", retryRuntimes)
+		m.log.Infof("resolveOperations() retryRuntimes", retryRuntimes)
+
 		var runtTimesNum int
 		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes)
+
+		//search the ops with retrying state and restore to `failed` state
+		_, resetErr := m.factory.RestoreOperations(o.OrchestrationID)
+		if resetErr != nil {
+			return nil, errors.Wrap(err, "while resolving restore operations to failed in operation db")
+		}
 		if err != nil {
 			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
 		}
 
-		fmt.Println("manager.go o.State retrying branch o.State = ", o.State)
 		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
+		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error
@@ -319,6 +317,9 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		numberOfRetrying, found := stats[orchestration.Retrying]
 		if found {
 			numberOfNotFinished += numberOfRetrying
+
+			log.Info("execute retrying in waitForCompletion()")
+
 			ops, err := m.factory.RetryOperations(o.OrchestrationID)
 			if err != nil {
 				// don't block the polling and cancel signal
@@ -339,7 +340,11 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				}
 				o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runttimesNum))
 
-				fmt.Println("execute retrying in waitForCompletion()")
+				err = m.orchestrationStorage.Update(*o)
+				if err != nil {
+					return false, errors.Wrap(err, "while updating orchestration during retrying")
+				}
+
 				retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
 				if err != nil {
 					return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
