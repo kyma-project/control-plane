@@ -408,7 +408,7 @@ func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
 				Zones:            []string{"fix-az-zone-1", "fix-az-zone-2"},
 			},
 			expected: `{
-		EnableNatGateway: true,	
+		enableNatGateway: true,	
 		vnetCidr: "8.8.8.8",
 		zones: ["fix-az-zone-1","fix-az-zone-2"],
 	}`,
