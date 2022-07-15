@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,9 +74,9 @@ func TestConfigProvider(t *testing.T) {
 	})
 }
 
-func fixAzureConfig() *config.ConfigForPlan {
-	return &config.ConfigForPlan{
-		AdditionalComponents: []runtime.KymaComponent{
+func fixAzureConfig() *internal.ConfigForPlan {
+	return &internal.ConfigForPlan{
+		AdditionalComponents: []internal.KymaComponent{
 			{
 				Name:      "additional-component1",
 				Namespace: "kyma-system",
@@ -88,7 +88,7 @@ func fixAzureConfig() *config.ConfigForPlan {
 			{
 				Name:      "azure-component",
 				Namespace: "azure-system",
-				Source:    &runtime.ComponentSource{URL: "https://azure.domain/component/azure-component.git"},
+				Source:    &internal.ComponentSource{URL: "https://azure.domain/component/azure-component.git"},
 			},
 		}}
 }

@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
+import "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 type (
 	ConfigReader interface {
@@ -12,27 +12,21 @@ type (
 	}
 
 	ConfigConverter interface {
-		ConvertToStruct(cfgString string) (ConfigForPlan, error)
+		ConvertToStruct(cfgString string) (internal.ConfigForPlan, error)
 	}
 )
 
-type (
-	ConfigForPlan struct {
-		AdditionalComponents []runtime.KymaComponent `json:"additional-components" yaml:"additional-components"`
-	}
-
-	ConfigProvider struct {
-		Reader    ConfigReader
-		Validator ConfigValidator
-		Converter ConfigConverter
-	}
-)
+type ConfigProvider struct {
+	Reader    ConfigReader
+	Validator ConfigValidator
+	Converter ConfigConverter
+}
 
 func NewConfigProvider(reader ConfigReader, validator ConfigValidator, converter ConfigConverter) *ConfigProvider {
 	return &ConfigProvider{Reader: reader, Validator: validator, Converter: converter}
 }
 
-func (p *ConfigProvider) ProvideForGivenVersionAndPlan(kymaVersion, planName string) (*ConfigForPlan, error) {
+func (p *ConfigProvider) ProvideForGivenVersionAndPlan(kymaVersion, planName string) (*internal.ConfigForPlan, error) {
 	cfgString, err := p.Reader.Read(kymaVersion, planName)
 	if err != nil {
 		return nil, err
