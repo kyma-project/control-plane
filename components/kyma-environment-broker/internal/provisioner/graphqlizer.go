@@ -147,6 +147,7 @@ func (g *Graphqlizer) DNSConfigInputToGraphQL(in gqlschema.DNSConfigInput) (stri
 					secretName: "{{ .SecretName }}",
 					type: "{{ .Type }}",
 				{{- end }}
+				}
 			]
 			{{- end }}
 		}`)
