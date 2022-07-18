@@ -69,8 +69,7 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // ConfigMaps and merge them together
-func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent,
-	error) {
+func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, config *internal.ConfigForPlan) ([]internal.KymaComponent, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -79,7 +78,7 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 		return nil, fmt.Errorf("while getting Kyma components: %w", err)
 	}
 
-	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, planName)
+	additionalComponents, err := p.additionalComponentsProvider.AdditionalComponents(kymaVersion, "")
 	if err != nil {
 		return nil, fmt.Errorf("while getting additional components: %w", err)
 	}

@@ -56,7 +56,7 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Version:      kymaVersion,
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
-		}, "")
+		}, nil)
 
 		// then
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 			Version:      kymaVersion,
 			Origin:       internal.Parameters,
 			MajorVersion: 2,
-		}, broker.AzurePlanName)
+		}, nil)
 
 		// then
 		require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestComponentsProviderErrors(t *testing.T) {
 			Version:      "1.1.0",
 			Origin:       internal.Parameters,
 			MajorVersion: 1,
-		}, broker.AzurePlanName)
+		}, nil)
 
 		// then
 		require.Error(t, err)
@@ -171,7 +171,7 @@ func TestComponentsProviderErrors(t *testing.T) {
 				Version:      wrongVer,
 				Origin:       internal.Parameters,
 				MajorVersion: 2,
-			}, broker.AzurePlanName)
+			}, nil)
 
 			// then
 			require.Error(t, err)

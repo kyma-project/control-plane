@@ -88,8 +88,8 @@ type componentProviderDecorated struct {
 	decorator         map[string]internal.KymaComponent
 }
 
-func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error) {
-	all, err := s.componentProvider.AllComponents(kymaVersion, planName)
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, config *internal.ConfigForPlan) ([]internal.KymaComponent, error) {
+	all, err := s.componentProvider.AllComponents(kymaVersion, config)
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
 			all[i] = dc

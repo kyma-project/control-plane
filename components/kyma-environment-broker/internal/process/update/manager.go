@@ -206,7 +206,7 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 
 func getComponent(componentProvider input.ComponentListProvider, component string,
 	kymaVersion internal.RuntimeVersionData, planName string) (*internal.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
+	allComponents, err := componentProvider.AllComponents(kymaVersion, nil)
 	if err != nil {
 		return nil, err
 	}
