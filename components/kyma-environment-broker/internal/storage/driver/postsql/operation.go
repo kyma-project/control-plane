@@ -40,7 +40,7 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 	return s.insert(dto)
 }
 
-// InsertOperation insert new ProvisioningOperation to storage
+// InsertOperation insert new Operation to storage
 func (s *operations) InsertOperation(operation internal.Operation) error {
 	dto, err := s.operationToDTO(&operation)
 
