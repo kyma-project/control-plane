@@ -40,7 +40,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and ProvisionRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"),
+			mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		configProvider := mockConfigProvider()
@@ -69,7 +70,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
@@ -94,7 +95,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with GA version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
@@ -119,7 +120,7 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		configProvider := mockConfigProvider()
@@ -140,8 +141,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with proper plan", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
 		configProvider := mockConfigProvider()
@@ -179,8 +180,8 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build UpgradeRuntimeInput with proper profile", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil)
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
 		configProvider := mockConfigProvider()

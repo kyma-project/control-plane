@@ -130,7 +130,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 		KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
@@ -552,6 +552,10 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		},
 	}
 
+	for _, version := range additionalKymaVersions {
+		kebConfig.ObjectMeta.Labels[fmt.Sprintf("runtime-version-%s", version)] = "true"
+	}
+
 	resources = append(resources, override, scOverride, orchestrationConfig, kebConfig)
 
 	return resources
@@ -588,7 +592,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil)
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
 

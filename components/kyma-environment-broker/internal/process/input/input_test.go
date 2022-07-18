@@ -34,7 +34,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 		}
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).
 			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
@@ -78,7 +78,7 @@ func TestShouldEnableComponents(t *testing.T) {
 			components.Tracing: runtime.NewGenericComponentDisabler(components.Tracing),
 		}
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).
 			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
@@ -123,7 +123,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).
 			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
@@ -159,7 +159,7 @@ func TestShouldDisableComponents(t *testing.T) {
 
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).
 			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
@@ -196,7 +196,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 
 	optionalComponentsDisablers := runtime.ComponentsDisablers{}
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).
 		Return([]internal.KymaComponent{
 			{Name: components.Kiali},
 			{Name: components.Tracing},
@@ -234,7 +234,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		builder, err := NewInputBuilderFactory(dummyOptComponentsSvc, runtime.NewDisabledComponentsProvider(),
 			componentsProvider, configProvider, Config{}, "not-important", fixTrialRegionMapping(), fixTrialProviders(),
@@ -275,7 +275,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 			}
 		)
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 
@@ -315,7 +315,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 			}
 		)
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -364,7 +364,7 @@ func TestInputBuilderFactoryOverrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "")
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -426,7 +426,7 @@ func TestInputBuilderFactoryForAzurePlan(t *testing.T) {
 		URL: "",
 	}
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(inputComponentList, nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(inputComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	configProvider := mockConfigProvider()
@@ -509,7 +509,7 @@ func TestShouldAdjustRuntimeName(t *testing.T) {
 			// given
 			optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 			componentsProvider := &automock.ComponentListProvider{}
-			componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+			componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 			configProvider := mockConfigProvider()
 
@@ -548,7 +548,7 @@ func TestShouldSetNumberOfNodesForTrialPlan(t *testing.T) {
 	// given
 	optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 	componentsProvider := &automock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 	configProvider := mockConfigProvider()
 
@@ -579,7 +579,7 @@ func TestShouldSetGlobalConfiguration(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -607,7 +607,7 @@ func TestShouldSetGlobalConfiguration(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -652,7 +652,7 @@ func TestCreateProvisionRuntimeInput_ConfigureDNS(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -688,7 +688,7 @@ func TestCreateProvisionRuntimeInput_ConfigureDNS(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -734,7 +734,7 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -774,7 +774,7 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -815,7 +815,7 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -863,7 +863,7 @@ func TestCreateProvisionRuntimeInput_ConfigureOIDC(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -914,7 +914,7 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(componentList)
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(componentList, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(componentList, nil)
 
 		configProvider := mockConfigProvider()
 
@@ -996,7 +996,7 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 
 		pp := fixProvisioningParameters(broker.AzurePlanID, "2.0.0-rc6")
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1047,7 +1047,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1082,7 +1082,7 @@ func TestCreateProvisionRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1141,7 +1141,7 @@ func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1174,7 +1174,7 @@ func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
 
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1205,7 +1205,7 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 
@@ -1244,7 +1244,7 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(fixKymaComponentList(), nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(fixKymaComponentList(), nil)
 
 		configProvider := mockConfigProvider()
 

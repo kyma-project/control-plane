@@ -207,7 +207,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}
 	componentsProvider := &inputAutomock.ComponentListProvider{}
-	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return(kymaComponentList, nil)
+	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return(kymaComponentList, nil)
 	defer componentsProvider.AssertExpectations(t)
 
 	cli := fake.NewClientBuilder().WithRuntimeObjects(fixConfigMap(kymaVersion)).Build()
