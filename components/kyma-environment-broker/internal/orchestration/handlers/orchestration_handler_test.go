@@ -665,8 +665,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID: orchestrationID,
 			// if "Orchestration-id-4" is failed
-			// RetryOperations: []string{"id-2"},
-			// OldOperations:   []string{"id-0"},
 			// if "id-4" is canceled
 			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
 			RetryOperations:   []string{"id-0", "id-2"},

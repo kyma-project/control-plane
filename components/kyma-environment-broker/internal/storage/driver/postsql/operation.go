@@ -442,11 +442,11 @@ func calFailedStatusForOrchestration(entries []dbmodel.OperationStatEntry) ([]st
 		resultPerInstanceID[entry.InstanceID] = append(resultPerInstanceID[entry.InstanceID], entry.State)
 	}
 
-	fmt.Println("calFailedStatusForOrchestration() show resultPerInstanceID", resultPerInstanceID)
+	log.Info("calFailedStatusForOrchestration() show resultPerInstanceID", resultPerInstanceID)
 	var invalidFailed, failedFound bool
 
 	for instanceID, statuses := range resultPerInstanceID {
-		fmt.Println("calFailedStatusForOrchestration() loop resultPerInstanceID", instanceID, statuses)
+		log.Info("calFailedStatusForOrchestration() loop resultPerInstanceID", instanceID, statuses)
 
 		invalidFailed = false
 		failedFound = false
@@ -461,7 +461,7 @@ func calFailedStatusForOrchestration(entries []dbmodel.OperationStatEntry) ([]st
 			}
 		}
 		if failedFound && !invalidFailed {
-			fmt.Println("calFailedStatusForOrchestration() append ", instanceID)
+			log.Info("calFailedStatusForOrchestration() append ", instanceID)
 			result = append(result, instanceID)
 		}
 	}

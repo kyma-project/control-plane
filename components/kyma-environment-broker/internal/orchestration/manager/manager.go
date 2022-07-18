@@ -345,11 +345,16 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 					return false, errors.Wrap(err, "while updating orchestration during retrying")
 				}
 
-				retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
+				err = strategy.Insert(execID, result, o.Parameters.Strategy)
 				if err != nil {
-					return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
+					fmt.Println("PollImmediateInfinite() strategy.Insert() ops failed", err)
+					retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
+					if err != nil {
+						return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
+					}
+					fmt.Println("PollImmediateInfinite() strategy.Execute() succeed.")
+					execIDs = append(execIDs, retryExecID)
 				}
-				execIDs = append(execIDs, retryExecID)
 			}
 		}
 
