@@ -28,7 +28,7 @@ require (
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
-	github.com/pivotal-cf/brokerapi/v8 v8.2.1
+	github.com/pivotal-cf/brokerapi/v8 v8.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/sebdah/goldie/v2 v2.5.3
