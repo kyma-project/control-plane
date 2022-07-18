@@ -111,3 +111,27 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 		pp.PlanID).Set(resultValue)
 	return nil
 }
+
+func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev interface{}) error {
+	stepProcessed, ok := ev.(process.OperationStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected OperationStepProcessed but got %+v", ev)
+	}
+
+	switch {
+	case stepProcessed.Operation.Type == "provisioning":
+		err := c.OnProvisioningStepProcessed(ctx, ev)
+		if err != nil {
+			return err
+		}
+	case stepProcessed.Operation.Type == "deprovisioning":
+		err := c.OnDeprovisioningStepProcessed(ctx, ev)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("expected OperationStep of types [provisioning, deprovisioning] but got %+v", stepProcessed.Operation.Type)
+	}
+
+	return nil
+}

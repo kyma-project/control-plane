@@ -204,3 +204,21 @@ func (c *OperationResultCollector) mapResult(state domain.LastOperationState) fl
 
 	return resultValue
 }
+
+func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev interface{}) error {
+	operationSucceeded, ok := ev.(process.OperationSucceeded)
+	if !ok {
+		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
+	}
+
+	if operationSucceeded.Operation.Type == "provisioning" {
+		err := c.OnProvisioningSucceeded(ctx, ev)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("expected OperationStep of type provisioning but got %+v", operationSucceeded.Operation.Type)
+	}
+
+	return nil
+}
