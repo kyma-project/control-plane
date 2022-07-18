@@ -45,7 +45,7 @@ func (s *operations) InsertOperation(operation internal.Operation) error {
 	dto, err := s.operationToDTO(&operation)
 
 	if err != nil {
-		return errors.Wrapf(err, "while inserting provisioning operation (id: %s)", operation.ID)
+		return errors.Wrapf(err, "while inserting operation (id: %s)", operation.ID)
 	}
 
 	return s.insert(dto)
