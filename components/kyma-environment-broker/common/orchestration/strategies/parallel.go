@@ -84,7 +84,11 @@ func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orche
 			p.handleRescheduleErrorOperation(execID, &operations[i])
 			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
 		} else {
-			fmt.Println("parallel.go Insert() updateMaintennanceWindow succeed", err)
+			if p.dq[execID].ShuttingDown() {
+				fmt.Println("parallel.go Insert() p.dq[execID] already ShuttingDown")
+				return fmt.Errorf("the execution ID %s is shutdown", execID)
+			}
+
 			dq, exist := p.dq[execID]
 			if !exist {
 				fmt.Println("parallel.go Insert() p.dq[execID] not found")
