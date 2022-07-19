@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -29,18 +30,23 @@ const (
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
 type InitialisationStep struct {
-	operationManager *process.UpdateOperationManager
-	operationStorage storage.Operations
-	instanceStorage  storage.Instances
-	inputBuilder     input.CreatorForPlan
+	operationManager       *process.UpdateOperationManager
+	operationStorage       storage.Operations
+	instanceStorage        storage.Instances
+	runtimeStatesStorage   storage.RuntimeStates
+	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator
+	inputBuilder           input.CreatorForPlan
 }
 
-func NewInitialisationStep(is storage.Instances, os storage.Operations, b input.CreatorForPlan) *InitialisationStep {
+func NewInitialisationStep(is storage.Instances, os storage.Operations, rs storage.RuntimeStates,
+	rvc *runtimeversion.RuntimeVersionConfigurator, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager: process.NewUpdateOperationManager(os),
-		operationStorage: os,
-		instanceStorage:  is,
-		inputBuilder:     b,
+		operationManager:       process.NewUpdateOperationManager(os),
+		operationStorage:       os,
+		instanceStorage:        is,
+		runtimeStatesStorage:   rs,
+		runtimeVerConfigurator: rvc,
+		inputBuilder:           b,
 	}
 }
 
@@ -77,6 +83,11 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
+		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
+		if err != nil {
+			return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+		}
+
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
@@ -85,6 +96,9 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
 			}
 			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+			if version != nil {
+				op.RuntimeVersion = *version
+			}
 		}, log)
 		if delay != 0 {
 			log.Errorf("unable to update the operation (move to 'in progress'), retrying")
@@ -102,7 +116,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
-	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
+	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

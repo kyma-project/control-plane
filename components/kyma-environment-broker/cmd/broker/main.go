@@ -753,7 +753,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	}{
 		{
 			stage: "cluster",
-			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), inputFactory),
+			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), db.RuntimeStates(), runtimeVerConfigurator, inputFactory),
 		},
 		{
 			stage:     "cluster",

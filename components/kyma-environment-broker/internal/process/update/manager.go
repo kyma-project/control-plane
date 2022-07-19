@@ -205,8 +205,8 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 }
 
 func getComponent(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (*internal.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion, nil)
+	kymaVersion internal.RuntimeVersionData, cfg *internal.ConfigForPlan) (*internal.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +219,8 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 }
 
 func getComponentInput(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (reconcilerApi.Component, error) {
-	c, err := getComponent(componentProvider, component, kymaVersion, planName)
+	kymaVersion internal.RuntimeVersionData, cfg *internal.ConfigForPlan) (reconcilerApi.Component, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion, cfg)
 	if err != nil {
 		return reconcilerApi.Component{}, err
 	}

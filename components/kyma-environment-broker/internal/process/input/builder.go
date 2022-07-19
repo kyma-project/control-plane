@@ -45,7 +45,7 @@ type (
 		IsPlanSupport(planID string) bool
 		CreateProvisionInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		CreateUpgradeInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
-		CreateUpgradeShootInput(parameters internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error)
+		CreateUpgradeShootInput(parameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error)
 		GetPlanDefaults(planID string, platformProvider internal.CloudProvider, parametersProvider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error)
 	}
 
@@ -281,7 +281,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
 
-	kymaInput, err := f.initProvisionRuntimeInput(provider, version, nil)
+	kymaInput, err := f.initProvisionRuntimeInput(provider, version, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing RuntimeInput")
 	}
@@ -354,9 +354,16 @@ func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
 	return res
 }
 
-func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningParameters) (internal.ProvisionerInputCreator, error) {
+func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(pp.PlanID) {
 		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+	}
+
+	planName := broker.PlanNamesMapping[pp.PlanID]
+
+	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
 	}
 
 	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
@@ -367,6 +374,7 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 	input := f.initUpgradeShootInput(provider)
 	return &RuntimeInput{
 		upgradeShootInput:        input,
+		config:                   cfg,
 		mutex:                    nsync.NewNamedMutex(),
 		hyperscalerInputProvider: provider,
 		trialNodesNumber:         f.config.TrialNodesNumber,
