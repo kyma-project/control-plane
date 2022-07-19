@@ -536,7 +536,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		},
 	}
 
-	kebConfig := &coreV1.ConfigMap{
+	kebCfg := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "keb-config",
 			Namespace: "kcp-system",
@@ -553,10 +553,10 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 	}
 
 	for _, version := range additionalKymaVersions {
-		kebConfig.ObjectMeta.Labels[fmt.Sprintf("runtime-version-%s", version)] = "true"
+		kebCfg.ObjectMeta.Labels[fmt.Sprintf("runtime-version-%s", version)] = "true"
 	}
 
-	resources = append(resources, override, scOverride, orchestrationConfig, kebConfig)
+	resources = append(resources, override, scOverride, orchestrationConfig, kebCfg)
 
 	return resources
 }
