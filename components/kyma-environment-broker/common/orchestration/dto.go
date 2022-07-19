@@ -12,7 +12,6 @@ type Parameters struct {
 	Strategy   StrategySpec          `json:"strategy,omitempty"`
 	DryRun     bool                  `json:"dryRun,omitempty"`
 	Kubernetes *KubernetesParameters `json:"kubernetes,omitempty"`
-	Now        bool                  `json:"now,omitempty"`
 	// upgrade kyma specific parameters
 	Kyma *KymaParameters `json:"kyma,omitempty"`
 	//customer notification status
