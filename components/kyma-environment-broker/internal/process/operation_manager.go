@@ -1,10 +1,10 @@
 package process
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -22,58 +22,58 @@ func NewOperationManager(storage storage.Operations) *OperationManager {
 	return &OperationManager{storage: storage}
 }
 
-// OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
+// OperationSucceeded marks the operation as succeeded and returns status of the operation's update
 func (om *OperationManager) OperationSucceeded(operation internal.Operation, description string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	op, repeat, _ := om.update(operation, domain.Succeeded, description, log)
-	// repeat in case of storage error
-	if repeat != 0 {
-		return op, repeat, nil
-	}
-
-	return op, 0, nil
+	return om.update(operation, domain.Succeeded, description, log)
 }
 
-// OperationFailed marks the operation as failed and only repeats it if there is a storage error
+// OperationFailed marks the operation as failed and returns status of the operation's update
 func (om *OperationManager) OperationFailed(operation internal.Operation, description string, err error, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	op, repeat, _ := om.update(operation, domain.Failed, description, log)
-	// repeat in case of storage error
-	if repeat != 0 {
-		return op, repeat, nil
-	}
-
-	var retErr error
-	if err == nil {
-		// no exact err passed in
-		retErr = errors.New(description)
-	} else {
-		// keep the original err object for error categorizer
-		retErr = errors.Wrap(err, description)
-	}
-
-	return op, 0, retErr
+	return om.update(operation, domain.Failed, description, log)
 }
 
-// OperationSucceeded marks the operation as succeeded and only repeats it if there is a storage error
+// OperationCanceled marks the operation as canceled and returns status of the operation's update
 func (om *OperationManager) OperationCanceled(operation internal.Operation, description string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	op, repeat, _ := om.update(operation, orchestration.Canceled, description, log)
-	if repeat != 0 {
-		return op, repeat, nil
-	}
-
-	return op, 0, nil
+	return om.update(operation, orchestration.Canceled, description, log)
 }
 
-// RetryOperation retries an operation for at maxTime in retryInterval steps and fails the operation if retrying failed
+// RetryOperation checks if operation should be retried or if it's the status should be marked as failed
 func (om *OperationManager) RetryOperation(operation internal.Operation, errorMessage string, err error, retryInterval time.Duration, maxTime time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	since := time.Since(operation.UpdatedAt)
-
 	log.Infof("Retry Operation was triggered with message: %s", errorMessage)
 	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
-	if since < maxTime {
+	if time.Since(operation.UpdatedAt) < maxTime {
 		return operation, retryInterval, nil
 	}
 	log.Errorf("Aborting after %s of failing retries", maxTime.String())
-	return om.OperationFailed(operation, errorMessage, err, log)
+	op, retry, err := om.OperationFailed(operation, errorMessage, err, log)
+	if err == nil {
+		err = fmt.Errorf("Too many retries")
+	} else {
+		err = fmt.Errorf("Failed to set status for operation after too many retries: %v", err)
+	}
+	return op, retry, err
+}
+
+// RetryOperationWithoutFail checks if operation should be retried or updates the status to InProgress, but omits setting the operation to failed if maxTime is reached
+func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operation, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	log.Infof("Retry Operation was triggered with message: %s", description)
+	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
+	if time.Since(operation.UpdatedAt) < maxTime {
+		return operation, retryInterval, nil
+	}
+	// update description to track failed steps
+	op, repeat, err := om.update(operation, domain.InProgress, description, log)
+	if repeat != 0 {
+		return op, repeat, err
+	}
+
+	log.Errorf("Omitting after %s of failing retries", maxTime.String())
+	return op, 0, nil
+}
+
+// RetryOperationOnce retries the operation once and fails the operation when call second time
+func (om *OperationManager) RetryOperationOnce(operation internal.Operation, errorMessage string, err error, wait time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	return om.RetryOperation(operation, errorMessage, err, wait, wait+1, log)
 }
 
 // UpdateOperation updates a given operation and handles conflict situation
@@ -100,25 +100,6 @@ func (om *OperationManager) UpdateOperation(operation internal.Operation, update
 		return operation, 1 * time.Minute, err
 	}
 	return *op, 0, nil
-}
-
-// RetryOperationWithoutFail retries an operation for at maxTime in retryInterval steps and omits the operation if retrying failed
-func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operation, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	since := time.Since(operation.UpdatedAt)
-
-	log.Infof("Retry Operation was triggered with message: %s", description)
-	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
-	if since < maxTime {
-		return operation, retryInterval, nil
-	}
-	// update description to track failed steps
-	op, repeat, _ := om.update(operation, domain.InProgress, description, log)
-	if repeat != 0 {
-		return op, repeat, nil
-	}
-
-	log.Errorf("Omitting after %s of failing retries", maxTime.String())
-	return op, 0, nil
 }
 
 func (om *OperationManager) update(operation internal.Operation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
