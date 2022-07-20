@@ -284,7 +284,6 @@ func TestClient_RetryOrchestration(t *testing.T) {
 		expectedRr := RetryResponse{
 			OrchestrationID: orch1.OrchestrationID,
 			RetryShoots:     []string{"Shoot-instance-A", "Shoot-instance-B"},
-			RetryOperations: operationIDs,
 			Msg:             "retry operations are queued for processing",
 		}
 

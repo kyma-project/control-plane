@@ -507,10 +507,8 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 			OrchestrationID: orchestrationID,
 			RetryShoots:     []string{"Shoot-instance-id-2"},
 			// if "Orchestration-id-4" is failed
-			RetryOperations: []string{"id-2"},
-			OldOperations:   []string{"id-0"},
+			OldOperations: []string{"id-0"},
 			// if "id-4" is canceled
-			// RetryOperations:   []string{"id-0", "id-2"},
 			// OldOperations:     nil,
 			InvalidOperations: []string{"id-1", "id-3", "id-10"},
 			Msg:               "retry operations are queued for processing",
@@ -590,7 +588,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
 			RetryShoots:       []string{"Shoot-instance-id-2"},
-			RetryOperations:   []string{"id-2"},
 			OldOperations:     []string{"id-0"},
 			InvalidOperations: []string{"id-1", "id-3", "id-10"},
 			Msg:               "retry operations are queued for processing",
@@ -667,7 +664,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 			// if "Orchestration-id-4" is failed
 			// if "id-4" is canceled
 			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
-			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
@@ -749,7 +745,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
 			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
-			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
@@ -819,7 +814,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
 			RetryShoots:       []string{"Shoot-instance-id-0", "Shoot-instance-id-2"},
-			RetryOperations:   []string{"id-0", "id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
@@ -883,7 +877,6 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		expectedOut := orchestration.RetryResponse{
 			OrchestrationID:   orchestrationID,
 			RetryShoots:       []string{"Shoot-instance-id-2"},
-			RetryOperations:   []string{"id-2"},
 			OldOperations:     nil,
 			InvalidOperations: nil,
 			Msg:               "retry operations are queued for processing",
