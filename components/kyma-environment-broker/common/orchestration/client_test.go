@@ -298,7 +298,6 @@ func TestClient_RetryOrchestration(t *testing.T) {
 
 		// when
 		operationIDs = nil
-		expectedRr.RetryOperations = []string{"operation-ID-3", "operation-ID-4"}
 		expectedRr.RetryShoots = []string{"Shoot-instance-C", "Shoot-instance-D"}
 		rr, err = client.RetryOrchestration(orch1.OrchestrationID, operationIDs)
 
@@ -422,11 +421,9 @@ func respondRetry(w http.ResponseWriter, orchestrationID string, operationIDs []
 
 	if len(operationIDs) == 0 {
 		rr.RetryShoots = []string{"Shoot-instance-C", "Shoot-instance-D"}
-		rr.RetryOperations = []string{"operation-ID-3", "operation-ID-4"}
 		rr.Msg = "retry operations are queued for processing"
 	} else {
 		rr.RetryShoots = []string{"Shoot-instance-A", "Shoot-instance-B"}
-		rr.RetryOperations = operationIDs
 		rr.Msg = "retry operations are queued for processing"
 	}
 
