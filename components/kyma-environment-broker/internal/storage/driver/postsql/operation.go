@@ -537,7 +537,7 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 	}
 
 	var failedDatas []dbmodel.OperationDTO
-	for instanceID, datas := range resPerInstanceID {
+	for _, datas := range resPerInstanceID {
 
 		var invalidFailed bool
 		var failedFound bool
