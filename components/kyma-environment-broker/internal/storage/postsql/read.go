@@ -328,20 +328,6 @@ func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.Operation
 	return operations, nil
 }
 
-// TODO: Not efficient
-func (r readSession) ListOperationsNoType() ([]dbmodel.OperationDTO, dberr.Error) {
-	var operations []dbmodel.OperationDTO
-
-	_, err := r.session.
-		Select("*").
-		From(OperationTableName).
-		Load(&operations)
-	if err != nil {
-		return nil, dberr.Internal("Failed to get operations: %s", err)
-	}
-	return operations, nil
-}
-
 func (r readSession) ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	typeCondition := dbr.Eq("type", operationType)
 	var operations []dbmodel.OperationDTO
