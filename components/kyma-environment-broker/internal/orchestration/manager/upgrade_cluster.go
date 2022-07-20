@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -130,7 +129,6 @@ func (u *upgradeClusterFactory) RetryOperations(orchestrationID string) ([]orche
 	}
 
 	for _, op := range ops {
-		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op=", op)
 		runtimeop, err := u.operationStorage.GetUpgradeClusterOperationByID(op.Operation.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while geting (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
@@ -151,7 +149,6 @@ func (u *upgradeClusterFactory) RestoreOperations(orchestrationID string) ([]orc
 	}
 
 	for _, op := range ops {
-		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op=", op)
 		runtimeop, err := u.restoreRetryingOperation(op)
 		if err != nil {
 			return nil, err

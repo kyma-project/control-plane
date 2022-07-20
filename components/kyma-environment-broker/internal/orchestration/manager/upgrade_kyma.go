@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -167,7 +166,6 @@ func (u *upgradeKymaFactory) RetryOperations(orchestrationID string) ([]orchestr
 	}
 
 	for _, op := range ops {
-		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
 		runtimeop, err := u.operationStorage.GetUpgradeKymaOperationByID(op.Operation.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while geting (retrying) upgrade kyma operation %s in storage", op.Operation.ID)
@@ -188,7 +186,6 @@ func (u *upgradeKymaFactory) RestoreOperations(orchestrationID string) ([]orches
 	}
 
 	for _, op := range ops {
-		fmt.Println("upgrade_cluster.go upgradeClusterFactory RetryOperations() op.State ", op.State)
 		runtimeop, err := u.restoreRetryingOperation(op)
 		if err != nil {
 			return nil, err

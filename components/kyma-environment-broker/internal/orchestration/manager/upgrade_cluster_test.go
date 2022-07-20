@@ -1,7 +1,6 @@
 package manager_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -359,7 +358,6 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
-		fmt.Println("upgrade_cluster_test.go o.State =", o.State)
 
 		_, err = store.Operations().GetUpgradeClusterOperationByID("op-id")
 		require.NoError(t, err)
