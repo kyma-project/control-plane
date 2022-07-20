@@ -787,17 +787,6 @@ func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	}
 }
 
-func (r readSession) getOperationCountNoFilter() (int, error) {
-	var res struct {
-		Total int
-	}
-	stmt := r.session.Select("count(*) as total").
-		From(OperationTableName)
-	err := stmt.LoadOne(&res)
-
-	return res.Total, err
-}
-
 func (r readSession) getOperationCount(filter dbmodel.OperationFilter) (int, error) {
 	var res struct {
 		Total int
