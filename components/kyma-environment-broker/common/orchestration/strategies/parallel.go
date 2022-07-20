@@ -79,24 +79,20 @@ func (p *ParallelOrchestrationStrategy) Insert(execID string, operations []orche
 	for i, op := range operations {
 		duration, err := p.updateMaintenanceWindow(execID, &operations[i], strategySpec)
 		if err != nil {
-			fmt.Println("parallel.go Insert() updateMaintennanceWindow failed", err)
 			//error when read from storage or update to storage during maintenance window reschedule
 			p.handleRescheduleErrorOperation(execID, &operations[i])
 			p.log.Errorf("while processing operation %s: %v, will reschedule it", op.ID, err)
 		} else {
 			if p.dq[execID].ShuttingDown() {
-				fmt.Println("parallel.go Insert() p.dq[execID] already ShuttingDown")
 				return fmt.Errorf("the execution ID %s is shutdown", execID)
 			}
 
 			dq, exist := p.dq[execID]
 			if !exist {
-				fmt.Println("parallel.go Insert() p.dq[execID] not found")
 				return fmt.Errorf("no queue for the execution ID: %s", execID)
 			}
 
 			dq.AddAfter(&operations[i], duration)
-			fmt.Println("parallel.go Insert() dq.AddAfter", operations[i])
 		}
 
 		p.scheduleNum[execID] += 1
@@ -133,7 +129,7 @@ func (p *ParallelOrchestrationStrategy) scheduleOperationsLoop(execID string, st
 
 		item, shutdown := dq.Get()
 		if shutdown {
-			p.log.Infof("parallel.go scheduling queue is shutdown")
+			p.log.Infof("scheduling queue is shutdown")
 			break
 		}
 

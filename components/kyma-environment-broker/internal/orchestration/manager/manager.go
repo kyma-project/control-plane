@@ -207,12 +207,12 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
 	}
 
-	if len(runtimes) != 0 {
+	if len(fileterRuntimes) != 0 {
 		o.State = orchestration.InProgress
 	} else {
 		o.State = orchestration.Succeeded
 	}
-	return result, o, len(runtimes), nil
+	return result, o, len(fileterRuntimes), nil
 }
 
 func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policy orchestration.MaintenancePolicy) ([]orchestration.RuntimeOperation, error) {
@@ -282,6 +282,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 	var err error
 	var stats map[string]int
 	execIDs := []string{execID}
+
 	err = wait.PollImmediateInfinite(m.pollingInterval, func() (bool, error) {
 		// check if orchestration wasn't canceled
 		o, err = m.orchestrationStorage.GetByID(orchestrationID)
@@ -338,12 +339,6 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				if err != nil {
 					log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
 				}
-				o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runttimesNum))
-
-				err = m.orchestrationStorage.Update(*o)
-				if err != nil {
-					return false, errors.Wrap(err, "while updating orchestration during retrying")
-				}
 
 				err = strategy.Insert(execID, result, o.Parameters.Strategy)
 				if err != nil {
@@ -354,6 +349,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 					}
 					fmt.Println("PollImmediateInfinite() strategy.Execute() succeed.")
 					execIDs = append(execIDs, retryExecID)
+					execID = retryExecID
 				}
 			}
 		}
