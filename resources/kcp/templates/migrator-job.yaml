@@ -23,7 +23,6 @@ spec:
             {{end}}
         spec:
             restartPolicy: Never
-            shareProcessNamespace: true
             containers:
                 {{if eq .Values.global.database.embedded.enabled false}}
                 - name: cloudsql-proxy
@@ -39,6 +38,8 @@ spec:
                 - name: migrator
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}schema-migrator:{{ .Values.global.images.schema_migrator.version }}
                   imagePullPolicy: IfNotPresent
+                  command: 
+                    - /bin/program
                   env:
                       - name: DB_USER
                         valueFrom:
@@ -120,6 +121,7 @@ spec:
                 - name: migrator
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}schema-migrator:{{ .Values.global.images.schema_migrator.version }}
                   imagePullPolicy: IfNotPresent
+                    - /bin/program
                   env:
                       - name: DB_USER
                         valueFrom:
