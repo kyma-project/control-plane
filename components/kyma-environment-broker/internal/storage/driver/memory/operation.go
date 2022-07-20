@@ -55,7 +55,7 @@ func (s *operations) InsertOperation(operation internal.Operation) error {
 	defer s.mu.Unlock()
 
 	id := operation.ID
-	if _, exists := s.provisioningOperations[id]; exists {
+	if _, exists := s.operations[id]; exists {
 		return dberr.AlreadyExists("instance operation with id %s already exist", id)
 	}
 
@@ -442,7 +442,7 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	}
 	op, exists := s.operations[operationID]
 	if exists {
-		res = &op.Operation
+		res = &op
 	}
 
 	if res == nil {
