@@ -234,9 +234,13 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 		provider = &cloudProvider.GcpInput{} // for broker.GCPPlanID
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
 
 		// when
-		input, err := ibf.CreateUpgradeShootInput(pp)
+		input, err := ibf.CreateUpgradeShootInput(pp, ver)
 
 		// Then
 		assert.NoError(t, err)

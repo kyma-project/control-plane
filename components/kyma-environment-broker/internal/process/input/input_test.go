@@ -1153,7 +1153,12 @@ func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
 		provisioningParams := fixture.FixProvisioningParameters(id)
 		provisioningParams.ErsContext.UserID = expectedAdmins[0]
 
-		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams, ver)
 		require.NoError(t, err)
 
 		// when
@@ -1187,7 +1192,12 @@ func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
 		provisioningParams.ErsContext.UserID = userId
 		provisioningParams.Parameters.RuntimeAdministrators = expectedAdmins
 
-		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams)
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
+
+		creator, err := inputBuilder.CreateUpgradeShootInput(provisioningParams, ver)
 		require.NoError(t, err)
 
 		// when
@@ -1219,7 +1229,12 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 		//provider = &cloudProvider.GcpInput{} // for broker.GCPPlanID
 
-		rtinput, err := ibf.CreateUpgradeShootInput(pp)
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
+
+		rtinput, err := ibf.CreateUpgradeShootInput(pp, ver)
 
 		assert.NoError(t, err)
 		require.IsType(t, &RuntimeInput{}, rtinput)
@@ -1261,7 +1276,12 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 
 		provider := &cloudProvider.GcpInput{} // for broker.GCPPlanID
 
-		rtinput, err := ibf.CreateUpgradeShootInput(pp)
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
+
+		rtinput, err := ibf.CreateUpgradeShootInput(pp, ver)
 
 		assert.NoError(t, err)
 		require.IsType(t, &RuntimeInput{}, rtinput)

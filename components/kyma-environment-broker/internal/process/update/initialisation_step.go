@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -29,17 +28,22 @@ const (
 
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
+//go:generate mockery --name=RuntimeVersionConfiguratorForUpdating --output=automock --outpkg=automock --case=underscore
+type RuntimeVersionConfiguratorForUpdating interface {
+	ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error)
+}
+
 type InitialisationStep struct {
 	operationManager       *process.UpdateOperationManager
 	operationStorage       storage.Operations
 	instanceStorage        storage.Instances
 	runtimeStatesStorage   storage.RuntimeStates
-	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator
+	runtimeVerConfigurator RuntimeVersionConfiguratorForUpdating
 	inputBuilder           input.CreatorForPlan
 }
 
 func NewInitialisationStep(is storage.Instances, os storage.Operations, rs storage.RuntimeStates,
-	rvc *runtimeversion.RuntimeVersionConfigurator, b input.CreatorForPlan) *InitialisationStep {
+	rvc RuntimeVersionConfiguratorForUpdating, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:       process.NewUpdateOperationManager(os),
 		operationStorage:       os,
