@@ -563,7 +563,7 @@ func (r readSession) GetERSContextStats() ([]dbmodel.InstanceERSContextStatsEntr
 	var rows []dbmodel.InstanceERSContextStatsEntry
 	// group existing instances by license_Type from the last operation that is not pending or canceled
 	_, err := r.session.SelectBySql(`
-SELECT license_type, count(1)
+SELECT license_type, count(1) as total
 FROM (
     SELECT DISTINCT ON (instances.instance_id) instances.instance_id, operations.id, state, type, (operations.provisioning_parameters->'ers_context'->'license_type')::VARCHAR AS license_type
     FROM operations
