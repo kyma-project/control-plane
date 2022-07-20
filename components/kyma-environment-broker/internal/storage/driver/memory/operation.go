@@ -440,6 +440,11 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 	if exists {
 		res = &updateOp.Operation
 	}
+	op, exists := s.operations[operationID]
+	if exists {
+		res = &op.Operation
+	}
+
 	if res == nil {
 		return nil, dberr.NotFound("instance operation with id %s not found", operationID)
 	}
