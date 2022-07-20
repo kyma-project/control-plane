@@ -1251,22 +1251,3 @@ func (s *operations) listOperationsByInstanceId(instanceId string) ([]dbmodel.Op
 	}
 	return operations, lastErr
 }
-
-func (s *operations) listOperations() ([]dbmodel.OperationDTO, error) {
-	session := s.NewReadSession()
-	operations := []dbmodel.OperationDTO{}
-	var lastErr error
-
-	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
-		operations, lastErr = session.ListOperationsNoFilter()
-		if lastErr != nil {
-			log.Errorf("while reading operation from the storage: %v", lastErr)
-			return false, nil
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, lastErr
-	}
-	return operations, lastErr
-}

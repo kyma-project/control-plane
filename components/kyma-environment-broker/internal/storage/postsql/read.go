@@ -146,23 +146,6 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 	return operation, nil
 }
 
-func (r readSession) ListOperationsNoFilter() ([]dbmodel.OperationDTO, error) {
-	var operations []dbmodel.OperationDTO
-
-	stmt := r.session.Select("*").
-		From(OperationTableName).
-		OrderBy(CreatedAtField)
-
-	_, err := stmt.Load(&operations)
-
-	_, err = r.getOperationCountNoFilter()
-	if err != nil {
-		return nil, err
-	}
-
-	return operations, nil
-}
-
 func (r readSession) ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
 	var operations []dbmodel.OperationDTO
 
