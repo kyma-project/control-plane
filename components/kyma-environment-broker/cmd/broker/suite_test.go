@@ -65,7 +65,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "2.0"
+	defaultKymaVer         = "2.4.0"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -113,7 +113,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		EnableSeqHttp: true,
 	}
 	cfg.OrchestrationConfig = kebOrchestration.Config{
-		KymaVersion:       "",
+		KymaVersion:       defaultKymaVer,
 		KubernetesVersion: "",
 	}
 	cfg.Reconciler = reconciler.Config{
@@ -140,7 +140,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 
-	kymaVer := "2.0.3"
+	kymaVer := "2.4.0"
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 	configProvider := kebConfig.NewConfigProvider(
 		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
@@ -1014,8 +1014,9 @@ func fixConfig() *Config {
 			EnableSeqHttp: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
-			Name:      "orchestration-config",
-			Namespace: "kcp-system",
+			KymaVersion: defaultKymaVer,
+			Namespace:   "kcp-system",
+			Name:        "orchestration-config",
 		},
 		MaxPaginationPage: 100,
 		FreemiumProviders: []string{"aws", "azure"},

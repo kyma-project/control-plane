@@ -87,6 +87,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
+		// todo no runtime id after suspension
 		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
