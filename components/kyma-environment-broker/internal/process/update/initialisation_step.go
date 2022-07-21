@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -87,7 +88,14 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
-		// todo no runtime id after suspension
+		// suspension cleared runtimeID
+		if operation.RuntimeID == "" {
+			err = s.getRuntimeIdFromProvisioningOp(&operation, log)
+			if err != nil {
+				return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+			}
+		}
+
 		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
@@ -117,6 +125,15 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 	}
 
 	return s.initializeUpgradeShootRequest(operation, log)
+}
+
+func (s *InitialisationStep) getRuntimeIdFromProvisioningOp(operation *internal.UpdatingOperation, log logrus.FieldLogger) error {
+	provOp, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
+	if err != nil {
+		return errors.New("cannot get last provisioning operation for runtime id")
+	}
+	operation.RuntimeID = provOp.RuntimeID
+	return nil
 }
 
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
