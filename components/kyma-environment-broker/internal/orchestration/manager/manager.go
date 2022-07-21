@@ -143,22 +143,18 @@ func (m *orchestrationManager) getMaintenancePolicy() (orchestration.Maintenance
 	return policy, nil
 }
 
-func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, result []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
-	fmt.Println("manager.go resolveOperations() o.State = ", o.State)
-	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
-	if err != nil {
-		return result, o, len(runtimes), errors.Wrap(err, "while resolving targets")
-	}
-	fmt.Println("NewOperationForPendingRetrying() runtimes is ", runtimes)
-
+//result contains the operations which from `kcp o *** retry` and its label are retrying, runtimes from target parameter
+func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtimes []orchestration.Runtime, result []orchestration.RuntimeOperation) []orchestration.Runtime {
+	logger := m.log.WithField("OrchestrationID state", o.State)
+	logger.Debugf("extractRuntimes() runtimes : %v", runtimes)
 	var fileterRuntimes []orchestration.Runtime
 	if o.State == orchestration.Pending {
 		fileterRuntimes = runtimes
 	} else if o.State == orchestration.Retrying {
 		for _, retryOp := range result {
-			fmt.Println("NewOperationForPendingRetrying() retryOp.Runtime.InstanceID", retryOp.Runtime.InstanceID)
+			logger.Debugf("extractRuntimes() retryOp.Runtime.InstanceID %s", retryOp.Runtime.InstanceID)
 			for _, r := range runtimes {
-				fmt.Println("NewOperationForPendingRetrying() r.InstanceID", r.InstanceID)
+				logger.Debugf("extractRuntimes() r.InstanceID %s", r.InstanceID)
 				if retryOp.Runtime.InstanceID == r.InstanceID {
 					fileterRuntimes = append(fileterRuntimes, r)
 					break
@@ -166,6 +162,16 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			}
 		}
 	}
+	return fileterRuntimes
+}
+
+func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, result []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
+	if err != nil {
+		return result, o, len(runtimes), errors.Wrap(err, "while resolving targets")
+	}
+
+	fileterRuntimes := m.extractRuntimes(o, runtimes, result)
 
 	for _, r := range fileterRuntimes {
 		windowBegin := time.Time{}
