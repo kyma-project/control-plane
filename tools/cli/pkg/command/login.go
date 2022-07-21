@@ -20,7 +20,7 @@ type LoginCommand struct {
 func NewLoginCmd() *cobra.Command {
 	cmd := LoginCommand{}
 	cobraCmd := &cobra.Command{
-		Use:     "loginn",
+		Use:     "login",
 		Aliases: []string{"l"},
 		Short:   "Performs OIDC login required by all commands.",
 		Long: `Initiates OIDC login to obtain the ID token which is required by all CLI commands.
