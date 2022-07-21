@@ -989,7 +989,6 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 		},
 	}
 
-
 	for _, step := range upgradeClusterSteps {
 		if !step.disabled {
 			upgradeClusterManager.AddStep(step.weight, step.step)
