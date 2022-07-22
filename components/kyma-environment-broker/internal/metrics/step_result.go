@@ -122,18 +122,18 @@ func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev i
 
 	switch {
 	case stepProcessed.Operation.Type == "provisioning":
-		provisioningOperation := process.ProvisioningStepProcessed{
+		provisioningStepProcessed := process.ProvisioningStepProcessed{
 			Operation: internal.ProvisioningOperation{Operation: stepProcessed.Operation},
 		}
-		err := c.OnProvisioningStepProcessed(ctx, provisioningOperation)
+		err := c.OnProvisioningStepProcessed(ctx, provisioningStepProcessed)
 		if err != nil {
 			return err
 		}
 	case stepProcessed.Operation.Type == "deprovisioning":
-		deprovisioningOperation := process.DeprovisioningStepProcessed{
+		deprovisioningStepProcessed := process.DeprovisioningStepProcessed{
 			Operation: internal.DeprovisioningOperation{Operation: stepProcessed.Operation},
 		}
-		err := c.OnDeprovisioningStepProcessed(ctx, deprovisioningOperation)
+		err := c.OnDeprovisioningStepProcessed(ctx, deprovisioningStepProcessed)
 		if err != nil {
 			return err
 		}
