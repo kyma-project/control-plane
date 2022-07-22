@@ -60,18 +60,6 @@
             "value": "400m"
           },
           {
-            "key": "oathkeeper.deployment.resources.requests.memory",
-            "value": "64Mi"
-          },
-          {
-            "key": "oathkeeper.oathkeeper-maester.deployment.resources.limits.cpu",
-            "value": "400m"
-          },
-          {
-            "key": "oathkeeper.oathkeeper-maester.deployment.resources.requests.memory",
-            "value": "32Mi"
-          },
-          {
             "key": "hydra.deployment.resources.limits.cpu",
             "value": "400m"
           },
@@ -86,18 +74,6 @@
           {
             "key": "hydra.hydra.autoMigrate",
             "value": "true"
-          },
-          {
-            "key": "oathkeeper.oathkeeper-maester.deployment.resources.limits.memory",
-            "value": "1Gi"
-          },
-          {
-            "key": "oathkeeper.oathkeeper-maester.deployment.resources.requests.cpu",
-            "value": "50m"
-          },
-          {
-            "key": "oathkeeper.deployment.resources.limits.memory",
-            "value": "512Mi"
           },
           {
             "key": "hydra.deployment.resources.limits.memory",
