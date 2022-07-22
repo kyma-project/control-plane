@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// comma separated list of required fields
 const requiredFields = "additional-components"
 
 type ConfigMapKeysValidator struct{}

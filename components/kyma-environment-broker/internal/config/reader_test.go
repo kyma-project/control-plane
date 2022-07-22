@@ -89,14 +89,14 @@ func TestConfigReaderErrors(t *testing.T) {
 	cfgMap, err := fixConfigMap()
 	require.NoError(t, err)
 
-	mockK8sClient := mockK8sClient{}
+	k8sClient := failingK8sClient{}
 	fakeK8sClient := fake.NewClientBuilder().Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	t.Run("should return error while fetching configmap on List() of K8s client", func(t *testing.T) {
 		// given
-		cfgReader := config.NewConfigMapReader(ctx, mockK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, k8sClient, logger)
 
 		// when
 		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
@@ -196,44 +196,44 @@ func (m *tempConfigMap) toConfigMap() *coreV1.ConfigMap {
 	}
 }
 
-type mockK8sClient struct{}
+type failingK8sClient struct{}
 
-func (m mockK8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+func (c failingK8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+func (c failingK8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+func (c failingK8sClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+func (c failingK8sClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (c failingK8sClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (c failingK8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+func (c failingK8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m mockK8sClient) Status() client.StatusWriter {
+func (c failingK8sClient) Status() client.StatusWriter {
 	panic("not implemented")
 }
 
-func (m mockK8sClient) Scheme() *runtime.Scheme {
+func (c failingK8sClient) Scheme() *runtime.Scheme {
 	panic("not implemented")
 }
 
-func (m mockK8sClient) RESTMapper() meta.RESTMapper {
+func (c failingK8sClient) RESTMapper() meta.RESTMapper {
 	panic("not implemented")
 }
