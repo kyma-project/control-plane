@@ -286,8 +286,7 @@ func main() {
 		kebConfig.NewConfigMapReader(ctx, cli, logs),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
-	// switch for runtime.NewComponentsProvider() when ready
-	componentsProvider := runtime.NewComponentsListProvider(cfg.ManagedRuntimeComponentsYAMLFilePath, cfg.NewAdditionalRuntimeComponentsYAMLFilePath)
+	componentsProvider := runtime.NewComponentsProvider()
 	gardenerClusterConfig, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
 	fatalOnError(err)
 	cfg.Gardener.DNSProviders, err = gardener.ReadDNSProvidersValuesFromYAML(cfg.SkrDnsProvidersValuesYAMLFilePath)
