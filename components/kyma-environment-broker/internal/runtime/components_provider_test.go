@@ -32,21 +32,21 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 		k8sClient := fake.NewClientBuilder().Build()
 		yamlPath := path.Join("testdata", additionalComponentsYaml)
 		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
-		expectedPrerequisiteComponent := runtime.KymaComponent{
+		expectedPrerequisiteComponent := internal.KymaComponent{
 			Name:      "cluster-essentials",
 			Namespace: "kyma-system",
 		}
-		expectedRequiredComponent := runtime.KymaComponent{
+		expectedRequiredComponent := internal.KymaComponent{
 			Name:      "serverless",
 			Namespace: "kyma-system",
 		}
-		expectedAdditionalComponent := runtime.KymaComponent{
+		expectedAdditionalComponent := internal.KymaComponent{
 			Name:      "new-component1",
 			Namespace: "kyma-system",
-			Source: &runtime.ComponentSource{
+			Source: &internal.ComponentSource{
 				URL: "https://local.test/kyma-additional-components/new-component1.tgz"},
 		}
-		unexpectedAdditionalComponent := runtime.KymaComponent{
+		unexpectedAdditionalComponent := internal.KymaComponent{
 			Name:      "test-component1",
 			Namespace: "kyma-system",
 		}
@@ -73,40 +73,40 @@ func TestComponentsProviderSuccessFlow(t *testing.T) {
 		k8sClient := fake.NewClientBuilder().WithRuntimeObjects(fixK8sResources()...).Build()
 		yamlPath := path.Join("testdata", additionalComponentsYaml)
 		componentsProvider := runtime.NewFakeComponentsProvider(ctx, k8sClient, yamlPath)
-		expectedPrerequisiteComponent := runtime.KymaComponent{
+		expectedPrerequisiteComponent := internal.KymaComponent{
 			Name:      "cluster-essentials",
 			Namespace: "kyma-system",
 		}
-		expectedRequiredComponent := runtime.KymaComponent{
+		expectedRequiredComponent := internal.KymaComponent{
 			Name:      "serverless",
 			Namespace: "kyma-system",
 		}
-		expectedAdditionalComponent1 := runtime.KymaComponent{
+		expectedAdditionalComponent1 := internal.KymaComponent{
 			Name:      "test-component1",
 			Namespace: "kyma-system",
 		}
-		expectedAdditionalComponent2 := runtime.KymaComponent{
+		expectedAdditionalComponent2 := internal.KymaComponent{
 			Name:      "test-component2",
 			Namespace: "compass-system",
-			Source: &runtime.ComponentSource{
+			Source: &internal.ComponentSource{
 				URL: "https://test.local/test-component2.tgz"},
 		}
-		unexpectedAdditionalComponent1 := runtime.KymaComponent{
+		unexpectedAdditionalComponent1 := internal.KymaComponent{
 			Name:      "new-component1",
 			Namespace: "kyma-system",
-			Source: &runtime.ComponentSource{
+			Source: &internal.ComponentSource{
 				URL: "https://local.test/kyma-additional-components/new-component1.tgz"},
 		}
-		unexpectedAdditionalComponent2 := runtime.KymaComponent{
+		unexpectedAdditionalComponent2 := internal.KymaComponent{
 			Name:      "test-component3",
 			Namespace: "kyma-system",
-			Source: &runtime.ComponentSource{
+			Source: &internal.ComponentSource{
 				URL: "https://test.local/test-component3.tgz"},
 		}
-		unexpectedAdditionalComponent3 := runtime.KymaComponent{
+		unexpectedAdditionalComponent3 := internal.KymaComponent{
 			Name:      "test-component4",
 			Namespace: "kyma-system",
-			Source: &runtime.ComponentSource{
+			Source: &internal.ComponentSource{
 				URL: "https://test.local/test-component4.tgz"},
 		}
 

@@ -565,3 +565,19 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 	}
 	return copiedList
 }
+
+// KymaComponent represents single Kyma component
+type KymaComponent struct {
+	Name        string           `json:"name"`
+	ReleaseName string           `json:"release"`
+	Namespace   string           `json:"namespace"`
+	Source      *ComponentSource `json:"source,omitempty"`
+}
+
+type ComponentSource struct {
+	URL string `json:"url"`
+}
+
+type ConfigForPlan struct {
+	AdditionalComponents []KymaComponent `json:"additional-components" yaml:"additional-components"`
+}

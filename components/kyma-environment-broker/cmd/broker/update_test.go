@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -1756,10 +1755,10 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
 	// change component input (additional components) and see if it works with update operation
-	suite.componentProvider.decorator["btp-operator"] = runtime.KymaComponent{
+	suite.componentProvider.decorator["btp-operator"] = internal.KymaComponent{
 		Name:      "btp-operator",
 		Namespace: "kyma-system",
-		Source:    &runtime.ComponentSource{URL: "https://btp-operator/updated"},
+		Source:    &internal.ComponentSource{URL: "https://btp-operator/updated"},
 	}
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
 {
