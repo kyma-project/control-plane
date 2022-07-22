@@ -65,7 +65,7 @@ func (s *operations) GetOperationByInstanceID(instanceID string) (*internal.Oper
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
 
-	ret, err := s.toOperation(op, operation.InstanceDetails)
+	ret, err := s.toOperation(op, operation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting DTO to Operation")
 	}
@@ -952,7 +952,7 @@ func (s *operations) toOperationList(ops []dbmodel.OperationDTO) ([]internal.Ope
 			return nil, errors.New("unable to unmarshall provisioning data")
 		}
 
-		o, err := s.toOperation(&op, operation.InstanceDetails)
+		o, err := s.toOperation(&op, operation)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting to upgrade kyma operation")
 		}
