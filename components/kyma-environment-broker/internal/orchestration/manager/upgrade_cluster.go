@@ -62,11 +62,11 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
 			InstanceDetails:        i.InstanceDetails,
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			ID:      id,
-			Runtime: r,
-			DryRun:  o.Parameters.DryRun,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      id,
+				Runtime: r,
+				DryRun:  o.Parameters.DryRun,
+			},
 		},
 	}
 
