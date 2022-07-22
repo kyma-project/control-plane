@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -120,12 +121,18 @@ func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev i
 
 	switch {
 	case stepProcessed.Operation.Type == "provisioning":
-		err := c.OnProvisioningStepProcessed(ctx, ev)
+		provisioningOperation := process.ProvisioningStepProcessed{
+			Operation: internal.ProvisioningOperation{Operation: stepProcessed.Operation},
+		}
+		err := c.OnProvisioningStepProcessed(ctx, provisioningOperation)
 		if err != nil {
 			return err
 		}
 	case stepProcessed.Operation.Type == "deprovisioning":
-		err := c.OnDeprovisioningStepProcessed(ctx, ev)
+		deprovisioningOperation := process.DeprovisioningStepProcessed{
+			Operation: internal.DeprovisioningOperation{Operation: stepProcessed.Operation},
+		}
+		err := c.OnDeprovisioningStepProcessed(ctx, deprovisioningOperation)
 		if err != nil {
 			return err
 		}

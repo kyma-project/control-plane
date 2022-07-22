@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -85,7 +86,10 @@ func (c *OperationDurationCollector) OnOperationSucceeded(ctx context.Context, e
 	}
 
 	if operationSucceeded.Operation.Type == "provisioning" {
-		err := c.OnProvisioningSucceeded(ctx, ev)
+		provisioningOperation := process.ProvisioningSucceeded{
+			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
+		}
+		err := c.OnProvisioningSucceeded(ctx, provisioningOperation)
 		if err != nil {
 			return err
 		}
