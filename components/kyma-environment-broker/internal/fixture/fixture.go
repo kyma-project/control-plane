@@ -323,14 +323,17 @@ func FixDNSProvidersConfig() gardener.DNSProvidersData {
 }
 
 func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
+	disabled := false
 	return internal.RuntimeState{
-		ID:            id,
-		CreatedAt:     time.Now(),
-		RuntimeID:     runtimeID,
-		OperationID:   operationID,
-		KymaConfig:    gqlschema.KymaConfigInput{},
-		ClusterConfig: gqlschema.GardenerConfigInput{},
-		ClusterSetup:  nil,
+		ID:          id,
+		CreatedAt:   time.Now(),
+		RuntimeID:   runtimeID,
+		OperationID: operationID,
+		KymaConfig:  gqlschema.KymaConfigInput{},
+		ClusterConfig: gqlschema.GardenerConfigInput{
+			ShootNetworkingFilterDisabled: &disabled,
+		},
+		ClusterSetup: nil,
 	}
 }
 
