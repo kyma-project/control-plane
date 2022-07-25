@@ -2,9 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -14,13 +21,38 @@ import (
 )
 
 func main() {
+	time.Sleep(20 * time.Second)
+	migrateErr := invokeMigration()
+	if migrateErr != nil {
+		fmt.Printf("while invoking migration: %s", migrateErr)
+	}
+
+	// continue with cleanup
+	database := os.Getenv("DATABASE_EMBEDDED")
+	var err error = nil
+	if database == "0" {
+		err = quitCloudSqlProxy()
+	} else if database == "1" {
+		err = quitIstioSidecar()
+	}
+
+	time.Sleep(5 * time.Second)
+
+	if err != nil || migrateErr != nil {
+		fmt.Printf("error during cleanup: %s", err)
+		fmt.Printf("error during migration: %s", migrateErr)
+		os.Exit(-1)
+	}
+}
+
+func invokeMigration() error {
 	envs := []string{"DB_USER", "DB_HOST", "DB_NAME", "DB_PORT",
 		"DB_PASSWORD", "MIGRATION_PATH", "DIRECTION"}
+
 	for _, env := range envs {
 		_, present := os.LookupEnv(env)
 		if !present {
-			fmt.Printf("ERROR: %s is not set\n", env)
-			os.Exit(1)
+			return errors.New(fmt.Sprintf("ERROR: %s is not set\n", env))
 		}
 	}
 
@@ -31,8 +63,7 @@ func main() {
 	case "down":
 		fmt.Println("Migration DOWN")
 	default:
-		fmt.Println("ERROR: DIRECTION variable accepts only two values: up or down")
-		os.Exit(1)
+		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
 
 	dbName := os.Getenv("DB_NAME")
@@ -64,8 +95,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("# COULD NOT ESTABLISH CONNECTION TO DATABASE #")
-		os.Exit(1)
+		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %s", err)
 	}
 
 	fmt.Println("# STARTING MIGRATION #")
@@ -79,11 +109,15 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 
+	if err != nil {
+		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %s", err)
+	}
+
 	m, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
 		"postgres", driver)
 	if err != nil {
-		fmt.Printf("Error during migration initialization, %s\n", err)
+		return fmt.Errorf("error during migration initialization: %s", err)
 	}
 
 	defer m.Close()
@@ -96,8 +130,64 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("Error during migration, %s\n", err)
+		return fmt.Errorf("during migration: %s", err)
 	}
+
+	return nil
+}
+
+func quitCloudSqlProxy() error {
+	matches, err := filepath.Glob("/proc/*/exe")
+	if err != nil {
+		return fmt.Errorf("while reading cloud_sql_proxy: %s", err)
+	}
+
+	for _, file := range matches {
+		target, _ := os.Readlink(file)
+		if len(target) > 0 && strings.Contains(target, "cloud_sql_proxy") {
+			splitted := filepath.SplitList(file)
+			pid, err := strconv.Atoi(splitted[1])
+			if err == nil {
+				return fmt.Errorf("ehil reading process id: %s", err)
+			}
+
+			proc, err := os.FindProcess(pid)
+			if err == nil {
+				return fmt.Errorf("while reading process by pid: %s", err)
+			}
+
+			err = proc.Kill()
+			if err == nil {
+				return fmt.Errorf("while killing cloud_sql_proxy: %s", err)
+			}
+
+			break
+		}
+	}
+	return nil
+}
+
+func quitIstioSidecar() error {
+	fmt.Println("# QUITTING ISTIO SIDECAR #")
+	resp, err := http.PostForm("http://127.0.0.1:15020/quitquitquit", url.Values{})
+
+	if err != nil {
+		return fmt.Errorf("while sending post to quit Istio sidecar: %s", err)
+	}
+
+	var res map[string]interface{}
+
+	err = json.NewDecoder(resp.Body).Decode(&res)
+
+	if err != nil {
+		return fmt.Errorf("while reading request response: %s", err)
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		return fmt.Errorf("while receiving response: %s", err)
+	}
+
+	return nil
 }
 
 type Logger struct {
