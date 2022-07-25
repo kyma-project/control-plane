@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -73,6 +75,27 @@ func (c *OperationDurationCollector) OnDeprovisioningStepProcessed(ctx context.C
 		minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
 		c.deprovisioningHistogram.
 			WithLabelValues(op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
+	}
+
+	return nil
+}
+
+func (c *OperationDurationCollector) OnOperationSucceeded(ctx context.Context, ev interface{}) error {
+	operationSucceeded, ok := ev.(process.OperationSucceeded)
+	if !ok {
+		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
+	}
+
+	if operationSucceeded.Operation.Type == "provisioning" {
+		provisioningOperation := process.ProvisioningSucceeded{
+			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
+		}
+		err := c.OnProvisioningSucceeded(ctx, provisioningOperation)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("expected OperationStep of type provisioning but got %+v", operationSucceeded.Operation.Type)
 	}
 
 	return nil
