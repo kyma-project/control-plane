@@ -42,7 +42,6 @@ global:
     - busola-migrator
     - cleaner
     - connectivity-proxy
-    - istio-configuration
     - istio
     - ory
     - rafter
