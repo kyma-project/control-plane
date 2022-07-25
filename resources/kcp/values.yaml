@@ -11,13 +11,13 @@ global:
       version: "PR-1851"
     provisioner:
       dir:
-      version: "PR-1837"
+      version: "PR-1882"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1861"
+      version: "PR-1874"
     tests:
       provisioner:
         dir:

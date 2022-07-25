@@ -85,10 +85,10 @@ type BrokerSuiteTest struct {
 
 type componentProviderDecorated struct {
 	componentProvider input.ComponentListProvider
-	decorator         map[string]kebRuntime.KymaComponent
+	decorator         map[string]internal.KymaComponent
 }
 
-func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]kebRuntime.KymaComponent, error) {
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error) {
 	all, err := s.componentProvider.AllComponents(kymaVersion, planName)
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
@@ -127,7 +127,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 	decoratedComponentListProvider := componentProviderDecorated{
 		componentProvider: componentListProvider,
-		decorator:         make(map[string]kebRuntime.KymaComponent),
+		decorator:         make(map[string]internal.KymaComponent),
 	}
 
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider, input.Config{

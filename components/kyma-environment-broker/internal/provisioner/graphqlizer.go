@@ -156,7 +156,7 @@ func (g *Graphqlizer) DNSConfigInputToGraphQL(in gqlschema.DNSConfigInput) (stri
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
         {{- if .EnableNatGateway}}
-		EnableNatGateway: {{.EnableNatGateway}},
+		enableNatGateway: {{.EnableNatGateway}},
         {{- end }}	
 		vnetCidr: "{{.VnetCidr}}",
 		{{- if .Zones }}

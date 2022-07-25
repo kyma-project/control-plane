@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -203,4 +205,25 @@ func (c *OperationResultCollector) mapResult(state domain.LastOperationState) fl
 	}
 
 	return resultValue
+}
+
+func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev interface{}) error {
+	operationSucceeded, ok := ev.(process.OperationSucceeded)
+	if !ok {
+		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
+	}
+
+	if operationSucceeded.Operation.Type == "provisioning" {
+		provisioningOperation := process.ProvisioningSucceeded{
+			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
+		}
+		err := c.OnProvisioningSucceeded(ctx, provisioningOperation)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("expected OperationStep of type provisioning but got %+v", operationSucceeded.Operation.Type)
+	}
+
+	return nil
 }

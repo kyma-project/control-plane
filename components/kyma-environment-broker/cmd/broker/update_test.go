@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -72,6 +71,7 @@ func TestUpdate(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -82,6 +82,7 @@ func TestUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -240,9 +241,11 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			OidcConfig: defaultOIDCConfig(),
+			OidcConfig:                    defaultOIDCConfig(),
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -300,6 +303,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -310,6 +314,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -696,6 +701,7 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -706,6 +712,7 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -765,6 +772,7 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -775,6 +783,7 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -838,6 +847,7 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -848,6 +858,7 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "new-username-claim",
 				UsernamePrefix: "->",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -904,6 +915,7 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -914,6 +926,7 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -971,6 +984,7 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -981,6 +995,7 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1042,6 +1057,7 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1052,6 +1068,7 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1110,6 +1127,7 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1120,6 +1138,7 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1184,6 +1203,7 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1194,6 +1214,7 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1253,6 +1274,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1263,6 +1285,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins1,
 	})
@@ -1294,6 +1317,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	upgradeOperationID = suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
 
+	disabled = false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1304,6 +1328,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "->",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins2,
 	})
@@ -1368,6 +1393,7 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 	min, max, surge, unav := 15, 25, 10, 7
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1378,10 +1404,11 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMin:  &min,
-			AutoScalerMax:  &max,
-			MaxSurge:       &surge,
-			MaxUnavailable: &unav,
+			AutoScalerMin:                 &min,
+			AutoScalerMax:                 &max,
+			MaxSurge:                      &surge,
+			MaxUnavailable:                &unav,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1501,8 +1528,9 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	upgradeOperationID := suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
-	max := 15
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	max := 15
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1513,7 +1541,8 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMax: &max,
+			AutoScalerMax:                 &max,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1538,6 +1567,7 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	upgradeOperationID = suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
 	min := 14
+	disabled = false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1548,7 +1578,8 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMin: &min,
+			AutoScalerMin:                 &min,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1756,10 +1787,10 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
 	// change component input (additional components) and see if it works with update operation
-	suite.componentProvider.decorator["btp-operator"] = runtime.KymaComponent{
+	suite.componentProvider.decorator["btp-operator"] = internal.KymaComponent{
 		Name:      "btp-operator",
 		Namespace: "kyma-system",
-		Source:    &runtime.ComponentSource{URL: "https://btp-operator/updated"},
+		Source:    &internal.ComponentSource{URL: "https://btp-operator/updated"},
 	}
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
 {
@@ -2022,7 +2053,8 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	instance := suite.GetInstance(id)
 
 	// then
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	disabled := false
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
 	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
 
 	// when
@@ -2052,7 +2084,7 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	instance2 := suite.GetInstance(id)
 	// license_type should be stored in the instance table for ERS context and future upgrades
 	// as well as sent to provisioner because the migration has not been triggered
-	disabled := true
+	disabled = true
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
@@ -2093,8 +2125,9 @@ func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
 	instance := suite.GetInstance(id)
 
 	// then
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
-	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
+	disabled := false
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, &disabled)
 	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
 
 	// when
@@ -2131,7 +2164,7 @@ func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
 	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
 	instance3 := suite.GetInstance(id)
 	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
-	disabled := true
+	disabled = true
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
 }
 

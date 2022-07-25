@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -484,7 +485,7 @@ func (s *Instance) GetERSContextStats() (internal.ERSContextStats, error) {
 		LicenseType: make(map[string]int),
 	}
 	for _, e := range entries {
-		result.LicenseType[e.LicenseType] += e.Total
+		result.LicenseType[strings.Trim(e.LicenseType.String, `"`)] += e.Total
 	}
 	return result, nil
 }

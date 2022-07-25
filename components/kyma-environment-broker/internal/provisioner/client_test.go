@@ -644,6 +644,7 @@ func (tqr testQueryResolver) RuntimeOperationStatus(_ context.Context, id string
 }
 
 func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
+	disabled := false
 	return schema.ProvisionRuntimeInput{
 		RuntimeInput: &schema.RuntimeInput{
 			Name:        "test",
@@ -666,6 +667,7 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 						},
 					},
 				},
+				ShootNetworkingFilterDisabled: &disabled,
 			},
 		},
 		KymaConfig: &schema.KymaConfigInput{
@@ -679,6 +681,7 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 }
 
 func fixProvisionRuntimeInputWithoutDnsConfig() schema.ProvisionRuntimeInput {
+	disabled := false
 	return schema.ProvisionRuntimeInput{
 		RuntimeInput: &schema.RuntimeInput{
 			Name:        "test",
@@ -687,9 +690,10 @@ func fixProvisionRuntimeInputWithoutDnsConfig() schema.ProvisionRuntimeInput {
 		},
 		ClusterConfig: &schema.ClusterConfigInput{
 			GardenerConfig: &schema.GardenerConfigInput{
-				ProviderSpecificConfig: &schema.ProviderSpecificInput{},
-				Name:                   "abcd",
-				VolumeSizeGb:           ptr.Integer(50),
+				ProviderSpecificConfig:        &schema.ProviderSpecificInput{},
+				Name:                          "abcd",
+				VolumeSizeGb:                  ptr.Integer(50),
+				ShootNetworkingFilterDisabled: &disabled,
 			},
 		},
 		KymaConfig: &schema.KymaConfigInput{
@@ -721,15 +725,17 @@ func fixUpgradeRuntimeInput(kymaVersion string) schema.UpgradeRuntimeInput {
 }
 
 func fixUpgradeShootInput() schema.UpgradeShootInput {
+	disabled := false
 	return schema.UpgradeShootInput{
 		GardenerConfig: &schema.GardenerUpgradeInput{
-			KubernetesVersion:   &testKubernetesVersion,
-			MachineImage:        &testMachineImage,
-			MachineImageVersion: &testMachineImageVersion,
-			AutoScalerMin:       &testAutoScalerMin,
-			AutoScalerMax:       &testAutoScalerMax,
-			MaxSurge:            &testMaxSurge,
-			MaxUnavailable:      &testMaxUnavailable,
+			KubernetesVersion:             &testKubernetesVersion,
+			MachineImage:                  &testMachineImage,
+			MachineImageVersion:           &testMachineImageVersion,
+			AutoScalerMin:                 &testAutoScalerMin,
+			AutoScalerMax:                 &testAutoScalerMax,
+			MaxSurge:                      &testMaxSurge,
+			MaxUnavailable:                &testMaxUnavailable,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 	}
 }
