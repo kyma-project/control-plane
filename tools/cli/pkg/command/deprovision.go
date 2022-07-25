@@ -34,9 +34,9 @@ func NewDeprovisionCmd() *cobra.Command {
 		Long: `Deprovisions a Kyma Runtime.
 The Runtime can be specified by one of the following:
   - Global account / Runtime ID pair with the --account and --runtime-id options
-  - Shoot cluster name with the --shoot option.
+  - Shoot cluster name with the --shoot option.`,
+		Example: `  kcp deprovision -c c-178e034                            Deprovisions the SKR using a Shoot cluster name.`,
 
-  kcp deprovision -c c-178e034                            Deprovisions the SKR using a Shoot cluster name.`,
 		PreRunE: func(_ *cobra.Command, _ []string) error { return cmd.Validate() },
 		RunE:    func(_ *cobra.Command, _ []string) error { return cmd.Run() },
 	}
