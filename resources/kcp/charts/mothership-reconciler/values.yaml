@@ -30,7 +30,7 @@ db:
   connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
 
 preComponents:
-  - [cluster-essentials, istio-configuration, istio, certificates]
+  - [cluster-essentials, istio, certificates]
 
 options:
   verbose: false
