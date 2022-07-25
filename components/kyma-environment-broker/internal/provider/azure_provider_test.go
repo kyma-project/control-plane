@@ -107,6 +107,15 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		//then
 		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
 	})
+
+	// when
+	t.Run("use default with NAT gateway", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		//then
+		assert.Equal(t, false, *input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+	})
 }
 
 func TestAzurInput_ApplyParameters(t *testing.T) {

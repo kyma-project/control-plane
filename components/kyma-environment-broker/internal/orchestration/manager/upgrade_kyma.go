@@ -68,11 +68,11 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
 			InstanceDetails:        details,
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			ID:      id,
-			Runtime: r,
-			DryRun:  o.Parameters.DryRun,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      id,
+				Runtime: r,
+				DryRun:  o.Parameters.DryRun,
+			},
 		},
 	}
 	if o.Parameters.Kyma.Version != "" {

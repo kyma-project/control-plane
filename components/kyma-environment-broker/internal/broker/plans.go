@@ -57,6 +57,12 @@ const (
 	Asia   TrialCloudRegion = "asia"
 )
 
+var validRegionsForTrial = map[TrialCloudRegion]struct{}{
+	Europe: {},
+	Us:     {},
+	Asia:   {},
+}
+
 type JSONSchemaValidator interface {
 	ValidateString(json string) (jsonschema.ValidationResult, error)
 }

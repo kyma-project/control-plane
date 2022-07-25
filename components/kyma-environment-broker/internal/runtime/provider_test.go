@@ -75,7 +75,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				tc.given.managedRuntimeComponentsYAMLPath,
 				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expAdditionalComponents := make([]runtime.KymaComponent, 0)
+			expAdditionalComponents := make([]internal.KymaComponent, 0)
 			if tc.given.kymaVersion.MajorVersion > 1 {
 				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
 			} else {
@@ -167,7 +167,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	}
 }
 
-func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []runtime.KymaComponent) {
+func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []internal.KymaComponent) {
 	t.Helper()
 
 	assert.NotPanics(t, func() {
@@ -178,14 +178,14 @@ func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedC
 	})
 }
 
-func readManagedComponentsFromFile(t *testing.T, path string) []runtime.KymaComponent {
+func readManagedComponentsFromFile(t *testing.T, path string) []internal.KymaComponent {
 	t.Helper()
 
 	yamlFile, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 
 	var managedList struct {
-		Components []runtime.KymaComponent `json:"components"`
+		Components []internal.KymaComponent `json:"components"`
 	}
 	err = yaml.Unmarshal(yamlFile, &managedList)
 	require.NoError(t, err)

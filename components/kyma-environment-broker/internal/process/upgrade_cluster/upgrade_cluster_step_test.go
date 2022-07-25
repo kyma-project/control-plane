@@ -58,6 +58,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	assert.NotNil(t, provider)
 
 	provisionerClient := &provisionerAutomock.Client{}
+	disabled := false
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
@@ -70,6 +71,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),
 			EnableMachineImageVersionAutoUpdate: ptr.Bool(fixAutoUpdateMachineImageVersion),
+			ShootNetworkingFilterDisabled:       &disabled,
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,

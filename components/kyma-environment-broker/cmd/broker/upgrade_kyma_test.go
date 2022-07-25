@@ -97,6 +97,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
+	disabled := false
 	suite.AssertShootUpgrade(upgradeKymaOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String("1.18"),
@@ -112,7 +113,8 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(false),
 			EnableMachineImageVersionAutoUpdate: ptr.Bool(false),
 
-			OidcConfig: defaultOIDCConfig(),
+			OidcConfig:                    defaultOIDCConfig(),
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})

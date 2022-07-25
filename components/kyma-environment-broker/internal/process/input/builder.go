@@ -50,7 +50,7 @@ type (
 	}
 
 	ComponentListProvider interface {
-		AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]runtime.KymaComponent, error)
+		AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error)
 	}
 )
 
@@ -305,7 +305,7 @@ func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVe
 	}, nil
 }
 
-func mapToGQLComponentConfigurationInput(kymaComponents []runtime.KymaComponent) internal.ComponentConfigurationInputList {
+func mapToGQLComponentConfigurationInput(kymaComponents []internal.KymaComponent) internal.ComponentConfigurationInputList {
 	var input internal.ComponentConfigurationInputList
 	for _, component := range kymaComponents {
 		var sourceURL *string

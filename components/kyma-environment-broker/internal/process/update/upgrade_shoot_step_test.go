@@ -55,6 +55,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 	assert.Zero(t, d)
 	assert.True(t, cli.IsShootUpgraded("runtime-id"))
 	req, _ := cli.LastShootUpgrade("runtime-id")
+	disabled := false
 	assert.Equal(t, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -65,6 +66,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"test-user-id"},
 	}, req)

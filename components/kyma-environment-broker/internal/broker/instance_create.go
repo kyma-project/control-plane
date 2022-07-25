@@ -265,6 +265,13 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
 	}
 
+	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {
+		_, valid := validRegionsForTrial[TrialCloudRegion(*parameters.Region)]
+		if !valid {
+			return ersContext, parameters, errors.Errorf("Invalid region specified in request for trial.")
+		}
+	}
+
 	if IsTrialPlan(details.PlanID) && b.config.OnlySingleTrialPerGA {
 		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
 		if err != nil {

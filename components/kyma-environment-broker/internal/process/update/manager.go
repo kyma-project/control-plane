@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -206,7 +205,7 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 }
 
 func getComponent(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (*runtime.KymaComponent, error) {
+	kymaVersion internal.RuntimeVersionData, planName string) (*internal.KymaComponent, error) {
 	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
 	if err != nil {
 		return nil, err

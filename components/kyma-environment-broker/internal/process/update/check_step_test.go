@@ -74,8 +74,8 @@ func fixOperationRuntimeStatus(id string) internal.UpdatingOperation {
 			UpdatedAt:              time.Now(),
 			ProvisionerOperationID: statusProvisionerOperationID,
 			State:                  domain.InProgress,
+			UpdatingParameters:     internal.UpdatingParametersDTO{},
+			InputCreator:           nil,
 		},
-		UpdatingParameters: internal.UpdatingParametersDTO{},
-		InputCreator:       nil,
 	}
 }

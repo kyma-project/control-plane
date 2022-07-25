@@ -33,8 +33,8 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 				ProvisioningParameters: internal.ProvisioningParameters{
 					PlanID:     "ca6e5357-707f-4565-bbbd-b3ab732597c6",
 					Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion}},
+				InputCreator: inputCreatorMock,
 			},
-			InputCreator: inputCreatorMock,
 		}
 
 		rcvMock := &automock.RuntimeVersionConfiguratorForProvisioning{}
@@ -70,10 +70,10 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		operation := internal.ProvisioningOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: internal.ProvisioningParameters{PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"},
-			},
-			InputCreator: inputCreatorMock,
-			RuntimeVersion: internal.RuntimeVersionData{
-				Version: kymaVersion,
+				InputCreator:           inputCreatorMock,
+				RuntimeVersion: internal.RuntimeVersionData{
+					Version: kymaVersion,
+				},
 			},
 		}
 

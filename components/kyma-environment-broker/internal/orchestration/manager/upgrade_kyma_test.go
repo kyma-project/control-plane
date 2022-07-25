@@ -194,15 +194,15 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				State:                  orchestration.Succeeded,
 				Description:            "operation created",
 				ProvisioningParameters: internal.ProvisioningParameters{},
-			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				Runtime: orchestration.Runtime{
-					RuntimeID:    id,
-					SubAccountID: "sub",
+				RuntimeOperation: orchestration.RuntimeOperation{
+					Runtime: orchestration.Runtime{
+						RuntimeID:    id,
+						SubAccountID: "sub",
+					},
+					DryRun: false,
 				},
-				DryRun: false,
+				InputCreator: nil,
 			},
-			InputCreator: nil,
 		}
 		err := store.Operations().InsertUpgradeKymaOperation(upgradeOperation)
 		require.NoError(t, err)
@@ -324,13 +324,13 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				ID:              opId,
 				OrchestrationID: id,
 				State:           orchestration.Retrying,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID:      opId,
+					Runtime: orchestration.Runtime{},
+					DryRun:  false,
+				},
+				InputCreator: nil,
 			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID:      opId,
-				Runtime: orchestration.Runtime{},
-				DryRun:  false,
-			},
-			InputCreator: nil,
 		})
 		require.NoError(t, err)
 
@@ -398,13 +398,13 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				ID:              opId,
 				OrchestrationID: id,
 				State:           orchestration.Retrying,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID:      opId,
+					Runtime: orchestration.Runtime{},
+					DryRun:  false,
+				},
+				InputCreator: nil,
 			},
-			RuntimeOperation: orchestration.RuntimeOperation{
-				ID:      opId,
-				Runtime: orchestration.Runtime{},
-				DryRun:  false,
-			},
-			InputCreator: nil,
 		})
 		require.NoError(t, err)
 

@@ -41,7 +41,7 @@ func TestHappyPath(t *testing.T) {
 	assert.True(t, op.IsStageFinished("stage-2"))
 }
 
-func TestHappyPathWiothStepCondition(t *testing.T) {
+func TestHappyPathWithStepCondition(t *testing.T) {
 	// given
 	const opID = "op-0001234"
 	operation := FixProvisionOperation("op-0001234")

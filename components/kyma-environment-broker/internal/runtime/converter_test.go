@@ -165,8 +165,8 @@ func fixSuspensionOperation(state domain.LastOperationState, createdAt time.Time
 			CreatedAt: createdAt,
 			ID:        "s-id",
 			State:     state,
+			Temporary: true,
 		},
-		Temporary: true,
 	}}
 }
 

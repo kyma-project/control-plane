@@ -15,6 +15,7 @@ type Instances interface {
 	Update(instance internal.Instance) (*internal.Instance, error)
 	Delete(instanceID string) error
 	GetInstanceStats() (internal.InstanceStats, error)
+	GetERSContextStats() (internal.ERSContextStats, error)
 	GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error)
 	List(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 
@@ -38,6 +39,12 @@ type Operations interface {
 	GetOperationsForIDs(operationIDList []string) ([]internal.Operation, error)
 	GetOperationStatsForOrchestration(orchestrationID string) (map[string]int, error)
 	ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
+
+	InsertOperation(operation internal.Operation) error
+	GetOperationByInstanceID(instanceID string) (*internal.Operation, error)
+	UpdateOperation(operation internal.Operation) (*internal.Operation, error)
+	ListOperationsByInstanceID(instanceID string) ([]internal.Operation, error)
+	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
 }
 
 type Provisioning interface {
