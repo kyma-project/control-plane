@@ -8,7 +8,7 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "effb5338"
+      version: "PR-1862"
     provisioner:
       dir:
       version: "PR-1837"
@@ -156,5 +156,4 @@ global:
     authentication: true
 pairing-adapter:
   enabled: false
-migratorJobs:
-  enabled: true
+  
