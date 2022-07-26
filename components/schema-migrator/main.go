@@ -28,11 +28,11 @@ func main() {
 	}
 
 	// continue with cleanup
-	database := os.Getenv("DATABASE_EMBEDDED")
+	_, embeded := os.LookupEnv("DATABASE_EMBEDDED")
 	var err error = nil
-	if database == "0" {
+	if !embeded {
 		err = quitCloudSqlProxy()
-	} else if database == "1" {
+	} else if embeded {
 		err = quitIstioSidecar()
 	}
 
@@ -52,7 +52,7 @@ func invokeMigration() error {
 	for _, env := range envs {
 		_, present := os.LookupEnv(env)
 		if !present {
-			return errors.New(fmt.Sprintf("ERROR: %s is not set\n", env))
+			return fmt.Errorf("ERROR: %s is not set", env)
 		}
 	}
 
