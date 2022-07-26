@@ -42,7 +42,7 @@ spec:
                   command: 
                     - /bin/program
                   env:
-                      {{if eq .Values.global.database.embedded.enabled false}}
+                      {{if eq .Values.global.database.embedded.enabled true}}
                       - name: DATABASE_EMBEDDED
                         value: "true"
                       {{end}}

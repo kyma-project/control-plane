@@ -137,6 +137,7 @@ func invokeMigration() error {
 }
 
 func quitCloudSqlProxy() error {
+	fmt.Println("# QUITTING CLOUD SQL PROXY #")
 	matches, err := filepath.Glob("/proc/*/exe")
 	if err != nil {
 		return fmt.Errorf("while reading cloud_sql_proxy: %s", err)
