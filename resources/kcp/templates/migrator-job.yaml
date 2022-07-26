@@ -23,6 +23,7 @@ spec:
             {{end}}
         spec:
             restartPolicy: Never
+            shareProcessNamespace: true
             containers:
                 {{if eq .Values.global.database.embedded.enabled false}}
                 - name: cloudsql-proxy
