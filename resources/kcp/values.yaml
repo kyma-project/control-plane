@@ -156,4 +156,6 @@ global:
     authentication: true
 pairing-adapter:
   enabled: false
+migratorJobs:
+  enabled: true
   
