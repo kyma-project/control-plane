@@ -149,7 +149,7 @@ func quitCloudSqlProxy() error {
 			splitted := filepath.SplitList(file)
 			pid, err := strconv.Atoi(splitted[1])
 			if err == nil {
-				return fmt.Errorf("ehil reading process id: %s", err)
+				return fmt.Errorf("while reading process id: %s", err)
 			}
 
 			proc, err := os.FindProcess(pid)
@@ -176,13 +176,6 @@ func quitIstioSidecar() error {
 		return fmt.Errorf("while sending post to quit Istio sidecar: %s", err)
 	}
 
-	var res map[string]interface{}
-
-	err = json.NewDecoder(resp.Body).Decode(&res)
-
-	if err != nil {
-		return fmt.Errorf("while reading request response: %s", err)
-	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
 		return fmt.Errorf("while receiving response: %s", err)
