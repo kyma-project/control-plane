@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
@@ -133,24 +132,7 @@ func TestAzurInput_ApplyParameters(t *testing.T) {
 		})
 
 		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 1)
-		assert.Equal(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones[0].Cidr, "10.250.0.0/19")
-	})
-
-	// when
-	t.Run("use zonesCount parameter", func(t *testing.T) {
-		// given
-		input := svc.Defaults()
-
-		// when
-		svc.ApplyParameters(input, internal.ProvisioningParameters{
-			Parameters: internal.ProvisioningParametersDTO{
-				ZonesCount: ptr.Integer(3),
-			},
-		})
-
-		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 3)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, DefaultAzureZonesCount)
 		assert.ElementsMatch(t, []int{1, 2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
 		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
 			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)

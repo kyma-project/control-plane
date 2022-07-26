@@ -86,9 +86,7 @@ func TestGcpInput_ApplyParameters(t *testing.T) {
 
 		// when
 		svc.ApplyParameters(input, internal.ProvisioningParameters{
-			Parameters: internal.ProvisioningParametersDTO{
-				ZonesCount: ptr.Integer(3),
-			},
+			Parameters: internal.ProvisioningParametersDTO{},
 		})
 
 		// then
@@ -105,13 +103,12 @@ func TestGcpInput_ApplyParameters(t *testing.T) {
 		// when
 		svc.ApplyParameters(input, internal.ProvisioningParameters{
 			Parameters: internal.ProvisioningParametersDTO{
-				Region:     ptr.String("us-central1"),
-				ZonesCount: ptr.Integer(2),
+				Region: ptr.String("us-central1"),
 			},
 		})
 
 		// then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 2)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 3)
 		assert.Subset(t, []string{"us-central1-a", "us-central1-b", "us-central1-c"}, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones)
 	})
 }

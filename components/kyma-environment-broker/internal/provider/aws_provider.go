@@ -15,6 +15,7 @@ import (
 const (
 	DefaultAWSRegion      = "eu-central-1"
 	DefaultAWSTrialRegion = "eu-west-1"
+	DefaultAWSZonesCount  = 3
 )
 
 var europeAWS = "eu-west-1"
@@ -50,15 +51,8 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
-					VpcCidr: "10.250.0.0/16",
-					AwsZones: []*gqlschema.AWSZoneInput{
-						{
-							Name:         ZoneForAWSRegion(DefaultAWSRegion),
-							PublicCidr:   "10.250.32.0/20",
-							InternalCidr: "10.250.48.0/20",
-							WorkerCidr:   "10.250.0.0/19",
-						},
-					},
+					VpcCidr:  "10.250.0.0/16",
+					AwsZones: generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, DefaultAWSZonesCount)),
 				},
 			},
 		},
@@ -148,20 +142,13 @@ func generateMultipleAWSZones(zoneNames []string) []*gqlschema.AWSZoneInput {
 }
 
 func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	zonesCount := 1
-	if pp.Parameters.ZonesCount != nil {
-		zonesCount = *pp.Parameters.ZonesCount
-	}
 	switch {
 	// explicit zones list is provided
 	case len(pp.Parameters.Zones) > 0:
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(pp.Parameters.Zones)
 	// region is provided, with or without zonesCount
 	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, zonesCount))
-	// region is not provided, zonesCount is provided
-	case zonesCount > 1:
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount))
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, DefaultAWSZonesCount))
 	}
 }
 

@@ -20,7 +20,6 @@ type ProvisioningProperties struct {
 	Name        NameType `json:"name"`
 	Region      *Type    `json:"region,omitempty"`
 	MachineType *Type    `json:"machineType,omitempty"`
-	ZonesCount  *Type    `json:"zonesCount,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -123,13 +122,6 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 		MachineType: &Type{
 			Type: "string",
 			Enum: ToInterfaceSlice(machineTypes),
-		},
-		ZonesCount: &Type{
-			Type:        "integer",
-			Minimum:     1,
-			Maximum:     3,
-			Default:     1,
-			Description: "Specifies the number of availability zones to use",
 		},
 	}
 

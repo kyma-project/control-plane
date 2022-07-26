@@ -99,8 +99,6 @@ func OpenStackRegions() []string {
 
 func OpenStackSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypes, OpenStackRegions(), update)
-	// Specifying multiple zones for openstack runtimes are not supported.
-	properties.ZonesCount = nil
 	properties.AutoScalerMax.Maximum = 40
 	if !update {
 		properties.AutoScalerMax.Default = 8
@@ -122,7 +120,6 @@ func AzureSchema(machineTypes []string, additionalParams, update bool) *map[stri
 
 func AzureLiteSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypes, AzureRegions(), update)
-	properties.ZonesCount = nil
 	properties.AutoScalerMax.Maximum = 40
 
 	if !update {

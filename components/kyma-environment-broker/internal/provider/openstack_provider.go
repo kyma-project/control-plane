@@ -45,12 +45,8 @@ func (p *OpenStackInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *OpenStackInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" && pp.Parameters.Zones == nil {
+	if pp.Parameters.Region != nil && *pp.Parameters.Region != "" {
 		input.GardenerConfig.ProviderSpecificConfig.OpenStackConfig.Zones = ZonesForOpenStack(*pp.Parameters.Region)
-	}
-
-	if len(pp.Parameters.Zones) > 0 {
-		input.GardenerConfig.ProviderSpecificConfig.OpenStackConfig.Zones = pp.Parameters.Zones
 	}
 }
 

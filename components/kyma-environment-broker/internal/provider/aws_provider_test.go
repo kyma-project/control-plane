@@ -80,7 +80,12 @@ func TestAWSInput_ApplyParameters(t *testing.T) {
 
 		//then
 		assert.Equal(t, DefaultAWSRegion, input.GardenerConfig.Region)
-		assert.Equal(t, 1, len(input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones))
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSZonesCount)
+
+		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
+			regionFromZone := zone.Name[:len(zone.Name)-1]
+			assert.Equal(t, DefaultAWSRegion, regionFromZone)
+		}
 	})
 
 	// when
@@ -97,53 +102,7 @@ func TestAWSInput_ApplyParameters(t *testing.T) {
 		})
 
 		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 1)
-
-		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
-			regionFromZone := zone.Name[:len(zone.Name)-1]
-			assert.Equal(t, inputRegion, regionFromZone)
-		}
-	})
-
-	// when
-	t.Run("use zonesCount input parameters (default region)", func(t *testing.T) {
-		// given
-		input := svc.Defaults()
-		zonesCount := 3
-
-		// when
-		svc.ApplyParameters(input, internal.ProvisioningParameters{
-			Parameters: internal.ProvisioningParametersDTO{
-				ZonesCount: ptr.Integer(zonesCount),
-			},
-		})
-
-		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, zonesCount)
-
-		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
-			regionFromZone := zone.Name[:len(zone.Name)-1]
-			assert.Equal(t, DefaultAWSRegion, regionFromZone)
-		}
-	})
-
-	// when
-	t.Run("use region and zonesCount input parameters", func(t *testing.T) {
-		// given
-		input := svc.Defaults()
-		inputRegion := "us-east-1"
-		zonesCount := 3
-
-		// when
-		svc.ApplyParameters(input, internal.ProvisioningParameters{
-			Parameters: internal.ProvisioningParametersDTO{
-				ZonesCount: ptr.Integer(zonesCount),
-				Region:     ptr.String(inputRegion),
-			},
-		})
-
-		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, zonesCount)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSZonesCount)
 
 		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			regionFromZone := zone.Name[:len(zone.Name)-1]

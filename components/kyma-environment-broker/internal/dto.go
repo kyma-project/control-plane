@@ -170,7 +170,6 @@ type ProvisioningParametersDTO struct {
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
 	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
-	ZonesCount                  *int     `json:"zonesCount"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
 	OverridesVersion            string   `json:"overridesVersion"`

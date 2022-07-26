@@ -6,7 +6,6 @@
     "machineType",
     "autoScalerMin",
     "autoScalerMax",
-    "zonesCount",
     "oidc",
     "administrators"
   ],
@@ -104,13 +103,6 @@
         "southeastasia"
       ],
       "type": "string"
-    },
-    "zonesCount": {
-      "default": 1,
-      "description": "Specifies the number of availability zones to use",
-      "maximum": 3,
-      "minimum": 1,
-      "type": "integer"
     }
   },
   "required": [

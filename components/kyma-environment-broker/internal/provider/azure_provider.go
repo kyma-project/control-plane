@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	DefaultAzureRegion = "eastus"
+	DefaultAzureRegion     = "eastus"
+	DefaultAzureZonesCount = 3
 )
 
 var europeAzure = "westeurope"
@@ -51,13 +52,8 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr: "10.250.0.0/16",
-					AzureZones: []*gqlschema.AzureZoneInput{
-						{
-							Name: generateRandomAzureZone(),
-							Cidr: "10.250.0.0/19",
-						},
-					},
+					VnetCidr:         "10.250.0.0/16",
+					AzureZones:       generateMultipleAzureZones(generateRandomAzureZones(DefaultAzureZonesCount)),
 					EnableNatGateway: ptr.Bool(true),
 				},
 			},
@@ -66,9 +62,8 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	switch {
 	// explicit zones list is provided
-	case len(pp.Parameters.Zones) > 0:
+	if len(pp.Parameters.Zones) > 0 {
 		zones := []int{}
 		for _, inputZone := range pp.Parameters.Zones {
 			zone, err := strconv.Atoi(inputZone)
@@ -78,10 +73,6 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 			zones = append(zones, zone)
 		}
 		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateMultipleAzureZones(zones)
-
-	// zonesCount is provided
-	case pp.Parameters.ZonesCount != nil && *pp.Parameters.ZonesCount > 1:
-		input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones = generateMultipleAzureZones(generateRandomAzureZones(*pp.Parameters.ZonesCount))
 	}
 }
 

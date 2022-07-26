@@ -321,19 +321,9 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production Azure": {
-			planID: broker.AzurePlanID,
-
-			expectedMinimalNumberOfNodes:        3,
-			expectedMaximumNumberOfNodes:        20,
-			expectedMachineType:                 "Standard_D4_v3",
-			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "azure",
-			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
-		},
-		"Production Azure - provided zonesCount": {
 			planID:     broker.AzurePlanID,
 			zonesCount: ptr.Integer(3),
+			region:     "westeurope",
 
 			expectedMinimalNumberOfNodes:        3,
 			expectedMaximumNumberOfNodes:        20,
@@ -344,17 +334,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production AWS": {
-			planID: broker.AWSPlanID,
-
-			expectedMinimalNumberOfNodes:        3,
-			expectedMaximumNumberOfNodes:        20,
-			expectedMachineType:                 "m5.xlarge",
-			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "aws",
-			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
-		},
-		"Production AWS - provided zonesCount": {
 			planID:     broker.AWSPlanID,
 			zonesCount: ptr.Integer(3),
 			region:     "us-east-1",
@@ -368,17 +347,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
 		"Production GCP": {
-			planID: broker.GCPPlanID,
-
-			expectedMinimalNumberOfNodes:        3,
-			expectedMaximumNumberOfNodes:        20,
-			expectedMachineType:                 "n2-standard-4",
-			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "gcp",
-			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.GCP,
-		},
-		"Production GCP - provided zonesCount": {
 			planID:     broker.GCPPlanID,
 			zonesCount: ptr.Integer(3),
 			region:     "us-central1",
@@ -399,7 +367,6 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			// when
 			provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
 				PlanID:           tc.planID,
-				ZonesCount:       tc.zonesCount,
 				PlatformRegion:   tc.platformRegion,
 				PlatformProvider: tc.platformProvider,
 				Region:           tc.region,

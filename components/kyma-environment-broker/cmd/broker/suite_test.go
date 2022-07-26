@@ -207,7 +207,6 @@ type RuntimeOptions struct {
 	PlatformRegion   string
 	Region           string
 	PlanID           string
-	ZonesCount       *int
 	Provider         internal.CloudProvider
 	KymaVersion      string
 	OverridesVersion string
@@ -255,10 +254,6 @@ func (o *RuntimeOptions) ProvidePlanID() string {
 	} else {
 		return o.PlanID
 	}
-}
-
-func (o *RuntimeOptions) ProvideZonesCount() *int {
-	return o.ZonesCount
 }
 
 func (o *RuntimeOptions) ProvideOIDC() *internal.OIDCConfigDTO {
@@ -646,7 +641,6 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 		PlatformProvider: options.PlatformProvider,
 		Parameters: internal.ProvisioningParametersDTO{
 			Region:                options.ProvideRegion(),
-			ZonesCount:            options.ProvideZonesCount(),
 			KymaVersion:           options.KymaVersion,
 			OverridesVersion:      options.OverridesVersion,
 			OIDC:                  options.ProvideOIDC(),
