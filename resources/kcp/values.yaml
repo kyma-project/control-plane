@@ -158,4 +158,3 @@ pairing-adapter:
   enabled: false
 migratorJobs:
   enabled: true
-  
