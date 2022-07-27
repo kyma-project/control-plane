@@ -38,18 +38,15 @@ type InitialisationStep struct {
 	operationManager       *process.UpdateOperationManager
 	operationStorage       storage.Operations
 	instanceStorage        storage.Instances
-	runtimeStatesStorage   storage.RuntimeStates
 	runtimeVerConfigurator RuntimeVersionConfiguratorForUpdating
 	inputBuilder           input.CreatorForPlan
 }
 
-func NewInitialisationStep(is storage.Instances, os storage.Operations, rs storage.RuntimeStates,
-	rvc RuntimeVersionConfiguratorForUpdating, b input.CreatorForPlan) *InitialisationStep {
+func NewInitialisationStep(is storage.Instances, os storage.Operations, rvc RuntimeVersionConfiguratorForUpdating, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:       process.NewUpdateOperationManager(os),
 		operationStorage:       os,
 		instanceStorage:        is,
-		runtimeStatesStorage:   rs,
 		runtimeVerConfigurator: rvc,
 		inputBuilder:           b,
 	}
@@ -90,7 +87,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 
 		// suspension cleared runtimeID
 		if operation.RuntimeID == "" {
-			err = s.getRuntimeIdFromProvisioningOp(&operation, log)
+			err = s.getRuntimeIdFromProvisioningOp(&operation)
 			if err != nil {
 				return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
 			}
@@ -127,7 +124,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 	return s.initializeUpgradeShootRequest(operation, log)
 }
 
-func (s *InitialisationStep) getRuntimeIdFromProvisioningOp(operation *internal.UpdatingOperation, log logrus.FieldLogger) error {
+func (s *InitialisationStep) getRuntimeIdFromProvisioningOp(operation *internal.UpdatingOperation) error {
 	provOp, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
 		return errors.New("cannot get last provisioning operation for runtime id")

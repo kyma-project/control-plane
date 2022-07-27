@@ -92,7 +92,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			builder.On("CreateUpgradeShootInput",
 				mock.Anything, mock.AnythingOfType("internal.RuntimeVersionData")).
 				Return(&fixture.SimpleInputCreator{}, nil)
-			step := NewInitialisationStep(is, os, rs, rvc, builder)
+			step := NewInitialisationStep(is, os, rvc, builder)
 			updatingOperation := fixture.FixUpdatingOperation("up-id", "iid")
 			updatingOperation.State = orchestration.Pending
 			os.InsertUpdatingOperation(updatingOperation)
