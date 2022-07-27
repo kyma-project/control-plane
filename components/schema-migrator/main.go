@@ -176,7 +176,8 @@ func quitIstioSidecar() error {
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		return fmt.Errorf("while receiving response: %s", err)
+		fmt.Printf("Quiting istio, response status is: %d", resp.StatusCode)
+		return nil
 	}
 
 	return nil
