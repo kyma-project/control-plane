@@ -378,8 +378,6 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	input.GardenerConfig.EnableKubernetesVersionAutoUpdate = &f.config.AutoUpdateKubernetesVersion
 	input.GardenerConfig.EnableMachineImageVersionAutoUpdate = &f.config.AutoUpdateMachineImageVersion
 
-	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway = provider.Defaults().GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway
-
 	return input
 }
 
