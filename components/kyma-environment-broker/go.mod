@@ -128,4 +128,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.24.3
+replace (
+	github.com/gardener/gardener => github.com/gardener/gardener v1.44.6
+	github.com/vektah/gqlparser/v2 => github.com/vektah/gqlparser/v2 v2.4.7
+	google.golang.org/protobuf => google.golang.org/protobuf v1.28.1
+	k8s.io/client-go => k8s.io/client-go v0.24.3
+	k8s.io/klog/v2 => k8s.io/klog/v2 v2.70.1
+)
