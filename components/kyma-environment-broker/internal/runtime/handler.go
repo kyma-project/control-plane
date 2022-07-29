@@ -1,9 +1,10 @@
 package runtime
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"net/http"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"

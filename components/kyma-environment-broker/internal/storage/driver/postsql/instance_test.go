@@ -3,11 +3,12 @@ package postsql_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"math/rand"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
