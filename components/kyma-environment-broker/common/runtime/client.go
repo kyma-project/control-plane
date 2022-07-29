@@ -110,6 +110,9 @@ func setQuery(url *url.URL, params ListParameters) {
 	if params.ClusterConfig {
 		query.Add(ClusterConfigParam, "true")
 	}
+	if params.Expired {
+		query.Add(ExpiredParam, "true")
+	}
 	setParamList(query, GlobalAccountIDParam, params.GlobalAccountIDs)
 	setParamList(query, SubAccountIDParam, params.SubAccountIDs)
 	setParamList(query, InstanceIDParam, params.InstanceIDs)

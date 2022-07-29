@@ -36,6 +36,7 @@ func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Pair("provider", instance.Provider).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
 		Pair("deleted_at", time.Time{}).
+		Pair("expired_at", instance.ExpiredAt).
 		Pair("version", instance.Version).
 		Exec()
 
@@ -78,6 +79,7 @@ func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Set("provider", instance.Provider).
 		Set("updated_at", time.Now()).
 		Set("version", instance.Version+1).
+		Set("expired_at", instance.ExpiredAt).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to update record to Instance table: %s", err)

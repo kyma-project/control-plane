@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"net/http"
 	"time"
 
@@ -328,6 +329,9 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Shoots = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
+	if v, exists := query[pkg.ExpiredParam]; exists && v[0] == "true" {
+		filter.Expired = ptr.Bool(true)
+	}
 	states := query[pkg.StateParam]
 	if len(states) == 0 {
 		// By default if no state filters are specified, suspended/deprovisioned runtimes are still excluded.

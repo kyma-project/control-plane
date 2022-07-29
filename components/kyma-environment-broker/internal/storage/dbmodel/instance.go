@@ -32,6 +32,7 @@ type InstanceFilter struct {
 	Plans                        []string
 	Shoots                       []string
 	States                       []InstanceState
+	Expired                      *bool
 }
 
 type InstanceDTO struct {
@@ -53,6 +54,7 @@ type InstanceDTO struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+	ExpiredAt *time.Time
 
 	Version int
 }
