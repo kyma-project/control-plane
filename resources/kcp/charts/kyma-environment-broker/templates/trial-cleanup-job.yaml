@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trial-cleanup-job
+spec:
+  jobTemplate:
+    metadata:
+      name: trial-cleanup-job
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: “false”
+        spec:
+          containers:
+            - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
+              name: trial-cleanup-job
+              env:
+                - name: APP_GARDENER_PROJECT
+                  value: {{ .Values.gardener.project }}
+                - name: APP_GARDENER_KUBECONFIG_PATH
+                  value: {{ .Values.gardener.kubeconfigPath }}
+              volumeMounts:
+                - mountPath: /gardener/kubeconfig
+                  name: gardener-kubeconfig
+                  readOnly: true
+              resources: {}
+          restartPolicy: OnFailure
+          volumes:
+            - name: gardener-kubeconfig
+              secret:
+                secretName: {{ .Values.gardener.secretName }}
+  schedule: "{{ .Values.trialCleanup.schedule }}"
+status: {}
