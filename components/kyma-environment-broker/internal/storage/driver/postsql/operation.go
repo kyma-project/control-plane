@@ -40,6 +40,39 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 	return s.insert(dto)
 }
 
+// InsertOperation insert new Operation to storage
+func (s *operations) InsertOperation(operation internal.Operation) error {
+	dto, err := s.operationToDTO(&operation)
+
+	if err != nil {
+		return errors.Wrapf(err, "while inserting operation (id: %s)", operation.ID)
+	}
+
+	return s.insert(dto)
+}
+
+// GetOperationByInstanceID fetches the latest Operation by given instanceID, returns error if not found
+func (s *operations) GetOperationByInstanceID(instanceID string) (*internal.Operation, error) {
+
+	op, err := s.getByInstanceID(instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	var operation internal.Operation
+	err = json.Unmarshal([]byte(op.Data), &operation)
+	if err != nil {
+		return nil, errors.New("unable to unmarshall provisioning data")
+	}
+
+	ret, err := s.toOperation(op, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return &ret, nil
+}
+
 // GetProvisioningOperationByID fetches the ProvisioningOperation by given ID, returns error if not found
 func (s *operations) GetProvisioningOperationByID(operationID string) (*internal.ProvisioningOperation, error) {
 	operation, err := s.getByID(operationID)
@@ -70,6 +103,21 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 	return ret, nil
 }
 
+// UpdateOperation updates Operation, fails if not exists or optimistic locking failure occurs.
+func (s *operations) UpdateOperation(op internal.Operation) (*internal.Operation, error) {
+	op.UpdatedAt = time.Now()
+	dto, err := s.operationToDTO(&op)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Operation to DTO")
+	}
+
+	lastErr := s.update(dto)
+	op.Version = op.Version + 1
+
+	return &op, lastErr
+}
+
 // UpdateProvisioningOperation updates ProvisioningOperation, fails if not exists or optimistic locking failure occurs.
 func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperation) (*internal.ProvisioningOperation, error) {
 	op.UpdatedAt = time.Now()
@@ -87,12 +135,27 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 
 func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) ([]internal.ProvisioningOperation, error) {
 
-	operations, err := s.listOperations(instanceID, internal.OperationTypeProvision)
+	operations, err := s.listOperationsByInstanceIdAndType(instanceID, internal.OperationTypeProvision)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading operations list")
 	}
 
 	ret, err := s.toProvisioningOperationList(operations)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, nil
+}
+
+func (s *operations) ListOperationsByInstanceID(instanceID string) ([]internal.Operation, error) {
+
+	operations, err := s.listOperationsByInstanceId(instanceID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading operations list")
+	}
+
+	ret, err := s.toOperationList(operations)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting DTO to Operation")
 	}
@@ -154,9 +217,9 @@ func (s *operations) UpdateDeprovisioningOperation(operation internal.Deprovisio
 	return &operation, lastErr
 }
 
-// ListDeprovisioningoOperationsByInstanceID
+// ListDeprovisioningOperationsByInstanceID
 func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error) {
-	operations, err := s.listOperations(instanceID, internal.OperationTypeDeprovision)
+	operations, err := s.listOperationsByInstanceIdAndType(instanceID, internal.OperationTypeDeprovision)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +304,7 @@ func (s *operations) ListUpgradeKymaOperations() ([]internal.UpgradeKymaOperatio
 }
 
 func (s *operations) ListUpgradeKymaOperationsByInstanceID(instanceID string) ([]internal.UpgradeKymaOperation, error) {
-	operations, err := s.listOperations(instanceID, internal.OperationTypeUpgradeKyma)
+	operations, err := s.listOperationsByInstanceIdAndType(instanceID, internal.OperationTypeUpgradeKyma)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +330,7 @@ func (s *operations) UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	return &operation, err
 }
 
-// GetLastOperation returns Operation for given instance ID which is not in 'pending' state. Returns an error if the operation does not exists.
+// GetLastOperation returns Operation for given instance ID which is not in 'pending' state. Returns an error if the operation does not exist.
 func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -292,14 +355,14 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 	if err != nil {
 		return nil, errors.New("unable to unmarshall operation data")
 	}
-	op, err = s.toOperation(&operation, op.InstanceDetails)
+	op, err = s.toOperation(&operation, op)
 	if err != nil {
 		return nil, err
 	}
 	return &op, nil
 }
 
-// GetOperationByID returns Operation with given ID. Returns an error if the operation does not exists.
+// GetOperationByID returns Operation with given ID. Returns an error if the operation does not exist.
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	op := internal.Operation{}
 	dto, err := s.getByID(operationID)
@@ -307,14 +370,14 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 		return nil, err
 	}
 
+	op, err = s.toOperation(dto, op)
+	if err != nil {
+		return nil, err
+	}
+
 	err = json.Unmarshal([]byte(dto.Data), &op)
 	if err != nil {
 		return nil, errors.New("unable to unmarshall operation data")
-	}
-
-	op, err = s.toOperation(dto, op.InstanceDetails)
-	if err != nil {
-		return nil, err
 	}
 	return &op, nil
 }
@@ -443,6 +506,36 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
 	ret, err := s.toUpgradeKymaOperationList(operations)
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
+	}
+
+	return ret, count, totalCount, nil
+}
+
+func (s *operations) ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {
+	session := s.NewReadSession()
+	var (
+		operations        = make([]dbmodel.OperationDTO, 0)
+		lastErr           error
+		count, totalCount int
+	)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("Operations for orchestration ID %s not exist", orchestrationID)
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
+	}
+	ret, err := s.toOperationList(operations)
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while converting DTO to Operation")
 	}
@@ -665,10 +758,10 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 	}, nil
 }
 
-func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails internal.InstanceDetails) (internal.Operation, error) {
+func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.Operation) (internal.Operation, error) {
 	pp := internal.ProvisioningParameters{}
-	if op.ProvisioningParameters.Valid {
-		err := json.Unmarshal([]byte(op.ProvisioningParameters.String), &pp)
+	if dto.ProvisioningParameters.Valid {
+		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &pp)
 		if err != nil {
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
@@ -679,37 +772,37 @@ func (s *operations) toOperation(op *dbmodel.OperationDTO, instanceDetails inter
 	}
 
 	stages := make(map[string]struct{})
-	for _, s := range strings.Split(storage.SQLNullStringToString(op.FinishedStages), ",") {
+	for _, s := range strings.Split(storage.SQLNullStringToString(dto.FinishedStages), ",") {
 		stages[s] = struct{}{}
 	}
-	return internal.Operation{
-		ID:                     op.ID,
-		CreatedAt:              op.CreatedAt,
-		UpdatedAt:              op.UpdatedAt,
-		Type:                   op.Type,
-		ProvisionerOperationID: op.TargetOperationID,
-		State:                  domain.LastOperationState(op.State),
-		InstanceID:             op.InstanceID,
-		Description:            op.Description,
-		Version:                op.Version,
-		OrchestrationID:        storage.SQLNullStringToString(op.OrchestrationID),
-		ProvisioningParameters: pp,
-		InstanceDetails:        instanceDetails,
-		FinishedStages:         stages,
-	}, nil
+
+	existingOp.ID = dto.ID
+	existingOp.CreatedAt = dto.CreatedAt
+	existingOp.UpdatedAt = dto.UpdatedAt
+	existingOp.Type = dto.Type
+	existingOp.ProvisionerOperationID = dto.TargetOperationID
+	existingOp.State = domain.LastOperationState(dto.State)
+	existingOp.InstanceID = dto.InstanceID
+	existingOp.Description = dto.Description
+	existingOp.Version = dto.Version
+	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
+	existingOp.ProvisioningParameters = pp
+	existingOp.FinishedStages = stages
+
+	return existingOp, nil
 }
 
 func (s *operations) toOperations(op []dbmodel.OperationDTO) ([]internal.Operation, error) {
 	operations := make([]internal.Operation, 0)
 	for _, o := range op {
 		operation := internal.Operation{}
-		err := json.Unmarshal([]byte(o.Data), &operation)
-		if err != nil {
-			return nil, errors.New("unable to unmarshall provisioning data")
-		}
-		operation, err = s.toOperation(&o, operation.InstanceDetails)
+		operation, err := s.toOperation(&o, operation)
 		if err != nil {
 			return nil, err
+		}
+		err = json.Unmarshal([]byte(o.Data), &operation)
+		if err != nil {
+			return nil, errors.New("unable to unmarshall operation data")
 		}
 		operations = append(operations, operation)
 	}
@@ -726,7 +819,7 @@ func (s *operations) toProvisioningOperation(op *dbmodel.OperationDTO) (*interna
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -761,6 +854,21 @@ func (s *operations) toDeprovisioningOperationList(ops []dbmodel.OperationDTO) (
 	return result, nil
 }
 
+func (s *operations) operationToDTO(op *internal.Operation) (dbmodel.OperationDTO, error) {
+	serialized, err := json.Marshal(op)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while serializing operation data %v", op)
+	}
+
+	ret, err := s.operationToDB(*op)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrapf(err, "while converting to operationDB %v", op)
+	}
+
+	ret.Data = string(serialized)
+	return ret, nil
+}
+
 func (s *operations) provisioningOperationToDTO(op *internal.ProvisioningOperation) (dbmodel.OperationDTO, error) {
 	serialized, err := json.Marshal(op)
 	if err != nil {
@@ -786,7 +894,7 @@ func (s *operations) toDeprovisioningOperation(op *dbmodel.OperationDTO) (*inter
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +927,7 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -829,6 +937,28 @@ func (s *operations) toUpgradeKymaOperation(op *dbmodel.OperationDTO) (*internal
 	}
 
 	return &operation, nil
+}
+
+func (s *operations) toOperationList(ops []dbmodel.OperationDTO) ([]internal.Operation, error) {
+	result := make([]internal.Operation, 0)
+
+	for _, op := range ops {
+
+		var operation internal.Operation
+		var err error
+		err = json.Unmarshal([]byte(op.Data), &operation)
+		if err != nil {
+			return nil, errors.New("unable to unmarshall provisioning data")
+		}
+
+		o, err := s.toOperation(&op, operation)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting to upgrade kyma operation")
+		}
+		result = append(result, o)
+	}
+
+	return result, nil
 }
 
 func (s *operations) toUpgradeKymaOperationList(ops []dbmodel.OperationDTO) ([]internal.UpgradeKymaOperation, error) {
@@ -871,7 +1001,7 @@ func (s *operations) toUpgradeClusterOperation(op *dbmodel.OperationDTO) (*inter
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -939,7 +1069,7 @@ func (s *operations) toUpdateOperation(op *dbmodel.OperationDTO) (*internal.Upda
 	if err != nil {
 		return nil, errors.New("unable to unmarshall provisioning data")
 	}
-	operation.Operation, err = s.toOperation(op, operation.InstanceDetails)
+	operation.Operation, err = s.toOperation(op, operation.Operation)
 	if err != nil {
 		return nil, err
 	}
@@ -1000,6 +1130,27 @@ func (s *operations) insert(dto dbmodel.OperationDTO) error {
 	})
 	return lastErr
 }
+
+func (s *operations) getByInstanceID(id string) (*dbmodel.OperationDTO, error) {
+	session := s.NewReadSession()
+	operation := dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operation, lastErr = session.GetOperationByInstanceID(id)
+		if lastErr != nil {
+			if dberr.IsNotFound(lastErr) {
+				lastErr = dberr.NotFound("operation does not exist")
+				return false, lastErr
+			}
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+
+	return &operation, err
+}
+
 func (s *operations) getByTypeAndInstanceID(id string, opType internal.OperationType) (*dbmodel.OperationDTO, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -1043,7 +1194,7 @@ func (s *operations) update(operation dbmodel.OperationDTO) error {
 	return lastErr
 }
 
-func (s *operations) listOperations(instanceId string, operationType internal.OperationType) ([]dbmodel.OperationDTO, error) {
+func (s *operations) listOperationsByInstanceIdAndType(instanceId string, operationType internal.OperationType) ([]dbmodel.OperationDTO, error) {
 	session := s.NewReadSession()
 	operations := []dbmodel.OperationDTO{}
 	var lastErr dberr.Error
@@ -1069,6 +1220,25 @@ func (s *operations) listOperationsByType(operationType internal.OperationType) 
 
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		operations, lastErr = session.ListOperationsByType(operationType)
+		if lastErr != nil {
+			log.Errorf("while reading operation from the storage: %v", lastErr)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, lastErr
+	}
+	return operations, lastErr
+}
+
+func (s *operations) listOperationsByInstanceId(instanceId string) ([]dbmodel.OperationDTO, error) {
+	session := s.NewReadSession()
+	operations := []dbmodel.OperationDTO{}
+	var lastErr dberr.Error
+
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		operations, lastErr = session.GetOperationsByInstanceID(instanceId)
 		if lastErr != nil {
 			log.Errorf("while reading operation from the storage: %v", lastErr)
 			return false, nil

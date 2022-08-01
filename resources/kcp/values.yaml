@@ -2,8 +2,8 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.1-alpine-3cba814e
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:b5001a84"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:b5001a84"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:6885ff35"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:6885ff35"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
@@ -11,13 +11,13 @@ global:
       version: "PR-1851"
     provisioner:
       dir:
-      version: "PR-1837"
+      version: "PR-1882"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1864"
+      version: "PR-1874"
     tests:
       provisioner:
         dir:
@@ -42,7 +42,6 @@ global:
     - busola-migrator
     - cleaner
     - connectivity-proxy
-    - istio-configuration
     - istio
     - ory
     - rafter

@@ -118,6 +118,20 @@ func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, 
 	return operation, nil
 }
 
+func (r readSession) GetOperationByInstanceID(instanceId string) (dbmodel.OperationDTO, dberr.Error) {
+	condition := dbr.Eq("instance_id", instanceId)
+	operation, err := r.getOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return dbmodel.OperationDTO{}, dberr.NotFound("for instance_id: %s %s", instanceId, err)
+		default:
+			return dbmodel.OperationDTO{}, err
+		}
+	}
+	return operation, nil
+}
+
 func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.Error) {
 	condition := dbr.Eq("id", opID)
 	operation, err := r.getOperation(condition)
@@ -274,6 +288,23 @@ func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType intern
 		From(OperationTableName).
 		Where(idCondition).
 		Where(typeCondition).
+		OrderDesc(CreatedAtField).
+		Load(&operations)
+
+	if err != nil {
+		return []dbmodel.OperationDTO{}, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
+func (r readSession) GetOperationsByInstanceID(inID string) ([]dbmodel.OperationDTO, dberr.Error) {
+	idCondition := dbr.Eq("instance_id", inID)
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(idCondition).
 		OrderDesc(CreatedAtField).
 		Load(&operations)
 
@@ -563,7 +594,7 @@ func (r readSession) GetERSContextStats() ([]dbmodel.InstanceERSContextStatsEntr
 	var rows []dbmodel.InstanceERSContextStatsEntry
 	// group existing instances by license_Type from the last operation that is not pending or canceled
 	_, err := r.session.SelectBySql(`
-SELECT license_type, count(1)
+SELECT license_type, count(1) as total
 FROM (
     SELECT DISTINCT ON (instances.instance_id) instances.instance_id, operations.id, state, type, (operations.provisioning_parameters->'ers_context'->'license_type')::VARCHAR AS license_type
     FROM operations

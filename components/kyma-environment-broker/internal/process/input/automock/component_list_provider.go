@@ -6,8 +6,6 @@ import (
 	internal "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	mock "github.com/stretchr/testify/mock"
 
-	runtime "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
-
 	testing "testing"
 )
 
@@ -17,15 +15,15 @@ type ComponentListProvider struct {
 }
 
 // AllComponents provides a mock function with given fields: kymaVersion, planName
-func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]runtime.KymaComponent, error) {
+func (_m *ComponentListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error) {
 	ret := _m.Called(kymaVersion, planName)
 
-	var r0 []runtime.KymaComponent
-	if rf, ok := ret.Get(0).(func(internal.RuntimeVersionData, string) []runtime.KymaComponent); ok {
+	var r0 []internal.KymaComponent
+	if rf, ok := ret.Get(0).(func(internal.RuntimeVersionData, string) []internal.KymaComponent); ok {
 		r0 = rf(kymaVersion, planName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]runtime.KymaComponent)
+			r0 = ret.Get(0).([]internal.KymaComponent)
 		}
 	}
 

@@ -190,7 +190,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 		},
 	}, nil)
 
-	kymaComponentList := []runtime.KymaComponent{
+	kymaComponentList := []internal.KymaComponent{
 		{
 			Name:      "to-remove-component",
 			Namespace: "kyma-system",

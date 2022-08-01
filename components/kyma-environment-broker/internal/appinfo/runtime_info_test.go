@@ -280,8 +280,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc1,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -323,8 +323,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance2.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc2,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -404,8 +404,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Failed,
 				Description: suspensionOpDesc1,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -419,8 +419,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc2,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 

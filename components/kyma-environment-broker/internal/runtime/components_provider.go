@@ -28,24 +28,12 @@ const (
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 
-type ComponentSource struct {
-	URL string `json:"url"`
-}
-
-// KymaComponent represents single Kyma component
-type KymaComponent struct {
-	Name        string           `json:"name"`
-	ReleaseName string           `json:"release"`
-	Namespace   string           `json:"namespace"`
-	Source      *ComponentSource `json:"source,omitempty"`
-}
-
 type RequiredComponentsProvider interface {
-	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error)
+	RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]internal.KymaComponent, error)
 }
 
 type AdditionalComponentsProvider interface {
-	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error)
+	AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]internal.KymaComponent, error)
 }
 
 type defaultRequiredComponentsProvider struct {
@@ -81,7 +69,7 @@ func NewComponentsProvider(ctx context.Context, k8sClient client.Client,
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // ConfigMaps and merge them together
-func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]KymaComponent,
+func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent,
 	error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -102,14 +90,14 @@ func (p *ComponentsProvider) AllComponents(kymaVersion internal.RuntimeVersionDa
 
 }
 
-func (p *defaultRequiredComponentsProvider) RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]KymaComponent, error) {
+func (p *defaultRequiredComponentsProvider) RequiredComponents(kymaVersion internal.RuntimeVersionData) ([]internal.KymaComponent, error) {
 	if kymaVersion.MajorVersion >= 2 {
 		return p.getComponentsFromComponentsYaml(kymaVersion.Version)
 	}
 	return nil, errors.New("unsupported Kyma version")
 }
 
-func (p *defaultRequiredComponentsProvider) getComponentsFromComponentsYaml(version string) ([]KymaComponent, error) {
+func (p *defaultRequiredComponentsProvider) getComponentsFromComponentsYaml(version string) ([]internal.KymaComponent, error) {
 	yamlURL := p.getComponentsYamlURL(version)
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
@@ -135,9 +123,9 @@ func (p *defaultRequiredComponentsProvider) getComponentsFromComponentsYaml(vers
 	}
 
 	type kymaComponents struct {
-		DefaultNamespace string          `yaml:"defaultNamespace"`
-		Prerequisites    []KymaComponent `yaml:"prerequisites"`
-		Components       []KymaComponent `yaml:"components"`
+		DefaultNamespace string                   `yaml:"defaultNamespace"`
+		Prerequisites    []internal.KymaComponent `yaml:"prerequisites"`
+		Components       []internal.KymaComponent `yaml:"components"`
 	}
 
 	decoder := yaml.NewDecoder(resp.Body)
@@ -147,7 +135,7 @@ func (p *defaultRequiredComponentsProvider) getComponentsFromComponentsYaml(vers
 		return nil, fmt.Errorf("while decoding response body: %w", err)
 	}
 
-	requiredComponents := make([]KymaComponent, 0)
+	requiredComponents := make([]internal.KymaComponent, 0)
 	requiredComponents = append(requiredComponents, kymaCmps.Prerequisites...)
 	requiredComponents = append(requiredComponents, kymaCmps.Components...)
 
@@ -204,7 +192,7 @@ func (p *defaultRequiredComponentsProvider) checkStatusCode(resp *http.Response)
 	}
 }
 
-func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion internal.RuntimeVersionData, plan string) ([]internal.KymaComponent, error) {
 	if kymaVersion.MajorVersion >= 2 {
 		defaults, err := p.fetchDefaultAdditionalComponents()
 		if err != nil {
@@ -227,7 +215,7 @@ func (p *defaultAdditionalComponentsProvider) AdditionalComponents(kymaVersion i
 
 }
 
-func (p *defaultAdditionalComponentsProvider) fetchDefaultAdditionalComponents() ([]KymaComponent, error) {
+func (p *defaultAdditionalComponentsProvider) fetchDefaultAdditionalComponents() ([]internal.KymaComponent, error) {
 	yamlContents, err := p.readYaml(p.defaultAdditionalComponentsYamlPath)
 	if err != nil {
 		return nil, err
@@ -235,7 +223,7 @@ func (p *defaultAdditionalComponentsProvider) fetchDefaultAdditionalComponents()
 	return p.getComponentsFromYaml(yamlContents)
 }
 
-func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenVersionAndPlan(kymaVersion internal.RuntimeVersionData, plan string) ([]KymaComponent, error) {
+func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenVersionAndPlan(kymaVersion internal.RuntimeVersionData, plan string) ([]internal.KymaComponent, error) {
 	if plan == "" {
 		return nil, nil
 	}
@@ -251,7 +239,7 @@ func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenV
 		return nil, nil
 	}
 
-	additionalComponents := make([]KymaComponent, 0)
+	additionalComponents := make([]internal.KymaComponent, 0)
 	for _, cm := range cfgMaps.Items {
 		additionalComponent, err := p.buildKymaComponentFromConfigMapData(cm.Data)
 		if err != nil {
@@ -263,7 +251,8 @@ func (p *defaultAdditionalComponentsProvider) fetchAdditionalComponentsForGivenV
 	return additionalComponents, nil
 }
 
-func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapData(data map[string]string) (KymaComponent, error) {
+func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapData(data map[string]string) (
+	internal.KymaComponent, error) {
 	dataForJSONEncoding := make(map[string]string, len(data))
 	for k, v := range data {
 		keySplit := strings.Split(k, ".")
@@ -272,7 +261,7 @@ func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapDat
 
 	encoded, err := json.Marshal(dataForJSONEncoding)
 	if err != nil {
-		return KymaComponent{}, fmt.Errorf("while marshalling data from ConfigMap to JSON: %w", err)
+		return internal.KymaComponent{}, fmt.Errorf("while marshalling data from ConfigMap to JSON: %w", err)
 	}
 
 	type tempComponent struct {
@@ -284,19 +273,19 @@ func (p *defaultAdditionalComponentsProvider) buildKymaComponentFromConfigMapDat
 	var buffer tempComponent
 	err = json.Unmarshal(encoded, &buffer)
 	if err != nil {
-		return KymaComponent{}, fmt.Errorf("while unmarshalling data from JSON to KymaComponent: %w", err)
+		return internal.KymaComponent{}, fmt.Errorf("while unmarshalling data from JSON to KymaComponent: %w", err)
 	}
 
-	return KymaComponent{
+	return internal.KymaComponent{
 		Name:      buffer.Name,
 		Namespace: buffer.Namespace,
 		Source:    p.provideComponentSourceIfExists(buffer.Source),
 	}, err
 }
 
-func (p *defaultAdditionalComponentsProvider) provideComponentSourceIfExists(componentSource string) *ComponentSource {
+func (p *defaultAdditionalComponentsProvider) provideComponentSourceIfExists(componentSource string) *internal.ComponentSource {
 	if componentSource != "" {
-		return &ComponentSource{URL: componentSource}
+		return &internal.ComponentSource{URL: componentSource}
 	}
 	return nil
 }
@@ -309,9 +298,9 @@ func (p *defaultAdditionalComponentsProvider) readYaml(yamlFilePath string) ([]b
 	return yamlContents, nil
 }
 
-func (p *defaultAdditionalComponentsProvider) getComponentsFromYaml(yamlContents []byte) ([]KymaComponent, error) {
+func (p *defaultAdditionalComponentsProvider) getComponentsFromYaml(yamlContents []byte) ([]internal.KymaComponent, error) {
 	var components struct {
-		Components []KymaComponent `json:"components"`
+		Components []internal.KymaComponent `json:"components"`
 	}
 
 	err := yaml.Unmarshal(yamlContents, &components)

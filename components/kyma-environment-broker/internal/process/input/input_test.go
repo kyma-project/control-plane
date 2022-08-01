@@ -35,7 +35,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
-			Return([]runtime.KymaComponent{
+			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
 				{Name: "dex"},
@@ -76,7 +76,7 @@ func TestShouldEnableComponents(t *testing.T) {
 		}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
-			Return([]runtime.KymaComponent{
+			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
 				{Name: "dex"},
@@ -118,7 +118,7 @@ func TestShouldDisableComponents(t *testing.T) {
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
-			Return([]runtime.KymaComponent{
+			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
 				{Name: components.Backup},
@@ -151,7 +151,7 @@ func TestShouldDisableComponents(t *testing.T) {
 		optionalComponentsDisablers := runtime.ComponentsDisablers{}
 		componentsProvider := &automock.ComponentListProvider{}
 		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
-			Return([]runtime.KymaComponent{
+			Return([]internal.KymaComponent{
 				{Name: components.Kiali},
 				{Name: components.Tracing},
 				{Name: components.Backup},
@@ -185,7 +185,7 @@ func TestDisabledComponentsForPlanNotExist(t *testing.T) {
 	optionalComponentsDisablers := runtime.ComponentsDisablers{}
 	componentsProvider := &automock.ComponentListProvider{}
 	componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).
-		Return([]runtime.KymaComponent{
+		Return([]internal.KymaComponent{
 			{Name: components.Kiali},
 			{Name: components.Tracing},
 			{Name: components.Backup},
@@ -841,13 +841,13 @@ func TestCreateClusterConfiguration_Overrides(t *testing.T) {
 		// given
 		id := uuid.New().String()
 
-		componentList := []runtime.KymaComponent{
+		componentList := []internal.KymaComponent{
 			{Name: "dex", Namespace: "kyma-system"},
 			{Name: "ory", Namespace: "kyma-system"},
 			{
 				Name:      "custom",
 				Namespace: "kyma-system",
-				Source:    &runtime.ComponentSource{URL: "http://source.url"},
+				Source:    &internal.ComponentSource{URL: "http://source.url"},
 			},
 		}
 
@@ -1221,15 +1221,15 @@ func findForReconciler(in []reconcilerApi.Component, name string) (reconcilerApi
 	return reconcilerApi.Component{}, false
 }
 
-func fixKymaComponentList() []runtime.KymaComponent {
-	return []runtime.KymaComponent{
+func fixKymaComponentList() []internal.KymaComponent {
+	return []internal.KymaComponent{
 		{Name: "dex", Namespace: "kyma-system"},
 		{Name: "ory", Namespace: "kyma-system"},
 		{Name: "keb", Namespace: "kyma-system"},
 	}
 }
 
-func dummyOptionalComponentServiceMock(inputComponentList []runtime.KymaComponent) *automock.OptionalComponentService {
+func dummyOptionalComponentServiceMock(inputComponentList []internal.KymaComponent) *automock.OptionalComponentService {
 	mappedComponentList := mapToGQLComponentConfigurationInput(inputComponentList)
 
 	optComponentsSvc := &automock.OptionalComponentService{}

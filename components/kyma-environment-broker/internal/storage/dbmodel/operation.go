@@ -45,6 +45,6 @@ type InstanceByGlobalAccountIDStatEntry struct {
 }
 
 type InstanceERSContextStatsEntry struct {
-	LicenseType string
+	LicenseType sql.NullString
 	Total       int
 }

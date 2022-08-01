@@ -1,23 +1,22 @@
-package update
+package process
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
-	"time"
 
-	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+
+	"time"
+
 	"github.com/sirupsen/logrus"
 )
 
-type Manager struct {
+type StagedManager struct {
 	log              logrus.FieldLogger
 	operationStorage storage.Operations
 	publisher        event.Publisher
@@ -32,10 +31,10 @@ type Manager struct {
 
 type Step interface {
 	Name() string
-	Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error)
+	Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error)
 }
 
-type StepCondition func(operation internal.UpdatingOperation) bool
+type StepCondition func(operation internal.Operation) bool
 
 type StepWithCondition struct {
 	Step
@@ -54,8 +53,8 @@ func (s *stage) AddStep(step Step, cnd StepCondition) {
 	})
 }
 
-func NewManager(storage storage.Operations, pub event.Publisher, operationTimeout time.Duration, logger logrus.FieldLogger) *Manager {
-	return &Manager{
+func NewStagedManager(storage storage.Operations, pub event.Publisher, operationTimeout time.Duration, logger logrus.FieldLogger) *StagedManager {
+	return &StagedManager{
 		log:              logger,
 		operationStorage: storage,
 		publisher:        pub,
@@ -66,28 +65,28 @@ func NewManager(storage storage.Operations, pub event.Publisher, operationTimeou
 
 // SpeedUp changes speedFactor parameter to reduce the sleep time if a step needs a retry.
 // This method should only be used for testing purposes
-func (m *Manager) SpeedUp(speedFactor int64) {
+func (m *StagedManager) SpeedUp(speedFactor int64) {
 	m.speedFactor = speedFactor
 }
 
-func (m *Manager) DefineStages(names []string) {
+func (m *StagedManager) DefineStages(names []string) {
 	m.stages = make([]*stage, len(names))
 	for i, n := range names {
 		m.stages[i] = &stage{name: n, steps: []StepWithCondition{}}
 	}
 }
 
-func (m *Manager) AddStep(stageName string, step Step, cnd StepCondition) error {
+func (m *StagedManager) AddStep(stageName string, step Step, cnd StepCondition) error {
 	for _, s := range m.stages {
 		if s.name == stageName {
 			s.AddStep(step, cnd)
 			return nil
 		}
 	}
-	return fmt.Errorf("Stage %s not defined", stageName)
+	return fmt.Errorf("stage %s not defined", stageName)
 }
 
-func (m *Manager) GetAllStages() []string {
+func (m *StagedManager) GetAllStages() []string {
 	var all []string
 	for _, s := range m.stages {
 		all = append(all, s.name)
@@ -95,8 +94,8 @@ func (m *Manager) GetAllStages() []string {
 	return all
 }
 
-func (m *Manager) Execute(operationID string) (time.Duration, error) {
-	operation, err := m.operationStorage.GetUpdatingOperationByID(operationID)
+func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
+	operation, err := m.operationStorage.GetOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch operation from storage: %s", err)
 		return 3 * time.Second, nil
@@ -105,14 +104,21 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
 	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
+		timeoutErr := kebError.TimeoutError("operation has reached the time limit")
+		operation.LastError = timeoutErr
+		defer m.callPubSubOutsideSteps(operation, timeoutErr)
+
 		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		operation.State = domain.Failed
-		_, err = m.operationStorage.UpdateUpdatingOperation(*operation)
+		_, err = m.operationStorage.UpdateOperation(*operation)
 		if err != nil {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
-			return time.Second, err
+			timeoutErr = timeoutErr.SetMessage(fmt.Sprintf("%s and %s", timeoutErr.Error(), err.Error()))
+			operation.LastError = timeoutErr
+			return time.Second, timeoutErr
 		}
-		return 0, errors.New("operation has reached the time limit")
+
+		return 0, timeoutErr
 	}
 
 	var when time.Duration
@@ -124,14 +130,12 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 
 		for _, step := range stage.steps {
-
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
 			if step.condition != nil && !step.condition(processedOperation) {
 				logStep.Debugf("Skipping")
 				continue
 			}
-			logStep.Infof("Start step")
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
 			if err != nil {
@@ -155,9 +159,14 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		}
 	}
 
+	logOperation.Infof("Operation succeeded")
+
 	processedOperation.State = domain.Succeeded
-	processedOperation.Description = "update succeeded"
-	_, err = m.operationStorage.UpdateUpdatingOperation(processedOperation)
+	m.publisher.Publish(context.TODO(), OperationSucceeded{
+		Operation: processedOperation,
+	})
+
+	_, err = m.operationStorage.UpdateOperation(processedOperation)
 	if err != nil {
 		logOperation.Infof("Unable to save operation with finished the provisioning process")
 		return time.Second, err
@@ -166,9 +175,9 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	return 0, nil
 }
 
-func (m *Manager) saveFinishedStage(operation internal.UpdatingOperation, s *stage, log logrus.FieldLogger) (internal.UpdatingOperation, error) {
+func (m *StagedManager) saveFinishedStage(operation internal.Operation, s *stage, log logrus.FieldLogger) (internal.Operation, error) {
 	operation.FinishStage(s.name)
-	op, err := m.operationStorage.UpdateUpdatingOperation(operation)
+	op, err := m.operationStorage.UpdateOperation(operation)
 	if err != nil {
 		log.Infof("Unable to save operation with finished stage %s: %s", s.name, err.Error())
 		return operation, err
@@ -177,15 +186,26 @@ func (m *Manager) saveFinishedStage(operation internal.UpdatingOperation, s *sta
 	return *op, nil
 }
 
-func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	begin := time.Now()
 	for {
 		start := time.Now()
+		logger.Infof("Start step")
 		processedOperation, when, err := step.Run(operation, logger)
-		m.publisher.Publish(context.TODO(), process.UpdatingStepProcessed{
-			OldOperation: operation,
-			Operation:    processedOperation,
-			StepProcessed: process.StepProcessed{
+
+		if err != nil {
+			processedOperation.LastError = kebError.ReasonForError(err)
+			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
+			logOperation.Errorf("Last error from step %s: %s", step.Name(), processedOperation.LastError.Error())
+			// only save to storage, skip for alerting if error
+			_, err = m.operationStorage.UpdateOperation(processedOperation)
+			if err != nil {
+				logOperation.Errorf("Unable to save operation with resolved last error from step: %s", step.Name())
+			}
+		}
+
+		m.publisher.Publish(context.TODO(), OperationStepProcessed{
+			StepProcessed: StepProcessed{
 				StepName: step.Name(),
 				Duration: time.Since(start),
 				When:     when,
@@ -197,36 +217,21 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 		// - the step does not need a retry
 		// - step returns an error
 		// - the loop takes too much time (to not block the worker too long)
-		if when == 0 || err != nil || time.Since(begin) > time.Minute {
+		if when == 0 || err != nil || time.Since(begin) > 10*time.Minute {
 			return processedOperation, when, err
 		}
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
 }
 
-func getComponent(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (*internal.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
-	if err != nil {
-		return nil, err
-	}
-	for _, c := range allComponents {
-		if c.Name == component {
-			return &c, nil
-		}
-	}
-	return nil, fmt.Errorf("failed to find %v component in all component list", component)
-}
+func (m *StagedManager) callPubSubOutsideSteps(operation *internal.Operation, err error) {
+	logOperation := m.log.WithFields(logrus.Fields{"operation": operation.ID, "error_component": operation.LastError.Component(), "error_reason": operation.LastError.Reason()})
+	logOperation.Errorf("Last error: %s", operation.LastError.Error())
 
-func getComponentInput(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (reconcilerApi.Component, error) {
-	c, err := getComponent(componentProvider, component, kymaVersion, planName)
-	if err != nil {
-		return reconcilerApi.Component{}, err
-	}
-	return reconcilerApi.Component{
-		Component: c.Name,
-		Namespace: c.Namespace,
-		URL:       c.Source.URL,
-	}, nil
+	m.publisher.Publish(context.TODO(), OperationStepProcessed{
+		StepProcessed: StepProcessed{
+			Duration: time.Since(operation.CreatedAt),
+			Error:    err,
+		},
+	})
 }
