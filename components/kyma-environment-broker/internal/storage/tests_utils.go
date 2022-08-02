@@ -430,7 +430,7 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 }
 
 func waitFor(cli *client.Client, containerId string, text string) error {
-	return wait.Poll(5*time.Second, 10*time.Second, func() (done bool, err error) {
+	return wait.PollImmediate(3*time.Second, 10*time.Second, func() (done bool, err error) {
 		out, err := cli.ContainerLogs(context.Background(), containerId, types.ContainerLogsOptions{ShowStdout: true})
 		if err != nil {
 			return true, errors.Wrap(err, "while loading logs")
