@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trial-cleanup-job
+spec:
+  jobTemplate:
+    metadata:
+      name: trial-cleanup-job
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: “false”
+        spec:
+          containers:
+            - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
+              name: trial-cleanup-job
+              resources: {}
+          restartPolicy: OnFailure
+  schedule: "{{ .Values.trialCleanup.schedule }}"
