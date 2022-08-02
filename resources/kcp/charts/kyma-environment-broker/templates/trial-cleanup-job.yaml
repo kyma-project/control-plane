@@ -18,4 +18,3 @@ spec:
               resources: {}
           restartPolicy: OnFailure
   schedule: "{{ .Values.trialCleanup.schedule }}"
-status: {}
