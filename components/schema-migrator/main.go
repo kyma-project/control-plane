@@ -30,9 +30,9 @@ func main() {
 	_, embeded := os.LookupEnv("DATABASE_EMBEDDED")
 	var err error = nil
 	if !embeded {
-		err = quitCloudSqlProxy()
+		err = haltCloudSqlProxy()
 	} else if embeded {
-		err = quitIstioSidecar()
+		err = haltIstioSidecar()
 	}
 
 	time.Sleep(5 * time.Second)
