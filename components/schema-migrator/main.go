@@ -135,8 +135,8 @@ func invokeMigration() error {
 	return nil
 }
 
-func quitCloudSqlProxy() error {
-	fmt.Println("# QUITTING CLOUD SQL PROXY #")
+func haltCloudSqlProxy() error {
+	fmt.Println("# HALT CLOUD SQL PROXY #")
 	matches, err := filepath.Glob("/proc/*/exe")
 	if err != nil {
 		return fmt.Errorf("while reading cloud_sql_proxy: %s", err)
@@ -167,8 +167,8 @@ func quitCloudSqlProxy() error {
 	return nil
 }
 
-func quitIstioSidecar() error {
-	fmt.Println("# QUITTING ISTIO SIDECAR #")
+func haltIstioSidecar() error {
+	fmt.Println("# HALT ISTIO SIDECAR #")
 	resp, err := http.PostForm("http://127.0.0.1:15020/quitquitquit", url.Values{})
 
 	if err != nil {
