@@ -79,6 +79,18 @@ spec:
                         value: "kyma-environment-broker"
                       - name: DIRECTION
                         value: "up"
+
+                  command:
+                    - "/bin/bash"
+                  args:
+                    - "-c"
+                    {{if eq .Values.global.database.embedded.enabled false}}
+                    # There is no Istio sidecar injected so there is no need to quit it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING CLOUD SQL PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
+                    {{else}}
+                    # There is no Cloud SQL Proxy so there is no need to kill it
+                    - "sleep 20; ./run.sh; exit_code=$?; echo '# QUITTING ISTIO SIDECAR #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                    {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
