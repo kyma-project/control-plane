@@ -156,7 +156,7 @@ func haltCloudSqlProxy() error {
 				return fmt.Errorf("while reading process by pid: %s", err)
 			}
 
-			err = proc.Kill()
+			err = proc.Signal(os.Interrupt)
 			if err == nil {
 				return fmt.Errorf("while killing cloud_sql_proxy: %s", err)
 			}
