@@ -361,6 +361,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 		CreatedAt:                   dto.CreatedAt,
 		UpdatedAt:                   dto.UpdatedAt,
 		DeletedAt:                   dto.DeletedAt,
+		ExpiredAt:                   dto.ExpiredAt,
 		Version:                     dto.Version,
 		Provider:                    internal.CloudProvider(dto.Provider),
 	}, nil
@@ -450,6 +451,7 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 		CreatedAt:                   instance.CreatedAt,
 		UpdatedAt:                   instance.UpdatedAt,
 		DeletedAt:                   instance.DeletedAt,
+		ExpiredAt:                   instance.ExpiredAt,
 		Version:                     instance.Version,
 		Provider:                    string(instance.Provider),
 	}, nil

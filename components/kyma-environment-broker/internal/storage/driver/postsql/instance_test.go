@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -41,9 +43,14 @@ func TestInstance(t *testing.T) {
 
 		// given
 		testInstanceId := "test"
+		expiredID := "expired-id"
 		fixInstance := fixture.FixInstance(testInstanceId)
+		expiredInstance := fixture.FixInstance(expiredID)
+		expiredInstance.ExpiredAt = ptr.Time(time.Now())
 
 		err = brokerStorage.Instances().Insert(fixInstance)
+		require.NoError(t, err)
+		err = brokerStorage.Instances().Insert(expiredInstance)
 		require.NoError(t, err)
 
 		fixInstance.DashboardURL = "diff"
@@ -77,6 +84,8 @@ func TestInstance(t *testing.T) {
 		// then
 		inst, err := brokerStorage.Instances().GetByID(testInstanceId)
 		assert.NoError(t, err)
+		expired, err := brokerStorage.Instances().GetByID(expiredID)
+		assert.NoError(t, err)
 		require.NotNil(t, inst)
 
 		assert.Equal(t, fixInstance.InstanceID, inst.InstanceID)
@@ -88,9 +97,11 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 		assert.Equal(t, fixInstance.Parameters, inst.Parameters)
 		assert.Equal(t, fixInstance.Provider, inst.Provider)
+		assert.False(t, inst.IsExpired())
 		assert.NotEmpty(t, inst.CreatedAt)
 		assert.NotEmpty(t, inst.UpdatedAt)
 		assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
+		assert.True(t, expired.IsExpired())
 
 		// when
 		err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
@@ -342,11 +353,13 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst1"}),
 			*fixInstance(instanceData{val: "inst2"}),
 			*fixInstance(instanceData{val: "inst3"}),
+			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
 		}
 		fixOperations := []internal.ProvisioningOperation{
 			fixture.FixProvisioningOperation("op1", "inst1"),
 			fixture.FixProvisioningOperation("op2", "inst2"),
 			fixture.FixProvisioningOperation("op3", "inst3"),
+			fixture.FixProvisioningOperation("op4", "expiredinstance"),
 		}
 		for i, v := range fixInstances {
 			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
@@ -427,6 +440,21 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, 1, totalCount)
 
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(true)})
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[3].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(false)})
+		require.NoError(t, err)
+		require.Equal(t, 3, count)
+		require.Equal(t, 3, totalCount)
+
 	})
 
 	t.Run("Should list instances based on state filters", func(t *testing.T) {
@@ -548,6 +576,7 @@ func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {
 	want.CreatedAt, got.CreatedAt = time.Time{}, time.Time{}
 	want.UpdatedAt, got.UpdatedAt = time.Time{}, time.Time{}
 	want.DeletedAt, got.DeletedAt = time.Time{}, time.Time{}
+	want.ExpiredAt, got.ExpiredAt = nil, nil
 
 	assert.EqualValues(t, want, got)
 }
@@ -570,6 +599,7 @@ type instanceData struct {
 	val             string
 	globalAccountID string
 	subAccountID    string
+	expired         bool
 }
 
 func fixInstance(testData instanceData) *internal.Instance {
@@ -603,6 +633,9 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
 	instance.InstanceDetails = internal.InstanceDetails{}
+	if testData.expired {
+		instance.ExpiredAt = ptr.Time(time.Now().Add(-10 * time.Hour))
+	}
 
 	return &instance
 }

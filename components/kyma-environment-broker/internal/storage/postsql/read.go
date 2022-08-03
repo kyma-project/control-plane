@@ -770,6 +770,16 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		shootNameMatch := fmt.Sprintf(`^(%s)$`, strings.Join(filter.Shoots, "|"))
 		stmt.Where("o1.data::json->>'shoot_name' ~ ?", shootNameMatch)
 	}
+
+	if filter.Expired != nil {
+		if *filter.Expired {
+			stmt.Where("instances.expired_at IS NOT NULL")
+		}
+		if !*filter.Expired {
+			stmt.Where("instances.expired_at IS NULL")
+		}
+	}
+
 }
 
 func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {

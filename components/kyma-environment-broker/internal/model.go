@@ -132,9 +132,14 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+	ExpiredAt *time.Time
 
 	Version  int
 	Provider CloudProvider
+}
+
+func (i *Instance) IsExpired() bool {
+	return i.ExpiredAt != nil
 }
 
 func (i *Instance) GetSubscriptionGlobalAccoundID() string {
