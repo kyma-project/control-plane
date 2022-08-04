@@ -27,6 +27,7 @@ type simpleInputCreator struct {
 	provider          internal.CloudProvider
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
+	config            *internal.ConfigForPlan
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -41,6 +42,10 @@ func (c *simpleInputCreator) DisableOptionalComponent(name string) internal.Prov
 		}
 	}
 	return c
+}
+
+func (c *simpleInputCreator) Configuration() *internal.ConfigForPlan {
+	return c.config
 }
 
 func (c *simpleInputCreator) Provider() internal.CloudProvider {
