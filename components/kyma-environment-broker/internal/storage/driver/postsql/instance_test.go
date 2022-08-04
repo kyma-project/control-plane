@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -457,7 +459,130 @@ func TestInstance(t *testing.T) {
 
 	})
 
-	t.Run("Should list instances based on state filters", func(t *testing.T) {
+	t.Run("Should list instances based on filters", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// populate database with samples
+		fixInstances := []internal.Instance{
+			*fixInstance(instanceData{val: "inst1"}),
+			*fixInstance(instanceData{val: "inst2"}),
+			*fixInstance(instanceData{val: "inst3"}),
+			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
+		}
+		fixOperations := []internal.ProvisioningOperation{
+			fixture.FixProvisioningOperation("op1", "inst1"),
+			fixture.FixProvisioningOperation("op2", "inst2"),
+			fixture.FixProvisioningOperation("op3", "inst3"),
+			fixture.FixProvisioningOperation("op4", "expiredinstance"),
+		}
+		for i, v := range fixInstances {
+			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
+			fixInstances[i] = v
+			err = brokerStorage.Instances().Insert(v)
+			require.NoError(t, err)
+		}
+		for _, i := range fixOperations {
+			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			require.NoError(t, err)
+		}
+		// when
+		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{InstanceIDs: []string{fixInstances[0].InstanceID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Shoots: []string{"Shoot-inst2"}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(true)})
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[3].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(false)})
+		require.NoError(t, err)
+		require.Equal(t, 3, count)
+		require.Equal(t, 3, totalCount)
+
+	})
+
+	t.Run("Should list trial instances", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -473,8 +598,8 @@ func TestInstance(t *testing.T) {
 
 		// populate database with samples
 		inst1 := fixInstance(instanceData{val: "inst1"})
-		inst2 := fixInstance(instanceData{val: "inst2"})
-		inst3 := fixInstance(instanceData{val: "inst3"})
+		inst2 := fixInstance(instanceData{val: "inst2", trial: true, expired: true})
+		inst3 := fixInstance(instanceData{val: "inst3", trial: true})
 		inst4 := fixInstance(instanceData{val: "inst4"})
 		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
 
@@ -524,16 +649,8 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceSucceeded}})
-
-		// then
-		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst1.InstanceID, out[0].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceError}})
+		nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}, Expired: &[]bool{true}[0]}
+		out, count, totalCount, err := brokerStorage.Instances().List(nonExpiredTrialInstancesFilter)
 
 		// then
 		require.NoError(t, err)
@@ -542,32 +659,15 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceDeprovisioned}})
+		trialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}}
+		out, count, totalCount, err = brokerStorage.Instances().List(trialInstancesFilter)
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst3.InstanceID, out[0].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceNotDeprovisioned}})
-
-		// then
-		require.NoError(t, err)
-		require.Equal(t, 3, count)
-		require.Equal(t, 3, totalCount)
-		require.NotEqual(t, inst3.InstanceID, out[0].InstanceID)
-		require.NotEqual(t, inst3.InstanceID, out[1].InstanceID)
-		require.NotEqual(t, inst3.InstanceID, out[2].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceFailed}})
-
-		// then
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst4.InstanceID, out[0].InstanceID)
+		require.Equal(t, 2, count)
+		require.Equal(t, 2, totalCount)
+		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
+		require.Equal(t, inst3.InstanceID, out[1].InstanceID)
 	})
 }
 
@@ -600,6 +700,7 @@ type instanceData struct {
 	globalAccountID string
 	subAccountID    string
 	expired         bool
+	trial           bool
 }
 
 func fixInstance(testData instanceData) *internal.Instance {
@@ -624,9 +725,13 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.GlobalAccountID = gaid
 	instance.SubscriptionGlobalAccountID = gaid
 	instance.SubAccountID = suid
-	instance.ServiceID = testData.val
-	instance.ServiceName = testData.val
-	instance.ServicePlanID = testData.val
+	if testData.trial {
+		instance.ServicePlanID = broker.TrialPlanID
+		instance.ServicePlanName = broker.TrialPlanName
+	} else {
+		instance.ServiceID = testData.val
+		instance.ServiceName = testData.val
+	}
 	instance.ServicePlanName = testData.val
 	instance.DashboardURL = fmt.Sprintf("https://console.%s.kyma.local", testData.val)
 	instance.ProviderRegion = testData.val

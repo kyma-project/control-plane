@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-1881"
+      version: "PR-1915"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1868"
@@ -11,7 +11,7 @@ global:
       version: "22cb2b4e"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-1902"
+      version: "PR-1915"
 
 deployment:
   replicaCount: 1

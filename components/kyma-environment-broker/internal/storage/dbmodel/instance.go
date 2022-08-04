@@ -29,6 +29,7 @@ type InstanceFilter struct {
 	InstanceIDs                  []string
 	RuntimeIDs                   []string
 	Regions                      []string
+	PlanIDs                      []string
 	Plans                        []string
 	Shoots                       []string
 	States                       []InstanceState
