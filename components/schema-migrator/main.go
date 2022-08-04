@@ -128,8 +128,10 @@ func invokeMigration() error {
 		err = m.Down()
 	}
 
-	if err != nil {
+	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("during migration: %s", err)
+	} else if err == migrate.ErrNoChange {
+		fmt.Println("No Changes. Migration done.")
 	}
 
 	return nil
