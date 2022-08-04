@@ -40,6 +40,7 @@ type SimpleInputCreator struct {
 	shootDnsProviders gardener.DNSProvidersData
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
+	Config            *internal.ConfigForPlan
 }
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
@@ -450,4 +451,8 @@ func (c *SimpleInputCreator) DisableOptionalComponent(name string) internal.Prov
 
 func (c *SimpleInputCreator) Provider() internal.CloudProvider {
 	return c.CloudProvider
+}
+
+func (c *SimpleInputCreator) Configuration() *internal.ConfigForPlan {
+	return c.Config
 }

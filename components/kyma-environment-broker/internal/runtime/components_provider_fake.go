@@ -2,14 +2,11 @@ package runtime
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"strings"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const kymaComponentsYAMLFileName = "kyma-components.yaml"
@@ -54,14 +51,8 @@ func isSupportedVersion(version string) bool {
 		strings.Split(version, ".")[0] == "2"
 }
 
-func NewFakeComponentsProvider(ctx context.Context, fakeK8sClient client.Client,
-	defaultAdditionalRuntimeComponentsYAMLPath string) *ComponentsProvider {
+func NewFakeComponentsProvider() *ComponentsProvider {
 	return &ComponentsProvider{
-		requiredComponentsProvider: &defaultRequiredComponentsProvider{httpClient: &fakeHTTPDoer{}},
-		additionalComponentsProvider: &defaultAdditionalComponentsProvider{
-			ctx:                                 ctx,
-			k8sClient:                           fakeK8sClient,
-			defaultAdditionalComponentsYamlPath: defaultAdditionalRuntimeComponentsYAMLPath,
-		},
+		httpClient: &fakeHTTPDoer{},
 	}
 }

@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,19 +29,26 @@ const (
 
 const postUpgradeDescription = "Performing post-upgrade tasks"
 
-type InitialisationStep struct {
-	operationManager *process.UpdateOperationManager
-	operationStorage storage.Operations
-	instanceStorage  storage.Instances
-	inputBuilder     input.CreatorForPlan
+//go:generate mockery --name=RuntimeVersionConfiguratorForUpdating --output=automock --outpkg=automock --case=underscore
+type RuntimeVersionConfiguratorForUpdating interface {
+	ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error)
 }
 
-func NewInitialisationStep(is storage.Instances, os storage.Operations, b input.CreatorForPlan) *InitialisationStep {
+type InitialisationStep struct {
+	operationManager       *process.UpdateOperationManager
+	operationStorage       storage.Operations
+	instanceStorage        storage.Instances
+	runtimeVerConfigurator RuntimeVersionConfiguratorForUpdating
+	inputBuilder           input.CreatorForPlan
+}
+
+func NewInitialisationStep(is storage.Instances, os storage.Operations, rvc RuntimeVersionConfiguratorForUpdating, b input.CreatorForPlan) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager: process.NewUpdateOperationManager(os),
-		operationStorage: os,
-		instanceStorage:  is,
-		inputBuilder:     b,
+		operationManager:       process.NewUpdateOperationManager(os),
+		operationStorage:       os,
+		instanceStorage:        is,
+		runtimeVerConfigurator: rvc,
+		inputBuilder:           b,
 	}
 }
 
@@ -77,6 +85,19 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Second, err
 		}
 
+		// suspension cleared runtimeID
+		if operation.RuntimeID == "" {
+			err = s.getRuntimeIdFromProvisioningOp(&operation)
+			if err != nil {
+				return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+			}
+		}
+
+		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
+		if err != nil {
+			return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+		}
+
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
@@ -85,6 +106,9 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
 			}
 			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+			if version != nil {
+				op.RuntimeVersion = *version
+			}
 		}, log)
 		if delay != 0 {
 			log.Errorf("unable to update the operation (move to 'in progress'), retrying")
@@ -100,9 +124,18 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 	return s.initializeUpgradeShootRequest(operation, log)
 }
 
+func (s *InitialisationStep) getRuntimeIdFromProvisioningOp(operation *internal.UpdatingOperation) error {
+	provOp, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
+	if err != nil {
+		return errors.New("cannot get last provisioning operation for runtime id")
+	}
+	operation.RuntimeID = provOp.RuntimeID
+	return nil
+}
+
 func (s *InitialisationStep) initializeUpgradeShootRequest(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	log.Infof("create provisioner input creator for plan ID %q", operation.ProvisioningParameters)
-	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters)
+	creator, err := s.inputBuilder.CreateUpgradeShootInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
 		operation.InputCreator = creator

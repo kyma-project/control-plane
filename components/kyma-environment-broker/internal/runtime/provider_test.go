@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
@@ -83,7 +82,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			}
 
 			// when
-			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion, broker.AzurePlanName)
+			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion, nil)
 
 			// then
 			require.NoError(t, err)
@@ -157,7 +156,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 				WithHTTPClient(fakeHTTPClient)
 
 			// when
-			components, err := listProvider.AllComponents(tc.given.kymaVersion, broker.AzurePlanName)
+			components, err := listProvider.AllComponents(tc.given.kymaVersion, nil)
 
 			// then
 			assert.Nil(t, components)
