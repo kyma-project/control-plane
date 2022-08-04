@@ -139,7 +139,7 @@ func invokeMigration() error {
 
 func haltCloudSqlProxy() error {
 	fmt.Println("# HALT CLOUD SQL PROXY #")
-	matches, err := filepath.Glob("/proc/*/exe")
+	matches, err := filepath.Glob("/cloudsql/proc/*/exe")
 	if err != nil {
 		return fmt.Errorf("while reading process list: %s", err)
 	}
