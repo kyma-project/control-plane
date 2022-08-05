@@ -8,9 +8,9 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
     a. The user sends a request to KEB through [Istio VirtualService](https://istio.io/docs/reference/config/networking/virtual-service/).
 
-    b. The request is validated by [Istio RequestAuthentication](https://istio.io/latest/docs/reference/config/security/request_authentication/) and [Istio AuthorizationPolicy](https://istio.io/latest/docs/reference/config/security/authorization-policy/) at KEB Istio sidecar level
+    b. The request is validated by [Istio RequestAuthentication](https://istio.io/latest/docs/reference/config/security/request_authentication/) and [Istio AuthorizationPolicy](https://istio.io/latest/docs/reference/config/security/authorization-policy/) at KEB Istio sidecar level.
 
-    c. If the validation is successful, the request is forwarded to KEB
+    c. If the validation is successful, the request is forwarded to KEB.
 
 2. KEB proxies the request to create a new cluster to the Runtime Provisioner component.
 
