@@ -165,7 +165,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ersContext internal.ERSContext) bool {
 	if len(details.RawParameters) != 0 {
-
 		return true
 	}
 	return instance.InstanceDetails.SCMigrationTriggered || ersContext.ERSUpdate()

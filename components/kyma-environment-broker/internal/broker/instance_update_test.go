@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
