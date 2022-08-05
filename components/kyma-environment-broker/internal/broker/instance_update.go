@@ -362,7 +362,7 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 
 // processExpirationParam returns true, if expired
 func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, details domain.UpdateDetails) (*internal.Instance, error) {
-	// if the instance was expired in before (in the past), then no need to do any work
+	// if the instance was expired before (in the past), then no need to do any work
 	if instance.IsExpired() {
 		return instance, nil
 	}
