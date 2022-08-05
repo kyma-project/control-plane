@@ -723,8 +723,8 @@ github.com/gardener/gardener v1.26.0/go.mod h1:BrVJl0J2c9a1KpUm9E1COMolNKFY5cp3G
 github.com/gardener/gardener v1.36.0/go.mod h1:aVEbZy2WybsuwfXfUFNfOYz1JOmMjEOeYbv+sN9PzE0=
 github.com/gardener/gardener v1.44.4/go.mod h1:y8f1w9u44YuDAowo3PWmR79LhUv4TeTTb/1dhAFbKzc=
 github.com/gardener/gardener v1.48.0/go.mod h1:SxHdXYy4GWEbaP4X4axADf1eqhtfizpYXsB/q7D1GsU=
-github.com/gardener/gardener v1.51.0 h1:tIimcoDx/c+LfojZCSLEb/mQy5vO/kC48u1BAcDkacU=
-github.com/gardener/gardener v1.51.0/go.mod h1:BuYOrvaoUc5R+8Q57PyxqxXEKhpsSCzpCv/MgPnm73w=
+github.com/gardener/gardener v1.52.2 h1:auWFIq1Kl2LQS43fD7bp9V94myxTBIT8/zbrx7wAV9c=
+github.com/gardener/gardener v1.52.2/go.mod h1:O+59kTQavqxX5nr5jyHqD6o4JxIukHMaW2t5BLiXqmc=
 github.com/gardener/gardener-extension-networking-calico v1.19.4/go.mod h1:i62aQOUURkhQrap9cNK1jNkZoxCb2o6iDeUYaoSt25g=
 github.com/gardener/gardener-extension-provider-aws v1.36.0 h1:vBlCGtMNZVT5hh4W6erC1wc/IobGv9mgw7GCn+J2ilY=
 github.com/gardener/gardener-extension-provider-aws v1.36.0/go.mod h1:ZvBuRrUhzj/VzXjU3VbFRAT4yi7FJvv4JhHwj1JY+3U=
@@ -3011,10 +3011,12 @@ istio.io/api v0.0.0-20201123152548-197f11e4ea09/go.mod h1:88HN3o1fSD1jo+Z1WTLlJf
 istio.io/api v0.0.0-20210520012029-891c0c12abfd/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
 istio.io/api v0.0.0-20211118170605-3f0f902cdfd1/go.mod h1:lavaUNsnT7RGyMFNOGgV5XvOgP3fkTSZkxP/0H/ISt4=
 istio.io/api v0.0.0-20220304035241-8c47cbbea144/go.mod h1:lavaUNsnT7RGyMFNOGgV5XvOgP3fkTSZkxP/0H/ISt4=
+istio.io/api v0.0.0-20220512181135-e8ec1e1d89de/go.mod h1:00myJeQGWma4Y5pboJ+MM4P2uqEWulKA1duC8kYN5Wo=
 istio.io/client-go v1.8.1/go.mod h1:Qymv71lwIqjDTkaE2NqBYLL+Bl5KsCfzEDhntXypHYY=
 istio.io/client-go v1.10.1/go.mod h1:xiCalTDM2HqP1KGxMOt+OOkqCLOI6QrwQMb95cSWw9U=
 istio.io/client-go v1.12.0/go.mod h1:Y46Rc0vTVHogmIXnGMCsb19Bc0XIMhOEnZUr+5ZxMmo=
 istio.io/client-go v1.12.5/go.mod h1:rKTRGbzRHY/lb3VCCIF4wwTwvkW000acWEcseSy3V9M=
+istio.io/client-go v1.14.0/go.mod h1:C7K0CKQlvY84yQKkZhxQbD1riqvnsgXJm3jF5GOmzNg=
 istio.io/gogo-genproto v0.0.0-20190930162913-45029607206a/go.mod h1:OzpAts7jljZceG4Vqi5/zXy/pOg1b209T3jb7Nv5wIs=
 istio.io/gogo-genproto v0.0.0-20210113155706-4daf5697332f/go.mod h1:6BwTZRNbWS570wHX/uR1Wqk5e0157TofTAUMzT7N4+s=
 k8s.io/api v0.22.12 h1:HV4VjUSd7dTbKpop+1klDpRrLnXwN67oB0B+8abaH1k=
