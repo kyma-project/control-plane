@@ -35,7 +35,7 @@ spec:
                         mountPath: /secrets/cloudsql-instance-credentials
                         readOnly: true
                       - name: cloudsql-proc
-                        mounthPath: /proc
+                        mountPath: /proc
                         readOnly: false
                 {{end}}
                 - name: migrator
@@ -46,7 +46,7 @@ spec:
                   {{if eq .Values.global.database.embedded.enabled false}}
                   volumeMounts:
                     - name: cloudsql-proc
-                      mounthPath: /cloudsql/proc
+                      mountPath: /cloudsql/proc
                       readOnly: true
                   {{end}}
                   env:
@@ -133,7 +133,7 @@ spec:
                         mountPath: /secrets/cloudsql-instance-credentials
                         readOnly: true
                       - name: cloudsql-proc
-                        mounthPath: /proc
+                        mountPath: /proc
                         readOnly: false
                 {{end}}
                 - name: migrator
@@ -144,7 +144,7 @@ spec:
                   {{if eq .Values.global.database.embedded.enabled false}}
                   volumeMounts:
                     - name: cloudsql-proc
-                      mounthPath: /cloudsql/proc
+                      mountPath: /cloudsql/proc
                       readOnly: true
                   {{end}}
                   env:
