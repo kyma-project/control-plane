@@ -81,8 +81,6 @@ spec:
                         value: "up"
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
-              - name: cloudsql-proc
-                emptyDir: {}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
