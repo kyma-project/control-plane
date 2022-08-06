@@ -139,7 +139,7 @@ func invokeMigration() error {
 
 func haltCloudSqlProxy() error {
 	fmt.Println("# HALT CLOUD SQL PROXY #")
-	matches, err := filepath.Glob("/cloudsql/proc/*/exe")
+	matches, err := filepath.Glob("/proc/*/comm")
 	if err != nil {
 		return fmt.Errorf("while reading process list: %s", err)
 	}
@@ -149,30 +149,26 @@ func haltCloudSqlProxy() error {
 	}
 
 	for _, file := range matches {
-		target, _ := os.Readlink(file)
-		fmt.Println("Reading target")
-		fmt.Println(target)
 
-		if len(target) > 0 && strings.Contains(target, "cloud_sql_proxy") {
-			fmt.Println("Target contains cloudsql proxy")
-			splitted := filepath.SplitList(file)
-			pid, err := strconv.Atoi(splitted[1])
-			if err == nil {
+		target, _ := os.ReadFile(file)
+
+		if len(target) > 0 && strings.Contains(string(target), "cloud_sql_proxy") {
+			splitted := strings.Split(file, "/")
+
+			pid, err := strconv.Atoi(splitted[2])
+			if err != nil {
 				return fmt.Errorf("while reading process id: %s", err)
 			}
 
 			proc, err := os.FindProcess(pid)
-			if err == nil {
+			if err != nil {
 				return fmt.Errorf("while reading process by pid: %s", err)
 			}
 
-			fmt.Println("Process found")
-
 			err = proc.Signal(os.Interrupt)
-			if err == nil {
+			if err != nil {
 				return fmt.Errorf("while killing cloud_sql_proxy: %s", err)
 			}
-			fmt.Println("Process signalled")
 
 			break
 		}
