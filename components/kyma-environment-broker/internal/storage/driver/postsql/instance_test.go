@@ -33,7 +33,7 @@ func TestInstance(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
-		time.Hour
+
 		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
 		require.NoError(t, err)
 		defer tablesCleanupFunc()
