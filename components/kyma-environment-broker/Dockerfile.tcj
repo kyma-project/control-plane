@@ -5,6 +5,7 @@ WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environmen
 
 COPY cmd cmd
 COPY common common
+COPY internal internal
 COPY go.mod go.mod
 COPY go.sum go.sum
 COPY vendor vendor

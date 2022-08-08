@@ -766,6 +766,9 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	if len(filter.Plans) > 0 {
 		stmt.Where("instances.service_plan_name IN ?", filter.Plans)
 	}
+	if len(filter.PlanIDs) > 0 {
+		stmt.Where("instances.service_plan_id IN ?", filter.PlanIDs)
+	}
 	if len(filter.Shoots) > 0 {
 		shootNameMatch := fmt.Sprintf(`^(%s)$`, strings.Join(filter.Shoots, "|"))
 		stmt.Where("o1.data::json->>'shoot_name' ~ ?", shootNameMatch)
