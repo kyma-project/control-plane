@@ -10,7 +10,7 @@ spec:
       template:
         metadata:
           {{- if eq .Values.global.database.embedded.enabled false }}
-            annotations:
+          annotations:
             sidecar.istio.io/inject: "false"
           {{ end }}
         spec:
