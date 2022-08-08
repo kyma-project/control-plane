@@ -800,7 +800,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "remove-sc-migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator),
 			condition: btpMigrationEnabled,
 		},
 		{
