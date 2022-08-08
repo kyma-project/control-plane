@@ -16,11 +16,10 @@ type InitKymaVersionStep struct {
 	runtimeStatesDb        storage.RuntimeStates
 }
 
-func NewInitKymaVersionStep(os storage.Operations, rvc *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates) *InitKymaVersionStep {
+func NewInitKymaVersionStep(os storage.Operations, rvc *runtimeversion.RuntimeVersionConfigurator) *InitKymaVersionStep {
 	return &InitKymaVersionStep{
 		operationManager:       process.NewUpdateOperationManager(os),
 		runtimeVerConfigurator: rvc,
-		runtimeStatesDb:        runtimeStatesDb,
 	}
 }
 
@@ -39,19 +38,12 @@ func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logr
 	} else {
 		version = &operation.RuntimeVersion
 	}
-	var lrs internal.RuntimeState
-	if version.MajorVersion == 2 {
-		lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
-		if err != nil {
-			return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
-		}
-	}
+
 	op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 		if version != nil {
 			op.RuntimeVersion = *version
 		}
-		op.LastRuntimeState = lrs
 	}, log)
-	log.Info("Init runtime version: ", op.RuntimeVersion.MajorVersion, ", last runtime state: ", op.LastRuntimeState.ID, ", service catalog migration triggered: ", operation.InstanceDetails.SCMigrationTriggered)
+	log.Info("Init runtime version: ", op.RuntimeVersion.MajorVersion)
 	return op, delay, nil
 }

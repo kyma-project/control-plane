@@ -46,7 +46,7 @@ spec:
                       name: {{ .Values.cis.v1.secretName }}
                       key: secret
                 - name: APP_CIS_AUTH_URL
-                  value: {{ .Values.cis.v1.authURL }}
+                   value: {{ .Values.cis.v1.authURL }}
                 - name: APP_CIS_EVENT_SERVICE_URL
                   value: {{ .Values.cis.v1.eventServiceURL }}
                 - name: APP_DATABASE_SECRET_KEY

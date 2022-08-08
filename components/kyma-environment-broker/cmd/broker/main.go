@@ -752,6 +752,10 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	}{
 		{
 			stage: "cluster",
+			step:  update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator),
+		},
+		{
+			stage: "cluster",
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), runtimeVerConfigurator, inputFactory),
 		},
 		{
@@ -761,7 +765,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 		},
 		{
 			stage:     "migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
+			step:      update.NewLastRuntimeStep(db.Operations(), db.RuntimeStates()),
 			condition: btpMigrationEnabled,
 		},
 		{
