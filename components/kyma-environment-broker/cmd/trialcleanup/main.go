@@ -20,6 +20,7 @@ const (
 
 type Config struct {
 	Database storage.Config
+	DryRun   bool `envconfig:"default=true"`
 }
 
 type TrialCleanupService struct {
@@ -39,6 +40,10 @@ func main() {
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
+
+	if cfg.DryRun {
+		log.Info("Dry run only - no changes")
+	}
 
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
