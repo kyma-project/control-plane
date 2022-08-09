@@ -5,6 +5,7 @@ WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environmen
 
 COPY cmd cmd
 COPY common common
+COPY internal internal
 COPY go.mod go.mod
 COPY go.sum go.sum
 COPY vendor vendor
@@ -16,8 +17,11 @@ FROM alpine:latest as certs
 RUN apk --update add ca-certificates
 
 # Final image
-FROM scratch
+FROM alpine:latest
 LABEL source = git@github.com:kyma-project/control-plane.git
+
+RUN apk --no-cache add --update openssl openssl-dev --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
+RUN apk --no-cache add --update curl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /app/trialcleanup /app/trialcleanup
