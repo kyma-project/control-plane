@@ -20,7 +20,7 @@ const (
 type Config struct {
 	Database         storage.Config
 	DryRun           bool          `envconfig:"default=true"`
-	ExpirationPeriod time.Duration `envconfig:"default:14d"`
+	ExpirationPeriod time.Duration `envconfig:"default=14d"`
 }
 
 type TrialCleanupService struct {
