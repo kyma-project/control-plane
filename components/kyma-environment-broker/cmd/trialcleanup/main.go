@@ -130,7 +130,7 @@ func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
 }
 
 func (s *TrialCleanupService) suspendInstance(instance internal.Instance) error {
-	s.logger.Infof("Abount to suspend instanceId: %+v - to be implemented", instance.InstanceID)
+	s.logger.Infof("About to suspend instanceId: %+v - to be implemented", instance.InstanceID)
 	return nil
 }
 
