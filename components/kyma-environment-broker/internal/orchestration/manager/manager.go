@@ -19,15 +19,16 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 type OperationFactory interface {
-	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error)
+	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance, state domain.LastOperationState) (orchestration.RuntimeOperation, error)
 	ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
 	CancelOperations(orchestrationID string) error
-	RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error)
+	RetryOperations(operationIDs []string) ([]orchestration.RuntimeOperation, error)
 }
 
 type orchestrationManager struct {
@@ -142,66 +143,108 @@ func (m *orchestrationManager) getMaintenancePolicy() (orchestration.Maintenance
 	return policy, nil
 }
 
+//result contains the operations which from `kcp o *** retry` and its label are retrying, runtimes from target parameter
+func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtimes []orchestration.Runtime, result []orchestration.RuntimeOperation) []orchestration.Runtime {
+	var fileterRuntimes []orchestration.Runtime
+	if o.State == orchestration.Pending {
+		fileterRuntimes = runtimes
+	} else if o.State == orchestration.Retrying {
+		for _, retryOp := range result {
+			for _, r := range runtimes {
+				if retryOp.Runtime.InstanceID == r.InstanceID {
+					fileterRuntimes = append(fileterRuntimes, r)
+					break
+				}
+			}
+		}
+	}
+	return fileterRuntimes
+}
+
+func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+	result := []orchestration.RuntimeOperation{}
+	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
+	if err != nil {
+		return result, o, len(runtimes), errors.Wrap(err, "while resolving targets")
+	}
+
+	fileterRuntimes := m.extractRuntimes(o, runtimes, retryRT)
+
+	for _, r := range fileterRuntimes {
+		windowBegin := time.Time{}
+		windowEnd := time.Time{}
+		days := []string{}
+
+		if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+			windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
+		}
+		r.MaintenanceWindowBegin = windowBegin
+		r.MaintenanceWindowEnd = windowEnd
+		r.MaintenanceDays = days
+
+		inst, err := m.instanceStorage.GetByID(r.InstanceID)
+		if err != nil {
+			return nil, o, len(runtimes), errors.Wrapf(err, "while getting instance %s", r.InstanceID)
+		}
+
+		op, err := m.factory.NewOperation(*o, r, *inst, orchestration.Pending)
+		if err != nil {
+			return nil, o, len(runtimes), errors.Wrapf(err, "while creating new operation for runtime id %q", r.RuntimeID)
+		}
+
+		result = append(result, op)
+	}
+
+	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
+		o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
+	}
+	if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
+		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
+	}
+
+	if len(fileterRuntimes) != 0 {
+		o.State = orchestration.InProgress
+	} else {
+		o.State = orchestration.Succeeded
+	}
+	return result, o, len(fileterRuntimes), nil
+}
+
 func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policy orchestration.MaintenancePolicy) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
 	if o.State == orchestration.Pending {
-		runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
-		if err != nil {
-			return result, errors.Wrap(err, "while resolving targets")
-		}
-
-		for _, r := range runtimes {
-			windowBegin := time.Time{}
-			windowEnd := time.Time{}
-			days := []string{}
-
-			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
-			}
-			r.MaintenanceWindowBegin = windowBegin
-			r.MaintenanceWindowEnd = windowEnd
-			r.MaintenanceDays = days
-
-			inst, err := m.instanceStorage.GetByID(r.InstanceID)
-			if err != nil {
-				return nil, errors.Wrapf(err, "while getting instance %s", r.InstanceID)
-			}
-
-			op, err := m.factory.NewOperation(*o, r, *inst)
-			if err != nil {
-				return nil, errors.Wrapf(err, "while creating new operation for runtime id %q", r.RuntimeID)
-			}
-
-			result = append(result, op)
-		}
-
-		if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
-			o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
-		}
-		if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
-			o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
-		}
-
-		if len(runtimes) != 0 {
-			o.State = orchestration.InProgress
-		} else {
-			o.State = orchestration.Succeeded
-		}
-		o.Description = fmt.Sprintf("Scheduled %d operations", len(runtimes))
-	} else if o.State == orchestration.Retrying {
-		// look for the ops with retrying state, then convert the op state to pending and orchestration state to in progress
 		var err error
-		result, err = m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, policy, true)
+		var runtTimesNum int
+		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, result)
 		if err != nil {
-			return result, errors.Wrap(err, "while resolving retrying orchestration")
+			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
 		}
 
-		if len(result) != 0 {
-			o.State = orchestration.InProgress
-		} else {
-			o.State = orchestration.Succeeded
+		o.Description = fmt.Sprintf("Scheduled %d operations", runtTimesNum)
+	} else if o.State == orchestration.Retrying {
+		//check retry operation list, if empty return error
+		defer o.Parameters.Mux.Unlock()
+		o.Parameters.Mux.Lock()
+		if len(o.Parameters.RetryOperations) == 0 {
+			return nil, errors.Wrap(errors.New("o.Parameters.RetryOperations=0"), "while retrying operations")
 		}
-		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(result)))
+
+		retryRuntimes, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
+		if err != nil {
+			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
+		}
+
+		var runtTimesNum int
+		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes)
+
+		if err != nil {
+			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
+		}
+
+		o.Parameters.RetryOperations = nil
+
+		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
+		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	} else {
 		// Resume processing of not finished upgrade operations after restart
 		var err error
@@ -234,6 +277,8 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 	canceled := false
 	var err error
 	var stats map[string]int
+	execIDs := []string{execID}
+
 	err = wait.PollImmediateInfinite(m.pollingInterval, func() (bool, error) {
 		// check if orchestration wasn't canceled
 		o, err = m.orchestrationStorage.GetByID(orchestrationID)
@@ -268,20 +313,35 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		}
 		numberOfRetrying, found := stats[orchestration.Retrying]
 		if found {
-			// handle the retrying ops during in progress orchestration
-			// use the existing resolved policy in op
 			numberOfNotFinished += numberOfRetrying
-			ops, err := m.factory.RetryOperations(o.OrchestrationID, o.Parameters.Strategy.Schedule, orchestration.MaintenancePolicy{}, false)
-			if err != nil {
-				// don't block the polling and cancel signal
-				log.Errorf("while handling retrying operations: %v", err)
+
+			defer o.Parameters.Mux.Unlock()
+			o.Parameters.Mux.Lock()
+			if len(o.Parameters.RetryOperations) == 0 {
+				log.Info("Orchestration RetryOperations was nil")
 			} else {
-				err := strategy.Insert(execID, ops, o.Parameters.Strategy)
+				ops, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
 				if err != nil {
-					return false, errors.Wrap(err, "while inserting operations to queue")
+					// don't block the polling and cancel signal
+					log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
+				} else {
+					o.State = orchestration.Retrying
+					result, o, _, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
+					if err != nil {
+						log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
+					}
+
+					err = strategy.Insert(execID, result, o.Parameters.Strategy)
+					if err != nil {
+						retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
+						if err != nil {
+							return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
+						}
+						execIDs = append(execIDs, retryExecID)
+						execID = retryExecID
+					}
 				}
 			}
-
 		}
 
 		// don't wait for pending operations if orchestration was canceled
@@ -295,16 +355,18 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		return nil, errors.Wrap(err, "while waiting for scheduled operations to finish")
 	}
 
-	return m.resolveOrchestration(o, strategy, execID, stats)
+	return m.resolveOrchestration(o, strategy, execIDs, stats)
 }
 
-func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execID string, stats map[string]int) (*internal.Orchestration, error) {
+func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, strategy orchestration.Strategy, execIDs []string, stats map[string]int) (*internal.Orchestration, error) {
 	if o.State == orchestration.Canceling {
 		err := m.factory.CancelOperations(o.OrchestrationID)
 		if err != nil {
 			return nil, errors.Wrap(err, "while resolving canceled operations")
 		}
-		strategy.Cancel(execID)
+		for _, execID := range execIDs {
+			strategy.Cancel(execID)
+		}
 		// Send customer notification for cancel
 		if !m.bundleBuilder.DisabledCheck() {
 			err := m.sendNotificationCancel(o)

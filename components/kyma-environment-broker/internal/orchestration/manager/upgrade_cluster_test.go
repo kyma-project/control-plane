@@ -4,22 +4,21 @@ import (
 	"testing"
 	"time"
 
-	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
-
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
+	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestUpgradeClusterManager_Execute(t *testing.T) {
@@ -352,6 +351,107 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor, resolver,
 			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
 
+		_, err = store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		_, err = store.Operations().GetUpgradeClusterOperationByID("op-id")
+		require.NoError(t, err)
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Failed, o.State)
+
+		op, err := store.Operations().GetUpgradeClusterOperationByID(opId)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Retrying, string(op.State))
+	})
+
+	t.Run("Retrying failed orchestration and create a new operation on same instanceID", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		opId := "op-" + id
+		instanceID := opId + "-1234"
+		runtimeID := opId + "-5678"
+
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: []orchestration.RuntimeTarget{
+				{RuntimeID: opId},
+			},
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{{
+			InstanceID: instanceID,
+			RuntimeID:  runtimeID,
+		}}, nil)
+
+		err := store.Instances().Insert(internal.Instance{
+			InstanceID: instanceID,
+			RuntimeID:  runtimeID,
+		})
+		require.NoError(t, err)
+
+		err = store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Retrying,
+			Type:            orchestration.UpgradeClusterOrchestration,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+			},
+				Targets: orchestration.TargetSpec{
+					Include: []orchestration.RuntimeTarget{
+						{RuntimeID: opId},
+					},
+					Exclude: nil,
+				},
+				RetryOperations: []string{"op-id"}},
+		})
+
+		require.NoError(t, err)
+
+		err = store.Operations().InsertUpgradeClusterOperation(internal.UpgradeClusterOperation{
+			Operation: internal.Operation{
+				ID:              opId,
+				OrchestrationID: id,
+				State:           orchestration.Failed,
+				InstanceID:      instanceID,
+				Type:            internal.OperationTypeUpgradeCluster,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: opId,
+					Runtime: orchestration.Runtime{
+						InstanceID: instanceID,
+						RuntimeID:  runtimeID,
+					},
+					DryRun: false,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		notificationBuilder.On("DisabledCheck").Return(true).Once()
+
+		executor := retryTestExecutor{
+			store:       store,
+			upgradeType: orchestration.UpgradeClusterOrchestration,
+		}
+		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor, resolver,
+			poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
+
+		_, err = store.Operations().GetUpgradeClusterOperationByID(opId)
+		require.NoError(t, err)
+
 		// when
 		_, err = svc.Execute(id)
 		require.NoError(t, err)
@@ -364,7 +464,20 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		op, err := store.Operations().GetUpgradeClusterOperationByID(opId)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Succeeded, string(op.State))
+		assert.Equal(t, orchestration.Failed, string(op.State))
+
+		//verify a new operation with same instanceID is created
+		ops, _, _, err := store.Operations().ListUpgradeClusterOperationsByOrchestrationID(id, dbmodel.OperationFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(ops))
+
+		for _, op := range ops {
+			if op.Operation.ID != opId {
+				assert.Equal(t, orchestration.Succeeded, string(op.State))
+				assert.Equal(t, instanceID, string(op.Operation.InstanceID))
+				assert.Equal(t, internal.OperationTypeUpgradeCluster, op.Operation.Type)
+			}
+		}
 	})
 
 	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {

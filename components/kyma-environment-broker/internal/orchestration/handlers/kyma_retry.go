@@ -60,13 +60,15 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	}
 
 	for _, op := range ops {
-		resp.RetryOperations = append(resp.RetryOperations, op.Operation.ID)
+		resp.RetryShoots = append(resp.RetryShoots, op.Operation.InstanceDetails.ShootName)
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	err = r.OperationsStateUpdate(ops, immediate)
-	if err != nil {
-		return resp, err
+	for _, op := range ops {
+		fmt.Println("kyma_retry.go o.Parameters.RetryOperation.Immediate=", o.Parameters.RetryOperation.Immediate)
+		fmt.Println("kyma_retry.go o.Parameters.RetryOperation.RetryOperations=", o.Parameters.RetryOperation.RetryOperations)
+		o.Parameters.RetryOperation.RetryOperations = append(o.Parameters.RetryOperation.RetryOperations, op.Operation.ID)
+		o.Parameters.RetryOperation.Immediate = immediate
 	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue

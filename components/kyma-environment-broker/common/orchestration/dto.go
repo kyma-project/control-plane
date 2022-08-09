@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"sync"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -16,6 +17,8 @@ type Parameters struct {
 	Kyma *KymaParameters `json:"kyma,omitempty"`
 	//customer notification status
 	NotificationState notificationStateType `json:"notificationstate,omitempty"`
+	RetryOperations   []string              `json:"retryoperations,omitempty"`
+	Mux               sync.RWMutex
 }
 
 type KubernetesParameters struct {
@@ -166,7 +169,7 @@ type UpgradeResponse struct {
 
 type RetryResponse struct {
 	OrchestrationID   string   `json:"orchestrationID"`
-	RetryOperations   []string `json:"retryOperations"`
+	RetryShoots       []string `json:"retryShoots"`
 	OldOperations     []string `json:"oldOperations"`
 	InvalidOperations []string `json:"invalidOperations"`
 	Msg               string   `json:"msg"`

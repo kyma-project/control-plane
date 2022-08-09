@@ -52,14 +52,15 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 
 	for _, op := range ops {
-		resp.RetryOperations = append(resp.RetryOperations, op.Operation.ID)
+		resp.RetryShoots = append(resp.RetryShoots, op.Operation.InstanceDetails.ShootName)
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	err = r.OperationsStateUpdate(ops)
-	if err != nil {
-		return resp, err
+	o.Parameters.Mux.Lock()
+	for _, op := range ops {
+		o.Parameters.RetryOperations = append(o.Parameters.RetryOperations, op.ID)
 	}
+	o.Parameters.Mux.Unlock()
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
 	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)

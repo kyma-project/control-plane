@@ -18,6 +18,8 @@ import (
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -268,6 +270,13 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				ID:              id,
 				OrchestrationID: id,
 				State:           orchestration.Pending,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					Runtime: orchestration.Runtime{
+						RuntimeID:    id,
+						SubAccountID: "sub",
+					},
+					DryRun: false,
+				},
 			},
 		})
 
@@ -304,6 +313,11 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
+
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: nil,
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{}, nil)
 
 		id := "id"
 		opId := "op-" + id
@@ -369,7 +383,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Succeeded, string(op.State))
+		assert.Equal(t, orchestration.Retrying, string(op.State))
 	})
 
 	t.Run("Retrying resumed in progress orchestration", func(t *testing.T) {
@@ -444,6 +458,109 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, orchestration.Succeeded, string(op.State))
+	})
+
+	t.Run("Retrying failed orchestration and create a new operation on same instanceID", func(t *testing.T) {
+		// given
+		store := storage.NewMemoryStorage()
+
+		resolver := &automock.RuntimeResolver{}
+		defer resolver.AssertExpectations(t)
+
+		id := "id"
+		opId := "op-" + id
+		instanceID := opId + "-1234"
+		runtimeID := opId + "-5678"
+
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: []orchestration.RuntimeTarget{
+				{RuntimeID: opId},
+			},
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{{
+			InstanceID: instanceID,
+			RuntimeID:  runtimeID,
+		}}, nil)
+
+		err := store.Instances().Insert(internal.Instance{
+			InstanceID: instanceID,
+			RuntimeID:  runtimeID,
+		})
+		require.NoError(t, err)
+		err = store.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: id,
+			State:           orchestration.Retrying,
+			Type:            orchestration.UpgradeClusterOrchestration,
+			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
+				Type:     orchestration.ParallelStrategy,
+				Schedule: orchestration.Immediate,
+				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+			},
+				Kyma: &orchestration.KymaParameters{Version: ""},
+				Targets: orchestration.TargetSpec{
+					Include: []orchestration.RuntimeTarget{
+						{RuntimeID: opId},
+					},
+					Exclude: nil,
+				},
+				RetryOperations: []string{"op-id"}},
+		})
+		require.NoError(t, err)
+
+		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{
+			Operation: internal.Operation{
+				ID:              opId,
+				OrchestrationID: id,
+				State:           orchestration.Failed,
+				InstanceID:      instanceID,
+				Type:            internal.OperationTypeUpgradeKyma,
+				RuntimeOperation: orchestration.RuntimeOperation{
+					ID: opId,
+					Runtime: orchestration.Runtime{
+						InstanceID: instanceID,
+						RuntimeID:  runtimeID},
+					DryRun: false,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		notificationBuilder.On("DisabledCheck").Return(true).Once()
+
+		executor := retryTestExecutor{
+			store:       store,
+			upgradeType: orchestration.UpgradeKymaOrchestration,
+		}
+		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), &executor,
+			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
+
+		// when
+		_, err = svc.Execute(id)
+		require.NoError(t, err)
+
+		o, err := store.Orchestrations().GetByID(id)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Succeeded, o.State)
+
+		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
+		require.NoError(t, err)
+
+		assert.Equal(t, orchestration.Failed, string(op.State))
+
+		//verify a new operation with same instanceID is created
+		ops, _, _, err := store.Operations().ListUpgradeKymaOperationsByOrchestrationID(id, dbmodel.OperationFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(ops))
+
+		for _, op := range ops {
+			if op.Operation.ID != opId {
+				assert.Equal(t, orchestration.Succeeded, string(op.State))
+				assert.Equal(t, instanceID, string(op.Operation.InstanceID))
+				assert.Equal(t, internal.OperationTypeUpgradeKyma, op.Operation.Type)
+			}
+		}
 	})
 }
 
