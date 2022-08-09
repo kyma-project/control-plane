@@ -6,8 +6,10 @@ import (
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -18,10 +20,8 @@ import (
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -314,11 +314,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
 
-		resolver.On("Resolve", orchestration.TargetSpec{
-			Include: nil,
-			Exclude: nil,
-		}).Return([]orchestration.Runtime{}, nil)
-
 		id := "id"
 		opId := "op-" + id
 		err := store.Orchestrations().Insert(internal.Orchestration{
@@ -378,7 +373,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Succeeded, o.State)
+		assert.Equal(t, orchestration.Failed, o.State)
 
 		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
 		require.NoError(t, err)
