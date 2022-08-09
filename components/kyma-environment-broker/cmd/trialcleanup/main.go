@@ -82,7 +82,7 @@ func (s *TrialCleanupService) PerformCleanup() error {
 
 	s.logger.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
 
-	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, s.olderThanExpirationDuration)
+	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
 
 	s.logger.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
 
@@ -121,10 +121,6 @@ func (s *TrialCleanupService) visitInstances(instances []internal.Instance, visi
 		}
 	}
 	return nil
-}
-
-func (s *TrialCleanupService) olderThanExpirationDuration(instance internal.Instance) bool {
-	return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod
 }
 
 func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
