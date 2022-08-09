@@ -69,7 +69,7 @@ func newTrialCleanupService(instances storage.Instances, logger *log.Logger) *Tr
 
 func (s *TrialCleanupService) PerformCleanup() error {
 
-	nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{trialPlanID}, Expired: &[]bool{true}[0]}
+	nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{trialPlanID}, Expired: &[]bool{false}[0]}
 	nonExpiredTrialInstances, nonExpiredTrialInstancesCount, err := s.getInstances(nonExpiredTrialInstancesFilter)
 
 	if err != nil {

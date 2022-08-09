@@ -11,7 +11,7 @@ global:
       version: "22cb2b4e"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-1933"
+      version: "PR-1935"
 
 deployment:
   replicaCount: 1
