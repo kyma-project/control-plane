@@ -23,7 +23,7 @@ func TestKymaUpgrade_OneRuntimeHappyPath(t *testing.T) {
 	// then
 	suite.WaitForOrchestrationState(orchestrationID, orchestration.Succeeded)
 
-	suite.AssertRuntimeUpgraded(runtimeID, "2.0.3")
+	suite.AssertRuntimeUpgraded(runtimeID, defaultKymaVer)
 	suite.AssertRuntimeNotUpgraded(otherRuntimeID)
 }
 

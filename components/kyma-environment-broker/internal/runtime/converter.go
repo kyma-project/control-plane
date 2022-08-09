@@ -79,6 +79,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		Status: pkg.RuntimeStatus{
 			CreatedAt:  instance.CreatedAt,
 			ModifiedAt: instance.UpdatedAt,
+			ExpiredAt:  instance.ExpiredAt,
 		},
 	}
 

@@ -27,6 +27,7 @@ type simpleInputCreator struct {
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
 	clusterName       string
+	config            *internal.ConfigForPlan
 }
 
 func (c *simpleInputCreator) EnableOptionalComponent(name string) internal.ProvisionerInputCreator {
@@ -93,9 +94,14 @@ func (c *simpleInputCreator) AppendOverrides(component string, overrides []*gqls
 	return c
 }
 
+func (c *simpleInputCreator) Configuration() *internal.ConfigForPlan {
+	return c.config
+}
+
 func (c *simpleInputCreator) Provider() internal.CloudProvider {
 	return internal.GCP
 }
+
 func (c *simpleInputCreator) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	return c
 }

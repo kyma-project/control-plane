@@ -22,9 +22,6 @@ deploy-on-minikube:
 ensure-local:
 	@echo ${SKIP_DEPLOY_MESSAGE}
 
-errcheck-local:
-	@echo ${SKIP_DEPLOY_MESSAGE}
-
 resolve-local:
 	@echo ${SKIP_DEPLOY_MESSAGE}
 

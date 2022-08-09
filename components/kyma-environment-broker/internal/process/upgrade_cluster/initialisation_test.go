@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 
@@ -125,7 +126,14 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		orch := internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Kyma: &orchestration.KymaParameters{Version: fixKymaVersion},
+			},
+		}
+		err := memoryStorage.Orchestrations().Insert(orch)
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -189,7 +197,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -207,7 +215,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 
 		provisionerClient := &provisionerAutomock.Client{}
 		inputBuilder := &automock.CreatorForPlan{}
-		inputBuilder.On("CreateUpgradeShootInput", fixProvisioningParameters()).Return(&input.RuntimeInput{}, nil)
+		inputBuilder.On("CreateUpgradeShootInput",
+			fixProvisioningParameters(), mock.AnythingOfType("internal.RuntimeVersionData")).
+			Return(&input.RuntimeInput{},
+				nil)
 
 		expectedOperation := upgradeOperation
 		expectedOperation.Version++
@@ -303,7 +314,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -370,7 +381,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -438,7 +449,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -506,7 +517,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -575,7 +586,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -644,7 +655,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -715,7 +726,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -781,7 +792,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -952,4 +963,15 @@ func fixGetHyperscalerProviderForPlanID(planID string) fixHyperscalerInputProvid
 		return nil
 	}
 	return provider
+}
+
+func fixOrchestrationWithKymaVer() internal.Orchestration {
+	orch := internal.Orchestration{
+		OrchestrationID: fixOrchestrationID,
+		State:           orchestration.InProgress,
+		Parameters: orchestration.Parameters{
+			Kyma: &orchestration.KymaParameters{Version: fixKymaVersion},
+		},
+	}
+	return orch
 }

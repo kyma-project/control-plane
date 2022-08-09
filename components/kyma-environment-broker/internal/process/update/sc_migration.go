@@ -5,7 +5,6 @@ import (
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -61,9 +60,8 @@ func (s *SCMigrationStep) Run(operation internal.UpdatingOperation, logger logru
 		}
 	}
 
-	planName := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !containsSCMigrationComponent {
-		c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion, planName)
+		c, err := getComponentInput(s.components, SCMigrationComponentName, operation.RuntimeVersion, operation.InputCreator.Configuration())
 		if err != nil {
 			return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
 		}

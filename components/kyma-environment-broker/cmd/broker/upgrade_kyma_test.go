@@ -123,7 +123,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 
 func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0.0-rc4", "2.0.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := "InstanceID-UpgradeAfterMigration"

@@ -217,7 +217,7 @@ func (s *operations) UpdateDeprovisioningOperation(operation internal.Deprovisio
 	return &operation, lastErr
 }
 
-// ListDeprovisioningoOperationsByInstanceID
+// ListDeprovisioningOperationsByInstanceID
 func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string) ([]internal.DeprovisioningOperation, error) {
 	operations, err := s.listOperationsByInstanceIdAndType(instanceID, internal.OperationTypeDeprovision)
 	if err != nil {
@@ -330,7 +330,7 @@ func (s *operations) UpdateUpgradeKymaOperation(operation internal.UpgradeKymaOp
 	return &operation, err
 }
 
-// GetLastOperation returns Operation for given instance ID which is not in 'pending' state. Returns an error if the operation does not exists.
+// GetLastOperation returns Operation for given instance ID which is not in 'pending' state. Returns an error if the operation does not exist.
 func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, error) {
 	session := s.NewReadSession()
 	operation := dbmodel.OperationDTO{}
@@ -362,7 +362,7 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 	return &op, nil
 }
 
-// GetOperationByID returns Operation with given ID. Returns an error if the operation does not exists.
+// GetOperationByID returns Operation with given ID. Returns an error if the operation does not exist.
 func (s *operations) GetOperationByID(operationID string) (*internal.Operation, error) {
 	op := internal.Operation{}
 	dto, err := s.getByID(operationID)
@@ -866,7 +866,6 @@ func (s *operations) operationToDTO(op *internal.Operation) (dbmodel.OperationDT
 	}
 
 	ret.Data = string(serialized)
-	ret.Type = internal.OperationTypeProvision
 	return ret, nil
 }
 

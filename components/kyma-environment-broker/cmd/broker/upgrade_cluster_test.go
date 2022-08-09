@@ -109,4 +109,43 @@ func TestClusterUpgrade_UpgradeAfterUpdateWithNetworkPolicy(t *testing.T) {
 	disabled := true
 	suite.AssertDisabledNetworkFilterRuntimeState(i.RuntimeID, upgradeClusterOperationID, &disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
+
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "jack.anvil@email.com"
+	},
+	"parameters": {
+		"autoScalerMin":15,
+		"autoScalerMax":25,
+		"maxSurge":13,
+		"maxUnavailable":6
+	}
+}`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	upgradeOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "jack.anvil@email.com"
+	},
+	"parameters": {
+		"autoScalerMin":14,
+		"autoScalerMax":25,
+		"maxSurge":13,
+		"maxUnavailable":6
+	}
+}`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	upgradeOperationID = suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
+
 }

@@ -21,8 +21,10 @@ func TestInputBuilderFactory_IsPlanSupport(t *testing.T) {
 	componentsProvider := &automock.ComponentListProvider{}
 	defer componentsProvider.AssertExpectations(t)
 
+	configProvider := mockConfigProvider()
+
 	ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-		Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	// when/then
@@ -37,11 +39,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and ProvisionRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"),
+			mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -64,12 +69,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with default version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -87,12 +94,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with GA version Kyma components and UpgradeRuntimeInput", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 			KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -110,11 +119,13 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with set version Kyma components", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
-		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(),
-			componentsProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		configProvider := mockConfigProvider()
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "PR-1")
 
@@ -129,12 +140,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build RuntimeInput with proper plan", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil).Once()
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -166,12 +179,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 	t.Run("should build UpgradeRuntimeInput with proper profile", func(t *testing.T) {
 		// given
 		componentsProvider := &automock.ComponentListProvider{}
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil)
-		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]internal.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
+		componentsProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 
@@ -211,14 +226,20 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		componentsProvider := &automock.ComponentListProvider{}
 		defer componentsProvider.AssertExpectations(t)
 
+		configProvider := mockConfigProvider()
+
 		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
-			Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
 		assert.NoError(t, err)
 		pp := fixProvisioningParameters(broker.GCPPlanID, "")
 		provider = &cloudProvider.GcpInput{} // for broker.GCPPlanID
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
 
 		// when
-		input, err := ibf.CreateUpgradeShootInput(pp)
+		input, err := ibf.CreateUpgradeShootInput(pp, ver)
 
 		// Then
 		assert.NoError(t, err)
