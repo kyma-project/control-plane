@@ -14,16 +14,17 @@ import (
 )
 
 const (
-	trialPlanID  = broker.TrialPlanID
-	fourteenDays = 14 * 24 * time.Hour
+	trialPlanID = broker.TrialPlanID
 )
 
 type Config struct {
-	Database storage.Config
-	DryRun   bool `envconfig:"default=true"`
+	Database         storage.Config
+	DryRun           bool          `envconfig:"default=true"`
+	ExpirationPeriod time.Duration `envconfig:"default:14d"`
 }
 
 type TrialCleanupService struct {
+	cfg             Config
 	instanceStorage storage.Instances
 	logger          *log.Logger
 	filter          dbmodel.InstanceFilter
@@ -52,16 +53,18 @@ func main() {
 
 	logger := log.New()
 
-	svc := newTrialCleanupService(db.Instances(), logger)
+	svc := newTrialCleanupService(cfg, db.Instances(), logger)
 
 	err = svc.PerformCleanup()
+
 	fatalOnError(err)
 
 	log.Info("Trial cleanup job finished successfully!")
 }
 
-func newTrialCleanupService(instances storage.Instances, logger *log.Logger) *TrialCleanupService {
+func newTrialCleanupService(cfg Config, instances storage.Instances, logger *log.Logger) *TrialCleanupService {
 	return &TrialCleanupService{
+		cfg:             cfg,
 		instanceStorage: instances,
 		logger:          logger,
 	}
@@ -77,22 +80,17 @@ func (s *TrialCleanupService) PerformCleanup() error {
 		return err
 	}
 
-	s.logger.Infof("Non expired trials to be processed: %+v\n", nonExpiredTrialInstancesCount)
+	s.logger.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
 
-	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, olderThanFourteenDays)
+	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, s.olderThanExpirationDuration)
 
-	return s.visitInstances(instancesToBeCleanedUp, s.dryRun)
-}
+	s.logger.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
 
-func (s *TrialCleanupService) filterByExpiredAt(trialInstances []internal.Instance) []internal.Instance {
-
-	var instancesToBeCleaned []internal.Instance
-	for _, instance := range trialInstances {
-		if time.Since(instance.CreatedAt) >= fourteenDays {
-			instancesToBeCleaned = append(instancesToBeCleaned, instance)
-		}
+	if s.cfg.DryRun {
+		return s.visitInstances(instancesToBeCleanedUp, s.executeDryRun)
+	} else {
+		return s.visitInstances(instancesToBeCleanedUp, s.suspendInstance)
 	}
-	return instancesToBeCleaned
 }
 
 func (s *TrialCleanupService) getInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, error) {
@@ -125,13 +123,18 @@ func (s *TrialCleanupService) visitInstances(instances []internal.Instance, visi
 	return nil
 }
 
-func olderThanFourteenDays(instance internal.Instance) bool {
-	return time.Since(instance.CreatedAt) >= fourteenDays
+func (s *TrialCleanupService) olderThanExpirationDuration(instance internal.Instance) bool {
+	return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod
 }
 
-func (s *TrialCleanupService) dryRun(instance internal.Instance) error {
+func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
 	s.logger.Infof("instanceId: %+v createdAt: %+v (so %.0f days ago) servicePlanID: %+v servicePlanName: %+v\n",
 		instance.InstanceID, instance.CreatedAt, time.Since(instance.CreatedAt).Hours()/24, instance.ServicePlanID, instance.ServicePlanName)
+	return nil
+}
+
+func (s *TrialCleanupService) suspendInstance(instance internal.Instance) error {
+	s.logger.Infof("Abount to suspend instanceId: %+v - to be implemented", instance.InstanceID)
 	return nil
 }
 
