@@ -374,7 +374,8 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 		if params.Expired {
 			if !IsTrialPlan(instance.ServicePlanID) {
 				b.log.Warn("Expiration for non-trial instance is not supported")
-				return instance, nil
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("Expiration for non-trial instance is not supported"), http.StatusBadRequest, err.Error())
+
 			}
 
 			b.log.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
