@@ -649,14 +649,14 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// when
-		nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}, Expired: &[]bool{true}[0]}
+		nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}, Expired: &[]bool{false}[0]}
 		out, count, totalCount, err := brokerStorage.Instances().List(nonExpiredTrialInstancesFilter)
 
 		// then
 		require.NoError(t, err)
 		require.Equal(t, 1, count)
 		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
+		require.Equal(t, inst3.InstanceID, out[0].InstanceID)
 
 		// when
 		trialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}}
