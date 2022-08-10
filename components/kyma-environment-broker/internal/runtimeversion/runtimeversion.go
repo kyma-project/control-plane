@@ -33,11 +33,8 @@ func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.UpdatingOperation
 	if err != nil {
 		return nil, err
 	}
-	if r.ClusterSetup != nil && r.ClusterSetup.KymaConfig.Version != "" {
-		return internal.NewRuntimeVersionFromDefaults(r.ClusterSetup.KymaConfig.Version), nil
-	} else {
-		return internal.NewRuntimeVersionFromDefaults(r.KymaConfig.Version), nil
-	}
+
+	return internal.NewRuntimeVersionFromDefaults(r.GetKymaVersion()), nil
 }
 
 func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {

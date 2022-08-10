@@ -46,6 +46,7 @@ type RuntimeInput struct {
 	labels                map[string]string
 	globalOverrides       []*gqlschema.ConfigEntryInput
 
+	config                    *internal.ConfigForPlan
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParameters
@@ -63,6 +64,10 @@ type RuntimeInput struct {
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
 	clusterName       string
+}
+
+func (r *RuntimeInput) Configuration() *internal.ConfigForPlan {
+	return r.config
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {

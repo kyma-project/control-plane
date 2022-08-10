@@ -9,6 +9,9 @@ global:
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "22cb2b4e"
+    kyma_environment_trial_cleanup_job:
+      dir:
+      version: "PR-1935"
 
 deployment:
   replicaCount: 1
@@ -245,6 +248,9 @@ environmentsCleanup:
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
+
+trialCleanup:
+  schedule: "0,15,30,45 * * * *"
 
 serviceMonitor:
   scrapeTimeout: 10s

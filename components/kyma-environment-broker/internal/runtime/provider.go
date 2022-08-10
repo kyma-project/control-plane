@@ -48,7 +48,7 @@ func NewComponentsListProvider(managedRuntimeComponentsYAMLPath, newAdditionalRu
 // AllComponents returns all components for Kyma Runtime. It fetches always the
 // Kyma open-source components from the given url and management components from
 // the file system and merge them together.
-func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]internal.KymaComponent, error) {
+func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersionData, config *internal.ConfigForPlan) ([]internal.KymaComponent, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

@@ -33,6 +33,7 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+	Configuration() *ConfigForPlan
 
 	CreateClusterConfiguration() (reconcilerApi.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
@@ -132,9 +133,14 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+	ExpiredAt *time.Time
 
 	Version  int
 	Provider CloudProvider
+}
+
+func (i *Instance) IsExpired() bool {
+	return i.ExpiredAt != nil
 }
 
 func (i *Instance) GetSubscriptionGlobalAccoundID() string {

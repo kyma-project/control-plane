@@ -54,6 +54,7 @@ type RuntimeDTO struct {
 type RuntimeStatus struct {
 	CreatedAt        time.Time       `json:"createdAt"`
 	ModifiedAt       time.Time       `json:"modifiedAt"`
+	ExpiredAt        *time.Time      `json:"expiredAt,omitempty"`
 	State            State           `json:"state"`
 	Provisioning     *Operation      `json:"provisioning,omitempty"`
 	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
@@ -109,6 +110,7 @@ const (
 	OperationDetailParam = "op_detail"
 	KymaConfigParam      = "kyma_config"
 	ClusterConfigParam   = "cluster_config"
+	ExpiredParam         = "expired"
 )
 
 type OperationDetail string
@@ -145,6 +147,8 @@ type ListParameters struct {
 	Plans []string
 	// States parameter filters runtimes by specified runtime states. See type State for possible values
 	States []State
+	// Expired parameter filters runtimes to show only expired ones.
+	Expired bool
 }
 
 func (rt RuntimeDTO) LastOperation() Operation {
