@@ -46,6 +46,8 @@ func main() {
 		log.Info("Dry run only - no changes")
 	}
 
+	log.Info("Expiration period: %+v", cfg.ExpirationPeriod)
+
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	db, _, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
