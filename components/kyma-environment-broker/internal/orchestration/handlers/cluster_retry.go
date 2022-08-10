@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"time"
 
 	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -56,18 +57,18 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	o.Parameters.Mux.Lock()
 	for _, op := range ops {
-		o.Parameters.RetryOperations = append(o.Parameters.RetryOperations, op.ID)
+		fmt.Println("cluster_retry.go o.Parameters.RetryOperations", op.Operation.ID)
+		o.Parameters.RetryOperations = append(o.Parameters.RetryOperations, op.Operation.ID)
 	}
-	o.Parameters.Mux.Unlock()
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
-	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)
+	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
 	if err != nil {
 		return resp, err
 	}
 
+	fmt.Println("cluster_retry.go", lastState)
 	if lastState == commonOrchestration.Failed {
 		r.queue.Add(o.OrchestrationID)
 	}

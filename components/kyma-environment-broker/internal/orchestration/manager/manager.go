@@ -223,8 +223,6 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		o.Description = fmt.Sprintf("Scheduled %d operations", runtTimesNum)
 	} else if o.State == orchestration.Retrying {
 		//check retry operation list, if empty return error
-		defer o.Parameters.Mux.Unlock()
-		o.Parameters.Mux.Lock()
 		if len(o.Parameters.RetryOperations) == 0 {
 			return nil, errors.Wrap(errors.New("o.Parameters.RetryOperations=0"), "while retrying operations")
 		}
@@ -314,34 +312,38 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 		numberOfRetrying, found := stats[orchestration.Retrying]
 		if found {
 			numberOfNotFinished += numberOfRetrying
+		}
 
-			defer o.Parameters.Mux.Unlock()
-			o.Parameters.Mux.Lock()
-			if len(o.Parameters.RetryOperations) == 0 {
-				log.Info("Orchestration RetryOperations was nil")
-			} else {
-				ops, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
-				if err != nil {
-					// don't block the polling and cancel signal
-					log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
-				} else {
-					o.State = orchestration.Retrying
-					result, o, _, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
-					if err != nil {
-						log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
-					}
-
-					err = strategy.Insert(execID, result, o.Parameters.Strategy)
-					if err != nil {
-						retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
-						if err != nil {
-							return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
-						}
-						execIDs = append(execIDs, retryExecID)
-						execID = retryExecID
-					}
-				}
+		if len(o.Parameters.RetryOperations) != 0 {
+			ops, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
+			if err != nil {
+				// don't block the polling and cancel signal
+				log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
 			}
+			o.State = orchestration.Retrying
+			result, o, _, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
+			if err != nil {
+				log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
+			}
+
+			err = strategy.Insert(execID, result, o.Parameters.Strategy)
+			if err != nil {
+				retryExecID, err := strategy.Execute(result, o.Parameters.Strategy)
+				if err != nil {
+					return false, errors.Wrap(err, "while executing upgrade strategy during retrying")
+				}
+				execIDs = append(execIDs, retryExecID)
+				execID = retryExecID
+			}
+
+			o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(o.Parameters.RetryOperations)))
+			o.Parameters.RetryOperations = nil
+			err = m.orchestrationStorage.Update(*o)
+			if err != nil {
+				log.Errorf("while updating orchestration %s: %v", orchestrationID, err)
+				return false, errors.Wrapf(err, "while updating orchestration %s", orchestrationID)
+			}
+			m.log.Infof("PollImmediateInfinite() resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 		}
 
 		// don't wait for pending operations if orchestration was canceled
