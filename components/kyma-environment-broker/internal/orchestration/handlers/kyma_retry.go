@@ -30,7 +30,7 @@ func NewKymaRetryer(orchestrations storage.Orchestrations, operations storage.Op
 	}
 }
 
-func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []internal.UpgradeKymaOperation, operationIDs []string) (commonOrchestration.RetryResponse, error) {
+func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []internal.UpgradeKymaOperation, operationIDs []string, immediate string) (commonOrchestration.RetryResponse, error) {
 	var err error
 	resp := commonOrchestration.RetryResponse{OrchestrationID: o.OrchestrationID}
 
@@ -64,7 +64,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	err = r.OperationsStateUpdate(ops)
+	err = r.OperationsStateUpdate(ops, immediate)
 	if err != nil {
 		return resp, err
 	}
@@ -167,8 +167,12 @@ func (r *kymaRetryer) latestOperationValidate(orchestrationID string, ops []inte
 	return retryOps, oldIDs, nil
 }
 
-func (r *kymaRetryer) OperationsStateUpdate(ops []internal.UpgradeKymaOperation) error {
+func (r *kymaRetryer) OperationsStateUpdate(ops []internal.UpgradeKymaOperation, immediate string) error {
 	for _, op := range ops {
+		if immediate == "true" {
+			op.MaintenanceWindowBegin = time.Time{}
+			op.MaintenanceWindowEnd = time.Time{}
+		}
 		op.State = commonOrchestration.Retrying
 		op.UpdatedAt = time.Now()
 		op.Description = "queued for retrying"

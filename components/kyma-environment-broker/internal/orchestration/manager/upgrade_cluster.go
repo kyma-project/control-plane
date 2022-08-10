@@ -134,7 +134,7 @@ func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule
 			days := []string{}
 
 			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow {
+			if schedule == orchestration.MaintenanceWindow && !op.MaintenanceWindowBegin.IsZero() {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
 			}
 			op.MaintenanceWindowBegin = windowBegin
