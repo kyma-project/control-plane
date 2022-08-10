@@ -259,6 +259,37 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
 	})
 
+	t.Run("nat gateway should be enabled for azure plan", func(t *testing.T) {
+		// given
+		var provider HyperscalerInputProvider
+
+		componentsProvider := &automock.ComponentListProvider{}
+		defer componentsProvider.AssertExpectations(t)
+
+		configProvider := mockConfigProvider()
+
+		ibf, err := NewInputBuilderFactory(nil, runtime.NewDisabledComponentsProvider(), componentsProvider,
+			configProvider, Config{}, "1.10", fixTrialRegionMapping(), fixTrialProviders(), fixture.FixOIDCConfigDTO())
+		assert.NoError(t, err)
+		pp := fixProvisioningParameters(broker.AzurePlanID, "")
+		provider = &cloudProvider.AzureInput{}
+		ver := internal.RuntimeVersionData{
+			Version: "2.4.0",
+			Origin:  internal.Defaults,
+		}
+
+		// when
+		input, err := ibf.CreateUpgradeShootInput(pp, ver)
+
+		// Then
+		assert.NoError(t, err)
+		require.IsType(t, &RuntimeInput{}, input)
+
+		result := input.(*RuntimeInput)
+		natGatewayEnabled := result.upgradeShootInput.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway
+
+		assert.Equal(t, natGatewayEnabled, provider.Defaults().GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+	})
 }
 
 func fixProvisioningParameters(planID, kymaVersion string) internal.ProvisioningParameters {
