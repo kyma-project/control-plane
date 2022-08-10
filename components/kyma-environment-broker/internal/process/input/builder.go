@@ -2,6 +2,7 @@ package input
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -372,6 +373,23 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningPa
 	}
 
 	input := f.initUpgradeShootInput(provider)
+
+	// TODO: remove this when Azure clusters are upgraded to use NAT Gateway
+	switch pp.PlanID {
+	case broker.AzurePlanID, broker.AzureLitePlanID, broker.AzureHAPlanID:
+		if input.GardenerConfig.ProviderSpecificConfig != nil { // prevent panic when provider specific config is nil
+			if input.GardenerConfig.ProviderSpecificConfig.AzureConfig != nil { // redundant but it is safer to set as it might change
+				input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway = ptr.Bool(true)
+			}
+		} else {
+			// as ProviderSpecificConfig was not allocated we need to create it and set the bool to true
+			input.GardenerConfig.ProviderSpecificConfig = &gqlschema.ProviderSpecificInput{AzureConfig: &gqlschema.AzureProviderConfigInput{
+				EnableNatGateway:             ptr.Bool(true),
+				IdleConnectionTimeoutMinutes: ptr.Integer(4), // default timeout for idle connections is 4 minutes
+			}}
+		}
+	}
+
 	return &RuntimeInput{
 		upgradeShootInput:        input,
 		config:                   cfg,
