@@ -236,7 +236,7 @@ func TestExpirationOfNonTrial(t *testing.T) {
 			"expired": true
 		}
    }`)
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	instance := suite.GetInstance(iid)
 	assert.False(suite.t, instance.IsExpired())
 }
@@ -1858,6 +1858,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	i, err = suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after update")
 	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
+	time.Sleep(5 * time.Millisecond)
 	rsu2, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime after update")
 	assert.NotEqual(t, rsu1.ID, rsu2.ID, "runtime_state ID from first call should differ runtime_state ID from second call")

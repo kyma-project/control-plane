@@ -118,7 +118,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	instance, err = b.processExpirationParam(instance, details)
 	if err != nil {
 		logger.Errorf("Unable to update the instance: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+		return domain.UpdateServiceSpec{}, err
 	}
 
 	lastDeprovisioningOperation, err := b.operationStorage.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
@@ -374,8 +374,7 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 		if params.Expired {
 			if !IsTrialPlan(instance.ServicePlanID) {
 				b.log.Warn("Expiration of a non-trial instance is not supported")
-				return instance, apiresponses.NewFailureResponse(fmt.Errorf("expiration of a non-trial instance is not supported"), http.StatusBadRequest, err.Error())
-
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("expiration of a non-trial instance is not supported"), http.StatusBadRequest, "")
 			}
 
 			b.log.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
