@@ -909,6 +909,63 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, orchestration.Succeeded, string(op.State))
 	})
+
+	t.Run("retry failed kyma orchestration - testing scheduling", func(t *testing.T) {
+		// given
+		db := storage.NewMemoryStorage()
+
+		orchestrationID := "orchestration-" + fixID
+		operationIDs := []string{"id-2"}
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID, State: orchestration.Failed, Type: orchestration.UpgradeKymaOrchestration, Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow}}})
+		require.NoError(t, err)
+
+		err = fixFailedOrchestrationOperations(db, orchestrationID, orchestration.UpgradeKymaOrchestration)
+		require.NoError(t, err)
+
+		logs := logrus.New()
+		kymaQueue := process.NewQueue(&testExecutor{}, logs)
+		kymaHandler := NewOrchestrationStatusHandler(db.Operations(), db.Orchestrations(), db.RuntimeStates(), kymaQueue, nil, 100, logs)
+
+		for i, id := range operationIDs {
+			operationIDs[i] = "operation-id=" + id
+		}
+		str := strings.Join(operationIDs, "&")
+		req, err := http.NewRequest("POST", fmt.Sprintf("/orchestrations/%s/retry", orchestrationID), strings.NewReader(str+"&immediate=true"))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		kymaHandler.AttachRoutes(router)
+
+		// when
+		router.ServeHTTP(rr, req)
+
+		// then
+		require.Equal(t, http.StatusAccepted, rr.Code)
+
+		var out orchestration.RetryResponse
+		expectedOut := orchestration.RetryResponse{
+			OrchestrationID:   orchestrationID,
+			RetryOperations:   []string{"id-2"},
+			OldOperations:     nil,
+			InvalidOperations: nil,
+			Msg:               "retry operations are queued for processing",
+		}
+
+		err = json.Unmarshal(rr.Body.Bytes(), &out)
+		require.NoError(t, err)
+		assert.Equal(t, expectedOut, out)
+
+		op, err := db.Operations().GetUpgradeKymaOperationByID("id-2")
+		require.NoError(t, err)
+		assert.Equal(t, op.MaintenanceWindowBegin, time.Time{})
+
+		o, err := db.Orchestrations().GetByID(orchestrationID)
+		require.NoError(t, err)
+		assert.Equal(t, orchestration.Retrying, o.State)
+
+	})
 }
 
 func assertKymaConfigValues(t *testing.T, expected, actual gqlschema.KymaConfigInput) {
