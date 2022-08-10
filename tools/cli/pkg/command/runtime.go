@@ -116,6 +116,7 @@ func (cmd *RuntimeCommand) Run() error {
 	return nil
 }
 
+//Test
 // Validate checks the input parameters of the runtimes command
 func (cmd *RuntimeCommand) Validate() error {
 	err := ValidateOutputOpt(cmd.output)
