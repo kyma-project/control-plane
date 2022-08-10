@@ -51,7 +51,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr:         "10.250.0.0/19",
 					Zones:            generateDefaultAzureZones(),
-					EnableNatGateway: ptr.Bool(true),
+					EnableNatGateway: ptr.Bool(false),
 				},
 			},
 		},
