@@ -64,7 +64,6 @@ These are the provisioning parameters for Azure that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **zonesCount** | int | Specifies the number of availability zones to use. Valid values are 1-3. | No | `1` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
@@ -103,7 +102,6 @@ These are the provisioning parameters for AWS that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
 | **region** | string | Defines the cluster region. | No | `westeurope` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **zonesCount** | int | Specifies the number of availability zones to use. Valid values are 1-3. | No | `1` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
@@ -126,7 +124,6 @@ These are the provisioning parameters for GCP that you can configure:
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `30` |
 | **region** | string | Defines the cluster region. | No | `europe-west3` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["a"]` |
-| **zonesCount** | int | Specifies the number of availability zones to use. Valid values are 1-3. | No | `1` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create. | No | `4` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |

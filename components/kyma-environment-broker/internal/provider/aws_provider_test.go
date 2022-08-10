@@ -66,7 +66,7 @@ func TestMultipleZonesForAWSRegion(t *testing.T) {
 	})
 }
 
-func TestAWSInput_ApplyParameters(t *testing.T) {
+func TestAWSInput_SingleZone_ApplyParameters(t *testing.T) {
 	// given
 	svc := AWSInput{}
 
@@ -80,7 +80,7 @@ func TestAWSInput_ApplyParameters(t *testing.T) {
 
 		//then
 		assert.Equal(t, DefaultAWSRegion, input.GardenerConfig.Region)
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSZonesCount)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 1)
 
 		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			regionFromZone := zone.Name[:len(zone.Name)-1]
@@ -102,7 +102,73 @@ func TestAWSInput_ApplyParameters(t *testing.T) {
 		})
 
 		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSZonesCount)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 1)
+
+		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
+			regionFromZone := zone.Name[:len(zone.Name)-1]
+			assert.Equal(t, inputRegion, regionFromZone)
+		}
+	})
+
+	// when
+	t.Run("use zones list input parameter", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+		zones := []string{"eu-central-1a", "eu-central-1b"}
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Zones: zones,
+			},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, len(zones))
+
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
+			assert.Equal(t, zones[i], zone.Name)
+		}
+	})
+}
+
+func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
+	// given
+	svc := AWSInput{MultiZone: true}
+
+	// when
+	t.Run("use default region and default zones count", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{})
+
+		//then
+		assert.Equal(t, DefaultAWSRegion, input.GardenerConfig.Region)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSMultiZoneCount)
+
+		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
+			regionFromZone := zone.Name[:len(zone.Name)-1]
+			assert.Equal(t, DefaultAWSRegion, regionFromZone)
+		}
+	})
+
+	// when
+	t.Run("use region input parameter", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+		inputRegion := "us-east-1"
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: ptr.String(inputRegion),
+			},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, DefaultAWSMultiZoneCount)
 
 		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			regionFromZone := zone.Name[:len(zone.Name)-1]

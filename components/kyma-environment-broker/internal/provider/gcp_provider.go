@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	DefaultGCPRegion      = "europe-west3"
-	DefaultGCPMachineType = "n2-standard-4"
-	DefaultGCPZonesCount  = 3
+	DefaultGCPRegion         = "europe-west3"
+	DefaultGCPMachineType    = "n2-standard-4"
+	DefaultGCPMultiZoneCount = 3
 )
 
 var europeGcp = "europe-west3"
@@ -29,13 +29,19 @@ var toGCPSpecific = map[string]*string{
 }
 
 type (
-	GcpInput      struct{}
+	GcpInput struct {
+		MultiZone bool
+	}
 	GcpTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
 )
 
 func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
+	zonesCount := 1
+	if p.MultiZone {
+		zonesCount = DefaultGCPMultiZoneCount
+	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("pd-standard"),
@@ -50,7 +56,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 			MaxUnavailable: 0,
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				GcpConfig: &gqlschema.GCPProviderConfigInput{
-					Zones: ZonesForGCPRegion(DefaultGCPRegion, DefaultGCPZonesCount),
+					Zones: ZonesForGCPRegion(DefaultGCPRegion, zonesCount),
 				},
 			},
 		},
@@ -64,7 +70,11 @@ func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, pp.Parameters.Zones)
 	// region is provided, with or without zonesCount
 	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region, DefaultGCPZonesCount))
+		zonesCount := 1
+		if p.MultiZone {
+			zonesCount = DefaultGCPMultiZoneCount
+		}
+		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, ZonesForGCPRegion(*pp.Parameters.Region, zonesCount))
 	}
 }
 

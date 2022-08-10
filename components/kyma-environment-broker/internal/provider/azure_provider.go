@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	DefaultAzureRegion     = "eastus"
-	DefaultAzureZonesCount = 3
+	DefaultAzureRegion         = "eastus"
+	DefaultAzureMultiZoneCount = 3
 )
 
 var europeAzure = "westeurope"
@@ -29,7 +29,9 @@ var toAzureSpecific = map[string]*string{
 }
 
 type (
-	AzureInput      struct{}
+	AzureInput struct {
+		MultiZone bool
+	}
 	AzureLiteInput  struct{}
 	AzureTrialInput struct {
 		PlatformRegionMapping map[string]string
@@ -38,6 +40,10 @@ type (
 )
 
 func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
+	zonesCount := 1
+	if p.MultiZone {
+		zonesCount = DefaultAzureMultiZoneCount
+	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
@@ -53,7 +59,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AzureConfig: &gqlschema.AzureProviderConfigInput{
 					VnetCidr:         "10.250.0.0/16",
-					AzureZones:       generateMultipleAzureZones(generateRandomAzureZones(DefaultAzureZonesCount)),
+					AzureZones:       generateMultipleAzureZones(generateRandomAzureZones(zonesCount)),
 					EnableNatGateway: ptr.Bool(true),
 				},
 			},

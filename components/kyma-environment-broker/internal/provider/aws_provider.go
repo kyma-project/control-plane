@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	DefaultAWSRegion      = "eu-central-1"
-	DefaultAWSTrialRegion = "eu-west-1"
-	DefaultAWSZonesCount  = 3
+	DefaultAWSRegion         = "eu-central-1"
+	DefaultAWSTrialRegion    = "eu-west-1"
+	DefaultAWSMultiZoneCount = 3
 )
 
 var europeAWS = "eu-west-1"
@@ -29,7 +29,9 @@ var toAWSSpecific = map[string]string{
 }
 
 type (
-	AWSInput      struct{}
+	AWSInput struct {
+		MultiZone bool
+	}
 	AWSTrialInput struct {
 		PlatformRegionMapping map[string]string
 	}
@@ -37,6 +39,10 @@ type (
 )
 
 func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
+	zonesCount := 1
+	if p.MultiZone {
+		zonesCount = DefaultAWSMultiZoneCount
+	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("gp2"),
@@ -52,7 +58,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
 					VpcCidr:  "10.250.0.0/16",
-					AwsZones: generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, DefaultAWSZonesCount)),
+					AwsZones: generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
 				},
 			},
 		},
@@ -148,7 +154,11 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(pp.Parameters.Zones)
 	// region is provided, with or without zonesCount
 	case pp.Parameters.Region != nil && *pp.Parameters.Region != "":
-		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, DefaultAWSZonesCount))
+		zonesCount := 1
+		if p.MultiZone {
+			zonesCount = DefaultAWSMultiZoneCount
+		}
+		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, zonesCount))
 	}
 }
 

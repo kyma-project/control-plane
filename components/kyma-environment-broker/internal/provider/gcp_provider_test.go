@@ -75,9 +75,47 @@ func TestGcpTrialInput_ApplyParametersWithRegion(t *testing.T) {
 	})
 }
 
-func TestGcpInput_ApplyParameters(t *testing.T) {
+func TestGcpInput_SingleZone_ApplyParameters(t *testing.T) {
 	// given
 	svc := GcpInput{}
+
+	// when
+	t.Run("zones with default region", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{},
+		})
+
+		// then
+		assert.Equal(t, "europe-west3", input.GardenerConfig.Region)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 1)
+		assert.Subset(t, []string{"europe-west3-a", "europe-west3-b", "europe-west3-c"}, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones)
+	})
+
+	// when
+	t.Run("zones with specified region", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: ptr.String("us-central1"),
+			},
+		})
+
+		// then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 1)
+		assert.Subset(t, []string{"us-central1-a", "us-central1-b", "us-central1-c"}, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones)
+	})
+}
+
+func TestGcpInput_MultiZone_ApplyParameters(t *testing.T) {
+	// given
+	svc := GcpInput{MultiZone: true}
 
 	// when
 	t.Run("zones with default region", func(t *testing.T) {

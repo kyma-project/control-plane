@@ -246,16 +246,14 @@ func TestInputBuilderFactory_ForPlan(t *testing.T) {
 		require.IsType(t, &RuntimeInput{}, input)
 
 		result := input.(*RuntimeInput)
-		autoscalerMax := *result.upgradeShootInput.GardenerConfig.AutoScalerMax
-		autoscalerMin := *result.upgradeShootInput.GardenerConfig.AutoScalerMin
 		maxSurge := *result.upgradeShootInput.GardenerConfig.MaxSurge
 		maxUnavailable := *result.upgradeShootInput.GardenerConfig.MaxUnavailable
 
-		assert.Equal(t, autoscalerMax, provider.Defaults().GardenerConfig.AutoScalerMax)
-		assert.Equal(t, autoscalerMin, provider.Defaults().GardenerConfig.AutoScalerMin)
+		assert.Nil(t, result.upgradeShootInput.GardenerConfig.AutoScalerMax)
+		assert.Nil(t, result.upgradeShootInput.GardenerConfig.AutoScalerMin)
 		assert.Equal(t, maxSurge, provider.Defaults().GardenerConfig.MaxSurge)
 		assert.Equal(t, maxUnavailable, provider.Defaults().GardenerConfig.MaxUnavailable)
-		t.Logf("%v, %v, %v, %v", autoscalerMax, autoscalerMin, maxSurge, maxUnavailable)
+		t.Logf("%v, %v", maxSurge, maxUnavailable)
 	})
 
 }

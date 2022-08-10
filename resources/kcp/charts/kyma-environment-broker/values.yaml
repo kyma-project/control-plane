@@ -143,6 +143,7 @@ gardener:
   defaultTrialProvider: "Azure" # Azure, AWS
   autoUpdateKubernetesVersion: "true"
   autoUpdateMachineImageVersion: "false"
+  multiZoneCluster: "false"
 
 kubeconfig:
   issuerURL: "TBD"

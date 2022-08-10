@@ -117,7 +117,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 	})
 }
 
-func TestAzurInput_ApplyParameters(t *testing.T) {
+func TestAzureInput_SingleZone_ApplyParameters(t *testing.T) {
 	// given
 	svc := AzureInput{}
 
@@ -132,7 +132,50 @@ func TestAzurInput_ApplyParameters(t *testing.T) {
 		})
 
 		//then
-		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, DefaultAzureZonesCount)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 1)
+		assert.Subset(t, []int{1, 2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+
+	// when
+	t.Run("use zones parameter", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Zones: []string{"2", "3"},
+			},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 2)
+		assert.Equal(t, []int{2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+}
+
+func TestAzureInput_MultiZone_ApplyParameters(t *testing.T) {
+	// given
+	svc := AzureInput{MultiZone: true}
+
+	// when
+	t.Run("defaults use three zones with dedicated subnet", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, DefaultAzureMultiZoneCount)
 		assert.ElementsMatch(t, []int{1, 2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
 		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
 			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)

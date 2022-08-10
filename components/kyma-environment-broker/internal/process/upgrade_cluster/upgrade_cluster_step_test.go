@@ -21,14 +21,13 @@ import (
 const (
 	fixKymaVersion                   = "1.19.0"
 	fixKubernetesVersion             = "1.17.16"
-	fixMachineType                   = "Standard_D8_v3"
 	fixMachineImage                  = "gardenlinux"
 	fixMachineImageVersion           = "184.0.0"
 	fixAutoUpdateKubernetesVersion   = true
 	fixAutoUpdateMachineImageVersion = true
 )
 
-func TestUpgradeKymaStep_Run(t *testing.T) {
+func TestUpgradeClusterStep_Run(t *testing.T) {
 	// given
 	expectedOIDC := fixture.FixOIDCConfigDTO()
 	log := logrus.New()
@@ -63,11 +62,8 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
-			MachineType:                         ptr.String(fixMachineType),
 			MachineImage:                        ptr.String(fixMachineImage),
 			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
-			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,
-			AutoScalerMax:                       operation.ProvisioningParameters.Parameters.AutoScalerMax,
 			MaxSurge:                            operation.ProvisioningParameters.Parameters.MaxSurge,
 			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),

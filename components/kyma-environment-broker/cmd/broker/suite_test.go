@@ -565,7 +565,7 @@ type ProvisioningSuite struct {
 	reconcilerClient *reconciler.FakeClient
 }
 
-func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
+func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuite {
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	logs := logrus.New()
 	db := storage.NewMemoryStorage()
@@ -604,6 +604,7 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 			ProvisioningTimeout:         time.Minute,
 			URL:                         "http://localhost",
 			DefaultGardenerShootPurpose: "testing",
+			MultiZoneCluster:            multiZoneCluster,
 		}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 	require.NoError(t, err)
 
@@ -913,11 +914,9 @@ func (s *ProvisioningSuite) AssertZonesCount(zonesCount *int, planID string) {
 	switch planID {
 	case broker.AzurePlanID:
 		if zonesCount != nil {
-			// zonesCount was provided in provisioning request
 			assert.Equal(s.t, *zonesCount, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
 			break
 		}
-		// zonesCount was not provided, should use default value
 		assert.Equal(s.t, 1, len(provisionInput.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
 	case broker.AWSPlanID:
 		if zonesCount != nil {
