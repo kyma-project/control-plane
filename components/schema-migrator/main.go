@@ -35,8 +35,8 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	if err != nil || migrateErr != nil {
-		fmt.Printf("error during migration: %w\n", migrateErr)
-		fmt.Printf("error during cleanup: %w\n", err)
+		log.Printf("error during migration: %w\n", migrateErr)
+		log.Printf("error during cleanup: %w\n", err)
 		os.Exit(-1)
 	}
 }
@@ -57,9 +57,9 @@ func invokeMigration() error {
 	direction := os.Getenv("DIRECTION")
 	switch direction {
 	case "up":
-		fmt.Println("Migration UP")
+		log.Println("Migration UP")
 	case "down":
-		fmt.Println("Migration DOWN")
+		log.Println("Migration DOWN")
 	default:
 		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
@@ -83,13 +83,13 @@ func invokeMigration() error {
 		dbName,
 	)
 
-	fmt.Println("# WAITING FOR CONNECTION WITH DATABASE #")
+	log.Println("# WAITING FOR CONNECTION WITH DATABASE #")
 	db, err := connectDB(connectionString, 30)
 	if err != nil {
 		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
 
-	fmt.Println("# STARTING MIGRATION #")
+	log.Println("# STARTING MIGRATION #")
 
 	migrationPath := fmt.Sprintf("file:///migrate/migrations/%s", os.Getenv("MIGRATION_PATH"))
 
@@ -108,7 +108,7 @@ func invokeMigration() error {
 	defer func(migrateInstance *migrate.Migrate) {
 		err, _ := migrateInstance.Close()
 		if err != nil {
-			fmt.Printf("error during migrate instance close: %s\n", err)
+			log.Printf("error during migrate instance close: %s\n", err)
 		}
 	}(migrateInstance)
 	migrateInstance.Log = &Logger{}
@@ -122,7 +122,7 @@ func invokeMigration() error {
 	if err != nil && !errors.Is(migrate.ErrNoChange, err) {
 		return fmt.Errorf("during migration: %w", err)
 	} else if errors.Is(migrate.ErrNoChange, err) {
-		fmt.Println("No Changes. Migration done.")
+		log.Println("No Changes. Migration done.")
 	}
 
 	return nil
