@@ -36,7 +36,7 @@ type instancePredicate func(internal.Instance) bool
 type instanceVisitor func(internal.Instance) error
 
 func main() {
-	time.Sleep(20 * times.Second)
+	time.Sleep(20 * time.Second)
 
 	log.Info("Starting trial cleanup job!")
 
