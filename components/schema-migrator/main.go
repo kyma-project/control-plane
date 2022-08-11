@@ -23,6 +23,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	time.Sleep(20 * time.Second)
 	migrateErr := invokeMigration()
 	if migrateErr != nil {
