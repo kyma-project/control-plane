@@ -36,8 +36,10 @@ func main() {
 }
 
 func invokeMigration() error {
-	envs := []string{"DB_USER", "DB_HOST", "DB_NAME", "DB_PORT",
-		"DB_PASSWORD", "MIGRATION_PATH", "DIRECTION"}
+	envs := []string{
+		"DB_USER", "DB_HOST", "DB_NAME", "DB_PORT",
+		"DB_PASSWORD", "MIGRATION_PATH", "DIRECTION",
+	}
 
 	for _, env := range envs {
 		_, present := os.LookupEnv(env)
@@ -128,8 +130,7 @@ func invokeMigration() error {
 	return nil
 }
 
-type Logger struct {
-}
+type Logger struct{}
 
 func (l *Logger) Printf(format string, v ...interface{}) {
 	fmt.Printf(format, v...)
