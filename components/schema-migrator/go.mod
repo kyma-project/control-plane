@@ -1,4 +1,4 @@
-module github.com/kyma-project/control-plane/schema-migrator
+module github.com/kyma-project/control-plane/components/schema-migrator
 
 go 1.18
 
