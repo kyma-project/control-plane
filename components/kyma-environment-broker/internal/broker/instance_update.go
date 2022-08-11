@@ -109,7 +109,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
 	if err != nil {
 		logger.Errorf("Unable to update the instance: %s", err.Error())
-		return domain.UpdateServiceSpec{}, err
+		return domain.UpdateServiceSpec{}, apiresponses.Is
 	}
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
@@ -385,7 +385,7 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 			logger.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
 			instance.ExpiredAt = ptr.Time(time.Now())
 			instance, err := b.instanceStorage.Update(*instance)
-			return instance, err
+			return instance, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "")
 		}
 	}
 	return instance, nil
