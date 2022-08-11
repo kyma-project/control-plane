@@ -69,7 +69,7 @@ func main() {
 	err = cleaner.Halt()
 	fatalOnError(err)
 
-	time.Sleep(5 * times.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func newTrialCleanupService(cfg Config, instances storage.Instances, logger *log.Logger) *TrialCleanupService {
