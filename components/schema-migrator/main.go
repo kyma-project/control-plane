@@ -105,20 +105,20 @@ func invokeMigration() error {
 		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %w", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
+	migrateInstance, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
 		"postgres", driver)
 	if err != nil {
 		return fmt.Errorf("error during migration initialization: %w", err)
 	}
 
-	defer m.Close()
-	m.Log = &Logger{}
+	defer migrateInstance.Close()
+	migrateInstance.Log = &Logger{}
 
 	if direction == "up" {
-		err = m.Up()
+		err = migrateInstance.Up()
 	} else if direction == "down" {
-		err = m.Down()
+		err = migrateInstance.Down()
 	}
 
 	if err != nil && err != migrate.ErrNoChange {
