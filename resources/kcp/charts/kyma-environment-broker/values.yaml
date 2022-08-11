@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-1945"
+      version: "PR-1950"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1868"
@@ -11,7 +11,7 @@ global:
       version: "22cb2b4e"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-1935"
+      version: "PR-1937"
 
 deployment:
   replicaCount: 1
@@ -251,6 +251,8 @@ subaccountCleanup:
 
 trialCleanup:
   schedule: "0,15,30,45 * * * *"
+  dryRun: true
+  expirationPeriod: 14d
 
 serviceMonitor:
   scrapeTimeout: 10s

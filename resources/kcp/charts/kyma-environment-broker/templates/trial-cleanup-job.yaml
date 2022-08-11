@@ -32,6 +32,10 @@ spec:
                 - name: DATABASE_EMBEDDED
                   value: "false"
                 {{end}} 
+                - name: APP_DRY_RUN
+                  value: "{{ .Values.trialCleanup.dryRun }}"
+                - name: APP_EXPIRATION_PERIOD
+                  value: "{{ .Values.trialCleanup.expirationPeriod }}"
                 - name: APP_DATABASE_SECRET_KEY
                   valueFrom:
                     secretKeyRef:
