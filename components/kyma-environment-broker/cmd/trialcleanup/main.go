@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -34,6 +35,8 @@ type instancePredicate func(internal.Instance) bool
 type instanceVisitor func(internal.Instance) error
 
 func main() {
+	time.Sleep(20 * times.Second)
+
 	log.Info("Starting trial cleanup job!")
 
 	// create and fill config
@@ -58,6 +61,11 @@ func main() {
 	fatalOnError(err)
 
 	log.Info("Trial cleanup job finished successfully!")
+
+	err = cleaner.Halt()
+	fatalOnError(err)
+
+	time.Sleep(5 * times.Second)
 }
 
 func newTrialCleanupService(instances storage.Instances, logger *log.Logger) *TrialCleanupService {

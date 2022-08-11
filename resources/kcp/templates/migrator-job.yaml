@@ -45,6 +45,10 @@ spec:
                       - name: DATABASE_EMBEDDED
                         value: "true"
                       {{end}}
+                      {{if eq .Values.global.database.embedded.enabled false}}
+                      - name: DATABASE_EMBEDDED
+                        value: "false"
+                      {{end}}
                       - name: DB_USER
                         valueFrom:
                             secretKeyRef:
@@ -131,6 +135,10 @@ spec:
                       {{if eq .Values.global.database.embedded.enabled true}}
                       - name: DATABASE_EMBEDDED
                         value: "true"
+                      {{end}}
+                      {{if eq .Values.global.database.embedded.enabled false}}
+                      - name: DATABASE_EMBEDDED
+                        value: "false"
                       {{end}}
                       - name: DB_USER
                         valueFrom:

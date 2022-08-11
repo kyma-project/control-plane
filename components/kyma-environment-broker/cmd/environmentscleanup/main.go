@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-project/control-plane/schema-migrator/cleaner"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/dlmiddlecote/sqlstats"
@@ -35,6 +35,9 @@ type provisionerConfig struct {
 }
 
 func main() {
+
+	time.Sleep(20 * time.Second)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(errors.Wrap(err, "while loading cleanup config"))
@@ -71,6 +74,8 @@ func main() {
 	}
 
 	log.Info("Kyma Environments cleanup performed successfully")
+
+	time.Sleep(5 * time.Second)
 }
 
 func fatalOnError(err error) {

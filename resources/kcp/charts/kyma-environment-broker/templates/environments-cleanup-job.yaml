@@ -34,6 +34,10 @@ spec:
             image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environments_cleanup_job.dir }}kyma-environments-cleanup-job:{{ .Values.global.images.kyma_environments_cleanup_job.version }}"
             imagePullPolicy: IfNotPresent
             env:
+              {{if eq .Values.global.database.embedded.enabled false}}
+              - name: DATABASE_EMBEDDED
+                value: "false"
+              {{end}}
               - name: APP_MAX_AGE_HOURS
                 value: "{{ .Values.environmentsCleanup.maxAge }}"
               - name: APP_LABEL_SELECTOR
@@ -100,7 +104,7 @@ spec:
               - bin/sh
             args:
               - -c
-              - "sleep 20; ./bin/environments-cleanup; exit_code=$?; echo '# KILLING CLOUD PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
+              - "./bin/environments-cleanup"
             volumeMounts:
               - mountPath: /gardener/kubeconfig
                 name: gardener-kubeconfig

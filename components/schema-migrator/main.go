@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-project/control-plane/schema-migrator/cleaner"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
