@@ -20,7 +20,7 @@ func main() {
 	time.Sleep(20 * time.Second)
 	migrateErr := invokeMigration()
 	if migrateErr != nil {
-		fmt.Printf("while invoking migration: %w", migrateErr)
+		fmt.Printf("while invoking migration: %s", migrateErr)
 	}
 
 	// continue with cleanup
