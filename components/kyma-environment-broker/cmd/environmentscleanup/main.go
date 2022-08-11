@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-project/control-plane/schema-migrator/cleaner"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/dlmiddlecote/sqlstats"
@@ -63,6 +64,12 @@ func main() {
 	if err != nil {
 		fatalOnError(err)
 	}
+
+	err = cleaner.Halt()
+	if err != nil {
+		fatalOnError(err)
+	}
+
 	log.Info("Kyma Environments cleanup performed successfully")
 }
 

@@ -5,13 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
+
+	"github.com/kyma-project/control-plane/schema-migrator/cleaner"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -27,19 +24,13 @@ func main() {
 	}
 
 	// continue with cleanup
-	_, embeded := os.LookupEnv("DATABASE_EMBEDDED")
-	var err error = nil
-	if !embeded {
-		err = haltCloudSqlProxy()
-	} else if embeded {
-		err = haltIstioSidecar()
-	}
+	err := cleaner.Halt()
 
 	time.Sleep(5 * time.Second)
 
 	if err != nil || migrateErr != nil {
-		fmt.Printf("error during cleanup: %s\n", err)
 		fmt.Printf("error during migration: %s\n", migrateErr)
+		fmt.Printf("error during cleanup: %s\n", err)
 		os.Exit(-1)
 	}
 }
@@ -132,61 +123,6 @@ func invokeMigration() error {
 		return fmt.Errorf("during migration: %s", err)
 	} else if err == migrate.ErrNoChange {
 		fmt.Println("No Changes. Migration done.")
-	}
-
-	return nil
-}
-
-func haltCloudSqlProxy() error {
-	fmt.Println("# HALT CLOUD SQL PROXY #")
-	matches, err := filepath.Glob("/proc/*/comm")
-	if err != nil {
-		return fmt.Errorf("while reading process list: %s", err)
-	}
-
-	if len(matches) == 0 {
-		fmt.Println("No matching processes found")
-	}
-
-	for _, file := range matches {
-
-		target, _ := os.ReadFile(file)
-
-		if len(target) > 0 && strings.Contains(string(target), "cloud_sql_proxy") {
-			splitted := strings.Split(file, "/")
-
-			pid, err := strconv.Atoi(splitted[2])
-			if err != nil {
-				return fmt.Errorf("while reading process id: %s", err)
-			}
-
-			proc, err := os.FindProcess(pid)
-			if err != nil {
-				return fmt.Errorf("while reading process by pid: %s", err)
-			}
-
-			err = proc.Signal(os.Interrupt)
-			if err != nil {
-				return fmt.Errorf("while killing cloud_sql_proxy: %s", err)
-			}
-
-			break
-		}
-	}
-	return nil
-}
-
-func haltIstioSidecar() error {
-	fmt.Println("# HALT ISTIO SIDECAR #")
-	resp, err := http.PostForm("http://127.0.0.1:15020/quitquitquit", url.Values{})
-
-	if err != nil {
-		return fmt.Errorf("while sending post to quit Istio sidecar: %s", err)
-	}
-
-	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		fmt.Printf("Quiting istio, response status is: %d", resp.StatusCode)
-		return nil
 	}
 
 	return nil
