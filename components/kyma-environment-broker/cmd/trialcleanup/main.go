@@ -21,13 +21,12 @@ const (
 type Config struct {
 	Database         storage.Config
 	DryRun           bool          `envconfig:"default=true"`
-	ExpirationPeriod time.Duration `envconfig:"default=14d"`
+	ExpirationPeriod time.Duration `envconfig:"default=336h"`
 }
 
 type TrialCleanupService struct {
 	cfg             Config
 	instanceStorage storage.Instances
-	logger          *log.Logger
 	filter          dbmodel.InstanceFilter
 }
 
@@ -38,6 +37,7 @@ type instanceVisitor func(internal.Instance) error
 func main() {
 	time.Sleep(20 * time.Second)
 
+	log.SetFormatter(&log.JSONFormatter{})
 	log.Info("Starting trial cleanup job!")
 
 	// create and fill config
@@ -56,9 +56,7 @@ func main() {
 	db, _, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
 
-	logger := log.New()
-
-	svc := newTrialCleanupService(cfg, db.Instances(), logger)
+	svc := newTrialCleanupService(cfg, db.Instances())
 
 	err = svc.PerformCleanup()
 
@@ -72,11 +70,10 @@ func main() {
 	time.Sleep(5 * time.Second)
 }
 
-func newTrialCleanupService(cfg Config, instances storage.Instances, logger *log.Logger) *TrialCleanupService {
+func newTrialCleanupService(cfg Config, instances storage.Instances) *TrialCleanupService {
 	return &TrialCleanupService{
 		cfg:             cfg,
 		instanceStorage: instances,
-		logger:          logger,
 	}
 }
 
@@ -86,15 +83,16 @@ func (s *TrialCleanupService) PerformCleanup() error {
 	nonExpiredTrialInstances, nonExpiredTrialInstancesCount, err := s.getInstances(nonExpiredTrialInstancesFilter)
 
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while getting non expired trial instances"))
+		log.Error(errors.Wrap(err, "while getting non expired trial instances"))
 		return err
 	}
 
-	s.logger.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
+	log.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
 
 	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
 
-	s.logger.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
+	log.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
+	log.Infof("Trials to be left untouched: %+v", nonExpiredTrialInstancesCount-len(instancesToBeCleanedUp))
 
 	if s.cfg.DryRun {
 		return s.visitInstances(instancesToBeCleanedUp, s.executeDryRun)
@@ -134,13 +132,13 @@ func (s *TrialCleanupService) visitInstances(instances []internal.Instance, visi
 }
 
 func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
-	s.logger.Infof("instanceId: %+v createdAt: %+v (so %.0f days ago) servicePlanID: %+v servicePlanName: %+v\n",
+	log.Infof("instanceId: %+v createdAt: %+v (so %.0f days ago) servicePlanID: %+v servicePlanName: %+v\n",
 		instance.InstanceID, instance.CreatedAt, time.Since(instance.CreatedAt).Hours()/24, instance.ServicePlanID, instance.ServicePlanName)
 	return nil
 }
 
 func (s *TrialCleanupService) suspendInstance(instance internal.Instance) error {
-	s.logger.Infof("About to suspend instanceId: %+v - to be implemented", instance.InstanceID)
+	log.Infof("About to suspend instanceId: %+v - to be implemented", instance.InstanceID)
 	return nil
 }
 
