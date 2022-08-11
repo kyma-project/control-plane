@@ -81,7 +81,7 @@ func invokeMigration() error {
 	db, err := sql.Open("postgres", connectionString)
 
 	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error while connecting to the database, %w\n", err)
+		fmt.Printf("Error while connecting to the database, %s\n", err)
 		db, err = sql.Open("postgres", connectionString)
 		time.Sleep(1 * time.Second)
 	}
@@ -96,7 +96,7 @@ func invokeMigration() error {
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error during driver initialization, %w\n", err)
+		fmt.Printf("Error during driver initialization, %s\n", err)
 		driver, err = postgres.WithInstance(db, &postgres.Config{})
 		time.Sleep(1 * time.Second)
 	}
