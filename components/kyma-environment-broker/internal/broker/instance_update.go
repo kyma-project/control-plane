@@ -369,7 +369,7 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 		var params internal.UpdatingParametersDTO
 		err := json.Unmarshal(details.RawParameters, &params)
 		if err != nil {
-			return instance, err
+			return instance, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "")
 		}
 		if params.Expired {
 			if !IsTrialPlan(instance.ServicePlanID) {
