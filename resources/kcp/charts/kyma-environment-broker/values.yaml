@@ -252,7 +252,7 @@ subaccountCleanup:
 trialCleanup:
   schedule: "0,15,30,45 * * * *"
   dryRun: true
-  expirationPeriod: 14d
+  expirationPeriod: 336h
 
 serviceMonitor:
   scrapeTimeout: 10s
