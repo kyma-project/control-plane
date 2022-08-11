@@ -109,7 +109,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
 	if err != nil {
 		logger.Errorf("Unable to update the instance: %s", err.Error())
-		return domain.UpdateServiceSpec{}, apiresponses.Is
+		return domain.UpdateServiceSpec{}, err
 	}
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
