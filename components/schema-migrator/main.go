@@ -20,7 +20,7 @@ func main() {
 	time.Sleep(20 * time.Second)
 	migrateErr := invokeMigration()
 	if migrateErr != nil {
-		fmt.Printf("while invoking migration: %s", migrateErr)
+		fmt.Printf("while invoking migration: %w", migrateErr)
 	}
 
 	// continue with cleanup
@@ -29,8 +29,8 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	if err != nil || migrateErr != nil {
-		fmt.Printf("error during migration: %s\n", migrateErr)
-		fmt.Printf("error during cleanup: %s\n", err)
+		fmt.Printf("error during migration: %w\n", migrateErr)
+		fmt.Printf("error during cleanup: %w\n", err)
 		os.Exit(-1)
 	}
 }
@@ -79,13 +79,13 @@ func invokeMigration() error {
 	db, err := sql.Open("postgres", connectionString)
 
 	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error while connecting to the database, %s\n", err)
+		fmt.Printf("Error while connecting to the database, %w\n", err)
 		db, err = sql.Open("postgres", connectionString)
 		time.Sleep(1 * time.Second)
 	}
 
 	if err != nil {
-		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %s", err)
+		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
 
 	fmt.Println("# STARTING MIGRATION #")
@@ -94,20 +94,20 @@ func invokeMigration() error {
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error during driver initialization, %s\n", err)
+		fmt.Printf("Error during driver initialization, %w\n", err)
 		driver, err = postgres.WithInstance(db, &postgres.Config{})
 		time.Sleep(1 * time.Second)
 	}
 
 	if err != nil {
-		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %s", err)
+		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %w", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
 		"postgres", driver)
 	if err != nil {
-		return fmt.Errorf("error during migration initialization: %s", err)
+		return fmt.Errorf("error during migration initialization: %w", err)
 	}
 
 	defer m.Close()
@@ -120,7 +120,7 @@ func invokeMigration() error {
 	}
 
 	if err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("during migration: %s", err)
+		return fmt.Errorf("during migration: %w", err)
 	} else if err == migrate.ErrNoChange {
 		fmt.Println("No Changes. Migration done.")
 	}
