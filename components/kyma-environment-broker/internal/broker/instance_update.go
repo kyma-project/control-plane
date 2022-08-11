@@ -105,6 +105,13 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
+	// If the param contains "expired" - then process expiration (save it in the instance)
+	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
+	if err != nil {
+		logger.Errorf("Unable to update the instance: %s", err.Error())
+		return domain.UpdateServiceSpec{}, err
+	}
+
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
 		logger.Errorf("cannot fetch provisioning lastProvisioningOperation for instance with ID: %s : %s", instance.InstanceID, err.Error())
@@ -112,13 +119,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 	if lastProvisioningOperation.State == domain.Failed {
 		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "")
-	}
-
-	// If the param contains "expired" - then process expiration (save it in the instance)
-	instance, err = b.processExpirationParam(instance, details)
-	if err != nil {
-		logger.Errorf("Unable to update the instance: %s", err.Error())
-		return domain.UpdateServiceSpec{}, err
 	}
 
 	lastDeprovisioningOperation, err := b.operationStorage.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
@@ -360,7 +360,7 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 }
 
 // processExpirationParam returns true, if expired
-func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, details domain.UpdateDetails) (*internal.Instance, error) {
+func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, details domain.UpdateDetails, ers internal.ERSContext, logger logrus.FieldLogger) (*internal.Instance, error) {
 	// if the instance was expired before (in the past), then no need to do any work
 	if instance.IsExpired() {
 		return instance, nil
@@ -373,11 +373,16 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 		}
 		if params.Expired {
 			if !IsTrialPlan(instance.ServicePlanID) {
-				b.log.Warn("Expiration of a non-trial instance is not supported")
+				logger.Warn("Expiration of a non-trial instance is not supported")
 				return instance, apiresponses.NewFailureResponse(fmt.Errorf("expiration of a non-trial instance is not supported"), http.StatusBadRequest, "")
 			}
 
-			b.log.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
+			if ers.Active == nil || *ers.Active {
+				logger.Warn("Parameter 'expired' requires `context.active=false`")
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("context.active=false is required for expiration"), http.StatusBadRequest, "")
+			}
+
+			logger.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
 			instance.ExpiredAt = ptr.Time(time.Now())
 			instance, err := b.instanceStorage.Update(*instance)
 			return instance, err
