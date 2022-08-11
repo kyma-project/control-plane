@@ -212,10 +212,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 
 	// awsHASchema := AWSHASchema(awsMachines, includeAdditionalParamsInSchema, false)
 
-	// TODO: restore slice in the line below when change introduced in https://github.wdf.sap.corp/kubernetes/landscape-setup/pull/4635 gets to production
-	//gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
-	// Till then n2-standard-48 is not supported by gardener which causes such occurrences as in https://github.tools.sap/kyma/backlog/issues/2790
-	gcpMachines := []string{"n2-standard-4", "n2-standard-8", "n2-standard-16", "n2-standard-32"}
+	gcpMachines := []string{"n2-standard-4", "n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
 	gcpSchema := GCPSchema(gcpMachines, includeAdditionalParamsInSchema, false)
 
 	openStackMachines := []string{"g_c4_m16", "g_c8_m32"}

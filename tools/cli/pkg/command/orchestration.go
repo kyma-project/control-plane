@@ -32,6 +32,7 @@ type OrchestrationCommand struct {
 	states     []string
 	operations []string
 	subCommand string
+	now        bool
 	listParams orchestration.ListParameters
 }
 
@@ -182,7 +183,8 @@ The command has the following modes:
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations                  Display the operations of the given orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel                      Cancel the given orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry                       Retry all failed operations of the given orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration.`,
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --now --operation OID1 Retry the given operations of the given orchestration schedule immediately`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -192,6 +194,7 @@ The command has the following modes:
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "s", nil, fmt.Sprintf("Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: %s.", strings.Join(cliOrchestrationStates(), ", ")))
 	cobraCmd.Flags().StringSliceVar(&cmd.operations, "operation", nil, "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
+	cobraCmd.Flags().BoolVarP(&cmd.now, "now", "n", false, "retry failed operations with schedule immediate.")
 	return cobraCmd
 }
 
@@ -246,8 +249,22 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
+			sr, err := cmd.client.GetOrchestration(args[0])
+			if err != nil {
+				return errors.Wrap(err, "while getting orchestration")
+			}
+			if !PromptUser(fmt.Sprintf("%s operation will be cancelled. Are you sure you want to continue?", sr.Type)) {
+				return errors.New("Cancel command aborted")
+			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
+			sr, err := cmd.client.GetOrchestration(args[0])
+			if err != nil {
+				return errors.Wrap(err, "while getting orchestration")
+			}
+			if !PromptUser(fmt.Sprintf("%s operation will be retried. Are you sure you want to continue?", sr.Type)) {
+				return errors.New("Retry command aborted")
+			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
@@ -443,7 +460,7 @@ func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) erro
 		return nil
 	}
 
-	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
+	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations, cmd.now)
 	if err != nil {
 		return errors.Wrap(err, "while triggering retrying orchestration")
 	}
@@ -550,4 +567,23 @@ func orchestrationDetails(obj interface{}) string {
 	}
 
 	return sb.String()
+}
+
+func PromptUser(msg string) bool {
+	fmt.Printf("%s%s", "? ", msg)
+	for {
+		fmt.Print("Type [y/N]: ")
+		var res string
+		if _, err := fmt.Scanf("%s", &res); err != nil {
+			return false
+		}
+		switch res {
+		case "yes", "y":
+			return true
+		case "No", "N", "no", "n":
+			return false
+		default:
+			continue
+		}
+	}
 }
