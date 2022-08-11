@@ -161,7 +161,7 @@ func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtim
 	return fileterRuntimes
 }
 
-func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation, updateWindow bool) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
 	result := []orchestration.RuntimeOperation{}
 	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
 	if err != nil {
@@ -171,16 +171,21 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 	fileterRuntimes := m.extractRuntimes(o, runtimes, retryRT)
 
 	for _, r := range fileterRuntimes {
-		windowBegin := time.Time{}
-		windowEnd := time.Time{}
-		days := []string{}
+		fmt.Println("NewOperationForPendingRetrying() r.MaintenanceWindowBegin", r.MaintenanceWindowBegin)
+		fmt.Println("NewOperationForPendingRetrying() updateWindow", updateWindow)
+		if updateWindow {
+			windowBegin := time.Time{}
+			windowEnd := time.Time{}
+			days := []string{}
 
-		if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-			windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
+			if o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
+			}
+			r.MaintenanceWindowBegin = windowBegin
+			fmt.Println("NewOperationForPendingRetrying() reset r.MaintenanceWindowBegin", r.MaintenanceWindowBegin)
+			r.MaintenanceWindowEnd = windowEnd
+			r.MaintenanceDays = days
 		}
-		r.MaintenanceWindowBegin = windowBegin
-		r.MaintenanceWindowEnd = windowEnd
-		r.MaintenanceDays = days
 
 		inst, err := m.instanceStorage.GetByID(r.InstanceID)
 		if err != nil {
@@ -193,6 +198,7 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 		}
 
 		result = append(result, op)
+
 	}
 
 	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
@@ -215,7 +221,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 	if o.State == orchestration.Pending {
 		var err error
 		var runtTimesNum int
-		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, result)
+		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, result, true)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
 		}
@@ -223,25 +229,24 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		o.Description = fmt.Sprintf("Scheduled %d operations", runtTimesNum)
 	} else if o.State == orchestration.Retrying {
 		//check retry operation list, if empty return error
-		if len(o.Parameters.RetryOperations) == 0 {
-			return nil, errors.Wrap(errors.New("o.Parameters.RetryOperations=0"), "while retrying operations")
+		if len(o.Parameters.RetryOperation.RetryOperations) == 0 {
+			return nil, errors.Wrap(errors.New("o.Parameters.RetryOperation.RetryOperations is empty"), "while retrying operations")
 		}
-
-		retryRuntimes, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
+		retryRuntimes, err := m.factory.RetryOperations(o.Parameters.RetryOperation.RetryOperations)
 		if err != nil {
 			return retryRuntimes, errors.Wrap(err, "while resolving retrying orchestration")
 		}
 
 		var runtTimesNum int
-		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes)
+		fmt.Println("resolveOperations() o.Parameters.RetryOperation.Immediate", o.Parameters.RetryOperation.Immediate)
+		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes, o.Parameters.RetryOperation.Immediate == "true")
 
 		if err != nil {
 			return nil, errors.Wrapf(err, "while NewOperationForPendingRetrying()")
 		}
 
-		o.Parameters.RetryOperations = nil
-
 		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
+		o.Parameters.RetryOperation.RetryOperations = nil
 		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	} else {
 		// Resume processing of not finished upgrade operations after restart
@@ -314,14 +319,16 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 			numberOfNotFinished += numberOfRetrying
 		}
 
-		if len(o.Parameters.RetryOperations) != 0 {
-			ops, err := m.factory.RetryOperations(o.Parameters.RetryOperations)
+		if len(o.Parameters.RetryOperation.RetryOperations) > 0 {
+			ops, err := m.factory.RetryOperations(o.Parameters.RetryOperation.RetryOperations)
 			if err != nil {
 				// don't block the polling and cancel signal
 				log.Errorf("PollImmediateInfinite() while handling retrying operations: %v", err)
 			}
+
 			o.State = orchestration.Retrying
-			result, o, _, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops)
+			fmt.Println("PollImmediateInfinite() o.Parameters.RetryOperation.Immediate=", o.Parameters.RetryOperation.Immediate)
+			result, o, _, err := m.NewOperationForPendingRetrying(o, orchestration.MaintenancePolicy{}, ops, o.Parameters.RetryOperation.Immediate == "true")
 			if err != nil {
 				log.Errorf("PollImmediateInfinite() while new operation for retrying instanceid : %v", err)
 			}
@@ -335,15 +342,9 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 				execIDs = append(execIDs, retryExecID)
 				execID = retryExecID
 			}
-
-			o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(o.Parameters.RetryOperations)))
-			o.Parameters.RetryOperations = nil
-			err = m.orchestrationStorage.Update(*o)
-			if err != nil {
-				log.Errorf("while updating orchestration %s: %v", orchestrationID, err)
-				return false, errors.Wrapf(err, "while updating orchestration %s", orchestrationID)
-			}
-			m.log.Infof("PollImmediateInfinite() resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
+			o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(o.Parameters.RetryOperation.RetryOperations)))
+			o.Parameters.RetryOperation.RetryOperations = nil
+			m.log.Infof("PollImmediateInfinite() while resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 		}
 
 		// don't wait for pending operations if orchestration was canceled

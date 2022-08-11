@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification"
 	notificationAutomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/notification/mocks"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/manager"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -314,17 +314,26 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		resolver := &automock.RuntimeResolver{}
 		defer resolver.AssertExpectations(t)
 
+		resolver.On("Resolve", orchestration.TargetSpec{
+			Include: nil,
+			Exclude: nil,
+		}).Return([]orchestration.Runtime{}, nil)
+
 		id := "id"
 		opId := "op-" + id
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Retrying,
 			Type:            orchestration.UpgradeKymaOrchestration,
-			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
-			}},
+			Parameters: orchestration.Parameters{
+				Strategy: orchestration.StrategySpec{
+					Type:     orchestration.ParallelStrategy,
+					Schedule: orchestration.Immediate,
+					Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+				},
+				RetryOperation: orchestration.RetryOperationParameters{
+					RetryOperations: []string{"op-id"},
+				}},
 		})
 		require.NoError(t, err)
 
@@ -373,7 +382,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		o, err := store.Orchestrations().GetByID(id)
 		require.NoError(t, err)
 
-		assert.Equal(t, orchestration.Failed, o.State)
+		assert.Equal(t, orchestration.Succeeded, o.State)
 
 		op, err := store.Operations().GetUpgradeKymaOperationByID(opId)
 		require.NoError(t, err)
@@ -482,24 +491,29 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			RuntimeID:  runtimeID,
 		})
 		require.NoError(t, err)
-		err = store.Orchestrations().Insert(internal.Orchestration{
-			OrchestrationID: id,
-			State:           orchestration.Retrying,
-			Type:            orchestration.UpgradeClusterOrchestration,
-			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
-			},
-				Kyma: &orchestration.KymaParameters{Version: ""},
-				Targets: orchestration.TargetSpec{
-					Include: []orchestration.RuntimeTarget{
-						{RuntimeID: opId},
+		err = store.Orchestrations().Insert(
+			internal.Orchestration{
+				OrchestrationID: id,
+				State:           orchestration.Retrying,
+				Type:            orchestration.UpgradeClusterOrchestration,
+				Parameters: orchestration.Parameters{
+					Strategy: orchestration.StrategySpec{
+						Type:     orchestration.ParallelStrategy,
+						Schedule: orchestration.Immediate,
+						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 					},
-					Exclude: nil,
+					Kyma: &orchestration.KymaParameters{Version: ""},
+					Targets: orchestration.TargetSpec{
+						Include: []orchestration.RuntimeTarget{
+							{RuntimeID: opId},
+						},
+						Exclude: nil,
+					},
+					RetryOperation: orchestration.RetryOperationParameters{
+						RetryOperations: []string{"op-id"},
+					},
 				},
-				RetryOperations: []string{"op-id"}},
-		})
+			})
 		require.NoError(t, err)
 
 		err = store.Operations().InsertUpgradeKymaOperation(internal.UpgradeKymaOperation{

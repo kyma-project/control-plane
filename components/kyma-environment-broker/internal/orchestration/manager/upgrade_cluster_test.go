@@ -400,23 +400,28 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = store.Orchestrations().Insert(internal.Orchestration{
-			OrchestrationID: id,
-			State:           orchestration.Retrying,
-			Type:            orchestration.UpgradeClusterOrchestration,
-			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: orchestration.Immediate,
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
-			},
-				Targets: orchestration.TargetSpec{
-					Include: []orchestration.RuntimeTarget{
-						{RuntimeID: opId},
+		err = store.Orchestrations().Insert(
+			internal.Orchestration{
+				OrchestrationID: id,
+				State:           orchestration.Retrying,
+				Type:            orchestration.UpgradeClusterOrchestration,
+				Parameters: orchestration.Parameters{
+					Strategy: orchestration.StrategySpec{
+						Type:     orchestration.ParallelStrategy,
+						Schedule: orchestration.Immediate,
+						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 					},
-					Exclude: nil,
+					Targets: orchestration.TargetSpec{
+						Include: []orchestration.RuntimeTarget{
+							{RuntimeID: opId},
+						},
+						Exclude: nil,
+					},
+					RetryOperation: orchestration.RetryOperationParameters{
+						RetryOperations: []string{"op-id"},
+					},
 				},
-				RetryOperations: []string{"op-id"}},
-		})
+			})
 
 		require.NoError(t, err)
 
