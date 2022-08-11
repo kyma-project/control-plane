@@ -112,7 +112,12 @@ func invokeMigration() error {
 		return fmt.Errorf("error during migration initialization: %w", err)
 	}
 
-	defer migrateInstance.Close()
+	defer func(migrateInstance *migrate.Migrate) {
+		err, _ := migrateInstance.Close()
+		if err != nil {
+			fmt.Printf("error during migrate instance close: %s\n", err)
+		}
+	}(migrateInstance)
 	migrateInstance.Log = &Logger{}
 
 	if direction == "up" {
