@@ -13,8 +13,9 @@ filters:
      - akgalwas
      - janmedrek
      - franpog859
-     - Maladie
      - koala7659
+     - mvshao
+     - VOID404
   '\.md$|/docs/|^milv\.config\.yaml$':
     approvers:
       - documentation-approvers

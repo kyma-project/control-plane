@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -83,6 +86,58 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
 	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
 	assert.Len(t, response.Metadata.Labels, 1)
+}
+
+func TestUpdateEndpoint_UpdateExpirationOfTrial(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		InstanceID:    instanceID,
+		ServicePlanID: TrialPlanID,
+		Parameters: internal.ProvisioningParameters{
+			PlanID: TrialPlanID,
+			ErsContext: internal.ERSContext{
+				TenantID:        "",
+				SubAccountID:    "",
+				GlobalAccountID: "",
+				Active:          nil,
+			},
+		},
+	}
+	st := storage.NewMemoryStorage()
+	st.Instances().Insert(instance)
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
+
+	handler := &handler{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
+	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+		return &gqlschema.ClusterConfigInput{}, nil
+	}
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+
+	// when
+	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+		ServiceID:       "",
+		PlanID:          TrialPlanID,
+		RawParameters:   json.RawMessage(`{"expired": true}`),
+		PreviousValues:  domain.PreviousValues{},
+		RawContext:      json.RawMessage("{\"active\":false}"),
+		MaintenanceInfo: nil,
+	}, true)
+	require.NoError(t, err)
+
+	// then
+
+	assert.Equal(t, internal.ERSContext{
+		Active: ptr.Bool(false),
+	}, handler.ersContext)
+
+	require.NotNil(t, handler.Instance.Parameters.ErsContext.Active)
+	assert.True(t, *handler.Instance.Parameters.ErsContext.Active)
+	assert.Len(t, response.Metadata.Labels, 1)
+	inst, err := st.Instances().GetByID(instanceID)
+	require.NoError(t, err)
+	assert.True(t, inst.IsExpired())
 }
 
 func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {

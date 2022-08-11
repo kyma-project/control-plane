@@ -186,6 +186,9 @@ type UpdatingParametersDTO struct {
 
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+
+	// Expired - means that the trial SKR is marked as expired
+	Expired bool `json:"expired"`
 }
 
 func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {

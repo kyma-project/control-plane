@@ -996,7 +996,7 @@ func fixConfig() *Config {
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial"},
+			EnablePlans: []string{"azure", "trial", "aws"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
