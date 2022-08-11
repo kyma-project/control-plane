@@ -92,7 +92,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
 	if instance.IsExpired() {
 		logger.Infof("The instance is expired (%s)", instance.ExpiredAt)
-		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, fmt.Sprintf("Could not execute update for an expired instanceID %s (expired at %s)", instanceID, instance.ExpiredAt))
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("the instance is expired"), http.StatusUnprocessableEntity, fmt.Sprintf("Could not execute update for an expired instanceID %s (expired at %s)", instanceID, instance.ExpiredAt))
 	}
 
 	var ersContext internal.ERSContext
