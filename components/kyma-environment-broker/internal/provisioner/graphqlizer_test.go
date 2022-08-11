@@ -403,10 +403,12 @@ func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
 		{
 			name: "Azure will all parameters",
 			givenInput: gqlschema.AzureProviderConfigInput{
-				VnetCidr: "8.8.8.8",
-				Zones:    []string{"fix-az-zone-1", "fix-az-zone-2"},
+				EnableNatGateway: boolPtr(true),
+				VnetCidr:         "8.8.8.8",
+				Zones:            []string{"fix-az-zone-1", "fix-az-zone-2"},
 			},
 			expected: `{
+		enableNatGateway: true,	
 		vnetCidr: "8.8.8.8",
 		zones: ["fix-az-zone-1","fix-az-zone-2"],
 	}`,
@@ -416,7 +418,7 @@ func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
 			givenInput: gqlschema.AzureProviderConfigInput{
 				VnetCidr: "8.8.8.8",
 			},
-			expected: `{
+			expected: `{	
 		vnetCidr: "8.8.8.8",
 	}`,
 		},

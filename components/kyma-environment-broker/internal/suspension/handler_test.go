@@ -61,8 +61,8 @@ func TestSuspension_Retrigger(t *testing.T) {
 				UpdatedAt:  time.Now(),
 				InstanceID: instance.InstanceID,
 				State:      domain.Succeeded,
+				Temporary:  true,
 			},
-			Temporary: true,
 		})
 
 		// when
@@ -96,8 +96,8 @@ func TestSuspension_Retrigger(t *testing.T) {
 				UpdatedAt:  time.Now(),
 				InstanceID: instance.InstanceID,
 				State:      domain.Failed,
+				Temporary:  true,
 			},
-			Temporary: true,
 		})
 
 		// when

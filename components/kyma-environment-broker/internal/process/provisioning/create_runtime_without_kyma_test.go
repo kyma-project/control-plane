@@ -30,6 +30,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	administrator := ""
+	disabled := false
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
@@ -84,6 +85,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 						},
 					},
 				},
+				ShootNetworkingFilterDisabled: &disabled,
 			},
 			Administrators: []string{administrator},
 		},

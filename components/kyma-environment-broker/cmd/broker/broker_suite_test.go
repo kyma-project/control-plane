@@ -14,10 +14,6 @@ import (
 	"testing"
 	"time"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"code.cloudfoundry.org/lager"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -28,6 +24,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -56,10 +53,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -85,11 +85,11 @@ type BrokerSuiteTest struct {
 
 type componentProviderDecorated struct {
 	componentProvider input.ComponentListProvider
-	decorator         map[string]kebRuntime.KymaComponent
+	decorator         map[string]internal.KymaComponent
 }
 
-func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, planName string) ([]kebRuntime.KymaComponent, error) {
-	all, err := s.componentProvider.AllComponents(kymaVersion, planName)
+func (s componentProviderDecorated) AllComponents(kymaVersion internal.RuntimeVersionData, config *internal.ConfigForPlan) ([]internal.KymaComponent, error) {
+	all, err := s.componentProvider.AllComponents(kymaVersion, config)
 	for i, c := range all {
 		if dc, found := s.decorator[c.Name]; found {
 			all[i] = dc
@@ -107,6 +107,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
+	additionalKymaVersions = append(additionalKymaVersions, version...)
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, additionalKymaVersions)...).Build()
 	cfg := fixConfig()
 	if len(version) == 1 {
@@ -122,22 +123,28 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	componentsYAML := kebRuntime.ReadYAMLFromFile(t, "kyma-components.yaml")
 	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
+	configProvider := kebConfig.NewConfigProvider(
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapKeysValidator(),
+		kebConfig.NewConfigMapConverter())
+
 	componentListProvider := kebRuntime.NewComponentsListProvider(
 		path.Join("testdata", "managed-runtime-components.yaml"),
 		path.Join("testdata", "additional-runtime-components.yaml")).WithHTTPClient(fakeHTTPClient)
 	decoratedComponentListProvider := componentProviderDecorated{
 		componentProvider: componentListProvider,
-		decorator:         make(map[string]kebRuntime.KymaComponent),
+		decorator:         make(map[string]internal.KymaComponent),
 	}
 
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider, input.Config{
-		MachineImageVersion:         "253",
-		KubernetesVersion:           "1.18",
-		MachineImage:                "coreos",
-		URL:                         "http://localhost",
-		DefaultGardenerShootPurpose: "testing",
-		DefaultTrialProvider:        internal.AWS,
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, decoratedComponentListProvider,
+		configProvider, input.Config{
+			MachineImageVersion:         "253",
+			KubernetesVersion:           "1.18",
+			MachineImage:                "coreos",
+			URL:                         "http://localhost",
+			DefaultGardenerShootPurpose: "testing",
+			DefaultTrialProvider:        internal.AWS,
+		}, defaultKymaVer, map[string]string{"cf-eu10": "europe", "cf-us10": "us"}, cfg.FreemiumProviders, defaultOIDCValues())
 
 	db := storage.NewMemoryStorage()
 

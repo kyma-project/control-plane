@@ -9,6 +9,7 @@ import (
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
+	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 
@@ -64,7 +65,7 @@ const (
 	subAccountLabel        = "subaccount"
 	runtimeIDAnnotation    = "kcp.provisioner.kyma-project.io/runtime-id"
 	defaultNamespace       = "kcp-system"
-	defaultKymaVer         = "2.0"
+	defaultKymaVer         = "2.4.0"
 	kymaVersionsConfigName = "kyma-versions"
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
@@ -112,7 +113,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		EnableSeqHttp: true,
 	}
 	cfg.OrchestrationConfig = kebOrchestration.Config{
-		KymaVersion:       "",
+		KymaVersion:       defaultKymaVer,
 		KubernetesVersion: "",
 	}
 	cfg.Reconciler = reconciler.Config{
@@ -129,27 +130,32 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]kebRuntime.
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.
 		KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
-
-	kymaVer := "2.0.3"
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
-		MachineImageVersion:         "coreos",
-		KubernetesVersion:           "1.18",
-		MachineImage:                "253",
-		ProvisioningTimeout:         time.Minute,
-		URL:                         "http://localhost",
-		DefaultGardenerShootPurpose: "testing",
-	}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
-	require.NoError(t, err)
 
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	db := storage.NewMemoryStorage()
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
+
+	kymaVer := "2.4.0"
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
+	configProvider := kebConfig.NewConfigProvider(
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapKeysValidator(),
+		kebConfig.NewConfigMapConverter())
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
+		configProvider, input.Config{
+			MachineImageVersion:         "coreos",
+			KubernetesVersion:           "1.18",
+			MachineImage:                "253",
+			ProvisioningTimeout:         time.Minute,
+			URL:                         "http://localhost",
+			DefaultGardenerShootPurpose: "testing",
+		}, kymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
+	require.NoError(t, err)
 
 	reconcilerClient := reconciler.NewFakeClient()
 	gardenerClient := gardener.NewDynamicFakeClient()
@@ -529,7 +535,28 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 	    }`,
 		},
 	}
-	resources = append(resources, override, scOverride, orchestrationConfig)
+
+	kebCfg := &coreV1.ConfigMap{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "keb-config",
+			Namespace: "kcp-system",
+			Labels: map[string]string{
+				"keb-config": "true",
+				fmt.Sprintf("runtime-version-%s", defaultKymaVersion): "true",
+			},
+		},
+		Data: map[string]string{
+			"default": `additional-components:
+  - name: "additional-component1"
+    namespace: "kyma-system"`,
+		},
+	}
+
+	for _, version := range additionalKymaVersions {
+		kebCfg.ObjectMeta.Labels[fmt.Sprintf("runtime-version-%s", version)] = "true"
+	}
+
+	resources = append(resources, override, scOverride, orchestrationConfig, kebCfg)
 
 	return resources
 }
@@ -565,25 +592,28 @@ func NewProvisioningSuite(t *testing.T) *ProvisioningSuite {
 	disabledComponentsProvider := kebRuntime.NewDisabledComponentsProvider()
 
 	componentListProvider := &automock.ComponentListProvider{}
-	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("string")).Return([]kebRuntime.KymaComponent{}, nil)
+	componentListProvider.On("AllComponents", mock.AnythingOfType("internal.RuntimeVersionData"), mock.AnythingOfType("*internal.ConfigForPlan")).Return([]internal.KymaComponent{}, nil)
 
 	oidcDefaults := fixture.FixOIDCConfigDTO()
-
-	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider, input.Config{
-		MachineImageVersion:         "coreos",
-		KubernetesVersion:           "1.18",
-		MachineImage:                "253",
-		ProvisioningTimeout:         time.Minute,
-		URL:                         "http://localhost",
-		DefaultGardenerShootPurpose: "testing",
-	}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
-
-	require.NoError(t, err)
 
 	sch := runtime.NewScheme()
 	require.NoError(t, coreV1.AddToScheme(sch))
 	additionalKymaVersions := []string{"1.19", "1.20", "main"}
 	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
+	configProvider := kebConfig.NewConfigProvider(
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapKeysValidator(),
+		kebConfig.NewConfigMapConverter())
+	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
+		configProvider, input.Config{
+			MachineImageVersion:         "coreos",
+			KubernetesVersion:           "1.18",
+			MachineImage:                "253",
+			ProvisioningTimeout:         time.Minute,
+			URL:                         "http://localhost",
+			DefaultGardenerShootPurpose: "testing",
+		}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
+	require.NoError(t, err)
 
 	server := avs.NewMockAvsServer(t)
 	mockServer := avs.FixMockAvsServer(server)
@@ -966,7 +996,7 @@ func fixConfig() *Config {
 		UpdateProcessingEnabled:    true,
 		EnableBTPOperatorMigration: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial"},
+			EnablePlans: []string{"azure", "trial", "aws"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
@@ -984,8 +1014,9 @@ func fixConfig() *Config {
 			EnableSeqHttp: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
-			Name:      "orchestration-config",
-			Namespace: "kcp-system",
+			KymaVersion: defaultKymaVer,
+			Namespace:   "kcp-system",
+			Name:        "orchestration-config",
 		},
 		MaxPaginationPage: 100,
 		FreemiumProviders: []string{"aws", "azure"},

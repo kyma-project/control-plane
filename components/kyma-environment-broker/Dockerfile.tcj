@@ -1,0 +1,29 @@
+# Build image
+FROM golang:1.19.0-alpine3.16 AS build
+
+WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environment-broker
+
+COPY cmd cmd
+COPY common common
+COPY internal internal
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY vendor vendor
+
+RUN CGO_ENABLED=0 go build -o /app/trialcleanup ./cmd/trialcleanup/main.go
+
+# Get latest CA certs
+FROM alpine:latest as certs
+RUN apk --update add ca-certificates
+
+# Final image
+FROM alpine:latest
+LABEL source = git@github.com:kyma-project/control-plane.git
+
+RUN apk --no-cache add --update openssl openssl-dev --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
+RUN apk --no-cache add --update curl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
+
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /app/trialcleanup /app/trialcleanup
+
+CMD ["/app/trialcleanup"]

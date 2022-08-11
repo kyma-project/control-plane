@@ -62,11 +62,11 @@ func (u *upgradeClusterFactory) NewOperation(o internal.Orchestration, r orchest
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
 			InstanceDetails:        i.InstanceDetails,
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			ID:      id,
-			Runtime: r,
-			DryRun:  o.Parameters.DryRun,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      id,
+				Runtime: r,
+				DryRun:  o.Parameters.DryRun,
+			},
 		},
 	}
 
@@ -134,7 +134,7 @@ func (u *upgradeClusterFactory) RetryOperations(orchestrationID string, schedule
 			days := []string{}
 
 			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow {
+			if schedule == orchestration.MaintenanceWindow && !op.MaintenanceWindowBegin.IsZero() {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
 			}
 			op.MaintenanceWindowBegin = windowBegin

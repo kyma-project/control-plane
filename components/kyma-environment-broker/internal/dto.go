@@ -186,6 +186,9 @@ type UpdatingParametersDTO struct {
 
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+
+	// Expired - means that the trial SKR is marked as expired
+	Expired bool `json:"expired"`
 }
 
 func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {
@@ -247,15 +250,19 @@ func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext
 }
 
 func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
+	// the provisioner and gardener API expects the feature to be enabled by disablement flag
+	// it feels counterintuitive but there is currently no plan in changing it, therefore
+	// following code is written the way it's written
+	disable := false
 	if e.LicenseType == nil {
-		return nil
+		return &disable
 	}
 	switch *e.LicenseType {
 	case "CUSTOMER", "PARTNER", "TRIAL":
-		disable := true
+		disable = true
 		return &disable
 	}
-	return nil
+	return &disable
 }
 
 func (e ERSContext) ERSUpdate() bool {

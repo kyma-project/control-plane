@@ -30,7 +30,7 @@ type Client interface {
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
 	UpgradeCluster(params Parameters) (UpgradeResponse, error)
 	CancelOrchestration(orchestrationID string) error
-	RetryOrchestration(orchestrationID string, operationIDs []string) (RetryResponse, error)
+	RetryOrchestration(orchestrationID string, operationIDs []string, now bool) (RetryResponse, error)
 }
 
 type client struct {
@@ -315,16 +315,21 @@ func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse
 	return ur, nil
 }
 
-func (c client) RetryOrchestration(orchestrationID string, operationIDs []string) (RetryResponse, error) {
+func (c client) RetryOrchestration(orchestrationID string, operationIDs []string, now bool) (RetryResponse, error) {
 	rr := RetryResponse{}
-	url := fmt.Sprintf("%s/orchestrations/%s/retry", c.url, orchestrationID)
+	uri := fmt.Sprintf("%s/orchestrations/%s/retry", c.url, orchestrationID)
 
 	for i, id := range operationIDs {
 		operationIDs[i] = "operation-id=" + id
 	}
-	body := strings.NewReader(strings.Join(operationIDs, "&"))
 
-	req, err := http.NewRequest(http.MethodPost, url, body)
+	str := strings.Join(operationIDs, "&")
+	if now {
+		str = str + "&immediate=true"
+	}
+	body := strings.NewReader(str)
+
+	req, err := http.NewRequest(http.MethodPost, uri, body)
 	if err != nil {
 		return rr, errors.Wrap(err, "while creating retry request")
 	}
@@ -332,7 +337,7 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return rr, errors.Wrapf(err, "while calling %s", url)
+		return rr, errors.Wrapf(err, "while calling %s", uri)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -348,7 +353,7 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 	}()
 
 	if resp.StatusCode != http.StatusAccepted {
-		return rr, fmt.Errorf("calling %s returned %s status", url, resp.Status)
+		return rr, fmt.Errorf("calling %s returned %s status", uri, resp.Status)
 	}
 
 	decoder := json.NewDecoder(resp.Body)

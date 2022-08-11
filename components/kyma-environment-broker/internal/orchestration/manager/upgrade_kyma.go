@@ -68,11 +68,11 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
 			InstanceDetails:        details,
-		},
-		RuntimeOperation: orchestration.RuntimeOperation{
-			ID:      id,
-			Runtime: r,
-			DryRun:  o.Parameters.DryRun,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				ID:      id,
+				Runtime: r,
+				DryRun:  o.Parameters.DryRun,
+			},
 		},
 	}
 	if o.Parameters.Kyma.Version != "" {
@@ -171,7 +171,7 @@ func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule or
 			days := []string{}
 
 			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow {
+			if schedule == orchestration.MaintenanceWindow && !op.MaintenanceWindowBegin.IsZero() {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
 			}
 			op.MaintenanceWindowBegin = windowBegin

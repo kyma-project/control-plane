@@ -97,6 +97,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
+	disabled := false
 	suite.AssertShootUpgrade(upgradeKymaOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:   ptr.String("1.18"),
@@ -111,7 +112,8 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(false),
 			EnableMachineImageVersionAutoUpdate: ptr.Bool(false),
 
-			OidcConfig: defaultOIDCConfig(),
+			OidcConfig:                    defaultOIDCConfig(),
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -120,7 +122,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 
 func TestKymaUpgrade_UpgradeAfterMigration(t *testing.T) {
 	// given
-	suite := NewBrokerSuiteTest(t)
+	suite := NewBrokerSuiteTest(t, "2.0.0-rc4", "2.0.0")
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
 	id := "InstanceID-UpgradeAfterMigration"

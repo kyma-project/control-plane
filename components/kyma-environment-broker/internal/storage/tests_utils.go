@@ -386,7 +386,10 @@ func createDbContainer(log func(format string, args ...interface{}), hostname st
 	}
 
 	cleanupFunc := func() {
-		cli.ContainerRemove(context.Background(), body.ID, types.ContainerRemoveOptions{RemoveVolumes: true, RemoveLinks: true, Force: true})
+		err := cli.ContainerRemove(context.Background(), body.ID, types.ContainerRemoveOptions{RemoveVolumes: true, RemoveLinks: false, Force: true})
+		if err != nil {
+			panic(errors.Wrap(err, "during container removal"))
+		}
 	}
 
 	if err := cli.ContainerStart(context.Background(), body.ID, types.ContainerStartOptions{}); err != nil {

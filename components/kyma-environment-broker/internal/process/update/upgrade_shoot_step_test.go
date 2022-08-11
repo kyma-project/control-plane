@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,6 +56,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 	assert.Zero(t, d)
 	assert.True(t, cli.IsShootUpgraded("runtime-id"))
 	req, _ := cli.LastShootUpgrade("runtime-id")
+	disabled := false
 	assert.Equal(t, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -65,6 +67,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"test-user-id"},
 	}, req)
@@ -98,11 +101,25 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	const kymaVersion = "1.20"
 	defer componentsProvider.AssertExpectations(t)
 
+	configProvider := &inputAutomock.ConfigurationProvider{}
+	configProvider.On("ProvideForGivenVersionAndPlan",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("string")).
+		Return(&internal.ConfigForPlan{
+			AdditionalComponents: []internal.KymaComponent{
+				{
+					Name:      "kyma-component1",
+					Namespace: "kyma-system",
+				},
+			},
+		}, nil)
+
 	const k8sVersion = "1.18"
-	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider, input.Config{
-		KubernetesVersion:           k8sVersion,
-		DefaultGardenerShootPurpose: "test",
-	}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
+	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(),
+		componentsProvider, configProvider, input.Config{
+			KubernetesVersion:           k8sVersion,
+			DefaultGardenerShootPurpose: "test",
+		}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
 	pp := internal.ProvisioningParameters{
@@ -111,7 +128,11 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 			KymaVersion: "",
 		},
 	}
-	creator, err := ibf.CreateUpgradeShootInput(pp)
+	ver := internal.RuntimeVersionData{
+		Version: kymaVersion,
+		Origin:  internal.Defaults,
+	}
+	creator, err := ibf.CreateUpgradeShootInput(pp, ver)
 	if err != nil {
 		t.Errorf("cannot create input creator for %q plan", broker.GCPPlanID)
 	}

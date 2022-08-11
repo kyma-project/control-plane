@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,6 +58,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 	assert.NotNil(t, provider)
 
 	provisionerClient := &provisionerAutomock.Client{}
+	disabled := false
 	provisionerClient.On("UpgradeShoot", fixGlobalAccountID, fixRuntimeID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
@@ -68,6 +70,7 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),
 			EnableMachineImageVersionAutoUpdate: ptr.Bool(fixAutoUpdateMachineImageVersion),
+			ShootNetworkingFilterDisabled:       &disabled,
 			OidcConfig: &gqlschema.OIDCConfigInput{
 				ClientID:       expectedOIDC.ClientID,
 				GroupsClaim:    expectedOIDC.GroupsClaim,
@@ -122,17 +125,36 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 	componentsProvider := &automock.ComponentListProvider{}
 	defer componentsProvider.AssertExpectations(t)
 
-	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider, input.Config{
-		KubernetesVersion:             fixKubernetesVersion,
-		MachineImage:                  fixMachineImage,
-		MachineImageVersion:           fixMachineImageVersion,
-		TrialNodesNumber:              1,
-		AutoUpdateKubernetesVersion:   fixAutoUpdateKubernetesVersion,
-		AutoUpdateMachineImageVersion: fixAutoUpdateMachineImageVersion,
-	}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
+	configProvider := &automock.ConfigurationProvider{}
+	configProvider.On("ProvideForGivenVersionAndPlan",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("string")).
+		Return(&internal.ConfigForPlan{
+			AdditionalComponents: []internal.KymaComponent{
+				{
+					Name:      "kyma-component1",
+					Namespace: "kyma-system",
+				},
+			},
+		}, nil)
+
+	ibf, err := input.NewInputBuilderFactory(nil, nil, componentsProvider,
+		configProvider, input.Config{
+			KubernetesVersion:             fixKubernetesVersion,
+			MachineImage:                  fixMachineImage,
+			MachineImageVersion:           fixMachineImageVersion,
+			TrialNodesNumber:              1,
+			AutoUpdateKubernetesVersion:   fixAutoUpdateKubernetesVersion,
+			AutoUpdateMachineImageVersion: fixAutoUpdateMachineImageVersion,
+		}, fixKymaVersion, nil, nil, fixture.FixOIDCConfigDTO())
 	require.NoError(t, err, "Input factory creation error")
 
-	creator, err := ibf.CreateUpgradeShootInput(fixProvisioningParameters())
+	ver := internal.RuntimeVersionData{
+		Version: fixKymaVersion,
+		Origin:  internal.Defaults,
+	}
+
+	creator, err := ibf.CreateUpgradeShootInput(fixProvisioningParameters(), ver)
 	require.NoError(t, err, "Input creator creation error")
 
 	return creator

@@ -17,7 +17,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -40,7 +39,7 @@ type UpdateEndpoint struct {
 
 	operationStorage storage.Operations
 
-	updatingQueue *process.Queue
+	updatingQueue Queue
 
 	planDefaults PlanDefaults
 
@@ -54,7 +53,7 @@ func NewUpdate(cfg Config,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
 	subAccountMovementEnabled bool,
-	queue *process.Queue,
+	queue Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 	dashboardConfig dashboard.Config,
@@ -91,6 +90,10 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
+	if instance.IsExpired() {
+		logger.Infof("The instance is expired (%s)", instance.ExpiredAt)
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, fmt.Sprintf("Could not execute update for an expired instanceID %s (expired at %s)", instanceID, instance.ExpiredAt))
+	}
 
 	var ersContext internal.ERSContext
 	err = json.Unmarshal(details.RawContext, &ersContext)
@@ -101,6 +104,13 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
+
+	// If the param contains "expired" - then process expiration (save it in the instance)
+	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
+	if err != nil {
+		logger.Errorf("Unable to update the instance: %s", err.Error())
+		return domain.UpdateServiceSpec{}, err
+	}
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
@@ -347,4 +357,37 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 	}
 	kv := s.GetKymaVersion()
 	return internal.DetermineMajorVersion(kv) == 2, kv, nil
+}
+
+// processExpirationParam returns true, if expired
+func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, details domain.UpdateDetails, ers internal.ERSContext, logger logrus.FieldLogger) (*internal.Instance, error) {
+	// if the instance was expired before (in the past), then no need to do any work
+	if instance.IsExpired() {
+		return instance, nil
+	}
+	if len(details.RawParameters) != 0 {
+		var params internal.UpdatingParametersDTO
+		err := json.Unmarshal(details.RawParameters, &params)
+		if err != nil {
+			return instance, err
+		}
+		if params.Expired {
+			if !IsTrialPlan(instance.ServicePlanID) {
+				logger.Warn("Expiration of a non-trial instance is not supported")
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("expiration of a non-trial instance is not supported"), http.StatusBadRequest, "")
+			}
+
+			if ers.Active == nil || *ers.Active {
+				logger.Warn("Parameter 'expired' requires `context.active=false`")
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("context.active=false is required for expiration"), http.StatusBadRequest, "")
+			}
+
+			logger.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
+			instance.ExpiredAt = ptr.Time(time.Now())
+			instance, err := b.instanceStorage.Update(*instance)
+			return instance, err
+		}
+	}
+	return instance, nil
+
 }
