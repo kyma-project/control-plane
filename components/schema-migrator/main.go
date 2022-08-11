@@ -1,12 +1,18 @@
 package main
 
 import (
+	crand "crypto/rand"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
+	"math/rand"
 	"net"
 	"os"
 	"time"
+
+	"github.com/golang-migrate/migrate/v4/database"
 
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 
@@ -78,14 +84,7 @@ func invokeMigration() error {
 	)
 
 	fmt.Println("# WAITING FOR CONNECTION WITH DATABASE #")
-	db, err := sql.Open("postgres", connectionString)
-
-	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error while connecting to the database, %s\n", err)
-		db, err = sql.Open("postgres", connectionString)
-		time.Sleep(1 * time.Second)
-	}
-
+	db, err := connectDB(connectionString, 30)
 	if err != nil {
 		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
@@ -94,13 +93,7 @@ func invokeMigration() error {
 
 	migrationPath := fmt.Sprintf("file:///migrate/migrations/%s", os.Getenv("MIGRATION_PATH"))
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	for i := 0; i < 30 && err != nil; i++ {
-		fmt.Printf("Error during driver initialization, %s\n", err)
-		driver, err = postgres.WithInstance(db, &postgres.Config{})
-		time.Sleep(1 * time.Second)
-	}
-
+	driver, err := initDriver(db, 30)
 	if err != nil {
 		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %w", err)
 	}
@@ -143,4 +136,92 @@ func (l *Logger) Printf(format string, v ...interface{}) {
 
 func (l *Logger) Verbose() bool {
 	return false
+}
+
+// Using connectDB as the backoff function sends retries
+// initially with a 1-second delay, but doubling after each attempt to
+// a maximum delay of 1-minute. The jitter is a randomization factor.
+// Randomness is generated cryptographic secure and nondeterministic.
+func connectDB(connectionString string, retries int) (*sql.DB, error) {
+	db, err := sql.Open("postgres", connectionString)
+
+	base, caP := time.Second, time.Minute
+
+	var src cryptoSource
+	rnd := rand.New(src)
+
+	var retryCounter int
+
+	for backoff := base; err != nil; backoff <<= 1 {
+		if retryCounter >= retries {
+			return nil, fmt.Errorf("error during postgres driver initialization, maximum retries reached: %w", err)
+		}
+
+		if backoff > caP {
+			backoff = caP
+		}
+
+		jitter := rnd.Int63n(int64(backoff * 3))
+		sleep := base + time.Duration(jitter)
+		log.Println("error during postgres driver initialization, retrying in", sleep)
+		time.Sleep(sleep)
+
+		db, err = sql.Open("postgres", connectionString)
+
+		retryCounter++
+	}
+	return db, err
+}
+
+// Using initDriver as the backoff function sends retries
+// initially with a 1-second delay, but doubling after each attempt to
+// a maximum delay of 1-minute. The jitter is a randomization factor.
+// Randomness is generated cryptographic secure and nondeterministic.
+func initDriver(db *sql.DB, retries int) (database.Driver, error) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+
+	base, caP := time.Second, time.Minute
+
+	var src cryptoSource
+	rnd := rand.New(src)
+
+	var retryCounter int
+
+	for backoff := base; err != nil; backoff <<= 1 {
+		if retryCounter >= retries {
+			return nil, fmt.Errorf("error while connecting to postgres, maximum retries reached: %w", err)
+		}
+
+		if backoff > caP {
+			backoff = caP
+		}
+
+		jitter := rnd.Int63n(int64(backoff * 3))
+		sleep := base + time.Duration(jitter)
+		log.Println("error while connecting to postgres, retrying in", sleep)
+		time.Sleep(sleep)
+
+		driver, err = postgres.WithInstance(db, &postgres.Config{})
+
+		retryCounter++
+	}
+
+	return driver, err
+}
+
+type cryptoSource struct{}
+
+func (s cryptoSource) Seed(seed int64) {}
+
+func (s cryptoSource) Int63() int64 {
+	return int64(s.Uint64() & ^uint64(1<<63))
+}
+
+func (s cryptoSource) Uint64() (v uint64) {
+	err := binary.Read(crand.Reader, binary.BigEndian, &v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return v
 }
