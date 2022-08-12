@@ -98,31 +98,30 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	return response.Operation, nil
 }
 
-// MakeInstanceExpired requests to suspend instance due to expiration
-func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error) {
-	updateInstanceUrl := c.formatUpdateInstanceUrl(instance)
-
-	jsonPayload, err := c.preparePayload(instance)
+// SendExpirationRequest send request to suspend instance due to expiration
+func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
+	request, err := preparePatchRequest(instance, c.brokerConfig.URL)
 	if err != nil {
-		return "", errors.Wrap(err, "while marshaling payload")
+		return "", err
 	}
-
-	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
-
-	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return "", errors.Wrap(err, "while creating request for Kyma Environment Broker")
-	}
-	request.Header.Set("X-Broker-API-Version", "2.14")
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return "", errors.Wrapf(err, "while executing request URL: %s", updateInstanceUrl)
+		return "", errors.Wrapf(err, "while executing request URL: %s", request.URL)
 	}
 	defer c.warnOnError(resp.Body.Close)
 
-	c.processStatusCode(resp.StatusCode)
+	processStatusCode(resp.StatusCode)
 
+	operation, err := decodeResponseOperation(err, resp)
+	if err != nil {
+		return "", err
+	}
+
+	return operation, nil
+}
+
+func decodeResponseOperation(err error, resp *http.Response) (string, error) {
 	response := serviceInstancesResponseDTO{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
@@ -131,7 +130,25 @@ func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error)
 	return response.Operation, nil
 }
 
-func (c *Client) preparePayload(instance internal.Instance) ([]byte, error) {
+func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*http.Request, error) {
+	updateInstanceUrl := fmt.Sprintf(updateInstanceTmpl, brokerConfigURL, instancesURL, instance.InstanceID)
+
+	jsonPayload, err := preparePayload(instance)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshaling payload")
+	}
+
+	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
+
+	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating request for Kyma Environment Broker")
+	}
+	request.Header.Set("X-Broker-API-Version", "2.14")
+	return request, nil
+}
+
+func preparePayload(instance internal.Instance) ([]byte, error) {
 	if len(instance.ServicePlanID) == 0 {
 		return nil, errors.Errorf("empty ServicePlanID")
 	}
@@ -140,7 +157,7 @@ func (c *Client) preparePayload(instance internal.Instance) ([]byte, error) {
 	return jsonPayload, err
 }
 
-func (c *Client) processStatusCode(statusCode int) {
+func processStatusCode(statusCode int) {
 	switch statusCode {
 	case http.StatusAccepted, http.StatusOK:
 		{
@@ -163,10 +180,6 @@ func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error
 	}
 
 	return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID), nil
-}
-
-func (c *Client) formatUpdateInstanceUrl(instance internal.Instance) string {
-	return fmt.Sprintf(updateInstanceTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID)
 }
 
 func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
