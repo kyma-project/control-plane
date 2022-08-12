@@ -23,6 +23,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220706110254-3d5dce79e48d
 	github.com/kyma-incubator/reconciler v0.0.0-20220707094852-b6e3650f6d66
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220707063253-fd8dedcdb5cf
+	github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20220811080535-8fad0e36abfc
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/lib/pq v1.10.6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225

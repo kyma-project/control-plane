@@ -24,6 +24,14 @@ spec:
             - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
               name: trial-cleanup-job
               env:
+                {{if eq .Values.global.database.embedded.enabled true}}
+                - name: DATABASE_EMBEDDED
+                  value: "true"
+                {{end}}
+                {{if eq .Values.global.database.embedded.enabled false}}
+                - name: DATABASE_EMBEDDED
+                  value: "false"
+                {{end}} 
                 - name: APP_DRY_RUN
                   value: "{{ .Values.trialCleanup.dryRun }}"
                 - name: APP_EXPIRATION_PERIOD
@@ -69,7 +77,7 @@ spec:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "sleep 20; ./app/trialcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                - "./app/trialcleanup"
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
