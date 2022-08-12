@@ -20,7 +20,7 @@ const (
 )
 
 type BrokerClient interface {
-	MakeInstanceExpired(instance internal.Instance) (string, error)
+	SendExpirationRequest(instance internal.Instance) (string, error)
 }
 
 type Config struct {
@@ -150,7 +150,7 @@ func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
 
 func (s *TrialCleanupService) suspendInstance(instance internal.Instance) error {
 	log.Infof("About to make instance suspended for instanceId: %+v", instance.InstanceID)
-	opID, err := s.brokerClient.MakeInstanceExpired(instance)
+	opID, err := s.brokerClient.SendExpirationRequest(instance)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "while triggering expiration of instance ID %q", instance.InstanceID))
 		return err

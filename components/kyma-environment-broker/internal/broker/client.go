@@ -98,7 +98,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	return response.Operation, nil
 }
 
-// SendExpirationRequest send request to suspend instance due to expiration
+// SendExpirationRequest requests Runtime suspension due to expiration
 // TODO: setting all required data in payload
 // TODO: pass result in form allowing execution summary: accepted, rejected, failed
 // TODO: test for all possible cases (accept, reject, failure)
