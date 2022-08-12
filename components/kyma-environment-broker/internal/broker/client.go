@@ -99,6 +99,9 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 }
 
 // SendExpirationRequest send request to suspend instance due to expiration
+// TODO: setting all required data in payload
+// TODO: pass result in form allowing execution summary: accepted, rejected, failed
+// TODO: test for all possible cases (accept, reject, failure)
 func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
 	request, err := preparePatchRequest(instance, c.brokerConfig.URL)
 	if err != nil {
