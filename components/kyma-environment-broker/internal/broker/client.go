@@ -123,7 +123,7 @@ func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error)
 	if err != nil {
 		return "", errors.Wrapf(err, "while executing request URL: %s", expireUrl)
 	}
-	defer c.warnOnError(resp.Body.Close) //TODO in edp client there is much more about defer in case of post - ask Maper
+	defer c.warnOnError(resp.Body.Close)
 
 	c.processStatusCode(resp)
 
