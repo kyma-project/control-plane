@@ -72,7 +72,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
-	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)
+	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
 	if err != nil {
 		return resp, err
 	}
@@ -190,7 +190,7 @@ func (r *kymaRetryer) OperationsStateUpdate(ops []internal.UpgradeKymaOperation,
 	return nil
 }
 
-func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrationID string, log logrus.FieldLogger) (string, error) {
+func orchestrationStateUpdate(orch *internal.Orchestration, orchestrations storage.Orchestrations, orchestrationID string, log logrus.FieldLogger) (string, error) {
 	o, err := orchestrations.GetByID(orchestrationID)
 	if err != nil {
 		log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
@@ -204,6 +204,8 @@ func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrati
 	}
 
 	o.UpdatedAt = time.Now()
+	o.Parameters.RetryOperation.RetryOperations = orch.Parameters.RetryOperation.RetryOperations
+	o.Parameters.RetryOperation.Immediate = orch.Parameters.RetryOperation.Immediate
 	if state == commonOrchestration.Failed {
 		o.Description += ", retrying"
 		o.State = commonOrchestration.Retrying

@@ -61,7 +61,7 @@ func (r *clusterRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch
 	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
-	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)
+	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
 	if err != nil {
 		return resp, err
 	}

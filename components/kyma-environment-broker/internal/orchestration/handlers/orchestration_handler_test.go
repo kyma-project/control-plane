@@ -954,9 +954,9 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedOut, out)
 
-		//op, err := db.Operations().GetUpgradeKymaOperationByID("id-2")
-		//require.NoError(t, err)
-		//assert.Equal(t, op.MaintenanceWindowBegin, time.Time{})
+		op, err := db.Operations().GetUpgradeKymaOperationByID("id-2")
+		require.NoError(t, err)
+		assert.NotEqual(t, op.MaintenanceWindowBegin, time.Time{})
 
 		o, err := db.Orchestrations().GetByID(orchestrationID)
 		require.NoError(t, err)
