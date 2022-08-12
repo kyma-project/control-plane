@@ -1,34 +1,28 @@
-# KEB configuration for given Kyma version and plan
+# Kyma Environment Broker (KEB) configuration for a given Kyma version and plan
 
-Some processes in Kyma Environment Broker can be configured to deliver different results. KEB requires a ConfigMap with 
-a configuration for given Kyma version and plan to process the requests. At least default configuration should be defined 
-for chosen Kyma version which KEB recognizes as applicable for all the supported plans. You can also set separate configuration 
-for each of the plans. 
+Some processes in KEB can be configured to deliver different results. KEB needs a ConfigMap with a configuration for the given Kyma version and plan to process the requests. 
+A default configuration must be defined for the chosen Kyma version. This configuration must be recognized by KEB as applicable for all the supported plans. You can also set a separate configuration for each plan.
   
-When processing requests KEB reads configuration from a ConfigMap which holds data about processable Kyma version(s) and 
-configurable units for a given plan. Only one ConfigMap can exist for given Kyma version, but it also can be set for 
-multiple Kyma versions if the configuration is the same for every targeted version.  
+While processing requests, KEB reads configuration from a ConfigMap which holds data about processable Kyma versions and configurable units for a given plan. Only one ConfigMap can exist for a given Kyma version, but it also can be set for multiple Kyma versions if the configuration is the same for every targeted version.
 
 > **NOTE:** Create all configurations in the `kcp-system` Namespace.
 
-> **NOTE:** As this is the first iteration of KEB configuration concept, only additional components list can be configured.
+> **NOTE:** As this is the first iteration of the KEB configuration concept, only the additional components list can be configured.
 
 ## ConfigMap  
 
-Appropriate ConfigMap is selected by filtering the resources using labels. KEB recognizes ConfigMaps with configuration 
-when they contain at least these two labels:
+The appropriate ConfigMap is selected by filtering the resources using labels. KEB recognizes the ConfigMaps with configurations when they contain these two labels:
 
 ```yaml
 keb-config: "true"
 runtime-version-{KYMA_VERSION}: "true"
 ```
 
-You can assign more than one ```runtime-version-{KYMA_VERSION}: "true"``` label as long as the configuration is the 
-same for provided Kyma versions.
+You can assign more than one ```runtime-version-{KYMA_VERSION}: "true"``` label as long as the configuration is the same for the provided Kyma versions.
 
-> **NOTE:** Each ConfigMap that defines configuration must have both labels assigned.
+> **NOTE:** Each ConfigMap that defines a configuration must have both labels assigned.
 
-The actual configuration is stored in ConfigMap's `data` object. Add `default` key under `data`object:
+The actual configuration is stored in ConfigMap's `data` object. Add `default` key under `data` object:
 
 ```yaml
 data:
@@ -38,10 +32,9 @@ data:
         namespace: "kyma-system"
 ```
 
-You must define a default configuration which is selected when supported plan key is missing. That means if there are no 
-other plan keys under `data` object then the default configuration is applicable for all the plans. 
+You must define a default configuration that is selected when the supported plan key is missing. This means that, for example, if there are no other plan keys under the `data` object, the default configuration applies to all the plans. 
 
-See the example of a ConfigMap with a configuration for Kyma version `2.5.3` and `plan1`, `plan2`, `trial` plans:
+See the example of a ConfigMap with a configuration for Kyma version `2.5.3` and `plan1`, `plan2`, and `trial` plans:
 
 ```yaml
 # keb-config.yaml
@@ -81,6 +74,6 @@ data:
           url: "https://example.source.url.local/artifacts/additional-component3-0.0.1.tgz"
   trial: |-
     additional-components:
-# no components
+# No components
 
 ```
