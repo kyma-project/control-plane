@@ -3,9 +3,10 @@ FROM golang:1.18.3-alpine3.15 AS build
 COPY cleaner /program/cleaner
 COPY go.mod /program/go.mod
 COPY main.go /program/main.go
+COPY vendor vendor
 
 WORKDIR /program
-RUN go mod tidy && go mod vendor && \
+RUN go mod tidy && \
     CGO_ENABLED=0 go build -ldflags="-s -w" -o /bin/program /program/main.go
 
 WORKDIR /migrate
