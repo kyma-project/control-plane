@@ -127,7 +127,7 @@ func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error)
 
 	c.processStatusCode(resp)
 
-	err = json.NewDecoder(resp.Body).Decode(response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return "", errors.Wrapf(err, "while decoding response body")
 	}
