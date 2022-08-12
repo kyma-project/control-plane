@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -19,8 +20,26 @@ import (
 const (
 	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 
-	instancesURL    = "/oauth/v2/service_instances"
-	deprovisionTmpl = "%s%s/%s?service_id=%s&plan_id=%s"
+	instancesURL       = "/oauth/v2/service_instances"
+	deprovisionTmpl    = "%s%s/%s?service_id=%s&plan_id=%s"
+	updateInstanceTmpl = "%s%s/%s"
+)
+
+type (
+	ContextDTO struct {
+		GlobalAccountID string `json:"globalaccount_id"`
+		SubAccountID    string `json:"subaccount_id"`
+		Active          bool   `json:"active"`
+	}
+	ParametersDTO struct {
+		Expired bool `json:"expired"`
+	}
+	ServiceUpdatePatchDTO struct {
+		ServiceID  string        `json:"service_id"`
+		PlanID     string        `json:"plan_id"`
+		Context    ContextDTO    `json:"context"`
+		Parameters ParametersDTO `json:"parameters"`
+	}
 )
 
 type ClientConfig struct {
@@ -52,7 +71,7 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 	}
 }
 
-type deprovisionResponse struct {
+type serviceInstancesResponseDTO struct {
 	Operation string `json:"operation"`
 }
 
@@ -63,7 +82,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 		return "", err
 	}
 
-	response := deprovisionResponse{}
+	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
@@ -79,12 +98,78 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	return response.Operation, nil
 }
 
+// MakeInstanceExpired requests to suspend instance due to expiration
+func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error) {
+	expireUrl := c.formatUpdateInstanceUrl(instance)
+
+	jsonPayload, err, s, err2 := c.preparePayload(instance)
+	if err2 != nil {
+		return s, err2
+	}
+	if err != nil {
+		return "", errors.Wrap(err, "while marshaling payload")
+	}
+
+	response := serviceInstancesResponseDTO{}
+	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
+
+	request, err := http.NewRequest(http.MethodPatch, expireUrl, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return "", errors.Wrap(err, "while creating request for Kyma Environment Broker")
+	}
+	request.Header.Set("X-Broker-API-Version", "2.14")
+
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return "", errors.Wrapf(err, "while executing request URL: %s", expireUrl)
+	}
+	defer c.warnOnError(resp.Body.Close) //TODO in edp client there is much more about defer in case of post - ask Maper
+
+	c.processStatusCode(resp)
+
+	err = json.NewDecoder(resp.Body).Decode(response)
+	if err != nil {
+		return "", errors.Wrapf(err, "while decoding response body")
+	}
+	return response.Operation, nil
+}
+
+func (c *Client) preparePayload(instance internal.Instance) ([]byte, error, string, error) {
+	if len(instance.ServicePlanID) == 0 {
+		return nil, nil, "", errors.Errorf("empty ServicePlanID")
+	}
+	payload := ServiceUpdatePatchDTO{}
+	jsonPayload, err := json.Marshal(payload)
+	return jsonPayload, err, "", nil
+}
+
+func (c *Client) processStatusCode(resp *http.Response) {
+	switch resp.StatusCode {
+	case http.StatusAccepted, http.StatusOK:
+		{
+			log.Infof("Request accepted with status: %+v", resp.StatusCode)
+		}
+	case http.StatusUnprocessableEntity:
+		{
+			log.Warnf("Request rejected with status: %+v", resp.StatusCode)
+		}
+	default:
+		{
+			log.Errorf("KEB responded with unexpected status: %+v", resp.StatusCode)
+		}
+	}
+}
+
 func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error) {
 	if len(instance.ServicePlanID) == 0 {
 		return "", errors.Errorf("empty ServicePlanID")
 	}
 
 	return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID), nil
+}
+
+func (c *Client) formatUpdateInstanceUrl(instance internal.Instance) string {
+	return fmt.Sprintf(updateInstanceTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID)
 }
 
 func (c *Client) executeRequest(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
