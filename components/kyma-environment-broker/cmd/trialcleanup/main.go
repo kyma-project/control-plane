@@ -65,7 +65,6 @@ func main() {
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	db, _, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
-
 	svc := newTrialCleanupService(cfg, brokerClient, db.Instances())
 
 	err = svc.PerformCleanup()

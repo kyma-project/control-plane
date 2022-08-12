@@ -99,7 +99,6 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 }
 
 // SendExpirationRequest requests Runtime suspension due to expiration
-// TODO: setting all required data in payload
 // TODO: pass result in form allowing execution summary: accepted, rejected, failed
 // TODO: test for all possible cases (accept, reject, failure)
 func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
@@ -152,10 +151,13 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 }
 
 func preparePayload(instance internal.Instance) ([]byte, error) {
-	if len(instance.ServicePlanID) == 0 {
-		return nil, errors.Errorf("empty ServicePlanID")
-	}
-	payload := ServiceUpdatePatchDTO{}
+	//TODO after initial test (if communication works smoothly - set expired = true and active = false
+	payload := ServiceUpdatePatchDTO{
+		ServiceID: KymaServiceID,
+		PlanID:    instance.ServicePlanID,
+		Context: ContextDTO{
+			GlobalAccountID: instance.SubscriptionGlobalAccountID,
+			SubAccountID:    instance.SubAccountID}}
 	jsonPayload, err := json.Marshal(payload)
 	return jsonPayload, err
 }
