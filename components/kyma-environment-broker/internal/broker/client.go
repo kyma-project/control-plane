@@ -85,7 +85,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequest(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
+		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
 			log.Warn(errors.Wrap(err, "while executing request").Error())
 			return false, nil
@@ -100,20 +100,16 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 // MakeInstanceExpired requests to suspend instance due to expiration
 func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error) {
-	expireUrl := c.formatUpdateInstanceUrl(instance)
+	updateInstanceUrl := c.formatUpdateInstanceUrl(instance)
 
-	jsonPayload, err, s, err2 := c.preparePayload(instance)
-	if err2 != nil {
-		return s, err2
-	}
+	jsonPayload, err := c.preparePayload(instance)
 	if err != nil {
 		return "", errors.Wrap(err, "while marshaling payload")
 	}
 
-	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
 
-	request, err := http.NewRequest(http.MethodPatch, expireUrl, bytes.NewBuffer(jsonPayload))
+	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return "", errors.Wrap(err, "while creating request for Kyma Environment Broker")
 	}
@@ -121,12 +117,13 @@ func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error)
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return "", errors.Wrapf(err, "while executing request URL: %s", expireUrl)
+		return "", errors.Wrapf(err, "while executing request URL: %s", updateInstanceUrl)
 	}
 	defer c.warnOnError(resp.Body.Close)
 
-	c.processStatusCode(resp)
+	c.processStatusCode(resp.StatusCode)
 
+	response := serviceInstancesResponseDTO{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return "", errors.Wrapf(err, "while decoding response body")
@@ -134,28 +131,28 @@ func (c *Client) MakeInstanceExpired(instance internal.Instance) (string, error)
 	return response.Operation, nil
 }
 
-func (c *Client) preparePayload(instance internal.Instance) ([]byte, error, string, error) {
+func (c *Client) preparePayload(instance internal.Instance) ([]byte, error) {
 	if len(instance.ServicePlanID) == 0 {
-		return nil, nil, "", errors.Errorf("empty ServicePlanID")
+		return nil, errors.Errorf("empty ServicePlanID")
 	}
 	payload := ServiceUpdatePatchDTO{}
 	jsonPayload, err := json.Marshal(payload)
-	return jsonPayload, err, "", nil
+	return jsonPayload, err
 }
 
-func (c *Client) processStatusCode(resp *http.Response) {
-	switch resp.StatusCode {
+func (c *Client) processStatusCode(statusCode int) {
+	switch statusCode {
 	case http.StatusAccepted, http.StatusOK:
 		{
-			log.Infof("Request accepted with status: %+v", resp.StatusCode)
+			log.Infof("Request accepted with status: %+v", statusCode)
 		}
 	case http.StatusUnprocessableEntity:
 		{
-			log.Warnf("Request rejected with status: %+v", resp.StatusCode)
+			log.Warnf("Request rejected with status: %+v", statusCode)
 		}
 	default:
 		{
-			log.Errorf("KEB responded with unexpected status: %+v", resp.StatusCode)
+			log.Errorf("KEB responded with unexpected status: %+v", statusCode)
 		}
 	}
 }
@@ -172,7 +169,7 @@ func (c *Client) formatUpdateInstanceUrl(instance internal.Instance) string {
 	return fmt.Sprintf(updateInstanceTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID)
 }
 
-func (c *Client) executeRequest(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
+func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return errors.Wrap(err, "while creating request for provisioning")
