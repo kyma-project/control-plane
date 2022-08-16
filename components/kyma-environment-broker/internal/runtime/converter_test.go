@@ -159,32 +159,29 @@ func TestConverting_SuspendedAndUpdateFAiled(t *testing.T) {
 	assert.Equal(t, runtime.StateSuspended, dto.Status.State)
 }
 
-func TestConverting_ProvisionedOperationWithoutStagesAndVersion(t *testing.T) {
+func TestConverting_ProvisionedOperation(t *testing.T) {
 	// given
 	instance := fixInstance()
 	svc := NewConverter("eu")
 
 	// when
 	dto, _ := svc.NewDTO(instance)
-	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
-	// then
-	assert.Equal(t, []string{}, dto.Status.Provisioning.FinishedStagesOrdered)
-	assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
-}
+	t.Run("a", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
-func TestConverting_ProvisionedOperationWithStagesAndVersion(t *testing.T) {
-	// given
-	instance := fixInstance()
-	svc := NewConverter("eu")
+		// then
+		assert.Equal(t, []string{""}, dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
+	})
 
-	// when
-	dto, _ := svc.NewDTO(instance)
-	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
+	t.Run("a", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
 
-	// then
-	assert.Equal(t, []string{"start", "create_runtime", "check_kyma", "post_actions"}, dto.Status.Provisioning.FinishedStagesOrdered)
-	assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
+		// then
+		assert.Equal(t, []string{"start", "create_runtime", "check_kyma", "post_actions"}, dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
+	})
 }
 
 func fixSuspensionOperation(state domain.LastOperationState, createdAt time.Time) []internal.DeprovisioningOperation {
