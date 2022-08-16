@@ -167,7 +167,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 	// when
 	dto, _ := svc.NewDTO(instance)
 
-	t.Run("provisioningOperationWithoutStagesAndVersion", func(t *testing.T) {
+	t.Run("provisioningOperationConverterWithoutStagesAndVersion", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
 		// then
@@ -175,7 +175,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
 	})
 
-	t.Run("provisioningOperationWithStagesAndVersion", func(t *testing.T) {
+	t.Run("provisioningOperationConverterWithStagesAndVersion", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
 
 		// then
