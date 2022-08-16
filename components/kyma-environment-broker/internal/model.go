@@ -207,16 +207,15 @@ type Operation struct {
 
 	// DEPROVISIONING
 	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool          `json:"temporary"`
-	ClusterConfigurationDeleted bool          `json:"clusterConfigurationDeleted"`
-	IsServiceInstanceDeleted    bool          `json:"isServiceInstanceDeleted"`
-	Retries                     int           `json:"-"`
-	ReconcilerDeregistrationAt  time.Time     `json:"reconcilerDeregistrationAt"`
-	K8sClient                   client.Client `json:"-"`
+	Temporary                   bool      `json:"temporary"`
+	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
+	Retries                     int       `json:"-"`
+	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
 
 	// UPDATING
 	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
 	CheckReconcilerStatus bool                  `json:"check_reconciler_status"`
+	K8sClient             client.Client         `json:"-"`
 
 	// following fields are not stored in the storage
 

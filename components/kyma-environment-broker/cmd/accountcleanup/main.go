@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cis"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -19,6 +21,8 @@ type Config struct {
 }
 
 func main() {
+	time.Sleep(20 * time.Second)
+
 	// create context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -54,6 +58,11 @@ func main() {
 	// create SubAccountCleanerService and execute process
 	sacs := cis.NewSubAccountCleanupService(client, brokerClient, db.Instances(), logs)
 	fatalOnError(sacs.Run())
+
+	err = cleaner.Halt()
+	fatalOnError(err)
+
+	time.Sleep(5 * time.Second)
 }
 
 func fatalOnError(err error) {

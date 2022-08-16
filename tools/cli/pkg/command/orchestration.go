@@ -249,8 +249,22 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
+			sr, err := cmd.client.GetOrchestration(args[0])
+			if err != nil {
+				return errors.Wrap(err, "while getting orchestration")
+			}
+			if !PromptUser(fmt.Sprintf("%s operation will be cancelled. Are you sure you want to continue?", sr.Type)) {
+				return errors.New("Cancel command aborted")
+			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
+			sr, err := cmd.client.GetOrchestration(args[0])
+			if err != nil {
+				return errors.Wrap(err, "while getting orchestration")
+			}
+			if !PromptUser(fmt.Sprintf("%s operation will be retried. Are you sure you want to continue?", sr.Type)) {
+				return errors.New("Retry command aborted")
+			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
@@ -553,4 +567,23 @@ func orchestrationDetails(obj interface{}) string {
 	}
 
 	return sb.String()
+}
+
+func PromptUser(msg string) bool {
+	fmt.Printf("%s%s", "? ", msg)
+	for {
+		fmt.Print("Type [y/N]: ")
+		var res string
+		if _, err := fmt.Scanf("%s", &res); err != nil {
+			return false
+		}
+		switch res {
+		case "yes", "y":
+			return true
+		case "No", "N", "no", "n":
+			return false
+		default:
+			continue
+		}
+	}
 }
