@@ -29,11 +29,11 @@ type (
 	ContextDTO struct {
 		GlobalAccountID string `json:"globalaccount_id"`
 		SubAccountID    string `json:"subaccount_id"`
-		Active          bool   `json:"active"`
+		Active          *bool  `json:"active"`
 	}
 
 	ParametersDTO struct {
-		Expired bool `json:"expired"`
+		Expired *bool `json:"expired"`
 	}
 
 	ServiceUpdatePatchDTO struct {
@@ -102,7 +102,6 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 // SendExpirationRequest requests Runtime suspension due to expiration
 // TODO: pass result in form allowing calculation of execution summary: accepted, rejected, failed
-// TODO: test for all possible cases (accept, reject, failure)
 func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
 	request, err := preparePatchRequest(instance, c.brokerConfig.URL)
 	if err != nil {
