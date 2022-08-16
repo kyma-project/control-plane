@@ -3,15 +3,15 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.17
 
 require (
-	github.com/gardener/gardener v1.51.0
-	github.com/gardener/gardener-extension-provider-aws v1.36.0
-	github.com/gardener/gardener-extension-provider-azure v1.28.1
-	github.com/gardener/gardener-extension-provider-gcp v1.23.1
+	github.com/gardener/gardener v1.53.0
+	github.com/gardener/gardener-extension-provider-aws v1.37.0
+	github.com/gardener/gardener-extension-provider-azure v1.29.0
+	github.com/gardener/gardener-extension-provider-gcp v1.24.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220718071443-87c648e298f4
-	github.com/onsi/gomega v1.19.0
+	github.com/onsi/gomega v1.20.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
