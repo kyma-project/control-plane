@@ -46,7 +46,7 @@ func TestOperation(t *testing.T) {
 		givenOperation.Version = 1
 		givenOperation.OrchestrationID = orchestrationID
 		givenOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
-
+		givenOperation.FinishedStagesOrdered = "prepare,check_provisioning"
 		latestOperation := fixture.FixOperation("latest-id", "inst-id", internal.OperationTypeDeprovision)
 		latestOperation.InputCreator = nil
 		latestOperation.State = domain.InProgress
@@ -536,6 +536,8 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -546,6 +548,8 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -560,6 +564,8 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -574,6 +580,8 @@ func assertUpgradeClusterOperation(t *testing.T, expected, got internal.UpgradeC
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -584,5 +592,7 @@ func assertOperation(t *testing.T, expected, got internal.Operation) {
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
