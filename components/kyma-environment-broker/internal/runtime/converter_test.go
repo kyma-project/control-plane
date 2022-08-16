@@ -159,6 +159,31 @@ func TestConverting_SuspendedAndUpdateFAiled(t *testing.T) {
 	assert.Equal(t, runtime.StateSuspended, dto.Status.State)
 }
 
+func TestConverting_ProvisioningOperationConverter(t *testing.T) {
+	// given
+	instance := fixInstance()
+	svc := NewConverter("eu")
+
+	// when
+	dto, _ := svc.NewDTO(instance)
+
+	t.Run("provisioningOperationConverterWithoutStagesAndVersion", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+
+		// then
+		assert.Equal(t, []string{""}, dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
+	})
+
+	t.Run("provisioningOperationConverterWithStagesAndVersion", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
+
+		// then
+		assert.Equal(t, []string{"start", "create_runtime", "check_kyma", "post_actions"}, dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
+	})
+}
+
 func fixSuspensionOperation(state domain.LastOperationState, createdAt time.Time) []internal.DeprovisioningOperation {
 	return []internal.DeprovisioningOperation{{
 		Operation: internal.Operation{
@@ -196,6 +221,22 @@ func fixProvisioningOperation(state domain.LastOperationState, createdAt time.Ti
 			CreatedAt: createdAt,
 			ID:        "prov-id",
 			State:     state,
+		},
+	}
+}
+
+func fixProvisioningOperationWithStagesAndVersion(state domain.LastOperationState, createdAt time.Time) *internal.ProvisioningOperation {
+	return &internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			CreatedAt:             createdAt,
+			ID:                    "prov-id",
+			State:                 state,
+			FinishedStagesOrdered: "start,create_runtime,check_kyma,post_actions",
+			RuntimeVersion: internal.RuntimeVersionData{
+				Version:      "2.0",
+				Origin:       "default",
+				MajorVersion: 2,
+			},
 		},
 	}
 }
