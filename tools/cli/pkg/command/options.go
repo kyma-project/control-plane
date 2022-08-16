@@ -120,8 +120,7 @@ func SetGlobalOpts(cmd *cobra.Command) {
 
 // ValidateGlobalOpts checks the presence of the required global configuration parameters
 func ValidateGlobalOpts() error {
-	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL,
-		GlobalOpts.mothershipAPIURL, GlobalOpts.oauth2IssuerURL, GlobalOpts.oauth2ClientID, GlobalOpts.oauth2ClientSecret}
+	var reqGlobalOpts = []string{GlobalOpts.oidcIssuerURL, GlobalOpts.oidcClientID, GlobalOpts.kebAPIURL, GlobalOpts.mothershipAPIURL}
 	var missingGlobalOpts []string
 	for _, opt := range reqGlobalOpts {
 		if viper.GetString(opt) == "" {
