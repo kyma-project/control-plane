@@ -159,7 +159,7 @@ func TestConverting_SuspendedAndUpdateFAiled(t *testing.T) {
 	assert.Equal(t, runtime.StateSuspended, dto.Status.State)
 }
 
-func TestConverting_ProvisionedOperation(t *testing.T) {
+func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 	// given
 	instance := fixInstance()
 	svc := NewConverter("eu")
@@ -167,7 +167,7 @@ func TestConverting_ProvisionedOperation(t *testing.T) {
 	// when
 	dto, _ := svc.NewDTO(instance)
 
-	t.Run("a", func(t *testing.T) {
+	t.Run("provisioningOperationWithoutStagesAndVersion", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
 		// then
@@ -175,7 +175,7 @@ func TestConverting_ProvisionedOperation(t *testing.T) {
 		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
 	})
 
-	t.Run("a", func(t *testing.T) {
+	t.Run("provisioningOperationWithStagesAndVersion", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
 
 		// then
