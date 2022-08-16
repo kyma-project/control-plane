@@ -201,7 +201,7 @@ type Operation struct {
 	FinishedStagesOrdered string              `json:"-"`
 	LastError             kebError.LastError  `json:"-"`
 
-	// PROVISIONINGś
+	// PROVISIONING
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 	DashboardURL   string             `json:"dashboardURL"`
 

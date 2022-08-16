@@ -1,10 +1,11 @@
 package runtime
 
 import (
+	"strings"
+
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"strings"
 )
 
 type Converter interface {
