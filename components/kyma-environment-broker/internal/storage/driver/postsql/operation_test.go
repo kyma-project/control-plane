@@ -46,7 +46,7 @@ func TestOperation(t *testing.T) {
 		givenOperation.Version = 1
 		givenOperation.OrchestrationID = orchestrationID
 		givenOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
-		givenOperation.FinishedStagesOrdered = "prepare,check_provisioning"
+
 		latestOperation := fixture.FixOperation("latest-id", "inst-id", internal.OperationTypeDeprovision)
 		latestOperation.InputCreator = nil
 		latestOperation.State = domain.InProgress
