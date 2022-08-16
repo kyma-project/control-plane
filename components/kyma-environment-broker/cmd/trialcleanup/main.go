@@ -39,7 +39,7 @@ type TrialCleanupService struct {
 
 type instancePredicate func(internal.Instance) bool
 
-type instanceVisitor func(internal.Instance) error
+type instanceVisitor func(internal.Instance) (bool, error)
 
 func main() {
 	time.Sleep(20 * time.Second)
@@ -132,32 +132,46 @@ func (s *TrialCleanupService) filterInstances(instances []internal.Instance, fil
 }
 
 func (s *TrialCleanupService) visitInstances(instances []internal.Instance, visit instanceVisitor) error {
+	var err error
+	var processedInstances int
+	var unprocessedInstances int
+	totalInstances := len(instances)
 	for _, instance := range instances {
-		err := visit(instance)
+		processed, err := visit(instance)
 		if err != nil {
-			return err
+			log.Error(errors.Wrap(err, "while sending expiration request"))
+			continue
+		}
+		if processed {
+			processedInstances += 1
+		} else {
+			unprocessedInstances += 1
 		}
 	}
-	return nil
+	failures := totalInstances - processedInstances - unprocessedInstances
+	log.Infof("To suspend: %+v processable: %+v unprocessable: %+v failures: %+v", totalInstances, processedInstances, unprocessedInstances, failures)
+	return err
 }
 
-func (s *TrialCleanupService) executeDryRun(instance internal.Instance) error {
+func (s *TrialCleanupService) executeDryRun(instance internal.Instance) (bool, error) {
 	log.Infof("instanceId: %+v createdAt: %+v (%.0f days ago) servicePlanID: %+v servicePlanName: %+v",
 		instance.InstanceID, instance.CreatedAt, time.Since(instance.CreatedAt).Hours()/24, instance.ServicePlanID, instance.ServicePlanName)
-	return nil
+	return true, nil
 }
 
-func (s *TrialCleanupService) suspendInstance(instance internal.Instance) error {
+func (s *TrialCleanupService) suspendInstance(instance internal.Instance) (processed bool, err error) {
 	log.Infof("About to make instance suspended for instanceId: %+v", instance.InstanceID)
 	opID, err := s.brokerClient.SendExpirationRequest(instance)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "while triggering expiration of instance ID %q", instance.InstanceID))
-		return err
+		return false, err
 	}
-
-	log.Infof("Successfully send request to Kyma Environment Broker, got operation ID %q", opID)
-
-	return nil
+	if len(opID) == 0 {
+		log.Info("Request sent successfully to Kyma Environment Broker - got unprocessable entity")
+		return false, nil
+	}
+	log.Infof("Request sent successfully to Kyma Environment Broker - got operation ID %q", opID)
+	return true, nil
 }
 
 func fatalOnError(err error) {

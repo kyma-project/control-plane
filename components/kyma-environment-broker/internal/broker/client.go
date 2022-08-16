@@ -26,21 +26,30 @@ const (
 )
 
 type (
-	ContextDTO struct {
+	contextDTO struct {
 		GlobalAccountID string `json:"globalaccount_id"`
 		SubAccountID    string `json:"subaccount_id"`
 		Active          *bool  `json:"active"`
 	}
 
-	ParametersDTO struct {
+	parametersDTO struct {
 		Expired *bool `json:"expired"`
 	}
 
-	ServiceUpdatePatchDTO struct {
+	serviceUpdatePatchDTO struct {
 		ServiceID  string        `json:"service_id"`
 		PlanID     string        `json:"plan_id"`
-		Context    ContextDTO    `json:"context"`
-		Parameters ParametersDTO `json:"parameters"`
+		Context    contextDTO    `json:"context"`
+		Parameters parametersDTO `json:"parameters"`
+	}
+
+	serviceInstancesResponseDTO struct {
+		Operation string `json:"operation"`
+	}
+
+	errorResponse struct {
+		Error       string `json:"error"`
+		Description string `json:"description"`
 	}
 )
 
@@ -73,10 +82,6 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 	}
 }
 
-type serviceInstancesResponseDTO struct {
-	Operation string `json:"operation"`
-}
-
 // Deprovision requests Runtime deprovisioning in KEB with given details
 func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	deprovisionURL, err := c.formatDeprovisionUrl(instance)
@@ -101,7 +106,6 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 }
 
 // SendExpirationRequest requests Runtime suspension due to expiration
-// TODO: pass result in form allowing calculation of execution summary: accepted, rejected, failed
 func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
 	request, err := preparePatchRequest(instance, c.brokerConfig.URL)
 	if err != nil {
@@ -114,23 +118,61 @@ func (c *Client) SendExpirationRequest(instance internal.Instance) (string, erro
 	}
 	defer c.warnOnError(resp.Body.Close)
 
-	processStatusCode(resp.StatusCode)
-
-	operation, err := decodeResponseOperation(err, resp)
-	if err != nil {
-		return "", err
-	}
-
-	return operation, nil
+	return processResponse(resp.StatusCode, resp)
 }
 
-func decodeResponseOperation(err error, resp *http.Response) (string, error) {
+func processResponse(statusCode int, resp *http.Response) (string, error) {
+	switch statusCode {
+	case http.StatusAccepted, http.StatusOK:
+		{
+			log.Infof("Request accepted with status: %+v", statusCode)
+			operation, err := decodeOperation(resp)
+			if err != nil {
+				return "", err
+			}
+			log.Infof("operation: %+v", operation)
+			return operation, nil
+		}
+	case http.StatusUnprocessableEntity:
+		{
+			log.Warnf("Entity unprocessable - request rejected with status: %+v", statusCode)
+			description, errorString, err := decodeErrorResponse(resp)
+			if err != nil {
+				return "", err
+			}
+			log.Warnf("error: %+v description: %+v", errorString, description)
+			return "", nil
+		}
+	default:
+		{
+			if statusCode >= 200 && statusCode <= 299 {
+				return "", fmt.Errorf("request with unexpected status: %+v", statusCode)
+			}
+			description, errorString, err := decodeErrorResponse(resp)
+			if err != nil {
+				return "", err
+			}
+			return "", fmt.Errorf("error: %+v description: %+v", errorString, description)
+		}
+	}
+}
+
+func decodeOperation(resp *http.Response) (string, error) {
 	response := serviceInstancesResponseDTO{}
-	err = json.NewDecoder(resp.Body).Decode(&response)
+	err := json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return "", errors.Wrapf(err, "while decoding response body")
 	}
 	return response.Operation, nil
+}
+
+func decodeErrorResponse(resp *http.Response) (string, string, error) {
+	response := errorResponse{}
+	err := json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "while decoding error response body")
+	}
+	return response.Description, response.Error, nil
 }
 
 func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*http.Request, error) {
@@ -152,32 +194,18 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 }
 
 func preparePayload(instance internal.Instance) ([]byte, error) {
-	//TODO after initial test (if communication works smoothly - set expired = true and active = false)
-	payload := ServiceUpdatePatchDTO{
+	expired := true
+	active := false
+	payload := serviceUpdatePatchDTO{
 		ServiceID: KymaServiceID,
 		PlanID:    instance.ServicePlanID,
-		Context: ContextDTO{
+		Context: contextDTO{
 			GlobalAccountID: instance.SubscriptionGlobalAccountID,
-			SubAccountID:    instance.SubAccountID}}
+			SubAccountID:    instance.SubAccountID,
+			Active:          &active},
+		Parameters: parametersDTO{Expired: &expired}}
 	jsonPayload, err := json.Marshal(payload)
 	return jsonPayload, err
-}
-
-func processStatusCode(statusCode int) {
-	switch statusCode {
-	case http.StatusAccepted, http.StatusOK:
-		{
-			log.Infof("Request accepted with status: %+v", statusCode)
-		}
-	case http.StatusUnprocessableEntity:
-		{
-			log.Warnf("Request rejected with status: %+v", statusCode)
-		}
-	default:
-		{
-			log.Errorf("KEB responded with unexpected status: %+v", statusCode)
-		}
-	}
 }
 
 func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error) {
