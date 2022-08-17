@@ -10,6 +10,7 @@ import (
 const (
 	DefaultAzureRegion       = "eastus"
 	DefaultAzureHAZonesCount = 3
+	DefaultAzureMachineType  = "Standard_D8_v3"
 )
 
 var europeAzure = "westeurope"
@@ -39,7 +40,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "Standard_D8_v3",
+			MachineType:    DefaultAzureMachineType,
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",
@@ -163,7 +164,7 @@ func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    "Standard_D8_v3",
+			MachineType:    DefaultAzureMachineType,
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/19",
