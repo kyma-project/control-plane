@@ -62,8 +62,20 @@ func (c *converter) applyOperation(source *internal.Operation, target *pkg.Opera
 		target.Description = source.Description
 		target.OrchestrationID = source.OrchestrationID
 		target.RuntimeVersion = source.RuntimeVersion.Version
-		target.FinishedStagesOrdered = strings.Split(source.FinishedStagesOrdered, ",")
+		target.FinishedStagesOrdered = GetFinishedStagesInOrderAsList(source.FinishedStagesOrdered)
 	}
+}
+
+func GetFinishedStagesInOrderAsList(finishedStagesOrdered string) []string {
+	stages := strings.Split(finishedStagesOrdered, ",")
+	var filteredStages []string
+	for _, stage := range stages {
+		if stage == "" {
+			continue
+		}
+		filteredStages = append(filteredStages, stage)
+	}
+	return filteredStages
 }
 
 func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
