@@ -335,7 +335,7 @@ func main() {
 
 	// metrics collectors
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
-
+	metrics.StartOpsMetricService(ctx, db.Operations(), logs)
 	//setup runtime overrides appender
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 

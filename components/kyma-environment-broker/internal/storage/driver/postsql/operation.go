@@ -690,6 +690,31 @@ func (s *operations) removeIndex(arr []string, index int) []string {
 	return append(arr[:index], arr[index+1:]...)
 }
 
+func (s *operations) ListOperationsInTimeRange(from, to time.Time) ([]internal.Operation, error) {
+	session := s.NewReadSession()
+	operations := make([]dbmodel.OperationDTO, 0)
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		var err error
+		operations, err = session.ListOperationsInTimeRange(from, to)
+		if err != nil {
+			if dberr.IsNotFound(err) {
+				return true, nil
+			}
+			return false, fmt.Errorf("while listing the operations from the storage: %w", err)
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("while getting operations in range %v-%v: %w", from.Format(time.RFC822), to.Format(time.RFC822), err)
+	}
+	ret, err := s.toOperationList(operations)
+	if err != nil {
+		return nil, fmt.Errorf("while converting DTO to Operation: %w", err)
+	}
+
+	return ret, nil
+}
+
 func (s *operations) InsertUpdatingOperation(operation internal.UpdatingOperation) error {
 	dto, err := s.updateOperationToDTO(&operation)
 	if err != nil {

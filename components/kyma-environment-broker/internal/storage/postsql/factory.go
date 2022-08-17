@@ -1,6 +1,8 @@
 package postsql
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -42,6 +44,7 @@ type ReadSession interface {
 	ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]dbmodel.OrchestrationDTO, int, int, error)
 	ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.InstanceDTO, int, int, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
+	ListOperationsInTimeRange(from, to time.Time) ([]dbmodel.OperationDTO, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
