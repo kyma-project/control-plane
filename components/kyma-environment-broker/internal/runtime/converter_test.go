@@ -243,7 +243,7 @@ func fixProvisioningOperationWithStagesAndVersion(state domain.LastOperationStat
 			CreatedAt:             createdAt,
 			ID:                    "prov-id",
 			State:                 state,
-			FinishedStagesOrdered: "start,create_runtime,check_kyma,post_actions,",
+			FinishedStagesOrdered: "start,create_runtime,check_kyma,post_actions",
 			RuntimeVersion: internal.RuntimeVersionData{
 				Version:      "2.0",
 				Origin:       "default",
