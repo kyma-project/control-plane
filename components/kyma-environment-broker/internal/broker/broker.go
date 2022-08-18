@@ -38,6 +38,7 @@ type Config struct {
 	URL                             string
 	EnableKubeconfigURLLabel        bool `envconfig:"default=false"`
 	IncludeAdditionalParamsInSchema bool `envconfig:"default=false"`
+	ShowTrialExpireInfo             bool `envconfig:"default=false"`
 }
 
 type ServicesConfig map[string]Service

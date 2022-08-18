@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "2822c931"
+      version: "PR-1972"
     kyma_environments_cleanup_job:
       dir:
       version: "2822c931"
@@ -124,6 +124,7 @@ enablePlans: "azure,gcp,azure_lite,azure_ha,trial"
 onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
 includeAdditionalParamsInSchema: "false"
+showTrialExpireInfo: "false"
 
 osbUpdateProcessingEnabled: "false"
 
