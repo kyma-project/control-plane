@@ -12,6 +12,7 @@ import (
 const (
 	kubeconfigURLKey = "KubeconfigURL"
 	remainingTimeKey = "Remaining time"
+	expireDuration   = time.Hour * 24 * 14
 )
 
 func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, enableKubeconfigLabel bool) map[string]string {
@@ -30,14 +31,18 @@ func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instanc
 func ResponseLabelsWithExpireInfo(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, enableKubeconfigLabel bool) map[string]string {
 	labels := ResponseLabels(op, instance, brokerURL, enableKubeconfigLabel)
 
-	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
+	expireTime := instance.CreatedAt.Add(expireDuration)
 	hoursLeft := calculateHoursLeft(expireTime)
 	if hoursLeft <= 0 {
 		delete(labels, kubeconfigURLKey)
 		labels[remainingTimeKey] = "0 days"
 	} else {
 		daysLeft := math.Round(hoursLeft / 24)
-		labels[remainingTimeKey] = fmt.Sprintf("%3.f days", daysLeft)
+		if daysLeft == 1 {
+			labels[remainingTimeKey] = fmt.Sprintf("%2.f day", daysLeft)
+		} else {
+			labels[remainingTimeKey] = fmt.Sprintf("%2.f days", daysLeft)
+		}
 	}
 
 	return labels
@@ -46,6 +51,5 @@ func ResponseLabelsWithExpireInfo(op internal.ProvisioningOperation, instance in
 func calculateHoursLeft(expireTime time.Time) float64 {
 	timeLeftUntilExpire := time.Until(expireTime)
 	timeLeftUntilExpireRoundedToHours := timeLeftUntilExpire.Round(time.Hour)
-	timeLeftInHours := timeLeftUntilExpireRoundedToHours.Hours()
-	return timeLeftInHours / 24
+	return timeLeftUntilExpireRoundedToHours.Hours()
 }
