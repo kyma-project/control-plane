@@ -171,7 +171,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 	//expected stages in order
 	expected := []string{"start", "create_runtime", "check_kyma", "post_actions"}
 
-	t.Run("provisioningOperationConverterWithoutStagesAndVersion", func(t *testing.T) {
+	t.Run("runtime and finished orders should be not set", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
 		// then
@@ -179,7 +179,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
 	})
 
-	t.Run("provisioningOperationConverterWithStagesAndVersion", func(t *testing.T) {
+	t.Run("runtime and finished orders should be set in order", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
 
 		// then
@@ -187,7 +187,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
 	})
 
-	t.Run("provisioningOperationConverterWithStagesAndVersionAndCommas", func(t *testing.T) {
+	t.Run("runtime and finished orders should be set in order and skip empty stages", func(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersionAndCommas(domain.Succeeded, time.Now()))
 
 		// then
