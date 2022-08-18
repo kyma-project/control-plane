@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -73,16 +74,108 @@ func TestClient_Deprovision(t *testing.T) {
 	})
 }
 
+func TestClient_ExpirationRequest(t *testing.T) {
+
+	t.Run("should return update operation ID on success", func(t *testing.T) {
+		// given
+		testServer := fixHTTPServer(false)
+		defer testServer.Close()
+
+		config := ClientConfig{
+			URL: testServer.URL,
+		}
+		client := NewClient(context.Background(), config)
+		client.setHttpClient(testServer.Client())
+
+		instance := internal.Instance{
+			InstanceID:    fixInstanceID,
+			RuntimeID:     fixRuntimeID,
+			ServicePlanID: TrialPlanID,
+		}
+
+		// when
+		opID, err := client.SendExpirationRequest(instance)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, fixOpID, opID)
+	})
+
+	t.Run("should return error when trying to make other plan than trial expired", func(t *testing.T) {
+		// given
+		testServer := fixHTTPServer(false)
+		defer testServer.Close()
+
+		config := ClientConfig{
+			URL: testServer.URL,
+		}
+		client := NewClient(context.Background(), config)
+		client.setHttpClient(testServer.Client())
+
+		instance := internal.Instance{
+			InstanceID:    fixInstanceID,
+			RuntimeID:     fixRuntimeID,
+			ServicePlanID: azurePlanID,
+		}
+
+		// when
+		opID, err := client.SendExpirationRequest(instance)
+
+		// then
+		assert.Error(t, err)
+		assert.Len(t, opID, 0)
+	})
+
+	t.Run("should return error when update fails", func(t *testing.T) {
+		// given
+		testServer := fixHTTPServer(true)
+		defer testServer.Close()
+
+		config := ClientConfig{
+			URL: testServer.URL,
+		}
+		client := NewClient(context.Background(), config)
+		client.setHttpClient(testServer.Client())
+
+		instance := internal.Instance{
+			InstanceID:    fixInstanceID,
+			RuntimeID:     fixRuntimeID,
+			ServicePlanID: TrialPlanID,
+		}
+
+		// when
+		opID, err := client.SendExpirationRequest(instance)
+
+		// then
+		assert.Error(t, err)
+		assert.Len(t, opID, 0)
+	})
+}
+
 func fixHTTPServer(withFailure bool) *httptest.Server {
 	if withFailure {
 		r := mux.NewRouter()
-		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", deprovisionFailure).Methods(http.MethodDelete)
+		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailure).Methods(http.MethodDelete)
+		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailure).Methods(http.MethodPatch)
 		return httptest.NewServer(r)
 	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", deprovision).Methods(http.MethodDelete)
+	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", serviceUpdateWithExpiration).Methods(http.MethodPatch)
 	return httptest.NewServer(r)
+}
+
+func serviceUpdateWithExpiration(w http.ResponseWriter, r *http.Request) {
+	responseDTO := ServiceUpdatePatchDTO{}
+	err := json.NewDecoder(r.Body).Decode(&responseDTO)
+	if err != nil || responseDTO.PlanID != TrialPlanID {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(fmt.Sprintf(`{"operation": "%s"}`, fixOpID)))
 }
 
 func deprovision(w http.ResponseWriter, r *http.Request) {
@@ -90,16 +183,18 @@ func deprovision(w http.ResponseWriter, r *http.Request) {
 	_, okServiceID := params["service_id"]
 	if !okServiceID {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	_, okPlanID := params["plan_id"]
 	if !okPlanID {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(fmt.Sprintf(`{"operation": "%s"}`, fixOpID)))
 }
 
-func deprovisionFailure(w http.ResponseWriter, r *http.Request) {
+func requestFailure(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 }
