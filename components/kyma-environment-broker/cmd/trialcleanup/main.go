@@ -61,7 +61,7 @@ func main() {
 
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, _, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
+	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
 	svc := newTrialCleanupService(cfg, brokerClient, db.Instances())
 
@@ -71,6 +71,12 @@ func main() {
 
 	log.Info("Trial cleanup job finished successfully!")
 
+	err = conn.Close()
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	fatalOnError(err)
 

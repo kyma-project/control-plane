@@ -68,6 +68,12 @@ func main() {
 		fatalOnError(err)
 	}
 
+	err = conn.Close()
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	if err != nil {
 		fatalOnError(err)

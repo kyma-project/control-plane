@@ -49,7 +49,7 @@ func main() {
 
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, _, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
+	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
 	fatalOnError(err)
 
 	// create broker client
@@ -58,6 +58,12 @@ func main() {
 	// create SubAccountCleanerService and execute process
 	sacs := cis.NewSubAccountCleanupService(client, brokerClient, db.Instances(), logs)
 	fatalOnError(sacs.Run())
+
+	// do not use defer, close must be done before halting
+	err = conn.Close()
+	if err != nil {
+		fatalOnError(err)
+	}
 
 	err = cleaner.Halt()
 	fatalOnError(err)
