@@ -23,11 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	trialGAForTests = "e449f875-b5b2-4485-b7c0-98725c0571bf"
-	trialSAForTests = "a45be5d8-eddc-4001-91cf-48cc644d571f"
-)
-
 func TestGetEndpoint_GetNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
@@ -99,9 +94,10 @@ func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	cfg := broker.Config{
-		URL:                      "https://test-broker.local",
-		EnableKubeconfigURLLabel: true,
-		ShowTrialExpireInfo:      true,
+		URL:                               "https://test-broker.local",
+		EnableKubeconfigURLLabel:          true,
+		ShowTrialExpireInfo:               true,
+		SubaccountIDToShowTrialExpireInfo: "test-saID",
 	}
 
 	const (
@@ -111,8 +107,7 @@ func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
 	op := fixture.FixProvisioningOperation(operationID, instanceID)
 
 	instance := fixture.FixInstance(instanceID)
-	instance.GlobalAccountID = trialGAForTests
-	instance.SubAccountID = trialSAForTests
+	instance.SubAccountID = cfg.SubaccountIDToShowTrialExpireInfo
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
@@ -132,7 +127,6 @@ func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, instance.IsExpired())
 	assert.Equal(t, instance.ServiceID, response.ServiceID)
-	assert.Equal(t, "", response.DashboardURL)
 	assert.NotContains(t, response.Metadata.Labels, "KubeconfigURL")
-	assert.Equal(t, "0 days", response.Metadata.Labels["Remaining time"])
+	assert.Contains(t, response.Metadata.Labels, "Trial expiration details")
 }
