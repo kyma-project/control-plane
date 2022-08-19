@@ -54,6 +54,7 @@ func TestResponseLabels(t *testing.T) {
 
 		// then
 		require.Len(t, labels, 3)
+		assert.Contains(t, labels, trialExpiryDetailsKey)
 		require.Equal(t, "cluster-test", labels["Name"])
 		require.Equal(t, "https://example.com/kubeconfig/instanceID", labels["KubeconfigURL"])
 	})
@@ -65,14 +66,16 @@ func TestResponseLabels(t *testing.T) {
 
 		instance := fixture.FixInstance("instanceID")
 		instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+		expiryDate := time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+		instance.ExpiredAt = &expiryDate
 
 		// when
 		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", true)
 
 		// then
 		require.Len(t, labels, 2)
+		assert.Contains(t, labels, trialExpiryDetailsKey)
 		assert.NotContains(t, labels, kubeconfigURLKey)
 		require.Equal(t, "cluster-test", labels["Name"])
-		require.Equal(t, "0 days", labels[remainingTimeKey])
 	})
 }
