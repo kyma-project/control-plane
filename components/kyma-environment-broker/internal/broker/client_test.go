@@ -167,9 +167,13 @@ func fixHTTPServer(withFailure bool) *httptest.Server {
 }
 
 func serviceUpdateWithExpiration(w http.ResponseWriter, r *http.Request) {
-	responseDTO := ServiceUpdatePatchDTO{}
+	responseDTO := serviceUpdatePatchDTO{}
 	err := json.NewDecoder(r.Body).Decode(&responseDTO)
-	if err != nil || responseDTO.PlanID != TrialPlanID {
+
+	validRequest := err == nil && responseDTO.PlanID == TrialPlanID &&
+		*responseDTO.Parameters.Expired && !*responseDTO.Context.Active
+
+	if !validRequest {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
