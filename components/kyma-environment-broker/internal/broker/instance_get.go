@@ -13,11 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	trialGAForTests = "e449f875-b5b2-4485-b7c0-98725c0571bf"
-	trialSAForTests = "a45be5d8-eddc-4001-91cf-48cc644d571f"
-)
-
 type GetInstanceEndpoint struct {
 	config            Config
 	instancesStorage  storage.Instances
@@ -75,12 +70,9 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 	}
 
 	if b.config.ShowTrialExpireInfo {
-		// for test purposes on DEV env
-		if instance.GlobalAccountID == trialGAForTests && instance.SubAccountID == trialSAForTests {
+		// for test purposes on DEV and PROD envs
+		if instance.SubAccountID == b.config.SubaccountIDToShowTrialExpireInfo {
 			spec.Metadata.Labels = ResponseLabelsWithExpireInfo(*op, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel)
-			if instance.IsExpired() {
-				spec.DashboardURL = ""
-			}
 		}
 	}
 
