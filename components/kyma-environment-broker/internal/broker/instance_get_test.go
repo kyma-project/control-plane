@@ -128,5 +128,5 @@ func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
 	assert.True(t, instance.IsExpired())
 	assert.Equal(t, instance.ServiceID, response.ServiceID)
 	assert.NotContains(t, response.Metadata.Labels, "KubeconfigURL")
-	assert.Equal(t, "0 days", response.Metadata.Labels["Remaining time"])
+	assert.Contains(t, response.Metadata.Labels, "Trial expiration details")
 }
