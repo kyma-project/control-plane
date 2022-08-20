@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -159,6 +160,42 @@ func TestConverting_SuspendedAndUpdateFAiled(t *testing.T) {
 	assert.Equal(t, runtime.StateSuspended, dto.Status.State)
 }
 
+func TestConverting_ProvisioningOperationConverter(t *testing.T) {
+	// given
+	instance := fixInstance()
+	svc := NewConverter("eu")
+
+	// when
+	dto, _ := svc.NewDTO(instance)
+
+	//expected stages in order
+	expected := []string{"start", "create_runtime", "check_kyma", "post_actions"}
+
+	t.Run("runtime and finished orders should be not set", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+
+		// then
+		assert.Equal(t, []string(nil), dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
+	})
+
+	t.Run("runtime and finished orders should be set in order", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
+
+		// then
+		assert.True(t, reflect.DeepEqual(expected, dto.Status.Provisioning.FinishedStagesOrdered))
+		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
+	})
+
+	t.Run("runtime and finished orders should be set in order and skip empty stages", func(t *testing.T) {
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersionAndCommas(domain.Succeeded, time.Now()))
+
+		// then
+		assert.True(t, reflect.DeepEqual(expected, dto.Status.Provisioning.FinishedStagesOrdered))
+		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
+	})
+}
+
 func fixSuspensionOperation(state domain.LastOperationState, createdAt time.Time) []internal.DeprovisioningOperation {
 	return []internal.DeprovisioningOperation{{
 		Operation: internal.Operation{
@@ -196,6 +233,38 @@ func fixProvisioningOperation(state domain.LastOperationState, createdAt time.Ti
 			CreatedAt: createdAt,
 			ID:        "prov-id",
 			State:     state,
+		},
+	}
+}
+
+func fixProvisioningOperationWithStagesAndVersion(state domain.LastOperationState, createdAt time.Time) *internal.ProvisioningOperation {
+	return &internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			CreatedAt:             createdAt,
+			ID:                    "prov-id",
+			State:                 state,
+			FinishedStagesOrdered: "start,create_runtime,check_kyma,post_actions",
+			RuntimeVersion: internal.RuntimeVersionData{
+				Version:      "2.0",
+				Origin:       "default",
+				MajorVersion: 2,
+			},
+		},
+	}
+}
+
+func fixProvisioningOperationWithStagesAndVersionAndCommas(state domain.LastOperationState, createdAt time.Time) *internal.ProvisioningOperation {
+	return &internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			CreatedAt:             createdAt,
+			ID:                    "prov-id",
+			State:                 state,
+			FinishedStagesOrdered: ",start,create_runtime,,check_kyma,post_actions,",
+			RuntimeVersion: internal.RuntimeVersionData{
+				Version:      "2.0",
+				Origin:       "default",
+				MajorVersion: 2,
+			},
 		},
 	}
 }

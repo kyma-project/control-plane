@@ -24,6 +24,14 @@ spec:
             - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
               name: trial-cleanup-job
               env:
+                {{if eq .Values.global.database.embedded.enabled true}}
+                - name: DATABASE_EMBEDDED
+                  value: "true"
+                {{end}}
+                {{if eq .Values.global.database.embedded.enabled false}}
+                - name: DATABASE_EMBEDDED
+                  value: "false"
+                {{end}} 
                 - name: APP_DRY_RUN
                   value: "{{ .Values.trialCleanup.dryRun }}"
                 - name: APP_EXPIRATION_PERIOD
@@ -64,12 +72,28 @@ spec:
                     secretKeyRef:
                       name: kcp-postgresql
                       key: postgresql-sslMode
+                - name: APP_BROKER_URL
+                  value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+                - name: APP_BROKER_TOKEN_URL
+                  value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_id
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_secret
+                - name: APP_BROKER_SCOPE
+                  value: {{.Values.kebClient.scope}}
               {{if eq .Values.global.database.embedded.enabled false}}
               command:
                 - "/bin/sh"
               args:
                 - "-c"
-                - "sleep 20; ./app/trialcleanup; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+                - "./app/trialcleanup"
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials

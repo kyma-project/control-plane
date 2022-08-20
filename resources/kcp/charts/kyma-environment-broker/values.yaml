@@ -5,13 +5,13 @@ global:
       version: "PR-1849"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1868"
+      version: "PR-1978"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "22cb2b4e"
+      version: "PR-1978"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-1937"
+      version: "PR-1978"
 
 deployment:
   replicaCount: 1
@@ -124,6 +124,8 @@ enablePlans: "azure,gcp,azure_lite,trial"
 onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
 includeAdditionalParamsInSchema: "false"
+showTrialExpireInfo: "false"
+subaccountIDToShowTrialExpireInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
 
 osbUpdateProcessingEnabled: "false"
 

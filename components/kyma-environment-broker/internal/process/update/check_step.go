@@ -51,7 +51,7 @@ func (s *CheckStep) checkRuntimeStatus(operation internal.UpdatingOperation, log
 	}
 
 	if operation.ProvisionerOperationID == "" {
-		msg := "Operation dos not contain Provisioner Operation ID"
+		msg := "Operation does not contain Provisioner Operation ID"
 		log.Error(msg)
 		return s.operationManager.OperationFailed(operation, msg, nil, log)
 	}
