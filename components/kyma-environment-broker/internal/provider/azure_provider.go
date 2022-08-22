@@ -185,22 +185,6 @@ func (p *AzureTrialInput) Provider() internal.CloudProvider {
 	return internal.Azure
 }
 
-func (p *AzureHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Zones == nil && pp.Parameters.ZonesCount != nil {
-		updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, generateMultipleAzureZones(*pp.Parameters.ZonesCount))
-		return
-	}
-	updateSlice(&input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones, pp.Parameters.Zones)
-}
-
-func (p *AzureHAInput) Profile() gqlschema.KymaProfile {
-	return gqlschema.KymaProfileProduction
-}
-
-func (p *AzureHAInput) Provider() internal.CloudProvider {
-	return internal.Azure
-}
-
 func (p *AzureTrialInput) Profile() gqlschema.KymaProfile {
 	return gqlschema.KymaProfileEvaluation
 }
