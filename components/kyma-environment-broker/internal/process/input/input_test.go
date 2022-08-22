@@ -1211,7 +1211,7 @@ func TestCreateUpgradeRuntimeInput_ConfigureAdmins(t *testing.T) {
 }
 
 func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
-	t.Run("should apply CreateUpgradeShootInput with provisioning autoscaler parameters", func(t *testing.T) {
+	t.Run("should not apply CreateUpgradeShootInput with provisioning autoscaler parameters", func(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
@@ -1243,19 +1243,17 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		input, err := rtinput.CreateUpgradeShootInput()
 		assert.NoError(t, err)
 
-		expectAutoscalerMin := *pp.Parameters.AutoScalerMin
-		expectAutoscalerMax := *pp.Parameters.AutoScalerMax
 		expectMaxSurge := *pp.Parameters.MaxSurge
 		expectMaxUnavailable := *pp.Parameters.MaxUnavailable
-		t.Logf("%v, %v, %v, %v", expectAutoscalerMin, expectAutoscalerMax, expectMaxSurge, expectMaxUnavailable)
+		t.Logf("%v, %v", expectMaxSurge, expectMaxUnavailable)
 
-		assert.Equal(t, expectAutoscalerMin, *input.GardenerConfig.AutoScalerMin)
-		assert.Equal(t, expectAutoscalerMax, *input.GardenerConfig.AutoScalerMax)
+		assert.Nil(t, input.GardenerConfig.AutoScalerMin)
+		assert.Nil(t, input.GardenerConfig.AutoScalerMax)
 		assert.Equal(t, expectMaxSurge, *input.GardenerConfig.MaxSurge)
 		assert.Equal(t, expectMaxUnavailable, *input.GardenerConfig.MaxUnavailable)
 	})
 
-	t.Run("should apply CreateUpgradeShootInput with provider autoscaler parameters", func(t *testing.T) {
+	t.Run("should not apply CreateUpgradeShootInput with provider autoscaler parameters", func(t *testing.T) {
 		// given
 		optComponentsSvc := dummyOptionalComponentServiceMock(fixKymaComponentList())
 		componentsProvider := &automock.ComponentListProvider{}
@@ -1290,13 +1288,11 @@ func TestCreateUpgradeShootInput_ConfigureAutoscalerParams(t *testing.T) {
 		input, err := rtinput.CreateUpgradeShootInput()
 		assert.NoError(t, err)
 
-		expectAutoscalerMin := provider.Defaults().GardenerConfig.AutoScalerMin
-		expectAutoscalerMax := provider.Defaults().GardenerConfig.AutoScalerMax
 		expectMaxSurge := provider.Defaults().GardenerConfig.MaxSurge
 		expectMaxUnavailable := provider.Defaults().GardenerConfig.MaxUnavailable
 
-		assert.Equal(t, expectAutoscalerMin, *input.GardenerConfig.AutoScalerMin)
-		assert.Equal(t, expectAutoscalerMax, *input.GardenerConfig.AutoScalerMax)
+		assert.Nil(t, input.GardenerConfig.AutoScalerMin)
+		assert.Nil(t, input.GardenerConfig.AutoScalerMax)
 		assert.Equal(t, expectMaxSurge, *input.GardenerConfig.MaxSurge)
 		assert.Equal(t, expectMaxUnavailable, *input.GardenerConfig.MaxUnavailable)
 	})

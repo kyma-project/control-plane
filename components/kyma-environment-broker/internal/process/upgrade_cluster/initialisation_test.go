@@ -956,12 +956,8 @@ func fixGetHyperscalerProviderForPlanID(planID string) fixHyperscalerInputProvid
 		provider = &cloudProvider.AzureInput{}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
-	case broker.AzureHAPlanID:
-		provider = &cloudProvider.AzureHAInput{}
 	case broker.AWSPlanID:
 		provider = &cloudProvider.AWSInput{}
-	case broker.AWSHAPlanID:
-		provider = &cloudProvider.AWSHAInput{}
 		// insert cases for other providers like AWS or GCP
 	default:
 		return nil

@@ -62,7 +62,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -133,7 +133,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_lite", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure", "azure_lite"},
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
 			},
@@ -649,7 +649,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -704,7 +704,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -759,7 +759,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -817,7 +817,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -871,7 +871,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,

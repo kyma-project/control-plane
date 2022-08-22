@@ -33,11 +33,13 @@ type KymaEnvironmentBroker struct {
 
 // Config represents configuration for broker
 type Config struct {
-	EnablePlans                     EnablePlans `envconfig:"default=azure"`
-	OnlySingleTrialPerGA            bool        `envconfig:"default=true"`
-	URL                             string
-	EnableKubeconfigURLLabel        bool `envconfig:"default=false"`
-	IncludeAdditionalParamsInSchema bool `envconfig:"default=false"`
+	EnablePlans                       EnablePlans `envconfig:"default=azure"`
+	OnlySingleTrialPerGA              bool        `envconfig:"default=true"`
+	URL                               string
+	EnableKubeconfigURLLabel          bool   `envconfig:"default=false"`
+	IncludeAdditionalParamsInSchema   bool   `envconfig:"default=false"`
+	ShowTrialExpireInfo               bool   `envconfig:"default=false"`
+	SubaccountIDToShowTrialExpireInfo string `envconfig:"default=a45be5d8-eddc-4001-91cf-48cc644d571f"`
 }
 
 type ServicesConfig map[string]Service

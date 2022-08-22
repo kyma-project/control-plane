@@ -101,9 +101,6 @@ spec:
               - name: APP_BROKER_SCOPE
                 value: {{.Values.kebClient.scope}}
             command:
-              - bin/sh
-            args:
-              - -c
               - "./bin/environments-cleanup"
             volumeMounts:
               - mountPath: /gardener/kubeconfig
