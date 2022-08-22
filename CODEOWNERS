@@ -43,8 +43,8 @@
 /components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar  @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @ebensom @fhivemind @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP
-/resources/oidc-kubeconfig-service  @ebensom @fhivemind @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP
+/components/kubeconfig-service @ebensom @fhivemind @life0215 @lumi017 @strekm @Tomasz-Smelcerz-SAP @AdrianPei @lauraanddolay @lauraanddola
+/resources/oidc-kubeconfig-service  @ebensom @fhivemind @life0215 @lumi017 @strekm  @Tomasz-Smelcerz-SAP @AdrianPei @lauraanddolay @lauraanddola
 
 # KCP CLI
 /tools/cli @ebensom @fhivemind @life0215 @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting
