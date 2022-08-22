@@ -12,10 +12,8 @@ import (
 )
 
 const (
-	DefaultAzureRegion       = "eastus"
-	DefaultAzureHAZonesCount = 3
-  DefaultAzureMultiZoneCount = 3
-	DefaultAzureMachineType  = "Standard_D4_v3"
+	DefaultAzureRegion         = "eastus"
+	DefaultAzureMultiZoneCount = 3
 )
 
 var europeAzure = "westeurope"
@@ -50,7 +48,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 		GardenerConfig: &gqlschema.GardenerConfigInput{
 			DiskType:       ptr.String("Standard_LRS"),
 			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    DefaultAzureMachineType,
+			MachineType:    "Standard_D4_v3",
 			Region:         DefaultAzureRegion,
 			Provider:       "azure",
 			WorkerCidr:     "10.250.0.0/16",
@@ -185,30 +183,6 @@ func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, p
 
 func (p *AzureTrialInput) Provider() internal.CloudProvider {
 	return internal.Azure
-}
-
-func (p *AzureHAInput) Defaults() *gqlschema.ClusterConfigInput {
-	return &gqlschema.ClusterConfigInput{
-		GardenerConfig: &gqlschema.GardenerConfigInput{
-			DiskType:       ptr.String("Standard_LRS"),
-			VolumeSizeGb:   ptr.Integer(50),
-			MachineType:    DefaultAzureMachineType,
-			Region:         DefaultAzureRegion,
-			Provider:       "azure",
-			WorkerCidr:     "10.250.0.0/19",
-			AutoScalerMin:  1,
-			AutoScalerMax:  10,
-			MaxSurge:       1,
-			MaxUnavailable: 0,
-			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
-				AzureConfig: &gqlschema.AzureProviderConfigInput{
-					VnetCidr:         "10.250.0.0/19",
-					Zones:            generateMultipleAzureZones(DefaultAzureHAZonesCount),
-					EnableNatGateway: ptr.Bool(true),
-				},
-			},
-		},
-	}
 }
 
 func (p *AzureHAInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
