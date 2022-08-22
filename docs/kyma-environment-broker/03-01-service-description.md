@@ -10,9 +10,7 @@ The supported plans are as follows:
 |-----------|---------|-------------|
 | `azure` | `4deee563-e5ec-4731-b9b1-53b42d855f0c` |Installs Kyma Runtime on the Azure cluster. |
 | `azure_lite` | `8cb22518-aa26-44c5-91a0-e669ec9bf443` | Installs Kyma Lite on the Azure cluster. |
-| `azure_ha` | `f2951649-02ca-43a5-9188-9c07fb612491` | Installs Kyma Runtime on the Azure cluster with multiple availability zones. |
 | `aws` | `a361c511f-f939-4621-b228-d0fb79a1fe15` | Installs Kyma Runtime on the AWS cluster. |
-| `aws_ha` | `aecef2e6-49f1-4094-8433-eba0e135eb6a` | Installs Kyma Runtime on the AWS cluster with multiple availability zones. |
 | `openstack` | `03b812ac-c991-4528-b5bd-08b303523a63` | Installs Kyma Runtime on the Openstack cluster. |
 | `gcp` | `ca6e5357-707f-4565-bbbd-b3ab732597c6` | Installs Kyma Runtime on the GCP cluster. |
 | `trial` | `7d55d31d-35ae-4438-bf13-6ffdfa107d9f` | Installs Kyma trial plan on Azure, AWS or GCP. |
@@ -89,25 +87,6 @@ These are the provisioning parameters for Azure that you can configure:
 | **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
 
  </details>
-
-  <details>
-  <summary label="azure-lite-plan">
-  Azure HA
-  </summary>
-
-| Parameter name | Type | Description | Required | Default value |
-| ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
-| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
-| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
-| **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
-
- </details>
  </div>
 
 These are the provisioning parameters for AWS that you can configure:
@@ -129,25 +108,6 @@ These are the provisioning parameters for AWS that you can configure:
 | **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
 
   </details>
-  <details>
-  <summary label="aws-ha-plan">
-  AWS HA
-  </summary>
-
-| Parameter name | Type | Description | Required | Default value |
-| ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m6i.2xlarge` |
-| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `4` |
-| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
-| **zonesCount** | int | Specifies the number of availability zones for an SKR. | No | `2` |
-
-
- </details>
  </div>
 
 These are the provisioning parameters for GCP that you can configure:
@@ -215,10 +175,10 @@ These are the provisioning parameters for the Trial plan that you can configure:
   Trial plan
   </summary>
 
-| Parameter name | Type | Description | Required | Possible values| Default value |  
-| ---------------|-------|-------------|----------|---------------|---------------|  
-| **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |  
-| **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |  
+| Parameter name | Type | Description | Required | Possible values| Default value |
+| ---------------|-------|-------------|----------|---------------|---------------|
+| **name** | string | Specifies the name of the Kyma Runtime. | Yes | Any string| None |
+| **region** | string | Defines the cluster region. | No | `europe`,`us`, `asia` | Calculated from the platform region |
 | **provider** | string | Specifies the cloud provider used during provisioning. | No | `Azure`, `AWS`, `GCP` | `Azure` |
 | **context.active** | string | Specifies if the SKR should be suspended or unsuspended. | `true`, `false` | None |
 

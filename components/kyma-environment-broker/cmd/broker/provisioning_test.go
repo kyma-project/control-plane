@@ -24,7 +24,7 @@ const (
 
 func TestProvisioning_HappyPath(t *testing.T) {
 	// given
-	suite := NewProvisioningSuite(t)
+	suite := NewProvisioningSuite(t, false)
 
 	// when
 	provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{})
@@ -167,7 +167,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 					"context": {
-						"sm_platform_credentials": {	
+						"sm_platform_credentials": {
 							"url": "https://sm.url",
 							"credentials": {
 								"basic": {
@@ -274,9 +274,10 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 		planID           string
 		platformRegion   string
 		platformProvider internal.CloudProvider
-		zonesCount       *int
 		region           string
+		multiZone        bool
 
+		expectedZonesCount                  *int
 		expectedProfile                     gqlschema.KymaProfile
 		expectedProvider                    string
 		expectedMinimalNumberOfNodes        int
@@ -321,84 +322,97 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production Azure": {
-			planID: broker.AzurePlanID,
+			planID:    broker.AzurePlanID,
+			region:    "westeurope",
+			multiZone: false,
 
-			expectedMinimalNumberOfNodes:        2,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
+			expectedZonesCount:                  ptr.Integer(1),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "azure",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
-		"HA Azure - provided zonesCount": {
-			planID:     broker.AzureHAPlanID,
-			zonesCount: ptr.Integer(3),
+		"Production Multi-AZ Azure": {
+			planID:    broker.AzurePlanID,
+			region:    "westeurope",
+			multiZone: true,
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
-			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "azure",
-			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
-		},
-		"HA Azure - default zonesCount": {
-			planID: broker.AzureHAPlanID,
-
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "Standard_D8_v3",
+			expectedZonesCount:                  ptr.Integer(3),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "Standard_D4_v3",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "azure",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.Azure,
 		},
 		"Production AWS": {
-			planID: broker.AWSPlanID,
+			planID:    broker.AWSPlanID,
+			region:    "us-east-1",
+			multiZone: false,
 
-			expectedMinimalNumberOfNodes:        2,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedZonesCount:                  ptr.Integer(1),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
-		"HA AWS - provided zonesCount": {
-			planID:     broker.AWSHAPlanID,
-			zonesCount: ptr.Integer(3),
-			region:     "us-east-1",
+		"Production Multi-AZ AWS": {
+			planID:    broker.AWSPlanID,
+			region:    "us-east-1",
+			multiZone: true,
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedZonesCount:                  ptr.Integer(3),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "m5.xlarge",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
 			expectedProvider:                    "aws",
 			expectedSharedSubscription:          false,
 			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
 		},
-		"HA AWS - default zonesCount": {
-			planID: broker.AWSHAPlanID,
-			region: "eu-central-1",
+		"Production GCP": {
+			planID:    broker.GCPPlanID,
+			region:    "us-central1",
+			multiZone: false,
 
-			expectedMinimalNumberOfNodes:        1,
-			expectedMaximumNumberOfNodes:        10,
-			expectedMachineType:                 "m5.2xlarge",
+			expectedZonesCount:                  ptr.Integer(1),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "n2-standard-4",
 			expectedProfile:                     gqlschema.KymaProfileProduction,
-			expectedProvider:                    "aws",
+			expectedProvider:                    "gcp",
 			expectedSharedSubscription:          false,
-			expectedSubscriptionHyperscalerType: hyperscaler.AWS,
+			expectedSubscriptionHyperscalerType: hyperscaler.GCP,
+		},
+		"Production Multi-AZ GCP": {
+			planID:    broker.GCPPlanID,
+			region:    "us-central1",
+			multiZone: true,
+
+			expectedZonesCount:                  ptr.Integer(3),
+			expectedMinimalNumberOfNodes:        3,
+			expectedMaximumNumberOfNodes:        20,
+			expectedMachineType:                 "n2-standard-4",
+			expectedProfile:                     gqlschema.KymaProfileProduction,
+			expectedProvider:                    "gcp",
+			expectedSharedSubscription:          false,
+			expectedSubscriptionHyperscalerType: hyperscaler.GCP,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			// given
-			suite := NewProvisioningSuite(t)
+			suite := NewProvisioningSuite(t, tc.multiZone)
 
 			// when
 			provisioningOperationID := suite.CreateProvisioning(RuntimeOptions{
 				PlanID:           tc.planID,
-				ZonesCount:       tc.zonesCount,
 				PlatformRegion:   tc.platformRegion,
 				PlatformProvider: tc.platformProvider,
 				Region:           tc.region,
@@ -420,7 +434,7 @@ func TestProvisioning_ClusterParameters(t *testing.T) {
 			suite.AssertMinimalNumberOfNodes(tc.expectedMinimalNumberOfNodes)
 			suite.AssertMaximumNumberOfNodes(tc.expectedMaximumNumberOfNodes)
 			suite.AssertMachineType(tc.expectedMachineType)
-			suite.AssertZonesCount(tc.zonesCount, tc.planID)
+			suite.AssertZonesCount(tc.expectedZonesCount, tc.planID)
 			suite.AssertSubscription(tc.expectedSharedSubscription, tc.expectedSubscriptionHyperscalerType)
 		})
 
@@ -431,7 +445,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 	t.Run("should apply default OIDC values when OIDC object is nil", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		defaultOIDC := fixture.FixOIDCConfigDTO()
 		expectedOIDC := gqlschema.OIDCConfigInput{
 			ClientID:       defaultOIDC.ClientID,
@@ -461,7 +475,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 	t.Run("should apply default OIDC values when all OIDC object's fields are empty", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		defaultOIDC := fixture.FixOIDCConfigDTO()
 		expectedOIDC := gqlschema.OIDCConfigInput{
 			ClientID:       defaultOIDC.ClientID,
@@ -494,7 +508,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 	t.Run("should apply provided OIDC configuration", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		providedOIDC := internal.OIDCConfigDTO{
 			ClientID:       "fake-client-id-1",
 			GroupsClaim:    "fakeGroups",
@@ -532,7 +546,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 
 	t.Run("should apply default OIDC values on empty OIDC params from input", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		providedOIDC := internal.OIDCConfigDTO{
 			ClientID:  "fake-client-id-1",
 			IssuerURL: "https://testurl.local",
@@ -569,7 +583,7 @@ func TestProvisioning_OIDCValues(t *testing.T) {
 func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 	t.Run("should use UserID as default value for admins list", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		options := RuntimeOptions{
 			UserID: "fake-user-id",
 		}
@@ -594,7 +608,7 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 
 	t.Run("should apply new admins list", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		options := RuntimeOptions{
 			UserID:        "fake-user-id",
 			RuntimeAdmins: []string{"admin1@test.com", "admin2@test.com"},
@@ -620,7 +634,7 @@ func TestProvisioning_RuntimeAdministrators(t *testing.T) {
 
 	t.Run("should apply empty admin value (list is not empty)", func(t *testing.T) {
 		// given
-		suite := NewProvisioningSuite(t)
+		suite := NewProvisioningSuite(t, false)
 		options := RuntimeOptions{
 			UserID:        "fake-user-id",
 			RuntimeAdmins: []string{""},

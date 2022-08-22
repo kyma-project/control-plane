@@ -17,14 +17,10 @@ const (
 	GCPPlanName       = "gcp"
 	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
 	AWSPlanName       = "aws"
-	AWSHAPlanID       = "aecef2e6-49f1-4094-8433-eba0e135eb6a"
-	AWSHAPlanName     = "aws_ha"
 	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
 	AzurePlanName     = "azure"
 	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
 	AzureLitePlanName = "azure_lite"
-	AzureHAPlanID     = "f2951649-02ca-43a5-9188-9c07fb612491"
-	AzureHAPlanName   = "azure_ha"
 	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	TrialPlanName     = "trial"
 	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
@@ -36,10 +32,8 @@ const (
 var PlanNamesMapping = map[string]string{
 	GCPPlanID:       GCPPlanName,
 	AWSPlanID:       AWSPlanName,
-	AWSHAPlanID:     AWSHAPlanName,
 	AzurePlanID:     AzurePlanName,
 	AzureLitePlanID: AzureLitePlanName,
-	AzureHAPlanID:   AzureHAPlanName,
 	TrialPlanID:     TrialPlanName,
 	OpenStackPlanID: OpenStackPlanName,
 	FreemiumPlanID:  FreemiumPlanName,
@@ -48,9 +42,7 @@ var PlanNamesMapping = map[string]string{
 var PlanIDsMapping = map[string]string{
 	AzurePlanName:     AzurePlanID,
 	AWSPlanName:       AWSPlanID,
-	AWSHAPlanName:     AWSHAPlanID,
 	AzureLitePlanName: AzureLitePlanID,
-	AzureHAPlanName:   AzureHAPlanID,
 	GCPPlanName:       GCPPlanID,
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
@@ -101,18 +93,17 @@ func AWSRegions() []string {
 		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
 }
 
-func AWSHARegions() []string {
-	// be aware of zones defined in internal/provider/aws_provider.go
-	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1",
-		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
-}
-
 func OpenStackRegions() []string {
 	return []string{"eu-de-1", "ap-sa-1"}
 }
 
 func OpenStackSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	return createSchema(machineTypes, OpenStackRegions(), additionalParams, update)
+	properties := NewProvisioningProperties(machineTypes, OpenStackRegions(), update)
+	properties.AutoScalerMax.Maximum = 40
+	if !update {
+		properties.AutoScalerMax.Default = 8
+	}
+	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
 func GCPSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
@@ -121,30 +112,6 @@ func GCPSchema(machineTypes []string, additionalParams, update bool) *map[string
 
 func AWSSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	return createSchema(machineTypes, AWSRegions(), additionalParams, update)
-}
-
-func AWSHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, AWSHARegions(), update)
-
-	properties.ZonesCount = &Type{
-		Type:        "integer",
-		Minimum:     3,
-		Maximum:     3,
-		Default:     3,
-		Description: "Specifies the number of availability zones for HA cluster",
-	}
-
-	if !update {
-		properties.AutoScalerMin.Default = 1
-	}
-
-	properties.AutoScalerMin.Minimum = 1
-	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
-
-	properties.AutoScalerMax.Minimum = 1
-	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
-
-	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
 func AzureSchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
@@ -157,6 +124,7 @@ func AzureLiteSchema(machineTypes []string, additionalParams, update bool) *map[
 
 	if !update {
 		properties.AutoScalerMax.Default = 10
+		properties.AutoScalerMin.Default = 2
 	}
 
 	return createSchemaWithProperties(properties, additionalParams, update)
@@ -183,29 +151,6 @@ func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bo
 			Enum: ToInterfaceSlice(regions),
 		},
 	}
-
-	return createSchemaWithProperties(properties, additionalParams, update)
-}
-
-func AzureHASchema(machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypes, AzureRegions(), update)
-	properties.ZonesCount = &Type{
-		Type:        "integer",
-		Minimum:     3,
-		Maximum:     3,
-		Default:     3,
-		Description: "Specifies the number of availability zones for HA cluster",
-	}
-
-	if !update {
-		properties.AutoScalerMin.Default = 1
-	}
-
-	properties.AutoScalerMin.Minimum = 1
-	properties.AutoScalerMin.Description = "Specifies the minimum number of virtual machines to create per zone"
-
-	properties.AutoScalerMax.Minimum = 1
-	properties.AutoScalerMax.Description = "Specifies the maximum number of virtual machines to create per zone"
 
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
@@ -263,19 +208,18 @@ func createSchemaWith(properties interface{}, update bool) *map[string]interface
 // Plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
 func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]domain.ServicePlan {
-	awsMachines := []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"}
+	awsMachines := []string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"}
 
 	// awsHASchema := AWSHASchema(awsMachines, includeAdditionalParamsInSchema, false)
 
-	gcpMachines := []string{"n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
+	gcpMachines := []string{"n2-standard-4", "n2-standard-8", "n2-standard-16", "n2-standard-32", "n2-standard-48"}
 	gcpSchema := GCPSchema(gcpMachines, includeAdditionalParamsInSchema, false)
 
-	openStackMachines := []string{"m2.xlarge", "m1.2xlarge"}
+	openStackMachines := []string{"g_c4_m16", "g_c8_m32"}
 	openstackSchema := OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, false)
 
-	azureMachines := []string{"Standard_D8_v3"}
+	azureMachines := []string{"Standard_D4_v3", "Standard_D8_v3"}
 	azureSchema := AzureSchema(azureMachines, includeAdditionalParamsInSchema, false)
-	azureHASchema := AzureHASchema(azureMachines, includeAdditionalParamsInSchema, false)
 
 	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, false)
 	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false)
@@ -284,19 +228,16 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
 	// when a machine type switch is introduced
 	// switch to m6 if m6 is available in all regions
-	awsCatalogMachines := []string{"m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}
+	awsCatalogMachines := []string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge"}
 	awsCatalogSchema := AWSSchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
-	awsHACatalogSchema := AWSHASchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
 
 	outputPlans := map[string]domain.ServicePlan{
 		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
-		AWSHAPlanID:     defaultServicePlan(AWSHAPlanID, AWSHAPlanName, plans, awsHACatalogSchema, AWSHASchema(awsMachines, includeAdditionalParamsInSchema, true)),
 		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
 		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
 		AzurePlanID:     defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachines, includeAdditionalParamsInSchema, true)),
 		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
 		FreemiumPlanID:  defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
-		AzureHAPlanID:   defaultServicePlan(AzureHAPlanID, AzureHAPlanName, plans, azureHASchema, AzureHASchema(azureMachines, includeAdditionalParamsInSchema, true)),
 		TrialPlanID:     defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 	}
 

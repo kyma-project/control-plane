@@ -100,8 +100,8 @@ func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) 
 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
-	case broker.AWSPlanID, broker.AWSHAPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
-		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.AzureHAPlanID:
+	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
+		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
 		return true
 	default:
 		return false
@@ -120,7 +120,9 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 	var provider HyperscalerInputProvider
 	switch planID {
 	case broker.GCPPlanID:
-		provider = &cloudProvider.GcpInput{}
+		provider = &cloudProvider.GcpInput{
+			MultiZone: f.config.MultiZoneCluster,
+		}
 	case broker.FreemiumPlanID:
 		return f.forFreemiumPlan(platformProvider)
 	case broker.OpenStackPlanID:
@@ -128,17 +130,17 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 			FloatingPoolName: f.config.OpenstackFloatingPoolName,
 		}
 	case broker.AzurePlanID:
-		provider = &cloudProvider.AzureInput{}
+		provider = &cloudProvider.AzureInput{
+			MultiZone: f.config.MultiZoneCluster,
+		}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
-	case broker.AzureHAPlanID:
-		provider = &cloudProvider.AzureHAInput{}
 	case broker.TrialPlanID:
 		provider = f.forTrialPlan(parametersProvider)
 	case broker.AWSPlanID:
-		provider = &cloudProvider.AWSInput{}
-	case broker.AWSHAPlanID:
-		provider = &cloudProvider.AWSHAInput{}
+		provider = &cloudProvider.AWSInput{
+			MultiZone: f.config.MultiZoneCluster,
+		}
 		// insert cases for other providers like AWS or GCP
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
@@ -397,8 +399,6 @@ func (f *InputBuilderFactory) initUpgradeShootInput(provider HyperscalerInputPro
 	}
 
 	// sync with the autoscaler and maintenance settings
-	input.GardenerConfig.AutoScalerMin = &provider.Defaults().GardenerConfig.AutoScalerMin
-	input.GardenerConfig.AutoScalerMax = &provider.Defaults().GardenerConfig.AutoScalerMax
 	input.GardenerConfig.MaxSurge = &provider.Defaults().GardenerConfig.MaxSurge
 	input.GardenerConfig.MaxUnavailable = &provider.Defaults().GardenerConfig.MaxUnavailable
 	input.GardenerConfig.EnableKubernetesVersionAutoUpdate = &f.config.AutoUpdateKubernetesVersion
