@@ -94,8 +94,9 @@ func TestResponseLabels(t *testing.T) {
 		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", true)
 
 		// then
-		require.Len(t, labels, 2)
+		require.Len(t, labels, 3)
 		assert.Contains(t, labels, trialExpiryDetailsKey)
+		assert.Contains(t, labels, trialDocsKey)
 		assert.NotContains(t, labels, kubeconfigURLKey)
 		require.Equal(t, "cluster-test", labels["Name"])
 	})

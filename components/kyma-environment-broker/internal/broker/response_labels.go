@@ -12,11 +12,12 @@ import (
 const (
 	kubeconfigURLKey      = "KubeconfigURL"
 	trialExpiryDetailsKey = "Trial expiration details"
+	trialDocsKey          = "Trial documentation"
 	expireDuration        = time.Hour * 24 * 14
 	trialDocsURL          = "https://help.sap.com/docs/"
 	notExpiredInfoFormat  = "your cluster will expire %s."
 	expiredInfoFormat     = "your cluster has expired, it is not operational and the link to the dashboard is no longer valid." +
-		" To create a new trial cluster, see %s."
+		" To create a new trial cluster, follow the link to the trial documentation."
 )
 
 func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, enableKubeconfigLabel bool) map[string]string {
@@ -39,7 +40,8 @@ func ResponseLabelsWithExpireInfo(op internal.ProvisioningOperation, instance in
 	hoursLeft := calculateHoursLeft(expireTime)
 	if instance.IsExpired() {
 		delete(labels, kubeconfigURLKey)
-		labels[trialExpiryDetailsKey] = fmt.Sprintf(expiredInfoFormat, trialDocsURL)
+		labels[trialExpiryDetailsKey] = expiredInfoFormat
+		labels[trialDocsKey] = trialDocsURL
 	} else {
 		if hoursLeft < 0 {
 			hoursLeft = 0
