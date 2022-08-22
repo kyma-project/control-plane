@@ -55,31 +55,12 @@ func (s *BTPOperatorCleanupStep) Run(operation internal.DeprovisioningOperation,
 		log.Info("instance has been deprovisioned already")
 		return operation, 0, nil
 	}
-	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
+
+	kclient, err := s.getKubeClient(operation, log)
 	if err != nil {
-		if s.isNotFoundErr(err) {
-			log.Info("instance not found in provisioner")
-			return operation, 0, nil
-		}
-		return handleError(s.Name(), operation, err, log, "call to provisioner RuntimeStatus failed")
+		return handleError(s.Name(), operation, err, log, "failed to get kube client")
 	}
-	if status.RuntimeConfiguration.Kubeconfig == nil {
-		err := kebError.NewTemporaryError("empty kubeconfig")
-		return handleError(s.Name(), operation, err, log, "provisioner returned empty kubeconfig")
-	}
-	k := *status.RuntimeConfiguration.Kubeconfig
-	hash := sha256.Sum256([]byte(k))
-	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
-	if len(k) < 10 {
-		err := kebError.NewTemporaryError("kubeconfig suspiciously small, requeuing")
-		return handleError(s.Name(), operation, err, log, "provisioner returned wrong kubeconfig")
-	}
-	cli, err := s.k8sClientProvider(k)
-	if err != nil {
-		err = kebError.AsTemporaryError(err, "failed to create k8s client from the kubeconfig")
-		return handleError(s.Name(), operation, err, log, "could not create a k8s client")
-	}
-	if err := s.deleteServiceBindingsAndInstances(cli, log); err != nil {
+	if err := s.deleteServiceBindingsAndInstances(kclient, log); err != nil {
 		err = kebError.AsTemporaryError(err, "failed BTP operator resource cleanup")
 		return handleError(s.Name(), operation, err, log, "could not delete bindings and service instances")
 	}
@@ -97,6 +78,24 @@ func (s *BTPOperatorCleanupStep) deleteServiceBindingsAndInstances(k8sClient cli
 		return fmt.Errorf("waiting for resources to be deleted")
 	}
 	return nil
+}
+
+func (s *BTPOperatorCleanupStep) removeFinalizers(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) {
+	listGvk := gvk
+	listGvk.Kind = gvk.Kind + "List"
+	for _, ns := range namespaces.Items {
+		list := &unstructured.UnstructuredList{}
+		list.SetGroupVersionKind(listGvk)
+		if err := k8sClient.List(context.Background(), list, client.InNamespace(ns.Name)); err != nil {
+			log.Errorf("failed listing resource %v in namespace %v", gvk, ns.Name)
+		}
+		for _, r := range list.Items {
+			r.SetFinalizers([]string{})
+			if err := k8sClient.Update(context.Background(), &r); err != nil {
+				log.Errorf("failed remove finalizer for resource %v: %v/%v", gvk, r.GetNamespace(), r.GetName())
+			}
+		}
+	}
 }
 
 func (s *BTPOperatorCleanupStep) deleteResource(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) (requeue bool) {
@@ -132,4 +131,60 @@ func (s *BTPOperatorCleanupStep) deleteResource(k8sClient client.Client, namespa
 
 func (s *BTPOperatorCleanupStep) isNotFoundErr(err error) bool {
 	return strings.Contains(err.Error(), "not found")
+}
+
+func (s *BTPOperatorCleanupStep) retryErrors(op internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+	if err != nil {
+		// handleError returns retry period if it's retriable error and it's within timeout
+		op, retry, err2 := handleError(s.Name(), op, err, log, msg)
+		if retry != 0 {
+			return op, retry, err2
+		}
+		// when retry is 0, that means error has been retried defined number of times and as a fallback routine
+		// it was decided that KEB should try to remove finalizers once
+		s.attemptToRemoveFinalizers(op, log)
+		return op, retry, err2
+	}
+	return op, 0, nil
+}
+
+func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.DeprovisioningOperation, log logrus.FieldLogger) {
+	k8sClient, err := s.getKubeClient(op, log)
+	if err != nil {
+		log.Errorf("failed to get kube clients to remove finalizers", err)
+		return
+	}
+
+	namespaces := corev1.NamespaceList{}
+	if err := k8sClient.List(context.Background(), &namespaces); err != nil {
+		log.Errorf("failed to list namespaces to remove finalizers", err)
+		return
+	}
+	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}, log)
+	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}, log)
+}
+
+func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (client.Client, error) {
+	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
+	if err != nil {
+		if s.isNotFoundErr(err) {
+			log.Info("instance not found in provisioner")
+			return nil, nil
+		}
+		return nil, err
+	}
+	if status.RuntimeConfiguration.Kubeconfig == nil {
+		return nil, kebError.NewTemporaryError("empty kubeconfig")
+	}
+	k := *status.RuntimeConfiguration.Kubeconfig
+	hash := sha256.Sum256([]byte(k))
+	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
+	if len(k) < 10 {
+		return nil, kebError.NewTemporaryError("kubeconfig suspiciously small, requeuing")
+	}
+	cli, err := s.k8sClientProvider(k)
+	if err != nil {
+		return nil, kebError.AsTemporaryError(err, "failed to create k8s client from the kubeconfig")
+	}
+	return cli, nil
 }
