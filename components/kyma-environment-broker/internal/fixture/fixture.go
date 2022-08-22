@@ -17,6 +17,7 @@ const (
 	ServiceId                   = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 	ServiceName                 = "kymaruntime"
 	PlanId                      = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	TrialPlan                   = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	PlanName                    = "azure"
 	GlobalAccountId             = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	SubscriptionGlobalAccountID = ""
@@ -236,6 +237,15 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
 	o.Temporary = false
+	return internal.DeprovisioningOperation{
+		Operation: o,
+	}
+}
+
+func FixSuspensionOperation(operationId, instanceId string) internal.DeprovisioningOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
+	o.Temporary = true
+	o.ProvisioningParameters.PlanID = TrialPlan
 	return internal.DeprovisioningOperation{
 		Operation: o,
 	}
