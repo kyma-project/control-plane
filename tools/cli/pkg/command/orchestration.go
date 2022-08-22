@@ -306,11 +306,12 @@ func (cmd *OrchestrationCommand) Validate(args []string) error {
 }
 
 func (cmd *OrchestrationCommand) showOrchestrations() error {
+	cmd.listParams.PageSize = 20
 	srl, err := cmd.client.ListOrchestrations(cmd.listParams)
 	if err != nil {
 		return errors.Wrap(err, "while listing orchestrations")
 	}
-
+	cmd.listParams.PageSize = 0
 	switch {
 	case cmd.output == tableOutput:
 		tp, err := printer.NewTablePrinter(orchestrationColumns, false)
