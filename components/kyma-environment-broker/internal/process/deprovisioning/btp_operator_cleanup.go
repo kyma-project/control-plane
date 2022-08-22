@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -49,6 +50,10 @@ func (s *BTPOperatorCleanupStep) Name() string {
 func (s *BTPOperatorCleanupStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
 	if !operation.Temporary {
 		log.Info("cleanup executed only for suspensions")
+		return operation, 0, nil
+	}
+	if operation.ProvisioningParameters.PlanID != broker.TrialPlanID {
+		log.Info("cleanup executed only for trial plan")
 		return operation, 0, nil
 	}
 	if operation.RuntimeID == "" {
