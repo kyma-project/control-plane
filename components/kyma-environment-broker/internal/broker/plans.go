@@ -218,7 +218,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	openStackMachines := []string{"g_c4_m16", "g_c8_m32"}
 	openstackSchema := OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, false)
 
-	azureMachines := []string{"Standard_D4_v3", "Standard_D8_v3"}
+	azureMachines := []string{"Standard_D4_v3", "Standard_D8_v3", "Standard_D16_v3", "Standard_D32_v3", "Standard_D48_v3", "Standard_D64_v3"}
 	azureSchema := AzureSchema(azureMachines, includeAdditionalParamsInSchema, false)
 
 	azureLiteSchema := AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, false)
@@ -249,7 +249,8 @@ func defaultServicePlan(id, name string, plans PlansConfig, createParams, update
 		ID:          id,
 		Name:        name,
 		Description: defaultDescription(name, plans),
-		Metadata:    defaultMetadata(name, plans), Schemas: &domain.ServiceSchemas{
+		Metadata:    defaultMetadata(name, plans),
+		Schemas: &domain.ServiceSchemas{
 			Instance: domain.ServiceInstanceSchema{
 				Create: domain.Schema{
 					Parameters: *createParams,

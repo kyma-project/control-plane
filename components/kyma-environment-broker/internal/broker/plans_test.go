@@ -35,7 +35,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name:           "Azure schema is correct",
 			generator:      AzureSchema,
-			machineTypes:   []string{"Standard_D4_v3", "Standard_D8_v3"},
+			machineTypes:   []string{"Standard_D4_v3", "Standard_D8_v3", "Standard_D16_v3", "Standard_D32_v3", "Standard_D48_v3", "Standard_D64_v3"},
 			file:           "azure-schema.json",
 			updateFile:     "update-azure-schema.json",
 			fileOIDC:       "azure-schema-additional-params.json",
