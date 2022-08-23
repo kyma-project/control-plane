@@ -20,8 +20,8 @@ require (
 )
 
 require (
-	k8s.io/api v0.23.8
-	k8s.io/apimachinery v0.23.8
+	k8s.io/api v0.24.4
+	k8s.io/apimachinery v0.24.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
@@ -38,7 +38,6 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -82,7 +81,7 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.23.8
 	k8s.io/apiserver => k8s.io/apiserver v0.23.8
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.23.8
-	k8s.io/client-go => k8s.io/client-go v0.23.8
+	k8s.io/client-go => k8s.io/client-go v0.24.0-alpha.4
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.23.8
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.8
 	k8s.io/code-generator => k8s.io/code-generator v0.23.8
