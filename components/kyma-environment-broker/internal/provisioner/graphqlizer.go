@@ -155,9 +155,22 @@ func (g *Graphqlizer) DNSConfigInputToGraphQL(in gqlschema.DNSConfigInput) (stri
 
 func (g *Graphqlizer) AzureProviderConfigInputToGraphQL(in gqlschema.AzureProviderConfigInput) (string, error) {
 	return g.genericToGraphQL(in, `{
+		{{- if .EnableNatGateway}}
+		enableNatGateway: {{.EnableNatGateway}},
+		{{- end }}
 		vnetCidr: "{{.VnetCidr}}",
 		{{- if .Zones }}
 		zones: {{.Zones | marshal }},
+		{{- end }}
+		{{- with .AzureZones }}
+		azureZones: [
+			{{- range . }}
+			{
+				name: {{ .Name }},
+				cidr: "{{ .Cidr }}",
+			}
+			{{- end }}
+		]
 		{{- end }}
 	}`)
 }
@@ -252,6 +265,9 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
 		{{- if .KubernetesVersion }}
 		kubernetesVersion: "{{.KubernetesVersion}}",
 		{{- end }}
+		{{- if .MachineType }}
+		machineType: "{{ .MachineType }}",
+		{{- end}}
 		{{- if .MachineImage }}
 		machineImage: "{{.MachineImage}}",
 		{{- end}}

@@ -13,6 +13,9 @@ validate:
 
 verify:: validate
 
+resolve-local:
+	GO111MODULE=on go mod vendor -v
+
 build-to-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}
 
@@ -20,6 +23,9 @@ deploy-on-minikube:
 	@echo ${SKIP_DEPLOY_MESSAGE}
 
 ensure-local:
+	@echo ${SKIP_DEPLOY_MESSAGE}
+
+errcheck-local:
 	@echo ${SKIP_DEPLOY_MESSAGE}
 
 resolve-local:

@@ -64,8 +64,16 @@ func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.Fie
 			return s.operationManager.OperationFailed(operation, "Unable to provide Instance details", err, log)
 		}
 	}
+	lastOp, err := s.operationStorage.GetLastOperation(operation.InstanceID)
+	if err != nil && !dberr.IsNotFound(err) {
+		log.Warn("Failed to get last operation for ERSContext:", err)
+		return operation, time.Minute, nil
+	}
 	log.Infof("Setting the operation to 'InProgress'")
 	newOp, retry, _ := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+		if lastOp != nil {
+			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+		}
 		op.State = domain.InProgress
 	}, log)
 	operation = newOp

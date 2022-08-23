@@ -22,6 +22,106 @@ func TestOperation(t *testing.T) {
 
 	ctx := context.Background()
 
+	t.Run("Operations - provisioning and deprovisioning", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		orchestrationID := "orch-id"
+
+		givenOperation := fixture.FixOperation("operation-id", "inst-id", internal.OperationTypeProvision)
+		givenOperation.InputCreator = nil
+		givenOperation.State = domain.InProgress
+		givenOperation.CreatedAt = givenOperation.CreatedAt.Truncate(time.Millisecond)
+		givenOperation.UpdatedAt = givenOperation.UpdatedAt.Truncate(time.Millisecond)
+		givenOperation.Version = 1
+		givenOperation.OrchestrationID = orchestrationID
+		givenOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
+
+		latestOperation := fixture.FixOperation("latest-id", "inst-id", internal.OperationTypeDeprovision)
+		latestOperation.InputCreator = nil
+		latestOperation.State = domain.InProgress
+		latestOperation.CreatedAt = latestOperation.CreatedAt.Truncate(time.Millisecond).Add(time.Minute)
+		latestOperation.UpdatedAt = latestOperation.UpdatedAt.Truncate(time.Millisecond).Add(2 * time.Minute)
+		latestOperation.Version = 1
+		latestOperation.OrchestrationID = orchestrationID
+		latestOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
+
+		latestPendingOperation := fixture.FixOperation("latest-id-pending", "inst-id", internal.OperationTypeProvision)
+		latestPendingOperation.InputCreator = nil
+		latestPendingOperation.State = orchestration.Pending
+		latestPendingOperation.CreatedAt = latestPendingOperation.CreatedAt.Truncate(time.Millisecond).Add(2 * time.Minute)
+		latestPendingOperation.UpdatedAt = latestPendingOperation.UpdatedAt.Truncate(time.Millisecond).Add(3 * time.Minute)
+		latestPendingOperation.Version = 1
+		latestPendingOperation.OrchestrationID = orchestrationID
+		latestPendingOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
+
+		err = brokerStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID})
+		require.NoError(t, err)
+
+		svc := brokerStorage.Operations()
+
+		// when
+		err = svc.InsertOperation(givenOperation)
+		require.NoError(t, err)
+		err = svc.InsertOperation(latestOperation)
+		require.NoError(t, err)
+		err = svc.InsertOperation(latestPendingOperation)
+		require.NoError(t, err)
+
+		provisionOps, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeProvision)
+		require.NoError(t, err)
+		assert.Len(t, provisionOps, 2)
+		assertOperation(t, givenOperation, provisionOps[0])
+
+		deprovisionOps, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeDeprovision)
+		require.NoError(t, err)
+		assert.Len(t, deprovisionOps, 1)
+		assertOperation(t, latestOperation, deprovisionOps[0])
+
+		gotOperation, err := svc.GetOperationByID("operation-id")
+		require.NoError(t, err)
+		assert.Equal(t, givenOperation.ID, gotOperation.ID)
+
+		lastOp, err := svc.GetLastOperation("inst-id")
+		require.NoError(t, err)
+		assert.Equal(t, latestOperation.ID, lastOp.ID)
+
+		latestOp, err := svc.GetOperationByInstanceID("inst-id")
+		require.NoError(t, err)
+		assert.Equal(t, latestPendingOperation.ID, latestOp.ID)
+
+		// when
+		opList, err := svc.ListOperationsByInstanceID("inst-id")
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 3, len(opList))
+
+		// when
+		_, _, totalCount, err := svc.ListOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{PageSize: 10, Page: 1})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 3, totalCount)
+		assertOperation(t, givenOperation, *gotOperation)
+
+		assertUpdateDescription(t, gotOperation, svc)
+
+		assertUpdateState(t, svc, orchestrationID, latestOp)
+
+		assertEmptyResultForNonExistingIds(t, svc)
+	})
+
 	t.Run("Provisioning", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
@@ -366,6 +466,67 @@ func TestOperation(t *testing.T) {
 	})
 }
 
+func assertUpdateState(t *testing.T, svc storage.Operations, orchestrationID string, latestOp *internal.Operation) {
+	// when
+	stats, err := svc.GetOperationStatsByPlan()
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, stats[broker.TrialPlanID].Provisioning[domain.InProgress])
+
+	opStats, err := svc.GetOperationStatsForOrchestration(orchestrationID)
+	require.NoError(t, err)
+
+	// then
+	assert.Equal(t, 2, opStats[orchestration.InProgress])
+
+	// when
+	latestOp.State = domain.InProgress
+	_, err = svc.UpdateOperation(*latestOp)
+	opStats, err = svc.GetOperationStatsForOrchestration(orchestrationID)
+	require.NoError(t, err)
+
+	// then
+	assert.Equal(t, 3, opStats[orchestration.InProgress])
+}
+
+func assertUpdateDescription(t *testing.T, gotOperation *internal.Operation, svc storage.Operations) {
+	// when
+	gotOperation.Description = "new modified description"
+	_, err := svc.UpdateOperation(*gotOperation)
+	require.NoError(t, err)
+
+	// then
+	gotOperation2, err := svc.GetOperationByID("operation-id")
+	require.NoError(t, err)
+
+	assert.Equal(t, "new modified description", gotOperation2.Description)
+}
+
+func assertEmptyResultForNonExistingIds(t *testing.T, svc storage.Operations) {
+	// when
+	opList, err := svc.ListOperationsByInstanceID("non-existing-inst-id")
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(opList))
+
+	// when
+	_, _, totalCount, err := svc.ListOperationsByOrchestrationID("non-existing-orchestration-id", dbmodel.OperationFilter{PageSize: 10, Page: 1})
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, 0, totalCount)
+
+	_, err = svc.GetOperationByID("non-existing-operation-id")
+	require.Error(t, err, "Operation with instance_id inst-id not exist")
+
+	_, err = svc.GetLastOperation("non-existing-inst-id")
+	require.Error(t, err, "Operation with instance_id inst-id not exist")
+
+	_, err = svc.GetOperationByInstanceID("non-existing-inst-id")
+	require.Error(t, err, "operation does not exist")
+}
+
 func assertProvisioningOperation(t *testing.T, expected, got internal.ProvisioningOperation) {
 	// do not check zones and monothonic clock, see: https://golang.org/pkg/time/#Time
 	assert.True(t, expected.CreatedAt.Equal(got.CreatedAt), fmt.Sprintf("Expected %s got %s", expected.CreatedAt, got.CreatedAt))
@@ -375,6 +536,8 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -385,6 +548,8 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -399,6 +564,8 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -413,6 +580,8 @@ func assertUpgradeClusterOperation(t *testing.T, expected, got internal.UpgradeC
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }
 
@@ -423,5 +592,7 @@ func assertOperation(t *testing.T, expected, got internal.Operation) {
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
+	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+
 	assert.Equal(t, expected, got)
 }

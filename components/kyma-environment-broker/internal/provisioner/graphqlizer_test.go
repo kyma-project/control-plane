@@ -401,12 +401,14 @@ func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
 		expected   string
 	}{
 		{
-			name: "Azure will all parameters",
+			name: "Azure with zones parameter",
 			givenInput: gqlschema.AzureProviderConfigInput{
-				VnetCidr: "8.8.8.8",
-				Zones:    []string{"fix-az-zone-1", "fix-az-zone-2"},
+				EnableNatGateway: boolPtr(true),
+				VnetCidr:         "8.8.8.8",
+				Zones:            []string{"fix-az-zone-1", "fix-az-zone-2"},
 			},
 			expected: `{
+		enableNatGateway: true,
 		vnetCidr: "8.8.8.8",
 		zones: ["fix-az-zone-1","fix-az-zone-2"],
 	}`,
@@ -418,6 +420,35 @@ func TestAzureProviderConfigInputToGraphQL(t *testing.T) {
 			},
 			expected: `{
 		vnetCidr: "8.8.8.8",
+	}`,
+		},
+		{
+			name: "Azure with azureZones passed",
+			givenInput: gqlschema.AzureProviderConfigInput{
+				VnetCidr: "8.8.8.8",
+				AzureZones: []*gqlschema.AzureZoneInput{
+					{
+						Name: 1,
+						Cidr: "10.250.0.0/19",
+					},
+					{
+						Name: 2,
+						Cidr: "10.250.32.0/19",
+					},
+				},
+			},
+			expected: `{
+		vnetCidr: "8.8.8.8",
+		azureZones: [
+			{
+				name: 1,
+				cidr: "10.250.0.0/19",
+			}
+			{
+				name: 2,
+				cidr: "10.250.32.0/19",
+			}
+		]
 	}`,
 		},
 	}
@@ -524,6 +555,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	exp := `{
 	gardenerConfig: {
 		kubernetesVersion: "1.18.0",
+		machineType: "m5.xlarge",
 		machineImage: "gardenlinux",
 		machineImageVersion: "184.0.0",
 		autoScalerMin: 2,
@@ -548,6 +580,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 	got, err := sut.UpgradeShootInputToGraphQL(gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			KubernetesVersion:                   strPrt("1.18.0"),
+			MachineType:                         strPrt("m5.xlarge"),
 			MachineImage:                        strPrt("gardenlinux"),
 			MachineImageVersion:                 strPrt("184.0.0"),
 			EnableKubernetesVersionAutoUpdate:   boolPtr(true),

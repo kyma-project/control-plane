@@ -20,7 +20,6 @@ type ProvisioningProperties struct {
 	Name        NameType `json:"name"`
 	Region      *Type    `json:"region,omitempty"`
 	MachineType *Type    `json:"machineType,omitempty"`
-	ZonesCount  *Type    `json:"zonesCount,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -104,14 +103,14 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 			AutoScalerMin: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Default:     2,
+				Default:     3,
 				Description: "Specifies the minimum number of virtual machines to create",
 			},
 			AutoScalerMax: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Maximum:     40,
-				Default:     10,
+				Maximum:     80,
+				Default:     20,
 				Description: "Specifies the maximum number of virtual machines to create",
 			},
 		},

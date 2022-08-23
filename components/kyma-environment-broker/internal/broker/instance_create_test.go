@@ -62,7 +62,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -133,7 +133,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_lite", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure", "azure_lite"},
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
 			},
@@ -331,6 +331,51 @@ func TestProvision_Provision(t *testing.T) {
 
 		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+	})
+
+	t.Run("fail if trial with invalid region", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID:      instanceID,
+			GlobalAccountID: "other-global-account",
+			ServiceID:       serviceID,
+			ServicePlanID:   broker.TrialPlanID,
+		})
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.TrialPlanID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{EnablePlans: []string{"gcp", "azure", "trial"}, OnlySingleTrialPerGA: true},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+			enabledDashboardConfig,
+		)
+
+		// when
+		_, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.TrialPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s", "region":"invalid-region"}`, clusterName)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
+		}, true)
+
+		// then
+		require.ErrorContains(t, err, "Invalid region specified in request for trial.")
 	})
 
 	t.Run("conflict should be handled", func(t *testing.T) {
@@ -604,7 +649,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -659,7 +704,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -714,7 +759,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -772,7 +817,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -826,7 +871,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "azure_ha"},
+				EnablePlans:              []string{"gcp", "azure"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,

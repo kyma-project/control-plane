@@ -30,6 +30,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	administrator := ""
+	disabled := false
 	provisionerInput := gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
@@ -46,14 +47,14 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 				KubernetesVersion:                   k8sVersion,
 				DiskType:                            ptr.String("pd-standard"),
 				VolumeSizeGb:                        ptr.Integer(50),
-				MachineType:                         "n2-standard-8",
+				MachineType:                         "n2-standard-4",
 				Region:                              "europe-west3",
 				Provider:                            "gcp",
 				Purpose:                             &shootPurpose,
 				LicenceType:                         nil,
 				WorkerCidr:                          "10.250.0.0/19",
-				AutoScalerMin:                       2,
-				AutoScalerMax:                       10,
+				AutoScalerMin:                       3,
+				AutoScalerMax:                       20,
 				MaxSurge:                            1,
 				MaxUnavailable:                      0,
 				TargetSecret:                        "",
@@ -84,6 +85,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 						},
 					},
 				},
+				ShootNetworkingFilterDisabled: &disabled,
 			},
 			Administrators: []string{administrator},
 		},

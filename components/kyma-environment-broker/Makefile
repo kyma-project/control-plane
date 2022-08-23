@@ -3,6 +3,7 @@ APP_PATH = components/kyma-environment-broker
 APP_CLEANUP_NAME = kyma-environments-cleanup-job
 APP_SUBACCOUNT_CLEANUP_NAME = kyma-environment-subaccount-cleanup-job
 APP_SUBSCRIPTION_CLEANUP_NAME = kyma-environment-subscription-cleanup-job
+APP_TRIAL_CLEANUP_NAME = kyma-environment-trial-cleanup-job
 
 ENTRYPOINT = cmd/broker/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220217-8d32835a
@@ -81,14 +82,15 @@ testing-with-database-network:
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK) || true
 
-# overide build-image to build two separate images - broker and cleanup job
+# overide build-image to build separate images - broker and cleanup jobs
 build-image:
 	docker build -t $(IMG_NAME) -f Dockerfile.keb .
 	docker build -t $(CLEANUP_IMG_NAME) -f Dockerfile.cleanup .
 	docker build -t $(SUBACCOUNT_CLEANUP_IMG_NAME) -f Dockerfile.sac .
 	docker build -t $(SUBSCRIPTION_CLEANUP_IMG_NAME) -f Dockerfile.scj .
+	docker build -t $(TRIAL_CLEANUP_IMG_NAME) -f Dockerfile.tcj .
 
-# overide push-image to push two separate images - broker and cleanup job
+# overide push-image to push separate images - broker and cleanup jobs
 push-image:
 	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
 	docker push $(IMG_NAME):$(TAG)
@@ -101,3 +103,6 @@ push-image:
 
 	docker tag $(SUBSCRIPTION_CLEANUP_IMG_NAME) $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
 	docker push $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
+
+	docker tag $(TRIAL_CLEANUP_IMG_NAME) $(TRIAL_CLEANUP_IMG_NAME):$(TAG)
+	docker push $(TRIAL_CLEANUP_IMG_NAME):$(TAG)

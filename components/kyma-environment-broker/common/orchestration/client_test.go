@@ -288,7 +288,7 @@ func TestClient_RetryOrchestration(t *testing.T) {
 		}
 
 		// when
-		rr, err := client.RetryOrchestration(orch1.OrchestrationID, operationIDs)
+		rr, err := client.RetryOrchestration(orch1.OrchestrationID, operationIDs, false)
 
 		// then
 		require.NoError(t, err)
@@ -298,7 +298,7 @@ func TestClient_RetryOrchestration(t *testing.T) {
 		// when
 		operationIDs = nil
 		expectedRr.RetryOperations = []string{"operation-ID-3", "operation-ID-4"}
-		rr, err = client.RetryOrchestration(orch1.OrchestrationID, operationIDs)
+		rr, err = client.RetryOrchestration(orch1.OrchestrationID, operationIDs, false)
 
 		// then
 		require.NoError(t, err)

@@ -26,6 +26,13 @@ else
 SUBSCRIPTION_CLEANUP_IMG_NAME := $(APP_SUBSCRIPTION_CLEANUP_NAME)
 endif
 
+# Configuration for Kyma Environment Broker trial cleanup job image
+ifneq ($(strip $(DOCKER_PUSH_REPOSITORY)),)
+TRIAL_CLEANUP_IMG_NAME := $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(APP_TRIAL_CLEANUP_NAME)
+else
+TRIAL_CLEANUP_IMG_NAME := $(APP_TRIAL_CLEANUP_NAME)
+endif
+
 TAG := $(DOCKER_TAG)
 # BASE_PKG is a root package of the component
 BASE_PKG := github.com/kyma-project/control-plane

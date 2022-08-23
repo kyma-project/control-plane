@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -360,6 +361,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 		CreatedAt:                   dto.CreatedAt,
 		UpdatedAt:                   dto.UpdatedAt,
 		DeletedAt:                   dto.DeletedAt,
+		ExpiredAt:                   dto.ExpiredAt,
 		Version:                     dto.Version,
 		Provider:                    internal.CloudProvider(dto.Provider),
 	}, nil
@@ -449,6 +451,7 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 		CreatedAt:                   instance.CreatedAt,
 		UpdatedAt:                   instance.UpdatedAt,
 		DeletedAt:                   instance.DeletedAt,
+		ExpiredAt:                   instance.ExpiredAt,
 		Version:                     instance.Version,
 		Provider:                    string(instance.Provider),
 	}, nil
@@ -471,6 +474,20 @@ func (s *Instance) GetInstanceStats() (internal.InstanceStats, error) {
 	for _, e := range entries {
 		result.PerGlobalAccountID[e.GlobalAccountID] = e.Total
 		result.TotalNumberOfInstances = result.TotalNumberOfInstances + e.Total
+	}
+	return result, nil
+}
+
+func (s *Instance) GetERSContextStats() (internal.ERSContextStats, error) {
+	entries, err := s.NewReadSession().GetERSContextStats()
+	if err != nil {
+		return internal.ERSContextStats{}, err
+	}
+	result := internal.ERSContextStats{
+		LicenseType: make(map[string]int),
+	}
+	for _, e := range entries {
+		result.LicenseType[strings.Trim(e.LicenseType.String, `"`)] += e.Total
 	}
 	return result, nil
 }

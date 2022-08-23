@@ -35,6 +35,7 @@ type Config struct {
 	OpenstackFloatingPoolName     string                 `envconfig:"default=FloatingIP-external-cp-kyma"`
 	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
 	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
+	MultiZoneCluster              bool                   `envconfig:"default=false"`
 }
 
 type RuntimeInput struct {
@@ -46,6 +47,7 @@ type RuntimeInput struct {
 	labels                map[string]string
 	globalOverrides       []*gqlschema.ConfigEntryInput
 
+	config                    *internal.ConfigForPlan
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParameters
@@ -63,6 +65,10 @@ type RuntimeInput struct {
 	shootDomain       string
 	shootDnsProviders gardener.DNSProvidersData
 	clusterName       string
+}
+
+func (r *RuntimeInput) Configuration() *internal.ConfigForPlan {
+	return r.config
 }
 
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
@@ -472,9 +478,6 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		}
 	}
 
-	// use autoscaler value in provisioningParameters if it is not nil
-	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMin, r.provisioningParameters.Parameters.AutoScalerMin)
-	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
 

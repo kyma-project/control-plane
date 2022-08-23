@@ -40,6 +40,7 @@ type SimpleInputCreator struct {
 	shootDnsProviders gardener.DNSProvidersData
 	CloudProvider     internal.CloudProvider
 	RuntimeID         string
+	Config            *internal.ConfigForPlan
 }
 
 func FixServiceManagerEntryDTO() *internal.ServiceManagerEntryDTO {
@@ -189,50 +190,54 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 }
 
 func FixProvisioningOperation(operationId, instanceId string) internal.ProvisioningOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
+	o.RuntimeVersion = internal.RuntimeVersionData{
+		Version: KymaVersion,
+		Origin:  internal.Defaults,
+	}
+	o.InputCreator = FixInputCreator(internal.Azure)
+	o.DashboardURL = "https://console.kyma.org"
 	return internal.ProvisioningOperation{
-		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: KymaVersion,
-			Origin:  internal.Defaults,
-		},
-		InputCreator: FixInputCreator(internal.Azure),
-		DashboardURL: "https://console.kyma.org",
+		Operation: o,
 	}
 }
 
 func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOperation {
-	return internal.UpdatingOperation{
-		Operation:    FixOperation(operationId, instanceId, internal.OperationTypeUpdate),
-		InputCreator: FixInputCreator(internal.Azure),
-		UpdatingParameters: internal.UpdatingParametersDTO{
-			OIDC: &internal.OIDCConfigDTO{
-				ClientID:       "clinet-id-oidc",
-				GroupsClaim:    "groups",
-				IssuerURL:      "issuer-url",
-				SigningAlgs:    []string{"signingAlgs"},
-				UsernameClaim:  "sub",
-				UsernamePrefix: "",
-			},
+	o := FixOperation(operationId, instanceId, internal.OperationTypeUpdate)
+	o.InputCreator = FixInputCreator(internal.Azure)
+	o.UpdatingParameters = internal.UpdatingParametersDTO{
+		OIDC: &internal.OIDCConfigDTO{
+			ClientID:       "clinet-id-oidc",
+			GroupsClaim:    "groups",
+			IssuerURL:      "issuer-url",
+			SigningAlgs:    []string{"signingAlgs"},
+			UsernameClaim:  "sub",
+			UsernamePrefix: "",
 		},
+	}
+	return internal.UpdatingOperation{
+		Operation: o,
 	}
 }
 
 func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
+	o.RuntimeVersion = internal.RuntimeVersionData{
+		Version: KymaVersion,
+		Origin:  internal.Defaults,
+	}
+	o.InputCreator = FixInputCreator(provider)
+	o.DashboardURL = "https://console.kyma.org"
 	return internal.ProvisioningOperation{
-		Operation: FixOperation(operationId, instanceId, internal.OperationTypeProvision),
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: KymaVersion,
-			Origin:  internal.Defaults,
-		},
-		InputCreator: FixInputCreator(provider),
-		DashboardURL: "https://console.kyma.org",
+		Operation: o,
 	}
 }
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
+	o.Temporary = false
 	return internal.DeprovisioningOperation{
-		Operation: FixOperation(operationId, instanceId, internal.OperationTypeDeprovision),
-		Temporary: false,
+		Operation: o,
 	}
 }
 
@@ -262,22 +267,24 @@ func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 }
 
 func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKymaOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeUpgradeKyma)
+	o.RuntimeOperation = FixRuntimeOperation(operationId)
+	o.InputCreator = FixInputCreator(internal.Azure)
+	o.RuntimeVersion = internal.RuntimeVersionData{
+		Version: KymaVersion,
+		Origin:  internal.Defaults,
+	}
 	return internal.UpgradeKymaOperation{
-		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeKyma),
-		RuntimeOperation: FixRuntimeOperation(operationId),
-		InputCreator:     FixInputCreator(internal.Azure),
-		RuntimeVersion: internal.RuntimeVersionData{
-			Version: KymaVersion,
-			Origin:  internal.Defaults,
-		},
+		Operation: o,
 	}
 }
 
 func FixUpgradeClusterOperation(operationId, instanceId string) internal.UpgradeClusterOperation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeUpgradeCluster)
+	o.RuntimeOperation = FixRuntimeOperation(operationId)
+	o.InputCreator = FixInputCreator(internal.Azure)
 	return internal.UpgradeClusterOperation{
-		Operation:        FixOperation(operationId, instanceId, internal.OperationTypeUpgradeCluster),
-		RuntimeOperation: FixRuntimeOperation(operationId),
-		InputCreator:     FixInputCreator(internal.Azure),
+		Operation: o,
 	}
 }
 
@@ -317,14 +324,17 @@ func FixDNSProvidersConfig() gardener.DNSProvidersData {
 }
 
 func FixRuntimeState(id, runtimeID, operationID string) internal.RuntimeState {
+	disabled := false
 	return internal.RuntimeState{
-		ID:            id,
-		CreatedAt:     time.Now(),
-		RuntimeID:     runtimeID,
-		OperationID:   operationID,
-		KymaConfig:    gqlschema.KymaConfigInput{},
-		ClusterConfig: gqlschema.GardenerConfigInput{},
-		ClusterSetup:  nil,
+		ID:          id,
+		CreatedAt:   time.Now(),
+		RuntimeID:   runtimeID,
+		OperationID: operationID,
+		KymaConfig:  gqlschema.KymaConfigInput{},
+		ClusterConfig: gqlschema.GardenerConfigInput{
+			ShootNetworkingFilterDisabled: &disabled,
+		},
+		ClusterSetup: nil,
 	}
 }
 
@@ -441,4 +451,8 @@ func (c *SimpleInputCreator) DisableOptionalComponent(name string) internal.Prov
 
 func (c *SimpleInputCreator) Provider() internal.CloudProvider {
 	return c.CloudProvider
+}
+
+func (c *SimpleInputCreator) Configuration() *internal.ConfigForPlan {
+	return c.Config
 }

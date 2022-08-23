@@ -170,7 +170,6 @@ type ProvisioningParametersDTO struct {
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
 	LicenceType                 *string  `json:"licence_type"`
 	Zones                       []string `json:"zones"`
-	ZonesCount                  *int     `json:"zonesCount"`
 	OptionalComponentsToInstall []string `json:"components"`
 	KymaVersion                 string   `json:"kymaVersion"`
 	OverridesVersion            string   `json:"overridesVersion"`
@@ -186,6 +185,9 @@ type UpdatingParametersDTO struct {
 
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+
+	// Expired - means that the trial SKR is marked as expired
+	Expired bool `json:"expired"`
 }
 
 func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {
@@ -224,38 +226,42 @@ type ERSContext struct {
 	Region                *string                            `json:"region,omitempty"`
 }
 
-func UpdateERSContext(provisioning, lastOperation ERSContext) ERSContext {
-	if lastOperation.SMOperatorCredentials != nil {
-		provisioning.SMOperatorCredentials = lastOperation.SMOperatorCredentials
+func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext {
+	if currentOperation.SMOperatorCredentials == nil {
+		currentOperation.SMOperatorCredentials = previousOperation.SMOperatorCredentials
 	}
-	if lastOperation.CommercialModel != nil {
-		provisioning.CommercialModel = lastOperation.CommercialModel
+	if currentOperation.CommercialModel == nil {
+		currentOperation.CommercialModel = previousOperation.CommercialModel
 	}
-	if lastOperation.LicenseType != nil {
-		provisioning.LicenseType = lastOperation.LicenseType
+	if currentOperation.LicenseType == nil {
+		currentOperation.LicenseType = previousOperation.LicenseType
 	}
-	if lastOperation.Origin != nil {
-		provisioning.Origin = lastOperation.Origin
+	if currentOperation.Origin == nil {
+		currentOperation.Origin = previousOperation.Origin
 	}
-	if lastOperation.Platform != nil {
-		provisioning.Platform = lastOperation.Platform
+	if currentOperation.Platform == nil {
+		currentOperation.Platform = previousOperation.Platform
 	}
-	if lastOperation.Region != nil {
-		provisioning.Region = lastOperation.Region
+	if currentOperation.Region == nil {
+		currentOperation.Region = previousOperation.Region
 	}
-	return provisioning
+	return currentOperation
 }
 
 func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
+	// the provisioner and gardener API expects the feature to be enabled by disablement flag
+	// it feels counterintuitive but there is currently no plan in changing it, therefore
+	// following code is written the way it's written
+	disable := false
 	if e.LicenseType == nil {
-		return nil
+		return &disable
 	}
 	switch *e.LicenseType {
 	case "CUSTOMER", "PARTNER", "TRIAL":
-		disable := true
+		disable = true
 		return &disable
 	}
-	return nil
+	return &disable
 }
 
 func (e ERSContext) ERSUpdate() bool {

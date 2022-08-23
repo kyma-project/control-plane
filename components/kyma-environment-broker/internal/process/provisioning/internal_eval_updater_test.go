@@ -38,8 +38,8 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 					AVSInternalEvaluationDeleted: false,
 					AVSExternalEvaluationDeleted: false,
 				}},
+				InputCreator: newInputCreator(),
 			},
-			InputCreator: newInputCreator(),
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
@@ -105,8 +105,8 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 					AVSInternalEvaluationDeleted: false,
 					AVSExternalEvaluationDeleted: false,
 				}},
+				InputCreator: newInputCreator(),
 			},
-			InputCreator: newInputCreator(),
 		}
 
 		err := memoryStorage.Operations().InsertProvisioningOperation(operation)

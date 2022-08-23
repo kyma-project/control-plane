@@ -1,12 +1,11 @@
 package provider
 
 import (
-	"strconv"
+	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,8 +86,7 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		// when
 		svc.ApplyParameters(input, internal.ProvisioningParameters{})
 
-		zone, err := strconv.Atoi(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones[0])
-		require.NoError(t, err)
+		zone := input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones[0].Name
 
 		//then
 		assert.LessOrEqual(t, zone, 3)
@@ -108,17 +106,109 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		//then
 		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
 	})
-}
-
-func TestAzureHAInput_Defaults(t *testing.T) {
-	// given
-	svc := AzureHAInput{}
 
 	// when
-	input := svc.Defaults()
+	t.Run("use default with NAT gateway", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
 
-	// then
-	assert.Equal(t, 1, input.GardenerConfig.AutoScalerMin)
-	assert.Equal(t, 10, input.GardenerConfig.AutoScalerMax)
-	assert.Equal(t, 3, len(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.Zones))
+		//then
+		assert.Equal(t, false, *input.GardenerConfig.ProviderSpecificConfig.AzureConfig.EnableNatGateway)
+	})
+}
+
+func TestAzureInput_SingleZone_ApplyParameters(t *testing.T) {
+	// given
+	svc := AzureInput{}
+
+	// when
+	t.Run("defaults use one zone with dedicated subnet", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 1)
+		assert.Subset(t, []int{1, 2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+
+	// when
+	t.Run("use zones parameter", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Zones: []string{"2", "3"},
+			},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 2)
+		assert.Equal(t, []int{2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+}
+
+func TestAzureInput_MultiZone_ApplyParameters(t *testing.T) {
+	// given
+	svc := AzureInput{MultiZone: true}
+
+	// when
+	t.Run("defaults use three zones with dedicated subnet", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, DefaultAzureMultiZoneCount)
+		assert.ElementsMatch(t, []int{1, 2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+
+	// when
+	t.Run("use zones parameter", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Zones: []string{"2", "3"},
+			},
+		})
+
+		//then
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones, 2)
+		assert.Equal(t, []int{2, 3}, azureZoneNames(input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones))
+		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
+			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
+		}
+	})
+}
+
+func azureZoneNames(zones []*gqlschema.AzureZoneInput) []int {
+	zoneNames := []int{}
+
+	for _, zone := range zones {
+		zoneNames = append(zoneNames, zone.Name)
+	}
+
+	return zoneNames
 }

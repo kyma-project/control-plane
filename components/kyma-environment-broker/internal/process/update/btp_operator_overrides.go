@@ -5,7 +5,6 @@ import (
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -34,8 +33,7 @@ func (s *BTPOperatorOverridesStep) Name() string {
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
 	// get btp-operator component input and calculate overrides
-	planName := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
-	ci, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion, planName)
+	ci, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion, operation.InputCreator.Configuration())
 	if err != nil {
 		return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
 	}

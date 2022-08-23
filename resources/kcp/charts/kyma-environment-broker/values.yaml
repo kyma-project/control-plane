@@ -2,13 +2,16 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-1788"
+      version: "PR-1982"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-1749"
+      version: "PR-1978"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-1651"
+      version: "PR-1978"
+    kyma_environment_trial_cleanup_job:
+      dir:
+      version: "PR-1978"
 
 deployment:
   replicaCount: 1
@@ -117,10 +120,12 @@ kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
 
 disableProcessOperationsInProgress: "false"
-enablePlans: "azure,gcp,azure_lite,azure_ha,trial"
+enablePlans: "azure,gcp,azure_lite,trial"
 onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
 includeAdditionalParamsInSchema: "false"
+showTrialExpireInfo: "false"
+subaccountIDToShowTrialExpireInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
 
 osbUpdateProcessingEnabled: "false"
 
@@ -140,6 +145,7 @@ gardener:
   defaultTrialProvider: "Azure" # Azure, AWS
   autoUpdateKubernetesVersion: "true"
   autoUpdateMachineImageVersion: "false"
+  multiZoneCluster: "false"
 
 kubeconfig:
   issuerURL: "TBD"
@@ -245,6 +251,11 @@ environmentsCleanup:
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
+
+trialCleanup:
+  schedule: "0,15,30,45 * * * *"
+  dryRun: true
+  expirationPeriod: 336h
 
 serviceMonitor:
   scrapeTimeout: 10s

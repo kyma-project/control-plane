@@ -1,0 +1,122 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trial-cleanup-job
+spec:
+  jobTemplate:
+    metadata:
+      name: trial-cleanup-job
+    spec:
+      template:
+        metadata:
+          {{- if eq .Values.global.database.embedded.enabled false }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{ end }}
+        spec:
+          shareProcessNamespace: true
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: Never
+          containers:
+            - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
+              name: trial-cleanup-job
+              env:
+                {{if eq .Values.global.database.embedded.enabled true}}
+                - name: DATABASE_EMBEDDED
+                  value: "true"
+                {{end}}
+                {{if eq .Values.global.database.embedded.enabled false}}
+                - name: DATABASE_EMBEDDED
+                  value: "false"
+                {{end}} 
+                - name: APP_DRY_RUN
+                  value: "{{ .Values.trialCleanup.dryRun }}"
+                - name: APP_EXPIRATION_PERIOD
+                  value: "{{ .Values.trialCleanup.expirationPeriod }}"
+                - name: APP_DATABASE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                      key: secretKey
+                      optional: true
+                - name: APP_DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-username
+                - name: APP_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-password
+                - name: APP_DATABASE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-serviceName
+                - name: APP_DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-servicePort
+                - name: APP_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-broker-db-name
+                - name: APP_DATABASE_SSL
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-postgresql
+                      key: postgresql-sslMode
+                - name: APP_BROKER_URL
+                  value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+                - name: APP_BROKER_TOKEN_URL
+                  value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_id
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_secret
+                - name: APP_BROKER_SCOPE
+                  value: {{.Values.kebClient.scope}}
+              {{if eq .Values.global.database.embedded.enabled false}}
+              command:
+                - "/bin/sh"
+              args:
+                - "-c"
+                - "./app/trialcleanup"
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+              {{ end }}
+
+            {{- if eq .Values.global.database.embedded.enabled false }}
+            - name: cloudsql-proxy
+              image: {{ .Values.global.images.cloudsql_proxy_image }}
+              command: [ "/cloud_sql_proxy",
+                         "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                         "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+              {{- with .Values.deployment.securityContext }}
+              securityContext:
+                {{ toYaml . | nindent 16 }}
+              {{- end }}
+          volumes:
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+            {{end}}
+  schedule: "{{ .Values.trialCleanup.schedule }}"

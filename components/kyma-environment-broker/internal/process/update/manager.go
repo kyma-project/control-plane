@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -206,8 +205,8 @@ func (m *Manager) runStep(step Step, operation internal.UpdatingOperation, logge
 }
 
 func getComponent(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (*runtime.KymaComponent, error) {
-	allComponents, err := componentProvider.AllComponents(kymaVersion, planName)
+	kymaVersion internal.RuntimeVersionData, cfg *internal.ConfigForPlan) (*internal.KymaComponent, error) {
+	allComponents, err := componentProvider.AllComponents(kymaVersion, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +219,8 @@ func getComponent(componentProvider input.ComponentListProvider, component strin
 }
 
 func getComponentInput(componentProvider input.ComponentListProvider, component string,
-	kymaVersion internal.RuntimeVersionData, planName string) (reconcilerApi.Component, error) {
-	c, err := getComponent(componentProvider, component, kymaVersion, planName)
+	kymaVersion internal.RuntimeVersionData, cfg *internal.ConfigForPlan) (reconcilerApi.Component, error) {
+	c, err := getComponent(componentProvider, component, kymaVersion, cfg)
 	if err != nil {
 		return reconcilerApi.Component{}, err
 	}
