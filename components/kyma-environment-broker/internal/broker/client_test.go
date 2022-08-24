@@ -76,7 +76,7 @@ func TestClient_Deprovision(t *testing.T) {
 
 func TestClient_ExpirationRequest(t *testing.T) {
 
-	t.Run("should return update operation ID on success", func(t *testing.T) {
+	t.Run("should return true on successfully commenced suspension", func(t *testing.T) {
 		// given
 		testServer := fixHTTPServer(false)
 		defer testServer.Close()
@@ -94,11 +94,11 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		}
 
 		// when
-		opID, err := client.SendExpirationRequest(instance)
+		suspensionUnderWay, err := client.SendExpirationRequest(instance)
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, fixOpID, opID)
+		assert.True(t, suspensionUnderWay)
 	})
 
 	t.Run("should return error when trying to make other plan than trial expired", func(t *testing.T) {
@@ -119,11 +119,11 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		}
 
 		// when
-		opID, err := client.SendExpirationRequest(instance)
+		suspensionUnderWay, err := client.SendExpirationRequest(instance)
 
 		// then
 		assert.Error(t, err)
-		assert.Len(t, opID, 0)
+		assert.False(t, suspensionUnderWay)
 	})
 
 	t.Run("should return error when update fails", func(t *testing.T) {
@@ -144,11 +144,11 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		}
 
 		// when
-		opID, err := client.SendExpirationRequest(instance)
+		suspensionUnderWay, err := client.SendExpirationRequest(instance)
 
 		// then
 		assert.Error(t, err)
-		assert.Len(t, opID, 0)
+		assert.False(t, suspensionUnderWay)
 	})
 }
 

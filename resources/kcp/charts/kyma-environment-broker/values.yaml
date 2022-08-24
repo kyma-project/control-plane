@@ -11,7 +11,7 @@ global:
       version: "PR-1978"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-1978"
+      version: "PR-1989"
 
 deployment:
   replicaCount: 1
