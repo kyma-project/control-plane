@@ -45,11 +45,11 @@ const ServiceAccount = "ServiceAccount"
 const Token = "token"
 
 var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
-	RUNTIME_ADMIN: []rbacv1.PolicyRule{
+	RUNTIME_ADMIN: {
 		rbacv1helpers.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
 		rbacv1helpers.NewRule("*").URLs("*").RuleOrDie(),
 	},
-	RUNTIME_OPERATOR: []rbacv1.PolicyRule{
+	RUNTIME_OPERATOR: {
 		rbacv1helpers.NewRule("get", "list", "watch").Groups("*").Resources("*").RuleOrDie(),
 		rbacv1helpers.NewRule("get", "list", "watch").URLs("*").RuleOrDie(),
 	},
@@ -92,7 +92,7 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 	return &RuntimeClient{clientset, coreClientset, user, L2L3OperatiorRole, RollbackE}, nil
 }
 
-//kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
+// kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
 func (rtc *RuntimeClient) Run() (string, error) {
 	var resultE error
 	defer func() {
@@ -344,7 +344,7 @@ func (rtc *RuntimeClient) getServiceAccount(info *SAInfo) func() error {
 	}
 }
 
-//Clean service account and cluster role
+// Clean service account and cluster role
 func (rtc *RuntimeClient) Cleaner() error {
 	if len(rtc.RollbackE.Data) == 0 {
 		return nil
