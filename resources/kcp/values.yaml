@@ -1,14 +1,14 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.1-alpine-3cba814e
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:a00986c5"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:a00986c5"
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.31.2-6324aa52"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:915ef227"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:915ef227"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1936"
+      version: "PR-1925"
     provisioner:
       dir:
       version: "PR-1940"
@@ -17,7 +17,7 @@ global:
       version: "PR-1651"
     kyma_metrics_collector:
       dir:
-      version: "PR-1874"
+      version: "PR-1977"
     tests:
       provisioner:
         dir:
@@ -49,7 +49,6 @@ global:
     - serverless
     - cluster-essentials
     - rma
-    - sc-migration
   auditlog:
     configMapName: "kcp-auditlog-config"
     secretName: "kcp-auditlog-secret"

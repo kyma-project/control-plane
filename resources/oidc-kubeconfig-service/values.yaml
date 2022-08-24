@@ -14,6 +14,10 @@ global:
     initialDelaySeconds: 180
     timeoutSeconds: 1
     periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 1
+    periodSeconds: 10
 
 replicaCount: 1
 

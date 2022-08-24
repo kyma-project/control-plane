@@ -1,6 +1,9 @@
 package suspension
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -8,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,6 +86,10 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 		if lastDeprovisioning != nil && !lastDeprovisioning.Temporary {
 			l.Infof("Instance has a deprovisioning operation %s (%s), skipping unsuspension.", lastDeprovisioning.ID, lastDeprovisioning.State)
 			return false, nil
+		}
+		if lastDeprovisioning != nil && lastDeprovisioning.State == domain.Failed {
+			err := fmt.Errorf("Preceding suspension has failed, unable to reliably unsuspend")
+			return false, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 		}
 		return true, h.unsuspend(instance, l)
 	} else {

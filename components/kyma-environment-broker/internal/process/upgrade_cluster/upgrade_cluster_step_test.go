@@ -27,7 +27,7 @@ const (
 	fixAutoUpdateMachineImageVersion = true
 )
 
-func TestUpgradeKymaStep_Run(t *testing.T) {
+func TestUpgradeClusterStep_Run(t *testing.T) {
 	// given
 	expectedOIDC := fixture.FixOIDCConfigDTO()
 	log := logrus.New()
@@ -64,8 +64,6 @@ func TestUpgradeKymaStep_Run(t *testing.T) {
 			KubernetesVersion:                   ptr.String(fixKubernetesVersion),
 			MachineImage:                        ptr.String(fixMachineImage),
 			MachineImageVersion:                 ptr.String(fixMachineImageVersion),
-			AutoScalerMin:                       operation.ProvisioningParameters.Parameters.AutoScalerMin,
-			AutoScalerMax:                       operation.ProvisioningParameters.Parameters.AutoScalerMax,
 			MaxSurge:                            operation.ProvisioningParameters.Parameters.MaxSurge,
 			MaxUnavailable:                      operation.ProvisioningParameters.Parameters.MaxUnavailable,
 			EnableKubernetesVersionAutoUpdate:   ptr.Bool(fixAutoUpdateKubernetesVersion),

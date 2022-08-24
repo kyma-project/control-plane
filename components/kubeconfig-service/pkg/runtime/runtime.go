@@ -108,7 +108,7 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 	return &RuntimeClient{clientset, coreClientset, user, L2L3OperatiorRole, RollbackE}, nil
 }
 
-//kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
+// kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
 func (rtc *RuntimeClient) Run() (string, error) {
 	var resultE error
 	defer func() {
@@ -413,7 +413,7 @@ func initCRBinding(objectMeta metav1.ObjectMeta, roleRef rbacv1.RoleRef, subject
 	}
 }
 
-//Clean service account and cluster role
+// Clean service account and cluster role
 func (rtc *RuntimeClient) Cleaner() error {
 	if len(rtc.RollbackE.Data) == 0 {
 		return nil
