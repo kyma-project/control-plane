@@ -67,6 +67,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	for _, op := range ops {
 		o.Parameters.RetryOperation.RetryOperations = append(o.Parameters.RetryOperation.RetryOperations, op.Operation.ID)
 		o.Parameters.RetryOperation.Immediate = (immediate == "true")
+	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
 	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
