@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"time"
-
 	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -152,21 +150,4 @@ func (r *clusterRetryer) latestOperationValidate(orchestrationID string, ops []i
 	}
 
 	return retryOps, oldIDs, nil
-}
-
-func (r *clusterRetryer) OperationsStateUpdate(ops []internal.UpgradeClusterOperation) error {
-	for _, op := range ops {
-		op.State = commonOrchestration.Retrying
-		op.UpdatedAt = time.Now()
-		op.Description = "queued for retrying"
-
-		_, err := r.operations.UpdateUpgradeClusterOperation(op)
-		if err != nil {
-			// one update fail then http return
-			r.log.Errorf("Cannot update operation %s in storage: %s", op.Operation.ID, err)
-			return errors.Wrapf(err, "while updating orchestration %s", op.OrchestrationID)
-		}
-	}
-
-	return nil
 }

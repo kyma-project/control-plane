@@ -65,11 +65,8 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	resp.Msg = "retry operations are queued for processing"
 
 	for _, op := range ops {
-		fmt.Println("kyma_retry.go o.Parameters.RetryOperation.Immediate=", o.Parameters.RetryOperation.Immediate)
-		fmt.Println("kyma_retry.go o.Parameters.RetryOperation.RetryOperations=", o.Parameters.RetryOperation.RetryOperations)
 		o.Parameters.RetryOperation.RetryOperations = append(o.Parameters.RetryOperation.RetryOperations, op.Operation.ID)
-		o.Parameters.RetryOperation.Immediate = immediate
-	}
+		o.Parameters.RetryOperation.Immediate = (immediate == "true")
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
 	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
@@ -167,27 +164,6 @@ func (r *kymaRetryer) latestOperationValidate(orchestrationID string, ops []inte
 	}
 
 	return retryOps, oldIDs, nil
-}
-
-func (r *kymaRetryer) OperationsStateUpdate(ops []internal.UpgradeKymaOperation, immediate string) error {
-	for _, op := range ops {
-		if immediate == "true" {
-			op.MaintenanceWindowBegin = time.Time{}
-			op.MaintenanceWindowEnd = time.Time{}
-		}
-		op.State = commonOrchestration.Retrying
-		op.UpdatedAt = time.Now()
-		op.Description = "queued for retrying"
-
-		_, err := r.operations.UpdateUpgradeKymaOperation(op)
-		if err != nil {
-			// one update fail then http return
-			r.log.Errorf("Cannot update operation %s in storage: %s", op.Operation.ID, err)
-			return errors.Wrapf(err, "while updating orchestration %s", op.OrchestrationID)
-		}
-	}
-
-	return nil
 }
 
 func orchestrationStateUpdate(orch *internal.Orchestration, orchestrations storage.Orchestrations, orchestrationID string, log logrus.FieldLogger) (string, error) {

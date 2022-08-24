@@ -20,7 +20,7 @@ type Parameters struct {
 }
 type RetryOperationParameters struct {
 	RetryOperations []string `json:"retryoperations,omitempty"`
-	Immediate       string   `json:"immediate,omitempty"`
+	Immediate       bool     `json:"immediate,omitempty"`
 }
 
 type KubernetesParameters struct {

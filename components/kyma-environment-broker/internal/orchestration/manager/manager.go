@@ -180,7 +180,7 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			if o.State == orchestration.Pending && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
 			}
-			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate != "true" && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
+			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
 			}
 
@@ -188,7 +188,7 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			r.MaintenanceWindowEnd = windowEnd
 			r.MaintenanceDays = days
 		} else {
-			if o.Parameters.RetryOperation.Immediate == "true" {
+			if o.Parameters.RetryOperation.Immediate {
 				r.MaintenanceWindowBegin = time.Time{}
 				r.MaintenanceWindowEnd = time.Time{}
 				r.MaintenanceDays = []string{}
@@ -254,7 +254,7 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 
 		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
 		o.Parameters.RetryOperation.RetryOperations = nil
-		o.Parameters.RetryOperation.Immediate = ""
+		o.Parameters.RetryOperation.Immediate = false
 		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	} else {
 		// Resume processing of not finished upgrade operations after restart
@@ -350,7 +350,7 @@ func (m *orchestrationManager) waitForCompletion(o *internal.Orchestration, stra
 			}
 			o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(o.Parameters.RetryOperation.RetryOperations)))
 			o.Parameters.RetryOperation.RetryOperations = nil
-			o.Parameters.RetryOperation.Immediate = ""
+			o.Parameters.RetryOperation.Immediate = false
 
 			err = m.orchestrationStorage.Update(*o)
 			if err != nil {

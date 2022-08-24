@@ -511,8 +511,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					},
 					RetryOperation: orchestration.RetryOperationParameters{
 						RetryOperations: []string{"op-id"},
-						//added by laura
-						Immediate: "true",
+						Immediate:       true,
 					},
 				},
 			})
@@ -567,7 +566,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		for _, op := range ops {
 			if op.Operation.ID != opId {
-				//added by laura
 				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowBegin, time.Time{})
 				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowEnd, time.Time{})
 
@@ -613,7 +611,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
 						Type:     orchestration.ParallelStrategy,
-						Schedule: orchestration.MaintenanceWindow,
+						Schedule: orchestration.Immediate,
 						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 					},
 					Kyma: &orchestration.KymaParameters{Version: ""},
@@ -625,8 +623,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					},
 					RetryOperation: orchestration.RetryOperationParameters{
 						RetryOperations: []string{"op-id"},
-						//added by laura
-						Immediate: "true",
+						Immediate:       true,
 					},
 				},
 			})
@@ -681,7 +678,6 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		for _, op := range ops {
 			if op.Operation.ID != opId {
-				//added by laura
 				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowBegin, time.Time{})
 				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowEnd, time.Time{})
 				assert.Equal(t, orchestration.Succeeded, string(op.State))
@@ -726,7 +722,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
 						Type:     orchestration.ParallelStrategy,
-						Schedule: orchestration.MaintenanceWindow,
+						Schedule: orchestration.Immediate,
 						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
 					},
 					Kyma: &orchestration.KymaParameters{Version: ""},
@@ -738,7 +734,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					},
 					RetryOperation: orchestration.RetryOperationParameters{
 						RetryOperations: []string{"op-id"},
-						Immediate:       "false",
+						Immediate:       false,
 					},
 				},
 			})
@@ -793,8 +789,8 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		for _, op := range ops {
 			if op.Operation.ID != opId {
-				assert.NotEqual(t, op.Operation.RuntimeOperation.MaintenanceWindowBegin, time.Time{})
-				assert.NotEqual(t, op.Operation.RuntimeOperation.MaintenanceWindowEnd, time.Time{})
+				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowBegin, time.Time{})
+				assert.Equal(t, op.Operation.RuntimeOperation.MaintenanceWindowEnd, time.Time{})
 				assert.Equal(t, orchestration.Succeeded, string(op.State))
 				assert.Equal(t, instanceID, string(op.Operation.InstanceID))
 				assert.Equal(t, internal.OperationTypeUpgradeKyma, op.Operation.Type)
