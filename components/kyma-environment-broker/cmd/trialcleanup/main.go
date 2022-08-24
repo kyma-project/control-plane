@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -8,32 +9,40 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
 const (
-	trialPlanID  = broker.TrialPlanID
-	fourteenDays = 14 * 24 * time.Hour
+	trialPlanID = broker.TrialPlanID
 )
 
+type BrokerClient interface {
+	SendExpirationRequest(instance internal.Instance) (string, error)
+}
+
 type Config struct {
-	Database storage.Config
-	DryRun   bool `envconfig:"default=true"`
+	Database         storage.Config
+	Broker           broker.ClientConfig
+	DryRun           bool          `envconfig:"default=true"`
+	ExpirationPeriod time.Duration `envconfig:"default=336h"`
 }
 
 type TrialCleanupService struct {
-	instanceStorage storage.Instances
-	logger          *log.Logger
+	cfg             Config
 	filter          dbmodel.InstanceFilter
+	instanceStorage storage.Instances
+	brokerClient    BrokerClient
 }
 
 type instancePredicate func(internal.Instance) bool
 
-type instanceVisitor func(internal.Instance) error
-
 func main() {
+	time.Sleep(20 * time.Second)
+
+	log.SetFormatter(&log.JSONFormatter{})
 	log.Info("Starting trial cleanup job!")
 
 	// create and fill config
@@ -45,25 +54,40 @@ func main() {
 		log.Info("Dry run only - no changes")
 	}
 
+	log.Infof("Expiration period: %+v", cfg.ExpirationPeriod)
+
+	ctx := context.Background()
+	brokerClient := broker.NewClient(ctx, cfg.Broker)
+
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, _, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
+	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
-
-	logger := log.New()
-
-	svc := newTrialCleanupService(db.Instances(), logger)
+	svc := newTrialCleanupService(cfg, brokerClient, db.Instances())
 
 	err = svc.PerformCleanup()
+
 	fatalOnError(err)
 
 	log.Info("Trial cleanup job finished successfully!")
+
+	err = conn.Close()
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	// do not use defer, close must be done before halting
+	err = cleaner.Halt()
+	fatalOnError(err)
+
+	time.Sleep(5 * time.Second)
 }
 
-func newTrialCleanupService(instances storage.Instances, logger *log.Logger) *TrialCleanupService {
+func newTrialCleanupService(cfg Config, brokerClient BrokerClient, instances storage.Instances) *TrialCleanupService {
 	return &TrialCleanupService{
+		cfg:             cfg,
 		instanceStorage: instances,
-		logger:          logger,
+		brokerClient:    brokerClient,
 	}
 }
 
@@ -73,26 +97,23 @@ func (s *TrialCleanupService) PerformCleanup() error {
 	nonExpiredTrialInstances, nonExpiredTrialInstancesCount, err := s.getInstances(nonExpiredTrialInstancesFilter)
 
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while getting non expired trial instances"))
+		log.Error(errors.Wrap(err, "while getting non expired trial instances"))
 		return err
 	}
 
-	s.logger.Infof("Non expired trials to be processed: %+v\n", nonExpiredTrialInstancesCount)
+	log.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
 
-	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, olderThanFourteenDays)
+	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
 
-	return s.visitInstances(instancesToBeCleanedUp, s.dryRun)
-}
+	log.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
+	log.Infof("Trials to be left untouched: %+v", nonExpiredTrialInstancesCount-len(instancesToBeCleanedUp))
 
-func (s *TrialCleanupService) filterByExpiredAt(trialInstances []internal.Instance) []internal.Instance {
-
-	var instancesToBeCleaned []internal.Instance
-	for _, instance := range trialInstances {
-		if time.Since(instance.CreatedAt) >= fourteenDays {
-			instancesToBeCleaned = append(instancesToBeCleaned, instance)
-		}
+	if s.cfg.DryRun {
+		s.logInstances(instancesToBeCleanedUp)
+	} else {
+		s.cleanupInstances(instancesToBeCleanedUp)
 	}
-	return instancesToBeCleaned
+	return nil
 }
 
 func (s *TrialCleanupService) getInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, error) {
@@ -115,24 +136,47 @@ func (s *TrialCleanupService) filterInstances(instances []internal.Instance, fil
 	return filteredInstances
 }
 
-func (s *TrialCleanupService) visitInstances(instances []internal.Instance, visit instanceVisitor) error {
+func (s *TrialCleanupService) cleanupInstances(instances []internal.Instance) {
+	var processedInstances int
+	var unprocessedInstances int
+	totalInstances := len(instances)
 	for _, instance := range instances {
-		err := visit(instance)
+		processed, err := s.suspendInstance(instance)
 		if err != nil {
-			return err
+			// ignoring errors - only logging
+			log.Error(errors.Wrap(err, "while sending expiration request"))
+			continue
+		}
+		if processed {
+			processedInstances += 1
+		} else {
+			unprocessedInstances += 1
 		}
 	}
-	return nil
+	failures := totalInstances - processedInstances - unprocessedInstances
+	log.Infof("To suspend: %+v processable: %+v unprocessable: %+v failures: %+v", totalInstances, processedInstances, unprocessedInstances, failures)
 }
 
-func olderThanFourteenDays(instance internal.Instance) bool {
-	return time.Since(instance.CreatedAt) >= fourteenDays
+func (s *TrialCleanupService) logInstances(instances []internal.Instance) {
+	for _, instance := range instances {
+		log.Infof("instanceId: %+v createdAt: %+v (%.0f days ago) servicePlanID: %+v servicePlanName: %+v",
+			instance.InstanceID, instance.CreatedAt, time.Since(instance.CreatedAt).Hours()/24, instance.ServicePlanID, instance.ServicePlanName)
+	}
 }
 
-func (s *TrialCleanupService) dryRun(instance internal.Instance) error {
-	s.logger.Infof("instanceId: %+v createdAt: %+v (so %.0f days ago) servicePlanID: %+v servicePlanName: %+v\n",
-		instance.InstanceID, instance.CreatedAt, time.Since(instance.CreatedAt).Hours()/24, instance.ServicePlanID, instance.ServicePlanName)
-	return nil
+func (s *TrialCleanupService) suspendInstance(instance internal.Instance) (processed bool, err error) {
+	log.Infof("About to make instance suspended for instanceId: %+v", instance.InstanceID)
+	opID, err := s.brokerClient.SendExpirationRequest(instance)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "while triggering expiration of instance ID %q", instance.InstanceID))
+		return false, err
+	}
+	if len(opID) == 0 {
+		log.Info("Request sent successfully to Kyma Environment Broker - got unprocessable entity")
+		return false, nil
+	}
+	log.Infof("Request sent successfully to Kyma Environment Broker - got operation ID %q", opID)
+	return true, nil
 }
 
 func fatalOnError(err error) {

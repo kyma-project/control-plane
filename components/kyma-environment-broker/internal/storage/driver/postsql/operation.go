@@ -919,7 +919,8 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 	}
 
 	stages := make(map[string]struct{})
-	for _, s := range strings.Split(storage.SQLNullStringToString(dto.FinishedStages), ",") {
+	finishedSteps := storage.SQLNullStringToString(dto.FinishedStages)
+	for _, s := range strings.Split(finishedSteps, ",") {
 		stages[s] = struct{}{}
 	}
 
@@ -935,6 +936,7 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
 	existingOp.ProvisioningParameters = pp
 	existingOp.FinishedStages = stages
+	existingOp.FinishedStagesOrdered = finishedSteps
 
 	return existingOp, nil
 }

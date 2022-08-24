@@ -82,7 +82,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 					  "subAccount": "sub-id"
 					}
 				  ]
-				}	
+				}
 				}`)
 	oID := suite.DecodeOrchestrationID(orchestrationResp)
 
@@ -104,8 +104,6 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 			MachineImage:        ptr.String("coreos"),
 			MachineImageVersion: ptr.String("253"),
 
-			AutoScalerMin:  ptr.Integer(150),
-			AutoScalerMax:  ptr.Integer(250),
 			MaxSurge:       ptr.Integer(13),
 			MaxUnavailable: ptr.Integer(9),
 

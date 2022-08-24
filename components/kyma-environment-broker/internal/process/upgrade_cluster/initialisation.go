@@ -64,7 +64,7 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, pc
 }
 
 func (s *InitialisationStep) Name() string {
-	return "Upgrade_Kyma_Initialisation"
+	return "Upgrade_Cluster_Initialisation"
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
