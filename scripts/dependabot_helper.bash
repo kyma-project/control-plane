@@ -22,6 +22,7 @@ for pr in "${prs[@]}"; do
         if [[ -n "$(git diff)" ]]; then
             git commit -am "KCP CLI go mod tidy"
             git push
+            gh pr review "${pr}" --approve --body "/lgtm\n/approve"
         fi
     )
 done
