@@ -20,7 +20,7 @@ const (
 )
 
 type BrokerClient interface {
-	SendExpirationRequest(instance internal.Instance) (string, error)
+	SendExpirationRequest(instance internal.Instance) (bool, error)
 }
 
 type Config struct {
@@ -101,17 +101,15 @@ func (s *TrialCleanupService) PerformCleanup() error {
 		return err
 	}
 
-	log.Infof("Non expired trials to be processed: %+v", nonExpiredTrialInstancesCount)
-
-	instancesToBeCleanedUp := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
-
-	log.Infof("Trials to be cleaned up: %+v", len(instancesToBeCleanedUp))
-	log.Infof("Trials to be left untouched: %+v", nonExpiredTrialInstancesCount-len(instancesToBeCleanedUp))
+	instancesToExpire, instancesToExpireCount := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
+	instancesToBeLeftCount := nonExpiredTrialInstancesCount - instancesToExpireCount
 
 	if s.cfg.DryRun {
-		s.logInstances(instancesToBeCleanedUp)
+		s.logInstances(instancesToExpire)
+		log.Infof("Trials non-expired: %+v to expire now: %+v to be left untouched: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount)
 	} else {
-		s.cleanupInstances(instancesToBeCleanedUp)
+		suspensionsAcceptedCount, onlyMarkedAsExpiredCount, failuresCount := s.cleanupInstances(instancesToExpire)
+		log.Infof("Trials non-expired: %+v to expire: %+v left untouched: %+v suspension under way: %+v only marked expired: %+v failures: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount, suspensionsAcceptedCount, onlyMarkedAsExpiredCount, failuresCount)
 	}
 	return nil
 }
@@ -126,35 +124,33 @@ func (s *TrialCleanupService) getInstances(filter dbmodel.InstanceFilter) ([]int
 	return instances, totalCount, nil
 }
 
-func (s *TrialCleanupService) filterInstances(instances []internal.Instance, filter instancePredicate) []internal.Instance {
+func (s *TrialCleanupService) filterInstances(instances []internal.Instance, filter instancePredicate) ([]internal.Instance, int) {
 	var filteredInstances []internal.Instance
 	for _, instance := range instances {
 		if filter(instance) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
-	return filteredInstances
+	return filteredInstances, len(filteredInstances)
 }
 
-func (s *TrialCleanupService) cleanupInstances(instances []internal.Instance) {
-	var processedInstances int
-	var unprocessedInstances int
+func (s *TrialCleanupService) cleanupInstances(instances []internal.Instance) (int, int, int) {
+	var suspensionAccepted int
+	var onlyExpirationMarked int
 	totalInstances := len(instances)
 	for _, instance := range instances {
-		processed, err := s.suspendInstance(instance)
-		if err != nil {
-			// ignoring errors - only logging
-			log.Error(errors.Wrap(err, "while sending expiration request"))
-			continue
-		}
-		if processed {
-			processedInstances += 1
-		} else {
-			unprocessedInstances += 1
+		suspensionUnderWay, err := s.expireInstance(instance)
+		// ignoring errors - only logging those in preceding calls
+		if err == nil {
+			if suspensionUnderWay {
+				suspensionAccepted += 1
+			} else {
+				onlyExpirationMarked += 1
+			}
 		}
 	}
-	failures := totalInstances - processedInstances - unprocessedInstances
-	log.Infof("To suspend: %+v processable: %+v unprocessable: %+v failures: %+v", totalInstances, processedInstances, unprocessedInstances, failures)
+	failures := totalInstances - suspensionAccepted - onlyExpirationMarked
+	return suspensionAccepted, onlyExpirationMarked, failures
 }
 
 func (s *TrialCleanupService) logInstances(instances []internal.Instance) {
@@ -164,19 +160,14 @@ func (s *TrialCleanupService) logInstances(instances []internal.Instance) {
 	}
 }
 
-func (s *TrialCleanupService) suspendInstance(instance internal.Instance) (processed bool, err error) {
+func (s *TrialCleanupService) expireInstance(instance internal.Instance) (processed bool, err error) {
 	log.Infof("About to make instance suspended for instanceId: %+v", instance.InstanceID)
-	opID, err := s.brokerClient.SendExpirationRequest(instance)
+	suspensionUnderWay, err := s.brokerClient.SendExpirationRequest(instance)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "while triggering expiration of instance ID %q", instance.InstanceID))
-		return false, err
+		log.Error(errors.Wrapf(err, "while sending expiration request for instance ID %q", instance.InstanceID))
+		return suspensionUnderWay, err
 	}
-	if len(opID) == 0 {
-		log.Info("Request sent successfully to Kyma Environment Broker - got unprocessable entity")
-		return false, nil
-	}
-	log.Infof("Request sent successfully to Kyma Environment Broker - got operation ID %q", opID)
-	return true, nil
+	return suspensionUnderWay, nil
 }
 
 func fatalOnError(err error) {
