@@ -63,11 +63,11 @@ func (s *BTPOperatorCleanupStep) Run(operation internal.DeprovisioningOperation,
 
 	kclient, err := s.getKubeClient(operation, log)
 	if err != nil {
-		return handleError(s.Name(), operation, err, log, "failed to get kube client")
+		return s.retryOnError(operation, err, log, "failed to get kube client")
 	}
 	if err := s.deleteServiceBindingsAndInstances(kclient, log); err != nil {
 		err = kebError.AsTemporaryError(err, "failed BTP operator resource cleanup")
-		return handleError(s.Name(), operation, err, log, "could not delete bindings and service instances")
+		return s.retryOnError(operation, err, log, "could not delete bindings and service instances")
 	}
 	return operation, 0, nil
 }
@@ -138,7 +138,7 @@ func (s *BTPOperatorCleanupStep) isNotFoundErr(err error) bool {
 	return strings.Contains(err.Error(), "not found")
 }
 
-func (s *BTPOperatorCleanupStep) retryErrors(op internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *BTPOperatorCleanupStep) retryOnError(op internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
 	if err != nil {
 		// handleError returns retry period if it's retriable error and it's within timeout
 		op, retry, err2 := handleError(s.Name(), op, err, log, msg)
