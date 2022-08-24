@@ -25,7 +25,7 @@ const (
 func TestClient_Deprovision(t *testing.T) {
 	t.Run("should return deprovisioning operation ID on success", func(t *testing.T) {
 		// given
-		testServer := fixHTTPServer(false)
+		testServer := fixHTTPServer(nil)
 		defer testServer.Close()
 
 		config := ClientConfig{
@@ -50,7 +50,7 @@ func TestClient_Deprovision(t *testing.T) {
 
 	t.Run("should return error on failed request execution", func(t *testing.T) {
 		// given
-		testServer := fixHTTPServer(true)
+		testServer := fixHTTPServer(requestFailureServerError)
 		defer testServer.Close()
 
 		config := ClientConfig{
@@ -78,7 +78,7 @@ func TestClient_ExpirationRequest(t *testing.T) {
 
 	t.Run("should return true on successfully commenced suspension", func(t *testing.T) {
 		// given
-		testServer := fixHTTPServer(false)
+		testServer := fixHTTPServer(nil)
 		defer testServer.Close()
 
 		config := ClientConfig{
@@ -103,7 +103,7 @@ func TestClient_ExpirationRequest(t *testing.T) {
 
 	t.Run("should return error when trying to make other plan than trial expired", func(t *testing.T) {
 		// given
-		testServer := fixHTTPServer(false)
+		testServer := fixHTTPServer(nil)
 		defer testServer.Close()
 
 		config := ClientConfig{
@@ -128,7 +128,32 @@ func TestClient_ExpirationRequest(t *testing.T) {
 
 	t.Run("should return error when update fails", func(t *testing.T) {
 		// given
-		testServer := fixHTTPServer(true)
+		testServer := fixHTTPServer(requestFailureServerError)
+		defer testServer.Close()
+
+		config := ClientConfig{
+			URL: testServer.URL,
+		}
+		client := NewClient(context.Background(), config)
+		client.setHttpClient(testServer.Client())
+
+		instance := internal.Instance{
+			InstanceID:    fixInstanceID,
+			RuntimeID:     fixRuntimeID,
+			ServicePlanID: TrialPlanID,
+		}
+
+		// when
+		suspensionUnderWay, err := client.SendExpirationRequest(instance)
+
+		// then
+		assert.Error(t, err)
+		assert.False(t, suspensionUnderWay)
+	})
+
+	t.Run("should return false on unprocessable entity", func(t *testing.T) {
+		// given
+		testServer := fixHTTPServer(requestFailureUnprocessableEntity)
 		defer testServer.Close()
 
 		config := ClientConfig{
@@ -152,11 +177,11 @@ func TestClient_ExpirationRequest(t *testing.T) {
 	})
 }
 
-func fixHTTPServer(withFailure bool) *httptest.Server {
-	if withFailure {
+func fixHTTPServer(requestFailureFunc func(http.ResponseWriter, *http.Request)) *httptest.Server {
+	if requestFailureFunc != nil {
 		r := mux.NewRouter()
-		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailure).Methods(http.MethodDelete)
-		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailure).Methods(http.MethodPatch)
+		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailureFunc).Methods(http.MethodDelete)
+		r.HandleFunc("/oauth/v2/service_instances/{instance_id}", requestFailureFunc).Methods(http.MethodPatch)
 		return httptest.NewServer(r)
 	}
 
@@ -199,6 +224,10 @@ func deprovision(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"operation": "%s"}`, fixOpID)))
 }
 
-func requestFailure(w http.ResponseWriter, _ *http.Request) {
+func requestFailureServerError(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
+}
+
+func requestFailureUnprocessableEntity(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusUnprocessableEntity)
 }
