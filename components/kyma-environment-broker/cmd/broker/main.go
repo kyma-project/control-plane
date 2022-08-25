@@ -66,9 +66,9 @@ import (
 	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	runtime2 "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -432,7 +432,7 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 		return nil, err
 	}
 
-	sch := runtime2.NewScheme()
+	sch := scheme.Scheme
 	apiextensionsv1.AddToScheme(sch)
 
 	k8sCli, err := client.New(restCfg, client.Options{
@@ -852,6 +852,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		weight   int
 		step     deprovisioning.Step
 	}{
+		{
+			weight: 1,
+			step:   deprovisioning.NewBTPOperatorCleanupStep(db.Operations(), provisionerClient, k8sClientProvider),
+		},
 		{
 			weight: 1,
 			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
