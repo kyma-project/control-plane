@@ -101,7 +101,11 @@ func (s *TrialCleanupService) PerformCleanup() error {
 		return err
 	}
 
-	instancesToExpire, instancesToExpireCount := s.filterInstances(nonExpiredTrialInstances, func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod })
+	instancesToExpire, instancesToExpireCount := s.filterInstances(
+		nonExpiredTrialInstances,
+		func(instance internal.Instance) bool { return time.Since(instance.CreatedAt) >= s.cfg.ExpirationPeriod },
+	)
+
 	instancesToBeLeftCount := nonExpiredTrialInstancesCount - instancesToExpireCount
 
 	if s.cfg.DryRun {
@@ -140,13 +144,15 @@ func (s *TrialCleanupService) cleanupInstances(instances []internal.Instance) (i
 	totalInstances := len(instances)
 	for _, instance := range instances {
 		suspensionUnderWay, err := s.expireInstance(instance)
-		// ignoring errors - only logging those in preceding calls
-		if err == nil {
-			if suspensionUnderWay {
-				suspensionAccepted += 1
-			} else {
-				onlyExpirationMarked += 1
-			}
+		if err != nil {
+			// ignoring errors - only logging
+			log.Error(errors.Wrapf(err, "while sending expiration request for instanceID: %s", instance.InstanceID))
+			continue
+		}
+		if suspensionUnderWay {
+			suspensionAccepted += 1
+		} else {
+			onlyExpirationMarked += 1
 		}
 	}
 	failures := totalInstances - suspensionAccepted - onlyExpirationMarked
