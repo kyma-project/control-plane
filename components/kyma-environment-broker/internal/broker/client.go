@@ -106,53 +106,53 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 }
 
 // SendExpirationRequest requests Runtime suspension due to expiration
-func (c *Client) SendExpirationRequest(instance internal.Instance) (string, error) {
+func (c *Client) SendExpirationRequest(instance internal.Instance) (suspensionUnderWay bool, err error) {
 	request, err := preparePatchRequest(instance, c.brokerConfig.URL)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return "", errors.Wrapf(err, "while executing request URL: %s", request.URL)
+		return false, errors.Wrapf(err, "while executing request URL: %s for instanceID: %s", request.URL, instance.InstanceID)
 	}
 	defer c.warnOnError(resp.Body.Close)
 
-	return processResponse(resp.StatusCode, resp)
+	return processResponse(instance.InstanceID, resp.StatusCode, resp)
 }
 
-func processResponse(statusCode int, resp *http.Response) (string, error) {
+func processResponse(instanceID string, statusCode int, resp *http.Response) (suspensionUnderWay bool, err error) {
 	switch statusCode {
 	case http.StatusAccepted, http.StatusOK:
 		{
-			log.Infof("Request accepted with status: %+v", statusCode)
+			log.Infof("Request for instanceID: %s accepted with status: %+v", instanceID, statusCode)
 			operation, err := decodeOperation(resp)
 			if err != nil {
-				return "", err
+				return false, err
 			}
-			log.Infof("operation: %+v", operation)
-			return operation, nil
+			log.Infof("For instanceID: %s we received operation: %s", instanceID, operation)
+			return true, nil
 		}
 	case http.StatusUnprocessableEntity:
 		{
-			log.Warnf("Entity unprocessable - request rejected with status: %+v", statusCode)
+			log.Warnf("For instanceID: %s we received entity unprocessable - status: %+v", instanceID, statusCode)
 			description, errorString, err := decodeErrorResponse(resp)
 			if err != nil {
-				return "", err
+				return false, errors.Wrapf(err, "for instanceID: %s", instanceID)
 			}
-			log.Warnf("error: %+v description: %+v", errorString, description)
-			return "", nil
+			log.Warnf("error: %+v description: %+v instanceID: %s", errorString, description, instanceID)
+			return false, nil
 		}
 	default:
 		{
 			if statusCode >= 200 && statusCode <= 299 {
-				return "", fmt.Errorf("request with unexpected status: %+v", statusCode)
+				return false, fmt.Errorf("for instanceID: %s we received unexpected status: %+v", instanceID, statusCode)
 			}
 			description, errorString, err := decodeErrorResponse(resp)
 			if err != nil {
-				return "", err
+				return false, errors.Wrapf(err, "for instanceID: %s", instanceID)
 			}
-			return "", fmt.Errorf("error: %+v description: %+v", errorString, description)
+			return false, fmt.Errorf("error: %+v description: %+v instanceID: %s", errorString, description, instanceID)
 		}
 	}
 }
@@ -180,14 +180,14 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 
 	jsonPayload, err := preparePayload(instance)
 	if err != nil {
-		return nil, errors.Wrap(err, "while marshaling payload")
+		return nil, errors.Wrapf(err, "while marshaling payload for instanceID: %s", instance.InstanceID)
 	}
 
 	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
 
 	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating request for Kyma Environment Broker")
+		return nil, errors.Wrapf(err, "while creating request for instanceID: %s", instance.InstanceID)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 	return request, nil
