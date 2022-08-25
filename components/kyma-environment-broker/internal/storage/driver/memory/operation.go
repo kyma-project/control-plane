@@ -14,6 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	Retrying   = "retrying" // to signal a retry sign before marking it to pending
+	Succeeded  = "succeeded"
+	Failed     = "failed"
+	InProgress = "in progress"
+)
+
 type operations struct {
 	mu sync.Mutex
 
@@ -570,18 +577,55 @@ func (s *operations) GetOperationStatsForOrchestration(orchestrationID string) (
 		orchestration.Succeeded:  0,
 		orchestration.Failed:     0,
 	}
+	opStatePerInstanceID := make(map[string][]string)
 	for _, op := range s.upgradeKymaOperations {
 		if op.OrchestrationID == orchestrationID {
-			result[string(op.State)] = result[string(op.State)] + 1
+			if op.State != Failed {
+				result[string(op.State)] = result[string(op.State)] + 1
+			}
+			opStatePerInstanceID[string(op.Operation.InstanceID)] = append(opStatePerInstanceID[string(op.Operation.InstanceID)], string(op.State))
 		}
 	}
 
 	for _, op := range s.upgradeClusterOperations {
 		if op.OrchestrationID == orchestrationID {
-			result[string(op.State)] = result[string(op.State)] + 1
+			if op.State != Failed {
+				result[string(op.State)] = result[string(op.State)] + 1
+			}
+			opStatePerInstanceID[string(op.Operation.InstanceID)] = append(opStatePerInstanceID[string(op.Operation.InstanceID)], string(op.State))
 		}
 	}
+
+	_, failedum := s.calFailedStatusForOrchestration(opStatePerInstanceID)
+	result[Failed] = failedum
+
 	return result, nil
+}
+
+func (s *operations) calFailedStatusForOrchestration(opStatePerInstanceID map[string][]string) ([]string, int) {
+	var result []string
+
+	var invalidFailed, failedFound bool
+
+	for instanceID, statuses := range opStatePerInstanceID {
+
+		invalidFailed = false
+		failedFound = false
+		for _, status := range statuses {
+			if status == Failed {
+				failedFound = true
+			}
+			//In Progress/Retrying/Succeeded means new operation for same instance_id is ongoing/succeeded.
+			if status == Succeeded || status == Retrying || status == InProgress {
+				invalidFailed = true
+			}
+		}
+		if failedFound && !invalidFailed {
+			result = append(result, instanceID)
+		}
+	}
+
+	return result, len(result)
 }
 
 func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error) {

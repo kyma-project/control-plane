@@ -15,7 +15,12 @@ type Parameters struct {
 	// upgrade kyma specific parameters
 	Kyma *KymaParameters `json:"kyma,omitempty"`
 	//customer notification status
-	NotificationState notificationStateType `json:"notificationstate,omitempty"`
+	NotificationState notificationStateType    `json:"notificationstate,omitempty"`
+	RetryOperation    RetryOperationParameters `json:"retryoperation,omitempty"`
+}
+type RetryOperationParameters struct {
+	RetryOperations []string `json:"retryoperations,omitempty"`
+	Immediate       bool     `json:"immediate,omitempty"`
 }
 
 type KubernetesParameters struct {
@@ -166,7 +171,7 @@ type UpgradeResponse struct {
 
 type RetryResponse struct {
 	OrchestrationID   string   `json:"orchestrationID"`
-	RetryOperations   []string `json:"retryOperations"`
+	RetryShoots       []string `json:"retryShoots"`
 	OldOperations     []string `json:"oldOperations"`
 	InvalidOperations []string `json:"invalidOperations"`
 	Msg               string   `json:"msg"`

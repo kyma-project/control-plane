@@ -14,12 +14,16 @@ global:
     initialDelaySeconds: 180
     timeoutSeconds: 1
     periodSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 1
+    periodSeconds: 10
 
 replicaCount: 1
 
 image:
   repository: eu.gcr.io/kyma-project/control-plane/kubeconfig-service
-  tag: "PR-1795"
+  tag: "PR-1958"
   pullPolicy: Always
 
 config:

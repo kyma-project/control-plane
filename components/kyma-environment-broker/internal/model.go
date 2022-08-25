@@ -196,9 +196,10 @@ type Operation struct {
 	InputCreator ProvisionerInputCreator `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string              `json:"-"`
-	FinishedStages  map[string]struct{} `json:"-"`
-	LastError       kebError.LastError  `json:"-"`
+	OrchestrationID       string              `json:"-"`
+	FinishedStages        map[string]struct{} `json:"-"`
+	FinishedStagesOrdered string              `json:"-"`
+	LastError             kebError.LastError  `json:"-"`
 
 	// PROVISIONING
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
