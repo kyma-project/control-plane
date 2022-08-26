@@ -18,7 +18,7 @@ const (
 	grafanaURLLabel = "operator_grafanaUrl"
 )
 
-//go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 
 type DirectorClient interface {
 	SetLabel(accountID, runtimeID, key, value string) error

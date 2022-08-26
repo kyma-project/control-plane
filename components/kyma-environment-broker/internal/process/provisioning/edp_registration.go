@@ -16,7 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=EDPClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EDPClient --output=automock --outpkg=automock --case=underscore
 type EDPClient interface {
 	CreateDataTenant(data edp.DataTenantPayload) error
 	CreateMetadataTenant(name, env string, data edp.MetadataTenantPayload) error

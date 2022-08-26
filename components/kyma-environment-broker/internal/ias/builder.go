@@ -1,7 +1,7 @@
 package ias
 
-//go:generate mockery -name=BundleBuilder -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=Bundle -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=BundleBuilder --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Bundle --output=automock --outpkg=automock --case=underscore
 type (
 	BundleBuilder interface {
 		NewBundle(identifier string, inputID SPInputID) (Bundle, error)

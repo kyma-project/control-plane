@@ -27,6 +27,7 @@ type Instances interface {
 	ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 }
 
+//go:generate mockery --name=Operations --output=automock --outpkg=mocks --case=underscore
 type Operations interface {
 	Provisioning
 	Deprovisioning
