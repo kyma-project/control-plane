@@ -35,7 +35,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
 		pMock := &mocks.ProvisionerClient{}
@@ -67,7 +67,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should fail when unable to fetch shoots from gardener", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.UnstructuredList{}, errors.New("failed to reach gardener"))
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.UnstructuredList{}, errors.New("failed to reach gardener"))
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -88,7 +88,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should return error when unable to find instance in db", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -113,7 +113,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should return error on KEB deprovision call failure", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", errors.New("failed to deprovision instance"))
 		pMock := &mocks.ProvisionerClient{}
@@ -150,7 +150,7 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should return error on Provisioner deprovision call failure", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", nil)
@@ -213,7 +213,7 @@ func TestService_PerformCleanup(t *testing.T) {
 				},
 			},
 		}
-		gcMock.On("List", mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
