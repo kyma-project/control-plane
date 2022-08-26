@@ -319,7 +319,7 @@ spec:
             - name: APP_KUBECONFIG_ALLOW_ORIGINS
               value: "{{ .Values.kubeconfig.allowOrigins }}"
             - name: APP_PROVISIONER_KUBERNETES_VERSION
-              value: {{ .Values.gardener.kubernetesVersion }}
+              value: "{{ .Values.gardener.kubernetesVersion }}"
             - name: APP_PROVISIONER_MACHINE_IMAGE
               value: {{ .Values.gardener.machineImage }}
             - name: APP_PROVISIONER_MACHINE_IMAGE_VERSION
