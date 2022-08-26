@@ -64,6 +64,16 @@
         ]
       },
       {
+        "component": "telemetry",
+        "namespace": "kyma-system",
+        "configuration": [
+          {
+              "key": "global.domainName",
+              "value": "example.com"
+          }
+        ]
+      },
+      {
         "component": "tracing",
         "namespace": "kyma-system",
         "configuration": [
