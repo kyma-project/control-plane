@@ -90,7 +90,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 	assert.Len(t, response.Metadata.Labels, 2)
 }
 
-func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
+func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	cfg := broker.Config{
@@ -107,7 +107,7 @@ func TestGetEndpoint_GetExpiredInstance(t *testing.T) {
 	op := fixture.FixProvisioningOperation(operationID, instanceID)
 
 	instance := fixture.FixInstance(instanceID)
-	instance.SubAccountID = cfg.SubaccountIDToShowTrialExpireInfo
+	instance.ServicePlanID = broker.TrialPlanID
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime

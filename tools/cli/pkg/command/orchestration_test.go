@@ -78,7 +78,7 @@ func fixOperationDetailResponse(ids []string, orchestrationID string) []orchestr
 func fixRetryOrchestrationResponse(orchestrationID string) orchestration.RetryResponse {
 	return orchestration.RetryResponse{
 		OrchestrationID:   orchestrationID,
-		RetryOperations:   []string{"id-2"},
+		RetryShoots:       []string{"id-2"},
 		OldOperations:     []string{"id-0"},
 		InvalidOperations: []string{"id-1", "id-3", "id-10"},
 		Msg:               "retry operations are queued for processing",

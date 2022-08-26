@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -49,7 +50,7 @@ func NewUpgradeKymaManager(orchestrationStorage storage.Orchestrations, operatio
 	}
 }
 
-func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance) (orchestration.RuntimeOperation, error) {
+func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance, state domain.LastOperationState) (orchestration.RuntimeOperation, error) {
 	id := uuid.New().String()
 	details, err := i.GetInstanceDetails()
 	if err != nil {
@@ -63,7 +64,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			UpdatedAt:              time.Now(),
 			Type:                   internal.OperationTypeUpgradeKyma,
 			InstanceID:             r.InstanceID,
-			State:                  orchestration.Pending,
+			State:                  state,
 			Description:            "Operation created",
 			OrchestrationID:        o.OrchestrationID,
 			ProvisioningParameters: i.Parameters,
@@ -156,35 +157,17 @@ func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 	return nil
 }
 
-// get current retrying operations, update state to pending and update other required params to storage
-func (u *upgradeKymaFactory) RetryOperations(orchestrationID string, schedule orchestration.ScheduleType, policy orchestration.MaintenancePolicy, updateMWindow bool) ([]orchestration.RuntimeOperation, error) {
+// get current retrying operations
+func (u *upgradeKymaFactory) RetryOperations(retryOps []string) ([]orchestration.RuntimeOperation, error) {
 	result := []orchestration.RuntimeOperation{}
-	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Retrying}})
-	if err != nil {
-		return nil, errors.Wrap(err, "while listing retrying operations")
-	}
 
-	for _, op := range ops {
-		if updateMWindow {
-			windowBegin := time.Time{}
-			windowEnd := time.Time{}
-			days := []string{}
-
-			// use the latest policy
-			if schedule == orchestration.MaintenanceWindow && !op.MaintenanceWindowBegin.IsZero() {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(op.RuntimeOperation.Runtime, policy)
-			}
-			op.MaintenanceWindowBegin = windowBegin
-			op.MaintenanceWindowEnd = windowEnd
-			op.MaintenanceDays = days
-		}
-
-		runtimeop, err := u.updateRetryingOperation(op)
+	for _, opId := range retryOps {
+		runtimeop, err := u.operationStorage.GetUpgradeKymaOperationByID(opId)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while geting (retrying) upgrade kyma operation %s in storage", opId)
 		}
 
-		result = append(result, runtimeop)
+		result = append(result, runtimeop.RuntimeOperation)
 	}
 
 	return result, nil
