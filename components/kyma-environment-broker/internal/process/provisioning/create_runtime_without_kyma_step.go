@@ -88,7 +88,6 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		return operation, 5 * time.Second, nil
 	}
 
-	// todo: dop we still need this
 	err = s.runtimeStateStorage.Insert(
 		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig),
 	)
@@ -100,6 +99,7 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 	err = s.updateInstance(operation.InstanceID,
 		*provisionerResponse.RuntimeID,
 		requestInput.ClusterConfig.GardenerConfig.Region)
+
 	switch {
 	case err == nil:
 	case dberr.IsConflict(err):

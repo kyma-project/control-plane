@@ -35,7 +35,7 @@ func TestLastOperationWithoutOperationIDHappyPath(t *testing.T) {
 		}
 	}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation", iid), "")
@@ -70,7 +70,7 @@ func TestLastOperationWithOperationIDHappyPath(t *testing.T) {
 		}
 	}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation?operation=%s", iid, opID), "")
@@ -136,7 +136,7 @@ func TestLastOperationWithOperationIDAndNotExistingInstanceID(t *testing.T) {
 			}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	oid := uuid.New().String()
 

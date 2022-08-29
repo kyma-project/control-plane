@@ -455,6 +455,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
+				Kubeconfig:   parameters.Parameters.Kubeconfig,
 			},
 			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},

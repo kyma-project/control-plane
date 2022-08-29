@@ -39,7 +39,7 @@ func TestClusterUpgrade_UpgradeAfterUpdateWithNetworkPolicy(t *testing.T) {
 	}
 }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	// provide license_type

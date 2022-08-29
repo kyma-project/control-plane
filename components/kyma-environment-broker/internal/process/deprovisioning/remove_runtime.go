@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -49,7 +50,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.DeprovisioningOperation, log 
 		return operation, 1 * time.Second, nil
 	}
 
-	if instance.RuntimeID == "" {
+	if instance.RuntimeID == "" || operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
 		// happens when provisioning process failed and Create_Runtime step was never reached
 		// It can also happen when the SKR is suspended (technically deprovisioned)
 		log.Infof("Runtime does not exist for instance id %q", instance.InstanceID)

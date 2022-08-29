@@ -7,7 +7,9 @@ import (
 )
 
 // InstancesStatsGetter provides number of all instances failed, succeeded or orphaned
-//   (instance exists but the cluster was removed manually from the gardener):
+//
+//	(instance exists but the cluster was removed manually from the gardener):
+//
 // - compass_keb_instances_total - total number of all instances
 // - compass_keb_global_account_id_instances_total - total number of all instances per global account
 // - compass_keb_ers_context_license_type_total - count of instances grouped by license types

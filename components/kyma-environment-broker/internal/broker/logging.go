@@ -11,6 +11,7 @@ var openKeys = map[string]struct{}{
 	"xsappname":        {},
 	"globalaccount_id": {},
 	"subaccount_id":    {},
+	"kubeconfig":       {},
 }
 
 func hideSensitiveDataFromRawContext(d []byte) map[string]interface{} {

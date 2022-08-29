@@ -40,7 +40,8 @@ func NewServices(cfg Config, servicesConfig ServicesConfig, log logrus.FieldLogg
 }
 
 // Services gets the catalog of services offered by the service broker
-//   GET /v2/catalog
+//
+//	GET /v2/catalog
 func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, error) {
 	var availableServicePlans []domain.ServicePlan
 	// we scope to the kymaruntime service only

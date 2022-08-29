@@ -41,7 +41,7 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	// perform an update with custom autoscaler params
