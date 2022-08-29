@@ -138,7 +138,7 @@ global:
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
       image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 1.8.15-a6fa9cb0
+      tag: 1.9.6-fdfefada
       persistence:
         enabled: true
         accessMode: ReadWriteOnce
