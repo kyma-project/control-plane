@@ -905,6 +905,11 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting basic auth")
 	}
+	err = s.cipher.EncryptKubeconfig(&op.ProvisioningParameters)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting kubeconfig")
+	}
+
 	pp, err := json.Marshal(op.ProvisioningParameters)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while marshal provisioning parameters")
@@ -927,16 +932,20 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 }
 
 func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.Operation) (internal.Operation, error) {
-	pp := internal.ProvisioningParameters{}
+	provisioningParameters := internal.ProvisioningParameters{}
 	if dto.ProvisioningParameters.Valid {
-		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &pp)
+		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &provisioningParameters)
 		if err != nil {
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
 	}
-	err := s.cipher.DecryptSMCreds(&pp)
+	err := s.cipher.DecryptSMCreds(&provisioningParameters)
 	if err != nil {
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
+	}
+	err = s.cipher.DecryptKubeconfig(&provisioningParameters)
+	if err != nil {
+		return internal.Operation{}, errors.Wrap(err, "while decrypting kubeconfig")
 	}
 
 	stages := make([]string, 0)
@@ -957,7 +966,7 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 	existingOp.Description = dto.Description
 	existingOp.Version = dto.Version
 	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
-	existingOp.ProvisioningParameters = pp
+	existingOp.ProvisioningParameters = provisioningParameters
 	existingOp.FinishedStages = stages
 
 	return existingOp, nil

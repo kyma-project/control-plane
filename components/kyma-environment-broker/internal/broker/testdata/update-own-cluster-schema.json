@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "kubeconfig"
+  ],
+  "_show_form_view": true,
+  "properties": {
+    "kubeconfig": {
+      "title": "Kubeconfig contents",
+      "type": "string"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

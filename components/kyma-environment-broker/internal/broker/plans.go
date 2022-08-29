@@ -13,40 +13,44 @@ import (
 const (
 	AllPlansSelector = "all_plans"
 
-	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName       = "gcp"
-	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
-	AWSPlanName       = "aws"
-	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName     = "azure"
-	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
-	AzureLitePlanName = "azure_lite"
-	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
-	TrialPlanName     = "trial"
-	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
-	OpenStackPlanName = "openstack"
-	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
-	FreemiumPlanName  = "free"
+	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName        = "gcp"
+	AWSPlanID          = "361c511f-f939-4621-b228-d0fb79a1fe15"
+	AWSPlanName        = "aws"
+	AzurePlanID        = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName      = "azure"
+	AzureLitePlanID    = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName  = "azure_lite"
+	TrialPlanID        = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	TrialPlanName      = "trial"
+	OpenStackPlanID    = "03b812ac-c991-4528-b5bd-08b303523a63"
+	OpenStackPlanName  = "openstack"
+	FreemiumPlanID     = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
+	FreemiumPlanName   = "free"
+	OwnClusterPlanID   = "03e3cb66-a4c6-4c6a-b4b0-5d42224debea"
+	OwnClusterPlanName = "owncluster"
 )
 
 var PlanNamesMapping = map[string]string{
-	GCPPlanID:       GCPPlanName,
-	AWSPlanID:       AWSPlanName,
-	AzurePlanID:     AzurePlanName,
-	AzureLitePlanID: AzureLitePlanName,
-	TrialPlanID:     TrialPlanName,
-	OpenStackPlanID: OpenStackPlanName,
-	FreemiumPlanID:  FreemiumPlanName,
+	GCPPlanID:        GCPPlanName,
+	AWSPlanID:        AWSPlanName,
+	AzurePlanID:      AzurePlanName,
+	AzureLitePlanID:  AzureLitePlanName,
+	TrialPlanID:      TrialPlanName,
+	OpenStackPlanID:  OpenStackPlanName,
+	FreemiumPlanID:   FreemiumPlanName,
+	OwnClusterPlanID: OwnClusterPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
-	AzurePlanName:     AzurePlanID,
-	AWSPlanName:       AWSPlanID,
-	AzureLitePlanName: AzureLitePlanID,
-	GCPPlanName:       GCPPlanID,
-	TrialPlanName:     TrialPlanID,
-	OpenStackPlanName: OpenStackPlanID,
-	FreemiumPlanName:  FreemiumPlanID,
+	AzurePlanName:      AzurePlanID,
+	AWSPlanName:        AWSPlanID,
+	AzureLitePlanName:  AzureLitePlanID,
+	GCPPlanName:        GCPPlanID,
+	TrialPlanName:      TrialPlanID,
+	OpenStackPlanName:  OpenStackPlanID,
+	FreemiumPlanName:   FreemiumPlanID,
+	OwnClusterPlanName: OwnClusterPlanID,
 }
 
 type TrialCloudRegion string
@@ -103,6 +107,7 @@ func OpenStackSchema(machineTypesDisplay map[string]string, machineTypes []strin
 	if !update {
 		properties.AutoScalerMax.Default = 8
 	}
+
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
@@ -167,6 +172,26 @@ func TrialSchema(additionalParams, update bool) *map[string]interface{} {
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
+func OwnClusterSchema(additionalParams, update bool) *map[string]interface{} {
+	properties := ProvisioningProperties{
+		Name:        NameProperty(),
+		ShootName:   ShootNameProperty(),
+		ShootDomain: ShootDomainProperty(),
+		UpdateProperties: UpdateProperties{
+			Kubeconfig: KubeconfigProperty(),
+		},
+	}
+	if additionalParams {
+		properties.IncludeAdditional()
+	}
+
+	if update {
+		return createSchemaForOwnCluster(properties.UpdateProperties, update)
+	} else {
+		return createSchemaForOwnCluster(properties, update)
+	}
+}
+
 func empty() *map[string]interface{} {
 	empty := make(map[string]interface{}, 0)
 	return &empty
@@ -190,8 +215,18 @@ func createSchemaWithProperties(properties ProvisioningProperties, additionalPar
 }
 
 func createSchemaWith(properties interface{}, update bool) *map[string]interface{} {
-	schema := NewSchema(properties, update)
+	schema := NewSchemaWithOnlyNameRequired(properties, update)
 
+	return unmarshalSchema(schema)
+}
+
+func createSchemaForOwnCluster(properties interface{}, update bool) *map[string]interface{} {
+	schema := NewSchemaForOwnCluster(properties, update, []string{"name", "kubeconfig", "shootName", "shootDomain"})
+
+	return unmarshalSchema(schema)
+}
+
+func unmarshalSchema(schema *RootSchema) *map[string]interface{} {
 	target := make(map[string]interface{})
 	schema.ControlsOrder = DefaultControlsOrder()
 
@@ -263,6 +298,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	azureLiteSchema := AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, false)
 	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false)
 	trialSchema := TrialSchema(includeAdditionalParamsInSchema, false)
+	ownClusterSchema := OwnClusterSchema(includeAdditionalParamsInSchema, false)
 
 	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
 	// when a machine type switch is introduced
@@ -278,13 +314,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	awsCatalogSchema := AWSSchema(awsCatalogMachinesDisplay, awsCatalogMachines, includeAdditionalParamsInSchema, false)
 
 	outputPlans := map[string]domain.ServicePlan{
-		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true)),
-		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachinesDisplay, gcpMachines, includeAdditionalParamsInSchema, true)),
-		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachinesDisplay, openStackMachines, includeAdditionalParamsInSchema, true)),
-		AzurePlanID:     defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, true)),
-		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, true)),
-		FreemiumPlanID:  defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
-		TrialPlanID:     defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
+		AWSPlanID:        defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true)),
+		GCPPlanID:        defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachinesDisplay, gcpMachines, includeAdditionalParamsInSchema, true)),
+		OpenStackPlanID:  defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachinesDisplay, openStackMachines, includeAdditionalParamsInSchema, true)),
+		AzurePlanID:      defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, true)),
+		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, true)),
+		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
+		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
+		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(includeAdditionalParamsInSchema, true)),
 	}
 
 	return outputPlans
