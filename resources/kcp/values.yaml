@@ -14,7 +14,7 @@ global:
       version: "PR-1940"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1651"
+      version: "PR-1840"
     kyma_metrics_collector:
       dir:
       version: "PR-1977"
