@@ -139,9 +139,13 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
-	// create SKR shoot name
-	shootName := gardener.CreateShootName()
+	shootName := gardener.CreateShootName()                         //TODO not used in OwnCluster plan
+	shootDomainCompressedSuffix := strings.Trim(b.shootDomain, ".") //TODO reconsider this, compare with current logic
 
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, shootDomainCompressedSuffix)
+	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 	dashboardURL := fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
 
 	// create and save new operation
@@ -150,10 +154,22 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
+
+	if provisioningParameters.PlanID != OwnClusterPlanID &&
+		(provisioningParameters.Parameters.ShootName != "" || provisioningParameters.Parameters.ShootDomain != "") {
+		logger.Errorf("shootName and shootDomain are only valid in owncluster plan")
+		return domain.ProvisionedServiceSpec{}, errors.New("shootName and shootDomain are only valid in owncluster plan")
+	}
+
+	if provisioningParameters.PlanID == OwnClusterPlanID {
+		shootName = provisioningParameters.Parameters.ShootName
+		shootDomainCompressedSuffix = provisioningParameters.Parameters.ShootDomain //TODO should we remove dots afterwards? how this parameter would be provided?
+	}
+
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomainCompressedSuffix)
 	operation.ShootDNSProviders = b.shootDnsProviders
-	operation.DashboardURL = dashboardURL
+	operation.DashboardURL = dashboardURL //TODO if we override shootName and shootDomain with provisioning parameters, should we override dashboardURL as well?
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertOperation(operation.Operation)

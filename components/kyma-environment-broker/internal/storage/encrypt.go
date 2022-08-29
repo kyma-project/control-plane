@@ -59,14 +59,14 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (e *Encrypter) EncryptSMCreds(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.SMOperatorCredentials == nil {
+func (e *Encrypter) EncryptSMCreds(provisioningParameters *internal.ProvisioningParameters) error {
+	if provisioningParameters.ErsContext.SMOperatorCredentials == nil {
 		return nil
 	}
 	var err error
 	encrypted := internal.ERSContext{}
 
-	creds := pp.ErsContext.SMOperatorCredentials
+	creds := provisioningParameters.ErsContext.SMOperatorCredentials
 	var clientID, clientSecret []byte
 	if creds.ClientID != "" {
 		clientID, err = e.Encrypt([]byte(creds.ClientID))
@@ -88,18 +88,30 @@ func (e *Encrypter) EncryptSMCreds(pp *internal.ProvisioningParameters) error {
 		XSAppName:         creds.XSAppName,
 	}
 
-	pp.ErsContext.SMOperatorCredentials = encrypted.SMOperatorCredentials
+	provisioningParameters.ErsContext.SMOperatorCredentials = encrypted.SMOperatorCredentials
 	return nil
 }
 
-func (e *Encrypter) DecryptSMCreds(pp *internal.ProvisioningParameters) error {
-	if pp.ErsContext.SMOperatorCredentials == nil {
+func (e *Encrypter) EncryptKubeconfig(provisioningParameters *internal.ProvisioningParameters) error {
+	if len(provisioningParameters.Parameters.Kubeconfig) == 0 {
+		return nil
+	}
+	encryptedKubeconfig, err := e.Encrypt([]byte(provisioningParameters.Parameters.Kubeconfig))
+	if err != nil {
+		return errors.Wrap(err, "while encrypting kubeconfig")
+	}
+	provisioningParameters.Parameters.Kubeconfig = string(encryptedKubeconfig)
+	return nil
+}
+
+func (e *Encrypter) DecryptSMCreds(provisioningParameters *internal.ProvisioningParameters) error {
+	if provisioningParameters.ErsContext.SMOperatorCredentials == nil {
 		return nil
 	}
 	var err error
 	var clientID, clientSecret []byte
 
-	creds := pp.ErsContext.SMOperatorCredentials
+	creds := provisioningParameters.ErsContext.SMOperatorCredentials
 	if creds.ClientID != "" {
 		clientID, err = e.Decrypt([]byte(creds.ClientID))
 		if err != nil {
@@ -114,10 +126,23 @@ func (e *Encrypter) DecryptSMCreds(pp *internal.ProvisioningParameters) error {
 	}
 
 	if len(clientID) != 0 {
-		pp.ErsContext.SMOperatorCredentials.ClientID = string(clientID)
+		provisioningParameters.ErsContext.SMOperatorCredentials.ClientID = string(clientID)
 	}
 	if len(clientSecret) != 0 {
-		pp.ErsContext.SMOperatorCredentials.ClientSecret = string(clientSecret)
+		provisioningParameters.ErsContext.SMOperatorCredentials.ClientSecret = string(clientSecret)
 	}
+	return nil
+}
+
+func (e *Encrypter) DecryptKubeconfig(provisioningParameters *internal.ProvisioningParameters) error {
+	if len(provisioningParameters.Parameters.Kubeconfig) == 0 {
+		return nil
+	}
+
+	decryptedKubeconfig, err := e.Decrypt([]byte(provisioningParameters.Parameters.Kubeconfig))
+	if err != nil {
+		return errors.Wrap(err, "while decrypting kubeconfig")
+	}
+	provisioningParameters.Parameters.Kubeconfig = string(decryptedKubeconfig)
 	return nil
 }

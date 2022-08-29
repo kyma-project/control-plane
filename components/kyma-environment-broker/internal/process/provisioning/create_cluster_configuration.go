@@ -35,11 +35,13 @@ func (s *CreateClusterConfigurationStep) Name() string {
 	return "Create_Cluster_Configuration"
 }
 
-func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+
 	if operation.ClusterConfigurationVersion != 0 {
 		log.Debugf("Cluster configuration already created, skipping")
 		return operation, 0, nil
 	}
+	log.Infof("Runtime id is %v", operation.RuntimeID)
 	operation.InputCreator.SetRuntimeID(operation.RuntimeID).
 		SetInstanceID(operation.InstanceID).
 		SetKubeconfig(operation.Kubeconfig).

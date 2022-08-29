@@ -648,8 +648,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -657,9 +658,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
-			disabled: cfg.EDP.Disabled,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
+			disabled:  cfg.EDP.Disabled,
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -674,10 +676,21 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			stage: createRuntimeStageName,
 			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
+		{
+			condition: skipForOwnClusterPlan,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+		},
+		{
+			condition: doForOwnClusterPlanOnly,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateRuntimeForOwnClusterStep(db.Operations(), db.Instances()),
+		},
 		// check the runtime status
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -697,8 +710,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
 		},
 		{
-			stage: postActionsStageName,
-			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			stage:     postActionsStageName,
+			step:      provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			condition: skipForOwnClusterPlan,
 		},
 	}
 	for _, step := range provisioningSteps {
@@ -938,4 +952,12 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	queue.Run(ctx.Done(), 3)
 
 	return queue
+}
+
+func skipForOwnClusterPlan(operation internal.Operation) bool {
+	return operation.ProvisioningParameters.PlanID != broker.OwnClusterPlanID
+}
+
+func doForOwnClusterPlanOnly(operation internal.Operation) bool {
+	return !skipForOwnClusterPlan(operation)
 }
