@@ -35,12 +35,13 @@ const (
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
 	userID          = "test@test.pl"
 
-	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
-	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
-	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
-	clusterName      = "cluster-testing"
-	region           = "eu"
-	brokerURL        = "example.com"
+	instanceID         = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
+	otherInstanceID    = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
+	existOperationID   = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
+	clusterName        = "cluster-testing"
+	region             = "eu"
+	brokerURL          = "example.com"
+	kubeconfigContents = "apiVersion: v1\nkind: Config"
 )
 
 var enabledDashboardConfig dashboard.Config = dashboard.Config{Enabled: true, LandscapeURL: "https://dashboard.example.com"}
@@ -152,7 +153,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		// when
-		kubeconfigEncoded := base64.StdEncoding.EncodeToString([]byte("apiVersion: v1\nkind: Config"))
+		kubeconfigEncoded := base64.StdEncoding.EncodeToString([]byte(kubeconfigContents))
 		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
@@ -163,6 +164,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
+		// UUID with version 4 and variant 1 i.e RFC. 4122/DCE
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
 		assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
@@ -180,7 +182,7 @@ func TestProvision_Provision(t *testing.T) {
 
 		kubeconfigParameter, err := base64.StdEncoding.DecodeString(operation.ProvisioningParameters.Parameters.Kubeconfig)
 		require.NoError(t, err)
-		assert.Regexp(t, `.*kind: Config$`, string(kubeconfigParameter))
+		assert.Equal(t, kubeconfigContents, string(kubeconfigParameter))
 
 		assert.Equal(t, fixDNSProviders(), operation.ShootDNSProviders)
 
