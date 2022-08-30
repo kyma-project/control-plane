@@ -182,8 +182,9 @@ func TestUpdateEndpoint_UpdateExpirationOfExpiredTrial(t *testing.T) {
 
 	// then
 
+	// we do not expect any action, handler won't be called
 	assert.Equal(t, internal.ERSContext{
-		Active: ptr.Bool(false),
+		Active: nil,
 	}, handler.ersContext)
 
 	assert.Len(t, response.Metadata.Labels, 1)
@@ -221,7 +222,7 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
 
 	// when
-	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
 		RawParameters:   json.RawMessage(`{"autoScalerMin": 1}`),
@@ -231,9 +232,8 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	}, true)
 
 	// then
-	assert.NotNil(t, err)
-	failureResp := err.(*apiresponses.FailureResponse)
-	assert.Equal(t, http.StatusUnprocessableEntity, failureResp.ValidatedStatusCode(nil))
+	assert.NoError(t, err)
+	assert.False(t, response.IsAsync)
 }
 
 func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {

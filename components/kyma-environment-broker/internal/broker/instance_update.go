@@ -89,11 +89,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
+	instanceWasExpired := instance.IsExpired()
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
-	if instance.IsExpired() && b.moreThanExpiredParameter(details.RawParameters) {
-		logger.Infof("The instance is expired (%s)", instance.ExpiredAt)
-		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("the instance is expired"), http.StatusUnprocessableEntity, fmt.Sprintf("Could not execute update for an expired instanceID %s (expired at %s)", instanceID, instance.ExpiredAt))
-	}
 
 	var ersContext internal.ERSContext
 	err = json.Unmarshal(details.RawContext, &ersContext)
@@ -139,7 +136,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		instance.DashboardURL = dashboardURL
 	}
 
-	if b.processingEnabled {
+	if b.processingEnabled && !instanceWasExpired {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
@@ -384,16 +381,4 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 	}
 	return instance, nil
 
-}
-
-// moreThanExpiredParameter  returns true if there is at least one parameter which is not "expired"
-func (b *UpdateEndpoint) moreThanExpiredParameter(parameters json.RawMessage) bool {
-	var values map[string]interface{}
-	err := json.Unmarshal(parameters, values)
-	if err != nil {
-		return false
-	}
-
-	delete(values, "expired")
-	return len(values) > 0
 }
