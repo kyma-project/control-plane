@@ -33,9 +33,26 @@ func (s *GetKubeconfigStep) Name() string {
 }
 
 func (s *GetKubeconfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	// TODO: check for KUBECONFIG from input parameters
 	if operation.Kubeconfig != "" {
 		return operation, 0, nil
 	}
+
+	if operation.ProvisioningParameters.Parameters.Kubeconfig != "" {
+		operation.Kubeconfig = operation.ProvisioningParameters.Parameters.Kubeconfig
+
+		newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.Kubeconfig = operation.ProvisioningParameters.Parameters.Kubeconfig
+		}, log)
+
+		if retry > 0 {
+			log.Errorf("unable to update operation")
+			return operation, time.Second, nil
+		}
+
+		return newOperation, 0, nil
+	}
+
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
 		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)

@@ -101,7 +101,7 @@ func (f *InputBuilderFactory) SetDefaultTrialProvider(p internal.CloudProvider) 
 func (f *InputBuilderFactory) IsPlanSupport(planID string) bool {
 	switch planID {
 	case broker.AWSPlanID, broker.GCPPlanID, broker.AzurePlanID, broker.FreemiumPlanID,
-		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID:
+		broker.AzureLitePlanID, broker.TrialPlanID, broker.OpenStackPlanID, broker.OwnClusterPlanID:
 		return true
 	default:
 		return false

@@ -13,30 +13,33 @@ import (
 const (
 	AllPlansSelector = "all_plans"
 
-	GCPPlanID         = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
-	GCPPlanName       = "gcp"
-	AWSPlanID         = "361c511f-f939-4621-b228-d0fb79a1fe15"
-	AWSPlanName       = "aws"
-	AzurePlanID       = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	AzurePlanName     = "azure"
-	AzureLitePlanID   = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
-	AzureLitePlanName = "azure_lite"
-	TrialPlanID       = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
-	TrialPlanName     = "trial"
-	OpenStackPlanID   = "03b812ac-c991-4528-b5bd-08b303523a63"
-	OpenStackPlanName = "openstack"
-	FreemiumPlanID    = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
-	FreemiumPlanName  = "free"
+	GCPPlanID          = "ca6e5357-707f-4565-bbbd-b3ab732597c6"
+	GCPPlanName        = "gcp"
+	AWSPlanID          = "361c511f-f939-4621-b228-d0fb79a1fe15"
+	AWSPlanName        = "aws"
+	AzurePlanID        = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	AzurePlanName      = "azure"
+	AzureLitePlanID    = "8cb22518-aa26-44c5-91a0-e669ec9bf443"
+	AzureLitePlanName  = "azure_lite"
+	TrialPlanID        = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
+	TrialPlanName      = "trial"
+	OpenStackPlanID    = "03b812ac-c991-4528-b5bd-08b303523a63"
+	OpenStackPlanName  = "openstack"
+	FreemiumPlanID     = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
+	FreemiumPlanName   = "free"
+	OwnClusterPlanID   = "b1a5764e-2ea1-4f95-94c0-2b4538b37b56" // dummy plan id
+	OwnClusterPlanName = "owncluster"
 )
 
 var PlanNamesMapping = map[string]string{
-	GCPPlanID:       GCPPlanName,
-	AWSPlanID:       AWSPlanName,
-	AzurePlanID:     AzurePlanName,
-	AzureLitePlanID: AzureLitePlanName,
-	TrialPlanID:     TrialPlanName,
-	OpenStackPlanID: OpenStackPlanName,
-	FreemiumPlanID:  FreemiumPlanName,
+	GCPPlanID:        GCPPlanName,
+	AWSPlanID:        AWSPlanName,
+	AzurePlanID:      AzurePlanName,
+	AzureLitePlanID:  AzureLitePlanName,
+	TrialPlanID:      TrialPlanName,
+	OpenStackPlanID:  OpenStackPlanName,
+	FreemiumPlanID:   FreemiumPlanName,
+	OwnClusterPlanID: OwnClusterPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -47,6 +50,7 @@ var PlanIDsMapping = map[string]string{
 	TrialPlanName:     TrialPlanID,
 	OpenStackPlanName: OpenStackPlanID,
 	FreemiumPlanName:  FreemiumPlanID,
+	OwnClusterPlanID:  OwnClusterPlanName,
 }
 
 type TrialCloudRegion string
@@ -103,6 +107,7 @@ func OpenStackSchema(machineTypes []string, additionalParams, update bool) *map[
 	if !update {
 		properties.AutoScalerMax.Default = 8
 	}
+
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
@@ -232,13 +237,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	awsCatalogSchema := AWSSchema(awsCatalogMachines, includeAdditionalParamsInSchema, false)
 
 	outputPlans := map[string]domain.ServicePlan{
-		AWSPlanID:       defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
-		GCPPlanID:       defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
-		OpenStackPlanID: defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
-		AzurePlanID:     defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachines, includeAdditionalParamsInSchema, true)),
-		AzureLitePlanID: defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
-		FreemiumPlanID:  defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
-		TrialPlanID:     defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
+		AWSPlanID:        defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachines, includeAdditionalParamsInSchema, true)),
+		GCPPlanID:        defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachines, includeAdditionalParamsInSchema, true)),
+		OpenStackPlanID:  defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachines, includeAdditionalParamsInSchema, true)),
+		AzurePlanID:      defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachines, includeAdditionalParamsInSchema, true)),
+		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
+		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
+		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
+		OwnClusterPlanID: defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 	}
 
 	return outputPlans

@@ -649,8 +649,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioner.ProvisioningTimeout, cfg.OperationTimeout, runtimeVerConfigurator),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			condition: noKubeConfig,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -658,9 +659,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
-			disabled: cfg.EDP.Disabled,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
+			disabled:  cfg.EDP.Disabled,
+			condition: noKubeConfig,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -676,13 +678,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			condition: noKubeConfig,
 		},
 		// check the runtime status
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			condition: noKubeConfig,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -702,8 +706,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
 		},
 		{
-			stage: postActionsStageName,
-			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			stage:     postActionsStageName,
+			step:      provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			condition: noKubeConfig,
 		},
 	}
 	for _, step := range provisioningSteps {
@@ -1004,4 +1009,8 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	queue.Run(ctx.Done(), 3)
 
 	return queue
+}
+
+func noKubeConfig(operation internal.ProvisioningOperation) bool {
+	return operation.ProvisioningParameters.Parameters.Kubeconfig == ""
 }
