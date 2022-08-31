@@ -236,6 +236,8 @@ func (h *orchestrationHandler) listOperations(w http.ResponseWriter, r *http.Req
 	var response commonOrchestration.OperationResponseList
 	switch o.Type {
 	case commonOrchestration.UpgradeKymaOrchestration:
+		fmt.Println("orchestrationID is:", orchestrationID)
+		fmt.Println("filter is:", filter)
 		operations, count, totalCount, err := h.operations.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			h.log.Errorf("while getting operations: %v", err)
