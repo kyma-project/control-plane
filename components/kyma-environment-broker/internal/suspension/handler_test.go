@@ -187,6 +187,30 @@ func TestUnsuspensionForDeprovisioningInstance(t *testing.T) {
 	assertQueue(t, provisioning)
 }
 
+func TestUnsuspensionForExpiredInstance(t *testing.T) {
+	// given
+	provisioning := NewDummyQueue()
+	deprovisioning := NewDummyQueue()
+	st := storage.NewMemoryStorage()
+
+	svc := NewContextUpdateHandler(st.Operations(), provisioning, deprovisioning, logrus.New())
+	instance := fixInstance(fixInactiveErsContext())
+	instance.InstanceDetails.ShootName = "c-012345"
+	instance.InstanceDetails.ShootDomain = "c-012345.sap.com"
+	instance.ExpiredAt = ptr.Time(time.Now())
+
+	st.Instances().Insert(*instance)
+
+	// when
+	changed, err := svc.Handle(instance, fixActiveErsContext())
+	require.NoError(t, err)
+	assert.False(t, changed, "handler to not change active flag")
+
+	// then
+	_, err = st.Operations().GetProvisioningOperationByInstanceID("instance-id")
+	assert.True(t, dberr.IsNotFound(err))
+}
+
 func fixInstance(ersContext internal.ERSContext) *internal.Instance {
 	instance := fixture.FixInstance("instance-id")
 	instance.ServicePlanID = broker.TrialPlanID
