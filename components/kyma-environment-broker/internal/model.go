@@ -196,10 +196,9 @@ type Operation struct {
 	InputCreator ProvisionerInputCreator `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID       string              `json:"-"`
-	FinishedStages        map[string]struct{} `json:"-"`
-	FinishedStagesOrdered string              `json:"-"`
-	LastError             kebError.LastError  `json:"-"`
+	OrchestrationID string             `json:"-"`
+	FinishedStages  []string           `json:"-"`
+	LastError       kebError.LastError `json:"-"`
 
 	// PROVISIONING
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
@@ -457,7 +456,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 			},
-			FinishedStages: make(map[string]struct{}, 0),
+			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},
 		},
 	}, nil
@@ -480,7 +479,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: details,
-			FinishedStages:  make(map[string]struct{}, 0),
+			FinishedStages:  make([]string, 0),
 		},
 	}, nil
 }
@@ -498,7 +497,7 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 			UpdatedAt:              time.Now(),
 			Type:                   OperationTypeUpdate,
 			InstanceDetails:        instance.InstanceDetails,
-			FinishedStages:         make(map[string]struct{}, 0),
+			FinishedStages:         make([]string, 0),
 			ProvisioningParameters: instance.Parameters,
 			UpdatingParameters:     updatingParams,
 		},
@@ -530,19 +529,23 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
-			FinishedStages:  make(map[string]struct{}, 0),
+			FinishedStages:  make([]string, 0),
 			Temporary:       true,
 		},
 	}
 }
 
 func (o *Operation) FinishStage(stageName string) {
-	o.FinishedStages[stageName] = struct{}{}
+	o.FinishedStages = append(o.FinishedStages, stageName)
 }
 
 func (o *Operation) IsStageFinished(stage string) bool {
-	_, found := o.FinishedStages[stage]
-	return found
+	for _, value := range o.FinishedStages {
+		if value == stage {
+			return true
+		}
+	}
+	return false
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

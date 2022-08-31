@@ -158,7 +158,7 @@ func (s *onceRetryingStep) Run(operation internal.ProvisioningOperation, logger 
 
 func FixProvisionOperation(ID string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
-	provisioningOperation.FinishedStages = make(map[string]struct{})
+	provisioningOperation.FinishedStages = make([]string, 0)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.Description = ""
 	provisioningOperation.ProvisioningParameters = provisioning.FixProvisioningParameters(broker.AzurePlanID, "westeurope")
