@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -20,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -55,7 +55,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		}}
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kyma-system"}}
 
-		scheme := scheme.Scheme
+		scheme := internal.NewSchemeForTests()
 		err := apiextensionsv1.AddToScheme(scheme)
 		decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 		obj, gvk, err := decoder.Decode(siCRD, nil, nil)
@@ -104,7 +104,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		}}
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kyma-system"}}
 
-		scheme := scheme.Scheme
+		scheme := internal.NewSchemeForTests()
 		err := apiextensionsv1.AddToScheme(scheme)
 		decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 		obj, gvk, err := decoder.Decode(siCRD, nil, nil)
@@ -154,7 +154,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		}}
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kyma-system"}}
 
-		scheme := scheme.Scheme
+		scheme := internal.NewSchemeForTests()
 		err := apiextensionsv1.AddToScheme(scheme)
 		decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 		obj, gvk, err := decoder.Decode(siCRD, nil, nil)
