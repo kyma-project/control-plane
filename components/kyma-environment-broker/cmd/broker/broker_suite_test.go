@@ -57,7 +57,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -103,7 +102,7 @@ func (s *BrokerSuiteTest) TearDown() {
 
 func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	ctx := context.Background()
-	sch := scheme.Scheme
+	sch := internal.NewSchemeForTests()
 	apiextensionsv1.AddToScheme(sch)
 	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
 	additionalKymaVersions = append(additionalKymaVersions, version...)
