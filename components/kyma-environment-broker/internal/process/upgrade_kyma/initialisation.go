@@ -116,7 +116,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		}
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeKymaOperation) {
 			op.ProvisioningParameters = provisioningOperation.ProvisioningParameters
-			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+			op.ProvisioningParameters.ErsContext = internal.InheritMissingERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 			op.State = domain.InProgress
 		}, log)
 		if delay != 0 {
@@ -144,7 +144,7 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 	creator, err := s.inputBuilder.CreateUpgradeInput(operation.ProvisioningParameters, operation.RuntimeVersion)
 	switch {
 	case err == nil:
-		internal.DisableServiceManagementComponents(creator)
+		creator.DisableOptionalComponent(internal.BTPOperatorComponentName)
 		operation.InputCreator = creator
 		return operation, 0, nil // go to next step
 	case kebError.IsTemporaryError(err):

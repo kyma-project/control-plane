@@ -102,7 +102,7 @@ func (s *InitialisationStep) run(operation internal.DeprovisioningOperation, log
 		setAvsIds(operation, op, log)
 		operation.SubAccountID = operation.ProvisioningParameters.ErsContext.SubAccountID
 		operation.ProvisioningParameters = op.ProvisioningParameters
-		operation.ProvisioningParameters.ErsContext = internal.UpdateERSContext(operation.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+		operation.ProvisioningParameters.ErsContext = internal.InheritMissingERSContext(operation.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 	}, log)
 	if repeat != 0 {
 		return operation, time.Second, nil

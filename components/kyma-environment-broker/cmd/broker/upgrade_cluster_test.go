@@ -15,7 +15,7 @@ func TestClusterUpgrade_UpgradeAfterUpdateWithNetworkPolicy(t *testing.T) {
 	suite := NewBrokerSuiteTest(t)
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
-	id := "InstanceID-UpgradeAfterMigration"
+	id := "InstanceID-UpgradeAfterUpdate"
 
 	// provision Kyma 2.0
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
