@@ -155,6 +155,7 @@ func TestOperation(t *testing.T) {
 		latestOperation.Version = 1
 		latestOperation.OrchestrationID = orchestrationID
 		latestOperation.ProvisioningParameters.PlanID = broker.TrialPlanID
+		latestOperation.FinishedStages = []string{}
 
 		latestPendingOperation := fixture.FixProvisioningOperation("latest-id-pending", "inst-id")
 		latestPendingOperation.InputCreator = nil
