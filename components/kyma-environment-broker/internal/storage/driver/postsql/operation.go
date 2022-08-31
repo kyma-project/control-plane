@@ -514,6 +514,7 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	)
 
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		fmt.Println("ListOperations()", filter)
 		operations, size, total, lastErr = session.ListOperations(filter)
 		if lastErr != nil {
 			log.Errorf("while getting operations from the storage: %v", lastErr)
@@ -575,6 +576,8 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	if failedFilterFound {
 		filter.States = []string{}
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() failedFilterFound", failedFilterFound)
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() filter", filter)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
 		if lastErr != nil {
@@ -590,9 +593,11 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations before", operations)
 	if failedFilterFound {
 		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations after", operations)
 	return operations, count, totalCount, nil
 }
 
@@ -607,6 +612,9 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		filter.States = states
 	}
 
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() states", states)
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filterFailedFound is:", filterFailedFound)
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filter", filter)
 	//excluded "failed" states
 	if !filterFailedFound || (filterFailedFound && len(filter.States) > 0) {
 		operations, count, totalCount, err = s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)

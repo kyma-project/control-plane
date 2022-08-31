@@ -147,6 +147,7 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 }
 
 func (r readSession) ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
+	fmt.Println("readSession ListOperations", filter)
 	var operations []dbmodel.OperationDTO
 
 	stmt := r.session.Select("*").
