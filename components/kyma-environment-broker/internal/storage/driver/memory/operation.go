@@ -3,6 +3,7 @@ package memory
 import (
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
@@ -189,6 +190,11 @@ func (s *operations) ListOperationsByInstanceID(instanceID string) ([]internal.O
 	}
 
 	return nil, dberr.NotFound("instance provisioning operations with instanceID %s not found", instanceID)
+}
+
+func (s *operations) ListOperationsInTimeRange(from, to time.Time) ([]internal.Operation, error) {
+	panic("not implemented") //also not used in any tests
+	return nil, nil
 }
 
 func (s *operations) InsertDeprovisioningOperation(operation internal.DeprovisioningOperation) error {

@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=EDPClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=EDPClient --output=automock --outpkg=automock --case=underscore
 type EDPClient interface {
 	DeleteDataTenant(name, env string) error
 	DeleteMetadataTenant(name, env, key string) error
