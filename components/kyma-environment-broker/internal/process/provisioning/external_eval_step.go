@@ -2,8 +2,9 @@ package provisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
