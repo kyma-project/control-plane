@@ -53,7 +53,9 @@ func (cmd *UpgradeClusterCommand) Validate() error {
 // Run executes the upgrade cluster command
 func (cmd *UpgradeClusterCommand) Run() error {
 	cmd.log = logger.New()
-	client := orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), CLICredentialManager(cmd.log))
+	cred := CLICredentialManager(cmd.log)
+
+	client := orchestration.NewClient(cmd.cobraCmd.Context(), GlobalOpts.KEBAPIURL(), cred)
 	ur, err := client.UpgradeCluster(cmd.orchestrationParams)
 	if err != nil {
 		return errors.Wrap(err, "while triggering kyma upgrade")
@@ -62,7 +64,7 @@ func (cmd *UpgradeClusterCommand) Run() error {
 
 	if !cmd.orchestrationParams.DryRun && GlobalOpts.SlackAPIURL() != "" {
 		slack_title := `upgrade cluster`
-		slack_err := SendSlackNotification(slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID)
+		slack_err := SendSlackNotification(slack_title, cmd.cobraCmd, "OrchestrationID:"+ur.OrchestrationID, cred)
 		if slack_err != nil {
 			return errors.Wrap(slack_err, "while sending notification to slack")
 		}

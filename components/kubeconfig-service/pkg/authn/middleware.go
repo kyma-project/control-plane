@@ -71,7 +71,7 @@ func ValidateToken(r *http.Request) (UserInfo, string, int) {
 		errMsg, code = MALFORMED_TOKEN, http.StatusBadRequest
 	} else {
 		var dat map[string]interface{}
-		dat, errMsg, code = parseToken(authHeader[1])
+		dat, errMsg, code = ParseToken(authHeader[1])
 		if dat == nil || reflect.ValueOf(dat).IsNil() {
 			return userInfo, errMsg, code
 		}
@@ -82,13 +82,13 @@ func ValidateToken(r *http.Request) (UserInfo, string, int) {
 		}
 
 		userInfo.Role = role
-		userInfo.ID = extractUserID(dat)
+		userInfo.ID = ExtractUserID(dat)
 		userInfo.Exp = extractExpiredData(dat)
 	}
 	return userInfo, errMsg, code
 }
 
-func extractUserID(dat map[string]interface{}) string {
+func ExtractUserID(dat map[string]interface{}) string {
 	var userID string
 	if dat[login_name] != nil {
 		rawLoginName := fmt.Sprintf("%s", dat[login_name])
@@ -168,10 +168,10 @@ func extractRole(dat map[string]interface{}) (string, string, int) {
 	return role, "", http.StatusOK
 }
 
-func parseToken(jwtToken string) (map[string]interface{}, string, int) {
+func ParseToken(jwtToken string) (map[string]interface{}, string, int) {
 	errMsg, code := "", http.StatusOK
 	var dat map[string]interface{}
-	payload, err := decodePayloadAsRawJSON(jwtToken)
+	payload, err := DecodePayloadAsRawJSON(jwtToken)
 	if err != nil {
 		errMsg, code = DECODE_TOKEN_FAILD, http.StatusBadRequest
 		return dat, errMsg, code
@@ -183,8 +183,8 @@ func parseToken(jwtToken string) (map[string]interface{}, string, int) {
 	return dat, errMsg, code
 }
 
-// decodePayloadAsRawJSON extracts the payload and returns the raw JSON.
-func decodePayloadAsRawJSON(s string) ([]byte, error) {
+// DecodePayloadAsRawJSON extracts the payload and returns the raw JSON.
+func DecodePayloadAsRawJSON(s string) ([]byte, error) {
 	parts := strings.SplitN(s, ".", 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("wants %d segments but got %d segments", 3, len(parts))
