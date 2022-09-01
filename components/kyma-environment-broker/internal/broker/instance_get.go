@@ -36,7 +36,7 @@ func NewGetInstance(cfg Config,
 }
 
 // GetInstance fetches information about a service instance
-//   GET /v2/service_instances/{instance_id}
+// GET /v2/service_instances/{instance_id}
 func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, _ domain.FetchInstanceDetails) (domain.GetInstanceDetailsSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("GetInstance called")
@@ -70,7 +70,7 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 	}
 
 	if b.config.ShowTrialExpireInfo && instance.ServicePlanID == TrialPlanID {
-		spec.Metadata.Labels = ResponseLabelsWithExpireInfo(*op, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel)
+		spec.Metadata.Labels = ResponseLabelsWithExpireInfo(*op, *instance, b.config.URL, b.config.TrialDocsURL, b.config.EnableKubeconfigURLLabel)
 	}
 
 	return spec, nil
