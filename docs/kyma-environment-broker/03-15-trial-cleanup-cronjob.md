@@ -9,7 +9,7 @@ For each instance meeting the criteria, a PATCH request is sent to Kyma Environm
 If the instance is already in the `suspended` state, this instance is just marked as `expired`. 
 
 ### Dry-run mode
-If you need to test your the Job, you can run it in the dry-run mode.
+If you need to test the Job, you can run it in the `dry-run` mode.
 In that mode, the Job only logs the information about the candidate instances (i.e. instances meeting the configured criteria). The instances are not affected.
 
 ## Prerequisites
