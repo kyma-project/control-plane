@@ -14,5 +14,4 @@ spec:
   components:
     - name: "kcp"
       namespace: "kcp-system"
-    - name: "oidc-kubeconfig-service"
-      namespace: "kcp-system"
+      
