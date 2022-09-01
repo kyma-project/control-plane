@@ -24,7 +24,7 @@ const (
 )
 
 type CreateRuntimeWithoutKymaStep struct {
-	operationManager    *process.ProvisionOperationManager
+	operationManager    *process.OperationManager
 	instanceStorage     storage.Instances
 	runtimeStateStorage storage.RuntimeStates
 	provisionerClient   provisioner.Client
@@ -32,7 +32,7 @@ type CreateRuntimeWithoutKymaStep struct {
 
 func NewCreateRuntimeWithoutKymaStep(os storage.Operations, runtimeStorage storage.RuntimeStates, is storage.Instances, cli provisioner.Client) *CreateRuntimeWithoutKymaStep {
 	return &CreateRuntimeWithoutKymaStep{
-		operationManager:    process.NewProvisionOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		instanceStorage:     is,
 		provisionerClient:   cli,
 		runtimeStateStorage: runtimeStorage,
@@ -43,7 +43,7 @@ func (s *CreateRuntimeWithoutKymaStep) Name() string {
 	return "Create_Runtime_Without_Kyma"
 }
 
-func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.RuntimeID != "" {
 		log.Infof("RuntimeID already set %s, skipping", operation.RuntimeID)
 		return operation, 0, nil
@@ -77,7 +77,7 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.ProvisioningOperat
 	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s", *provisionerResponse.RuntimeID)
 
 	repeat := time.Duration(0)
-	operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.ProvisionerOperationID = *provisionerResponse.ID
 		if provisionerResponse.RuntimeID != nil {
 			operation.RuntimeID = *provisionerResponse.RuntimeID
@@ -129,7 +129,7 @@ func (s *CreateRuntimeWithoutKymaStep) updateInstance(id, runtimeID, region stri
 	return nil
 }
 
-func (s *CreateRuntimeWithoutKymaStep) createProvisionInput(operation internal.ProvisioningOperation) (gqlschema.ProvisionRuntimeInput, error) {
+func (s *CreateRuntimeWithoutKymaStep) createProvisionInput(operation internal.Operation) (gqlschema.ProvisionRuntimeInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	operation.InputCreator.SetShootName(operation.ShootName)
 	operation.InputCreator.SetShootDomain(operation.ShootDomain)

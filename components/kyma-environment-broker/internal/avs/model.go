@@ -91,7 +91,7 @@ type BasicEvaluationCreateResponse struct {
 	IdOnTester                 string `json:"id_on_tester"`
 }
 
-func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
+func newBasicEvaluationCreateRequest(operation internal.Operation, evalTypeSpecificConfig ModelConfigurator, url string) (*BasicEvaluationCreateRequest, error) {
 
 	beName, beDescription := generateNameAndDescription(operation, evalTypeSpecificConfig.ProvideSuffix())
 
@@ -116,7 +116,7 @@ func newBasicEvaluationCreateRequest(operation internal.ProvisioningOperation, e
 	}, nil
 }
 
-func generateNameAndDescription(operation internal.ProvisioningOperation, beType string) (string, string) {
+func generateNameAndDescription(operation internal.Operation, beType string) (string, string) {
 	globalAccountID := operation.ProvisioningParameters.ErsContext.GlobalAccountID
 	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
 	instanceID := operation.InstanceID

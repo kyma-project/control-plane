@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -10,12 +11,12 @@ import (
 )
 
 type EnableForTrialPlanStep struct {
-	step Step
+	step process.Step
 }
 
-var _ Step = &EnableForTrialPlanStep{}
+var _ process.Step = &EnableForTrialPlanStep{}
 
-func NewEnableForTrialPlanStep(step Step) EnableForTrialPlanStep {
+func NewEnableForTrialPlanStep(step process.Step) EnableForTrialPlanStep {
 	return EnableForTrialPlanStep{
 		step: step,
 	}
@@ -25,7 +26,7 @@ func (s EnableForTrialPlanStep) Name() string {
 	return s.step.Name()
 }
 
-func (s EnableForTrialPlanStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s EnableForTrialPlanStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if !broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
 		log.Infof("Skipping step %s", s.Name())
 		return operation, 0, nil

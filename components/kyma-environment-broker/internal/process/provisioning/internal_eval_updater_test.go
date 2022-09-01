@@ -25,24 +25,22 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ID:                     operationID,
-				InstanceID:             instanceID,
-				UpdatedAt:              time.Now(),
-				State:                  domain.InProgress,
-				ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
-				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
-					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-					AVSInternalEvaluationDeleted: false,
-					AVSExternalEvaluationDeleted: false,
-				}},
-				InputCreator: newInputCreator(),
-			},
+		operation := internal.Operation{
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			State:                  domain.InProgress,
+			ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+			InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+				AVSInternalEvaluationDeleted: false,
+				AVSExternalEvaluationDeleted: false,
+			}},
+			InputCreator: newInputCreator(),
 		}
 
-		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+		err := memoryStorage.Operations().InsertOperation(operation)
 		assert.NoError(t, err)
 
 		mockOauthServer := newMockAvsOauthServer()
@@ -92,24 +90,22 @@ func TestInternalEvalUpdater_AddTagsToEval(t *testing.T) {
 		// given
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ID:                     operationID,
-				InstanceID:             instanceID,
-				UpdatedAt:              time.Now(),
-				State:                  domain.InProgress,
-				ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
-				InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
-					AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
-					AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
-					AVSInternalEvaluationDeleted: false,
-					AVSExternalEvaluationDeleted: false,
-				}},
-				InputCreator: newInputCreator(),
-			},
+		operation := internal.Operation{
+			ID:                     operationID,
+			InstanceID:             instanceID,
+			UpdatedAt:              time.Now(),
+			State:                  domain.InProgress,
+			ProvisioningParameters: FixProvisioningParameters(broker.AzurePlanID, "westeurope"),
+			InstanceDetails: internal.InstanceDetails{Avs: internal.AvsLifecycleData{
+				AvsEvaluationInternalId:      FixAvsEvaluationInternalId,
+				AVSEvaluationExternalId:      FixAvsEvaluationExternalId,
+				AVSInternalEvaluationDeleted: false,
+				AVSExternalEvaluationDeleted: false,
+			}},
+			InputCreator: newInputCreator(),
 		}
 
-		err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+		err := memoryStorage.Operations().InsertOperation(operation)
 		assert.NoError(t, err)
 
 		mockOauthServer := newMockAvsOauthServer()
