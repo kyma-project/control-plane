@@ -1,43 +1,45 @@
 # Trial Cleanup Job
 
-Trial Cleanup Job is an application that makes SKR instances with trial plan expire if those are 14 days old.
-Expiration means that SKR instance is suspended and `expired` flag is set.
+Trial Cleanup Job is a Job that makes the SKR instances with the trial plan expire if those are 14 days old.
+Expiration means that the SKR instance is suspended and the `expired` flag is set.
 
 ## Details
 
-The job can be run either in dry run mode or in production mode:
+For each instance meeting criteria, a PATCH request is sent to Kyma Environment Broker (KEB). This instance is marked as `expired`, and if it is in the `succeeded` state, the suspension process is started. 
+If the instance is already in the `suspended` state, this instance is only marked as `expired`. 
 
-- In `dry run mode` information about candidate instances (i.e. instances meeting configured criteria) is logged. No changes are made.
-- In `production mode` for each instance meeting criteria PATCH request is sent to KEB. This instance is marked as `expired` and if is in `succeeded` state suspension process is started. 
-In case the instance is already in `suspended` state this instance is only marked as `expired`. 
+### Dry-run mode
+If you need to test your the Job, you can run it in the dry-run mode.
+In that mode, the Job only logs the information about the candidate instances (i.e. instances meeting the configured criteria). No changes are made.
 
 ## Prerequisites
 
-Trial Cleanup requires access to:
-- Database to get the IDs of instances with `trial plan` which are not expired yet. 
-- Kyma Environment Broker to initiate SKR instance suspension.
+The Trial Cleanup Job requires access to:
+- Database, to get the IDs of the instances with `trial` plan which are not expired yet. 
+- KEB to initiate the SKR instance suspension.
 
 ## Configuration
 
-The job is a cronjob with schedule that can be configured in `management-plan-config`. 
-Default settings (every day at 1:15 am) is as follows:
-```  kyma-environment-broker.trialCleanup.schedule: "15 1 * * *"
+The Job is a CronJob with schedule that can be configured as the parameter in `management-plane-config`.
+By default, the CronJob is set to run every day at 1:15 am:
+```yaml  
+kyma-environment-broker.trialCleanup.schedule: "15 1 * * *"
 ```
 
-Use the following environment variables to configure the application:
+Use the following environment variables to configure the Job:
 
-| Environment variable | Description                                                                                                                   | Default value                            |
-|---|-------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| **APP_DRY_RUN** | Specifies the mode - dry run only logs candidate instances                                                                    | `true`                                   |
-| **APP_EXPIRATION_PERIOD** | Specifies expiration period - instances with `trial plan` and older than expiration period are made expired                   | `336h`                                    |
-| **APP_DATABASE_USER** | Specifies the username for the database.                                                                                      | `postgres`                               |
-| **APP_DATABASE_PASSWORD** | Specifies the user password for the database.                                                                                 | `password`                               |
-| **APP_DATABASE_HOST** | Specifies the host of the database.                                                                                           | `localhost`                              |
-| **APP_DATABASE_PORT** | Specifies the port for the database.                                                                                          | `5432`                                   |
-| **APP_DATABASE_NAME** | Specifies the name of the database.                                                                                           | `provisioner`                            |
-| **APP_DATABASE_SSL** | Activates the SSL mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html). | `disable`                                |
-| **APP_BROKER_URL**  | Specifies the Kyma Environment Broker URL.                                                                                    | `https://kyma-env-broker.kyma.local`     |
-| **APP_BROKER_TOKEN_URL** | Specifies the Kyma Environment Broker OAuth token endpoint.                                                                   | `https://oauth.2kyma.local/oauth2/token` |
-| **APP_BROKER_CLIENT_ID** | Specifies the username for the OAuth2 authentication in KEB.                                                                  | None                                     |
-| **APP_BROKER_CLIENT_SECRET** | Specifies the password for the OAuth2 authentication in KEB.                                                                  | None                                     |
-| **APP_BROKER_SCOPE** | Specifies the scope for the OAuth2 authentication in KEB.                                                                     | None                                     |
+| Environment variable | Description                                                                                                                    | Default value                            |
+|---|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| **APP_DRY_RUN** | Specifies whether to run in the [`dry-run` mode](#details). dry run only logs candidate instances                              | `true`                                   |
+| **APP_EXPIRATION_PERIOD** | Specifies the the [expiration period](#trial-cleanup-job) for the instances with the `trial` plan                              | `336h`                                    |
+| **APP_DATABASE_USER** | Specifies the username for the database.                                                                                       | `postgres`                               |
+| **APP_DATABASE_PASSWORD** | Specifies the user password for the database.                                                                                  | `password`                               |
+| **APP_DATABASE_HOST** | Specifies the host of the database.                                                                                            | `localhost`                              |
+| **APP_DATABASE_PORT** | Specifies the port for the database.                                                                                           | `5432`                                   |
+| **APP_DATABASE_NAME** | Specifies the name of the database.                                                                                            | `provisioner`                            |
+| **APP_DATABASE_SSL** | Activates the SSL mode for PostgreSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html). | `disable`                                |
+| **APP_BROKER_URL**  | Specifies the KEB URL.                                                                                                         | `https://kyma-env-broker.kyma.local`     |
+| **APP_BROKER_TOKEN_URL** | Specifies the KEB OAuth token endpoint.                                                                                        | `https://oauth.2kyma.local/oauth2/token` |
+| **APP_BROKER_CLIENT_ID** | Specifies the username for the OAuth2 authentication in KEB.                                                                   | None                                     |
+| **APP_BROKER_CLIENT_SECRET** | Specifies the password for the OAuth2 authentication in KEB.                                                                   | None                                     |
+| **APP_BROKER_SCOPE** | Specifies the scope for the OAuth2 authentication in KEB.                                                                      | None                                     |
