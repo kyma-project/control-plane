@@ -57,7 +57,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -103,7 +102,7 @@ func (s *BrokerSuiteTest) TearDown() {
 
 func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	ctx := context.Background()
-	sch := scheme.Scheme
+	sch := internal.NewSchemeForTests()
 	apiextensionsv1.AddToScheme(sch)
 	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
 	additionalKymaVersions = append(additionalKymaVersions, version...)
@@ -451,13 +450,16 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 	var op *internal.UpdatingOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetUpdatingOperationByID(operationID)
-		if op.RuntimeID != "" {
-			return true, nil
+		if op.RuntimeID == "" {
+			return false, nil
 		}
-		return false, nil
+		if op.ProvisionerOperationID == "" {
+			return false, nil
+		}
+		return true, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.RuntimeID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.Operation.ID)
 }
 
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
@@ -534,36 +536,6 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 	assert.NoError(s.t, err)
 }
 
-func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisionerAndReconciler(operationID string) {
-	var updatingOp *internal.UpdatingOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
-		if err != nil {
-			return false, nil
-		}
-		if op.ProvisionerOperationID != "" {
-			updatingOp = op
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err)
-
-	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
-		if err != nil {
-			return false, err
-		}
-		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err)
-}
-
 func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
 
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
@@ -597,38 +569,6 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-}
-
-func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID string) {
-	var updatingOp *internal.UpdatingOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
-		if err != nil {
-			return false, nil
-		}
-		if op.ProvisionerOperationID != "" {
-			updatingOp = op
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err)
-
-	var state *reconcilerApi.HTTPClusterResponse
-	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
-		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
-			if err != nil {
-				return false, err
-			}
-			if state.Cluster != "" {
-				s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, ccv, reconcilerApi.StatusReady)
-				return true, nil
-			}
-			return false, nil
-		})
-		assert.NoError(s.t, err)
-	}
 }
 
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
@@ -939,6 +879,12 @@ func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKy
 	}
 
 	assert.Equal(s.t, expectedKymaConfig, clusterConfig.KymaConfig)
+}
+
+func (s *BrokerSuiteTest) AssertComponent(a, b reconcilerApi.Component) {
+	sort.Slice(a.Configuration, func(i, j int) bool { return a.Configuration[i].Key < a.Configuration[j].Key })
+	sort.Slice(b.Configuration, func(i, j int) bool { return b.Configuration[i].Key < b.Configuration[j].Key })
+	assert.Equal(s.t, a, b)
 }
 
 func (s *BrokerSuiteTest) AssertClusterConfigWithKubeconfig(id string) {

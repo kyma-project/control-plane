@@ -3,6 +3,7 @@ package postsql
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -375,6 +376,26 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, fil
 		len(ops),
 		totalCount,
 		nil
+}
+
+func (r readSession) ListOperationsInTimeRange(from, to time.Time) ([]dbmodel.OperationDTO, error) {
+	var ops []dbmodel.OperationDTO
+	condition := dbr.Or(
+		dbr.And(dbr.Gte("created_at", from), dbr.Lte("created_at", to)),
+		dbr.And(dbr.Gte("updated_at", from), dbr.Lte("updated_at", to)),
+	)
+
+	stmt := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(condition)
+
+	_, err := stmt.Load(&ops)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+
+	return ops, nil
 }
 
 func (r readSession) GetRuntimeStateByOperationID(operationID string) (dbmodel.RuntimeStateDTO, dberr.Error) {

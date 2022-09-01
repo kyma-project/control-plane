@@ -63,10 +63,6 @@ mutation {
             namespace: "kyma-system"
           }
           {
-            component: "rafter"
-            namespace: "kyma-system"
-          }
-          {
             component: "service-catalog"
             namespace: "kyma-system"
           }

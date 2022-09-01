@@ -21,7 +21,7 @@ import (
 
 const attachmentName = "kubeconfig.yaml"
 
-//go:generate mockery -name=KcBuilder -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=KcBuilder --output=automock --outpkg=automock --case=underscore
 
 type KcBuilder interface {
 	Build(*internal.Instance) (string, error)

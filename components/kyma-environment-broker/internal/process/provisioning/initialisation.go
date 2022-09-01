@@ -18,7 +18,7 @@ const (
 	grafanaURLLabel = "operator_grafanaUrl"
 )
 
-//go:generate mockery -name=DirectorClient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 
 type DirectorClient interface {
 	SetLabel(accountID, runtimeID, key, value string) error
@@ -31,22 +31,14 @@ type KymaVersionConfigurator interface {
 type InitialisationStep struct {
 	operationManager       *process.ProvisionOperationManager
 	inputBuilder           input.CreatorForPlan
-	operationTimeout       time.Duration
-	provisioningTimeout    time.Duration
 	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
 	instanceStorage        storage.Instances
 }
 
-func NewInitialisationStep(os storage.Operations, is storage.Instances,
-	b input.CreatorForPlan,
-	provisioningTimeout time.Duration,
-	operationTimeout time.Duration,
-	rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
+func NewInitialisationStep(os storage.Operations, is storage.Instances, b input.CreatorForPlan, rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
 	return &InitialisationStep{
 		operationManager:       process.NewProvisionOperationManager(os),
 		inputBuilder:           b,
-		operationTimeout:       operationTimeout,
-		provisioningTimeout:    provisioningTimeout,
 		runtimeVerConfigurator: rvc,
 		instanceStorage:        is,
 	}
@@ -70,8 +62,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	switch {
 	case err == nil:
 		operation.InputCreator = creator
-		internal.DisableServiceManagementComponents(operation.InputCreator)
-
+		operation.InputCreator.DisableOptionalComponent(internal.BTPOperatorComponentName)
 		err := s.updateInstance(operation.InstanceID, creator.Provider())
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, "error while creating provisioning input creator", err, 1*time.Second, 5*time.Second, log)

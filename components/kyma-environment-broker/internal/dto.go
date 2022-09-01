@@ -220,7 +220,6 @@ type ERSContext struct {
 	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
-	IsMigration           bool                               `json:"isMigration"`
 	CommercialModel       *string                            `json:"commercial_model,omitempty"`
 	LicenseType           *string                            `json:"license_type,omitempty"`
 	Origin                *string                            `json:"origin,omitempty"`
@@ -228,7 +227,7 @@ type ERSContext struct {
 	Region                *string                            `json:"region,omitempty"`
 }
 
-func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext {
+func InheritMissingERSContext(currentOperation, previousOperation ERSContext) ERSContext {
 	if currentOperation.SMOperatorCredentials == nil {
 		currentOperation.SMOperatorCredentials = previousOperation.SMOperatorCredentials
 	}
@@ -250,6 +249,28 @@ func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext
 	return currentOperation
 }
 
+func UpdateInstanceERSContext(instance, operation ERSContext) ERSContext {
+	if operation.SMOperatorCredentials != nil {
+		instance.SMOperatorCredentials = operation.SMOperatorCredentials
+	}
+	if operation.CommercialModel != nil {
+		instance.CommercialModel = operation.CommercialModel
+	}
+	if operation.LicenseType != nil {
+		instance.LicenseType = operation.LicenseType
+	}
+	if operation.Origin != nil {
+		instance.Origin = operation.Origin
+	}
+	if operation.Platform != nil {
+		instance.Platform = operation.Platform
+	}
+	if operation.Region != nil {
+		instance.Region = operation.Region
+	}
+	return instance
+}
+
 func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
 	// the provisioner and gardener API expects the feature to be enabled by disablement flag
 	// it feels counterintuitive but there is currently no plan in changing it, therefore
@@ -267,6 +288,9 @@ func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
 }
 
 func (e ERSContext) ERSUpdate() bool {
+	if e.SMOperatorCredentials != nil {
+		return true
+	}
 	if e.CommercialModel != nil {
 		return true
 	}

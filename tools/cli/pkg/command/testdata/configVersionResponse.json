@@ -19,13 +19,6 @@
         ],
         "namespace": "kyma-system",
         "version": ""
-      },
-      {
-        "URL": "",
-        "component": "rafter",
-        "configuration": [],
-        "namespace": "kyma-system",
-        "version": ""
       }
     ],
     "profile": "Evaluation",

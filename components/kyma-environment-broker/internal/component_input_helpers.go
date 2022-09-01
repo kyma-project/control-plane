@@ -20,12 +20,7 @@ import (
 )
 
 const (
-	SCMigrationComponentName          = "sc-migration"
-	BTPOperatorComponentName          = "btp-operator"
-	HelmBrokerComponentName           = "helm-broker"
-	ServiceCatalogComponentName       = "service-catalog"
-	ServiceCatalogAddonsComponentName = "service-catalog-addons"
-	ServiceManagerComponentName       = "service-manager-proxy"
+	BTPOperatorComponentName = "btp-operator"
 
 	// BTP Operator overrides keys
 	BTPOperatorClientID     = "manager.secret.clientid"
@@ -39,15 +34,6 @@ const (
 var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID}
 
 type ClusterIDGetter func(string) (string, error)
-
-func DisableServiceManagementComponents(r ProvisionerInputCreator) {
-	r.DisableOptionalComponent(SCMigrationComponentName)
-	r.DisableOptionalComponent(HelmBrokerComponentName)
-	r.DisableOptionalComponent(ServiceCatalogComponentName)
-	r.DisableOptionalComponent(ServiceCatalogAddonsComponentName)
-	r.DisableOptionalComponent(ServiceManagerComponentName)
-	r.DisableOptionalComponent(BTPOperatorComponentName)
-}
 
 func GetBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
