@@ -15,12 +15,12 @@ In that mode, the Job only logs the information about the candidate instances (i
 ## Prerequisites
 
 The Trial Cleanup Job requires access to:
-- KEB Database, to get the IDs of the instances with `trial` plan which are not expired yet. 
+- KEB database, to get the IDs of the instances with `trial` plan which are not expired yet. 
 - KEB, to initiate the SKR instance suspension.
 
 ## Configuration
 
-The Job is a CronJob with a schedule that can be [configured](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) as a parameter in `management-plane-config` repository.
+The Job is a CronJob with a schedule that can be [configured](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) as a parameter in the `management-plane-config` repository.
 By default, the CronJob is set to run every day at 1:15 am:
 ```yaml  
 kyma-environment-broker.trialCleanup.schedule: "15 1 * * *"
