@@ -14,9 +14,9 @@ const (
 	trialExpiryDetailsKey = "Trial expiration details"
 	trialDocsKey          = "Trial documentation"
 	expireDuration        = time.Hour * 24 * 14
-	notExpiredInfoFormat  = "your cluster will expire %s."
-	expiredInfoFormat     = "your cluster has expired, it is not operational and the link to the dashboard is no longer valid." +
-		" To create a new trial cluster, follow the link to the trial documentation."
+	notExpiredInfoFormat  = "Your cluster expires %s."
+	expiredInfoFormat     = "Your cluster has expired. It is not operational and the link to the Dashboard is no longer valid." +
+		" To continue using Kyma, you must create a new cluster. To learn how, follow the link to the trial documentation."
 )
 
 func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, enableKubeconfigLabel bool) map[string]string {
@@ -50,7 +50,7 @@ func ResponseLabelsWithExpireInfo(op internal.ProvisioningOperation, instance in
 		case daysLeft == 0:
 			labels[trialExpiryDetailsKey] = fmt.Sprintf(notExpiredInfoFormat, "today")
 		case daysLeft == 1:
-			labels[trialExpiryDetailsKey] = fmt.Sprintf(notExpiredInfoFormat, "in 1 day")
+			labels[trialExpiryDetailsKey] = fmt.Sprintf(notExpiredInfoFormat, "tomorrow")
 		default:
 			daysLeftNotice := fmt.Sprintf("in %2.f days", daysLeft)
 			labels[trialExpiryDetailsKey] = fmt.Sprintf(notExpiredInfoFormat, daysLeftNotice)
