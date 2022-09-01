@@ -15,7 +15,7 @@ In that mode, the Job only logs the information about the candidate instances (i
 ## Prerequisites
 
 The Trial Cleanup Job requires access to:
-- Database, to get the IDs of the instances with `trial` plan which are not expired yet. 
+- KEB Database, to get the IDs of the instances with `trial` plan which are not expired yet. 
 - KEB, to initiate the SKR instance suspension.
 
 ## Configuration
@@ -30,8 +30,8 @@ Use the following environment variables to configure the Job:
 
 | Environment variable | Description                                                                                                                    | Default value                            |
 |---|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| **APP_DRY_RUN** | Specifies whether to run the Job in the [`dry-run` mode](#details). dry run only logs candidate instances                      | `true`                                   |
-| **APP_EXPIRATION_PERIOD** | Specifies the the [expiration period](#trial-cleanup-job) for the instances with the `trial` plan                              | `336h`                                    |
+| **APP_DRY_RUN** | Specifies whether to run the Job in the [`dry-run` mode](#details).                                                            | `true`                                   |
+| **APP_EXPIRATION_PERIOD** | Specifies the the [expiration period](#trial-cleanup-job) for the instances with the `trial` plan.                             | `336h`                                    |
 | **APP_DATABASE_USER** | Specifies the username for the database.                                                                                       | `postgres`                               |
 | **APP_DATABASE_PASSWORD** | Specifies the user password for the database.                                                                                  | `password`                               |
 | **APP_DATABASE_HOST** | Specifies the host of the database.                                                                                            | `localhost`                              |
