@@ -2,7 +2,7 @@
 
 Kyma Environment Broker allows you to configure operations that you can run on a Runtime. Each operation consists of several steps and each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
 
-- Return an error, which interrupts the entire process.
+- Return an error, which interrupts the entire process, or
 - Repeat the entire operation after the specified period.
 
 > **NOTE:** It's important to set lower timeouts for the Kyma installation in the Runtime Provisioner.
