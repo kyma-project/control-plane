@@ -22,8 +22,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=Queue -output=automock -outpkg=automock -case=underscore
-//go:generate mockery -name=PlanValidator -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Queue --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=PlanValidator --output=automock --outpkg=automock --case=underscore
 
 type (
 	Queue interface {

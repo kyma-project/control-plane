@@ -221,7 +221,7 @@ type Operation struct {
 	// Last runtime state payload
 	LastRuntimeState RuntimeState `json:"-"`
 
-	// Flag used by the steps regarding Service Catalog migration
+	// Flag used by the steps regarding BTP-Operator credentials update
 	// denotes whether the payload to reconciler differs from last runtime state
 	RequiresReconcilerUpdate bool `json:"-"`
 
@@ -282,7 +282,6 @@ type InstanceDetails struct {
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
 
-	SCMigrationTriggered    bool   `json:"migration_triggered"`
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 }
 

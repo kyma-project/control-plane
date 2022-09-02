@@ -134,16 +134,6 @@
         ]
       },
       {
-        "component": "rafter",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-            "key": "global.domainName",
-            "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "helm-broker",
         "namespace": "kyma-system",
         "configuration": [

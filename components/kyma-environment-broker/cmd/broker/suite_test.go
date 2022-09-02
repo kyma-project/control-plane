@@ -987,10 +987,9 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                defaultKymaVer,
-		EnableOnDemandVersion:      true,
-		UpdateProcessingEnabled:    true,
-		EnableBTPOperatorMigration: true,
+		KymaVersion:             defaultKymaVer,
+		EnableOnDemandVersion:   true,
+		UpdateProcessingEnabled: true,
 		Broker: broker.Config{
 			EnablePlans: []string{"azure", "trial", "aws"},
 		},

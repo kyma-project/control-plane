@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery -name=InstanceFinder -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=InstanceFinder --output=automock --outpkg=automock --case=underscore
 
 type (
 	InstanceFinder interface {

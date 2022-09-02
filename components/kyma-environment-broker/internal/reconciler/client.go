@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 
 type Client interface {
 	ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error)

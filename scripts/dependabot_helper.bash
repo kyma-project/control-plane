@@ -11,7 +11,9 @@ set -xeuo pipefail
 DIR=$(dirname "${BASH_SOURCE[0]}")/..
 
 # list open PRs from dependabot touching KEB go modules
-prs=( $(gh pr list | awk '/gomod\(deps\).*kyma-environment-broker/{print($1)}') )
+prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | startswith("gomod(deps)")) | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
+body="/lgtm
+/approve"
 
 # iterate over each PR, run go mod tidy under the KCP CLI dir, commit, push
 for pr in "${prs[@]}"; do
@@ -22,7 +24,8 @@ for pr in "${prs[@]}"; do
         if [[ -n "$(git diff)" ]]; then
             git commit -am "KCP CLI go mod tidy"
             git push
-            gh pr review "${pr}" --approve --body "/lgtm\n/approve"
+            sleep 5
+            gh pr review "${pr}" --approve --body "${body}"
         fi
     )
 done

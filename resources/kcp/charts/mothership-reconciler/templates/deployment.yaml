@@ -127,23 +127,22 @@ spec:
         {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
       - name: fluentbit-sidecar
         image: {{ .Values.global.mothership_reconciler.auditlog.image }}:{{ .Values.global.mothership_reconciler.auditlog.tag }}
-        command:
-        - sh
-        - -c
-        - |
-          # this is safe to be empty, i.e. no port specified in the URL
-          export PORT=$(echo $APP_AUDITLOG_URL | cut -d/ -f 3 | cut -d: -f2)
-          export HOST=$(echo $APP_AUDITLOG_URL | cut -d/ -f 3 | cut -d: -f1)
-          export URI=$(echo $APP_AUDITLOG_URL | cut -d/ -f4-)
-          /fluent-bit/bin/fluent-bit \
-            -e /fluent-bit/lib/flb-out_sequentialhttp.so \
-            -c /fluent-bit/etc/fluent-bit.conf
         env:
-        - name: APP_AUDITLOG_URL
+        - name: URI
           valueFrom:
             configMapKeyRef:
+              key: auditlog-uri
               name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
-              key: auditlog-url-basic
+        - name: HOST
+          valueFrom:
+            configMapKeyRef:
+              key: auditlog-host
+              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              key: auditlog-port
+              name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
         - name: APP_AUDITLOG_USER
           valueFrom:
             secretKeyRef:

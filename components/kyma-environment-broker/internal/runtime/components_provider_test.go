@@ -91,10 +91,6 @@ func throwError(message string) error {
 func fixConfigForPlan() *internal.ConfigForPlan {
 	return &internal.ConfigForPlan{AdditionalComponents: []internal.KymaComponent{
 		{
-			Name:      "service-manager-proxy",
-			Namespace: "kyma-system",
-		},
-		{
 			Name:      "compass-runtime-agent",
 			Namespace: "compass-system",
 		},

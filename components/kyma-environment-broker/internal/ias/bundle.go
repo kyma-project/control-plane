@@ -22,7 +22,7 @@ type (
 	}
 )
 
-//go:generate mockery -name=IASCLient -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=IASCLient --output=automock --outpkg=automock --case=underscore
 type IASCLient interface {
 	GetCompany() (*Company, error)
 	CreateServiceProvider(string, string) error

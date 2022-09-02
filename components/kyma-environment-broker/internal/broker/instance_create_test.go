@@ -2,6 +2,7 @@ package broker_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,12 +35,13 @@ const (
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
 	userID          = "test@test.pl"
 
-	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
-	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
-	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
-	clusterName      = "cluster-testing"
-	region           = "eu"
-	brokerURL        = "example.com"
+	instanceID         = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
+	otherInstanceID    = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
+	existOperationID   = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
+	clusterName        = "cluster-testing"
+	region             = "eu"
+	brokerURL          = "example.com"
+	kubeconfigContents = "apiVersion: v1\nkind: Config"
 )
 
 var enabledDashboardConfig dashboard.Config = dashboard.Config{Enabled: true, LandscapeURL: "https://dashboard.example.com"}
@@ -104,6 +106,83 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
 		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
 		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
+
+		assert.Equal(t, fixDNSProviders(), operation.ShootDNSProviders)
+
+		instance, err := memoryStorage.Instances().GetByID(instanceID)
+		require.NoError(t, err)
+
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
+		assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
+		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
+	})
+
+	t.Run("new operation with kubeconfig will be created", func(t *testing.T) {
+		// given
+		// #setup memory storage
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+			enabledDashboardConfig,
+		)
+
+		// when
+		kubeconfigEncoded := base64.StdEncoding.EncodeToString([]byte(kubeconfigContents))
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s", "kubeconfig": "%s"}`, clusterName, kubeconfigEncoded)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.NoError(t, err)
+		// UUID with version 4 and variant 1 i.e RFC. 4122/DCE
+		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
+		assert.NotEqual(t, instanceID, response.OperationData)
+		assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
+		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
+		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
+
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+		assert.Equal(t, operation.InstanceID, instanceID)
+
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
+
+		kubeconfigParameter, err := base64.StdEncoding.DecodeString(operation.ProvisioningParameters.Parameters.Kubeconfig)
+		require.NoError(t, err)
+		assert.Equal(t, kubeconfigContents, string(kubeconfigParameter))
 
 		assert.Equal(t, fixDNSProviders(), operation.ShootDNSProviders)
 
