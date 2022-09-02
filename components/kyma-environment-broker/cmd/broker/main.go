@@ -636,7 +636,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 	provisioningSteps := []struct {
 		disabled  bool
 		stage     string
-		step      provisioning.Step
+		step      process.Step
 		condition process.StepCondition
 	}{
 		{

@@ -74,7 +74,7 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		log.Errorf("call to Provisioner failed: %s", err)
 		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", err, log)
 	}
-	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s", *provisionerResponse.RuntimeID)
+	log.Infof("Provisioning runtime in the Provisioner started, RuntimeID=%s, provisioner operation=%s", *provisionerResponse.RuntimeID, *provisionerResponse.ID)
 
 	repeat := time.Duration(0)
 	operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
