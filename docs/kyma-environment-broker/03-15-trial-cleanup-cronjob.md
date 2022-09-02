@@ -15,7 +15,7 @@ In that mode, the Job only logs the information about the candidate instances (i
 ## Prerequisites
 
 The Trial Cleanup Job requires access to:
-- KEB database, to get the IDs of the instances with `trial` plan which are not expired yet. 
+- KEB database, to get the IDs of the instances with the `trial` plan which are not expired yet. 
 - KEB, to initiate the SKR instance suspension.
 
 ## Configuration
