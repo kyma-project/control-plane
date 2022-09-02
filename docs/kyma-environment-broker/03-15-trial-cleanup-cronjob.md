@@ -8,8 +8,8 @@ Expiration means that the SKR instance is suspended and the `expired` flag is se
 For each instance meeting the criteria, a PATCH request is sent to Kyma Environment Broker (KEB). This instance is marked as `expired`, and if it is in the `succeeded` state, the suspension process is started. 
 If the instance is already in the `suspended` state, this instance is just marked as `expired`. 
 
-
 ### Dry-run mode
+
 If you need to test the Job, you can run it in the `dry-run` mode.
 In that mode, the Job only logs the information about the candidate instances (i.e. instances meeting the configured criteria). The instances are not affected.
 
