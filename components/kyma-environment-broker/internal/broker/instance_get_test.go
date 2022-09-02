@@ -94,9 +94,10 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	cfg := broker.Config{
-		URL:                      "https://test-broker.local",
-		EnableKubeconfigURLLabel: true,
-		ShowTrialExpireInfo:      true,
+		URL:                               "https://test-broker.local",
+		EnableKubeconfigURLLabel:          true,
+		ShowTrialExpireInfo:               true,
+		SubaccountIDToShowTrialExpireInfo: "test-saID",
 	}
 
 	const (
@@ -106,6 +107,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	op := fixture.FixProvisioningOperation(operationID, instanceID)
 
 	instance := fixture.FixInstance(instanceID)
+	instance.SubAccountID = cfg.SubaccountIDToShowTrialExpireInfo
 	instance.ServicePlanID = broker.TrialPlanID
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)

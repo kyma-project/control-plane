@@ -69,7 +69,7 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		},
 	}
 
-	if b.config.ShowTrialExpireInfo && instance.ServicePlanID == TrialPlanID {
+	if b.config.ShowTrialExpireInfo && instance.ServicePlanID == TrialPlanID && instance.SubAccountID == b.config.SubaccountIDToShowTrialExpireInfo {
 		spec.Metadata.Labels = ResponseLabelsWithExpireInfo(*op, *instance, b.config.URL, b.config.TrialDocsURL, b.config.EnableKubeconfigURLLabel)
 	}
 
