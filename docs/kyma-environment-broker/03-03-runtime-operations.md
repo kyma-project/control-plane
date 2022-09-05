@@ -58,24 +58,24 @@ Each upgrade step is responsible for a separate part of upgrading Runtime depend
 
 The upgrade process contains the following steps:
 
-| Step                                   | Description                                                                        | Owner            |
-|----------------------------------------|------------------------------------------------------------------------------------|------------------|
-| Check_Cluster_Configuration            | Checks if the cluster configuration is applied                                     | Team Gopher      |
-| Get_Kubeconfig                         | Gets the kubeconfig file.                                                          | Team Gopher      |
-| BTPOperatorOverrides                   | Configures required configuration for BTP (credentials).                           | Team Gopher      |
-| Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.  | Team Gopher      |
-| BusolaMigratorOverrides                | Sets configuration for Busola.                                                     | Team Hasselhoff  |
-| Send_Notification                      | -                                                                                  | Team SRE         |
-| Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                 | Team Gopher      |
+| Step                                   | Description                                                                                         | Owner            |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------|------------------|
+| Check_Cluster_Configuration            | Checks if the cluster configuration is applied                                                      | Team Gopher      |
+| Get_Kubeconfig                         | Gets the kubeconfig file.                                                                           | Team Gopher      |
+| BTPOperatorOverrides                   | Configures required configuration for BTP (credentials).                                            | Team Gopher      |
+| Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                   | Team Gopher      |
+| BusolaMigratorOverrides                | Sets configuration for Busola.                                                                      | Team Hasselhoff  |
+| Send_Notification                      | Notify customers via SPC whenever an orchestration is scheduled, triggered, completed or cancelled. | Team SRE         |
+| Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                  | Team Gopher      |
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
 
 ## Upgrade Cluster
 
-| Step                          | Description                                    |
-|-------------------------------|------------------------------------------------|
-| Send_Notification             |                                                |
-| Upgrade_Cluster               | Sends to provisoner changed cluster parameters |
+| Step                          | Description                                                                                         |
+|-------------------------------|-----------------------------------------------------------------------------------------------------|
+| Send_Notification             | Notify customers via SPC whenever an orchestration is scheduled, triggered, completed or cancelled. |
+| Upgrade_Cluster               | Sends to provisoner changed cluster parameters                                                      |
 
 ## Update 
 
