@@ -3,7 +3,6 @@ package internal
 import (
 	"database/sql"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	log "github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
