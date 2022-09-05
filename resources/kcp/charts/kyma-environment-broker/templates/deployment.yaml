@@ -75,7 +75,7 @@ spec:
               value: "{{ .Values.includeAdditionalParamsInSchema }}"
             - name: APP_BROKER_SHOW_TRIAL_EXPIRE_INFO
               value: "{{ .Values.showTrialExpireInfo }}"
-            - name: APP_BROKER_SUBACCOUNTID_TO_SHOW_TRIAL_EXPIRE_INFO
+            - name: APP_BROKER_SUBACCOUNT_ID_TO_SHOW_TRIAL_EXPIRE_INFO
               value: "{{ .Values.subaccountIDToShowTrialExpireInfo }}"
             - name: APP_BROKER_TRIAL_DOCS_URL
               value: "{{ .Values.trialDocsURL }}"
