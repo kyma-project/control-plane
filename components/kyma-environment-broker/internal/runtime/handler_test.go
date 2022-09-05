@@ -305,6 +305,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testID1,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
@@ -315,6 +316,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now().Add(1 * time.Hour),
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testID1,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 
@@ -384,6 +386,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testInstance1.InstanceID,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
@@ -395,6 +398,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now().Add(1 * time.Hour),
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testInstance1.InstanceID,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
