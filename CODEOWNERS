@@ -8,7 +8,7 @@
 * @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @hanngos @tillknuesting
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar  @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @jaroslaw-pieszka
+/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar  @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @jaroslaw-pieszka
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting @ebensom
@@ -39,21 +39,21 @@
 /tests/e2e/provisioning @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar  @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar  @pxsalehi @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @ebensom @life0215 @lumi017 @AdrianPei @lauraanddolay
-/resources/oidc-kubeconfig-service  @ebensom @life0215 @lumi017 @AdrianPei @lauraanddolay
+/components/kubeconfig-service @ebensom @lumi017 @AdrianPei @lauraanddolay
+/resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @lauraanddolay
 
 # KCP CLI
-/tools/cli @ebensom @life0215 @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
+/tools/cli @ebensom @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
 
 # reconciler
 /components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
 
 # All .md files
-*.md @klaudiagrz @mmitoraj @majakurcius @NHingerl @grego952
+*.md @mmitoraj @majakurcius @NHingerl @grego952
 
 # Owners of the .kyma-project-io folder
 /.kyma-project-io/ @m00g3n @pPrecel @dbadura @kwiatekus @cortey
