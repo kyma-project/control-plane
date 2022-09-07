@@ -39,7 +39,7 @@ type Config struct {
 	EnableKubeconfigURLLabel                bool   `envconfig:"default=false"`
 	IncludeAdditionalParamsInSchema         bool   `envconfig:"default=false"`
 	ShowTrialExpirationInfo                 bool   `envconfig:"default=false"`
-	SubaccountsIDsToShowTrialExpirationInfo string `envconfig:"default="`
+	SubaccountsIdsToShowTrialExpirationInfo string `envconfig:"default="`
 	TrialDocsURL                            string `envconfig:"default="`
 }
 

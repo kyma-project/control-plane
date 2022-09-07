@@ -97,7 +97,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 		URL:                                     "https://test-broker.local",
 		EnableKubeconfigURLLabel:                true,
 		ShowTrialExpirationInfo:                 true,
-		SubaccountsIDsToShowTrialExpirationInfo: "test-saID",
+		SubaccountsIdsToShowTrialExpirationInfo: "test-saID",
 	}
 
 	const (
@@ -107,7 +107,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	op := fixture.FixProvisioningOperation(operationID, instanceID)
 
 	instance := fixture.FixInstance(instanceID)
-	instance.SubAccountID = cfg.SubaccountsIDsToShowTrialExpirationInfo
+	instance.SubAccountID = cfg.SubaccountsIdsToShowTrialExpirationInfo
 	instance.ServicePlanID = broker.TrialPlanID
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
@@ -140,7 +140,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetailsAllSubaccountsIDs(t 
 		URL:                                     "https://test-broker.local",
 		EnableKubeconfigURLLabel:                true,
 		ShowTrialExpirationInfo:                 true,
-		SubaccountsIDsToShowTrialExpirationInfo: "all",
+		SubaccountsIdsToShowTrialExpirationInfo: "all",
 	}
 
 	const (
@@ -156,7 +156,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetailsAllSubaccountsIDs(t 
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
 
-	err := st.Operations().InsertProvisioningOperation(op)
+	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
 
 	err = st.Instances().Insert(instance)
@@ -183,7 +183,7 @@ func TestGetEndpoint_GetExpiredInstanceWithoutExpirationInfo(t *testing.T) {
 		URL:                                     "https://test-broker.local",
 		EnableKubeconfigURLLabel:                true,
 		ShowTrialExpirationInfo:                 true,
-		SubaccountsIDsToShowTrialExpirationInfo: "subaccount-id1,subaccount-id2",
+		SubaccountsIdsToShowTrialExpirationInfo: "subaccount-id1,subaccount-id2",
 	}
 
 	const (
@@ -199,7 +199,7 @@ func TestGetEndpoint_GetExpiredInstanceWithoutExpirationInfo(t *testing.T) {
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
 
-	err := st.Operations().InsertProvisioningOperation(op)
+	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
 
 	err = st.Instances().Insert(instance)
