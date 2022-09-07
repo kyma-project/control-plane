@@ -32,7 +32,7 @@ func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instanc
 	return responseLabels
 }
 
-func ResponseLabelsWithExpireInfo(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, trialDocsURL string, enableKubeconfigLabel bool) map[string]string {
+func ResponseLabelsWithExpirationInfo(op internal.ProvisioningOperation, instance internal.Instance, brokerURL string, trialDocsURL string, enableKubeconfigLabel bool) map[string]string {
 	labels := ResponseLabels(op, instance, brokerURL, enableKubeconfigLabel)
 
 	expireTime := instance.CreatedAt.Add(expireDuration)

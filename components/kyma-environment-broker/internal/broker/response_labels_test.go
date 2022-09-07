@@ -50,7 +50,7 @@ func TestResponseLabels(t *testing.T) {
 		instance := fixture.FixInstance("instanceID")
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)
@@ -70,7 +70,7 @@ func TestResponseLabels(t *testing.T) {
 		expectedMsg := fmt.Sprintf(notExpiredInfoFormat, "today")
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)
@@ -91,7 +91,7 @@ func TestResponseLabels(t *testing.T) {
 		instance.ExpiredAt = &expiryDate
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)

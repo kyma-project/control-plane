@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -12,6 +13,8 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 )
+
+const allSubaccountsIDs = "all"
 
 type GetInstanceEndpoint struct {
 	config            Config
@@ -69,8 +72,11 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		},
 	}
 
-	if b.config.ShowTrialExpireInfo && instance.ServicePlanID == TrialPlanID && instance.SubAccountID == b.config.SubaccountIDToShowTrialExpireInfo {
-		spec.Metadata.Labels = ResponseLabelsWithExpireInfo(*op, *instance, b.config.URL, b.config.TrialDocsURL, b.config.EnableKubeconfigURLLabel)
+	if b.config.ShowTrialExpirationInfo &&
+		instance.ServicePlanID == TrialPlanID &&
+		(b.config.SubaccountsIDsToShowTrialExpirationInfo == allSubaccountsIDs ||
+			strings.Contains(b.config.SubaccountsIDsToShowTrialExpirationInfo, instance.SubAccountID)) {
+		spec.Metadata.Labels = ResponseLabelsWithExpirationInfo(*op, *instance, b.config.URL, b.config.TrialDocsURL, b.config.EnableKubeconfigURLLabel)
 	}
 
 	return spec, nil
