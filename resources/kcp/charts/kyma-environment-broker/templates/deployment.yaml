@@ -75,8 +75,8 @@ spec:
               value: "{{ .Values.includeAdditionalParamsInSchema }}"
             - name: APP_BROKER_SHOW_TRIAL_EXPIRATION_INFO
               value: "{{ .Values.showTrialExpirationInfo }}"
-            - name: APP_BROKER_SUBACCOUNT_ID_TO_SHOW_TRIAL_EXPIRATION_INFO
-              value: "{{ .Values.subaccountIDToShowTrialExpirationInfo }}"
+            - name: APP_BROKER_SUBACCOUNTS_IDS_TO_SHOW_TRIAL_EXPIRATION_INFO
+              value: "{{ .Values.subaccountsIDsToShowTrialExpirationInfo }}"
             - name: APP_BROKER_TRIAL_DOCS_URL
               value: "{{ .Values.trialDocsURL }}"
             - name: APP_OPERATION_TIMEOUT

@@ -125,7 +125,7 @@ onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
 includeAdditionalParamsInSchema: "false"
 showTrialExpirationInfo: "false"
-subaccountIDToShowTrialExpirationInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
+subaccountsIDsToShowTrialExpirationInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
 trialDocsURL: "https://help.sap.com/docs/"
 
 osbUpdateProcessingEnabled: "false"
