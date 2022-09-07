@@ -5,7 +5,7 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @hanngos @tillknuesting
+* @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @hanngos @tillknuesting @jaroslaw-pieszka
 
 # All developers working on this repository are able to edit main values.yaml file.
 /resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar  @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
@@ -53,7 +53,7 @@
 /components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
 
 # All .md files
-*.md @klaudiagrz @mmitoraj @majakurcius @NHingerl @grego952
+*.md @mmitoraj @majakurcius @NHingerl @grego952
 
 # Owners of the .kyma-project-io folder
 /.kyma-project-io/ @m00g3n @pPrecel @dbadura @kwiatekus @cortey
