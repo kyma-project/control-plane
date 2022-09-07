@@ -199,7 +199,7 @@ func TestProvision_Provision(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(fixInstance())
 
@@ -245,7 +245,7 @@ func TestProvision_Provision(t *testing.T) {
 	t.Run("more than one trial is not allowed", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID:      instanceID,
@@ -290,7 +290,7 @@ func TestProvision_Provision(t *testing.T) {
 	t.Run("more than one trial is allowed", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID:      instanceID,
@@ -461,7 +461,7 @@ func TestProvision_Provision(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(fixInstance())
 		assert.NoError(t, err)
@@ -1087,7 +1087,7 @@ func TestRegionValidation(t *testing.T) {
 
 }
 
-func fixExistOperation() internal.ProvisioningOperation {
+func fixExistOperation() internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(existOperationID, instanceID)
 	provisioningOperation.ProvisioningParameters = internal.ProvisioningParameters{
 		PlanID:    planID,

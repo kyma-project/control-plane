@@ -7,7 +7,7 @@ import (
 )
 
 type EvalAssistant interface {
-	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
+	CreateBasicEvaluationRequest(operations internal.Operation, url string) (*BasicEvaluationCreateRequest, error)
 	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
 	IsValid(lifecycleData internal.AvsLifecycleData) bool
 	IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool

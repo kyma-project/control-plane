@@ -549,9 +549,11 @@ func newInMemoryStorage(t *testing.T,
 }
 
 func fixProvisionOperation(idx int) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
+	o := internal.ProvisioningOperation{
 		Operation: fixSucceededOperation(idx),
 	}
+	o.Type = internal.OperationTypeProvision
+	return o
 }
 func fixDeprovisionOperation(idx int) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{

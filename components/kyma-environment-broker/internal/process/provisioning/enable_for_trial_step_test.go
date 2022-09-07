@@ -54,16 +54,16 @@ func TestEnableForTrialPlanStepShouldNotSkip(t *testing.T) {
 	assert.Equal(t, wantOperation2, gotOperation)
 }
 
-func fixOperationWithPlanID(planID string) internal.ProvisioningOperation {
-	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
-	provisioningOperation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+func fixOperationWithPlanID(planID string) internal.Operation {
+	Operation := fixture.FixProvisioningOperation(operationID, instanceID)
+	Operation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
 
-	return provisioningOperation
+	return Operation
 }
 
-func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.ProvisioningOperation {
-	provisioningOperation := fixOperationWithPlanID(planID)
-	provisioningOperation.RuntimeVersion.Version = version
+func fixOperationWithPlanIDAndKymaVersion(planID, version string) internal.Operation {
+	Operation := fixOperationWithPlanID(planID)
+	Operation.RuntimeVersion.Version = version
 
-	return provisioningOperation
+	return Operation
 }

@@ -22,7 +22,7 @@ func NewExternalEvalCreator(delegator *avs.Delegator, disabled bool, assistant *
 	}
 }
 
-func (eec *ExternalEvalCreator) createEval(operation internal.ProvisioningOperation, url string, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (eec *ExternalEvalCreator) createEval(operation internal.Operation, url string, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if eec.disabled {
 		logger.Infof("creating AVS external evaluation is disabled")
 		return operation, 0, nil

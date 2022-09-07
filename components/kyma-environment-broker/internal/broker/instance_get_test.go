@@ -112,7 +112,7 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
 
-	err := st.Operations().InsertProvisioningOperation(op)
+	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
 
 	err = st.Instances().Insert(instance)

@@ -37,7 +37,7 @@ type (
 
 type ProvisionEndpoint struct {
 	config            Config
-	operationsStorage storage.Provisioning
+	operationsStorage storage.Operations
 	instanceStorage   storage.Instances
 	queue             Queue
 	builderFactory    PlanValidator
@@ -159,7 +159,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	operation.DashboardURL = dashboardURL
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
-	err = b.operationsStorage.InsertProvisioningOperation(operation)
+	err = b.operationsStorage.InsertOperation(operation.Operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")

@@ -41,7 +41,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		assert.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -87,7 +87,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		assert.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -134,7 +134,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		assert.NoError(t, err)
 
 		instance := fixInstanceRuntimeStatus()
@@ -171,7 +171,7 @@ func fixDeprovisioningOperation() internal.DeprovisioningOperation {
 	return deprovisioniningOperation
 }
 
-func fixProvisioningOperation() internal.ProvisioningOperation {
+func fixProvisioningOperation() internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(fixOperationID, fixInstanceID)
 	return provisioningOperation
 }

@@ -61,7 +61,7 @@ func TestCheckClusterConfigurationStep_ClusterReady(t *testing.T) {
 	recClient.ChangeClusterState(operation.RuntimeID, 1, reconcilerApi.StatusReady)
 
 	step := NewCheckClusterConfigurationStep(st.Operations(), recClient, time.Minute)
-	st.Operations().InsertProvisioningOperation(operation)
+	st.Operations().InsertOperation(operation)
 
 	// when
 	_, d, err := step.Run(operation, logger.NewLogSpy().Logger)
@@ -88,7 +88,7 @@ func TestCheckClusterConfigurationStep_InProgress(t *testing.T) {
 			recClient.ChangeClusterState(operation.RuntimeID, 1, state)
 
 			step := NewCheckClusterConfigurationStep(st.Operations(), recClient, time.Minute)
-			st.Operations().InsertProvisioningOperation(operation)
+			st.Operations().InsertOperation(operation)
 
 			// when
 			_, d, err := step.Run(operation, logger.NewLogSpy().Logger)
@@ -115,17 +115,17 @@ func TestCheckClusterConfigurationStep_ClusterFailed(t *testing.T) {
 	recClient.ChangeClusterState(operation.RuntimeID, 1, reconcilerApi.StatusError)
 
 	step := NewCheckClusterConfigurationStep(st.Operations(), recClient, time.Minute)
-	st.Operations().InsertProvisioningOperation(operation)
+	st.Operations().InsertOperation(operation)
 
 	// when
-	_, d, err := step.Run(operation, logger.NewLogSpy().Logger)
+	op, d, _ := step.Run(operation, logger.NewLogSpy().Logger)
 
 	// then
-	require.Error(t, err)
+	assert.Equal(t, domain.Failed, op.State)
 	assert.Zero(t, d)
 }
 
-func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.ProvisioningOperation {
+func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)

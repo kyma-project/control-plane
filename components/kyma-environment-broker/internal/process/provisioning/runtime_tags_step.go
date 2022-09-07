@@ -3,6 +3,8 @@ package provisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -17,7 +19,7 @@ type RuntimeTagsStep struct {
 }
 
 // ensure the interface is implemented
-var _ Step = (*RuntimeTagsStep)(nil)
+var _ process.Step = (*RuntimeTagsStep)(nil)
 
 func NewRuntimeTagsStep(internalEvalUpdater *InternalEvalUpdater, provisionerClient provisioner.Client) *RuntimeTagsStep {
 	return &RuntimeTagsStep{
@@ -29,7 +31,7 @@ func (e *RuntimeTagsStep) Name() string {
 	return "AVS_Tags"
 }
 
-func (s *RuntimeTagsStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *RuntimeTagsStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
 		return operation, 1 * time.Minute, err

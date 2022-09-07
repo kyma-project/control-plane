@@ -64,7 +64,7 @@ func TestManager_Execute(t *testing.T) {
 			operations := memoryStorage.Operations()
 			err := operations.InsertDeprovisioningOperation(fixDeprovisionOperation(tc.operationID))
 			assert.NoError(t, err)
-			err = operations.InsertProvisioningOperation(fixProvisionOperation())
+			err = operations.InsertOperation(fixProvisionOperation())
 
 			sInit := testStep{t: t, name: "init", storage: operations}
 			s1 := testStep{t: t, name: "one", storage: operations}
@@ -173,7 +173,7 @@ func fixDeprovisionOperation(ID string) internal.DeprovisioningOperation {
 	return deprovisioningOperation
 }
 
-func fixProvisionOperation() internal.ProvisioningOperation {
+func fixProvisionOperation() internal.Operation {
 	return fixture.FixProvisioningOperation("6bc401aa-2ec4-4303-bf3f-2e04990f6d8f", fakeInstanceID)
 }
 

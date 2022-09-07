@@ -16,7 +16,7 @@ import (
 // CheckRuntimeStep checks if the SKR is provisioned
 type CheckRuntimeStep struct {
 	provisionerClient   provisioner.Client
-	operationManager    *process.ProvisionOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 }
 
@@ -25,18 +25,18 @@ func NewCheckRuntimeStep(os storage.Operations,
 	provisioningTimeout time.Duration) *CheckRuntimeStep {
 	return &CheckRuntimeStep{
 		provisionerClient:   provisionerClient,
-		operationManager:    process.NewProvisionOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		provisioningTimeout: provisioningTimeout,
 	}
 }
 
-var _ Step = (*CheckRuntimeStep)(nil)
+var _ process.Step = (*CheckRuntimeStep)(nil)
 
 func (s *CheckRuntimeStep) Name() string {
 	return "Check_Runtime"
 }
 
-func (s *CheckRuntimeStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CheckRuntimeStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
 		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
@@ -44,7 +44,7 @@ func (s *CheckRuntimeStep) Run(operation internal.ProvisioningOperation, log log
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeID))
 }
 
-func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CheckRuntimeStep) checkRuntimeStatus(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), nil, log)

@@ -13,11 +13,11 @@ type RuntimeVersionConfiguratorForProvisioning struct {
 }
 
 // ForProvisioning provides a mock function with given fields: op
-func (_m *RuntimeVersionConfiguratorForProvisioning) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {
+func (_m *RuntimeVersionConfiguratorForProvisioning) ForProvisioning(op internal.Operation) (*internal.RuntimeVersionData, error) {
 	ret := _m.Called(op)
 
 	var r0 *internal.RuntimeVersionData
-	if rf, ok := ret.Get(0).(func(internal.ProvisioningOperation) *internal.RuntimeVersionData); ok {
+	if rf, ok := ret.Get(0).(func(internal.Operation) *internal.RuntimeVersionData); ok {
 		r0 = rf(op)
 	} else {
 		if ret.Get(0) != nil {
@@ -26,7 +26,7 @@ func (_m *RuntimeVersionConfiguratorForProvisioning) ForProvisioning(op internal
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(internal.ProvisioningOperation) error); ok {
+	if rf, ok := ret.Get(1).(func(internal.Operation) error); ok {
 		r1 = rf(op)
 	} else {
 		r1 = ret.Error(1)

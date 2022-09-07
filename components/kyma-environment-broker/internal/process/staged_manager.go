@@ -211,6 +211,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 				When:     when,
 				Error:    err,
 			},
+			Operation: processedOperation,
 		})
 
 		// break the loop if:
