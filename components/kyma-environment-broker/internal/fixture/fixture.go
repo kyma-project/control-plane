@@ -238,6 +238,12 @@ func FixDeprovisioningOperation(operationId, instanceId string) internal.Deprovi
 	}
 }
 
+func FixDeprovisioningOperationAsOperation(operationId, instanceId string) internal.Operation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
+	o.Temporary = false
+	return o
+}
+
 func FixSuspensionOperation(operationId, instanceId string) internal.DeprovisioningOperation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
 	o.Temporary = true
