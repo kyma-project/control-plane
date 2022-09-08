@@ -40,7 +40,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	inputCreator := newInputCreator()
 	provisioningOperation.InputCreator = inputCreator
 
-	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+	err := memoryStorage.Operations().InsertOperation(provisioningOperation)
 	assert.NoError(t, err)
 
 	mockOauthServer := newMockAvsOauthServer()
@@ -63,7 +63,7 @@ func TestInternalEvaluationStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
 
-	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
+	inDB, err := memoryStorage.Operations().GetOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
 	assert.Contains(t, mockAvsSvc.evals, inDB.Avs.AvsEvaluationInternalId)
 }
@@ -79,7 +79,7 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	inputCreator := newInputCreator()
 	provisioningOperation.InputCreator = inputCreator
 
-	err := memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+	err := memoryStorage.Operations().InsertOperation(provisioningOperation)
 	assert.NoError(t, err)
 
 	mockOauthServer := newMockAvsOauthServer()
@@ -102,7 +102,7 @@ func TestInternalEvaluationStep_WhenOperationIsRepeatedWithIdPresent(t *testing.
 	assert.NoError(t, err)
 	assert.Equal(t, 0*time.Second, repeat)
 
-	inDB, err := memoryStorage.Operations().GetProvisioningOperationByID(provisioningOperation.ID)
+	inDB, err := memoryStorage.Operations().GetOperationByID(provisioningOperation.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, inDB.Avs.AvsEvaluationInternalId, id)
 }

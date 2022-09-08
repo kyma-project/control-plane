@@ -14,7 +14,7 @@ import (
 
 type GetKubeconfigStep struct {
 	provisionerClient   provisioner.Client
-	operationManager    *process.ProvisionOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 }
 
@@ -22,17 +22,17 @@ func NewGetKubeconfigStep(os storage.Operations,
 	provisionerClient provisioner.Client) *GetKubeconfigStep {
 	return &GetKubeconfigStep{
 		provisionerClient: provisionerClient,
-		operationManager:  process.NewProvisionOperationManager(os),
+		operationManager:  process.NewOperationManager(os),
 	}
 }
 
-var _ Step = (*GetKubeconfigStep)(nil)
+var _ process.Step = (*GetKubeconfigStep)(nil)
 
 func (s *GetKubeconfigStep) Name() string {
 	return "Get_Kubeconfig"
 }
 
-func (s *GetKubeconfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.Kubeconfig != "" {
 		return operation, 0, nil
 	}
@@ -60,7 +60,7 @@ func (s *GetKubeconfigStep) Run(operation internal.ProvisioningOperation, log lo
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 
-	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}, log)
 	if retry > 0 {

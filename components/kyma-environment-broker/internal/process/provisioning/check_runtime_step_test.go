@@ -46,7 +46,7 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 			operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 			operation.RuntimeID = statusRuntimeID
 			operation.DashboardURL = dashboardURL
-			err := st.Operations().InsertProvisioningOperation(operation)
+			err := st.Operations().InsertOperation(operation)
 			assert.NoError(t, err)
 
 			step := NewCheckRuntimeStep(st.Operations(), provisionerClient, time.Second)

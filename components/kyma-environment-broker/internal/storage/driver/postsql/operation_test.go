@@ -171,31 +171,31 @@ func TestOperation(t *testing.T) {
 		svc := brokerStorage.Operations()
 
 		// when
-		err = svc.InsertProvisioningOperation(givenOperation)
+		err = svc.InsertOperation(givenOperation)
 		require.NoError(t, err)
-		err = svc.InsertProvisioningOperation(latestOperation)
+		err = svc.InsertOperation(latestOperation)
 		require.NoError(t, err)
-		err = svc.InsertProvisioningOperation(latestPendingOperation)
+		err = svc.InsertOperation(latestPendingOperation)
 		require.NoError(t, err)
 
 		ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeProvision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 3)
-		assertOperation(t, givenOperation.Operation, ops[0])
+		assertOperation(t, givenOperation, ops[0])
 
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
 
 		op, err := svc.GetOperationByID("operation-id")
 		require.NoError(t, err)
-		assert.Equal(t, givenOperation.Operation.ID, op.ID)
+		assert.Equal(t, givenOperation.ID, op.ID)
 
 		lastOp, err := svc.GetLastOperation("inst-id")
 		require.NoError(t, err)
-		assert.Equal(t, latestOperation.Operation.ID, lastOp.ID)
+		assert.Equal(t, latestOperation.ID, lastOp.ID)
 
 		// then
-		assertProvisioningOperation(t, givenOperation, *gotOperation)
+		assertOperation(t, givenOperation, gotOperation.Operation)
 
 		// when
 		gotOperation.Description = "new modified description"

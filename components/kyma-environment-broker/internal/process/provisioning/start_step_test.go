@@ -25,7 +25,7 @@ func TestStartStep_RunIfDeprovisioningInProgress(t *testing.T) {
 
 	st.Instances().Insert(inst)
 	st.Operations().InsertDeprovisioningOperation(dOp)
-	st.Operations().InsertProvisioningOperation(pOp)
+	st.Operations().InsertOperation(pOp)
 
 	// when
 	operation, retry, err := step.Run(pOp, logrus.New())
@@ -49,7 +49,7 @@ func TestStartStep_RunIfDeprovisioningDone(t *testing.T) {
 
 	st.Instances().Insert(inst)
 	st.Operations().InsertDeprovisioningOperation(dOp)
-	st.Operations().InsertProvisioningOperation(pOp)
+	st.Operations().InsertOperation(pOp)
 
 	// when
 	operation, retry, err := step.Run(pOp, logrus.New())
@@ -58,7 +58,7 @@ func TestStartStep_RunIfDeprovisioningDone(t *testing.T) {
 	assert.Equal(t, domain.InProgress, operation.State)
 	assert.NoError(t, err)
 	assert.Zero(t, retry)
-	storedOp, err := st.Operations().GetProvisioningOperationByID("p-op-id")
+	storedOp, err := st.Operations().GetOperationByID("p-op-id")
 	assert.NoError(t, err)
 	assert.Equal(t, domain.InProgress, storedOp.State)
 }

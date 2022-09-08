@@ -121,7 +121,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeKymaOperation()
@@ -186,7 +186,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeKymaOperation()
@@ -259,7 +259,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		notificationTenants := []notification.NotificationTenant{
@@ -306,7 +306,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		avsData := createMonitors(t, client, "", "")
@@ -374,7 +374,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
@@ -443,7 +443,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := avs.StatusActive, avs.StatusInactive
@@ -512,7 +512,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := avs.StatusActive, ""
@@ -582,7 +582,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := "", avs.StatusInactive
@@ -652,7 +652,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := "", ""
@@ -724,7 +724,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := avs.StatusInactive, avs.StatusActive
@@ -791,7 +791,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
-		err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+		err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 		require.NoError(t, err)
 
 		internalStatus, externalStatus := avs.StatusInactive, avs.StatusActive
@@ -909,7 +909,7 @@ func fixUpgradeKymaOperationWithAvs(avsData internal.AvsLifecycleData) internal.
 	return upgradeOperation
 }
 
-func fixProvisioningOperation() internal.ProvisioningOperation {
+func fixProvisioningOperation() internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(fixProvisioningOperationID, fixInstanceID)
 	provisioningOperation.ProvisionerOperationID = fixProvisionerOperationID
 	provisioningOperation.Description = ""

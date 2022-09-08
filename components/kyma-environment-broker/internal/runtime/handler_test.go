@@ -150,9 +150,9 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 		err = instances.Insert(testInstance2)
 		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp1)
+		err = operations.InsertOperation(testOp1)
 		require.NoError(t, err)
-		err = operations.InsertProvisioningOperation(testOp2)
+		err = operations.InsertOperation(testOp2)
 		require.NoError(t, err)
 
 		runtimeHandler := runtime.NewHandler(instances, operations, states, 2, "")
@@ -202,11 +202,11 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		provOp1 := fixture.FixProvisioningOperation(fixRandomID(), testID1)
-		err = operations.InsertProvisioningOperation(provOp1)
+		err = operations.InsertOperation(provOp1)
 		require.NoError(t, err)
 
 		provOp2 := fixture.FixProvisioningOperation(fixRandomID(), testID2)
-		err = operations.InsertProvisioningOperation(provOp2)
+		err = operations.InsertOperation(provOp2)
 		require.NoError(t, err)
 		upgOp2 := fixture.FixUpgradeKymaOperation(fixRandomID(), testID2)
 		upgOp2.State = domain.Failed
@@ -215,7 +215,7 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		provOp3 := fixture.FixProvisioningOperation(fixRandomID(), testID3)
-		err = operations.InsertProvisioningOperation(provOp3)
+		err = operations.InsertOperation(provOp3)
 		require.NoError(t, err)
 		upgOp3 := fixture.FixUpgradeKymaOperation(fixRandomID(), testID3)
 		upgOp3.State = domain.Failed
@@ -305,6 +305,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testID1,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
@@ -315,6 +316,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now().Add(1 * time.Hour),
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testID1,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 
@@ -384,6 +386,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now(),
 				UpdatedAt:  time.Now(),
 				InstanceID: testInstance1.InstanceID,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
@@ -395,6 +398,7 @@ func TestRuntimeHandler(t *testing.T) {
 				CreatedAt:  time.Now().Add(1 * time.Hour),
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testInstance1.InstanceID,
+				Type:       internal.OperationTypeProvision,
 			},
 		})
 		require.NoError(t, err)
@@ -510,7 +514,7 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		provOp := fixture.FixProvisioningOperation(fixRandomID(), testID)
-		err = operations.InsertProvisioningOperation(provOp)
+		err = operations.InsertOperation(provOp)
 		require.NoError(t, err)
 		upgOp := fixture.FixUpgradeKymaOperation(fixRandomID(), testID)
 		upgOp.State = domain.Failed
@@ -581,7 +585,7 @@ func TestRuntimeHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		provOp := fixture.FixProvisioningOperation(fixRandomID(), testID)
-		err = operations.InsertProvisioningOperation(provOp)
+		err = operations.InsertOperation(provOp)
 		require.NoError(t, err)
 		upgOp := fixture.FixUpgradeKymaOperation(fixRandomID(), testID)
 		upgOp.State = domain.Failed

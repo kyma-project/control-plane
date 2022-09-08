@@ -26,7 +26,6 @@ type operations struct {
 	mu sync.Mutex
 
 	operations               map[string]internal.Operation
-	provisioningOperations   map[string]internal.ProvisioningOperation
 	deprovisioningOperations map[string]internal.DeprovisioningOperation
 	upgradeKymaOperations    map[string]internal.UpgradeKymaOperation
 	upgradeClusterOperations map[string]internal.UpgradeClusterOperation
@@ -37,7 +36,6 @@ type operations struct {
 func NewOperation() *operations {
 	return &operations{
 		operations:               make(map[string]internal.Operation, 0),
-		provisioningOperations:   make(map[string]internal.ProvisioningOperation, 0),
 		deprovisioningOperations: make(map[string]internal.DeprovisioningOperation, 0),
 		upgradeKymaOperations:    make(map[string]internal.UpgradeKymaOperation, 0),
 		upgradeClusterOperations: make(map[string]internal.UpgradeClusterOperation, 0),
@@ -50,11 +48,11 @@ func (s *operations) InsertProvisioningOperation(operation internal.Provisioning
 	defer s.mu.Unlock()
 
 	id := operation.ID
-	if _, exists := s.provisioningOperations[id]; exists {
+	if _, exists := s.operations[id]; exists {
 		return dberr.AlreadyExists("instance operation with id %s already exist", id)
 	}
 
-	s.provisioningOperations[id] = operation
+	s.operations[id] = operation.Operation
 	return nil
 }
 
@@ -75,11 +73,11 @@ func (s *operations) GetProvisioningOperationByID(operationID string) (*internal
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	op, exists := s.provisioningOperations[operationID]
+	op, exists := s.operations[operationID]
 	if !exists {
 		return nil, dberr.NotFound("instance provisioning operation with id %s not found", operationID)
 	}
-	return &op, nil
+	return &internal.ProvisioningOperation{Operation: op}, nil
 }
 
 func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*internal.ProvisioningOperation, error) {
@@ -88,9 +86,9 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 
 	var result []internal.ProvisioningOperation
 
-	for _, op := range s.provisioningOperations {
+	for _, op := range s.operations {
 		if op.InstanceID == instanceID {
-			result = append(result, op)
+			result = append(result, internal.ProvisioningOperation{Operation: op})
 		}
 	}
 	if len(result) != 0 {
@@ -124,7 +122,7 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	oldOp, exists := s.provisioningOperations[op.ID]
+	oldOp, exists := s.operations[op.ID]
 	if !exists {
 		return nil, dberr.NotFound("instance operation with id %s not found", op.ID)
 	}
@@ -132,7 +130,7 @@ func (s *operations) UpdateProvisioningOperation(op internal.ProvisioningOperati
 		return nil, dberr.Conflict("unable to update provisioning operation with id %s (for instance id %s) - conflict", op.ID, op.InstanceID)
 	}
 	op.Version = op.Version + 1
-	s.provisioningOperations[op.ID] = op
+	s.operations[op.ID] = op.Operation
 
 	return &op, nil
 }
@@ -159,9 +157,9 @@ func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) (
 	defer s.mu.Unlock()
 
 	operations := make([]internal.ProvisioningOperation, 0)
-	for _, op := range s.provisioningOperations {
-		if op.InstanceID == instanceID {
-			operations = append(operations, op)
+	for _, op := range s.operations {
+		if op.InstanceID == instanceID && op.Type == internal.OperationTypeProvision {
+			operations = append(operations, internal.ProvisioningOperation{Operation: op})
 		}
 	}
 
@@ -390,9 +388,9 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 
 	var rows []internal.Operation
 
-	for _, op := range s.provisioningOperations {
+	for _, op := range s.operations {
 		if op.InstanceID == instanceID && op.State != orchestration.Pending {
-			rows = append(rows, op.Operation)
+			rows = append(rows, op)
 		}
 	}
 	for _, op := range s.deprovisioningOperations {
@@ -433,9 +431,9 @@ func (s *operations) GetOperationByID(operationID string) (*internal.Operation, 
 
 	var res *internal.Operation
 
-	provisionOp, exists := s.provisioningOperations[operationID]
+	provisionOp, exists := s.operations[operationID]
 	if exists {
-		res = &provisionOp.Operation
+		res = &provisionOp
 	}
 	deprovisionOp, exists := s.deprovisioningOperations[operationID]
 	if exists {
@@ -472,9 +470,9 @@ func (s *operations) GetNotFinishedOperationsByType(opType internal.OperationTyp
 	ops := make([]internal.Operation, 0)
 	switch opType {
 	case internal.OperationTypeProvision:
-		for _, op := range s.provisioningOperations {
+		for _, op := range s.operations {
 			if op.State == domain.InProgress {
-				ops = append(ops, op.Operation)
+				ops = append(ops, op)
 			}
 		}
 	case internal.OperationTypeDeprovision:
@@ -516,9 +514,9 @@ func (s *operations) GetOperationsForIDs(opIdList []string) ([]internal.Operatio
 	}
 
 	for _, opID := range opIdList {
-		for _, op := range s.provisioningOperations {
-			if op.Operation.ID == opID {
-				ops = append(ops, op.Operation)
+		for _, op := range s.operations {
+			if op.ID == opID {
+				ops = append(ops, op)
 			}
 		}
 	}
@@ -544,7 +542,7 @@ func (s *operations) GetOperationStatsByPlan() (map[string]internal.OperationSta
 
 	result := make(map[string]internal.OperationStats)
 
-	for _, op := range s.provisioningOperations {
+	for _, op := range s.operations {
 		if op.ProvisioningParameters.PlanID == "" {
 			continue
 		}
@@ -877,8 +875,8 @@ func (s *operations) getAll() ([]internal.Operation, error) {
 	for _, op := range s.upgradeClusterOperations {
 		ops = append(ops, op.Operation)
 	}
-	for _, op := range s.provisioningOperations {
-		ops = append(ops, op.Operation)
+	for _, op := range s.operations {
+		ops = append(ops, op)
 	}
 	for _, op := range s.deprovisioningOperations {
 		ops = append(ops, op.Operation)

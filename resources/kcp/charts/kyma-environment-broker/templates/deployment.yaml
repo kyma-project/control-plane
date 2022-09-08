@@ -73,10 +73,12 @@ spec:
               value: "{{ .Values.enableKubeconfigURLLabel }}"
             - name: APP_BROKER_INCLUDE_ADDITIONAL_PARAMS_IN_SCHEMA
               value: "{{ .Values.includeAdditionalParamsInSchema }}"
-            - name: APP_BROKER_SHOW_TRIAL_EXPIRE_INFO
-              value: "{{ .Values.showTrialExpireInfo }}"
-            - name: APP_BROKER_SUBACCOUNTID_TO_SHOW_TRIAL_EXPIRE_INFO
-              value: "{{ .Values.subaccountIDToShowTrialExpireInfo }}"
+            - name: APP_BROKER_SHOW_TRIAL_EXPIRATION_INFO
+              value: "{{ .Values.showTrialExpirationInfo }}"
+            - name: APP_BROKER_SUBACCOUNTS_IDS_TO_SHOW_TRIAL_EXPIRATION_INFO
+              value: "{{ .Values.subaccountsIdsToShowTrialExpirationInfo }}"
+            - name: APP_BROKER_TRIAL_DOCS_URL
+              value: "{{ .Values.trialDocsURL }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_RECONCILER_URL

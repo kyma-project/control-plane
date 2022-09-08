@@ -117,7 +117,7 @@ func (s *DeprovisioningSuite) CreateProvisionedRuntime(options RuntimeOptions) s
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, randomInstanceId)
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
-	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.storage.Operations().InsertOperation(provisioningOperation))
 
 	state, err := s.provisionerClient.ProvisionRuntime(options.ProvideGlobalAccountID(), options.ProvideSubAccountID(), gqlschema.ProvisionRuntimeInput{})
 	require.NoError(s.t, err)

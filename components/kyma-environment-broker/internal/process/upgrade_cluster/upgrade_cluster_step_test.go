@@ -38,7 +38,7 @@ func TestUpgradeClusterStep_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	provisioningOperation := fixProvisioningOperation()
-	err = memoryStorage.Operations().InsertProvisioningOperation(provisioningOperation)
+	err = memoryStorage.Operations().InsertOperation(provisioningOperation)
 	assert.NoError(t, err)
 
 	runtimeState := fixture.FixRuntimeState("runtimestate-1", fixRuntimeID, provisioningOperation.ID)

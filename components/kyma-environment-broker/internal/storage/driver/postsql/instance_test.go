@@ -62,12 +62,12 @@ func TestInstance(t *testing.T) {
 
 		fixProvisioningOperation1 := fixture.FixProvisioningOperation("op-id", fixInstance.InstanceID)
 
-		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation1)
+		err = brokerStorage.Operations().InsertOperation(fixProvisioningOperation1)
 		require.NoError(t, err)
 
 		fixProvisioningOperation2 := fixture.FixProvisioningOperation("latest-op-id", fixInstance.InstanceID)
 
-		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation2)
+		err = brokerStorage.Operations().InsertOperation(fixProvisioningOperation2)
 		require.NoError(t, err)
 
 		upgradeOperation := fixture.FixUpgradeKymaOperation("operation-id-3", "inst-id")
@@ -189,14 +189,14 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		fixProvisionOps := []internal.ProvisioningOperation{
+		fixProvisionOps := []internal.Operation{
 			fixProvisionOperation("A1"),
 			fixProvisionOperation("B1"),
 			fixProvisionOperation("C1"),
 		}
 
 		for _, op := range fixProvisionOps {
-			err = brokerStorage.Operations().InsertProvisioningOperation(op)
+			err = brokerStorage.Operations().InsertOperation(op)
 			require.NoError(t, err)
 		}
 
@@ -299,7 +299,7 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "2"}),
 			*fixInstance(instanceData{val: "3"}),
 		}
-		fixOperations := []internal.ProvisioningOperation{
+		fixOperations := []internal.Operation{
 			fixture.FixProvisioningOperation("op1", "1"),
 			fixture.FixProvisioningOperation("op2", "2"),
 			fixture.FixProvisioningOperation("op3", "3"),
@@ -311,7 +311,7 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 		for _, i := range fixOperations {
-			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			err = brokerStorage.Operations().InsertOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -357,7 +357,7 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst3"}),
 			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
 		}
-		fixOperations := []internal.ProvisioningOperation{
+		fixOperations := []internal.Operation{
 			fixture.FixProvisioningOperation("op1", "inst1"),
 			fixture.FixProvisioningOperation("op2", "inst2"),
 			fixture.FixProvisioningOperation("op3", "inst3"),
@@ -370,7 +370,7 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 		for _, i := range fixOperations {
-			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			err = brokerStorage.Operations().InsertOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -480,7 +480,7 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst3"}),
 			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
 		}
-		fixOperations := []internal.ProvisioningOperation{
+		fixOperations := []internal.Operation{
 			fixture.FixProvisioningOperation("op1", "inst1"),
 			fixture.FixProvisioningOperation("op2", "inst2"),
 			fixture.FixProvisioningOperation("op3", "inst3"),
@@ -493,7 +493,7 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 		for _, i := range fixOperations {
-			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			err = brokerStorage.Operations().InsertOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -611,13 +611,13 @@ func TestInstance(t *testing.T) {
 		// inst1 is in succeeded state
 		provOp1 := fixProvisionOperation("inst1")
 		provOp1.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp1)
+		err = brokerStorage.Operations().InsertOperation(provOp1)
 		require.NoError(t, err)
 
 		// inst2 is in error state
 		provOp2 := fixProvisionOperation("inst2")
 		provOp2.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp2)
+		err = brokerStorage.Operations().InsertOperation(provOp2)
 		require.NoError(t, err)
 		upgrOp2 := fixUpgradeKymaOperation("inst2")
 		upgrOp2.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
@@ -628,7 +628,7 @@ func TestInstance(t *testing.T) {
 		// inst3 is in suspended state
 		provOp3 := fixProvisionOperation("inst3")
 		provOp3.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp3)
+		err = brokerStorage.Operations().InsertOperation(provOp3)
 		require.NoError(t, err)
 		upgrOp3 := fixUpgradeKymaOperation("inst3")
 		upgrOp3.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
@@ -645,7 +645,7 @@ func TestInstance(t *testing.T) {
 		// inst4 is in failed state
 		provOp4 := fixProvisionOperation("inst4")
 		provOp4.State = domain.Failed
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp4)
+		err = brokerStorage.Operations().InsertOperation(provOp4)
 		require.NoError(t, err)
 
 		// when
@@ -753,7 +753,7 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 	return runtimeOperation
 }
 
-func fixProvisionOperation(instanceId string) internal.ProvisioningOperation {
+func fixProvisionOperation(instanceId string) internal.Operation {
 	operationId := fmt.Sprintf("%s-%d", instanceId, rand.Int())
 	return fixture.FixProvisioningOperation(operationId, instanceId)
 

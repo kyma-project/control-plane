@@ -18,7 +18,7 @@ func TestCreateClusterConfigurationStep_Run(t *testing.T) {
 	step := NewCreateClusterConfiguration(st.Operations(), st.RuntimeStates(), reconcilerClient)
 	operation := fixture.FixProvisioningOperation(operationID, instanceID)
 	operation.RuntimeID = runtimeID
-	st.Operations().InsertProvisioningOperation(operation)
+	st.Operations().InsertOperation(operation)
 
 	// when
 	_, d, err := step.Run(operation, logrus.New())
