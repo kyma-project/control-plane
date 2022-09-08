@@ -60,7 +60,7 @@ func prepareProvisionedInstance(s storage.BrokerStorage) {
 	inst := fixture.FixInstance(instanceID)
 	s.Instances().Insert(inst)
 	pOp := fixture.FixProvisioningOperation("pop-id", instanceID)
-	s.Operations().InsertOperation(pOp.Operation)
+	s.Operations().InsertOperation(pOp)
 }
 
 func prepareDeprovisioningOperation(s storage.BrokerStorage, state domain.LastOperationState) internal.Operation {
