@@ -25,7 +25,7 @@ require (
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220707063253-fd8dedcdb5cf
 	github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20220811080535-8fad0e36abfc
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
-	github.com/lib/pq v1.10.6
+	github.com/lib/pq v1.10.7
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
