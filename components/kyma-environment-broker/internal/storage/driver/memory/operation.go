@@ -393,6 +393,11 @@ func (s *operations) GetLastOperation(instanceID string) (*internal.Operation, e
 			rows = append(rows, op)
 		}
 	}
+	for _, op := range s.provisioningOperations {
+		if op.InstanceID == instanceID && op.State != orchestration.Pending {
+			rows = append(rows, op.Operation)
+		}
+	}
 	for _, op := range s.deprovisioningOperations {
 		if op.InstanceID == instanceID && op.State != orchestration.Pending {
 			rows = append(rows, op.Operation)
