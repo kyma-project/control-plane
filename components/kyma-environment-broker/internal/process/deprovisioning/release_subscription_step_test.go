@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReleaseSubscriptionStepHappyPath_Run(t *testing.T) {
+func TestReleaseSubscriptionStep_HappyPath(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -44,7 +44,7 @@ func TestReleaseSubscriptionStepHappyPath_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
-func TestReleaseSubscriptionStepForTrial_Run(t *testing.T) {
+func TestReleaseSubscriptionStep_TrialPlan(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -72,7 +72,7 @@ func TestReleaseSubscriptionStepForTrial_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
-func TestReleaseSubscriptionStepInstanceNotFound_Run(t *testing.T) {
+func TestReleaseSubscriptionStep_InstanceNotFound(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -97,7 +97,7 @@ func TestReleaseSubscriptionStepInstanceNotFound_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
-func TestReleaseSubscriptionStepProviderNotFound_Run(t *testing.T) {
+func TestReleaseSubscriptionStep_ProviderNotFound(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
@@ -126,7 +126,7 @@ func TestReleaseSubscriptionStepProviderNotFound_Run(t *testing.T) {
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
-func TestReleaseSubscriptionStepGardenerCallFails_Run(t *testing.T) {
+func TestReleaseSubscriptionStepGardener_CallFails(t *testing.T) {
 	// given
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
