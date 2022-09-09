@@ -282,6 +282,7 @@ type InstanceDetails struct {
 
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
+	providedKubeconfig          string `json:"kcfg"`
 
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 }

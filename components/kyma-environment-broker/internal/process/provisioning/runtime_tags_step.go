@@ -24,7 +24,7 @@ var _ process.Step = (*RuntimeTagsStep)(nil)
 func NewRuntimeTagsStep(internalEvalUpdater *InternalEvalUpdater, provisionerClient provisioner.Client) *RuntimeTagsStep {
 	return &RuntimeTagsStep{
 		internalEvalUpdater: internalEvalUpdater,
-		provisionerClient:   provisionerClient,
+		c:                   provisionerClient,
 	}
 }
 func (e *RuntimeTagsStep) Name() string {
