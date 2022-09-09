@@ -42,7 +42,7 @@ The deprovisioning process contains the following steps:
 
 | Step                         | Domain                           | Description                                                      | Owner                 |
 |------------------------------|----------------------------------|------------------------------------------------------------------|-----------------------|
-| BTPOperator_Cleanup          | BTP                              | Delete service instances and service bindings from cluster.      | Team Gopher           |
+| BTPOperator_Cleanup          | BTP                              | Delete service instances and service bindings from the cluster.      | Team Gopher           |
 | De-provision_AVS_Evaluations | AvS                              | Removes external and internal monitoring of Kyma Runtime.        | Team Gopher           |
 | EDP_Deregistration           | Event Data Platform              | Removes all entries about SKR from Event Data Platform.          | Team Gopher           |
 | IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                            | Team Gopher           |
