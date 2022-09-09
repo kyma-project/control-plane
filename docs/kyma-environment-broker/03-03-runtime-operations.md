@@ -42,7 +42,7 @@ The deprovisioning process contains the following steps:
 
 | Step                         | Domain                           | Description                                                        | Owner                 |
 |------------------------------|----------------------------------|--------------------------------------------------------------------|-----------------------|
-| BTPOperator_Cleanup          | BTP                              | Delete service instances and service bindings from the cluster.    | Team Gopher           |
+| BTPOperator_Cleanup          | BTP                              | Deletes service instances and service bindings from the cluster.    | Team Gopher           |
 | De-provision_AVS_Evaluations | AvS                              | Removes external and internal monitoring of Kyma Runtime.          | Team Gopher           |
 | EDP_Deregistration           | Event Data Platform              | Removes all SKR entries from the Event Data Platform.              | Team Gopher           |
 | IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                              | Team Gopher           |
@@ -65,7 +65,7 @@ The upgrade process contains the following steps:
 | BTPOperatorOverrides                   | Configures the required credentials for BTP.                                                          | Team Gopher      |
 | Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                     | Team Gopher      |
 | BusolaMigratorOverrides                | Sets Busola's configuration.                                                                          | Team Hasselhoff  |
-| Send_Notification                      | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. | Team SRE         |
+| Send_Notification                      | Notifies customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. | Team SRE         |
 | Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                    | Team Gopher      |
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
@@ -74,7 +74,7 @@ The upgrade process contains the following steps:
 
 | Step                          | Description                                                                                           |
 |-------------------------------|-------------------------------------------------------------------------------------------------------|
-| Send_Notification             | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. |
+| Send_Notification             | Notifies customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. |
 | Upgrade_Cluster               | Sends the updated cluster parameters to the Provisioner                                               |
 
 ## Update 
