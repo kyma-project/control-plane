@@ -12,23 +12,23 @@ Kyma Environment Broker allows you to configure operations that you can run on a
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
 
-| Stage          | Step                                   | Domain                   | Description                                                                                                                           | Owner           |
-|----------------|----------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| start          | Starting                               | Provisioning             | Changes the state from `pending` to `in progress` if there is no other operation in progress.                                              | Team Gopher     |
-| create_runtime | Provision_Initialization               | Provisioning             | Starts the provisioning process.                                                                                                      | Team Gopher     |
-| create_runtime | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of the Gardener Secret that contains the Hypescaler account credentials used during cluster provisioning.                | Team Framefrog  |
-| create_runtime | AVS_Create_Internal_Eval_Step          | AvS                      | Sets up internal monitoring of Kyma Runtime.                                                                                          | Team Gopher     |
-| create_runtime | EDP_Registration                       | Event Data Platform      | Registers an SKR on the Event Data Platform with the necessary parameters. **Note that this step is not mandatory and you can disable it.**                 | Team Gopher     |
-| create_runtime | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                | Team Gopher     |
-| create_runtime | BTPOperatorOverrides                   | BTP                      | Configures the required credentials for BTP.                                                                              | Team Gopher     |
-| create_runtime | BusolaMigratorOverrides                | Busola                   | Sets configuration for Busola.                                                                                                        | Team Hasselhoff |
-| create_runtime | Create_Runtime_Without_Kyma            | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                        | Team Gopher     |
-| check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of the Provisioner process and asks the Director for the Dashboard URL if the provisioning is completed in Gardener. | Team Gopher     |
-| create_runtime | Get_Kubeconfig                         | Provisioning             | Gets the kubeconfig.                                                                                                                  | Team Gopher     |
-| create_runtime | Create_Cluster_Configuration           | Reconciler               | Applies the cluster configuration.                                                                                                    | Team Gopher     |
-| check_kyma     | Check_Cluster_Configuration            | Reconciler               | Checks if the cluster configuration is applied .                                                                                      | Team Gopher     |
-| post_actions   | AVS_Create_External_Eval_Step          | AvS                      | Sets up external monitoring of Kyma Runtime.                                                                                          | Team Gopher     |
-| post_actions   | AVS_Tags                               | AvS                      | Sets up proper tags in the internal monitoring system.                                                                                | Team Gopher     |
+| Stage          | Step                                   | Domain                   | Description                                                                                                                                 | Owner           |
+|----------------|----------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| start          | Starting                               | Provisioning             | Changes the state from `pending` to `in progress` if there is no other operation in progress.                                               | Team Gopher     |
+| create_runtime | Provision_Initialization               | Provisioning             | Starts the provisioning process.                                                                                                            | Team Gopher     |
+| create_runtime | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of the Gardener Secret that contains the Hypescaler account credentials used during cluster provisioning.                 | Team Framefrog  |
+| create_runtime | AVS_Create_Internal_Eval_Step          | AvS                      | Sets up internal monitoring of Kyma Runtime.                                                                                                | Team Gopher     |
+| create_runtime | EDP_Registration                       | Event Data Platform      | Registers an SKR on the Event Data Platform with the necessary parameters. **Note that this step is not mandatory and you can disable it.** | Team Gopher     |
+| create_runtime | Overrides_From_Secrets_And_Config_Step | Kyma overrides           | Configures default overrides for Kyma.                                                                                                      | Team Gopher     |
+| create_runtime | BTPOperatorOverrides                   | BTP                      | Configures the required credentials for BTP.                                                                                                | Team Gopher     |
+| create_runtime | BusolaMigratorOverrides                | Busola                   | Sets configuration for Busola.                                                                                                              | Team Hasselhoff |
+| create_runtime | Create_Runtime_Without_Kyma            | Provisioning             | Triggers provisioning of a Runtime in the Runtime Provisioner.                                                                              | Team Gopher     |
+| check_runtime  | Check_Runtime                          | Provisioning             | Checks the status of the Provisioner process and asks the Director for the Dashboard URL if the provisioning is completed in Gardener.      | Team Gopher     |
+| create_runtime | Get_Kubeconfig                         | Provisioning             | Gets the kubeconfig.                                                                                                                        | Team Gopher     |
+| create_runtime | Create_Cluster_Configuration           | Reconciler               | Applies the cluster configuration.                                                                                                          | Team Gopher     |
+| check_kyma     | Check_Cluster_Configuration            | Reconciler               | Checks if the cluster configuration is applied .                                                                                            | Team Gopher     |
+| post_actions   | AVS_Create_External_Eval_Step          | AvS                      | Sets up external monitoring of Kyma Runtime.                                                                                                | Team Gopher     |
+| post_actions   | AVS_Tags                               | AvS                      | Sets up proper tags in the internal monitoring system.                                                                                      | Team Gopher     |
 
 The timeout for processing the whole provisioning operation is set to `24h`. In Kyma 2.0 provisioning steps delegate resource creation to Reconciler. Since Reconciler does not constrain a number of retries in case of a failed reconciliation, KEB sets [provisioning timeout for Reconciler](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49) to `2h`.
 
@@ -40,15 +40,15 @@ Any deprovisioning step shouldn't block the entire deprovisioning operation. Use
 
 The deprovisioning process contains the following steps:
 
-| Step                         | Domain                           | Description                                                      | Owner                 |
-|------------------------------|----------------------------------|------------------------------------------------------------------|-----------------------|
-| BTPOperator_Cleanup          | BTP                              | Delete service instances and service bindings from the cluster.      | Team Gopher           |
-| De-provision_AVS_Evaluations | AvS                              | Removes external and internal monitoring of Kyma Runtime.        | Team Gopher           |
-| EDP_Deregistration           | Event Data Platform              | Removes all SKR entries from the Event Data Platform.          | Team Gopher           |
-| IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                            | Team Gopher           |
-| Deregister_Cluster           | Reconciler                       | Removes the cluster from the Reconciler.                         | Team Gopher           |
-| Check_Cluster_Deregistration | Reconciler                       | Checks if the cluster deregistration is complete                      | Team Gopher           |
-| Remove_Runtime               | Deprovisioning                   | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | Team Gopher           | 
+| Step                         | Domain                           | Description                                                        | Owner                 |
+|------------------------------|----------------------------------|--------------------------------------------------------------------|-----------------------|
+| BTPOperator_Cleanup          | BTP                              | Delete service instances and service bindings from the cluster.    | Team Gopher           |
+| De-provision_AVS_Evaluations | AvS                              | Removes external and internal monitoring of Kyma Runtime.          | Team Gopher           |
+| EDP_Deregistration           | Event Data Platform              | Removes all SKR entries from the Event Data Platform.              | Team Gopher           |
+| IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                              | Team Gopher           |
+| Deregister_Cluster           | Reconciler                       | Removes the cluster from the Reconciler.                           | Team Gopher           |
+| Check_Cluster_Deregistration | Reconciler                       | Checks if the cluster deregistration is complete                   | Team Gopher           |
+| Remove_Runtime               | Deprovisioning                   | Triggers deprovisioning of a Runtime in the Runtime Provisioner.   | Team Gopher           | 
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
@@ -58,37 +58,37 @@ Each upgrade step is responsible for a separate part of upgrading Runtime depend
 
 The upgrade process contains the following steps:
 
-| Step                                   | Description                                                                                         | Owner            |
-|----------------------------------------|-----------------------------------------------------------------------------------------------------|------------------|
-| Check_Cluster_Configuration            | Checks if the cluster configuration is applied                                                      | Team Gopher      |
-| Get_Kubeconfig                         | Gets the kubeconfig file.                                                                           | Team Gopher      |
-| BTPOperatorOverrides                   | Configures the required credentials for BTP.                                            | Team Gopher      |
-| Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                   | Team Gopher      |
-| BusolaMigratorOverrides                | Sets Busola's configuration.                                                                      | Team Hasselhoff  |
+| Step                                   | Description                                                                                           | Owner            |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------|------------------|
+| Check_Cluster_Configuration            | Checks if the cluster configuration is applied                                                        | Team Gopher      |
+| Get_Kubeconfig                         | Gets the kubeconfig file.                                                                             | Team Gopher      |
+| BTPOperatorOverrides                   | Configures the required credentials for BTP.                                                          | Team Gopher      |
+| Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                     | Team Gopher      |
+| BusolaMigratorOverrides                | Sets Busola's configuration.                                                                          | Team Hasselhoff  |
 | Send_Notification                      | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. | Team SRE         |
-| Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                  | Team Gopher      |
+| Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                    | Team Gopher      |
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
 
 ## Upgrade Cluster
 
-| Step                          | Description                                                                                         |
-|-------------------------------|-----------------------------------------------------------------------------------------------------|
+| Step                          | Description                                                                                           |
+|-------------------------------|-------------------------------------------------------------------------------------------------------|
 | Send_Notification             | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. |
-| Upgrade_Cluster               | Sends the updated cluster parameters to the Provisioner                                                       |
+| Upgrade_Cluster               | Sends the updated cluster parameters to the Provisioner                                               |
 
 ## Update 
 
-| Stage               | Step                           | Description                                                                                 |
-|---------------------|--------------------------------|---------------------------------------------------------------------------------------------|
-| cluster             | Update_Kyma_Initialisation     | Changes the state from `pending` to `in progress` if there is no other operation in progress.    |                                                                                                                     
-| cluster             | Upgrade_Shoot                  | Sends the updated cluster parameters to the Provisioner.                                             |                                                                                                                     
-| btp-operator        | Update_Init_Kyma_Version       | Specifies the Kyma version to install.                                                     |                                                                                                                      
-| btp-operator        | Get_Kubeconfig                 | Gets the kubeconfig file.                                                                   |                                                                                                                      
-| btp-operator        | BTPOperatorOverrides           | Configures the required credentials for BTP.                                    |                                                                                                                     
-| btp-operator        | Apply_Reconciler_Configuration | Applies the cluster configuration to the Reconciler.                                         |                                                                                                                      
-| btp-operator-check  | CheckReconcilerState           | Checks if the cluster configuration is applied                                              |                                                                                                                      
-| check               | Check_Runtime                  | Checks the status of the Provisioner process.                                               |                                                                                                                      
+| Stage               | Step                           | Description                                                                                   |
+|---------------------|--------------------------------|-----------------------------------------------------------------------------------------------|
+| cluster             | Update_Kyma_Initialisation     | Changes the state from `pending` to `in progress` if there is no other operation in progress. |                                                                                                                     
+| cluster             | Upgrade_Shoot                  | Sends the updated cluster parameters to the Provisioner.                                      |                                                                                                                     
+| btp-operator        | Update_Init_Kyma_Version       | Specifies the Kyma version to install.                                                        |                                                                                                                      
+| btp-operator        | Get_Kubeconfig                 | Gets the kubeconfig file.                                                                     |                                                                                                                      
+| btp-operator        | BTPOperatorOverrides           | Configures the required credentials for BTP.                                                  |                                                                                                                     
+| btp-operator        | Apply_Reconciler_Configuration | Applies the cluster configuration to the Reconciler.                                          |                                                                                                                      
+| btp-operator-check  | CheckReconcilerState           | Checks if the cluster configuration is applied                                                |                                                                                                                      
+| check               | Check_Runtime                  | Checks the status of the Provisioner process.                                                 |                                                                                                                      
  
 
 ## Provide additional steps
