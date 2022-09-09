@@ -47,7 +47,7 @@ The deprovisioning process contains the following steps:
 | EDP_Deregistration           | Event Data Platform              | Removes all SKR entries from the Event Data Platform.          | Team Gopher           |
 | IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                            | Team Gopher           |
 | Deregister_Cluster           | Reconciler                       | Removes the cluster from the Reconciler.                         | Team Gopher           |
-| Check_Cluster_Deregistration | Reconciler                       | Check if cluster deregistration is finished                      | Team Gopher           |
+| Check_Cluster_Deregistration | Reconciler                       | Checks if the cluster deregistration is complete                      | Team Gopher           |
 | Remove_Runtime               | Deprovisioning                   | Triggers deprovisioning of a Runtime in the Runtime Provisioner. | Team Gopher           | 
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
