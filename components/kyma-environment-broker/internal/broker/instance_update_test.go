@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var enabledDashboardConfig dashboard.Config = dashboard.Config{Enabled: true, LandscapeURL: "https://dashboard.example.com"}
+var dashboardConfig dashboard.Config = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
 
 type handler struct {
 	Instance   internal.Instance
@@ -65,7 +65,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -114,7 +114,7 @@ func TestUpdateEndpoint_UpdateExpirationOfTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -167,7 +167,7 @@ func TestUpdateEndpoint_UpdateExpirationOfExpiredTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -219,7 +219,7 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -261,7 +261,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -316,7 +316,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -344,7 +344,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -403,7 +403,7 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -443,7 +443,7 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
 
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), dashboardConfig)
 
 	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
 		// given
@@ -569,7 +569,7 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), enabledDashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -590,57 +590,4 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, inst.DashboardURL)
 	// check if the API response is correct
 	assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
-}
-
-func TestUpdateEndpoint_UpdateWithDisabledDashboard(t *testing.T) {
-	// given
-	disabledDashboardConfig := dashboard.Config{
-		Enabled:      false,
-		LandscapeURL: "example.com",
-	}
-
-	instance := internal.Instance{
-		InstanceID:    instanceID,
-		ServicePlanID: TrialPlanID,
-		Parameters: internal.ProvisioningParameters{
-			PlanID: TrialPlanID,
-			ErsContext: internal.ERSContext{
-				TenantID:        "",
-				SubAccountID:    "",
-				GlobalAccountID: "",
-				Active:          nil,
-			},
-		},
-		DashboardURL: "https://console.cd6e47b.example.com",
-	}
-	st := storage.NewMemoryStorage()
-	st.Instances().Insert(instance)
-	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
-
-	handler := &handler{}
-	q := process.Queue{}
-	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
-		return &gqlschema.ClusterConfigInput{}, nil
-	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), disabledDashboardConfig)
-
-	// when
-	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
-		ServiceID:       "",
-		PlanID:          TrialPlanID,
-		RawParameters:   nil,
-		PreviousValues:  domain.PreviousValues{},
-		RawContext:      json.RawMessage("{\"active\":false}"),
-		MaintenanceInfo: nil,
-	}, true)
-	require.NoError(t, err)
-
-	// then
-	inst, err := st.Instances().GetByID(instanceID)
-	require.NoError(t, err)
-
-	// ensure the instance is not updated
-	assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, inst.DashboardURL)
-	// ensure the API response is not updated
-	assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
 }

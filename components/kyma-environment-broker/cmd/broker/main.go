@@ -672,10 +672,6 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewBusolaMigratorOverridesStep(),
-		},
-		{
-			stage: createRuntimeStageName,
 			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		// check the runtime status
@@ -876,10 +872,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 4,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-		},
-		{
-			weight: 6,
-			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
 			weight:   8,

@@ -60,7 +60,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 		false,
 		planDefaults,
 		logrus.StandardLogger(),
-		enabledDashboardConfig,
+		dashboardConfig,
 	)
 	getSvc := broker.NewGetInstance(broker.Config{EnableKubeconfigURLLabel: true}, st.Instances(), st.Operations(), logrus.New())
 

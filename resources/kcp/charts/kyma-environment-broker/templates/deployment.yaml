@@ -384,8 +384,6 @@ spec:
               value: /config/newAdditionalRuntimeComponents.yaml
             - name: APP_PROFILER_MEMORY
               value: "{{ .Values.broker.profiler.memory }}"
-            - name: APP_KYMA_DASHBOARD_CONFIG_ENABLED
-              value: "{{ .Values.dashboardConfig.enabled }}"
             - name: APP_KYMA_DASHBOARD_CONFIG_LANDSCAPE_URL
               value: "{{ .Values.dashboardConfig.landscapeURL }}"
           ports:

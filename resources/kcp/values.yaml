@@ -39,7 +39,6 @@ global:
     periodSeconds: 2
   components:
     - base
-    - busola-migrator
     - cleaner
     - connectivity-proxy
     - istio

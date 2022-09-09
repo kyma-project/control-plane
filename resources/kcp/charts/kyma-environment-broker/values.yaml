@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2038"
+      version: "PR-2031"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1978"
@@ -263,5 +263,4 @@ serviceMonitor:
   interval: 30s
 
 dashboardConfig:
-  enabled: false
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
