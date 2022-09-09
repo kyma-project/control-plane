@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"strings"
-
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -62,20 +60,8 @@ func (c *converter) applyOperation(source *internal.Operation, target *pkg.Opera
 		target.Description = source.Description
 		target.OrchestrationID = source.OrchestrationID
 		target.RuntimeVersion = source.RuntimeVersion.Version
-		target.FinishedStagesOrdered = GetFinishedStagesInOrderAsList(source.FinishedStagesOrdered)
+		target.FinishedStages = source.FinishedStages
 	}
-}
-
-func GetFinishedStagesInOrderAsList(finishedStagesOrdered string) []string {
-	stages := strings.Split(finishedStagesOrdered, ",")
-	var filteredStages []string
-	for _, stage := range stages {
-		if stage == "" {
-			continue
-		}
-		filteredStages = append(filteredStages, stage)
-	}
-	return filteredStages
 }
 
 func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {

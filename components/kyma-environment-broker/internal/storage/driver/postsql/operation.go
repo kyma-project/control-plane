@@ -910,10 +910,6 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while marshal provisioning parameters")
 	}
 
-	stages := []string{}
-	for s, _ := range op.FinishedStages {
-		stages = append(stages, s)
-	}
 	return dbmodel.OperationDTO{
 		ID:                     op.ID,
 		Type:                   op.Type,
@@ -926,7 +922,7 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 		InstanceID:             op.InstanceID,
 		OrchestrationID:        storage.StringToSQLNullString(op.OrchestrationID),
 		ProvisioningParameters: storage.StringToSQLNullString(string(pp)),
-		FinishedStages:         storage.StringToSQLNullString(strings.Join(stages, ",")),
+		FinishedStages:         storage.StringToSQLNullString(strings.Join(op.FinishedStages, ",")),
 	}, nil
 }
 
@@ -943,10 +939,12 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
 	}
 
-	stages := make(map[string]struct{})
+	stages := make([]string, 0)
 	finishedSteps := storage.SQLNullStringToString(dto.FinishedStages)
 	for _, s := range strings.Split(finishedSteps, ",") {
-		stages[s] = struct{}{}
+		if s != "" {
+			stages = append(stages, s)
+		}
 	}
 
 	existingOp.ID = dto.ID
@@ -961,7 +959,6 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
 	existingOp.ProvisioningParameters = pp
 	existingOp.FinishedStages = stages
-	existingOp.FinishedStagesOrdered = finishedSteps
 
 	return existingOp, nil
 }
