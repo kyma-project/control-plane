@@ -14,7 +14,7 @@ The provisioning process contains the following steps:
 
 | Stage          | Step                                   | Domain                   | Description                                                                                                                           | Owner           |
 |----------------|----------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| start          | Starting                               | Provisioning             | Changes the state from pending to in progress if any other operation is not in progress.                                              | Team Gopher     |
+| start          | Starting                               | Provisioning             | Changes the state from `pending` to `in progress` if there is no other operation in progress.                                              | Team Gopher     |
 | create_runtime | Provision_Initialization               | Provisioning             | Starts the provisioning process.                                                                                                      | Team Gopher     |
 | create_runtime | Resolve_Target_Secret                  | Hyperscaler Account Pool | Provides the name of a Gardener Secret that contains  Hypescaler account credentials used during cluster provisioning.                | Team Framefrog  |
 | create_runtime | AVS_Create_Internal_Eval_Step          | AvS                      | Sets up internal monitoring of Kyma Runtime.                                                                                          | Team Gopher     |
