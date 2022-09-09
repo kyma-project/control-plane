@@ -60,13 +60,14 @@ type Type struct {
 
 	// Regex pattern to match against string type of fields.
 	// If not specified for strings user can pass empty string with whitespaces only.
-	Pattern         string        `json:"pattern,omitempty"`
-	Default         interface{}   `json:"default,omitempty"`
-	Example         interface{}   `json:"example,omitempty"`
-	Enum            []interface{} `json:"enum,omitempty"`
-	Items           []Type        `json:"items,omitempty"`
-	AdditionalItems *bool         `json:"additionalItems,omitempty"`
-	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
+	Pattern         string            `json:"pattern,omitempty"`
+	Default         interface{}       `json:"default,omitempty"`
+	Example         interface{}       `json:"example,omitempty"`
+	Enum            []interface{}     `json:"enum,omitempty"`
+	EnumDisplayName map[string]string `json:"_enumDisplayName,omitempty"`
+	Items           []Type            `json:"items,omitempty"`
+	AdditionalItems *bool             `json:"additionalItems,omitempty"`
+	UniqueItems     *bool             `json:"uniqueItems,omitempty"`
 }
 
 type NameType struct {
@@ -96,7 +97,7 @@ func NameProperty() NameType {
 
 // NewProvisioningProperties creates a new properties for different plans
 // Note that the order of properties will be the same in the form on the website
-func NewProvisioningProperties(machineTypes []string, regions []string, update bool) ProvisioningProperties {
+func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTypes, regions []string, update bool) ProvisioningProperties {
 
 	properties := ProvisioningProperties{
 		UpdateProperties: UpdateProperties{
@@ -120,8 +121,9 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 			Enum: ToInterfaceSlice(regions),
 		},
 		MachineType: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(machineTypes),
+			Type:            "string",
+			Enum:            ToInterfaceSlice(machineTypes),
+			EnumDisplayName: machineTypesDisplay,
 		},
 	}
 

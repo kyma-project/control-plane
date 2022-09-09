@@ -15,13 +15,14 @@ import (
 
 func TestSchemaGenerator(t *testing.T) {
 	tests := []struct {
-		name           string
-		generator      func([]string, bool, bool) *map[string]interface{}
-		machineTypes   []string
-		file           string
-		updateFile     string
-		fileOIDC       string
-		updateFileOIDC string
+		name                string
+		generator           func(map[string]string, []string, bool, bool) *map[string]interface{}
+		machineTypes        []string
+		machineTypesDisplay map[string]string
+		file                string
+		updateFile          string
+		fileOIDC            string
+		updateFileOIDC      string
 	}{
 		{
 			name:           "AWS schema is correct",
@@ -42,13 +43,14 @@ func TestSchemaGenerator(t *testing.T) {
 			updateFileOIDC: "update-azure-schema-additional-params.json",
 		},
 		{
-			name:           "AzureLite schema is correct",
-			generator:      AzureLiteSchema,
-			machineTypes:   []string{"Standard_D4_v3"},
-			file:           "azure-lite-schema.json",
-			updateFile:     "update-azure-lite-schema.json",
-			fileOIDC:       "azure-lite-schema-additional-params.json",
-			updateFileOIDC: "update-azure-lite-schema-additional-params.json",
+			name:                "AzureLite schema is correct",
+			generator:           AzureLiteSchema,
+			machineTypes:        []string{"Standard_D4_v3"},
+			machineTypesDisplay: map[string]string{"Standard_D4_v3": "Standard_D4_v3 (4vCPU, 16GB RAM)"},
+			file:                "azure-lite-schema.json",
+			updateFile:          "update-azure-lite-schema.json",
+			fileOIDC:            "azure-lite-schema-additional-params.json",
+			updateFileOIDC:      "update-azure-lite-schema-additional-params.json",
 		},
 		{
 			name:           "GCP schema is correct",
@@ -70,7 +72,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name: "Trial schema is correct",
-			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
 				return TrialSchema(additionalParams, update)
 			},
 			machineTypes:   []string{},
@@ -81,7 +83,7 @@ func TestSchemaGenerator(t *testing.T) {
 		},
 		{
 			name: "Freemium schema is correct",
-			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
 				return FreemiumSchema(internal.Azure, additionalParams, update)
 			},
 			machineTypes:   []string{},
@@ -93,7 +95,7 @@ func TestSchemaGenerator(t *testing.T) {
 
 		{
 			name: " schema is correct",
-			generator: func(machines []string, additionalParams, update bool) *map[string]interface{} {
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
 				return FreemiumSchema(internal.AWS, additionalParams, update)
 			},
 			machineTypes:   []string{},
@@ -105,16 +107,16 @@ func TestSchemaGenerator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.generator(tt.machineTypes, false, false)
+			got := tt.generator(tt.machineTypesDisplay, tt.machineTypes, false, false)
 			validateSchema(t, Marshal(got), tt.file)
 
-			got = tt.generator(tt.machineTypes, false, true)
+			got = tt.generator(tt.machineTypesDisplay, tt.machineTypes, false, true)
 			validateSchema(t, Marshal(got), tt.updateFile)
 
-			got = tt.generator(tt.machineTypes, true, false)
+			got = tt.generator(tt.machineTypesDisplay, tt.machineTypes, true, false)
 			validateSchema(t, Marshal(got), tt.fileOIDC)
 
-			got = tt.generator(tt.machineTypes, true, true)
+			got = tt.generator(tt.machineTypesDisplay, tt.machineTypes, true, true)
 			validateSchema(t, Marshal(got), tt.updateFileOIDC)
 		})
 	}
