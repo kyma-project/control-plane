@@ -65,7 +65,7 @@ The upgrade process contains the following steps:
 | BTPOperatorOverrides                   | Configures the required credentials for BTP.                                            | Team Gopher      |
 | Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                   | Team Gopher      |
 | BusolaMigratorOverrides                | Sets Busola's configuration.                                                                      | Team Hasselhoff  |
-| Send_Notification                      | Notify customers via SPC whenever an orchestration is scheduled, triggered, completed or cancelled. | Team SRE         |
+| Send_Notification                      | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. | Team SRE         |
 | Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                  | Team Gopher      |
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
