@@ -74,19 +74,19 @@ The upgrade process contains the following steps:
 
 | Step                          | Description                                                                                         |
 |-------------------------------|-----------------------------------------------------------------------------------------------------|
-| Send_Notification             | Notify customers via SPC whenever an orchestration is scheduled, triggered, completed or cancelled. |
-| Upgrade_Cluster               | Sends to provisoner changed cluster parameters                                                      |
+| Send_Notification             | Notify customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. |
+| Upgrade_Cluster               | Sends the updated cluster parameters to the Provisioner                                                       |
 
 ## Update 
 
 | Stage               | Step                           | Description                                                                                 |
 |---------------------|--------------------------------|---------------------------------------------------------------------------------------------|
-| cluster             | Update_Kyma_Initialisation     | Changes the state from pending to in progress if any other operation is not in progress.    |                                                                                                                     
-| cluster             | Upgrade_Shoot                  | Sends to provisoner changed cluster parameters.                                             |                                                                                                                     
-| btp-operator        | Update_Init_Kyma_Version       | Calculate what Kyma version to install.                                                     |                                                                                                                      
+| cluster             | Update_Kyma_Initialisation     | Changes the state from `pending` to `in progress` if there is no other operation in progress.    |                                                                                                                     
+| cluster             | Upgrade_Shoot                  | Sends the updated cluster parameters to the Provisioner.                                             |                                                                                                                     
+| btp-operator        | Update_Init_Kyma_Version       | Specifies the Kyma version to install.                                                     |                                                                                                                      
 | btp-operator        | Get_Kubeconfig                 | Gets the kubeconfig file.                                                                   |                                                                                                                      
-| btp-operator        | BTPOperatorOverrides           | Configures required configuration for BTP (credentials).                                    |                                                                                                                     
-| btp-operator        | Apply_Reconciler_Configuration | Applies a cluster configuration to the Reconciler .                                         |                                                                                                                      
+| btp-operator        | BTPOperatorOverrides           | Configures the required credentials for BTP.                                    |                                                                                                                     
+| btp-operator        | Apply_Reconciler_Configuration | Applies the cluster configuration to the Reconciler.                                         |                                                                                                                      
 | btp-operator-check  | CheckReconcilerState           | Checks if the cluster configuration is applied                                              |                                                                                                                      
 | check               | Check_Runtime                  | Checks the status of the Provisioner process.                                               |                                                                                                                      
  
