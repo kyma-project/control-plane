@@ -64,7 +64,7 @@ The upgrade process contains the following steps:
 | Get_Kubeconfig                         | Gets the kubeconfig file.                                                                           | Team Gopher      |
 | BTPOperatorOverrides                   | Configures the required credentials for BTP.                                            | Team Gopher      |
 | Overrides_From_Secrets_And_Config_Step | Builds an input configuration that is passed as overrides to Runtime Provisioner.                   | Team Gopher      |
-| BusolaMigratorOverrides                | Sets configuration for Busola.                                                                      | Team Hasselhoff  |
+| BusolaMigratorOverrides                | Sets Busola's configuration.                                                                      | Team Hasselhoff  |
 | Send_Notification                      | Notify customers via SPC whenever an orchestration is scheduled, triggered, completed or cancelled. | Team SRE         |
 | Apply_Cluster_Configuration            | Applies a cluster configuration to the Reconciler.                                                  | Team Gopher      |
 
