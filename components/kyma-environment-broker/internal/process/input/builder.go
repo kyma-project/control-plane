@@ -141,7 +141,10 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 		provider = &cloudProvider.AWSInput{
 			MultiZone: f.config.MultiZoneCluster,
 		}
+	case broker.OwnClusterPlanID:
+		provider = &cloudProvider.NoHyperscalerInput{}
 		// insert cases for other providers like AWS or GCP
+
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
 	}
@@ -165,7 +168,7 @@ func (f *InputBuilderFactory) CreateProvisionInput(pp internal.ProvisioningParam
 		return nil, errors.Wrap(err, "during creating provision input")
 	}
 
-	initInput, err := f.initProvisionRuntimeInput(provider, version, cfg)
+	initInput, err := f.initProvisionRuntimeInput(pp, provider, version, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
 	}
@@ -227,7 +230,7 @@ func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersi
 	return mapToGQLComponentConfigurationInput(allComponents), nil
 }
 
-func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInputProvider, version internal.RuntimeVersionData, config *internal.ConfigForPlan) (gqlschema.ProvisionRuntimeInput, error) {
+func (f *InputBuilderFactory) initProvisionRuntimeInput(pp internal.ProvisioningParameters, provider HyperscalerInputProvider, version internal.RuntimeVersionData, config *internal.ConfigForPlan) (gqlschema.ProvisionRuntimeInput, error) {
 	components, err := f.provideComponentList(version, config)
 	if err != nil {
 		return gqlschema.ProvisionRuntimeInput{}, err
@@ -243,6 +246,11 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 			Version:    version.Version,
 			Components: components.DeepCopy(),
 		},
+	}
+
+	// TODO: omit this section
+	if provisionInput.ClusterConfig.GardenerConfig == nil {
+		return provisionInput, nil
 	}
 
 	provisionInput.ClusterConfig.GardenerConfig.KubernetesVersion = f.config.KubernetesVersion
@@ -283,7 +291,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
 	}
 
-	kymaInput, err := f.initProvisionRuntimeInput(provider, version, cfg)
+	kymaInput, err := f.initProvisionRuntimeInput(pp, provider, version, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "while initializing RuntimeInput")
 	}

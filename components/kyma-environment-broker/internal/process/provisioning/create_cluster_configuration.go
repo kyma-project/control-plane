@@ -5,8 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
@@ -36,6 +38,18 @@ func (s *CreateClusterConfigurationStep) Name() string {
 }
 
 func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+	if operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID && operation.RuntimeID == "" {
+		generatedRuntimeId := uuid.New().String()
+		operation.RuntimeID = generatedRuntimeId
+		_, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+			operation.RuntimeID = generatedRuntimeId
+		}, log)
+		if repeat != 0 {
+			log.Errorf("cannot save cluster runtimeId")
+			return operation, 5 * time.Second, nil
+		}
+	}
+
 	if operation.ClusterConfigurationVersion != 0 {
 		log.Debugf("Cluster configuration already created, skipping")
 		return operation, 0, nil

@@ -46,6 +46,12 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 		broker.FreemiumPlanID: {
 			components.KnativeEventingKafka: {},
 		},
+		broker.OwnClusterPlanID: {
+			components.KnativeEventingKafka: {},
+			components.Connectivity:         {},
+			components.ConnectivityProxy:    {},
+			components.Connector:            {},
+		},
 	}
 }
 

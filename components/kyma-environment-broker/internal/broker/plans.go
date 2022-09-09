@@ -27,7 +27,7 @@ const (
 	OpenStackPlanName  = "openstack"
 	FreemiumPlanID     = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
 	FreemiumPlanName   = "free"
-	OwnClusterPlanID   = "b1a5764e-2ea1-4f95-94c0-2b4538b37b56" // dummy plan id
+	OwnClusterPlanID   = "03e3cb66-a4c6-4c6a-b4b0-5d42224debea"
 	OwnClusterPlanName = "owncluster"
 )
 
@@ -43,14 +43,14 @@ var PlanNamesMapping = map[string]string{
 }
 
 var PlanIDsMapping = map[string]string{
-	AzurePlanName:     AzurePlanID,
-	AWSPlanName:       AWSPlanID,
-	AzureLitePlanName: AzureLitePlanID,
-	GCPPlanName:       GCPPlanID,
-	TrialPlanName:     TrialPlanID,
-	OpenStackPlanName: OpenStackPlanID,
-	FreemiumPlanName:  FreemiumPlanID,
-	OwnClusterPlanID:  OwnClusterPlanName,
+	AzurePlanName:      AzurePlanID,
+	AWSPlanName:        AWSPlanID,
+	AzureLitePlanName:  AzureLitePlanID,
+	GCPPlanName:        GCPPlanID,
+	TrialPlanName:      TrialPlanID,
+	OpenStackPlanName:  OpenStackPlanID,
+	FreemiumPlanName:   FreemiumPlanID,
+	OwnClusterPlanName: OwnClusterPlanID,
 }
 
 type TrialCloudRegion string
@@ -244,7 +244,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema([]string{"Standard_D4_v3"}, includeAdditionalParamsInSchema, true)),
 		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
-		OwnClusterPlanID: defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
+		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 	}
 
 	return outputPlans

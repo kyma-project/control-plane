@@ -954,5 +954,5 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 }
 
 func noKubeConfig(operation internal.ProvisioningOperation) bool {
-	return operation.ProvisioningParameters.Parameters.Kubeconfig == ""
+	return operation.ProvisioningParameters.PlanID != broker.OwnClusterPlanID
 }
