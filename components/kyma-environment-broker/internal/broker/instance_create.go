@@ -20,6 +20,7 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 //go:generate mockery --name=Queue --output=automock --outpkg=automock --case=underscore
@@ -139,8 +140,8 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
-	// create SKR shoot name
 	shootName := gardener.CreateShootName()
+	shootDomain := strings.Trim(b.shootDomain, ".")
 
 	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
 	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
@@ -153,8 +154,60 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
+
+	if provisioningParameters.PlanID != OwnClusterPlanID &&
+		(provisioningParameters.Parameters.ShootName != "" || provisioningParameters.Parameters.ShootDomain != "") {
+		logger.Errorf("shootName and shootDomain are only valid in owncluster plan: %s", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("shootName and shootDomain are only valid in owncluster plan")
+	}
+
+	// xor validation of shootName, shotDomain pair dependent on the owncluster plan
+	if provisioningParameters.PlanID == OwnClusterPlanID &&
+		(provisioningParameters.Parameters.ShootName != "" || provisioningParameters.Parameters.ShootDomain != "") &&
+		!(provisioningParameters.Parameters.ShootName != "" && provisioningParameters.Parameters.ShootDomain != "") {
+		logger.Errorf("shootName and shootDomain should be specified togerther: %s", err)
+		return domain.ProvisionedServiceSpec{}, errors.New("shootName and shootDomain should be specified togerther")
+	}
+
+	if provisioningParameters.PlanID == OwnClusterPlanID &&
+		provisioningParameters.Parameters.ShootName != "" &&
+		provisioningParameters.Parameters.ShootDomain != "" {
+
+		shootName = provisioningParameters.Parameters.ShootName
+		shootDomain = provisioningParameters.Parameters.ShootDomain
+
+	} else if provisioningParameters.PlanID == OwnClusterPlanID {
+
+		config, err := clientcmd.NewClientConfigFromBytes([]byte(provisioningParameters.Parameters.Kubeconfig))
+		if err != nil {
+			logger.Errorf("while parsing kubeconfig: %s", err)
+			return domain.ProvisionedServiceSpec{}, errors.New("while parsing kubeconfig")
+		}
+
+		clientConfig, err := config.ClientConfig()
+		if err != nil {
+			logger.Errorf("while generating clientconfigs: %s", err)
+			return domain.ProvisionedServiceSpec{}, errors.New("while generating clientconfigs")
+		}
+		logger.Infof("Client config is: %v", clientConfig)
+
+		k8sServicePath := strings.TrimSpace(clientConfig.Host)
+		logger.Infof("Api path is: %v", clientConfig.Host)
+		parts := strings.Split(k8sServicePath, ".")
+		logger.Infof("Array contents: %v", parts)
+		if len(parts) < 2 {
+			logger.Errorf("while extracting the domain: %s", err)
+			return domain.ProvisionedServiceSpec{}, errors.New("while parsing service path")
+		}
+
+		shootName = parts[1]
+		logger.Infof("Shoot name is: %v", shootName)
+		shootDomain = strings.ReplaceAll(k8sServicePath, "https://api."+shootName+".", "")
+		logger.Infof("Domain is: %v", shootDomain)
+	}
+
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomain)
 	operation.ShootDNSProviders = b.shootDnsProviders
 	operation.DashboardURL = dashboardURL
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
