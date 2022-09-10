@@ -677,9 +677,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewBusolaMigratorOverridesStep(),
 		},
 		{
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
-			condition: noKubeConfig,
+			stage: createRuntimeStageName,
+			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		// check the runtime status
 		{
