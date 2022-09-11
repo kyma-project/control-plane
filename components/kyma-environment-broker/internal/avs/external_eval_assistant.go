@@ -20,7 +20,7 @@ func NewExternalEvalAssistant(avsConfig Config) *ExternalEvalAssistant {
 	}
 }
 
-func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
+func (eea *ExternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.Operation, url string) (*BasicEvaluationCreateRequest, error) {
 	return newBasicEvaluationCreateRequest(operations, eea, url)
 }
 

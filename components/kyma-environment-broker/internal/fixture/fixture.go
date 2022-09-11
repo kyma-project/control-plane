@@ -176,7 +176,7 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
-		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedStages:         []string{"prepare", "check_provisioning"},
 	}
 }
 
@@ -190,7 +190,7 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	}
 }
 
-func FixProvisioningOperation(operationId, instanceId string) internal.ProvisioningOperation {
+func FixProvisioningOperation(operationId, instanceId string) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
 	o.RuntimeVersion = internal.RuntimeVersionData{
 		Version: KymaVersion,
@@ -198,9 +198,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 	}
 	o.InputCreator = FixInputCreator(internal.Azure)
 	o.DashboardURL = "https://console.kyma.org"
-	return internal.ProvisioningOperation{
-		Operation: o,
-	}
+	return o
 }
 
 func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOperation {
@@ -221,7 +219,7 @@ func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOpera
 	}
 }
 
-func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
 	o.RuntimeVersion = internal.RuntimeVersionData{
 		Version: KymaVersion,
@@ -229,9 +227,7 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 	}
 	o.InputCreator = FixInputCreator(provider)
 	o.DashboardURL = "https://console.kyma.org"
-	return internal.ProvisioningOperation{
-		Operation: o,
-	}
+	return o
 }
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
@@ -240,6 +236,12 @@ func FixDeprovisioningOperation(operationId, instanceId string) internal.Deprovi
 	return internal.DeprovisioningOperation{
 		Operation: o,
 	}
+}
+
+func FixDeprovisioningOperationAsOperation(operationId, instanceId string) internal.Operation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
+	o.Temporary = false
+	return o
 }
 
 func FixSuspensionOperation(operationId, instanceId string) internal.DeprovisioningOperation {

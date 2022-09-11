@@ -23,7 +23,7 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 
 	operation := fixOperationCreateRuntime(t, broker.GCPPlanID, "europe-west3")
 	operation.ShootDomain = "kyma.org"
-	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	err := memoryStorage.Operations().InsertOperation(operation)
 	assert.NoError(t, err)
 
 	err = memoryStorage.Instances().Insert(fixInstance())
@@ -128,7 +128,7 @@ func TestCreateRuntimeWithoutKymaStep_RunWithBadRequestError(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage()
 
 	operation := fixOperationCreateRuntime(t, broker.AzurePlanID, "westeurope")
-	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	err := memoryStorage.Operations().InsertOperation(operation)
 	assert.NoError(t, err)
 
 	err = memoryStorage.Instances().Insert(fixInstance())

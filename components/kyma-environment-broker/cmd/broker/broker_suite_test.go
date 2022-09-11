@@ -172,7 +172,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	require.NoError(t, err)
 
 	// TODO put Reconciler client in the queue for steps
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
@@ -356,7 +356,7 @@ func (s *BrokerSuiteTest) CreateProvisionedRuntime(options RuntimeOptions) strin
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, randomInstanceId)
 
 	require.NoError(s.t, s.db.Instances().Insert(instance))
-	require.NoError(s.t, s.db.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.db.Operations().InsertOperation(provisioningOperation))
 
 	return instance.InstanceID
 }

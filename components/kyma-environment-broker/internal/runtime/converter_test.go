@@ -175,7 +175,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
 
 		// then
-		assert.Equal(t, []string(nil), dto.Status.Provisioning.FinishedStagesOrdered)
+		assert.Equal(t, []string(nil), dto.Status.Provisioning.FinishedStages)
 		assert.Equal(t, "", dto.Status.Provisioning.RuntimeVersion)
 	})
 
@@ -183,15 +183,7 @@ func TestConverting_ProvisioningOperationConverter(t *testing.T) {
 		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersion(domain.Succeeded, time.Now()))
 
 		// then
-		assert.True(t, reflect.DeepEqual(expected, dto.Status.Provisioning.FinishedStagesOrdered))
-		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
-	})
-
-	t.Run("runtime and finished orders should be set in order and skip empty stages", func(t *testing.T) {
-		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperationWithStagesAndVersionAndCommas(domain.Succeeded, time.Now()))
-
-		// then
-		assert.True(t, reflect.DeepEqual(expected, dto.Status.Provisioning.FinishedStagesOrdered))
+		assert.True(t, reflect.DeepEqual(expected, dto.Status.Provisioning.FinishedStages))
 		assert.Equal(t, "2.0", dto.Status.Provisioning.RuntimeVersion)
 	})
 }
@@ -240,26 +232,10 @@ func fixProvisioningOperation(state domain.LastOperationState, createdAt time.Ti
 func fixProvisioningOperationWithStagesAndVersion(state domain.LastOperationState, createdAt time.Time) *internal.ProvisioningOperation {
 	return &internal.ProvisioningOperation{
 		Operation: internal.Operation{
-			CreatedAt:             createdAt,
-			ID:                    "prov-id",
-			State:                 state,
-			FinishedStagesOrdered: "start,create_runtime,check_kyma,post_actions",
-			RuntimeVersion: internal.RuntimeVersionData{
-				Version:      "2.0",
-				Origin:       "default",
-				MajorVersion: 2,
-			},
-		},
-	}
-}
-
-func fixProvisioningOperationWithStagesAndVersionAndCommas(state domain.LastOperationState, createdAt time.Time) *internal.ProvisioningOperation {
-	return &internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			CreatedAt:             createdAt,
-			ID:                    "prov-id",
-			State:                 state,
-			FinishedStagesOrdered: ",start,create_runtime,,check_kyma,post_actions,",
+			CreatedAt:      createdAt,
+			ID:             "prov-id",
+			State:          state,
+			FinishedStages: []string{"start", "create_runtime", "check_kyma", "post_actions"},
 			RuntimeVersion: internal.RuntimeVersionData{
 				Version:      "2.0",
 				Origin:       "default",

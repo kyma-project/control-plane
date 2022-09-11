@@ -21,7 +21,7 @@ func (s *BusolaMigratorOverridesStep) Name() string {
 	return "BusolaMigratorOverrides"
 }
 
-func (s *BusolaMigratorOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *BusolaMigratorOverridesStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	kubeconfigIDOverrides := []*gqlschema.ConfigEntryInput{
 		{
 			Key:   "deployment.env.kubeconfigID",

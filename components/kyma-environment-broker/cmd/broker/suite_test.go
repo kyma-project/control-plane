@@ -332,6 +332,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 				ShootName:   shootName,
 				ShootDomain: "fake.domain",
 			},
+			Type: internal.OperationTypeProvision,
 		},
 	}
 	runtimeState := fixture.FixRuntimeState(runtimeStateID, runtimeID, provisioningOperation.ID)
@@ -368,7 +369,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	shoot.SetGroupVersionKind(shootGVK)
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
-	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.storage.Operations().InsertOperation(provisioningOperation.Operation))
 	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
@@ -555,7 +556,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 
 type ProvisioningSuite struct {
 	provisionerClient   *provisioner.FakeClient
-	provisioningManager *provisioning.StagedManager
+	provisioningManager *process.StagedManager
 	provisioningQueue   *process.Queue
 	storage             storage.BrokerStorage
 	directorClient      *director.FakeClient
@@ -640,7 +641,7 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 
 	eventBroker := event.NewPubSub(logs)
 
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
@@ -689,7 +690,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 
-	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	err = s.storage.Operations().InsertOperation(operation.Operation)
 	require.NoError(s.t, err)
 
 	err = s.storage.Instances().Insert(internal.Instance{
@@ -727,7 +728,7 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 	operation.DashboardURL = dashboardURL
 	require.NoError(s.t, err)
 
-	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	err = s.storage.Operations().InsertOperation(operation.Operation)
 	require.NoError(s.t, err)
 
 	instance := &internal.Instance{
@@ -753,18 +754,18 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 }
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
-	var op *internal.ProvisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconciler(operationID string) {
-	var op *internal.ProvisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
 		}
@@ -775,7 +776,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconcile
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
 
 	err = wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		if op.ClusterConfigurationVersion != 0 {
 			return true, nil
 		}
@@ -788,9 +789,9 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconcile
 
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
-	var provisioningOp *internal.ProvisioningOperation
+	var provisioningOp *internal.Operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
 			provisioningOp = op
@@ -820,7 +821,7 @@ func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	}
 }
 
-func (s *ProvisioningSuite) finishOperationByReconciler(op *internal.ProvisioningOperation) {
+func (s *ProvisioningSuite) finishOperationByReconciler(op *internal.Operation) {
 	time.Sleep(50 * time.Millisecond)
 	err := wait.Poll(pollingInterval, 10*time.Second, func() (bool, error) {
 		state, err := s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)

@@ -17,14 +17,14 @@ import (
 type StartStep struct {
 	operationStorage storage.Operations
 	instanceStorage  storage.Instances
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.OperationManager
 }
 
 func NewStartStep(os storage.Operations, is storage.Instances) *StartStep {
 	return &StartStep{
 		operationStorage: os,
 		instanceStorage:  is,
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 	}
 }
 
@@ -32,7 +32,7 @@ func (s *StartStep) Name() string {
 	return "Starting"
 }
 
-func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *StartStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.State != orchestration.Pending {
 		return operation, 0, nil
 	}
@@ -70,7 +70,7 @@ func (s *StartStep) Run(operation internal.ProvisioningOperation, log logrus.Fie
 		return operation, time.Minute, nil
 	}
 	log.Infof("Setting the operation to 'InProgress'")
-	newOp, retry, _ := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+	newOp, retry, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		if lastOp != nil {
 			op.ProvisioningParameters.ErsContext = internal.InheritMissingERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 		}

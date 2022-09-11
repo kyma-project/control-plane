@@ -8,19 +8,19 @@
 * @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @hanngos @tillknuesting
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar  @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/resources/kcp/values.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar  @wozniakjan @hanngos @tillknuesting @ebensom @tobiscr @pbochynski @varbanv @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @pxsalehi @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @jaroslaw-pieszka
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting @ebensom
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting
+/resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @janmedrek @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @hanngos @tillknuesting @jaroslaw-pieszka
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/components/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting
+/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
+/components/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
+/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
+/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
 
 # Runtime Provisioner
 /resources/kcp/charts/provisioner @janmedrek @akgalwas @franpog859 @mvshao @VOID404 @koala7659
@@ -47,7 +47,7 @@
 /resources/oidc-kubeconfig-service  @ebensom @life0215 @lumi017 @AdrianPei @lauraanddolay
 
 # KCP CLI
-/tools/cli @ebensom @life0215 @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting
+/tools/cli @ebensom @life0215 @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @m00g3n @dbadura @pPrecel @kwiatekus @moelsayed @cortey @ralikio @hanngos @tillknuesting @jaroslaw-pieszka
 
 # reconciler
 /components/reconciler @m00g3n @dbadura @pPrecel @moelsayed @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia

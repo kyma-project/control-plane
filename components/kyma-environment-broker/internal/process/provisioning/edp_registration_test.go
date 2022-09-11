@@ -29,18 +29,16 @@ func TestEDPRegistration_Run(t *testing.T) {
 		Environment: edpEnvironment,
 		Required:    true,
 	})
-	operation := internal.ProvisioningOperation{
-		Operation: internal.Operation{
-			ProvisioningParameters: internal.ProvisioningParameters{
-				PlanID:         broker.AzurePlanID,
-				PlatformRegion: edpRegion,
-				ErsContext: internal.ERSContext{
-					SubAccountID: edpName,
-				},
+	operation := internal.Operation{
+		ProvisioningParameters: internal.ProvisioningParameters{
+			PlanID:         broker.AzurePlanID,
+			PlatformRegion: edpRegion,
+			ErsContext: internal.ERSContext{
+				SubAccountID: edpName,
 			},
 		},
 	}
-	memoryStorage.Operations().InsertProvisioningOperation(operation)
+	memoryStorage.Operations().InsertOperation(operation)
 
 	// when
 	_, repeat, err := step.Run(operation, logger.NewLogDummy())

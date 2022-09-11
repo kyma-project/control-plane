@@ -24,7 +24,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 	t.Run("Should return last operation when operation ID provided", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
+		err := memoryStorage.Operations().InsertOperation(fixOperation())
 		assert.NoError(t, err)
 
 		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
@@ -42,7 +42,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 	t.Run("Should return last operation when operation ID not provided", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixOperation())
+		err := memoryStorage.Operations().InsertOperation(fixOperation())
 		assert.NoError(t, err)
 
 		lastOperationEndpoint := broker.NewLastOperation(memoryStorage.Operations(), logrus.StandardLogger())
@@ -180,7 +180,7 @@ func TestLastOperation_LastOperation(t *testing.T) {
 	})
 }
 
-func fixOperation() internal.ProvisioningOperation {
+func fixOperation() internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, instID)
 	provisioningOperation.State = domain.Succeeded
 	provisioningOperation.Description = operationDescription

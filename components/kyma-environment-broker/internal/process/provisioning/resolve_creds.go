@@ -13,7 +13,7 @@ import (
 )
 
 type ResolveCredentialsStep struct {
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.OperationManager
 	accountProvider  hyperscaler.AccountProvider
 	opStorage        storage.Operations
 	tenant           string
@@ -21,7 +21,7 @@ type ResolveCredentialsStep struct {
 
 func NewResolveCredentialsStep(os storage.Operations, accountProvider hyperscaler.AccountProvider) *ResolveCredentialsStep {
 	return &ResolveCredentialsStep{
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		opStorage:        os,
 		accountProvider:  accountProvider,
 	}
@@ -31,7 +31,7 @@ func (s *ResolveCredentialsStep) Name() string {
 	return "Resolve_Target_Secret"
 }
 
-func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ResolveCredentialsStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.ProvisioningParameters.Parameters.TargetSecret != nil {
 		return operation, 0, nil
 	}
@@ -70,7 +70,7 @@ func (s *ResolveCredentialsStep) Run(operation internal.ProvisioningOperation, l
 	}
 	operation.ProvisioningParameters.Parameters.TargetSecret = &secretName
 
-	updatedOperation, err := s.opStorage.UpdateProvisioningOperation(operation)
+	updatedOperation, err := s.opStorage.UpdateOperation(operation)
 	if err != nil {
 		return operation, 1 * time.Minute, nil
 	}

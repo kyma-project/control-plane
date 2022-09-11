@@ -29,7 +29,7 @@ type KymaVersionConfigurator interface {
 }
 
 type InitialisationStep struct {
-	operationManager       *process.ProvisionOperationManager
+	operationManager       *process.OperationManager
 	inputBuilder           input.CreatorForPlan
 	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
 	instanceStorage        storage.Instances
@@ -37,7 +37,7 @@ type InitialisationStep struct {
 
 func NewInitialisationStep(os storage.Operations, is storage.Instances, b input.CreatorForPlan, rvc RuntimeVersionConfiguratorForProvisioning) *InitialisationStep {
 	return &InitialisationStep{
-		operationManager:       process.NewProvisionOperationManager(os),
+		operationManager:       process.NewOperationManager(os),
 		inputBuilder:           b,
 		runtimeVerConfigurator: rvc,
 		instanceStorage:        is,
@@ -48,7 +48,7 @@ func (s *InitialisationStep) Name() string {
 	return "Provision_Initialization"
 }
 
-func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *InitialisationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	// configure the Kyma version to use
 	err := s.configureKymaVersion(&operation, log)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *InitialisationStep) Run(operation internal.ProvisioningOperation, log l
 	}
 }
 
-func (s *InitialisationStep) configureKymaVersion(operation *internal.ProvisioningOperation, log logrus.FieldLogger) error {
+func (s *InitialisationStep) configureKymaVersion(operation *internal.Operation, log logrus.FieldLogger) error {
 	if !operation.RuntimeVersion.IsEmpty() {
 		return nil
 	}
@@ -88,7 +88,7 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Provisioni
 	}
 
 	var repeat time.Duration
-	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.ProvisioningOperation) {
+	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.Operation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
 		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")

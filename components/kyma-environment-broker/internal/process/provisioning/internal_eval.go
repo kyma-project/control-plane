@@ -25,6 +25,6 @@ func (ies *InternalEvaluationStep) Name() string {
 	return "AVS_Create_Internal_Eval_Step"
 }
 
-func (ies *InternalEvaluationStep) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (ies *InternalEvaluationStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	return ies.delegator.CreateEvaluation(logger, operation, ies.iec, "")
 }

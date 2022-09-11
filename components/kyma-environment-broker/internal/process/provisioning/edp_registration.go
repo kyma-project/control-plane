@@ -26,14 +26,14 @@ type EDPClient interface {
 }
 
 type EDPRegistrationStep struct {
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.OperationManager
 	client           EDPClient
 	config           edp.Config
 }
 
 func NewEDPRegistrationStep(os storage.Operations, client EDPClient, config edp.Config) *EDPRegistrationStep {
 	return &EDPRegistrationStep{
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		client:           client,
 		config:           config,
 	}
@@ -43,7 +43,7 @@ func (s *EDPRegistrationStep) Name() string {
 	return "EDP_Registration"
 }
 
-func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EDPRegistrationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.EDPCreated {
 		return operation, 0, nil
 	}
@@ -85,7 +85,7 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 		}
 	}
 
-	newOp, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.ProvisioningOperation) {
+	newOp, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		op.EDPCreated = true
 	}, log)
 	if repeat != 0 {
@@ -96,7 +96,7 @@ func (s *EDPRegistrationStep) Run(operation internal.ProvisioningOperation, log 
 	return newOp, 0, nil
 }
 
-func (s *EDPRegistrationStep) handleError(operation internal.ProvisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EDPRegistrationStep) handleError(operation internal.Operation, err error, log logrus.FieldLogger, msg string) (internal.Operation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 
 	if kebError.IsTemporaryError(err) {
@@ -147,7 +147,7 @@ func (s *EDPRegistrationStep) generateSecret(name, env string) string {
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s%s", name, env)))
 }
 
-func (s *EDPRegistrationStep) handleConflict(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *EDPRegistrationStep) handleConflict(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	for _, key := range []string{
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,

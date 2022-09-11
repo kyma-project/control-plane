@@ -16,7 +16,7 @@ import (
 
 type CreateClusterConfigurationStep struct {
 	reconcilerClient    reconciler.Client
-	operationManager    *process.ProvisionOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 	runtimeStateStorage storage.RuntimeStates
 }
@@ -24,19 +24,18 @@ type CreateClusterConfigurationStep struct {
 func NewCreateClusterConfiguration(os storage.Operations, runtimeStorage storage.RuntimeStates, reconcilerClient reconciler.Client) *CreateClusterConfigurationStep {
 	return &CreateClusterConfigurationStep{
 		reconcilerClient:    reconcilerClient,
-		operationManager:    process.NewProvisionOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		runtimeStateStorage: runtimeStorage,
 	}
 }
 
-var _ Step = (*CreateClusterConfigurationStep)(nil)
+var _ process.Step = (*CreateClusterConfigurationStep)(nil)
 
 func (s *CreateClusterConfigurationStep) Name() string {
 	return "Create_Cluster_Configuration"
 }
 
-func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
-
+func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.ClusterConfigurationVersion != 0 {
 		log.Debugf("Cluster configuration already created, skipping")
 		return operation, 0, nil
@@ -87,7 +86,7 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.ProvisioningOper
 	}
 	log.Infof("Cluster configuration version %d", state.ConfigurationVersion)
 
-	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.ClusterConfigurationVersion = state.ConfigurationVersion
 		operation.ClusterName = clusterConfiguration.RuntimeInput.Name
 	}, log)

@@ -124,8 +124,9 @@ enablePlans: "azure,gcp,azure_lite,trial"
 onlySingleTrialPerGA: "true"
 enableKubeconfigURLLabel: "false"
 includeAdditionalParamsInSchema: "false"
-showTrialExpireInfo: "false"
-subaccountIDToShowTrialExpireInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
+showTrialExpirationInfo: "false"
+subaccountsIdsToShowTrialExpirationInfo: "a45be5d8-eddc-4001-91cf-48cc644d571f"
+trialDocsURL: "https://help.sap.com/docs/"
 
 osbUpdateProcessingEnabled: "false"
 

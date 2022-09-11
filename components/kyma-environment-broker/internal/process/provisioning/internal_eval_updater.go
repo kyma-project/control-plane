@@ -22,7 +22,7 @@ func NewInternalEvalUpdater(delegator *avs.Delegator, assistant *avs.InternalEva
 	}
 }
 
-func (ieu *InternalEvalUpdater) AddTagsToEval(tags []*avs.Tag, operation internal.ProvisioningOperation, url string, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (ieu *InternalEvalUpdater) AddTagsToEval(tags []*avs.Tag, operation internal.Operation, url string, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if !ieu.avsConfig.AdditionalTagsEnabled {
 		logger.Infof("Adding additional tags to AVS evaluation is disabled")
 		return operation, 0 * time.Second, nil

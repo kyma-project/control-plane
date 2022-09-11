@@ -365,7 +365,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 func fixProvisioningOperation(id string) internal.ProvisioningOperation {
 	provisioningOperation := fixture.FixProvisioningOperation(id, instanceID)
 
-	return provisioningOperation
+	return internal.ProvisioningOperation{Operation: provisioningOperation}
 }
 
 func fixSuspensionOperation() internal.DeprovisioningOperation {

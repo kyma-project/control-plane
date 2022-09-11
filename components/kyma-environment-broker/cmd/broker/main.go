@@ -345,7 +345,7 @@ func main() {
 
 	// run queues
 	const workersAmount = 5
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, bundleBuilder,
@@ -610,7 +610,7 @@ func panicOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.StagedManager, workersAmount int,
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *process.StagedManager, workersAmount int,
 	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
 	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
@@ -636,8 +636,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	provisioningSteps := []struct {
 		disabled  bool
 		stage     string
-		step      provisioning.Step
-		condition provisioning.StepCondition
+		step      process.Step
+		condition process.StepCondition
 	}{
 		{
 			stage: startStageName,
