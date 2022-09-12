@@ -231,10 +231,8 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 }
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
-	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
-	o.Temporary = false
 	return internal.DeprovisioningOperation{
-		Operation: o,
+		Operation: FixDeprovisioningOperationAsOperation(operationId, instanceId),
 	}
 }
 
@@ -245,12 +243,16 @@ func FixDeprovisioningOperationAsOperation(operationId, instanceId string) inter
 }
 
 func FixSuspensionOperation(operationId, instanceId string) internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		Operation: FixSuspensionOperationAsOperation(operationId, instanceId),
+	}
+}
+
+func FixSuspensionOperationAsOperation(operationId, instanceId string) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
 	o.Temporary = true
 	o.ProvisioningParameters.PlanID = TrialPlan
-	return internal.DeprovisioningOperation{
-		Operation: o,
-	}
+	return o
 }
 
 func FixRuntime(id string) orchestration.Runtime {
