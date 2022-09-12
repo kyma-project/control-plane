@@ -121,7 +121,7 @@ func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev i
 	}
 
 	switch {
-	case stepProcessed.Operation.Type == internal.OperationTypeProvision:
+	case stepProcessed.Operation.Type == "provisioning":
 		provisioningStepProcessed := process.ProvisioningStepProcessed{
 			Operation:     internal.ProvisioningOperation{Operation: stepProcessed.Operation},
 			StepProcessed: stepProcessed.StepProcessed,
