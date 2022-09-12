@@ -32,26 +32,22 @@ func (s RemoveInstanceStep) Name() string {
 }
 
 func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	var delay time.Duration
 
 	if operation.Temporary {
-		delay, err := s.removeRuntimeIDFromInstance(operation.InstanceID, log)
-		if err != nil {
-			return operation, delay, err
+		log.Info("Removing the RuntimeID field from instance")
+		delay = s.removeRuntimeIDFromInstance(operation.InstanceID)
+		if delay != 0 {
+			return operation, delay, nil
 		}
 
 		log.Info("Removing the RuntimeID field from operation")
 		operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			operation.RuntimeID = ""
 		}, log)
-
-		if delay != 0 {
-			return operation, delay, nil
-		}
-
-		return operation, 0, nil
 	} else {
-		log.Info("Removing the instance")
-		delay := s.removeInstancePermanently(operation.InstanceID)
+		log.Info("Removing the instance permanently")
+		delay = s.removeInstancePermanently(operation.InstanceID)
 		if delay != 0 {
 			return operation, delay, nil
 		}
@@ -60,31 +56,26 @@ func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLo
 		operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			operation.ProvisioningParameters.ErsContext.UserID = ""
 		}, log)
-		if delay != 0 {
-			return operation, delay, nil
-		}
-
-		return operation, 0, nil
 	}
+
+	return operation, delay, nil
 }
 
-func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string, log logrus.FieldLogger) (time.Duration, error) {
+func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.Duration {
 	delay := time.Second
+
 	instance, err := s.instanceStorage.GetByID(instanceID)
 	if err != nil {
-		log.Errorf("cannot fetch instance with ID: %s from storage", instanceID)
-		return delay, err
+		return delay
 	}
 
 	// empty RuntimeID means there is no runtime in the Provisioner Domain
-	log.Info("Removing the RuntimeID field from instance")
 	instance.RuntimeID = ""
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		log.Errorf("cannot update instance with ID: %s", instanceID)
-		return delay, err
+		return delay
 	}
-	return 0, nil
+	return 0
 }
 
 func (s RemoveInstanceStep) removeInstancePermanently(instanceID string) time.Duration {
