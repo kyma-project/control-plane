@@ -234,5 +234,6 @@ func (m *StagedManager) callPubSubOutsideSteps(operation *internal.Operation, er
 			Duration: time.Since(operation.CreatedAt),
 			Error:    err,
 		},
+		Operation: *operation,
 	})
 }
