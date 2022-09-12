@@ -1246,6 +1246,10 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 					Value:  smClusterID,
 					Secret: false,
 				},
+				{
+					Key:   "manager.priorityClassName",
+					Value: "kyma-system",
+				},
 			},
 		},
 	}

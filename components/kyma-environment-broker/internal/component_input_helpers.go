@@ -23,15 +23,17 @@ const (
 	BTPOperatorComponentName = "btp-operator"
 
 	// BTP Operator overrides keys
-	BTPOperatorClientID     = "manager.secret.clientid"
-	BTPOperatorClientSecret = "manager.secret.clientsecret"
-	BTPOperatorURL          = "manager.secret.url"    // deprecated, for btp-operator v0.2.0
-	BTPOperatorSMURL        = "manager.secret.sm_url" // for btp-operator v0.2.3
-	BTPOperatorTokenURL     = "manager.secret.tokenurl"
-	BTPOperatorClusterID    = "cluster.id"
+	BTPOperatorClientID           = "manager.secret.clientid"
+	BTPOperatorClientSecret       = "manager.secret.clientsecret"
+	BTPOperatorURL                = "manager.secret.url"    // deprecated, for btp-operator v0.2.0
+	BTPOperatorSMURL              = "manager.secret.sm_url" // for btp-operator v0.2.3
+	BTPOperatorTokenURL           = "manager.secret.tokenurl"
+	BTPOperatorClusterID          = "cluster.id"
+	BTPOperatorPriorityClass      = "manager.priorityClassName"
+	BTPOperatorPriorityClassValue = "kyma-system"
 )
 
-var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID}
+var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID, BTPOperatorPriorityClass}
 
 type ClusterIDGetter func(string) (string, error)
 
@@ -62,6 +64,10 @@ func GetBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredential
 		{
 			Key:   BTPOperatorClusterID,
 			Value: clusterId,
+		},
+		{
+			Key:   BTPOperatorPriorityClass,
+			Value: BTPOperatorPriorityClassValue,
 		},
 	}
 }
