@@ -34,19 +34,8 @@ func (s RemoveInstanceStep) Name() string {
 func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 
 	if operation.Temporary {
-		delay := time.Second
-		instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+		delay, err := s.removeRuntimeIDFromInstance(operation.InstanceID, log)
 		if err != nil {
-			log.Errorf("cannot fetch instance with ID: %s from storage", operation.InstanceID)
-			return operation, delay, err
-		}
-
-		// empty RuntimeID means there is no runtime in the Provisioner Domain
-		log.Info("Removing the RuntimeID field from instance")
-		instance.RuntimeID = ""
-		_, err = s.instanceStorage.Update(*instance)
-		if err != nil {
-			log.Errorf("cannot update instance with ID: %s", instance.InstanceID)
 			return operation, delay, err
 		}
 
@@ -77,6 +66,25 @@ func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLo
 
 		return operation, 0, nil
 	}
+}
+
+func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string, log logrus.FieldLogger) (time.Duration, error) {
+	delay := time.Second
+	instance, err := s.instanceStorage.GetByID(instanceID)
+	if err != nil {
+		log.Errorf("cannot fetch instance with ID: %s from storage", instanceID)
+		return delay, err
+	}
+
+	// empty RuntimeID means there is no runtime in the Provisioner Domain
+	log.Info("Removing the RuntimeID field from instance")
+	instance.RuntimeID = ""
+	_, err = s.instanceStorage.Update(*instance)
+	if err != nil {
+		log.Errorf("cannot update instance with ID: %s", instanceID)
+		return delay, err
+	}
+	return 0, nil
 }
 
 func (s RemoveInstanceStep) removeInstancePermanently(instanceID string) time.Duration {
