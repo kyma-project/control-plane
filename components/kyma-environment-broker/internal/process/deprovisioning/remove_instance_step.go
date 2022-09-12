@@ -35,13 +35,13 @@ func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLo
 	var delay time.Duration
 
 	if operation.Temporary {
-		log.Info("Removing the RuntimeID field from instance")
+		log.Info("Removing the RuntimeID field from the instance")
 		delay = s.removeRuntimeIDFromInstance(operation.InstanceID)
 		if delay != 0 {
 			return operation, delay, nil
 		}
 
-		log.Info("Removing the RuntimeID field from operation")
+		log.Info("Removing the RuntimeID field from the operation")
 		operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			operation.RuntimeID = ""
 		}, log)
@@ -52,7 +52,7 @@ func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLo
 			return operation, delay, nil
 		}
 
-		log.Info("Removing the userID field from operation")
+		log.Info("Removing the userID field from the operation")
 		operation, delay, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			operation.ProvisioningParameters.ErsContext.UserID = ""
 		}, log)
@@ -75,6 +75,7 @@ func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.
 	if err != nil {
 		return delay
 	}
+
 	return 0
 }
 
