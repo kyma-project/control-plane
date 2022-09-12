@@ -222,7 +222,7 @@ func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev 
 			return err
 		}
 	} else {
-		return fmt.Errorf("expected OperationStep of type provision but got %+v", operationSucceeded.Operation.Type)
+		return fmt.Errorf("expected OperationStep of type %s but got %+v", internal.OperationTypeProvision, operationSucceeded.Operation.Type)
 	}
 
 	return nil

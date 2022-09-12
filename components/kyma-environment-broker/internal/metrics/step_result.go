@@ -140,7 +140,7 @@ func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev i
 			return err
 		}
 	default:
-		return fmt.Errorf("expected OperationStep of types [provision, deprovision] but got %+v", stepProcessed.Operation.Type)
+		return fmt.Errorf("expected OperationStep of types [%s, %s] but got %+v", internal.OperationTypeProvision, internal.OperationTypeDeprovision, stepProcessed.Operation.Type)
 	}
 
 	return nil
