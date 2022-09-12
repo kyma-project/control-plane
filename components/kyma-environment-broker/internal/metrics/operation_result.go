@@ -128,6 +128,28 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 	return nil
 }
 
+func (c *OperationResultCollector) OnOperationStepProcessed(ctx context.Context, ev interface{}) error {
+	e, ok := ev.(process.OperationStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected OperationStepProcessed but got %+v", ev)
+	}
+
+	switch e.Operation.Type {
+	case internal.OperationTypeProvision:
+		return c.OnProvisioningStepProcessed(ctx, process.ProvisioningStepProcessed{
+			StepProcessed: e.StepProcessed,
+			Operation:     internal.ProvisioningOperation{Operation: e.Operation},
+		})
+	case internal.OperationTypeDeprovision:
+		return c.OnDeprovisioningStepProcessed(ctx, process.DeprovisioningStepProcessed{
+			StepProcessed: e.StepProcessed,
+			Operation:     internal.DeprovisioningOperation{Operation: e.Operation},
+		})
+	default:
+		return fmt.Errorf("expected OperationStep of types [%s, %s] but got %+v", internal.OperationTypeProvision, internal.OperationTypeDeprovision, e.Operation.Type)
+	}
+}
+
 func (c *OperationResultCollector) OnProvisioningSucceeded(ctx context.Context, ev interface{}) error {
 	provisioningSucceeded, ok := ev.(process.ProvisioningSucceeded)
 	if !ok {
