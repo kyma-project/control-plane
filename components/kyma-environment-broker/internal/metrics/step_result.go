@@ -130,7 +130,7 @@ func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev i
 		if err != nil {
 			return err
 		}
-	case stepProcessed.Operation.Type == internal.OperationTypeDeprovision:
+	case stepProcessed.Operation.Type == "deprovisioning":
 		deprovisioningStepProcessed := process.DeprovisioningStepProcessed{
 			Operation:     internal.DeprovisioningOperation{Operation: stepProcessed.Operation},
 			StepProcessed: stepProcessed.StepProcessed,
