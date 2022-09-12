@@ -213,7 +213,7 @@ func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev 
 		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
 	}
 
-	if operationSucceeded.Operation.Type == "provisioning" {
+	if operationSucceeded.Operation.Type == internal.OperationTypeProvision {
 		provisioningOperation := process.ProvisioningSucceeded{
 			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
 		}
@@ -222,7 +222,7 @@ func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev 
 			return err
 		}
 	} else {
-		return fmt.Errorf("expected OperationStep of type provisioning but got %+v", operationSucceeded.Operation.Type)
+		return fmt.Errorf("expected OperationStep of type %s but got %+v", internal.OperationTypeProvision, operationSucceeded.Operation.Type)
 	}
 
 	return nil
