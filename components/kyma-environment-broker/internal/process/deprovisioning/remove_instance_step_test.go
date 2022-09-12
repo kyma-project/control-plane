@@ -28,7 +28,7 @@ func TestRemoveInstanceStep_HappyPathForPermanentRemoval(t *testing.T) {
 	step := NewRemoveInstanceStep(memoryStorage.Instances(), memoryStorage.Operations())
 
 	// when
-	operation, repeat, err := step.Run(operation, log)
+	operation, backoff, err := step.Run(operation, log)
 
 	assert.NoError(t, err)
 
@@ -40,7 +40,30 @@ func TestRemoveInstanceStep_HappyPathForPermanentRemoval(t *testing.T) {
 	_, err = memoryStorage.Instances().GetByID(instanceID)
 	assert.ErrorContains(t, err, "not exist")
 
-	assert.Equal(t, time.Duration(0), repeat)
+	assert.Equal(t, time.Duration(0), backoff)
+	assert.Equal(t, domain.Succeeded, operation.State)
+}
+
+func TestRemoveInstanceStep_UpdateOperationFailsForPermanentRemoval(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixture.FixDeprovisioningOperationAsOperation(operationID, instanceID)
+	instance := fixture.FixInstance(instanceID)
+
+	err := memoryStorage.Instances().Insert(instance)
+	assert.NoError(t, err)
+
+	step := NewRemoveInstanceStep(memoryStorage.Instances(), memoryStorage.Operations())
+
+	// when
+	operation, backoff, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	// then
+	assert.Equal(t, time.Minute, backoff)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
@@ -61,7 +84,7 @@ func TestRemoveInstanceStep_HappyPathForSuspension(t *testing.T) {
 	step := NewRemoveInstanceStep(memoryStorage.Instances(), memoryStorage.Operations())
 
 	// when
-	operation, repeat, err := step.Run(operation, log)
+	operation, backoff, err := step.Run(operation, log)
 
 	assert.NoError(t, err)
 
@@ -73,6 +96,28 @@ func TestRemoveInstanceStep_HappyPathForSuspension(t *testing.T) {
 	instanceFromStorage, err := memoryStorage.Instances().GetByID(instanceID)
 	assert.Equal(t, 0, len(instanceFromStorage.RuntimeID))
 
-	assert.Equal(t, time.Duration(0), repeat)
+	assert.Equal(t, time.Duration(0), backoff)
+	assert.Equal(t, domain.Succeeded, operation.State)
+}
+
+func TestRemoveInstanceStep_UpdateInstanceFailsForSuspension(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixture.FixSuspensionOperationAsOperation(operationID, instanceID)
+
+	err := memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	step := NewRemoveInstanceStep(memoryStorage.Instances(), memoryStorage.Operations())
+
+	// when
+	operation, backoff, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	// then
+	assert.Equal(t, time.Second, backoff)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
