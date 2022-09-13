@@ -142,10 +142,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	// create SKR shoot name
 	shootName := gardener.CreateShootName()
 
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, strings.Trim(b.shootDomain, "."))
-	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
-		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
-	}
+	dashboardURL := fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
