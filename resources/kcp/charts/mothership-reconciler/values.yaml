@@ -35,6 +35,7 @@ preComponents:
 options:
   verbose: false
   workerCount: 50
+  reconcileInterval: 5
 
 deployment:
   imagePullPolicy: "IfNotPresent"
