@@ -52,7 +52,7 @@ func StartOpsMetricService(ctx context.Context, db operationsGetter, logger logr
 			Subsystem: prometheusSubsystem,
 			Name:      "operation_result",
 			Help:      "Results of operations",
-		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id", "type", "state"}),
+		}, []string{"operation_id", "instance_id", "global_account_id", "plan_id", "type", "state", "error_category", "error_reason"}),
 	}
 	go svc.run(ctx)
 }
@@ -65,6 +65,8 @@ func (s *opsMetricService) setOperation(op internal.Operation, val float64) {
 	labels["plan_id"] = op.Plan
 	labels["type"] = string(op.Type)
 	labels["state"] = string(op.State)
+	labels["error_category"] = string(op.LastError.Component())
+	labels["error_reason"] = string(op.LastError.Reason())
 	s.operations.With(labels).Set(val)
 }
 
