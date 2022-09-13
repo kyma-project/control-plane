@@ -19,7 +19,7 @@ require (
 	github.com/matryer/is v1.4.0
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.26.0
 	github.com/sirupsen/logrus v1.8.1
