@@ -6,7 +6,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +40,6 @@ func TestRemoveInstanceStep_HappyPathForPermanentRemoval(t *testing.T) {
 	assert.ErrorContains(t, err, "not exist")
 
 	assert.Equal(t, time.Duration(0), backoff)
-	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
 func TestRemoveInstanceStep_UpdateOperationFailsForPermanentRemoval(t *testing.T) {
@@ -64,7 +62,6 @@ func TestRemoveInstanceStep_UpdateOperationFailsForPermanentRemoval(t *testing.T
 
 	// then
 	assert.Equal(t, time.Minute, backoff)
-	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
 func TestRemoveInstanceStep_HappyPathForSuspension(t *testing.T) {
@@ -97,7 +94,6 @@ func TestRemoveInstanceStep_HappyPathForSuspension(t *testing.T) {
 	assert.Equal(t, 0, len(instanceFromStorage.RuntimeID))
 
 	assert.Equal(t, time.Duration(0), backoff)
-	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
 func TestRemoveInstanceStep_UpdateInstanceFailsForSuspension(t *testing.T) {
@@ -119,5 +115,4 @@ func TestRemoveInstanceStep_UpdateInstanceFailsForSuspension(t *testing.T) {
 
 	// then
 	assert.Equal(t, time.Second, backoff)
-	assert.Equal(t, domain.Succeeded, operation.State)
 }
