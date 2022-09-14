@@ -28,7 +28,7 @@ func NewReleaseSubscriptionStep(instanceStorage storage.Instances, accountProvid
 }
 
 func (s ReleaseSubscriptionStep) Name() string {
-	return "Release_credentials_secret_binding"
+	return "Release_Subscription"
 }
 
 func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
