@@ -1885,6 +1885,7 @@ func TestUpdateBTPOperatorCredsSuccess(t *testing.T) {
 					{Key: "manager.secret.sm_url", Value: "sm_url"},
 					{Key: "manager.secret.tokenurl", Value: "url"},
 					{Key: "cluster.id", Value: i.InstanceDetails.ServiceManagerClusterID},
+					{Key: "manager.priorityClassName", Value: "kyma-system"},
 				},
 			}
 			suite.AssertComponent(exp, c)
@@ -1934,6 +1935,7 @@ func TestUpdateBTPOperatorCredsSuccess(t *testing.T) {
 					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
 					{Key: "cluster.id", Value: i.InstanceDetails.ServiceManagerClusterID},
+					{Key: "manager.priorityClassName", Value: "kyma-system"},
 				},
 			}
 			suite.AssertComponent(exp, c)
