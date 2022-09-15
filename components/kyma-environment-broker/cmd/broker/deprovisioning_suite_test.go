@@ -156,18 +156,18 @@ func (s *DeprovisioningSuite) CreateDeprovisioning(instanceId string) string {
 }
 
 func (s *DeprovisioningSuite) WaitForDeprovisioningState(operationID string, state domain.LastOperationState) {
-	var op *internal.DeprovisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetDeprovisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})
-	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. %v The existing operation %+v", state, op.State, op)
 }
 
 func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID string) {
-	var deprovisioningOp *internal.DeprovisioningOperation
+	var deprovisioningOp *internal.Operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.storage.Operations().GetDeprovisioningOperationByID(operationID)
+		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
 			deprovisioningOp = op
@@ -175,7 +175,7 @@ func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
