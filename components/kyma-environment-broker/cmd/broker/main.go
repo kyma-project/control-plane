@@ -778,54 +778,52 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *process.StagedManager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client,
 	k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, cfg.OperationTimeout)
-	deprovisionManager.InitStep(deprovisioningInit)
-
 	deprovisioningSteps := []struct {
 		disabled bool
-		weight   int
-		step     deprovisioning.Step
+		step     process.Step
 	}{
 		{
-			weight: 1,
-			step:   deprovisioning.NewBTPOperatorCleanupStep(db.Operations(), provisionerClient, k8sClientProvider),
+			step: deprovisioning.NewInitStep(db.Operations(), db.Instances(), 12*time.Hour),
 		},
 		{
-			weight: 1,
-			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+			step: deprovisioning.NewBTPOperatorCleanupStep(db.Operations(), provisionerClient, k8sClientProvider),
 		},
 		{
-			weight:   1,
+			step: deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
-			weight:   1,
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			weight: 5,
-			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
+			step: deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
 		{
-			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
+			step: deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
 		},
 		{
-			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
+			step: deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
+		},
+		//{
+		//	step: deprovisioning.NewCHeckRuntimeRemoval
+		//},
+		{
+			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
 		},
 	}
 	for _, step := range deprovisioningSteps {
 		if !step.disabled {
-			deprovisionManager.AddStep(step.weight, step.step)
+			deprovisionManager.AddStep(step.step.Name(), step.step, nil)
 		}
 	}
 

@@ -301,9 +301,9 @@ type DeprovisioningOperation struct {
 	Operation
 }
 
-func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+func (op *Operation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
 	if op.ReconcilerDeregistrationAt.IsZero() {
-		return time.Since(op.CreatedAt)
+		return 0
 	}
 	return time.Since(op.ReconcilerDeregistrationAt)
 }

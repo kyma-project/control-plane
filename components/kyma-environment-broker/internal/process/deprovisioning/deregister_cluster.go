@@ -12,14 +12,14 @@ import (
 )
 
 type DeregisterClusterStep struct {
-	operationManager   *process.DeprovisionOperationManager
+	operationManager   *process.OperationManager
 	reconcilerClient   reconciler.Client
 	provisionerTimeout time.Duration
 }
 
 func NewDeregisterClusterStep(os storage.Operations, cli reconciler.Client) *DeregisterClusterStep {
 	return &DeregisterClusterStep{
-		operationManager: process.NewDeprovisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		reconcilerClient: cli,
 	}
 }
@@ -28,7 +28,7 @@ func (s *DeregisterClusterStep) Name() string {
 	return "Deregister_Cluster"
 }
 
-func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *DeregisterClusterStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.ClusterConfigurationVersion == 0 {
 		log.Info("Cluster configuration was not created, skipping")
 		return operation, 0, nil
@@ -42,7 +42,7 @@ func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, 
 		return s.handleError(operation, err, log, "cannot remove DataTenant")
 	}
 
-	modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.DeprovisioningOperation) {
+	modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		op.ClusterConfigurationDeleted = true
 		op.ReconcilerDeregistrationAt = time.Now()
 	}, log)
@@ -50,7 +50,7 @@ func (s *DeregisterClusterStep) Run(operation internal.DeprovisioningOperation, 
 	return modifiedOp, d, nil
 }
 
-func (s *DeregisterClusterStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *DeregisterClusterStep) handleError(operation internal.Operation, err error, log logrus.FieldLogger, msg string) (internal.Operation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 
 	if kebErrors.IsTemporaryError(err) {

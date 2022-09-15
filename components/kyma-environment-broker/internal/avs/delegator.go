@@ -176,7 +176,7 @@ func (del *Delegator) SetStatus(log logrus.FieldLogger, lifecycleData *internal.
 	return nil
 }
 
-func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {
+func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Operation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.Operation, error) {
 	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
 		return deProvisioningOperation, nil
@@ -188,14 +188,14 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 
 	assistant.SetDeleted(&deProvisioningOperation.Avs, true)
 
-	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
+	updatedDeProvisioningOp, err := del.operationsStorage.UpdateOperation(deProvisioningOperation)
 	if err != nil {
 		return deProvisioningOperation, err
 	}
 	return *updatedDeProvisioningOp, nil
 }
 
-func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) error {
+func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.Operation, logger logrus.FieldLogger) error {
 	evaluationID := assistant.GetEvaluationId(deProvisioningOperation.Avs)
 	parentID := assistant.ProvideParentId(deProvisioningOperation.ProvisioningParameters)
 	err := del.client.RemoveReferenceFromParentEval(parentID, evaluationID)
