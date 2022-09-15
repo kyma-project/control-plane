@@ -89,6 +89,9 @@ spec:
           - --audit-log-file={{ .Values.global.mothership_reconciler.auditlog.logPath }}/mothership-audit.log
           - --audit-log-tenant-id=$(APP_AUDITLOG_TENANT)
           {{- end }}
+          {{- if .Values.options.reconcileInterval }}
+          - --reconcile-interval={{ .Values.options.reconcileInterval }}
+          {{- end }}
         env:
         - name: APP_AUDITLOG_TENANT
           valueFrom:
