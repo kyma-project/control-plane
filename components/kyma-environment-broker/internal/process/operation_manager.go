@@ -90,7 +90,7 @@ func (om *OperationManager) UpdateOperation(operation internal.Operation, update
 	switch {
 	case dberr.IsConflict(err):
 		{
-			op, err := om.storage.GetOperationByID(operation.ID)
+			op, err = om.storage.GetOperationByID(operation.ID)
 			if err != nil {
 				log.Errorf("while getting operation: %v", err)
 				return operation, 1 * time.Minute, err
@@ -105,6 +105,9 @@ func (om *OperationManager) UpdateOperation(operation internal.Operation, update
 	case err != nil:
 		log.Errorf("while updating operation: %v", err)
 		return operation, 1 * time.Minute, err
+	}
+	if op == nil {
+		fmt.Println("XXXXXX")
 	}
 	return *op, 0, nil
 }

@@ -814,13 +814,23 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		{
 			step: deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
 		},
-		//{
-		//	step: deprovisioning.NewCHeckRuntimeRemoval
-		//},
+		{
+			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), provisionerClient),
+		},
 		{
 			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
 		},
+		{
+			step: deprovisioning.NewRemoveInstanceStep(db.Instances(), db.Operations()),
+		},
 	}
+	var stages []string
+	for _, step := range deprovisioningSteps {
+		if !step.disabled {
+			stages = append(stages, step.step.Name())
+		}
+	}
+	deprovisionManager.DefineStages(stages)
 	for _, step := range deprovisioningSteps {
 		if !step.disabled {
 			deprovisionManager.AddStep(step.step.Name(), step.step, nil)

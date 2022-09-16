@@ -192,6 +192,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
 		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
+	deprovisionManager.SpeedUp(10000)
 
 	deprovisioningQueue.SpeedUp(10000)
 

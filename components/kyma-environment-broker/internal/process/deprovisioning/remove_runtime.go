@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -59,8 +58,8 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 		}
 		log.Infof("fetched ProvisionerOperationID=%s", provisionerResponse)
 		repeat := time.Duration(0)
-		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-			operation.ProvisionerOperationID = provisionerResponse
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(o *internal.Operation) {
+			o.ProvisionerOperationID = provisionerResponse
 		}, log)
 		if repeat != 0 {
 			return operation, 5 * time.Second, nil
@@ -68,19 +67,5 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 	}
 
 	log.Infof("runtime deletion process initiated successfully")
-	// return repeat mode (1 sec) to start the initialization step which will now check the runtime status
-	return operation, 1 * time.Second, nil
-}
-
-func (s *RemoveRuntimeStep) cleanUp(operation *internal.Operation, log logrus.FieldLogger) error {
-	if !operation.Temporary {
-		log.Info("Removing the instance")
-		err := s.instanceStorage.Delete(operation.InstanceID)
-		if err != nil {
-			return err
-		}
-		log.Info("Removing the userID field from operation")
-		operation.ProvisioningParameters.ErsContext.UserID = ""
-	}
-	return nil
+	return operation, 0, nil
 }

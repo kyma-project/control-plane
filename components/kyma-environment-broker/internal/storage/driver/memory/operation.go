@@ -85,7 +85,7 @@ func (s *operations) GetProvisioningOperationByInstanceID(instanceID string) (*i
 	var result []internal.ProvisioningOperation
 
 	for _, op := range s.operations {
-		if op.InstanceID == instanceID {
+		if op.InstanceID == instanceID && op.Type == internal.OperationTypeProvision {
 			result = append(result, internal.ProvisioningOperation{Operation: op})
 		}
 	}

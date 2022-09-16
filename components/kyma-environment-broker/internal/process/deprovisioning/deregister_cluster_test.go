@@ -25,7 +25,7 @@ func TestDeregisterClusterStep_Run(t *testing.T) {
 	})
 
 	// when
-	_, d, err := step.Run(op, logrus.New())
+	_, d, err := step.Run(op.Operation, logrus.New())
 
 	// then
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestDeregisterClusterStep_RunForNotExistingCluster(t *testing.T) {
 	op.RuntimeID = "runtime-id"
 
 	// when
-	_, d, err := step.Run(op, logrus.New())
+	_, d, err := step.Run(op.Operation, logrus.New())
 
 	// then
 	require.NoError(t, err)

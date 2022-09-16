@@ -34,7 +34,7 @@ func (s *CheckClusterDeregistrationStep) Name() string {
 
 func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if !operation.ClusterConfigurationDeleted {
-		log.Infof("Cluster deregistration has not be executed, skipping", s.timeout)
+		log.Infof("Cluster deregistration has not be executed, skipping")
 		return operation, 0, nil
 	}
 	if operation.ClusterConfigurationVersion == 0 {

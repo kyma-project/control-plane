@@ -81,7 +81,7 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 	accountProvider := fixAccountProvider()
 
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Minute, logs.WithField("deprovisioning", "manager"))
-
+	deprovisionManager.SpeedUp(1000)
 	scheme := runtime.NewScheme()
 	apiextensionsv1.AddToScheme(scheme)
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -157,7 +157,7 @@ func (s *DeprovisioningSuite) CreateDeprovisioning(instanceId string) string {
 
 func (s *DeprovisioningSuite) WaitForDeprovisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := wait.PollImmediate(pollingInterval, 5*time.Second, func() (done bool, err error) {
 		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})

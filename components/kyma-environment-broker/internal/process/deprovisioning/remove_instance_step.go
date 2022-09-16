@@ -19,19 +19,19 @@ type RemoveInstanceStep struct {
 
 var _ process.Step = &RemoveInstanceStep{}
 
-func NewRemoveInstanceStep(instanceStorage storage.Instances, operationStorage storage.Operations) RemoveInstanceStep {
-	return RemoveInstanceStep{
+func NewRemoveInstanceStep(instanceStorage storage.Instances, operationStorage storage.Operations) *RemoveInstanceStep {
+	return &RemoveInstanceStep{
 		operationManager: process.NewOperationManager(operationStorage),
 		instanceStorage:  instanceStorage,
 		operationStorage: operationStorage,
 	}
 }
 
-func (s RemoveInstanceStep) Name() string {
+func (s *RemoveInstanceStep) Name() string {
 	return "Remove_Instance"
 }
 
-func (s RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	var backoff time.Duration
 
 	if operation.Temporary {

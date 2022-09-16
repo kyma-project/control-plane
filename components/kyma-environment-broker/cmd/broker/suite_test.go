@@ -1007,5 +1007,6 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.AWS, mock.Anything).Return(nil)
 	return &accountProvider
 }

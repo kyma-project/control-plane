@@ -54,7 +54,7 @@ func TestCheckClusterDeregistrationStep(t *testing.T) {
 			st.Operations().InsertDeprovisioningOperation(operation)
 
 			// when
-			_, d, err := step.Run(operation, logger.NewLogSpy().Logger)
+			_, d, err := step.Run(operation.Operation, logger.NewLogSpy().Logger)
 
 			// then
 			require.NoError(t, err)
