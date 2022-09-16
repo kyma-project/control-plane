@@ -35,7 +35,7 @@ func (s *CreateClusterConfigurationStep) Name() string {
 	return "Create_Cluster_Configuration"
 }
 
-func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 
 	if operation.ClusterConfigurationVersion != 0 {
 		log.Debugf("Cluster configuration already created, skipping")
