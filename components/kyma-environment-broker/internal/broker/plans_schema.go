@@ -65,7 +65,7 @@ type Type struct {
 	Example         interface{}       `json:"example,omitempty"`
 	Enum            []interface{}     `json:"enum,omitempty"`
 	EnumDisplayName map[string]string `json:"_enumDisplayName,omitempty"`
-	Items           []Type            `json:"items,omitempty"`
+	Items           *Type             `json:"items,omitempty"`
 	AdditionalItems *bool             `json:"additionalItems,omitempty"`
 	UniqueItems     *bool             `json:"uniqueItems,omitempty"`
 }
@@ -146,9 +146,9 @@ func NewOIDCSchema() *OIDCType {
 			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
 			SigningAlgs: Type{
 				Type: "array",
-				Items: []Type{{
+				Items: &Type{
 					Type: "string",
-				}},
+				},
 				Description: "List of allowed JOSE asymmetric signing algorithms.",
 			},
 		},
@@ -202,8 +202,8 @@ func AdministratorsProperty() *Type {
 		Type:        "array",
 		Title:       "Administrators",
 		Description: "Specifies the list of runtime administrators",
-		Items: []Type{{
+		Items: &Type{
 			Type: "string",
-		}},
+		},
 	}
 }
