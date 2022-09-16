@@ -9,8 +9,6 @@ ifndef ARTIFACTS
 	ARTIFACTS = .
 endif
 
-# ENTRYPOINT is the relative path to the main Go file
-ENTRYPOINT = cmd/kcp/main.go
 # VERIFY_IGNORE is a grep pattern to exclude files and directories from verification
 VERIFY_IGNORE := /vendor\|/automock
 # FILES_TO_CHECK is a command used to determine which files should be verified
@@ -58,16 +56,16 @@ go-mod-check:
 errcheck:
 	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
-build: build-windows build-linux build-darwin
+build: build-windows-kcp build-windows-ers build-linux-kcp build-linux-ers build-darwin-kcp build-darwin-ers
 
-build-windows:
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(ARTIFACTS)/kcp.exe $(CLI_FLAGS) $(ENTRYPOINT)
+build-windows-%:
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(ARTIFACTS)/$*.exe $(CLI_FLAGS) cmd/$*/main.go
 
-build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(ARTIFACTS)/kcp-linux $(CLI_FLAGS) $(ENTRYPOINT)
+build-linux-%:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(ARTIFACTS)/$*-linux $(CLI_FLAGS) cmd/$*/main.go
 
-build-darwin:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(ARTIFACTS)/kcp-darwin $(CLI_FLAGS) $(ENTRYPOINT)
+build-darwin-%:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(ARTIFACTS)/$*-darwin $(CLI_FLAGS) cmd/$*/main.go
 
 docs:
 	go run ./cmd/gendocs/gendocs.go
