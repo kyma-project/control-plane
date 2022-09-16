@@ -139,14 +139,10 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
-	shootName := gardener.CreateShootName()                         //TODO not used in OwnCluster plan
-	shootDomainCompressedSuffix := strings.Trim(b.shootDomain, ".") //TODO reconsider this, compare with current logic
+	shootName := gardener.CreateShootName()
+	shootDomainSuffix := strings.Trim(b.shootDomain, ".")
 
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, shootDomainCompressedSuffix)
-	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
-		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
-	}
-	dashboardURL := fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, shootDomainSuffix)
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -155,21 +151,15 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 
-	if provisioningParameters.PlanID != OwnClusterPlanID &&
-		(provisioningParameters.Parameters.ShootName != "" || provisioningParameters.Parameters.ShootDomain != "") {
-		logger.Errorf("shootName and shootDomain are only valid in owncluster plan")
-		return domain.ProvisionedServiceSpec{}, errors.New("shootName and shootDomain are only valid in owncluster plan")
-	}
-
 	if provisioningParameters.PlanID == OwnClusterPlanID {
 		shootName = provisioningParameters.Parameters.ShootName
-		shootDomainCompressedSuffix = provisioningParameters.Parameters.ShootDomain //TODO should we remove dots afterwards? how this parameter would be provided?
+		shootDomainSuffix = provisioningParameters.Parameters.ShootDomain
 	}
 
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomainCompressedSuffix)
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomainSuffix)
 	operation.ShootDNSProviders = b.shootDnsProviders
-	operation.DashboardURL = dashboardURL //TODO if we override shootName and shootDomain with provisioning parameters, should we override dashboardURL as well?
+	operation.DashboardURL = dashboardURL
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertOperation(operation.Operation)
