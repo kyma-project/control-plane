@@ -98,6 +98,7 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 					ID:         operationID,
 					InstanceID: instance.InstanceID,
 					State:      d.operationStatus,
+					Type:       internal.OperationTypeProvision,
 				},
 			}
 

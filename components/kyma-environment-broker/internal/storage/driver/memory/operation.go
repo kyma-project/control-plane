@@ -259,7 +259,7 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 
 	operations := make([]internal.DeprovisioningOperation, 0)
 	for _, op := range s.operations {
-		if op.InstanceID == instanceID {
+		if op.InstanceID == instanceID && op.Type == internal.OperationTypeDeprovision {
 			operations = append(operations, internal.DeprovisioningOperation{Operation: op})
 		}
 	}
