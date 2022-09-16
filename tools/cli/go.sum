@@ -62,8 +62,8 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 cloud.google.com/go/storage v1.22.1/go.mod h1:S8N1cAStu7BOeFfE8KAQzmyyLkK8p/vmRq6kuBTW58Y=
 code.cloudfoundry.org/lager v2.0.0+incompatible h1:WZwDKDB2PLd/oL+USK4b4aEjUymIej9My2nUQ9oWEwQ=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github.com/99designs/gqlgen v0.17.17 h1:UmdRb+8uCqK65nA9lKcjI8lJI+HzgwDz3/aNYtYCv6E=
-github.com/99designs/gqlgen v0.17.17/go.mod h1:tXjo2/o1L/9A8S/4nLK7Arx/677H8hxlD/iSTRx0BtE=
+github.com/99designs/gqlgen v0.17.19 h1:lO3PBSOv5Mw8RPt0Nwg7ovJ9tNfjGDEnU48AYqLzBVA=
+github.com/99designs/gqlgen v0.17.19/go.mod h1:tXjo2/o1L/9A8S/4nLK7Arx/677H8hxlD/iSTRx0BtE=
 github.com/Azure/go-ansiterm v0.0.0-20210608223527-2377c96fe795/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
