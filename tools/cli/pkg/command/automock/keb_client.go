@@ -5,9 +5,10 @@
 package automock
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	runtime "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	reflect "reflect"
 )
 
 // MockkebClient is a mock of kebClient interface
