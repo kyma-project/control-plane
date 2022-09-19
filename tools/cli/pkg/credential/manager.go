@@ -37,6 +37,7 @@ const defaultAuthenticationTimeout = 180 * time.Second
 // Manager is a client for an OIDC provider capable of authenticating users and retrieving ID tokens through
 //   - Authorization code grant flow using browser for interactive use
 //   - Resource owner password credentials flow for non-interactive use
+//
 // Manager implements the oauth2.TokenSource interface to interact with client libraries depending on the oauth2 package for obtaining auth token.
 type Manager interface {
 	GetTokenByAuthCode(ctx context.Context) (string, error)
