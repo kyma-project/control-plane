@@ -143,6 +143,9 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	shootDomainSuffix := strings.Trim(b.shootDomain, ".")
 
 	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, shootDomainSuffix)
+	if b.dashboardConfig.LandscapeURL != "" {
+		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
