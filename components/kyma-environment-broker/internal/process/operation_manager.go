@@ -106,9 +106,7 @@ func (om *OperationManager) UpdateOperation(operation internal.Operation, update
 		log.Errorf("while updating operation: %v", err)
 		return operation, 1 * time.Minute, err
 	}
-	if op == nil {
-		fmt.Println("XXXXXX")
-	}
+
 	return *op, 0, nil
 }
 
