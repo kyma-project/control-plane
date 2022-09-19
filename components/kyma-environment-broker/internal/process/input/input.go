@@ -654,11 +654,6 @@ func (r *RuntimeInput) configureOIDC() error {
 	// provisioning (upgradeShootInput.GardenerConfig is nil)
 	// or upgrade (provisionRuntimeInput.ClusterConfig is nil)
 
-	if r.provisionRuntimeInput.ClusterConfig == nil ||
-		r.provisionRuntimeInput.ClusterConfig.GardenerConfig == nil {
-		return nil
-	}
-
 	if r.provisionRuntimeInput.ClusterConfig != nil {
 		oidcParamsToSet := r.setOIDCForProvisioning()
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.OidcConfig = oidcParamsToSet
