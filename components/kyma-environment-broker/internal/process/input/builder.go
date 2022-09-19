@@ -263,19 +263,19 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 	return provisionInput, nil
 }
 
-func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
-	if !f.IsPlanSupport(pp.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+func (f *InputBuilderFactory) CreateUpgradeInput(provisioningParameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(provisioningParameters.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", provisioningParameters.PlanID)
 	}
 
-	planName := broker.PlanNamesMapping[pp.PlanID]
+	planName := broker.PlanNamesMapping[provisioningParameters.PlanID]
 
 	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
+	provider, err := f.getHyperscalerProviderForPlanID(provisioningParameters.PlanID, provisioningParameters.PlatformProvider, provisioningParameters.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
@@ -290,7 +290,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(pp internal.ProvisioningParamet
 		return nil, errors.Wrap(err, "while initializing RuntimeInput")
 	}
 
-	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(pp.PlanID)
+	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(provisioningParameters.PlanID)
 	if err != nil {
 		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
 	}
@@ -358,19 +358,19 @@ func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
 	return res
 }
 
-func (f *InputBuilderFactory) CreateUpgradeShootInput(pp internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
-	if !f.IsPlanSupport(pp.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", pp.PlanID)
+func (f *InputBuilderFactory) CreateUpgradeShootInput(provisioningParameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
+	if !f.IsPlanSupport(provisioningParameters.PlanID) {
+		return nil, errors.Errorf("plan %s in not supported", provisioningParameters.PlanID)
 	}
 
-	planName := broker.PlanNamesMapping[pp.PlanID]
+	planName := broker.PlanNamesMapping[provisioningParameters.PlanID]
 
 	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
 	}
 
-	provider, err := f.getHyperscalerProviderForPlanID(pp.PlanID, pp.PlatformProvider, pp.Parameters.Provider)
+	provider, err := f.getHyperscalerProviderForPlanID(provisioningParameters.PlanID, provisioningParameters.PlatformProvider, provisioningParameters.Parameters.Provider)
 	if err != nil {
 		return nil, errors.Wrap(err, "during createing provision input")
 	}
