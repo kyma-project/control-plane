@@ -22,7 +22,6 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
@@ -44,7 +43,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -103,14 +101,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.AuditLog.Disabled = false
-	cfg.AuditLog = auditlog.Config{
-		URL:           "https://host1:8080/aaa/v2/",
-		User:          "fooUser",
-		Password:      "barPass",
-		Tenant:        "fooTen",
-		EnableSeqHttp: true,
-	}
 	cfg.OrchestrationConfig = kebOrchestration.Config{
 		KymaVersion:       defaultKymaVer,
 		KubernetesVersion: "",
@@ -118,10 +108,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cfg.Reconciler = reconciler.Config{
 		ProvisioningTimeout: time.Second,
 	}
-
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -181,8 +167,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Retry:              2 * time.Millisecond,
 		StatusCheck:        20 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager, &cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 2 * time.Millisecond,
@@ -573,10 +558,6 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 
 	cfg := fixConfig()
 
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
-
 	provisionerClient := provisioner.NewFakeClient()
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -644,7 +625,7 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -1002,13 +983,6 @@ func fixConfig() *Config {
 			Url:      "http://host:8080/",
 			Disabled: false,
 		},
-		AuditLog: auditlog.Config{
-			URL:           "https://host1:8080/aaa/v2/",
-			User:          "fooUser",
-			Password:      "barPass",
-			Tenant:        "fooTen",
-			EnableSeqHttp: true,
-		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,
 			Namespace:   "kcp-system",
@@ -1033,19 +1007,4 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
 	return &accountProvider
-}
-
-func createInMemFS() (afero.Fs, error) {
-
-	inMemoryFs := afero.NewMemMapFs()
-
-	fileScript := `
-		func myScript() {
-		foo: sub_account_id
-		bar: tenant_id
-		return "fooBar"
-	}`
-
-	err := afero.WriteFile(inMemoryFs, "/auditlog-script/script", []byte(fileScript), 0755)
-	return inMemoryFs, err
 }

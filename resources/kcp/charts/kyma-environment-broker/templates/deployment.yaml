@@ -338,30 +338,6 @@ spec:
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
               value: "{{ .Values.osbUpdateProcessingEnabled }}"
-            - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
-              value: "{{ .Values.global.auditlog.enableSeqHttp }}"
-            - name: APP_AUDITLOG_DISABLED
-              value: "{{ .Values.global.auditlog.disabled }}"
-            - name: APP_AUDITLOG_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configMapName }}
-                  key: auditlog-url-basic
-            - name: APP_AUDITLOG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-user
-            - name: APP_AUDITLOG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-password
-            - name: APP_AUDITLOG_TENANT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configMapName }}
-                  key: auditlog-tenant
             - name: APP_NOTIFICATION_URL
               value: "{{ .Values.notification.url }}"
             - name: APP_NOTIFICATION_DISABLED
@@ -414,8 +390,6 @@ spec:
               name: config-volume
             - mountPath: /swagger/schema
               name: swagger-volume
-            - mountPath: /auditlog-script
-              name: auditlog-script
           {{- if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
@@ -457,9 +431,6 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      - name: auditlog-script
-        configMap:
-          name: {{ .Values.global.auditlog.script.configMapName }}
       {{- if .Values.broker.profiler.memory }}
       - name: keb-memory-profile
         persistentVolumeClaim:

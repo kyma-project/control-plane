@@ -47,13 +47,6 @@ global:
     - serverless
     - cluster-essentials
     - rma
-  auditlog:
-    configMapName: "kcp-auditlog-config"
-    secretName: "kcp-auditlog-secret"
-    script:
-      configMapName: "kcp-auditlog-script"
-    enableSeqHttp: false
-    disabled: false
   provisioning:
     enabled: false
   kyma_environment_broker:
