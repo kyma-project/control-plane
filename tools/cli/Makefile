@@ -56,7 +56,7 @@ go-mod-check:
 errcheck:
 	errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
-build: build-windows-kcp build-windows-ers build-linux-kcp build-linux-ers build-darwin-kcp build-darwin-ers
+build: $(foreach TOOL,ers kcp,$(foreach OS,linux windows darwin,build-$(OS)-$(TOOL)))
 
 build-windows-%:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(ARTIFACTS)/$*.exe $(CLI_FLAGS) cmd/$*/main.go
