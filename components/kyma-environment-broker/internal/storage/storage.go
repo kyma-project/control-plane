@@ -15,6 +15,7 @@ type BrokerStorage interface {
 	Deprovisioning() Deprovisioning
 	Orchestrations() Orchestrations
 	RuntimeStates() RuntimeStates
+	Events() Events
 }
 
 const (
@@ -42,6 +43,7 @@ func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (
 		operation:      operation,
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
+		events:         postgres.NewEvents(fact),
 	}, connection, nil
 }
 
@@ -60,6 +62,7 @@ type storage struct {
 	operation      Operations
 	orchestrations Orchestrations
 	runtimeStates  RuntimeStates
+	events         Events
 }
 
 func (s storage) Instances() Instances {
@@ -84,4 +87,8 @@ func (s storage) Orchestrations() Orchestrations {
 
 func (s storage) RuntimeStates() RuntimeStates {
 	return s.runtimeStates
+}
+
+func (s storage) Events() Events {
+	return s.events
 }

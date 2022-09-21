@@ -62,6 +62,7 @@ type WriteSession interface {
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
+	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string) dberr.Error
 }
 
 type Transaction interface {
