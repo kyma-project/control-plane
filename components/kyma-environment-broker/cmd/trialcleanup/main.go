@@ -110,10 +110,10 @@ func (s *TrialCleanupService) PerformCleanup() error {
 
 	if s.cfg.DryRun {
 		s.logInstances(instancesToExpire)
-		log.Infof("Trials non-expired: %+v to expire now: %+v to be left untouched: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount)
+		log.Infof("Trials non-expired: %+v, to expire now: %+v, to be left non-expired: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount)
 	} else {
 		suspensionsAcceptedCount, onlyMarkedAsExpiredCount, failuresCount := s.cleanupInstances(instancesToExpire)
-		log.Infof("Trials non-expired: %+v to expire: %+v left untouched: %+v suspension under way: %+v only marked expired: %+v failures: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount, suspensionsAcceptedCount, onlyMarkedAsExpiredCount, failuresCount)
+		log.Infof("Trials non-expired: %+v, to expire: %+v, left non-expired: %+v, suspension under way: %+v just marked expired: %+v, failures: %+v", nonExpiredTrialInstancesCount, instancesToExpireCount, instancesToBeLeftCount, suspensionsAcceptedCount, onlyMarkedAsExpiredCount, failuresCount)
 	}
 	return nil
 }
