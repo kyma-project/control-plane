@@ -111,6 +111,5 @@ type Updating interface {
 }
 
 type Events interface {
-	Info(message, instanceID, operationID string) error
-	Error(err error, instanceID, operationID string) error
+	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/sirupsen/logrus"
 )
@@ -15,7 +16,6 @@ type BrokerStorage interface {
 	Deprovisioning() Deprovisioning
 	Orchestrations() Orchestrations
 	RuntimeStates() RuntimeStates
-	Events() Events
 }
 
 const (
@@ -43,7 +43,7 @@ func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (
 		operation:      operation,
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
-		events:         postgres.NewEvents(fact),
+		events:         events.New(fact, log),
 	}, connection, nil
 }
 
@@ -87,8 +87,4 @@ func (s storage) Orchestrations() Orchestrations {
 
 func (s storage) RuntimeStates() RuntimeStates {
 	return s.runtimeStates
-}
-
-func (s storage) Events() Events {
-	return s.events
 }
