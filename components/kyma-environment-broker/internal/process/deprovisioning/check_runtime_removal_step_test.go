@@ -58,6 +58,6 @@ func TestCheckRuntimeRemovalStep_ProvisionerFailed(t *testing.T) {
 	op, _, err := svc.Run(dOp, log)
 
 	// then
-	require.NoError(t, err)
+	require.Error(t, err)
 	assert.Equal(t, domain.Failed, op.State)
 }

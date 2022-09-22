@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -29,7 +28,15 @@ func (om *OperationManager) OperationSucceeded(operation internal.Operation, des
 
 // OperationFailed marks the operation as failed and returns status of the operation's update
 func (om *OperationManager) OperationFailed(operation internal.Operation, description string, err error, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	return om.update(operation, domain.Failed, description, log)
+	op, t, updateErr := om.update(operation, domain.Failed, description, log)
+	retErr := fmt.Errorf("operation failed")
+	if err != nil {
+		retErr = fmt.Errorf("%v: %w", retErr, err)
+	}
+	if updateErr != nil {
+		retErr = fmt.Errorf("%v: %w", retErr, updateErr)
+	}
+	return op, t, retErr
 }
 
 // OperationCanceled marks the operation as canceled and returns status of the operation's update
