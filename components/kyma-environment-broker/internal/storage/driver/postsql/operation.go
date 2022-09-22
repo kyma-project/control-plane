@@ -531,7 +531,7 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	return result, size, total, err
 }
 
-func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int) {
+func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int, int) {
 	resPerInstanceID := make(map[string][]dbmodel.OperationDTO)
 	for _, entry := range entries {
 		resPerInstanceID[entry.InstanceID] = append(resPerInstanceID[entry.InstanceID], entry)
@@ -566,7 +566,7 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 			failedDatas = append(failedDatas, faildEntry)
 		}
 	}
-	return failedDatas, len(failedDatas)
+	return failedDatas, len(failedDatas), len(failedDatas)
 }
 
 func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
@@ -600,12 +600,7 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations before", operations)
 	if failedFilterFound {
 
-		/*totalCount, err = session.GetUpgradeOperationCount(orchestrationID, filter)
-		if err != nil {
-			return nil, -1, -1, err
-		}*/
-
-		operations, count = s.fetchFailedStatusForOrchestration(operations)
+		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
 
 	}
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations after", operations)
