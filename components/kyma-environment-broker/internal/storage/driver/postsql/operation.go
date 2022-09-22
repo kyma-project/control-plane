@@ -514,6 +514,7 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	)
 
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+		fmt.Println("ListOperations()", filter)
 		operations, size, total, lastErr = session.ListOperations(filter)
 		if lastErr != nil {
 			log.Errorf("while getting operations from the storage: %v", lastErr)
@@ -530,21 +531,22 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 	return result, size, total, err
 }
 
-func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int, int) {
+func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.OperationDTO) ([]dbmodel.OperationDTO, int) {
 	resPerInstanceID := make(map[string][]dbmodel.OperationDTO)
 	for _, entry := range entries {
 		resPerInstanceID[entry.InstanceID] = append(resPerInstanceID[entry.InstanceID], entry)
 	}
 
 	var failedDatas []dbmodel.OperationDTO
-	for _, datas := range resPerInstanceID {
-
+	//for _, datas := range resPerInstanceID {
+	for instaceID, datas := range resPerInstanceID {
 		var invalidFailed bool
 		var failedFound bool
 		var faildEntry dbmodel.OperationDTO
 		for _, data := range datas {
-
+			fmt.Printf("fetchFailedStatusForOrchestration() instanceID %s data.State %s", instaceID, data.State)
 			if data.State == Succeeded || data.State == Retrying || data.State == InProgress {
+				fmt.Println("fetchFailedStatusForOrchestration() invalidFailed", invalidFailed)
 				invalidFailed = true
 				break
 			}
@@ -552,16 +554,19 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 				failedFound = true
 				if faildEntry.InstanceID == "" {
 					faildEntry = data
+					fmt.Println("fetchFailedStatusForOrchestration() failed.Entry empty")
 				} else if faildEntry.CreatedAt.Before(data.CreatedAt) {
+					fmt.Println("fetchFailedStatusForOrchestration() failed.Entry refreshed")
 					faildEntry = data
 				}
 			}
 		}
 		if failedFound && !invalidFailed {
+			fmt.Println("fetchFailedStatusForOrchestration() append", faildEntry)
 			failedDatas = append(failedDatas, faildEntry)
 		}
 	}
-	return failedDatas, len(failedDatas), len(failedDatas)
+	return failedDatas, len(failedDatas)
 }
 
 func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
@@ -575,6 +580,8 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	if failedFilterFound {
 		filter.States = []string{}
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() failedFilterFound", failedFilterFound)
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() filter", filter)
 	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		operations, count, totalCount, lastErr = session.ListOperationsByOrchestrationID(orchestrationID, filter)
 		if lastErr != nil {
@@ -590,9 +597,11 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	if err != nil {
 		return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", lastErr)
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations before", operations)
 	if failedFilterFound {
-		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
+		operations, count = s.fetchFailedStatusForOrchestration(operations)
 	}
+	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations after", operations)
 	return operations, count, totalCount, nil
 }
 
@@ -615,6 +624,9 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 		}
 	}
 
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() states", states)
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filterFailedFound is:", filterFailedFound)
+	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filter", filter)
 	//only for "failed" states
 	if filterFailedFound {
 		filter.States = []string{Failed}
