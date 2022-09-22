@@ -162,6 +162,8 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 		}
 	}
 
+	params.States = []string {"failed", "succeeded"}
+
 	for !fetchedAll {
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -197,12 +199,18 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 			return operations, errors.Wrap(err, "while decoding response body")
 		}
 
+		fmt.Println("client.go orl.TotalCount", orl.TotalCount)
+		fmt.Println("client.go orl.Count", orl.Count)
 		operations.TotalCount = orl.TotalCount
 		operations.Count += orl.Count
 		operations.Data = append(operations.Data, orl.Data...)
 		if getAll {
 			params.Page++
 			fetchedAll = operations.Count >= operations.TotalCount
+			if = "faied", ***/100+1
+			if = "failed, succeeded",
+			if = "", right
+			if ="-s succeeded", right
 		} else {
 			fetchedAll = true
 		}

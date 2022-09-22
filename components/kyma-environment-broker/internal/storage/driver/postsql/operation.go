@@ -599,7 +599,14 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	}
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations before", operations)
 	if failedFilterFound {
+
+		/*totalCount, err = session.GetUpgradeOperationCount(orchestrationID, filter)
+		if err != nil {
+			return nil, -1, -1, err
+		}*/
+
 		operations, count = s.fetchFailedStatusForOrchestration(operations)
+
 	}
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations after", operations)
 	return operations, count, totalCount, nil

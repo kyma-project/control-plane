@@ -368,7 +368,7 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, fil
 		return nil, -1, -1, dberr.Internal("Failed to get operations: %s", err)
 	}
 
-	totalCount, err := r.getUpgradeOperationCount(orchestrationID, filter)
+	totalCount, err := r.GetUpgradeOperationCount(orchestrationID, filter)
 	if err != nil {
 		return nil, -1, -1, err
 	}
@@ -834,7 +834,7 @@ func (r readSession) getOperationCount(filter dbmodel.OperationFilter) (int, err
 	return res.Total, err
 }
 
-func (r readSession) getUpgradeOperationCount(orchestrationID string, filter dbmodel.OperationFilter) (int, error) {
+func (r readSession) GetUpgradeOperationCount(orchestrationID string, filter dbmodel.OperationFilter) (int, error) {
 	var res struct {
 		Total int
 	}
