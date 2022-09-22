@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//CreateShootName generates random shoot name in pattern "[a-z0-0]{7}" or "c-[a-z0-0]{7}"
+// CreateShootName generates random shoot name in pattern "[a-z0-0]{7}" or "c-[a-z0-0]{7}"
 func CreateShootName() string {
 	id := uuid.New()
 

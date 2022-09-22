@@ -18,11 +18,14 @@ type ProvisioningProperties struct {
 	UpdateProperties
 
 	Name        NameType `json:"name"`
+	ShootName   *Type    `json:"shootName,omitempty"`
+	ShootDomain *Type    `json:"shootDomain,omitempty"`
 	Region      *Type    `json:"region,omitempty"`
 	MachineType *Type    `json:"machineType,omitempty"`
 }
 
 type UpdateProperties struct {
+	Kubeconfig     *Type     `json:"kubeconfig,omitempty"`
 	AutoScalerMin  *Type     `json:"autoScalerMin,omitempty"`
 	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
 	OIDC           *OIDCType `json:"oidc,omitempty"`
@@ -95,6 +98,27 @@ func NameProperty() NameType {
 	}
 }
 
+func KubeconfigProperty() *Type {
+	return &Type{
+		Type:  "string",
+		Title: "Kubeconfig contents",
+	}
+}
+
+func ShootNameProperty() *Type {
+	return &Type{
+		Type:  "string",
+		Title: "Shoot name",
+	}
+}
+
+func ShootDomainProperty() *Type {
+	return &Type{
+		Type:  "string",
+		Title: "Shoot domain",
+	}
+}
+
 // NewProvisioningProperties creates a new properties for different plans
 // Note that the order of properties will be the same in the form on the website
 func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTypes, regions []string, update bool) ProvisioningProperties {
@@ -156,7 +180,11 @@ func NewOIDCSchema() *OIDCType {
 	}
 }
 
-func NewSchema(properties interface{}, update bool) *RootSchema {
+func NewSchemaWithOnlyNameRequired(properties interface{}, update bool) *RootSchema {
+	return NewSchemaForOwnCluster(properties, update, []string{"name"})
+}
+
+func NewSchemaForOwnCluster(properties interface{}, update bool, required []string) *RootSchema {
 	schema := &RootSchema{
 		Schema: "http://json-schema.org/draft-04/schema#",
 		Type: Type{
@@ -164,7 +192,7 @@ func NewSchema(properties interface{}, update bool) *RootSchema {
 		},
 		Properties:   properties,
 		ShowFormView: true,
-		Required:     []string{"name"},
+		Required:     required,
 	}
 
 	if update {
@@ -186,7 +214,7 @@ func unmarshalOrPanic(from, to interface{}) interface{} {
 }
 
 func DefaultControlsOrder() []string {
-	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
+	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
 }
 
 func ToInterfaceSlice(input []string) []interface{} {

@@ -1,4 +1,4 @@
-//build provisioning-test
+// build provisioning-test
 package main
 
 import (
@@ -68,10 +68,44 @@ func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// then
 	suite.AssertAWSRegionAndZone("eu-west-1")
+}
+
+func TestProvisioning_OwnCluster(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "03e3cb66-a4c6-4c6a-b4b0-5d42224debea",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"kubeconfig":"kubeconfig-001",
+"shootName": "sh1",
+"shootDomain": "sh1.avs.sap.nothing"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.FinishReconciliation(opID)
+
+	// then
+	suite.WaitForOperationState(opID, domain.Succeeded)
 }
 
 func TestProvisioning_TrialAtEU(t *testing.T) {
@@ -99,7 +133,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// then
 	suite.AssertAWSRegionAndZone("eu-west-1")
@@ -185,7 +219,7 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	provisioningOp, _ := suite.db.Operations().GetProvisioningOperationByID(opID)
 	clusterID := provisioningOp.InstanceDetails.ServiceManagerClusterID
 
@@ -242,7 +276,7 @@ func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// then
 	suite.AssertProvider("aws")
@@ -685,7 +719,7 @@ func TestProvisioning_WithoutNetworkFilter(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	instance := suite.GetInstance(iid)
 
 	// then
@@ -720,7 +754,7 @@ func TestProvisioning_WithNetworkFilter(t *testing.T) {
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	instance := suite.GetInstance(iid)
 
 	// then

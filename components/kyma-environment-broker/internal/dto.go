@@ -177,7 +177,9 @@ type ProvisioningParametersDTO struct {
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
 	Provider *CloudProvider `json:"provider"`
 
-	Kubeconfig string `json:"kubeconfig"`
+	Kubeconfig  string `json:"kubeconfig"`
+	ShootName   string `json:"shootName"`
+	ShootDomain string `json:"shootDomain"`
 
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }

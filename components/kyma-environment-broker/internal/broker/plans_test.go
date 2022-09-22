@@ -82,6 +82,17 @@ func TestSchemaGenerator(t *testing.T) {
 			updateFileOIDC: "update-azure-trial-schema-additional-params.json",
 		},
 		{
+			name: "Own cluster schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return OwnClusterSchema(additionalParams, update)
+			},
+			machineTypes:   []string{},
+			file:           "own-cluster-schema.json",
+			updateFile:     "update-own-cluster-schema.json",
+			fileOIDC:       "own-cluster-schema-additional-params.json",
+			updateFileOIDC: "update-own-cluster-schema-additional-params.json",
+		},
+		{
 			name: "Freemium schema is correct",
 			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
 				return FreemiumSchema(internal.Azure, additionalParams, update)

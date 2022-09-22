@@ -18,6 +18,7 @@ import (
 )
 
 // RuntimeLister is the interface to get runtime objects from KEB
+//
 //go:generate mockery --name=RuntimeLister --output=. --outpkg=orchestration --case=underscore --structname RuntimeListerMock --filename runtime_lister_mock.go
 type RuntimeLister interface {
 	ListAllRuntimes() ([]runtime.RuntimeDTO, error)

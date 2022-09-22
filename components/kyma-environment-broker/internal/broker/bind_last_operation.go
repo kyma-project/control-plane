@@ -17,7 +17,8 @@ func NewLastBindingOperation(log logrus.FieldLogger) *LastBindingOperationEndpoi
 }
 
 // LastBindingOperation fetches last operation state for a service binding
-//   GET /v2/service_instances/{instance_id}/service_bindings/{binding_id}/last_operation
+//
+//	GET /v2/service_instances/{instance_id}/service_bindings/{binding_id}/last_operation
 func (b *LastBindingOperationEndpoint) LastBindingOperation(ctx context.Context, instanceID, bindingID string, details domain.PollDetails) (domain.LastOperation, error) {
 	b.log.Infof("LastBindingOperation instanceID: %s", instanceID)
 	b.log.Infof("LastBindingOperation bindingID: %s", bindingID)

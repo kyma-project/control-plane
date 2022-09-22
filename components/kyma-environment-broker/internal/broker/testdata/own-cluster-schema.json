@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "name",
+    "kubeconfig",
+    "shootName",
+    "shootDomain"
+  ],
+  "_show_form_view": true,
+  "properties": {
+    "kubeconfig": {
+      "title": "Kubeconfig contents",
+      "type": "string"
+    },
+    "name": {
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      },
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "title": "Cluster Name",
+      "type": "string"
+    },
+    "shootDomain": {
+      "title": "Shoot domain",
+      "type": "string"
+    },
+    "shootName": {
+      "title": "Shoot name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "kubeconfig",
+    "shootName",
+    "shootDomain"
+  ],
+  "type": "object"
+}

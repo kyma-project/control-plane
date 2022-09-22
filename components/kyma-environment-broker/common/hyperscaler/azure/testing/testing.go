@@ -17,7 +17,7 @@ import (
 // ensure the fake Client is implementing the interface
 var _ azure.Interface = (*FakeNamespaceClient)(nil)
 
-/// A fake Client for Azure EventHubs Namespace handling
+// / A fake Client for Azure EventHubs Namespace handling
 type FakeNamespaceClient struct {
 	PersistEventhubsNamespaceError error
 	ResourceGroupError             error
