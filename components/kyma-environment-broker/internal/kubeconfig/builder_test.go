@@ -100,6 +100,43 @@ func TestBuilder_Build(t *testing.T) {
 	})
 }
 
+func TestBuilder_BuildFromAdminKubeconfig(t *testing.T) {
+	t.Run("new kubeconfig was build properly", func(t *testing.T) {
+		// given
+		provisionerClient := &automock.Client{}
+		provisionerClient.On("RuntimeStatus", globalAccountID, runtimeID).Return(schema.RuntimeStatus{
+			RuntimeConfiguration: &schema.RuntimeConfig{
+				Kubeconfig: skrKubeconfig(),
+				ClusterConfig: &schema.GardenerConfig{
+					OidcConfig: &schema.OIDCConfig{
+						ClientID:       clientID,
+						GroupsClaim:    "gclaim",
+						IssuerURL:      issuerURL,
+						SigningAlgs:    nil,
+						UsernameClaim:  "uclaim",
+						UsernamePrefix: "-",
+					},
+				},
+			},
+		}, nil)
+		defer provisionerClient.AssertExpectations(t)
+
+		builder := NewBuilder(provisionerClient)
+
+		instance := &internal.Instance{
+			RuntimeID:       runtimeID,
+			GlobalAccountID: globalAccountID,
+		}
+
+		// when
+		kubeconfig, err := builder.BuildFromAdminKubeconfig(instance, adminKubeconfig())
+
+		//then
+		require.NoError(t, err)
+		require.Equal(t, kubeconfig, newOwnClusterKubeconfig())
+	})
+}
+
 func skrKubeconfig() *string {
 	kc := `
 ---
@@ -166,6 +203,48 @@ users:
 	)
 }
 
+func newOwnClusterKubeconfig() string {
+	return fmt.Sprintf(`
+---
+apiVersion: v1
+kind: Config
+current-context: shoot--kyma-dev--admin
+clusters:
+- name: shoot--kyma-dev--admin
+  cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURUSUZJQ0FURS0tLS0tCg==
+    server: https://api.ac0d8d9.kyma-dev.shoot.canary.k8s-hana.ondemand.com
+contexts:
+- name: shoot--kyma-dev--admin
+  context:
+    cluster: shoot--kyma-dev--admin
+    user: shoot--kyma-dev--admin
+users:
+- name: shoot--kyma-dev--admin
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - get-token
+      - "--oidc-issuer-url=%s"
+      - "--oidc-client-id=%s"
+      - "--oidc-extra-scope=email"
+      - "--oidc-extra-scope=openid"
+      command: kubectl-oidc_login
+      installHint: |
+        kubelogin plugin is required to proceed with authentication
+        # Homebrew (macOS and Linux)
+        brew install int128/kubelogin/kubelogin
+
+        # Krew (macOS, Linux, Windows and ARM)
+        kubectl krew install oidc-login
+
+        # Chocolatey (Windows)
+        choco install kubelogin
+`, issuerURL, clientID,
+	)
+}
+
 func skrWrongKubeconfig() *string {
 	kc := `
 ---
@@ -185,4 +264,28 @@ users:
     token: DKPAe2Lt06a8dlUlE81kaWdSSDVSSf38x5PIj6cwQkqHMrw4UldsUr1guD6Thayw
 `
 	return &kc
+}
+
+func adminKubeconfig() string {
+	return `
+---
+apiVersion: v1
+kind: Config
+current-context: shoot--kyma-dev--admin
+clusters:
+- name: shoot--kyma-dev--admin
+  cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURUSUZJQ0FURS0tLS0tCg==
+    server: https://api.ac0d8d9.kyma-dev.shoot.canary.k8s-hana.ondemand.com
+contexts:
+- name: shoot--kyma-dev--admin
+  context:
+    cluster: shoot--kyma-dev--admin
+    user: shoot--kyma-dev--admin-token
+users:
+- name: shoot--kyma-dev--admin-token
+  user:
+    token: DKPAe2Lt06a8dlUlE81kaWdSSDVSSf38x5PIj6cwQkqHMrw4UldsUr1guD6Thayw
+
+`
 }

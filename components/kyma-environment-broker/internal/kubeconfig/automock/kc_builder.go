@@ -34,6 +34,27 @@ func (_m *KcBuilder) Build(_a0 *internal.Instance) (string, error) {
 	return r0, r1
 }
 
+// BuildFromAdminKubeconfig provides a mock function with given fields: instance, adminKubeconfig
+func (_m *KcBuilder) BuildFromAdminKubeconfig(instance *internal.Instance, adminKubeconfig string) (string, error) {
+	ret := _m.Called(instance, adminKubeconfig)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(*internal.Instance, string) string); ok {
+		r0 = rf(instance, adminKubeconfig)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*internal.Instance, string) error); ok {
+		r1 = rf(instance, adminKubeconfig)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewKcBuilder interface {
 	mock.TestingT
 	Cleanup(func())
