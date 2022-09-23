@@ -3,10 +3,14 @@ package kubeconfig
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -149,6 +153,65 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandler_GetKubeconfigForOwnCluster(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		Parameters: internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Kubeconfig: "custom-kubeconfig",
+			},
+		},
+		InstanceDetails: internal.InstanceDetails{
+			Kubeconfig: "custom-kubeconfig",
+		},
+		InstanceID:    instanceID,
+		RuntimeID:     runtimeID,
+		ServicePlanID: broker.OwnClusterPlanID,
+	}
+
+	operation := internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			ID:         operationID,
+			InstanceID: instance.InstanceID,
+			State:      domain.Succeeded,
+			InstanceDetails: internal.InstanceDetails{
+				Kubeconfig: "custom-kubeconfig",
+			},
+			Type: internal.OperationTypeProvision,
+		},
+	}
+
+	db := storage.NewMemoryStorage()
+	err := db.Instances().Insert(instance)
+	require.NoError(t, err)
+	err = db.Operations().InsertProvisioningOperation(operation)
+	require.NoError(t, err)
+
+	builder := &automock.KcBuilder{}
+	builder.On("BuildFromAdminKubeconfig", &instance, "custom-kubeconfig").Return("custom-kubeconfig-001", nil)
+	defer builder.AssertExpectations(t)
+
+	router := mux.NewRouter()
+
+	handler := NewHandler(db, builder, "", logger.NewLogDummy())
+	handler.AttachRoutes(router)
+
+	server := httptest.NewServer(router)
+
+	// when
+	response, err := http.Get(fmt.Sprintf("%s/kubeconfig/%s", server.URL, instanceID))
+	require.NoError(t, err)
+
+	// then
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	assert.Equal(t, "application/x-yaml", response.Header.Get("Content-Type"))
+
+	body, err := io.ReadAll(response.Body)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "custom-kubeconfig-001", string(body))
 }
 
 func TestHandler_specifyAllowOriginHeader(t *testing.T) {

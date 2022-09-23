@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kennygrant/sanitize"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -25,6 +27,7 @@ const attachmentName = "kubeconfig.yaml"
 
 type KcBuilder interface {
 	Build(*internal.Instance) (string, error)
+	BuildFromAdminKubeconfig(instance *internal.Instance, adminKubeconfig string) (string, error)
 }
 
 type Handler struct {
@@ -103,18 +106,18 @@ func (h *Handler) GetKubeconfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newKubeconfig, err := h.kubeconfigBuilder.Build(instance)
+	var newKubeconfig string
+	if instance.ServicePlanID == broker.OwnClusterPlanID {
+		newKubeconfig, err = h.kubeconfigBuilder.BuildFromAdminKubeconfig(instance, instance.InstanceDetails.Kubeconfig)
+	} else {
+		newKubeconfig, err = h.kubeconfigBuilder.Build(instance)
+	}
 	if err != nil {
 		h.handleResponse(w, http.StatusInternalServerError, fmt.Errorf("cannot fetch SKR kubeconfig: %s", err))
 		return
 	}
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", attachmentName))
-	w.Header().Add("Content-Type", "application/x-yaml")
-	_, err = w.Write([]byte(newKubeconfig))
-	if err != nil {
-		h.log.Errorf("cannot write response with new kubeconfig: %s", err)
-	}
+	writeToResponse(w, newKubeconfig, h.log)
 }
 
 func (h *Handler) handleResponse(w http.ResponseWriter, code int, err error) {
@@ -142,5 +145,14 @@ func (h *Handler) specifyAllowOriginHeader(r *http.Request, w http.ResponseWrite
 			w.Header().Set("Access-Control-Allow-Origin", sanitize.HTML(origin))
 			return
 		}
+	}
+}
+
+func writeToResponse(w http.ResponseWriter, data string, l logrus.FieldLogger) {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", attachmentName))
+	w.Header().Add("Content-Type", "application/x-yaml")
+	_, err := w.Write([]byte(data))
+	if err != nil {
+		l.Errorf("cannot write response with new kubeconfig: %s", err)
 	}
 }
