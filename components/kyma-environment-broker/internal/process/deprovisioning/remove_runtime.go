@@ -51,7 +51,8 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned", log)
+		log.Errorf("instance already deleted", err)
+		return operation, 0 * time.Second, nil
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
