@@ -2,8 +2,9 @@ package deprovisioning
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
