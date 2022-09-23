@@ -395,6 +395,10 @@ func IsFreemiumPlan(planID string) bool {
 	}
 }
 
+func IsOwnClusterPlan(planID string) bool {
+	return planID == OwnClusterPlanID
+}
+
 func filter(items *[]interface{}, included map[string]interface{}) interface{} {
 	output := make([]interface{}, 0)
 	for i := 0; i < len(*items); i++ {
