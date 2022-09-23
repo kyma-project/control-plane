@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -28,15 +29,22 @@ func (om *OperationManager) OperationSucceeded(operation internal.Operation, des
 
 // OperationFailed marks the operation as failed and returns status of the operation's update
 func (om *OperationManager) OperationFailed(operation internal.Operation, description string, err error, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	op, t, updateErr := om.update(operation, domain.Failed, description, log)
-	retErr := fmt.Errorf("operation failed")
-	if err != nil {
-		retErr = fmt.Errorf("%v: %w", retErr, err)
+	op, t, _ := om.update(operation, domain.Failed, description, log)
+	// repeat in case of storage error
+	if t != 0 {
+		return op, t, nil
 	}
-	if updateErr != nil {
-		retErr = fmt.Errorf("%v: %w", retErr, updateErr)
+
+	var retErr error
+	if err == nil {
+		// no exact err passed in
+		retErr = errors.New(description)
+	} else {
+		// keep the original err object for error categorizer
+		retErr = errors.Wrap(err, description)
 	}
-	return op, t, retErr
+
+	return op, 0, retErr
 }
 
 // OperationCanceled marks the operation as canceled and returns status of the operation's update
