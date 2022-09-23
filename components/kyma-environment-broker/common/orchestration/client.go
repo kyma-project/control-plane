@@ -152,69 +152,146 @@ func (c client) GetOrchestration(orchestrationID string) (StatusResponse, error)
 func (c client) ListOperations(orchestrationID string, params ListParameters) (OperationResponseList, error) {
 	operations := OperationResponseList{}
 	url := fmt.Sprintf("%s/orchestrations/%s/operations", c.url, orchestrationID)
-	//getAll := false
-	//fetchedAll := false
-	/*if params.Page == 0 || params.PageSize == 0 {
+	getAll := false
+	fetchedAll := false
+	if params.Page == 0 || params.PageSize == 0 {
 		getAll = true
 		params.Page = 1
 		if params.PageSize == 0 {
 			params.PageSize = defaultPageSize
 		}
-	}*/
+	}
 
 	fmt.Println("client.go parmes.Page=", params.Page, params.PageSize)
-	params.Page = 0
-	params.PageSize = 0
 
-	//for !fetchedAll {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return operations, errors.Wrap(err, "while creating request")
-	}
-	setQuery(req.URL, params)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return operations, errors.Wrapf(err, "while calling %s", url)
+	failedFound, failedIndex := c.searchFilter(params.States, "failed")
+	if failedFound {
+		params.States = c.removeIndex(params.States, failedIndex)
 	}
 
-	// Drain response body and close, return error to context if there isn't any.
-	defer func() {
-		derr := drainResponseBody(resp.Body)
-		if err == nil {
-			err = derr
+	if !(failedFound && len(params.States) == 0) {
+		for !fetchedAll {
+			fmt.Println("client.go ListOperations()", params.Page, params.PageSize, params.States)
+
+			req, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				return operations, errors.Wrap(err, "while creating request")
+			}
+			setQuery(req.URL, params)
+
+			resp, err := c.httpClient.Do(req)
+			if err != nil {
+				return operations, errors.Wrapf(err, "while calling %s", url)
+			}
+
+			// Drain response body and close, return error to context if there isn't any.
+			defer func() {
+				derr := drainResponseBody(resp.Body)
+				if err == nil {
+					err = derr
+				}
+				cerr := resp.Body.Close()
+				if err == nil {
+					err = cerr
+				}
+			}()
+
+			if resp.StatusCode != http.StatusOK {
+				return operations, fmt.Errorf("calling %s returned %s status", url, resp.Status)
+			}
+
+			var orl OperationResponseList
+			decoder := json.NewDecoder(resp.Body)
+			err = decoder.Decode(&orl)
+			if err != nil {
+				return operations, errors.Wrap(err, "while decoding response body")
+			}
+
+			fmt.Println("operations.TotalCount = before ", operations.TotalCount)
+			fmt.Println("operations.Count = before ", operations.Count)
+			operations.TotalCount = orl.TotalCount
+			operations.Count += orl.Count
+			fmt.Println("operations.TotalCount =  afternn", operations.TotalCount)
+			fmt.Println("operations.Count = after ", operations.Count)
+
+			operations.Data = append(operations.Data, orl.Data...)
+			if getAll {
+				params.Page++
+				fetchedAll = operations.Count >= operations.TotalCount
+			} else {
+				fetchedAll = true
+			}
 		}
-		cerr := resp.Body.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return operations, fmt.Errorf("calling %s returned %s status", url, resp.Status)
 	}
 
-	var orl OperationResponseList
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&orl)
-	if err != nil {
-		return operations, errors.Wrap(err, "while decoding response body")
-	}
+	if failedFound {
+		params.States = []string{"failed"}
+		params.Page = 0
+		params.PageSize = 0
+		fmt.Println("client.go ListOperations() for failed", params.Page, params.PageSize, params.States)
 
-	fmt.Println("client.go orl.TotalCount", orl.TotalCount)
-	fmt.Println("client.go orl.Count", orl.Count)
-	operations.TotalCount = orl.TotalCount
-	operations.Count += orl.Count
-	operations.Data = append(operations.Data, orl.Data...)
-	/*	if getAll {
-			params.Page++
-			fetchedAll = operations.Count >= operations.TotalCount
-		} else {
-			fetchedAll = true
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return operations, errors.Wrap(err, "while creating request")
 		}
-	}*/
+		setQuery(req.URL, params)
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return operations, errors.Wrapf(err, "while calling %s", url)
+		}
+
+		// Drain response body and close, return error to context if there isn't any.
+		defer func() {
+			derr := drainResponseBody(resp.Body)
+			if err == nil {
+				err = derr
+			}
+			cerr := resp.Body.Close()
+			if err == nil {
+				err = cerr
+			}
+		}()
+
+		if resp.StatusCode != http.StatusOK {
+			return operations, fmt.Errorf("calling %s returned %s status", url, resp.Status)
+		}
+
+		var orl OperationResponseList
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&orl)
+		if err != nil {
+			return operations, errors.Wrap(err, "while decoding response body")
+		}
+
+		fmt.Println("only for failed : operations.TotalCount = before ", operations.TotalCount)
+		fmt.Println("only for failed :  operations.Count = before ", operations.Count)
+		operations.TotalCount = orl.TotalCount
+		operations.Count += orl.Count
+		fmt.Println("only for failed : operations.TotalCount =  aftern", operations.TotalCount)
+		fmt.Println("only for failed : operations.Count = after ", operations.Count)
+
+		operations.Data = append(operations.Data, orl.Data...)
+	}
 
 	return operations, nil
+}
+
+func (c client) searchFilter(states []string, inputState string) (bool, int) {
+	var failedFound bool
+	var failedIndex int
+	for index, state := range states {
+		if strings.Contains(state, inputState) {
+			failedFound = true
+			failedIndex = index
+			break
+		}
+	}
+	return failedFound, failedIndex
+}
+
+func (c client) removeIndex(arr []string, index int) []string {
+	return append(arr[:index], arr[index+1:]...)
 }
 
 // GetOperation fetches detailed Runtime operation corresponding to the given orchestration and operation ID.
