@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -41,13 +42,7 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 		// happens when provisioning process failed and Create_Runtime step was never reached
 		// It can also happen when the SKR is suspended (technically deprovisioned)
 		log.Infof("Runtime does not exist for instance id %q", operation.InstanceID)
-
-		err := s.cleanUp(&operation, log)
-		if err != nil {
-			return operation, 1 * time.Second, nil
-		}
-		operation, _, _ := s.operationManager.OperationSucceeded(operation, "Runtime was never provisioned", log)
-		return operation, 1 * time.Second, nil
+		return operation, 0 * time.Second, nil
 	}
 
 	if operation.ProvisionerOperationID == "" {
