@@ -155,7 +155,7 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 	}
 }
 
-func TestHandler_GetKubeconfigForOwnCLuster(t *testing.T) {
+func TestHandler_GetKubeconfigForOwnCluster(t *testing.T) {
 	// given
 	instance := internal.Instance{
 		Parameters: internal.ProvisioningParameters{
@@ -179,6 +179,7 @@ func TestHandler_GetKubeconfigForOwnCLuster(t *testing.T) {
 			InstanceDetails: internal.InstanceDetails{
 				Kubeconfig: "custom-kubeconfig",
 			},
+			Type: internal.OperationTypeProvision,
 		},
 	}
 
