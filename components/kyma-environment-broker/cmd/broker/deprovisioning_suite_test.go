@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -81,8 +80,8 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 
 	accountProvider := fixAccountProvider()
 
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
-
+	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Minute, logs.WithField("deprovisioning", "manager"))
+	deprovisionManager.SpeedUp(1000)
 	scheme := runtime.NewScheme()
 	apiextensionsv1.AddToScheme(scheme)
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -157,18 +156,18 @@ func (s *DeprovisioningSuite) CreateDeprovisioning(instanceId string) string {
 }
 
 func (s *DeprovisioningSuite) WaitForDeprovisioningState(operationID string, state domain.LastOperationState) {
-	var op *internal.DeprovisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetDeprovisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})
-	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
+	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. %v The existing operation %+v", state, op.State, op)
 }
 
 func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID string) {
-	var deprovisioningOp *internal.DeprovisioningOperation
+	var deprovisioningOp *internal.Operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.storage.Operations().GetDeprovisioningOperationByID(operationID)
+		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
 			deprovisioningOp = op
@@ -176,7 +175,7 @@ func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {

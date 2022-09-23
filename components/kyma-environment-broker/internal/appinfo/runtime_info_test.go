@@ -550,20 +550,20 @@ func newInMemoryStorage(t *testing.T,
 
 func fixProvisionOperation(idx int) internal.ProvisioningOperation {
 	o := internal.ProvisioningOperation{
-		Operation: fixSucceededOperation(idx),
+		Operation: fixSucceededOperation(internal.OperationTypeProvision, idx),
 	}
 	o.Type = internal.OperationTypeProvision
 	return o
 }
 func fixDeprovisionOperation(idx int) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		Operation: fixSucceededOperation(idx),
+		Operation: fixSucceededOperation(internal.OperationTypeDeprovision, idx),
 	}
 }
 
-func fixSucceededOperation(idx int) internal.Operation {
+func fixSucceededOperation(operationType internal.OperationType, idx int) internal.Operation {
 	return internal.Operation{
-		ID:                     fmt.Sprintf("Operation ID field. IDX: %d", idx),
+		ID:                     fmt.Sprintf("Operation %v ID field. IDX: %d", operationType, idx),
 		Version:                0,
 		CreatedAt:              fixTime().Add(time.Duration(idx) * 24 * time.Hour),
 		UpdatedAt:              fixTime().Add(time.Duration(idx) * 48 * time.Hour),
@@ -571,5 +571,6 @@ func fixSucceededOperation(idx int) internal.Operation {
 		ProvisionerOperationID: fmt.Sprintf("ProvisionerOperationID field. IDX: %d", idx),
 		State:                  domain.Succeeded,
 		Description:            fmt.Sprintf("esc for succeeded op.. IDX: %d", idx),
+		Type:                   operationType,
 	}
 }

@@ -16,7 +16,7 @@ type AvsEvaluationRemovalStep struct {
 	operationsStorage     storage.Operations
 	externalEvalAssistant avs.EvalAssistant
 	internalEvalAssistant avs.EvalAssistant
-	deProvisioningManager *process.DeprovisionOperationManager
+	deProvisioningManager *process.OperationManager
 }
 
 func NewAvsEvaluationsRemovalStep(delegator *avs.Delegator, operationsStorage storage.Operations, externalEvalAssistant, internalEvalAssistant avs.EvalAssistant) *AvsEvaluationRemovalStep {
@@ -25,7 +25,7 @@ func NewAvsEvaluationsRemovalStep(delegator *avs.Delegator, operationsStorage st
 		operationsStorage:     operationsStorage,
 		externalEvalAssistant: externalEvalAssistant,
 		internalEvalAssistant: internalEvalAssistant,
-		deProvisioningManager: process.NewDeprovisionOperationManager(operationsStorage),
+		deProvisioningManager: process.NewOperationManager(operationsStorage),
 	}
 }
 
@@ -33,7 +33,7 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 	return "De-provision_AVS_Evaluations"
 }
 
-func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	logger.Infof("Avs lifecycle %+v", deProvisioningOperation.Avs)
 	if deProvisioningOperation.Avs.AVSExternalEvaluationDeleted && deProvisioningOperation.Avs.AVSInternalEvaluationDeleted {
 		logger.Infof("Both internal and external evaluations have been deleted")

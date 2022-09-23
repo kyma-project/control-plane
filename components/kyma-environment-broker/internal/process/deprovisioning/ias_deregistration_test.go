@@ -38,7 +38,7 @@ func TestIASDeregistration_Run(t *testing.T) {
 	step := NewIASDeregistrationStep(memoryStorage.Operations(), bundleBuilder)
 
 	// when
-	_, repeat, err := step.Run(operation, logger.NewLogDummy())
+	_, repeat, err := step.Run(operation.Operation, logger.NewLogDummy())
 
 	// then
 	assert.Equal(t, time.Duration(0), repeat)

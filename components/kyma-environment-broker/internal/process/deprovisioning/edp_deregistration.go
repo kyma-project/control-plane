@@ -33,7 +33,7 @@ func (s *EDPDeregistrationStep) Name() string {
 	return "EDP_Deregistration"
 }
 
-func (s *EDPDeregistrationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *EDPDeregistrationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	log.Info("Delete DataTenant metadata")
 	for _, key := range []string{
 		edp.MaasConsumerEnvironmentKey,
@@ -56,7 +56,7 @@ func (s *EDPDeregistrationStep) Run(operation internal.DeprovisioningOperation, 
 	return operation, 0, nil
 }
 
-func (s *EDPDeregistrationStep) handleError(operation internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *EDPDeregistrationStep) handleError(operation internal.Operation, err error, log logrus.FieldLogger, msg string) (internal.Operation, time.Duration, error) {
 	log.Errorf("%s: %s", msg, err)
 
 	if kebError.IsTemporaryError(err) {

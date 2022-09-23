@@ -13,6 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// the time after which the operation is marked as expired
+	CheckStatusTimeout = 5 * time.Hour
+)
+
 type InitStep struct {
 	operationManager *process.OperationManager
 	operationTimeout time.Duration

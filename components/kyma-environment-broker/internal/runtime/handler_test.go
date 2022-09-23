@@ -329,6 +329,7 @@ func TestRuntimeHandler(t *testing.T) {
 				UpdatedAt:  time.Now(),
 				InstanceID: testID1,
 				Temporary:  true,
+				Type:       internal.OperationTypeDeprovision,
 			},
 		})
 		require.NoError(t, err)
@@ -454,6 +455,7 @@ func TestRuntimeHandler(t *testing.T) {
 				UpdatedAt:  time.Now(),
 				InstanceID: testInstance1.InstanceID,
 				Temporary:  true,
+				Type:       internal.OperationTypeDeprovision,
 			},
 		})
 		require.NoError(t, err)
@@ -466,6 +468,7 @@ func TestRuntimeHandler(t *testing.T) {
 				UpdatedAt:  time.Now().Add(1 * time.Hour),
 				InstanceID: testInstance1.InstanceID,
 				Temporary:  false,
+				Type:       internal.OperationTypeDeprovision,
 			},
 		})
 		require.NoError(t, err)
