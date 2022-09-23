@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -46,8 +47,18 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 		return operation, 0 * time.Second, nil
 	}
 
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		return s.operationManager.OperationSucceeded(operation, "instance already deprovisioned", log)
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+
 	if operation.ProvisionerOperationID == "" {
-		provisionerResponse, err := s.provisionerClient.DeprovisionRuntime(operation.GlobalAccountID, operation.RuntimeID)
+		provisionerResponse, err := s.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 		if err != nil {
 			log.Errorf("unable to deprovision runtime: %s", err)
 			return operation, 10 * time.Second, nil
