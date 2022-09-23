@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"github.com/sirupsen/logrus"
@@ -46,8 +48,19 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 		return operation, 0 * time.Second, nil
 	}
 
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		log.Errorf("instance already deleted", err)
+		return operation, 0 * time.Second, nil
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+
 	if operation.ProvisionerOperationID == "" {
-		provisionerResponse, err := s.provisionerClient.DeprovisionRuntime(operation.GlobalAccountID, operation.RuntimeID)
+		provisionerResponse, err := s.provisionerClient.DeprovisionRuntime(instance.GlobalAccountID, instance.RuntimeID)
 		if err != nil {
 			log.Errorf("unable to deprovision runtime: %s", err)
 			return operation, 10 * time.Second, nil
