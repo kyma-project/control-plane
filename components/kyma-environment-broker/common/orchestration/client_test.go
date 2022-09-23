@@ -110,54 +110,6 @@ func TestClient_GetOrchestration(t *testing.T) {
 	})
 }
 
-func TestClient_ListOperations(t *testing.T) {
-	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
-		// given
-		called := 0
-		params := ListParameters{
-			PageSize: 2,
-			States:   []string{"failed", "in progress"},
-		}
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			called++
-			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/operations", orch1.OrchestrationID), r.URL.Path)
-			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
-			query := r.URL.Query()
-			var err error
-			if called == 3 {
-				assert.ElementsMatch(t, []string{strconv.Itoa(0)}, query[pagination.PageSizeParam])
-				assert.ElementsMatch(t, []string{"failed"}, query[StateParam])
-				err = respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 6)
-			} else {
-				assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
-				assert.ElementsMatch(t, []string{"in progress"}, query[StateParam])
-				err = respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 4)
-			}
-
-			require.NoError(t, err)
-		}))
-		defer ts.Close()
-		client := NewClient(context.TODO(), ts.URL, fixToken)
-
-		// when
-		orl, err := client.ListOperations(orch1.OrchestrationID, params)
-
-		// then
-		require.NoError(t, err)
-
-		assert.Equal(t, 3, called)
-		assert.Equal(t, 6, orl.Count)
-		assert.Equal(t, 6, orl.TotalCount)
-
-		assert.Len(t, orl.Data, 6)
-		for i := 0; i < 6; i++ {
-			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
-			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
-		}
-	})
-}
-
 func TestClient_ListOperationsWithoutFailed(t *testing.T) {
 	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
 		// given
@@ -214,16 +166,13 @@ func TestClient_ListOperationsWithFailed(t *testing.T) {
 			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
 			query := r.URL.Query()
 			assert.ElementsMatch(t, params.States, query[StateParam])
-
 			err := respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 2)
 			require.NoError(t, err)
 		}))
 		defer ts.Close()
 		client := NewClient(context.TODO(), ts.URL, fixToken)
-
 		// when
 		orl, err := client.ListOperations(orch1.OrchestrationID, params)
-
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, 1, called)
@@ -231,6 +180,50 @@ func TestClient_ListOperationsWithFailed(t *testing.T) {
 		assert.Equal(t, 2, orl.TotalCount)
 		assert.Len(t, orl.Data, 2)
 		for i := 0; i < 2; i++ {
+			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
+			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
+		}
+	})
+}
+
+func TestClient_ListOperations(t *testing.T) {
+	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
+		// given
+		called := 0
+		params := ListParameters{
+			PageSize: 2,
+			States:   []string{"failed", "in progress", "pending"},
+		}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called++
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/operations", orch1.OrchestrationID), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
+			query := r.URL.Query()
+			var err error
+			assert.ElementsMatch(t, []string{strconv.Itoa(called)}, query[pagination.PageParam])
+			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
+			if called == 2 {
+				assert.ElementsMatch(t, []string{"in progress", "pending"}, query[StateParam])
+			} else {
+				assert.ElementsMatch(t, params.States, query[StateParam])
+			}
+
+			err = respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 4)
+			require.NoError(t, err)
+		}))
+		defer ts.Close()
+		client := NewClient(context.TODO(), ts.URL, fixToken)
+		// when
+		orl, err := client.ListOperations(orch1.OrchestrationID, params)
+		// then
+		require.NoError(t, err)
+
+		assert.Equal(t, 2, called)
+		assert.Equal(t, 4, orl.Count)
+		assert.Equal(t, 4, orl.TotalCount)
+		assert.Len(t, orl.Data, 4)
+		for i := 0; i < 4; i++ {
 			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
 			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
 		}

@@ -599,9 +599,7 @@ func (s *operations) showUpgradeKymaOperationDTOByOrchestrationID(orchestrationI
 	}
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations before", operations)
 	if failedFilterFound {
-
 		operations, count, totalCount = s.fetchFailedStatusForOrchestration(operations)
-
 	}
 	fmt.Println("showUpgradeKymaOperationDTOByOrchestrationID() operations after", operations)
 	return operations, count, totalCount, nil
@@ -631,7 +629,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 	fmt.Println("ListUpgradeKymaOperationsByOrchestrationID() filter", filter)
 	//only for "failed" states
 	if filterFailedFound {
-		filter.States = []string{Failed}
+		filter = dbmodel.OperationFilter{States: []string{"failed"}}
 		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
