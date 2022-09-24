@@ -26,7 +26,7 @@ func TestCheckRuntimeRemovalStep(t *testing.T) {
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
 			provisionerClient := provisioner.NewFakeClient()
-			svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), provisionerClient)
+			svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 			dOp := fixDeprovisioningOperation().Operation
 			provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
 			provisionerClient.FinishProvisionerOperation(provisionerOp, tc.givenState)
@@ -47,7 +47,7 @@ func TestCheckRuntimeRemovalStep_ProvisionerFailed(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 	provisionerClient := provisioner.NewFakeClient()
-	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), provisionerClient)
+	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 	dOp := fixDeprovisioningOperation().Operation
 	memoryStorage.Operations().InsertOperation(dOp)
 	provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
