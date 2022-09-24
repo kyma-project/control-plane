@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -28,6 +29,10 @@ func TestCheckRuntimeRemovalStep(t *testing.T) {
 			provisionerClient := provisioner.NewFakeClient()
 			svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 			dOp := fixDeprovisioningOperation().Operation
+			memoryStorage.Instances().Insert(internal.Instance{
+				GlobalAccountID: "global-acc",
+				InstanceID:      dOp.InstanceID,
+			})
 			provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
 			provisionerClient.FinishProvisionerOperation(provisionerOp, tc.givenState)
 			dOp.ProvisionerOperationID = provisionerOp
@@ -50,6 +55,10 @@ func TestCheckRuntimeRemovalStep_ProvisionerFailed(t *testing.T) {
 	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 	dOp := fixDeprovisioningOperation().Operation
 	memoryStorage.Operations().InsertOperation(dOp)
+	memoryStorage.Instances().Insert(internal.Instance{
+		GlobalAccountID: "global-acc",
+		InstanceID:      dOp.InstanceID,
+	})
 	provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
 	provisionerClient.FinishProvisionerOperation(provisionerOp, gqlschema.OperationStateFailed)
 	dOp.ProvisionerOperationID = provisionerOp
