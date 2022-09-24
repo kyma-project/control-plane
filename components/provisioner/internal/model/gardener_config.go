@@ -77,6 +77,7 @@ type GardenerConfig struct {
 	DNSConfig                           *DNSConfig
 	ExposureClassName                   *string
 	ShootNetworkingFilterDisabled       *bool
+	ControlPlaneFailureTolerance        *string
 }
 
 type ExtensionProviderConfig struct {
@@ -152,6 +153,17 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 		return nil, apperrors.Internal("error encoding Cert extension config: %s", encodingErr.Error())
 	}
 
+	var controlPlane *gardener_types.ControlPlane = nil
+	if c.ControlPlaneFailureTolerance != nil && *c.ControlPlaneFailureTolerance != "" {
+		controlPlane = &gardener_types.ControlPlane{
+			HighAvailability: &gardener_types.HighAvailability{
+				FailureTolerance: gardener_types.FailureTolerance{
+					Type: gardener_types.FailureToleranceType(*c.ControlPlaneFailureTolerance),
+				},
+			},
+		}
+	}
+
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -192,6 +204,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				{Type: "shoot-cert-service", ProviderConfig: &apimachineryRuntime.RawExtension{Raw: jsonCertConfig}},
 				{Type: ShootNetworkingFilterExtensionType, Disabled: util.DefaultBoolIfNil(c.ShootNetworkingFilterDisabled, util.BoolPtr(ShootNetworkingFilterDisabledDefault))},
 			},
+			ControlPlane: controlPlane,
 		},
 	}
 
@@ -337,7 +350,7 @@ func (c GCPGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSpecific
 }
 
 func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	return updateShootConfig(gardenerConfig, shoot)
 }
 
 func (c GCPGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
@@ -449,11 +462,7 @@ func (c AzureGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Sho
 }
 
 func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	zoneNames := c.input.Zones
-	if len(c.input.AzureZones) > 0 {
-		zoneNames = getAzureZonesNames(c.input.AzureZones)
-	}
-	err := updateShootConfig(gardenerConfig, shoot, zoneNames)
+	err := updateShootConfig(gardenerConfig, shoot)
 	if err != nil {
 		return err
 	}
@@ -590,8 +599,7 @@ func (c AWSGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot
 }
 
 func (c AWSGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	zoneNames := getAWSZonesNames(c.input.AwsZones)
-	return updateShootConfig(gardenerConfig, shoot, zoneNames)
+	return updateShootConfig(gardenerConfig, shoot)
 }
 
 func (c AWSGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -658,7 +666,7 @@ func (c OpenStackGardenerConfig) ValidateShootConfigChange(shoot *gardener_types
 }
 
 func (c OpenStackGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
-	return updateShootConfig(gardenerConfig, shoot, c.input.Zones)
+	return updateShootConfig(gardenerConfig, shoot)
 }
 
 func (c OpenStackGardenerConfig) ExtendShootConfig(gardenerConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
@@ -709,7 +717,7 @@ func getWorkerConfig(gardenerConfig GardenerConfig, zones []string) gardener_typ
 	return worker
 }
 
-func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot, zones []string) apperrors.AppError {
+func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot) apperrors.AppError {
 
 	if upgradeConfig.KubernetesVersion != "" {
 		shoot.Spec.Kubernetes.Version = upgradeConfig.KubernetesVersion
@@ -741,7 +749,6 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	shoot.Spec.Provider.Workers[0].Machine.Type = upgradeConfig.MachineType
 	shoot.Spec.Provider.Workers[0].Maximum = int32(upgradeConfig.AutoScalerMax)
 	shoot.Spec.Provider.Workers[0].Minimum = int32(upgradeConfig.AutoScalerMin)
-	shoot.Spec.Provider.Workers[0].Zones = zones
 	if util.NotNilOrEmpty(upgradeConfig.MachineImage) {
 		shoot.Spec.Provider.Workers[0].Machine.Image.Name = *upgradeConfig.MachineImage
 	}

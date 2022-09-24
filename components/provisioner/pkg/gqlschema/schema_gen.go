@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 		AllowPrivilegedContainers           func(childComplexity int) int
 		AutoScalerMax                       func(childComplexity int) int
 		AutoScalerMin                       func(childComplexity int) int
+		ControlPlaneFailureTolerance        func(childComplexity int) int
 		DNSConfig                           func(childComplexity int) int
 		DiskType                            func(childComplexity int) int
 		EnableKubernetesVersionAutoUpdate   func(childComplexity int) int
@@ -451,6 +452,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.AutoScalerMin(childComplexity), true
+
+	case "GardenerConfig.controlPlaneFailureTolerance":
+		if e.complexity.GardenerConfig.ControlPlaneFailureTolerance == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.ControlPlaneFailureTolerance(childComplexity), true
 
 	case "GardenerConfig.dnsConfig":
 		if e.complexity.GardenerConfig.DNSConfig == nil {
@@ -1058,6 +1066,7 @@ type GardenerConfig {
     oidcConfig: OIDCConfig
     exposureClassName: String
     shootNetworkingFilterDisabled: Boolean
+    controlPlaneFailureTolerance: String
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -1259,6 +1268,7 @@ input GardenerConfigInput {
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
     shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
+    controlPlaneFailureTolerance: String            # Shoot control plane HA failure tolerance level to configure. Valid values: 'nil' (left empty, no HA), "node", "zone"
 }
 
 input OIDCConfigInput {
@@ -3313,6 +3323,37 @@ func (ec *executionContext) _GardenerConfig_shootNetworkingFilterDisabled(ctx co
 	res := resTmp.(*bool)
 	fc.Result = res
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_controlPlaneFailureTolerance(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ControlPlaneFailureTolerance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HibernationStatus_hibernated(ctx context.Context, field graphql.CollectedField, obj *HibernationStatus) (ret graphql.Marshaler) {
@@ -6351,6 +6392,12 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "controlPlaneFailureTolerance":
+			var err error
+			it.ControlPlaneFailureTolerance, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -7158,6 +7205,8 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_exposureClassName(ctx, field, obj)
 		case "shootNetworkingFilterDisabled":
 			out.Values[i] = ec._GardenerConfig_shootNetworkingFilterDisabled(ctx, field, obj)
+		case "controlPlaneFailureTolerance":
+			out.Values[i] = ec._GardenerConfig_controlPlaneFailureTolerance(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
