@@ -206,7 +206,6 @@ func TestGardenerProvisioner_UpgradeCluster(t *testing.T) {
 				WithMinMax(1, 5).
 				WithMaxSurge(25).
 				WithMaxUnavailable(1).
-				WithZones("zone-1").
 				ToWorker()).
 		ToShoot()
 
