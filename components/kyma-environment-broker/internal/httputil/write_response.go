@@ -27,5 +27,6 @@ type errObj struct {
 }
 
 func WriteErrorResponse(w http.ResponseWriter, code int, err error) {
+	logrus.Errorf("%v", err.Error())
 	WriteResponse(w, code, errObj{Error: err.Error()})
 }
