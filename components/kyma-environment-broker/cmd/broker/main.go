@@ -815,7 +815,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
 		},
 		{
-			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), provisionerClient),
+			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), db.Instances(), provisionerClient),
 		},
 		{
 			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
