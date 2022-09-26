@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 func Recovery(next http.Handler) http.Handler {
