@@ -6,8 +6,9 @@ import (
 
 type OperationState string
 
-//TODO: Remove after schema migration
-//      Is it ok to remove it now? Which schema migration exactly?
+// TODO: Remove after schema migration
+//
+//	Is it ok to remove it now? Which schema migration exactly?
 const AWS = "aws"
 
 const (

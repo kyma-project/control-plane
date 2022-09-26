@@ -24,7 +24,7 @@ type tester struct {
 	errReturned bool
 }
 
-//testFunction returns error on first call and nil on subsequent calls
+// testFunction returns error on first call and nil on subsequent calls
 func (t *tester) testFunction() apperrors.AppError {
 	if t.errReturned {
 		return nil
