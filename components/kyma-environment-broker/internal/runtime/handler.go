@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 
@@ -44,6 +46,15 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			logrus.Errorf("?unable to provide runtimes: %v", err)
+
+			httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("%v", err))
+		}
+
+	}()
 	toReturn := make([]pkg.RuntimeDTO, 0)
 
 	pageSize, page, err := pagination.ExtractPaginationConfigFromRequest(req, h.defaultMaxPage)
