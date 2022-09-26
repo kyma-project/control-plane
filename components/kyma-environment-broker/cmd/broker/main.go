@@ -471,6 +471,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 
 	router.Use(middleware.AddRegionToContext(cfg.DefaultRequestRegion))
 	router.Use(middleware.AddProviderToContext())
+	router.Use(middleware.Recovery)
 	for _, prefix := range []string{
 		"/oauth/",          // oauth2 handled by Ory
 		"/oauth/{region}/", // oauth2 handled by Ory with region
