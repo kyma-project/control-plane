@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 
@@ -60,6 +61,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 
 	instances, count, totalCount, err := h.instancesDb.List(filter)
 	if err != nil {
+		logrus.Errorf("Unable to list instances: %s", err.Error())
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while fetching instances"))
 		return
 	}
@@ -67,6 +69,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	for _, instance := range instances {
 		dto, err := h.converter.NewDTO(instance)
 		if err != nil {
+			logrus.Errorf("Unable to convert an instance: %s", err.Error())
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrap(err, "while converting instance to DTO"))
 			return
 		}
