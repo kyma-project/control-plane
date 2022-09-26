@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -128,7 +129,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s, ProvisioningParameterts.Region=%s, ProvisioningParameterts.MachineType=%s",
 		parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region, valueOfPtr(parameters.Region), valueOfPtr(parameters.MachineType))
-	logger.Infof("Runtime parameters: %+v", parameters)
+	logParametersWithMaskedKubeconfig(parameters, logger)
 
 	// check if operation with instance ID already created
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
@@ -202,6 +203,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}, nil
 }
 
+func logParametersWithMaskedKubeconfig(parameters internal.ProvisioningParametersDTO, logger *logrus.Entry) {
+	parameters.Kubeconfig = "*****"
+	logger.Infof("Runtime parameters: %+v", parameters)
+}
+
 func valueOfPtr(ptr *string) string {
 	if ptr == nil {
 		return ""
@@ -270,6 +276,14 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	if IsOwnClusterPlan(details.PlanID) {
+		decodedKubeconfig, err := base64.StdEncoding.DecodeString(parameters.Kubeconfig)
+		if err != nil {
+			return ersContext, parameters, errors.Wrap(err, "while decoding kubeconfig")
+		}
+		parameters.Kubeconfig = string(decodedKubeconfig)
 	}
 
 	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {

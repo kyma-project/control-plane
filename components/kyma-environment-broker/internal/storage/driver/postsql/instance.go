@@ -345,10 +345,12 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 	if err != nil {
 		return internal.Instance{}, errors.Wrap(err, "while decrypting parameters")
 	}
+
 	err = s.cipher.DecryptKubeconfig(&params)
 	if err != nil {
-		return internal.Instance{}, errors.Wrap(err, "while decrypting kubeconfig")
+		log.Warn("decrypting skipped because kubeconfig is in a plain text")
 	}
+
 	return internal.Instance{
 		InstanceID:                  dto.InstanceID,
 		RuntimeID:                   dto.RuntimeID,
