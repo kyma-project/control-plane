@@ -3,7 +3,6 @@ package kubeconfig
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -189,8 +188,8 @@ func TestHandler_GetKubeconfigForOwnCluster(t *testing.T) {
 	err = db.Operations().InsertProvisioningOperation(operation)
 	require.NoError(t, err)
 
+	// we do not expect usage of KcBuilder
 	builder := &automock.KcBuilder{}
-	builder.On("BuildFromAdminKubeconfig", &instance, "custom-kubeconfig").Return("custom-kubeconfig-001", nil)
 	defer builder.AssertExpectations(t)
 
 	router := mux.NewRouter()
@@ -205,13 +204,7 @@ func TestHandler_GetKubeconfigForOwnCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	// then
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, "application/x-yaml", response.Header.Get("Content-Type"))
-
-	body, err := io.ReadAll(response.Body)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "custom-kubeconfig-001", string(body))
+	assert.Equal(t, http.StatusNotFound, response.StatusCode)
 }
 
 func TestHandler_specifyAllowOriginHeader(t *testing.T) {
