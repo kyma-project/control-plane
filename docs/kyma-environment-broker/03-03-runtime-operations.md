@@ -2,28 +2,12 @@
 
 Kyma Environment Broker allows you to configure operations that you can run on a Runtime. Each operation consists of several steps and each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
 
-- Return an error, which interrupts the entire process, or
-- Repeat the entire operation after the specified period.
+- return an error, which interrupts the entire process, or
+- repeat the entire operation after the specified period.
 
 > **NOTE:** It's important to set lower timeouts for the Kyma installation in the Runtime Provisioner.
 
-## Operations
-
-Operation defines stages and steps, which represents a part of work to be done.
-
-The stage is a grouping unit for steps.
-
-Step is a part of the stage
-
-Operation can contain multiple stages, and stage can contain multiple steps.
-
-Each step returns time value (duration) which tells if steps should be repeated or not, if duration is equal to 0 then it means that step was processed successfully and there is no need to repeat it, and the operation can go forward.
-If duration is more than 0 it means that step need to be repeated and also all previous steps within stage are repeated from beginning.
-It is each step responisbility to handle retries and ensure that it logic is executed once.
-Retry pattern applies only to steps.
-Once all steps in stage are executed with success, then stage is marked as finished and never repeat again, even if next one will fail.
-
-### Provisioning
+## Provisioning
 
 Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
@@ -48,7 +32,7 @@ The provisioning process contains the following steps:
 
 The timeout for processing the whole provisioning operation is set to `24h`. In Kyma 2.0 provisioning steps delegate resource creation to Reconciler. Since Reconciler does not constrain a number of retries in case of a failed reconciliation, KEB sets [provisioning timeout for Reconciler](../../resources/kcp/charts/kyma-environment-broker/values.yaml#L49) to `2h`.
 
-### Deprovisioning
+## Deprovisioning
 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
 
@@ -68,7 +52,7 @@ The deprovisioning process contains the following steps:
 
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
-### Upgrade Kyma
+## Upgrade Kyma
 
 Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
 
@@ -86,14 +70,14 @@ The upgrade process contains the following steps:
 
 >**NOTE:** The timeout for processing this operation is set to `3h`.
 
-### Upgrade Cluster
+## Upgrade Cluster
 
 | Step                          | Description                                                                                           |
 |-------------------------------|-------------------------------------------------------------------------------------------------------|
 | Send_Notification             | Notifies customers using SPC whenever an orchestration is scheduled, triggered, completed, or canceled. |
 | Upgrade_Cluster               | Sends the updated cluster parameters to the Provisioner                                               |
 
-### Update 
+## Update 
 
 | Stage               | Step                           | Description                                                                                   |
 |---------------------|--------------------------------|-----------------------------------------------------------------------------------------------|
@@ -107,7 +91,7 @@ The upgrade process contains the following steps:
 | check               | Check_Runtime                  | Checks the status of the Provisioner process.                                                 |                                                                                                                      
 
 
-### Provide additional steps
+## Provide additional steps
 
 You can configure Runtime operations by providing additional steps. To add a new step, follow these tutorials:
 
@@ -543,3 +527,18 @@ You can configure Runtime operations by providing additional steps. To add a new
 
    </details>
 </div>
+
+## Stages
+
+Operation defines stages and steps, which represents a part of work to be done.
+
+The stage is a grouping unit for steps.
+
+Step is a part of the stage
+
+Operation can contain multiple stages, and stage can contain multiple steps.
+
+We group the steps inside one stage when we have some sensitive data which we don't want to store in database, then we are keeping them temporary in memory and pass through steps.
+
+Once all steps in stage are executed with success, then stage is marked as finished and never repeat again, even if next one will fail.
+If any of steps will fail in given stage, then whole stage will be repeated from beginning.
