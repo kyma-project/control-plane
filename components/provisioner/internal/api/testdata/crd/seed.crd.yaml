@@ -8,11 +8,13 @@ spec:
   group: core.gardener.cloud
   versions:
   - name: v1beta1
-    served: true
-    storage: true
     schema:
       openAPIV3Schema:
+        description: Seed represents an installation request for an external controller.
         type: object
+        x-kubernetes-preserve-unknown-fields: true
+    served: true
+    storage: true
   names:
     kind: Seed
     plural: seeds
