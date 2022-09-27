@@ -471,6 +471,9 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 	}
 	return DeprovisioningOperation{
 		Operation: Operation{
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{GlobalAccountID: instance.GlobalAccountID, RuntimeID: instance.RuntimeID},
+			},
 			ID:              operationID,
 			Version:         0,
 			Description:     "Operation created",

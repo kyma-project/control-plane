@@ -96,7 +96,7 @@ func TestProvisioning_OwnCluster(t *testing.T) {
 					},
 					"parameters": {
 						"name": "testing-cluster",
-						"kubeconfig":"kubeconfig-001",
+						"kubeconfig":"a3ViZWNvbmZpZy0wMDEK",
 "shootName": "sh1",
 "shootDomain": "sh1.avs.sap.nothing"
 					}

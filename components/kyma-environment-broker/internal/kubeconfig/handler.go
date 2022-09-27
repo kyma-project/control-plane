@@ -76,6 +76,11 @@ func (h *Handler) GetKubeconfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if broker.IsOwnClusterPlan(instance.ServicePlanID) {
+		h.handleResponse(w, http.StatusNotFound, fmt.Errorf("kubeconfig for instance %s does not exist", instanceID))
+		return
+	}
+
 	if instance.RuntimeID == "" {
 		h.handleResponse(w, http.StatusNotFound, fmt.Errorf("kubeconfig for instance %s does not exist. Provisioning could be in progress, please try again later", instanceID))
 		return

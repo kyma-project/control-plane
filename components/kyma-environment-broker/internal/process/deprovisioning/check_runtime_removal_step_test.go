@@ -3,6 +3,8 @@ package deprovisioning
 import (
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -26,8 +28,12 @@ func TestCheckRuntimeRemovalStep(t *testing.T) {
 			log := logrus.New()
 			memoryStorage := storage.NewMemoryStorage()
 			provisionerClient := provisioner.NewFakeClient()
-			svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), provisionerClient)
+			svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 			dOp := fixDeprovisioningOperation().Operation
+			memoryStorage.Instances().Insert(internal.Instance{
+				GlobalAccountID: "global-acc",
+				InstanceID:      dOp.InstanceID,
+			})
 			provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
 			provisionerClient.FinishProvisionerOperation(provisionerOp, tc.givenState)
 			dOp.ProvisionerOperationID = provisionerOp
@@ -47,9 +53,13 @@ func TestCheckRuntimeRemovalStep_ProvisionerFailed(t *testing.T) {
 	log := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 	provisionerClient := provisioner.NewFakeClient()
-	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), provisionerClient)
+	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 	dOp := fixDeprovisioningOperation().Operation
 	memoryStorage.Operations().InsertOperation(dOp)
+	memoryStorage.Instances().Insert(internal.Instance{
+		GlobalAccountID: "global-acc",
+		InstanceID:      dOp.InstanceID,
+	})
 	provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
 	provisionerClient.FinishProvisionerOperation(provisionerOp, gqlschema.OperationStateFailed)
 	dOp.ProvisionerOperationID = provisionerOp
