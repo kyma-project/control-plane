@@ -144,10 +144,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	shootName := gardener.CreateShootName()
 	shootDomainSuffix := strings.Trim(b.shootDomain, ".")
 
-	dashboardURL := fmt.Sprintf("https://console.%s.%s", shootName, shootDomainSuffix)
-	if b.dashboardConfig.LandscapeURL != "" {
-		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
-	}
+	dashboardURL := b.createDashboardURL(details.PlanID, instanceID)
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -378,4 +375,12 @@ func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider
 	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
 
 	return jsonschema.NewValidatorFromStringSchema(schema)
+}
+
+func (b *ProvisionEndpoint) createDashboardURL(planID, instanceID string) string {
+	if IsOwnClusterPlan(planID) {
+		return b.dashboardConfig.LandscapeURL
+	} else {
+		return fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 }

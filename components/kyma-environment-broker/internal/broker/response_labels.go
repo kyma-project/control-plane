@@ -25,7 +25,7 @@ func ResponseLabels(op internal.ProvisioningOperation, instance internal.Instanc
 
 	responseLabels := make(map[string]string, 0)
 	responseLabels["Name"] = op.ProvisioningParameters.Parameters.Name
-	if enableKubeconfigLabel {
+	if enableKubeconfigLabel && !IsOwnClusterPlan(instance.ServicePlanID) {
 		responseLabels[kubeconfigURLKey] = fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instance.InstanceID)
 	}
 

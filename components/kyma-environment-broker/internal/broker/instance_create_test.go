@@ -169,9 +169,9 @@ func TestProvision_Provision(t *testing.T) {
 		// UUID with version 4 and variant 1 i.e RFC. 4122/DCE
 		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
 		assert.NotEqual(t, instanceID, response.OperationData)
-		assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
+		assert.Equal(t, `https://dashboard.example.com`, response.DashboardURL)
 		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
-		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
+		assert.NotContains(t, response.Metadata.Labels, "KubeconfigURL")
 
 		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
 		require.NoError(t, err)
@@ -191,7 +191,7 @@ func TestProvision_Provision(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
-		assert.Regexp(t, `^https:\/\/dashboard\.example\.com\/\?kubeconfigID=`, response.DashboardURL)
+		assert.Equal(t, `https://dashboard.example.com`, response.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
