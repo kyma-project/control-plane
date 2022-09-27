@@ -162,8 +162,6 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 		}
 	}
 
-	fmt.Println("client.go parmes.Page=", params.Page, params.PageSize)
-
 	for !fetchedAll {
 		if params.Page > 1 {
 			failedFound, failedIndex := c.searchFilter(params.States, "failed")
@@ -171,8 +169,6 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 				params.States = c.removeIndex(params.States, failedIndex)
 			}
 		}
-
-		fmt.Println("client.go ListOperations()", params.Page, params.PageSize, params.States)
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -208,12 +204,8 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 			return operations, errors.Wrap(err, "while decoding response body")
 		}
 
-		fmt.Println("operations.TotalCount = before ", operations.TotalCount)
-		fmt.Println("operations.Count = before ", operations.Count)
 		operations.TotalCount = orl.TotalCount
 		operations.Count += orl.Count
-		fmt.Println("operations.TotalCount =  afternn", operations.TotalCount)
-		fmt.Println("operations.Count = after ", operations.Count)
 
 		operations.Data = append(operations.Data, orl.Data...)
 		if getAll {

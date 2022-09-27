@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 )
 
@@ -40,8 +42,13 @@ var operations = []OperationResponse{
 	fixOperationResponse("operation2", orch1.OrchestrationID),
 	fixOperationResponse("operation3", orch1.OrchestrationID),
 	fixOperationResponse("operation4", orch1.OrchestrationID),
-	fixOperationResponse("operation5", orch1.OrchestrationID),
-	fixOperationResponse("operation6", orch1.OrchestrationID),
+}
+
+var operationsWithState = []OperationResponse{
+	fixOperationResponse("operation1", orch1.OrchestrationID),
+	fixOperationResponse("operation2", orch1.OrchestrationID),
+	fixOperationResponseWithState("operation3", orch1.OrchestrationID, "failed"),
+	fixOperationResponse("operation4", orch1.OrchestrationID),
 }
 
 func TestClient_ListOrchestrations(t *testing.T) {
@@ -209,7 +216,7 @@ func TestClient_ListOperations(t *testing.T) {
 				assert.ElementsMatch(t, params.States, query[StateParam])
 			}
 
-			err = respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 4)
+			err = respondOperationListWithFailed(w, operationsWithState[(called-1)*params.PageSize:called*params.PageSize], query[StateParam], 4)
 			require.NoError(t, err)
 		}))
 		defer ts.Close()
@@ -223,9 +230,16 @@ func TestClient_ListOperations(t *testing.T) {
 		assert.Equal(t, 4, orl.Count)
 		assert.Equal(t, 4, orl.TotalCount)
 		assert.Len(t, orl.Data, 4)
+		var opS, orlD []string
+		for i := 0; i < 4; i++ {
+			opS = append(opS, operationsWithState[i].OperationID)
+			orlD = append(orlD, orl.Data[i].OperationID)
+		}
+		sort.Strings(opS)
+		sort.Strings(orlD)
 		for i := 0; i < 4; i++ {
 			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
-			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
+			assert.Equal(t, opS, orlD)
 		}
 	})
 }
@@ -412,6 +426,15 @@ func fixOperationResponse(id, orchestrationID string) OperationResponse {
 	}
 }
 
+func fixOperationResponseWithState(id, orchestrationID, state string) OperationResponse {
+	return OperationResponse{
+		OperationID:     id,
+		RuntimeID:       id,
+		OrchestrationID: orchestrationID,
+		State:           state,
+	}
+}
+
 func fixOperationDetailResponse(id, orchestrationID string) OperationDetailResponse {
 	return OperationDetailResponse{
 		OperationResponse: fixOperationResponse(id, orchestrationID),
@@ -453,6 +476,37 @@ func respondOperationList(w http.ResponseWriter, operations []OperationResponse,
 	orl := OperationResponseList{
 		Data:       operations,
 		Count:      len(operations),
+		TotalCount: totalCount,
+	}
+	data, err := json.Marshal(orl)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(data)
+	return err
+}
+
+func respondOperationListWithFailed(w http.ResponseWriter, operations []OperationResponse, queryState []string, totalCount int) error {
+	var operationR []OperationResponse
+	if slices.Contains(queryState, "failed") {
+		for i := 0; i < totalCount; i++ {
+			if operationsWithState[i].State == "failed" && i >= len(operations) {
+				operationR = append(operationR, operationsWithState[i])
+			}
+		}
+	}
+	for i, _ := range operations {
+		if operations[i].State != "failed" {
+			operationR = append(operationR, operations[i])
+		}
+	}
+	orl := OperationResponseList{
+		Data:       operationR,
+		Count:      len(operationR),
 		TotalCount: totalCount,
 	}
 	data, err := json.Marshal(orl)
