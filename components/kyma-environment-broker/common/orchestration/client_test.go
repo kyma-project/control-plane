@@ -38,17 +38,17 @@ var orch3 = fixStatusResponse("orchestration3")
 var orch4 = fixStatusResponse("orchestration4")
 var orchs = []StatusResponse{orch1, orch2, orch3, orch4}
 var operations = []OperationResponse{
-	fixOperationResponse("operation1", orch1.OrchestrationID),
-	fixOperationResponse("operation2", orch1.OrchestrationID),
-	fixOperationResponse("operation3", orch1.OrchestrationID),
-	fixOperationResponse("operation4", orch1.OrchestrationID),
+	fixOperationResponse("operation1", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation2", orch1.OrchestrationID, "pending"),
+	fixOperationResponse("operation3", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation4", orch1.OrchestrationID, "pending"),
 }
 
-var operationsWithState = []OperationResponse{
-	fixOperationResponse("operation1", orch1.OrchestrationID),
-	fixOperationResponse("operation2", orch1.OrchestrationID),
-	fixOperationResponseWithState("operation3", orch1.OrchestrationID, "failed"),
-	fixOperationResponse("operation4", orch1.OrchestrationID),
+var operationsWithFailedState = []OperationResponse{
+	fixOperationResponse("operation1", orch1.OrchestrationID, "pending"),
+	fixOperationResponse("operation2", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation3", orch1.OrchestrationID, "failed"),
+	fixOperationResponse("operation4", orch1.OrchestrationID, "in progress"),
 }
 
 func TestClient_ListOrchestrations(t *testing.T) {
@@ -216,7 +216,7 @@ func TestClient_ListOperations(t *testing.T) {
 				assert.ElementsMatch(t, params.States, query[StateParam])
 			}
 
-			err = respondOperationListWithFailed(w, operationsWithState[(called-1)*params.PageSize:called*params.PageSize], query[StateParam], 4)
+			err = respondOperationListWithFailed(w, operationsWithFailedState[(called-1)*params.PageSize:called*params.PageSize], query[StateParam], 4)
 			require.NoError(t, err)
 		}))
 		defer ts.Close()
@@ -232,7 +232,7 @@ func TestClient_ListOperations(t *testing.T) {
 		assert.Len(t, orl.Data, 4)
 		var opS, orlD []string
 		for i := 0; i < 4; i++ {
-			opS = append(opS, operationsWithState[i].OperationID)
+			opS = append(opS, operationsWithFailedState[i].OperationID)
 			orlD = append(orlD, orl.Data[i].OperationID)
 		}
 		sort.Strings(opS)
@@ -418,15 +418,7 @@ func fixStatusResponse(id string) StatusResponse {
 	}
 }
 
-func fixOperationResponse(id, orchestrationID string) OperationResponse {
-	return OperationResponse{
-		OperationID:     id,
-		RuntimeID:       id,
-		OrchestrationID: orchestrationID,
-	}
-}
-
-func fixOperationResponseWithState(id, orchestrationID, state string) OperationResponse {
+func fixOperationResponse(id, orchestrationID, state string) OperationResponse {
 	return OperationResponse{
 		OperationID:     id,
 		RuntimeID:       id,
@@ -437,7 +429,7 @@ func fixOperationResponseWithState(id, orchestrationID, state string) OperationR
 
 func fixOperationDetailResponse(id, orchestrationID string) OperationDetailResponse {
 	return OperationDetailResponse{
-		OperationResponse: fixOperationResponse(id, orchestrationID),
+		OperationResponse: fixOperationResponse(id, orchestrationID, ""),
 	}
 }
 
@@ -494,8 +486,8 @@ func respondOperationListWithFailed(w http.ResponseWriter, operations []Operatio
 	var operationR []OperationResponse
 	if slices.Contains(queryState, "failed") {
 		for i := 0; i < totalCount; i++ {
-			if operationsWithState[i].State == "failed" && i >= len(operations) {
-				operationR = append(operationR, operationsWithState[i])
+			if operationsWithFailedState[i].State == "failed" && i >= len(operations) {
+				operationR = append(operationR, operationsWithFailedState[i])
 			}
 		}
 	}
