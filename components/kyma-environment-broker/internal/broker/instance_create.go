@@ -153,15 +153,15 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
 
-	if provisioningParameters.PlanID == OwnClusterPlanID {
-		shootName = provisioningParameters.Parameters.ShootName
-		shootDomainSuffix = provisioningParameters.Parameters.ShootDomain
-	}
-
 	operation.ShootName = shootName
 	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomainSuffix)
 	operation.ShootDNSProviders = b.shootDnsProviders
 	operation.DashboardURL = dashboardURL
+	// for own cluster plan - KEB uses provided shoot name and shoot domain
+	if IsOwnClusterPlan(provisioningParameters.PlanID) {
+		operation.ShootName = provisioningParameters.Parameters.ShootName
+		operation.ShootDomain = provisioningParameters.Parameters.ShootDomain
+	}
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertOperation(operation.Operation)
