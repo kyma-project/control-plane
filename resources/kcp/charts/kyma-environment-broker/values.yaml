@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2088"
+      version: "PR-2091"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1978"
@@ -147,7 +147,6 @@ gardener:
   autoUpdateKubernetesVersion: "true"
   autoUpdateMachineImageVersion: "false"
   multiZoneCluster: "false"
-  controlPlaneFailureTolerance: ""
 
 kubeconfig:
   issuerURL: "TBD"
