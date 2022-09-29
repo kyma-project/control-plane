@@ -552,7 +552,7 @@ type ProvisioningSuite struct {
 	reconcilerClient *reconciler.FakeClient
 }
 
-func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuite {
+func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailureTolerance string) *ProvisioningSuite {
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	logs := logrus.New()
 	db := storage.NewMemoryStorage()
@@ -581,13 +581,14 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 		kebConfig.NewConfigMapConverter())
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
 		configProvider, input.Config{
-			MachineImageVersion:         "coreos",
-			KubernetesVersion:           "1.18",
-			MachineImage:                "253",
-			ProvisioningTimeout:         time.Minute,
-			URL:                         "http://localhost",
-			DefaultGardenerShootPurpose: "testing",
-			MultiZoneCluster:            multiZoneCluster,
+			MachineImageVersion:          "coreos",
+			KubernetesVersion:            "1.18",
+			MachineImage:                 "253",
+			ProvisioningTimeout:          time.Minute,
+			URL:                          "http://localhost",
+			DefaultGardenerShootPurpose:  "testing",
+			MultiZoneCluster:             multiZoneCluster,
+			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
 		}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 	require.NoError(t, err)
 
@@ -938,6 +939,16 @@ func (s *ProvisioningSuite) AssertRuntimeAdmins(admins []string) {
 	currentAdmins := input.ClusterConfig.Administrators
 
 	assert.ElementsMatch(s.t, currentAdmins, admins)
+}
+
+func (s *ProvisioningSuite) AssertControlPlaneFailureTolerance(level string) {
+	input := s.fetchProvisionInput()
+	if level == "" {
+		assert.Empty(s.t, input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+	} else {
+		require.NotNil(s.t, input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+		assert.Equal(s.t, level, *input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+	}
 }
 
 func regularSubscription(ht hyperscaler.Type) string {

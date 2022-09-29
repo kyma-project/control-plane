@@ -30,7 +30,8 @@ var toAzureSpecific = map[string]*string{
 
 type (
 	AzureInput struct {
-		MultiZone bool
+		MultiZone                    bool
+		ControlPlaneFailureTolerance string
 	}
 	AzureLiteInput  struct{}
 	AzureTrialInput struct {
@@ -43,6 +44,10 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 	zonesCount := 1
 	if p.MultiZone {
 		zonesCount = DefaultAzureMultiZoneCount
+	}
+	var controlPlaneFailureTolerance *string = nil
+	if p.ControlPlaneFailureTolerance != "" {
+		controlPlaneFailureTolerance = &p.ControlPlaneFailureTolerance
 	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -63,6 +68,7 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 					EnableNatGateway: ptr.Bool(true),
 				},
 			},
+			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
 		},
 	}
 }

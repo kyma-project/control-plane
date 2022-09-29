@@ -36,6 +36,7 @@ type Config struct {
 	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
 	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
 	MultiZoneCluster              bool                   `envconfig:"default=false"`
+	ControlPlaneFailureTolerance  string                 `envconfig:"optional"`
 }
 
 type RuntimeInput struct {

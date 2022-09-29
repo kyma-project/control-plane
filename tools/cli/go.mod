@@ -55,7 +55,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220706110254-3d5dce79e48d // indirect
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220707063253-fd8dedcdb5cf // indirect
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220929072045-bfb8d6dac310 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
