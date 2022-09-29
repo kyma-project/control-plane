@@ -44,7 +44,7 @@ func (s *CheckRuntimeRemovalStep) Run(operation internal.Operation, log logrus.F
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		log.Errorf("instance already deleted", err)
+		log.Infof("instance already deleted", err)
 		return operation, 0 * time.Second, nil
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
@@ -53,7 +53,7 @@ func (s *CheckRuntimeRemovalStep) Run(operation internal.Operation, log logrus.F
 
 	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
-		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s, GlobalAccountID=%s, Provisioner OperationID=%s", err.Error(), instance.GlobalAccountID, operation.ProvisionerOperationID)
 		return operation, 1 * time.Minute, nil
 	}
 	var msg string
