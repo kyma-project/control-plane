@@ -1,9 +1,8 @@
 package deprovisioning
 
 import (
-	"testing"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -70,4 +69,23 @@ func TestCheckRuntimeRemovalStep_ProvisionerFailed(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Equal(t, domain.Failed, op.State)
+}
+
+func TestCheckRuntimeRemovalStep_InstanceDeleted(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+	provisionerClient := provisioner.NewFakeClient()
+	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
+	dOp := fixDeprovisioningOperation().Operation
+	memoryStorage.Operations().InsertOperation(dOp)
+	provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
+	dOp.ProvisionerOperationID = provisionerOp
+
+	// when
+	_, backoff, err := svc.Run(dOp, log)
+
+	// then
+	require.NoError(t, err)
+	assert.Zero(t, backoff)
 }
