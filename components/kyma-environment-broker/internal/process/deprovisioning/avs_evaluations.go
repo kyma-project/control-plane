@@ -3,6 +3,8 @@ package deprovisioning
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -33,22 +35,26 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 	return "De-provision_AVS_Evaluations"
 }
 
-func (ars *AvsEvaluationRemovalStep) Run(deProvisioningOperation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	logger.Infof("Avs lifecycle %+v", deProvisioningOperation.Avs)
-	if deProvisioningOperation.Avs.AVSExternalEvaluationDeleted && deProvisioningOperation.Avs.AVSInternalEvaluationDeleted {
+func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	logger.Infof("Avs lifecycle %+v", operation.Avs)
+	if operation.Avs.AVSExternalEvaluationDeleted && operation.Avs.AVSInternalEvaluationDeleted {
 		logger.Infof("Both internal and external evaluations have been deleted")
-		return deProvisioningOperation, 0, nil
+		return operation, 0, nil
 	}
 
-	deProvisioningOperation, err := ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.internalEvalAssistant)
+	operation, err := ars.delegator.DeleteAvsEvaluation(operation, logger, ars.internalEvalAssistant)
 	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, "error while deleting avs internal evaluation", err, 10*time.Second, 10*time.Minute, logger)
+		return ars.deProvisioningManager.RetryOperation(operation, "error while deleting avs internal evaluation", err, 10*time.Second, 10*time.Minute, logger)
 	}
 
-	deProvisioningOperation, err = ars.delegator.DeleteAvsEvaluation(deProvisioningOperation, logger, ars.externalEvalAssistant)
-	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(deProvisioningOperation, "error while deleting avs external evaluation", err, 10*time.Second, 10*time.Minute, logger)
+	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
+		logger.Info("skipping AVS external evaluation deletion for trial/freemium plan")
+		return operation, 0, nil
 	}
-	return deProvisioningOperation, 0, nil
+	operation, err = ars.delegator.DeleteAvsEvaluation(operation, logger, ars.externalEvalAssistant)
+	if err != nil {
+		return ars.deProvisioningManager.RetryOperation(operation, "error while deleting avs external evaluation", err, 10*time.Second, 10*time.Minute, logger)
+	}
+	return operation, 0, nil
 
 }

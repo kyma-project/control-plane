@@ -41,12 +41,6 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisionerTimeout), nil, log)
 	}
-	if operation.RuntimeID == "" || operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
-		// happens when provisioning process failed and Create_Runtime step was never reached
-		// It can also happen when the SKR is suspended (technically deprovisioned)
-		log.Infof("Runtime does not exist for instance id %q", operation.InstanceID)
-		return operation, 0 * time.Second, nil
-	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {
@@ -57,6 +51,12 @@ func (s *RemoveRuntimeStep) Run(operation internal.Operation, log logrus.FieldLo
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
 		return operation, 1 * time.Second, nil
+	}
+	if instance.RuntimeID == "" || operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+		// happens when provisioning process failed and Create_Runtime step was never reached
+		// It can also happen when the SKR is suspended (technically deprovisioned)
+		log.Infof("Runtime does not exist for instance id %q", operation.InstanceID)
+		return operation, 0 * time.Second, nil
 	}
 
 	if operation.ProvisionerOperationID == "" {
