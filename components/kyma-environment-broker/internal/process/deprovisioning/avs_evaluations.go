@@ -47,7 +47,7 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 	}
 
 	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
-		logger.Debug("skipping AVS external evaluation deletion for trial/freemium plan")
+		logger.Info("skipping AVS external evaluation deletion for trial/freemium plan")
 		return operation, 0, nil
 	}
 	operation, err = ars.delegator.DeleteAvsEvaluation(operation, logger, ars.externalEvalAssistant)
