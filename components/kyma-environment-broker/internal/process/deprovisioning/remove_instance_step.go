@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -36,7 +37,7 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 
 	if operation.Temporary {
 		log.Info("Removing the RuntimeID field from the instance")
-		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID)
+		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID, log)
 		if backoff != 0 {
 			return operation, backoff, nil
 		}
@@ -61,12 +62,18 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 	return operation, backoff, nil
 }
 
-func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.Duration {
+func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string, log logrus.FieldLogger) time.Duration {
 	backoff := time.Second
 
 	instance, err := s.instanceStorage.GetByID(instanceID)
-	if err != nil {
-		return backoff
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		log.Errorf("instance already deleted", err)
+		return 0
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return 1 * time.Second
 	}
 
 	// empty RuntimeID means there is no runtime in the Provisioner Domain
