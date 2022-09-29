@@ -1,8 +1,9 @@
 package deprovisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -58,14 +59,10 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 			operation.RuntimeID = ""
 		}, log)
 	} else {
-		var alreadyDeleted bool
 		log.Info("Removing the instance permanently")
 		backoff = s.removeInstancePermanently(operation.InstanceID)
 		if backoff != 0 {
 			return operation, backoff, nil
-		}
-		if alreadyDeleted {
-			return operation, 0, nil
 		}
 
 		log.Info("Removing the userID field from the operation")
