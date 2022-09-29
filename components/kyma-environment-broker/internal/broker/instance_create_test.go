@@ -120,7 +120,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
 
-	t.Run("new operation for owncluster plan with kubeconfig will be created", func(t *testing.T) {
+	t.Run("new operation for own_cluster plan with kubeconfig will be created", func(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
@@ -137,7 +137,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "owncluster"},
+				EnablePlans:              []string{"gcp", "azure", "own_cluster"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,
@@ -196,7 +196,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
 
-	t.Run("new operation for owncluster plan with not encoded kubeconfig will not be created", func(t *testing.T) {
+	t.Run("new operation for own_cluster plan with not encoded kubeconfig will not be created", func(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
@@ -213,7 +213,7 @@ func TestProvision_Provision(t *testing.T) {
 		// #create provisioner endpoint
 		provisionEndpoint := broker.NewProvision(
 			broker.Config{
-				EnablePlans:              []string{"gcp", "azure", "owncluster"},
+				EnablePlans:              []string{"gcp", "azure", "own_cluster"},
 				URL:                      brokerURL,
 				OnlySingleTrialPerGA:     true,
 				EnableKubeconfigURLLabel: true,

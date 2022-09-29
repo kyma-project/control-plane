@@ -459,7 +459,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws":          "true",
 				"overrides-plan-free":         "true",
 				"overrides-plan-gcp":          "true",
-				"overrides-plan-owncluster":   "true",
+				"overrides-plan-own_cluster":  "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 			},
@@ -985,7 +985,7 @@ func fixConfig() *Config {
 		EnableOnDemandVersion:   true,
 		UpdateProcessingEnabled: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial", "aws", "owncluster"},
+			EnablePlans: []string{"azure", "trial", "aws", "own_cluster"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
