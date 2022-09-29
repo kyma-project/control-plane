@@ -35,9 +35,20 @@ func (s *RemoveInstanceStep) Name() string {
 func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	var backoff time.Duration
 
+	_, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		log.Errorf("instance already deleted", err)
+		return operation, 0 * time.Second, nil
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+
 	if operation.Temporary {
 		log.Info("Removing the RuntimeID field from the instance")
-		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID, log)
+		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID)
 		if backoff != 0 {
 			return operation, backoff, nil
 		}
@@ -47,10 +58,14 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 			operation.RuntimeID = ""
 		}, log)
 	} else {
+		var alreadyDeleted bool
 		log.Info("Removing the instance permanently")
 		backoff = s.removeInstancePermanently(operation.InstanceID)
 		if backoff != 0 {
 			return operation, backoff, nil
+		}
+		if alreadyDeleted {
+			return operation, 0, nil
 		}
 
 		log.Info("Removing the userID field from the operation")
@@ -62,18 +77,12 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 	return operation, backoff, nil
 }
 
-func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string, log logrus.FieldLogger) time.Duration {
+func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.Duration {
 	backoff := time.Second
 
 	instance, err := s.instanceStorage.GetByID(instanceID)
-	switch {
-	case err == nil:
-	case dberr.IsNotFound(err):
-		log.Errorf("instance already deleted", err)
-		return 0
-	default:
-		log.Errorf("unable to get instance from storage: %s", err)
-		return 1 * time.Second
+	if err != nil {
+		return backoff
 	}
 
 	// empty RuntimeID means there is no runtime in the Provisioner Domain
