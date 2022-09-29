@@ -252,7 +252,8 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return response, NewAvsError("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
 	}
 
-	return response, NewAvsError("unsupported status code: %d for %s", response.StatusCode, request.URL.String())
+	message, _ := io.ReadAll(response.Body)
+	return response, NewAvsError("unsupported status code: %d for %s. Message: %s", response.StatusCode, request.URL.String(), string(message))
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {
