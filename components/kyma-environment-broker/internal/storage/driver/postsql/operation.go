@@ -538,12 +538,10 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 
 	var failedDatas []dbmodel.OperationDTO
 	for _, datas := range resPerInstanceID {
-
 		var invalidFailed bool
 		var failedFound bool
 		var faildEntry dbmodel.OperationDTO
 		for _, data := range datas {
-
 			if data.State == Succeeded || data.State == Retrying || data.State == InProgress {
 				invalidFailed = true
 				break
@@ -617,7 +615,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 
 	//only for "failed" states
 	if filterFailedFound {
-		filter.States = []string{Failed}
+		filter = dbmodel.OperationFilter{States: []string{"failed"}}
 		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
