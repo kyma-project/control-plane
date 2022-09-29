@@ -28,7 +28,7 @@ const (
 	FreemiumPlanID     = "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
 	FreemiumPlanName   = "free"
 	OwnClusterPlanID   = "03e3cb66-a4c6-4c6a-b4b0-5d42224debea"
-	OwnClusterPlanName = "owncluster"
+	OwnClusterPlanName = "own_cluster"
 )
 
 var PlanNamesMapping = map[string]string{
