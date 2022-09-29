@@ -25,7 +25,7 @@ func NewTestWorker(name string) *TestWorker {
 		},
 		MaxSurge:       util.IntOrStringPtr(intstr.FromInt(0)),
 		MaxUnavailable: util.IntOrStringPtr(intstr.FromInt(0)),
-		Zones:          []string{},
+		Zones:          nil,
 	}}
 }
 

@@ -43,6 +43,7 @@ CREATE TABLE gardener_config
     exposure_class_name varchar(256),
     provider_specific_config jsonb,
     shoot_networking_filter_disabled boolean,
+    control_plane_failure_tolerance varchar(256),
     UNIQUE(cluster_id),
     foreign key (cluster_id) REFERENCES cluster (id) ON DELETE CASCADE
 );

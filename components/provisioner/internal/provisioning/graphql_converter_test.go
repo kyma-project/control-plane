@@ -92,6 +92,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
+		controlPlaneFailureTolerance := "zone"
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -135,6 +136,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					DNSConfig:                           dnsConfig(),
 					ExposureClassName:                   &exposureClassName,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(nil),
@@ -211,6 +213,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					},
 					ExposureClassName:             &exposureClassName,
 					ShootNetworkingFilterDisabled: &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:  &controlPlaneFailureTolerance,
 				},
 				KymaConfig: fixKymaGraphQLConfig(nil),
 				Kubeconfig: &kubeconfig,
@@ -256,6 +259,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
+		controlPlaneFailureTolerance := "node"
 
 		gardenerProviderConfig, err := model.NewGardenerProviderConfigFromJSON(`{"zones":["fix-gcp-zone-1","fix-gcp-zone-2"]}`)
 		require.NoError(t, err)
@@ -298,6 +302,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					OIDCConfig:                          oidcConfig(),
 					ExposureClassName:                   &exposureClassName,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -362,6 +367,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					},
 					ExposureClassName:             &exposureClassName,
 					ShootNetworkingFilterDisabled: &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:  &controlPlaneFailureTolerance,
 				},
 				Kubeconfig: &kubeconfig,
 			},
@@ -404,6 +410,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		enableMachineImageVersionAutoUpdate := false
 		allowPrivilegedContainers := true
 		shootNetworkingFilterDisabled := true
+		controlPlaneFailureTolerance := "node"
 
 		modelProductionProfile := model.ProductionProfile
 		gqlProductionProfile := gqlschema.KymaProfileProduction
@@ -447,6 +454,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 				},
 				Kubeconfig: &kubeconfig,
 				KymaConfig: fixKymaConfig(&modelProductionProfile),
@@ -499,6 +507,7 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
 					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
+					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 					ProviderSpecificConfig: gqlschema.AzureProviderConfig{
 						VnetCidr: util.StringPtr("10.10.11.11/255"),
 						Zones:    nil, // Expected empty when no zones specified in input.

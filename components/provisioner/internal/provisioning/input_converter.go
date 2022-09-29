@@ -127,6 +127,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		DNSConfig:                           dnsConfigFromInput(input.DNSConfig),
 		ExposureClassName:                   input.ExposureClassName,
 		ShootNetworkingFilterDisabled:       input.ShootNetworkingFilterDisabled,
+		ControlPlaneFailureTolerance:        input.ControlPlaneFailureTolerance,
 	}, nil
 }
 

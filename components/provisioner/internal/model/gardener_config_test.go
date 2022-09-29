@@ -265,6 +265,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Disabled: util.BoolPtr(true),
 						},
 					},
+					ControlPlane: &gardener_types.ControlPlane{
+						HighAvailability: &gardener_types.HighAvailability{
+							FailureTolerance: gardener_types.FailureTolerance{
+								Type: gardener_types.FailureToleranceTypeZone,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -335,6 +342,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						{
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.BoolPtr(true),
+						},
+					},
+					ControlPlane: &gardener_types.ControlPlane{
+						HighAvailability: &gardener_types.HighAvailability{
+							FailureTolerance: gardener_types.FailureTolerance{
+								Type: gardener_types.FailureToleranceTypeZone,
+							},
 						},
 					},
 				},
@@ -409,6 +423,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Disabled: util.BoolPtr(true),
 						},
 					},
+					ControlPlane: &gardener_types.ControlPlane{
+						HighAvailability: &gardener_types.HighAvailability{
+							FailureTolerance: gardener_types.FailureTolerance{
+								Type: gardener_types.FailureToleranceTypeZone,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -479,6 +500,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						{
 							Type:     ShootNetworkingFilterExtensionType,
 							Disabled: util.BoolPtr(true),
+						},
+					},
+					ControlPlane: &gardener_types.ControlPlane{
+						HighAvailability: &gardener_types.HighAvailability{
+							FailureTolerance: gardener_types.FailureTolerance{
+								Type: gardener_types.FailureToleranceTypeZone,
+							},
 						},
 					},
 				},
@@ -553,6 +581,13 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 							Disabled: util.BoolPtr(true),
 						},
 					},
+					ControlPlane: &gardener_types.ControlPlane{
+						HighAvailability: &gardener_types.HighAvailability{
+							FailureTolerance: gardener_types.FailureTolerance{
+								Type: gardener_types.FailureToleranceTypeZone,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -593,7 +628,6 @@ func TestEditShootConfig(t *testing.T) {
 				WithMinMax(1, 3).
 				WithMaxSurge(30).
 				WithMaxUnavailable(1).
-				WithZones("fix-zone-1", "fix-zone-2").
 				ToWorker()).
 		ToShoot()
 
@@ -617,11 +651,7 @@ func TestEditShootConfig(t *testing.T) {
 			provider:      "aws",
 			upgradeConfig: fixGardenerConfig("aws", awsProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
-			expectedShoot: func(s *gardener_types.Shoot) *gardener_types.Shoot {
-				shoot := s.DeepCopy()
-				shoot.Spec.Provider.Workers[0].Zones = []string{"zone"}
-				return shoot
-			}(expectedShoot), // fix of zones for AWS
+			expectedShoot: expectedShoot.DeepCopy(),
 		},
 		{description: "should edit Azure shoot template",
 			provider:      "az",
@@ -718,6 +748,7 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		OIDCConfig:                          oidcConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),
 		ShootNetworkingFilterDisabled:       nil,
+		ControlPlaneFailureTolerance:        util.StringPtr("zone"),
 	}
 }
 

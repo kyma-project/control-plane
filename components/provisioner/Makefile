@@ -1,7 +1,7 @@
 APP_NAME = provisioner
 APP_PATH = components/provisioner
 ENTRYPOINT = cmd/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-kubebuilder2:v20210407-70afe459
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220809-002bc8cf3
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
@@ -61,6 +61,8 @@ testing-with-database-network:
 		--network=$(TESTING_DB_NETWORK) \
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
+		--env TC_HOST=host.docker.internal \
+		--add-host host.docker.internal:host-gateway \
 		$(DOCKER_CREATE_OPTS) go test ./... -timeout 15m
 	@docker network rm $(TESTING_DB_NETWORK)
 
