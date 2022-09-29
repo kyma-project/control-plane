@@ -79,8 +79,6 @@ func TestCheckRuntimeRemovalStep_InstanceDeleted(t *testing.T) {
 	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), provisionerClient)
 	dOp := fixDeprovisioningOperation().Operation
 	memoryStorage.Operations().InsertOperation(dOp)
-	provisionerOp, _ := provisionerClient.DeprovisionRuntime(dOp.GlobalAccountID, dOp.RuntimeID)
-	dOp.ProvisionerOperationID = provisionerOp
 
 	// when
 	_, backoff, err := svc.Run(dOp, log)

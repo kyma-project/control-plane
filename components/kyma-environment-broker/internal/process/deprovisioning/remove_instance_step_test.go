@@ -116,3 +116,24 @@ func TestRemoveInstanceStep_UpdateInstanceFailsForSuspension(t *testing.T) {
 	// then
 	assert.Equal(t, time.Second, backoff)
 }
+
+func TestRemoveInstanceStep_InstanceDeleted(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixture.FixDeprovisioningOperationAsOperation(operationID, instanceID)
+
+	err := memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	step := NewRemoveInstanceStep(memoryStorage.Instances(), memoryStorage.Operations())
+
+	// when
+	_, backoff, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	// then
+	assert.Equal(t, time.Duration(0), backoff)
+}

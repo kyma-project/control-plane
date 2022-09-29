@@ -40,7 +40,7 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 	switch {
 	case err == nil:
 	case dberr.IsNotFound(err):
-		log.Errorf("instance already deleted", err)
+		log.Infof("instance already deleted", err)
 		return operation, 0 * time.Second, nil
 	default:
 		log.Errorf("unable to get instance from storage: %s", err)
