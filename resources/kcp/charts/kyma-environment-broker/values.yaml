@@ -147,6 +147,7 @@ gardener:
   autoUpdateKubernetesVersion: "true"
   autoUpdateMachineImageVersion: "false"
   multiZoneCluster: "false"
+  controlPlaneFailureTolerance: ""
 
 kubeconfig:
   issuerURL: "TBD"

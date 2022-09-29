@@ -132,6 +132,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .DNSConfig }}
 		dnsConfig: {{ DNSConfigInputToGraphQL .DNSConfig }}
 		{{- end }}
+		{{- if .ControlPlaneFailureTolerance }}
+		controlPlaneFailureTolerance: "{{ .ControlPlaneFailureTolerance }}",
+		{{- end }}
 	}`)
 }
 

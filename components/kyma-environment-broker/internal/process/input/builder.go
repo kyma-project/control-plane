@@ -121,7 +121,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 	switch planID {
 	case broker.GCPPlanID:
 		provider = &cloudProvider.GcpInput{
-			MultiZone: f.config.MultiZoneCluster,
+			MultiZone:                    f.config.MultiZoneCluster,
+			ControlPlaneFailureTolerance: f.config.ControlPlaneFailureTolerance,
 		}
 	case broker.FreemiumPlanID:
 		return f.forFreemiumPlan(platformProvider)
@@ -131,7 +132,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 		}
 	case broker.AzurePlanID:
 		provider = &cloudProvider.AzureInput{
-			MultiZone: f.config.MultiZoneCluster,
+			MultiZone:                    f.config.MultiZoneCluster,
+			ControlPlaneFailureTolerance: f.config.ControlPlaneFailureTolerance,
 		}
 	case broker.AzureLitePlanID:
 		provider = &cloudProvider.AzureLiteInput{}
@@ -139,7 +141,8 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 		provider = f.forTrialPlan(parametersProvider)
 	case broker.AWSPlanID:
 		provider = &cloudProvider.AWSInput{
-			MultiZone: f.config.MultiZoneCluster,
+			MultiZone:                    f.config.MultiZoneCluster,
+			ControlPlaneFailureTolerance: f.config.ControlPlaneFailureTolerance,
 		}
 	case broker.OwnClusterPlanID:
 		provider = &cloudProvider.NoHyperscalerInput{}

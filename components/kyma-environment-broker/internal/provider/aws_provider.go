@@ -30,7 +30,8 @@ var toAWSSpecific = map[string]string{
 
 type (
 	AWSInput struct {
-		MultiZone bool
+		MultiZone                    bool
+		ControlPlaneFailureTolerance string
 	}
 	AWSTrialInput struct {
 		PlatformRegionMapping map[string]string
@@ -42,6 +43,10 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 	zonesCount := 1
 	if p.MultiZone {
 		zonesCount = DefaultAWSMultiZoneCount
+	}
+	var controlPlaneFailureTolerance *string = nil
+	if p.ControlPlaneFailureTolerance != "" {
+		controlPlaneFailureTolerance = &p.ControlPlaneFailureTolerance
 	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -61,6 +66,7 @@ func (p *AWSInput) Defaults() *gqlschema.ClusterConfigInput {
 					AwsZones: generateMultipleAWSZones(MultipleZonesForAWSRegion(DefaultAWSRegion, zonesCount)),
 				},
 			},
+			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
 		},
 	}
 }

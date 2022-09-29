@@ -153,6 +153,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		maxUnavailable: 1,
 		enableKubernetesVersionAutoUpdate: true,
 		enableMachineImageVersionAutoUpdate: true,
+		controlPlaneFailureTolerance: "zone",
 	}`
 
 	// when
@@ -173,6 +174,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   ptr.Bool(true),
 		EnableMachineImageVersionAutoUpdate: ptr.Bool(true),
+		ControlPlaneFailureTolerance:        ptr.String("zone"),
 	})
 
 	// then
@@ -205,6 +207,7 @@ func Test_GardenerConfigInputToGraphQLWithOIDC(t *testing.T) {
 			usernameClaim: "",
 			usernamePrefix: "",
 		}
+		controlPlaneFailureTolerance: "node",
 	}`
 
 	// when
@@ -227,6 +230,7 @@ func Test_GardenerConfigInputToGraphQLWithOIDC(t *testing.T) {
 			UsernameClaim:  "",
 			UsernamePrefix: "",
 		},
+		ControlPlaneFailureTolerance: ptr.String("node"),
 	})
 
 	// then
