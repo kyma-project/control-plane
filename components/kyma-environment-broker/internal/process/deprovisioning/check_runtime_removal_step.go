@@ -39,6 +39,10 @@ func (s *CheckRuntimeRemovalStep) Run(operation internal.Operation, log logrus.F
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
+	if operation.ProvisionerOperationID == "" {
+		log.Infof("ProvisionerOperationID is empty, skipping (there is no runtime)")
+		return operation, 0, nil
+	}
 
 	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 	switch {

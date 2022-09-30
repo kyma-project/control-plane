@@ -88,3 +88,23 @@ func TestCheckRuntimeRemovalStep_InstanceDeleted(t *testing.T) {
 	require.NoError(t, err)
 	assert.Zero(t, backoff)
 }
+
+func TestCheckRuntimeRemovalStep_NoProvisionerOperationID(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+	svc := NewCheckRuntimeRemovalStep(memoryStorage.Operations(), memoryStorage.Instances(), nil)
+	dOp := fixDeprovisioningOperation().Operation
+	memoryStorage.Instances().Insert(internal.Instance{
+		GlobalAccountID: "global-acc",
+		InstanceID:      dOp.InstanceID,
+	})
+	dOp.ProvisionerOperationID = ""
+
+	// when
+	_, d, err := svc.Run(dOp, log)
+
+	// then
+	require.NoError(t, err)
+	assert.Zero(t, d)
+}
