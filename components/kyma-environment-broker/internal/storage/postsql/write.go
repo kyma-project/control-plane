@@ -251,6 +251,13 @@ func (ws writeSession) InsertEvent(level dbmodel.EventLevel, message, instanceID
 	return dberr.Internal("Failed to insert event: %s", err)
 }
 
+func (ws writeSession) DeleteEvents(until time.Time) dberr.Error {
+	_, err := ws.deleteFrom("events").
+		Where(dbr.Lte("created_at", until)).
+		Exec()
+	return dberr.Internal("failed to delete events created until %v: %v", until.Format(time.RFC1123Z), err)
+}
+
 func (ws writeSession) Commit() dberr.Error {
 	err := ws.transaction.Commit()
 	if err != nil {

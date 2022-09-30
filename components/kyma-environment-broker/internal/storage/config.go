@@ -24,10 +24,6 @@ type Config struct {
 	ConnMaxLifetime time.Duration `envconfig:"default=30m"`
 }
 
-type EventsConfig struct {
-	Retention time.Duration `envconfig:"default=72h"`
-}
-
 func (cfg *Config) ConnectionURL() string {
 	return fmt.Sprintf(connectionURLFormat, cfg.Host, cfg.Port, cfg.User,
 		cfg.Password, cfg.Name, cfg.SSLMode)

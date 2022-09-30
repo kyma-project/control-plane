@@ -22,7 +22,7 @@ const (
 	connectionRetries = 10
 )
 
-func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
+func NewFromConfig(cfg Config, evcfg events.Config, cipher postgres.Cipher, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {
 	log.Infof("Setting DB connection pool params: connectionMaxLifetime=%s "+
 		"maxIdleConnections=%d maxOpenConnections=%d", cfg.ConnMaxLifetime, cfg.MaxIdleConns, cfg.MaxOpenConns)
 
@@ -43,7 +43,7 @@ func NewFromConfig(cfg Config, cipher postgres.Cipher, log logrus.FieldLogger) (
 		operation:      operation,
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
-		events:         events.New(fact, log),
+		events:         events.New(evcfg, fact, log),
 	}, connection, nil
 }
 

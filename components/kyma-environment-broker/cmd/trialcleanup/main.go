@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -61,7 +62,7 @@ func main() {
 
 	// create storage connection
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
+	db, conn, err := storage.NewFromConfig(cfg.Database, events.Config{}, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
 	svc := newTrialCleanupService(cfg, brokerClient, db.Instances())
 

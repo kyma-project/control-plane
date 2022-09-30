@@ -3,11 +3,17 @@ package events
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/sirupsen/logrus"
 )
+
+type Config struct {
+	Retention     time.Duration `envconfig:"default=72h"`
+	PollingPeriod time.Duration `envconfig:"default=1h"`
+}
 
 var ev *events
 
@@ -17,13 +23,13 @@ type events struct {
 	log logrus.FieldLogger
 }
 
-func New(sess postsql.Factory, log logrus.FieldLogger) *events {
+func New(cfg Config, sess postsql.Factory, log logrus.FieldLogger) *events {
 	if ev == nil {
 		ev = &events{
 			Factory: sess,
 			log:     log,
 		}
-		go ev.gc()
+		go ev.gc(cfg)
 	}
 	return ev
 }
@@ -47,8 +53,18 @@ func (e *events) InsertEvent(eventLevel dbmodel.EventLevel, message, instanceID,
 	}
 }
 
-func (e *events) gc() {
-	// TODO: implement events garbace collection with retention policy from config
+func (e *events) gc(cfg Config) {
+	if cfg.Retention == 0 {
+		return
+	}
+	ticker := time.NewTicker(cfg.PollingPeriod)
 	for {
+		select {
+		case <-ticker.C:
+			sess := e.NewWriteSession()
+			if err := sess.DeleteEvents(time.Now().Add(-cfg.Retention)); err != nil {
+				e.log.Errorf("failed to delete old events: %v", err)
+			}
+		}
 	}
 }
