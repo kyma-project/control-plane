@@ -12,6 +12,7 @@ import (
 )
 
 type Config struct {
+	Enabled       bool          `envconfig:"default=false"`
 	Retention     time.Duration `envconfig:"default=72h"`
 	PollingPeriod time.Duration `envconfig:"default=1h"`
 }
@@ -28,6 +29,9 @@ type events struct {
 }
 
 func New(cfg Config, sess postsql.Factory, log logrus.FieldLogger) *events {
+	if !cfg.Enabled {
+		return nil
+	}
 	initLock.Lock()
 	defer initLock.Unlock()
 	if ev == nil {

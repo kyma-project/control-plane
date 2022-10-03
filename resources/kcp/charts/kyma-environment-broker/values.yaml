@@ -36,6 +36,8 @@ broker:
   operationTimeout: "24h"
   profiler:
     memory: false
+  events:
+    enabled: false
 
 service:
   type: ClusterIP
