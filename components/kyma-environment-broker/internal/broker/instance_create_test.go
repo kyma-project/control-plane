@@ -194,6 +194,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, `https://dashboard.example.com`, response.DashboardURL)
 		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
+		assert.Equal(t, shootDomain, operation.ShootDomain)
 	})
 
 	t.Run("new operation for own_cluster plan with not encoded kubeconfig will not be created", func(t *testing.T) {
