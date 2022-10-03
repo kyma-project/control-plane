@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -92,7 +93,8 @@ func NewProvision(cfg Config,
 }
 
 // Provision creates a new service instance
-//   PUT /v2/service_instances/{instance_id}
+//
+//	PUT /v2/service_instances/{instance_id}
 func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, details domain.ProvisionDetails, asyncAllowed bool) (domain.ProvisionedServiceSpec, error) {
 	operationID := uuid.New().String()
 	logger := b.log.WithFields(logrus.Fields{"instanceID": instanceID, "operationID": operationID, "planID": details.PlanID})
@@ -127,7 +129,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	logger.Infof("Starting provisioning runtime: Name=%s, GlobalAccountID=%s, SubAccountID=%s PlatformRegion=%s, ProvisioningParameterts.Region=%s, ProvisioningParameterts.MachineType=%s",
 		parameters.Name, ersContext.GlobalAccountID, ersContext.SubAccountID, region, valueOfPtr(parameters.Region), valueOfPtr(parameters.MachineType))
-	logger.Infof("Runtime parameters: %+v", parameters)
+	logParametersWithMaskedKubeconfig(parameters, logger)
 
 	// check if operation with instance ID already created
 	existingOperation, errStorage := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
@@ -139,10 +141,10 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
 
-	// create SKR shoot name
 	shootName := gardener.CreateShootName()
+	shootDomainSuffix := strings.Trim(b.shootDomain, ".")
 
-	dashboardURL := fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	dashboardURL := b.createDashboardURL(details.PlanID, instanceID)
 
 	// create and save new operation
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
@@ -150,10 +152,16 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
 	}
+
 	operation.ShootName = shootName
-	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, strings.Trim(b.shootDomain, "."))
+	operation.ShootDomain = fmt.Sprintf("%s.%s", shootName, shootDomainSuffix)
 	operation.ShootDNSProviders = b.shootDnsProviders
 	operation.DashboardURL = dashboardURL
+	// for own cluster plan - KEB uses provided shoot name and shoot domain
+	if IsOwnClusterPlan(provisioningParameters.PlanID) {
+		operation.ShootName = provisioningParameters.Parameters.ShootName
+		operation.ShootDomain = provisioningParameters.Parameters.ShootDomain
+	}
 	logger.Infof("Runtime ShootDomain: %s", operation.ShootDomain)
 
 	err = b.operationsStorage.InsertOperation(operation.Operation)
@@ -190,6 +198,11 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 			Labels: ResponseLabels(operation, instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
 	}, nil
+}
+
+func logParametersWithMaskedKubeconfig(parameters internal.ProvisioningParametersDTO, logger *logrus.Entry) {
+	parameters.Kubeconfig = "*****"
+	logger.Infof("Runtime parameters: %+v", parameters)
 }
 
 func valueOfPtr(ptr *string) string {
@@ -260,6 +273,14 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
 		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+	}
+
+	if IsOwnClusterPlan(details.PlanID) {
+		decodedKubeconfig, err := base64.StdEncoding.DecodeString(parameters.Kubeconfig)
+		if err != nil {
+			return ersContext, parameters, errors.Wrap(err, "while decoding kubeconfig")
+		}
+		parameters.Kubeconfig = string(decodedKubeconfig)
 	}
 
 	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {
@@ -354,4 +375,12 @@ func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider
 	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
 
 	return jsonschema.NewValidatorFromStringSchema(schema)
+}
+
+func (b *ProvisionEndpoint) createDashboardURL(planID, instanceID string) string {
+	if IsOwnClusterPlan(planID) {
+		return b.dashboardConfig.LandscapeURL
+	} else {
+		return fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
+	}
 }

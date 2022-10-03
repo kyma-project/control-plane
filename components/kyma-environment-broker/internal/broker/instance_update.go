@@ -74,7 +74,8 @@ func NewUpdate(cfg Config,
 }
 
 // Update modifies an existing service instance
-//  PATCH /v2/service_instances/{instance_id}
+//
+//	PATCH /v2/service_instances/{instance_id}
 func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("Updating instanceID: %s", instanceID)

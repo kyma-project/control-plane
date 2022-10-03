@@ -36,6 +36,7 @@ type Config struct {
 	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
 	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
 	MultiZoneCluster              bool                   `envconfig:"default=false"`
+	ControlPlaneFailureTolerance  string                 `envconfig:"optional"`
 }
 
 type RuntimeInput struct {
@@ -327,6 +328,7 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, erro
 	if err != nil {
 		return reconcilerApi.Cluster{}, err
 	}
+
 	if r.runtimeID == "" {
 		return reconcilerApi.Cluster{}, errors.New("missing runtime ID")
 	}
@@ -394,10 +396,14 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, erro
 			ServicePlanName: broker.PlanNamesMapping[r.provisioningParameters.PlanID],
 			ShootName:       *r.shootName,
 			InstanceID:      r.instanceID,
-			Region:          r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region,
 		},
 		Kubeconfig: r.kubeconfig,
 	}
+
+	if r.provisionRuntimeInput.ClusterConfig != nil && r.provisionRuntimeInput.ClusterConfig.GardenerConfig != nil {
+		result.Metadata.Region = r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region
+	}
+
 	return result, nil
 }
 
@@ -427,6 +433,10 @@ func (r *RuntimeInput) CreateProvisionClusterInput() (gqlschema.ProvisionRuntime
 func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
+
+	if r.provisioningParameters.PlanID == broker.OwnClusterPlanID {
+		return nil
+	}
 
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxSurge, params.MaxSurge)
@@ -631,7 +641,8 @@ func (r *RuntimeInput) configureDNS() error {
 
 	dnsParamsToSet.Domain = r.shootDomain
 
-	if r.provisionRuntimeInput.ClusterConfig != nil {
+	if r.provisionRuntimeInput.ClusterConfig != nil &&
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsParamsToSet
 	}
 

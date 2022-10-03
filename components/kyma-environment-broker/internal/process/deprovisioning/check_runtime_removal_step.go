@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -15,14 +17,16 @@ import (
 type CheckRuntimeRemovalStep struct {
 	operationManager  *process.OperationManager
 	provisionerClient provisioner.Client
+	instanceStorage   storage.Instances
 }
 
 var _ process.Step = &CheckRuntimeRemovalStep{}
 
-func NewCheckRuntimeRemovalStep(operations storage.Operations, provisionerClient provisioner.Client) *CheckRuntimeRemovalStep {
+func NewCheckRuntimeRemovalStep(operations storage.Operations, instances storage.Instances, provisionerClient provisioner.Client) *CheckRuntimeRemovalStep {
 	return &CheckRuntimeRemovalStep{
 		operationManager:  process.NewOperationManager(operations),
 		provisionerClient: provisionerClient,
+		instanceStorage:   instances,
 	}
 }
 
@@ -35,10 +39,25 @@ func (s *CheckRuntimeRemovalStep) Run(operation internal.Operation, log logrus.F
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
+	if operation.ProvisionerOperationID == "" {
+		log.Infof("ProvisionerOperationID is empty, skipping (there is no runtime)")
+		return operation, 0, nil
+	}
 
-	status, err := s.provisionerClient.RuntimeOperationStatus(operation.GlobalAccountID, operation.ProvisionerOperationID)
+	instance, err := s.instanceStorage.GetByID(operation.InstanceID)
+	switch {
+	case err == nil:
+	case dberr.IsNotFound(err):
+		log.Infof("instance already deleted", err)
+		return operation, 0 * time.Second, nil
+	default:
+		log.Errorf("unable to get instance from storage: %s", err)
+		return operation, 1 * time.Second, nil
+	}
+
+	status, err := s.provisionerClient.RuntimeOperationStatus(instance.GlobalAccountID, operation.ProvisionerOperationID)
 	if err != nil {
-		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s", err.Error())
+		log.Errorf("call to provisioner RuntimeOperationStatus failed: %s, GlobalAccountID=%s, Provisioner OperationID=%s", err.Error(), instance.GlobalAccountID, operation.ProvisionerOperationID)
 		return operation, 1 * time.Minute, nil
 	}
 	var msg string

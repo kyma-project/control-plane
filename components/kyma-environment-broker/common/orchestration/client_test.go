@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 )
 
@@ -36,10 +38,17 @@ var orch3 = fixStatusResponse("orchestration3")
 var orch4 = fixStatusResponse("orchestration4")
 var orchs = []StatusResponse{orch1, orch2, orch3, orch4}
 var operations = []OperationResponse{
-	fixOperationResponse("operation1", orch1.OrchestrationID),
-	fixOperationResponse("operation2", orch1.OrchestrationID),
-	fixOperationResponse("operation3", orch1.OrchestrationID),
-	fixOperationResponse("operation4", orch1.OrchestrationID),
+	fixOperationResponse("operation1", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation2", orch1.OrchestrationID, "pending"),
+	fixOperationResponse("operation3", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation4", orch1.OrchestrationID, "pending"),
+}
+
+var operationsWithFailedState = []OperationResponse{
+	fixOperationResponse("operation1", orch1.OrchestrationID, "pending"),
+	fixOperationResponse("operation2", orch1.OrchestrationID, "in progress"),
+	fixOperationResponse("operation3", orch1.OrchestrationID, "failed"),
+	fixOperationResponse("operation4", orch1.OrchestrationID, "in progress"),
 }
 
 func TestClient_ListOrchestrations(t *testing.T) {
@@ -108,13 +117,13 @@ func TestClient_GetOrchestration(t *testing.T) {
 	})
 }
 
-func TestClient_ListOperations(t *testing.T) {
+func TestClient_ListOperationsWithoutFailed(t *testing.T) {
 	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
 		// given
 		called := 0
 		params := ListParameters{
 			PageSize: 2,
-			States:   []string{"failed", "in progress"},
+			States:   []string{"pending", "in progress"},
 		}
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			called++
@@ -122,6 +131,7 @@ func TestClient_ListOperations(t *testing.T) {
 			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/operations", orch1.OrchestrationID), r.URL.Path)
 			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
 			query := r.URL.Query()
+
 			assert.ElementsMatch(t, []string{strconv.Itoa(called)}, query[pagination.PageParam])
 			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
 			assert.ElementsMatch(t, params.States, query[StateParam])
@@ -144,6 +154,92 @@ func TestClient_ListOperations(t *testing.T) {
 		for i := 0; i < 4; i++ {
 			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
 			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
+		}
+	})
+}
+
+func TestClient_ListOperationsWithFailed(t *testing.T) {
+	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
+		// given
+		called := 0
+		params := ListParameters{
+			PageSize: 2,
+			States:   []string{"failed"},
+		}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called++
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/operations", orch1.OrchestrationID), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
+			query := r.URL.Query()
+			assert.ElementsMatch(t, params.States, query[StateParam])
+			err := respondOperationList(w, operations[(called-1)*params.PageSize:called*params.PageSize], 2)
+			require.NoError(t, err)
+		}))
+		defer ts.Close()
+		client := NewClient(context.TODO(), ts.URL, fixToken)
+		// when
+		orl, err := client.ListOperations(orch1.OrchestrationID, params)
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, 1, called)
+		assert.Equal(t, 2, orl.Count)
+		assert.Equal(t, 2, orl.TotalCount)
+		assert.Len(t, orl.Data, 2)
+		for i := 0; i < 2; i++ {
+			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
+			assert.Equal(t, operations[i].OperationID, orl.Data[i].OperationID)
+		}
+	})
+}
+
+func TestClient_ListOperations(t *testing.T) {
+	t.Run("test_URL_params_pagination__NoError_path", func(t *testing.T) {
+		// given
+		called := 0
+		params := ListParameters{
+			PageSize: 2,
+			States:   []string{"failed", "in progress", "pending"},
+		}
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called++
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, fmt.Sprintf("/orchestrations/%s/operations", orch1.OrchestrationID), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("Bearer %s", fixToken), r.Header.Get("Authorization"))
+			query := r.URL.Query()
+			var err error
+			assert.ElementsMatch(t, []string{strconv.Itoa(called)}, query[pagination.PageParam])
+			assert.ElementsMatch(t, []string{strconv.Itoa(params.PageSize)}, query[pagination.PageSizeParam])
+			if called == 2 {
+				assert.ElementsMatch(t, []string{"in progress", "pending"}, query[StateParam])
+			} else {
+				assert.ElementsMatch(t, params.States, query[StateParam])
+			}
+
+			err = respondOperationListWithFailed(w, operationsWithFailedState[(called-1)*params.PageSize:called*params.PageSize], query[StateParam], 4)
+			require.NoError(t, err)
+		}))
+		defer ts.Close()
+		client := NewClient(context.TODO(), ts.URL, fixToken)
+		// when
+		orl, err := client.ListOperations(orch1.OrchestrationID, params)
+		// then
+		require.NoError(t, err)
+
+		assert.Equal(t, 2, called)
+		assert.Equal(t, 4, orl.Count)
+		assert.Equal(t, 4, orl.TotalCount)
+		assert.Len(t, orl.Data, 4)
+		var opS, orlD []string
+		for i := 0; i < 4; i++ {
+			opS = append(opS, operationsWithFailedState[i].OperationID)
+			orlD = append(orlD, orl.Data[i].OperationID)
+		}
+		sort.Strings(opS)
+		sort.Strings(orlD)
+		for i := 0; i < 4; i++ {
+			assert.Equal(t, orch1.OrchestrationID, orl.Data[i].OrchestrationID)
+			assert.Equal(t, opS, orlD)
 		}
 	})
 }
@@ -322,17 +418,18 @@ func fixStatusResponse(id string) StatusResponse {
 	}
 }
 
-func fixOperationResponse(id, orchestrationID string) OperationResponse {
+func fixOperationResponse(id, orchestrationID, state string) OperationResponse {
 	return OperationResponse{
 		OperationID:     id,
 		RuntimeID:       id,
 		OrchestrationID: orchestrationID,
+		State:           state,
 	}
 }
 
 func fixOperationDetailResponse(id, orchestrationID string) OperationDetailResponse {
 	return OperationDetailResponse{
-		OperationResponse: fixOperationResponse(id, orchestrationID),
+		OperationResponse: fixOperationResponse(id, orchestrationID, ""),
 	}
 }
 
@@ -371,6 +468,37 @@ func respondOperationList(w http.ResponseWriter, operations []OperationResponse,
 	orl := OperationResponseList{
 		Data:       operations,
 		Count:      len(operations),
+		TotalCount: totalCount,
+	}
+	data, err := json.Marshal(orl)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(data)
+	return err
+}
+
+func respondOperationListWithFailed(w http.ResponseWriter, operations []OperationResponse, queryState []string, totalCount int) error {
+	var operationR []OperationResponse
+	if slices.Contains(queryState, "failed") {
+		for i := 0; i < totalCount; i++ {
+			if operationsWithFailedState[i].State == "failed" && i >= len(operations) {
+				operationR = append(operationR, operationsWithFailedState[i])
+			}
+		}
+	}
+	for i, _ := range operations {
+		if operations[i].State != "failed" {
+			operationR = append(operationR, operations[i])
+		}
+	}
+	orl := OperationResponseList{
+		Data:       operationR,
+		Count:      len(operationR),
 		TotalCount: totalCount,
 	}
 	data, err := json.Marshal(orl)

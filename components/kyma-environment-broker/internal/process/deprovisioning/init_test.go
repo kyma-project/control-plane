@@ -13,6 +13,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	fixOperationID            = "17f3ddba-1132-466d-a3c5-920f544d7ea6"
+	fixInstanceID             = "9d75a545-2e1e-4786-abd8-a37b14e185b9"
+	fixRuntimeID              = "ef4e3210-652c-453e-8015-bba1c1cd1e1c"
+	fixGlobalAccountID        = "abf73c71-a653-4951-b9c2-a26d6c2cccbd"
+	fixProvisionerOperationID = "e04de524-53b3-4890-b05a-296be393e4ba"
+)
+
 func TestInitStep_happyPath(t *testing.T) {
 	// given
 	log := logrus.New()
@@ -68,4 +76,22 @@ func prepareDeprovisioningOperation(s storage.BrokerStorage, state domain.LastOp
 	dOperation.State = state
 	s.Operations().InsertOperation(dOperation.Operation)
 	return dOperation.Operation
+}
+
+func fixDeprovisioningOperation() internal.DeprovisioningOperation {
+	deprovisioniningOperation := fixture.FixDeprovisioningOperation(fixOperationID, fixInstanceID)
+	return deprovisioniningOperation
+}
+
+func fixProvisioningOperation() internal.Operation {
+	provisioningOperation := fixture.FixProvisioningOperation(fixOperationID, fixInstanceID)
+	return provisioningOperation
+}
+
+func fixInstanceRuntimeStatus() internal.Instance {
+	instance := fixture.FixInstance(fixInstanceID)
+	instance.RuntimeID = fixRuntimeID
+	instance.GlobalAccountID = fixGlobalAccountID
+
+	return instance
 }

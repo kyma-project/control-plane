@@ -33,7 +33,6 @@ import (
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
@@ -188,11 +187,12 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
 		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
+	deprovisionManager.SpeedUp(10000)
 
 	deprovisioningQueue.SpeedUp(10000)
 
@@ -524,6 +524,26 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
+		}
+		if state.Cluster != "" {
+			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FinishReconciliation(opID string) {
+	var state *reconcilerApi.HTTPClusterResponse
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		provisioningOp, err := s.db.Operations().GetProvisioningOperationByID(opID)
+		if err != nil {
+			return false, nil
+		}
+		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
+		if err != nil {
+			return false, nil
 		}
 		if state.Cluster != "" {
 			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
@@ -1057,7 +1077,7 @@ func (s *BrokerSuiteTest) fixGardenerShootForOperationID(opID string) *unstructu
 	return &un
 }
 
-func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
+func (s *BrokerSuiteTest) processProvisioningAndReconcilingByOperationID(opID string) {
 	// Provisioner part
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
@@ -1078,10 +1098,10 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	s.processProvisioningByOperationID(opID)
 }
 
-func (s *BrokerSuiteTest) processReconciliationByInstanceID(iid string) {
+func (s *BrokerSuiteTest) processProvisioningAndReconciliationByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
-	s.processReconcilingByOperationID(opID)
+	s.processProvisioningAndReconcilingByOperationID(opID)
 }
 
 func (s *BrokerSuiteTest) ShootName(id string) string {

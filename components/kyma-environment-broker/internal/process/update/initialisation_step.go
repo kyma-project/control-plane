@@ -89,9 +89,10 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if operation.RuntimeID == "" {
 			err = s.getRuntimeIdFromProvisioningOp(&operation)
 			if err != nil {
-				return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+				return s.operationManager.RetryOperation(operation, "error while getting runtime ID", err, 5*time.Second, 1*time.Minute, log)
 			}
 		}
+		log.Infof("Got runtime ID %s", operation.RuntimeID)
 
 		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
 		if err != nil {

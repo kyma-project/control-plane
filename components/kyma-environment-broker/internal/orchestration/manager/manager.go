@@ -143,7 +143,7 @@ func (m *orchestrationManager) getMaintenancePolicy() (orchestration.Maintenance
 	return policy, nil
 }
 
-//result contains the operations which from `kcp o *** retry` and its label are retrying, runtimes from target parameter
+// result contains the operations which from `kcp o *** retry` and its label are retrying, runtimes from target parameter
 func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtimes []orchestration.Runtime, result []orchestration.RuntimeOperation) []orchestration.Runtime {
 	var fileterRuntimes []orchestration.Runtime
 	if o.State == orchestration.Pending {

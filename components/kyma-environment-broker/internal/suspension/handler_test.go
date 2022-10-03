@@ -62,6 +62,7 @@ func TestSuspension_Retrigger(t *testing.T) {
 				InstanceID: instance.InstanceID,
 				State:      domain.Succeeded,
 				Temporary:  true,
+				Type:       internal.OperationTypeDeprovision,
 			},
 		})
 
@@ -97,6 +98,7 @@ func TestSuspension_Retrigger(t *testing.T) {
 				InstanceID: instance.InstanceID,
 				State:      domain.Failed,
 				Temporary:  true,
+				Type:       internal.OperationTypeDeprovision,
 			},
 		})
 

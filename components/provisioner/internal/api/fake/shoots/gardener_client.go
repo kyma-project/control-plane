@@ -103,6 +103,10 @@ func (f *fakeShootsInterface) CreateAdminKubeconfigRequest(_ context.Context, _ 
 	return nil, nil
 }
 
+func (f *fakeShootsInterface) UpdateBinding(ctx context.Context, shootName string, shoot *gardener_types.Shoot, opts metav1.UpdateOptions) (*gardener_types.Shoot, error) {
+	return nil, nil
+}
+
 func addTypeMeta(shoot *gardener_types.Shoot) {
 	shoot.TypeMeta = metav1.TypeMeta{
 		Kind:       "Shoot",

@@ -74,14 +74,14 @@ func runtimeStatusData() string {
 }
 
 /*
-type OIDCConfig {
-    clientID: String!
-    groupsClaim: String!
-    issuerURL: String!
-    signingAlgs: [String!]!
-    usernameClaim: String!
-    usernamePrefix: String!
-}
+	type OIDCConfig {
+	    clientID: String!
+	    groupsClaim: String!
+	    issuerURL: String!
+	    signingAlgs: [String!]!
+	    usernameClaim: String!
+	    usernamePrefix: String!
+	}
 */
 func clusterConfig() string {
 	return fmt.Sprintf(`

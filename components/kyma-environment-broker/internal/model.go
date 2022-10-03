@@ -301,9 +301,9 @@ type DeprovisioningOperation struct {
 	Operation
 }
 
-func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+func (op *Operation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
 	if op.ReconcilerDeregistrationAt.IsZero() {
-		return time.Since(op.CreatedAt)
+		return 0
 	}
 	return time.Since(op.ReconcilerDeregistrationAt)
 }
@@ -455,6 +455,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
+				Kubeconfig:   parameters.Parameters.Kubeconfig,
 			},
 			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},
@@ -470,6 +471,9 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 	}
 	return DeprovisioningOperation{
 		Operation: Operation{
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{GlobalAccountID: instance.GlobalAccountID, RuntimeID: instance.RuntimeID},
+			},
 			ID:              operationID,
 			Version:         0,
 			Description:     "Operation created",

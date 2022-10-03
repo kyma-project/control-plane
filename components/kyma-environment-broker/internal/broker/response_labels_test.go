@@ -100,4 +100,21 @@ func TestResponseLabels(t *testing.T) {
 		assert.NotContains(t, labels, kubeconfigURLKey)
 		require.Equal(t, "cluster-test", labels["Name"])
 	})
+
+	t.Run("should return labels for own cluster", func(t *testing.T) {
+		// given
+		operation := internal.ProvisioningOperation{}
+		operation.ProvisioningParameters.Parameters.Name = "cluster-test"
+
+		instance := fixture.FixInstance("instanceID")
+		instance.ServicePlanID = OwnClusterPlanID
+
+		// when
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
+
+		// then
+		require.Len(t, labels, 2)
+		assert.NotContains(t, labels, kubeconfigURLKey)
+		require.Equal(t, "cluster-test", labels["Name"])
+	})
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -36,6 +37,21 @@ func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLo
 	if operation.Kubeconfig != "" {
 		return operation, 0, nil
 	}
+
+	if operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+
+		newOperation, backoff, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+			operation.Kubeconfig = operation.ProvisioningParameters.Parameters.Kubeconfig
+		}, log)
+
+		if backoff > 0 {
+			log.Errorf("unable to update operation")
+			return operation, backoff, nil
+		}
+
+		return newOperation, 0, nil
+	}
+
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
 		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
@@ -51,6 +67,7 @@ func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLo
 		log.Errorf("kubeconfig is not provided")
 		return operation, 1 * time.Minute, nil
 	}
+
 	k := *status.RuntimeConfiguration.Kubeconfig
 	hash := sha256.Sum256([]byte(k))
 	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
@@ -60,12 +77,13 @@ func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLo
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 
-	newOperation, retry, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+	newOperation, backoff, _ := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}, log)
-	if retry > 0 {
+
+	if backoff > 0 {
 		log.Errorf("unable to update operation")
-		return operation, time.Second, nil
+		return operation, backoff, nil
 	}
 
 	return newOperation, 0, nil

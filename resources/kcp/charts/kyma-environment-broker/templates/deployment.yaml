@@ -334,6 +334,8 @@ spec:
               value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
             - name: APP_PROVISIONER_MULTI_ZONE_CLUSTER
               value: "{{ .Values.gardener.multiZoneCluster }}"
+            - name: APP_PROVISIONER_CONTROL_PLANE_FAILURE_TOLERANCE
+              value: "{{ .Values.gardener.controlPlaneFailureTolerance }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED

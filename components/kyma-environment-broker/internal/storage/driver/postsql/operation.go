@@ -538,12 +538,10 @@ func (s *operations) fetchFailedStatusForOrchestration(entries []dbmodel.Operati
 
 	var failedDatas []dbmodel.OperationDTO
 	for _, datas := range resPerInstanceID {
-
 		var invalidFailed bool
 		var failedFound bool
 		var faildEntry dbmodel.OperationDTO
 		for _, data := range datas {
-
 			if data.State == Succeeded || data.State == Retrying || data.State == InProgress {
 				invalidFailed = true
 				break
@@ -617,7 +615,7 @@ func (s *operations) ListUpgradeKymaOperationsByOrchestrationID(orchestrationID 
 
 	//only for "failed" states
 	if filterFailedFound {
-		filter.States = []string{Failed}
+		filter = dbmodel.OperationFilter{States: []string{"failed"}}
 		failedOperations, failedCount, failedtotalCount, err := s.showUpgradeKymaOperationDTOByOrchestrationID(orchestrationID, filter)
 		if err != nil {
 			return nil, -1, -1, errors.Wrapf(err, "while getting operation by ID: %v", err)
@@ -905,6 +903,10 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting basic auth")
 	}
+	err = s.cipher.EncryptKubeconfig(&op.ProvisioningParameters)
+	if err != nil {
+		return dbmodel.OperationDTO{}, errors.Wrap(err, "while encrypting kubeconfig")
+	}
 	pp, err := json.Marshal(op.ProvisioningParameters)
 	if err != nil {
 		return dbmodel.OperationDTO{}, errors.Wrap(err, "while marshal provisioning parameters")
@@ -927,16 +929,21 @@ func (s *operations) operationToDB(op internal.Operation) (dbmodel.OperationDTO,
 }
 
 func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.Operation) (internal.Operation, error) {
-	pp := internal.ProvisioningParameters{}
+	provisioningParameters := internal.ProvisioningParameters{}
 	if dto.ProvisioningParameters.Valid {
-		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &pp)
+		err := json.Unmarshal([]byte(dto.ProvisioningParameters.String), &provisioningParameters)
 		if err != nil {
 			return internal.Operation{}, errors.Wrap(err, "while unmarshal provisioning parameters")
 		}
 	}
-	err := s.cipher.DecryptSMCreds(&pp)
+	err := s.cipher.DecryptSMCreds(&provisioningParameters)
 	if err != nil {
 		return internal.Operation{}, errors.Wrap(err, "while decrypting basic auth")
+	}
+
+	err = s.cipher.DecryptKubeconfig(&provisioningParameters)
+	if err != nil {
+		log.Warn("decrypting skipped because kubeconfig is in a plain text")
 	}
 
 	stages := make([]string, 0)
@@ -957,7 +964,7 @@ func (s *operations) toOperation(dto *dbmodel.OperationDTO, existingOp internal.
 	existingOp.Description = dto.Description
 	existingOp.Version = dto.Version
 	existingOp.OrchestrationID = storage.SQLNullStringToString(dto.OrchestrationID)
-	existingOp.ProvisioningParameters = pp
+	existingOp.ProvisioningParameters = provisioningParameters
 	existingOp.FinishedStages = stages
 
 	return existingOp, nil

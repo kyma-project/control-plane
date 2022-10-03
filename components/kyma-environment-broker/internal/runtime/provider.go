@@ -90,7 +90,7 @@ func (r *ComponentsListProvider) getAdditionalComponents(kymaVersion internal.Ru
 // It is copied because using directly the installer CR
 // with such fields:
 //
-// 	metav1.TypeMeta   `json:",inline"`
+//	metav1.TypeMeta   `json:",inline"`
 //	metav1.ObjectMeta `json:"metadata,omitempty"`
 //
 // is not working with "gopkg.in/yaml.v2" stream decoder.
@@ -134,8 +134,9 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 // isOnDemandRelease returns true if the version is recognized as on-demand.
 //
 // Detection rules:
-//   For pull requests: PR-<number>
-//   For changes to the main branch: main-<commit_sha>
+//
+//	For pull requests: PR-<number>
+//	For changes to the main branch: main-<commit_sha>
 //
 // source: https://github.com/kyma-project/test-infra/blob/main/docs/prow/prow-architecture.md#generate-development-artifacts
 func (r *ComponentsListProvider) isOnDemandRelease(version string) bool {

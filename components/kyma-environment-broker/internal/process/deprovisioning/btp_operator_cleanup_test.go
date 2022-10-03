@@ -66,7 +66,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		err = k8sCli.Create(context.TODO(), si)
 		require.NoError(t, err)
 
-		op := fixture.FixSuspensionOperation(fixOperationID, fixInstanceID)
+		op := fixture.FixSuspensionOperationAsOperation(fixOperationID, fixInstanceID)
 		op.State = "in progress"
 		fakeProvisionerClient := fakeProvisionerClient{}
 		step := NewBTPOperatorCleanupStep(ms.Operations(), fakeProvisionerClient, func(k string) (client.Client, error) { return k8sCli, nil })
@@ -115,7 +115,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		err = k8sCli.Create(context.TODO(), si)
 		require.NoError(t, err)
 
-		op := fixture.FixSuspensionOperation(fixOperationID, fixInstanceID)
+		op := fixture.FixSuspensionOperationAsOperation(fixOperationID, fixInstanceID)
 		op.ProvisioningParameters.PlanID = broker.AWSPlanID
 		op.State = "in progress"
 		fakeProvisionerClient := fakeProvisionerClient{}
@@ -165,7 +165,7 @@ func TestRemoveServiceInstanceStep(t *testing.T) {
 		err = k8sCli.Create(context.TODO(), si)
 		require.NoError(t, err)
 
-		op := fixture.FixSuspensionOperation(fixOperationID, fixInstanceID)
+		op := fixture.FixSuspensionOperationAsOperation(fixOperationID, fixInstanceID)
 		op.State = "in progress"
 		op.Temporary = false
 		fakeProvisionerClient := fakeProvisionerClient{}

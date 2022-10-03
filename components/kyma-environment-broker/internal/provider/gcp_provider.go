@@ -30,7 +30,8 @@ var toGCPSpecific = map[string]*string{
 
 type (
 	GcpInput struct {
-		MultiZone bool
+		MultiZone                    bool
+		ControlPlaneFailureTolerance string
 	}
 	GcpTrialInput struct {
 		PlatformRegionMapping map[string]string
@@ -41,6 +42,10 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 	zonesCount := 1
 	if p.MultiZone {
 		zonesCount = DefaultGCPMultiZoneCount
+	}
+	var controlPlaneFailureTolerance *string = nil
+	if p.ControlPlaneFailureTolerance != "" {
+		controlPlaneFailureTolerance = &p.ControlPlaneFailureTolerance
 	}
 	return &gqlschema.ClusterConfigInput{
 		GardenerConfig: &gqlschema.GardenerConfigInput{
@@ -59,6 +64,7 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 					Zones: ZonesForGCPRegion(DefaultGCPRegion, zonesCount),
 				},
 			},
+			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
 		},
 	}
 }

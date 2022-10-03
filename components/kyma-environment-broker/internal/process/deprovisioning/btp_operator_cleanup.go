@@ -47,7 +47,7 @@ func (s *BTPOperatorCleanupStep) Name() string {
 	return "BTPOperator_Cleanup"
 }
 
-func (s *BTPOperatorCleanupStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *BTPOperatorCleanupStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if !operation.Temporary {
 		log.Info("cleanup executed only for suspensions")
 		return operation, 0, nil
@@ -138,7 +138,7 @@ func (s *BTPOperatorCleanupStep) isNotFoundErr(err error) bool {
 	return strings.Contains(err.Error(), "not found")
 }
 
-func (s *BTPOperatorCleanupStep) retryOnError(op internal.DeprovisioningOperation, err error, log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *BTPOperatorCleanupStep) retryOnError(op internal.Operation, err error, log logrus.FieldLogger, msg string) (internal.Operation, time.Duration, error) {
 	if err != nil {
 		// handleError returns retry period if it's retriable error and it's within timeout
 		op, retry, err2 := handleError(s.Name(), op, err, log, msg)
@@ -153,7 +153,7 @@ func (s *BTPOperatorCleanupStep) retryOnError(op internal.DeprovisioningOperatio
 	return op, 0, nil
 }
 
-func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.DeprovisioningOperation, log logrus.FieldLogger) {
+func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Operation, log logrus.FieldLogger) {
 	k8sClient, err := s.getKubeClient(op, log)
 	if err != nil {
 		log.Errorf("failed to get kube clients to remove finalizers", err)
@@ -169,7 +169,7 @@ func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Deprovisi
 	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}, log)
 }
 
-func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (client.Client, error) {
+func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log logrus.FieldLogger) (client.Client, error) {
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
 		if s.isNotFoundErr(err) {

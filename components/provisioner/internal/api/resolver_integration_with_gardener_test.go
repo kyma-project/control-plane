@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
@@ -24,12 +25,12 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/hydroform/install/installation"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -41,7 +42,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	runtimeConfig "github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"

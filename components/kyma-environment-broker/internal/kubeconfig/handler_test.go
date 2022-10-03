@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/kubeconfig/automock"
@@ -98,6 +101,7 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 					ID:         operationID,
 					InstanceID: instance.InstanceID,
 					State:      d.operationStatus,
+					Type:       internal.OperationTypeProvision,
 				},
 			}
 
@@ -148,6 +152,59 @@ func TestHandler_GetKubeconfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandler_GetKubeconfigForOwnCluster(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		Parameters: internal.ProvisioningParameters{
+			Parameters: internal.ProvisioningParametersDTO{
+				Kubeconfig: "custom-kubeconfig",
+			},
+		},
+		InstanceDetails: internal.InstanceDetails{
+			Kubeconfig: "custom-kubeconfig",
+		},
+		InstanceID:    instanceID,
+		RuntimeID:     runtimeID,
+		ServicePlanID: broker.OwnClusterPlanID,
+	}
+
+	operation := internal.ProvisioningOperation{
+		Operation: internal.Operation{
+			ID:         operationID,
+			InstanceID: instance.InstanceID,
+			State:      domain.Succeeded,
+			InstanceDetails: internal.InstanceDetails{
+				Kubeconfig: "custom-kubeconfig",
+			},
+			Type: internal.OperationTypeProvision,
+		},
+	}
+
+	db := storage.NewMemoryStorage()
+	err := db.Instances().Insert(instance)
+	require.NoError(t, err)
+	err = db.Operations().InsertProvisioningOperation(operation)
+	require.NoError(t, err)
+
+	// we do not expect usage of KcBuilder
+	builder := &automock.KcBuilder{}
+	defer builder.AssertExpectations(t)
+
+	router := mux.NewRouter()
+
+	handler := NewHandler(db, builder, "", logger.NewLogDummy())
+	handler.AttachRoutes(router)
+
+	server := httptest.NewServer(router)
+
+	// when
+	response, err := http.Get(fmt.Sprintf("%s/kubeconfig/%s", server.URL, instanceID))
+	require.NoError(t, err)
+
+	// then
+	assert.Equal(t, http.StatusNotFound, response.StatusCode)
 }
 
 func TestHandler_specifyAllowOriginHeader(t *testing.T) {

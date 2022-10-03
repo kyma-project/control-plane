@@ -11,16 +11,15 @@ import (
 /*
 FakeClient is simulating API and db transactions in Reconciler Inventory
 
-- registeredCluster is representation of 'inventory_clusters' table
-  each unique clusterVersion should be a separate record
-- registeredCluster.clusterConfigs is representation of `inventory_cluster_configs` table
-  and it is a map[configVersion]Cluster; it stores different clusterConfigs for the same cluster
-- registeredCluster.clusterStates is a map[configVersion]State; it simulates returning the status of given cluster in given configVersion
-- registeredCluster.statusChanges is representation of 'inventory_cluster_config_statuses' table
-  and it is a slice of *StatusChange; it contains all status changes for the cluster
+  - registeredCluster is representation of 'inventory_clusters' table
+    each unique clusterVersion should be a separate record
+  - registeredCluster.clusterConfigs is representation of `inventory_cluster_configs` table
+    and it is a map[configVersion]Cluster; it stores different clusterConfigs for the same cluster
+  - registeredCluster.clusterStates is a map[configVersion]State; it simulates returning the status of given cluster in given configVersion
+  - registeredCluster.statusChanges is representation of 'inventory_cluster_config_statuses' table
+    and it is a slice of *StatusChange; it contains all status changes for the cluster
 
 calling ApplyClusterConfig method on already existing cluster results in adding a new ClusterConfig
-
 */
 type FakeClient struct {
 	mu                sync.Mutex

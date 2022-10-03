@@ -23,11 +23,11 @@ const (
 	ErrDBUnknown       dbErrReason = "err_db_unknown"
 )
 
-// type Error interface {
-// 	Append(string, ...interface{}) Error
-// 	Code() apperrors.ErrCode
-// 	Error() string
-// }
+//	type Error interface {
+//		Append(string, ...interface{}) Error
+//		Code() apperrors.ErrCode
+//		Error() string
+//	}
 type Error = apperrors.AppError
 
 type dbError struct {

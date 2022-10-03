@@ -1,4 +1,4 @@
-//TODO: Remove this package after schema migration
+// TODO: Remove this package after schema migration
 package migrator
 
 import (

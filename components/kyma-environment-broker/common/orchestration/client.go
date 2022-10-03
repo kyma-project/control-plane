@@ -163,6 +163,13 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 	}
 
 	for !fetchedAll {
+		if params.Page > 1 {
+			failedFound, failedIndex := c.searchFilter(params.States, "failed")
+			if failedFound {
+				params.States = c.removeIndex(params.States, failedIndex)
+			}
+		}
+
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return operations, errors.Wrap(err, "while creating request")
@@ -199,6 +206,7 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 
 		operations.TotalCount = orl.TotalCount
 		operations.Count += orl.Count
+
 		operations.Data = append(operations.Data, orl.Data...)
 		if getAll {
 			params.Page++
@@ -209,6 +217,31 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 	}
 
 	return operations, nil
+}
+
+func (c client) searchFilter(states []string, inputState string) (bool, int) {
+	var failedFound bool
+	var failedIndex int
+	for index, state := range states {
+		if strings.Contains(state, inputState) {
+			failedFound = true
+			failedIndex = index
+			break
+		}
+	}
+	return failedFound, failedIndex
+}
+
+func (c client) removeIndex(arr []string, index int) []string {
+	var temp = make([]string, len(arr)-1)
+	j := 0
+	for i := range arr {
+		if i != index {
+			temp[j] = arr[i]
+			j = j + 1
+		}
+	}
+	return temp
 }
 
 // GetOperation fetches detailed Runtime operation corresponding to the given orchestration and operation ID.
