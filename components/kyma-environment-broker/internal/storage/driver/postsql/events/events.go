@@ -3,6 +3,7 @@ package events
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -15,7 +16,10 @@ type Config struct {
 	PollingPeriod time.Duration `envconfig:"default=1h"`
 }
 
-var ev *events
+var (
+	ev       *events
+	initLock sync.Mutex
+)
 
 type events struct {
 	postsql.Factory
@@ -24,6 +28,8 @@ type events struct {
 }
 
 func New(cfg Config, sess postsql.Factory, log logrus.FieldLogger) *events {
+	initLock.Lock()
+	defer initLock.Unlock()
 	if ev == nil {
 		ev = &events{
 			Factory: sess,
