@@ -2,8 +2,8 @@
 
 Kyma Environment Broker allows you to configure operations that you can run on a Runtime. Each operation consists of several steps and each step is represented by a separate file. As every step can be re-launched multiple times, for each step, you should determine a behavior in case of a processing failure. It can either:
 
-- Return an error, which interrupts the entire process, or
-- Repeat the entire operation after the specified period.
+- return an error, which interrupts the entire process, or
+- repeat the entire operation after the specified period.
 
 > **NOTE:** It's important to set lower timeouts for the Kyma installation in the Runtime Provisioner.
 
@@ -89,7 +89,7 @@ The upgrade process contains the following steps:
 | btp-operator        | Apply_Reconciler_Configuration | Applies the cluster configuration to the Reconciler.                                          |                                                                                                                      
 | btp-operator-check  | CheckReconcilerState           | Checks if the cluster configuration is applied                                                |                                                                                                                      
 | check               | Check_Runtime                  | Checks the status of the Provisioner process.                                                 |                                                                                                                      
- 
+
 
 ## Provide additional steps
 
@@ -527,3 +527,18 @@ You can configure Runtime operations by providing additional steps. To add a new
 
    </details>
 </div>
+
+## Stages
+
+An operation defines stages and steps which represent the work you must do.
+
+A stage is a grouping unit for steps.
+
+A step is a part of a stage.
+
+An operation can consist of multiple stages, and a stage can consist of multiple steps.
+
+You group steps in a stage when you have some sensitive data which you don't want to store in database. In such a case you temporarily store the sensitive data in the memory and go through the steps.
+
+Once all the steps in a stage are successfully executed, the stage is marked as finished and never repeated again, even if the next one fails.
+If any steps fail at a given stage, the whole stage is repeated from the beginning.
