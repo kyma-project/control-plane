@@ -530,15 +530,4 @@ You can configure Runtime operations by providing additional steps. To add a new
 
 ## Stages
 
-An operation defines stages and steps which represent the work you must do.
-
-A stage is a grouping unit for steps.
-
-A step is a part of a stage.
-
-An operation can consist of multiple stages, and a stage can consist of multiple steps.
-
-You group steps in a stage when you have some sensitive data which you don't want to store in database. In such a case you temporarily store the sensitive data in the memory and go through the steps.
-
-Once all the steps in a stage are successfully executed, the stage is marked as finished and never repeated again, even if the next one fails.
-If any steps fail at a given stage, the whole stage is repeated from the beginning.
+An operation defines stages and steps which represent the work you must do. A stage is a grouping unit for steps. A step is a part of a stage. An operation can consist of multiple stages, and a stage can consist of multiple steps. You group steps in a stage when you have some sensitive data which you don't want to store in database. In such a case you temporarily store the sensitive data in the memory and go through the steps. Once all the steps in a stage are successfully executed, the stage is marked as finished and never repeated again, even if the next one fails. If any steps fail at a given stage, the whole stage is repeated from the beginning.
