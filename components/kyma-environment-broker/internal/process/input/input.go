@@ -145,7 +145,7 @@ func (r *RuntimeInput) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) i
 func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	// currently same as in AppendOverrides function, as we working on the same underlying object.
 	r.muOverrides.Lock()
-	defer r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	r.overrides[component] = overrides
 	return r
@@ -154,7 +154,7 @@ func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.Con
 // AppendOverrides appends overrides for the given components, the existing overrides are preserved.
 func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	r.muOverrides.Lock()
-	defer r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	for _, o2 := range overrides {
 		found := false
@@ -175,7 +175,7 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 // AppendGlobalOverrides appends overrides, the existing overrides are preserved.
 func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	r.muOverrides.Lock()
-	defer r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	for _, o2 := range overrides {
 		found := false
@@ -195,7 +195,7 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 
 func (r *RuntimeInput) SetLabel(key, value string) internal.ProvisionerInputCreator {
 	r.muLabels.Lock()
-	defer r.muLabels.Lock()
+	defer r.muLabels.Unlock()
 
 	if r.provisionRuntimeInput.RuntimeInput.Labels == nil {
 		r.provisionRuntimeInput.RuntimeInput.Labels = gqlschema.Labels{}
