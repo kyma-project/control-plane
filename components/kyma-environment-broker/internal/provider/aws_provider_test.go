@@ -134,7 +134,7 @@ func TestAWSInput_SingleZone_ApplyParameters(t *testing.T) {
 
 func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
 	// given
-	svc := AWSInput{MultiZone: true}
+	svc := AWSInput{MultiZone: true, ControlPlaneFailureTolerance: "zone"}
 
 	// when
 	t.Run("use default region and default zones count", func(t *testing.T) {
@@ -152,6 +152,8 @@ func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
 			regionFromZone := zone.Name[:len(zone.Name)-1]
 			assert.Equal(t, DefaultAWSRegion, regionFromZone)
 		}
+
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 
 	// when
@@ -174,6 +176,7 @@ func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
 			regionFromZone := zone.Name[:len(zone.Name)-1]
 			assert.Equal(t, inputRegion, regionFromZone)
 		}
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 
 	// when
@@ -195,6 +198,7 @@ func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
 		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			assert.Equal(t, zones[i], zone.Name)
 		}
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 }
 

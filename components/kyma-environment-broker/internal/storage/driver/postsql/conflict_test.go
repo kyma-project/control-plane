@@ -139,11 +139,11 @@ func TestConflict(t *testing.T) {
 			givenOperation.State = domain.InProgress
 			givenOperation.ProvisionerOperationID = "target-op-id"
 
-			svc := brokerStorage.Provisioning()
+			svc := brokerStorage.Operations()
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
-			err = svc.InsertProvisioningOperation(givenOperation)
+			err = svc.InsertOperation(givenOperation)
 			require.NoError(t, err)
 
 			// when

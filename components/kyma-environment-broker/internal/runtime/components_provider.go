@@ -122,8 +122,9 @@ func (p *ComponentsProvider) getComponentsYamlURL(kymaVersion string) string {
 // isOnDemandRelease returns true if the version is recognized as on-demand.
 //
 // Detection rules:
-//   For pull requests: PR-<number>
-//   For changes to the main branch: main-<commit_sha>
+//
+//	For pull requests: PR-<number>
+//	For changes to the main branch: main-<commit_sha>
 //
 // source: https://github.com/kyma-project/test-infra/blob/main/docs/prow/prow-architecture.md#generate-development-artifacts
 func (p *ComponentsProvider) isOnDemandRelease(version string) bool {

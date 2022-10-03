@@ -8,11 +8,9 @@
   "properties": {
     "administrators": {
       "description": "Specifies the list of runtime administrators",
-      "items": [
-        {
-          "type": "string"
-        }
-      ],
+      "items": {
+        "type": "string"
+      },
       "title": "Administrators",
       "type": "array"
     },
@@ -33,11 +31,9 @@
         },
         "signingAlgs": {
           "description": "List of allowed JOSE asymmetric signing algorithms.",
-          "items": [
-            {
-              "type": "string"
-            }
-          ],
+          "items": {
+            "type": "string"
+          },
           "type": "array"
         },
         "usernameClaim": {

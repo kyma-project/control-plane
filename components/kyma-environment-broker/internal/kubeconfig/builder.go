@@ -33,14 +33,20 @@ type kubeconfigData struct {
 	OIDCClientID  string
 }
 
-func (b *Builder) Build(instance *internal.Instance) (string, error) {
+func (b *Builder) BuildFromAdminKubeconfig(instance *internal.Instance, adminKubeconfig string) (string, error) {
 	status, err := b.provisionerClient.RuntimeStatus(instance.GlobalAccountID, instance.RuntimeID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while fetching runtime status from provisioner")
 	}
 
 	var kubeCfg kubeconfig
-	err = yaml.Unmarshal([]byte(*status.RuntimeConfiguration.Kubeconfig), &kubeCfg)
+	if adminKubeconfig == "" {
+		if status.RuntimeConfiguration.Kubeconfig == nil {
+			return "", errors.New("Kubeconfig is nil (nil response from Provisioner)")
+		}
+		adminKubeconfig = *status.RuntimeConfiguration.Kubeconfig
+	}
+	err = yaml.Unmarshal([]byte(adminKubeconfig), &kubeCfg)
 	if err != nil {
 		return "", errors.Wrapf(err, "while unmarshaling kubeconfig")
 	}
@@ -56,6 +62,10 @@ func (b *Builder) Build(instance *internal.Instance) (string, error) {
 		OIDCIssuerURL: status.RuntimeConfiguration.ClusterConfig.OidcConfig.IssuerURL,
 		OIDCClientID:  status.RuntimeConfiguration.ClusterConfig.OidcConfig.ClientID,
 	})
+}
+
+func (b *Builder) Build(instance *internal.Instance) (string, error) {
+	return b.BuildFromAdminKubeconfig(instance, "")
 }
 
 func (b *Builder) parseTemplate(payload kubeconfigData) (string, error) {

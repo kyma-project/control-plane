@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	log "github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
@@ -196,10 +197,9 @@ type Operation struct {
 	InputCreator ProvisionerInputCreator `json:"-"`
 
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID       string              `json:"-"`
-	FinishedStages        map[string]struct{} `json:"-"`
-	FinishedStagesOrdered string              `json:"-"`
-	LastError             kebError.LastError  `json:"-"`
+	OrchestrationID string             `json:"-"`
+	FinishedStages  []string           `json:"-"`
+	LastError       kebError.LastError `json:"-"`
 
 	// PROVISIONING
 	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
@@ -222,7 +222,7 @@ type Operation struct {
 	// Last runtime state payload
 	LastRuntimeState RuntimeState `json:"-"`
 
-	// Flag used by the steps regarding Service Catalog migration
+	// Flag used by the steps regarding BTP-Operator credentials update
 	// denotes whether the payload to reconciler differs from last runtime state
 	RequiresReconcilerUpdate bool `json:"-"`
 
@@ -283,7 +283,6 @@ type InstanceDetails struct {
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
 
-	SCMigrationTriggered    bool   `json:"migration_triggered"`
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 }
 
@@ -302,9 +301,9 @@ type DeprovisioningOperation struct {
 	Operation
 }
 
-func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+func (op *Operation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
 	if op.ReconcilerDeregistrationAt.IsZero() {
-		return time.Since(op.CreatedAt)
+		return 0
 	}
 	return time.Since(op.ReconcilerDeregistrationAt)
 }
@@ -456,8 +455,9 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
+				Kubeconfig:   parameters.Parameters.Kubeconfig,
 			},
-			FinishedStages: make(map[string]struct{}, 0),
+			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},
 		},
 	}, nil
@@ -471,6 +471,9 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 	}
 	return DeprovisioningOperation{
 		Operation: Operation{
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{GlobalAccountID: instance.GlobalAccountID, RuntimeID: instance.RuntimeID},
+			},
 			ID:              operationID,
 			Version:         0,
 			Description:     "Operation created",
@@ -480,7 +483,7 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: details,
-			FinishedStages:  make(map[string]struct{}, 0),
+			FinishedStages:  make([]string, 0),
 		},
 	}, nil
 }
@@ -498,7 +501,7 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 			UpdatedAt:              time.Now(),
 			Type:                   OperationTypeUpdate,
 			InstanceDetails:        instance.InstanceDetails,
-			FinishedStages:         make(map[string]struct{}, 0),
+			FinishedStages:         make([]string, 0),
 			ProvisioningParameters: instance.Parameters,
 			UpdatingParameters:     updatingParams,
 		},
@@ -530,19 +533,33 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
-			FinishedStages:  make(map[string]struct{}, 0),
+			FinishedStages:  make([]string, 0),
 			Temporary:       true,
 		},
 	}
 }
 
 func (o *Operation) FinishStage(stageName string) {
-	o.FinishedStages[stageName] = struct{}{}
+	if stageName == "" {
+		log.Warnf("Attempt to add empty stage.")
+		return
+	}
+
+	if exists := o.IsStageFinished(stageName); exists {
+		log.Warnf("Attempt to add stage (%s) which is already saved.", stageName)
+		return
+	}
+
+	o.FinishedStages = append(o.FinishedStages, stageName)
 }
 
 func (o *Operation) IsStageFinished(stage string) bool {
-	_, found := o.FinishedStages[stage]
-	return found
+	for _, value := range o.FinishedStages {
+		if value == stage {
+			return true
+		}
+	}
+	return false
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput

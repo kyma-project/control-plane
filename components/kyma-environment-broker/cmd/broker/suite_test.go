@@ -22,7 +22,6 @@ import (
 	hyperscalerautomock "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
@@ -44,7 +43,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -103,14 +101,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	logs.Formatter.(*logrus.TextFormatter).TimestampFormat = "15:04:05.000"
 
 	var cfg Config
-	cfg.AuditLog.Disabled = false
-	cfg.AuditLog = auditlog.Config{
-		URL:           "https://host1:8080/aaa/v2/",
-		User:          "fooUser",
-		Password:      "barPass",
-		Tenant:        "fooTen",
-		EnableSeqHttp: true,
-	}
 	cfg.OrchestrationConfig = kebOrchestration.Config{
 		KymaVersion:       defaultKymaVer,
 		KubernetesVersion: "",
@@ -118,10 +108,6 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cfg.Reconciler = reconciler.Config{
 		ProvisioningTimeout: time.Second,
 	}
-
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -181,8 +167,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 		Retry:              2 * time.Millisecond,
 		StatusCheck:        20 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		&cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager, &cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 2 * time.Millisecond,
@@ -332,6 +317,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 				ShootName:   shootName,
 				ShootDomain: "fake.domain",
 			},
+			Type: internal.OperationTypeProvision,
 		},
 	}
 	runtimeState := fixture.FixRuntimeState(runtimeStateID, runtimeID, provisioningOperation.ID)
@@ -368,7 +354,7 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	shoot.SetGroupVersionKind(shootGVK)
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
-	require.NoError(s.t, s.storage.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.storage.Operations().InsertOperation(provisioningOperation.Operation))
 	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
@@ -473,6 +459,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 				"overrides-plan-aws":          "true",
 				"overrides-plan-free":         "true",
 				"overrides-plan-gcp":          "true",
+				"overrides-plan-own_cluster":  "true",
 				"overrides-version-2.0.0-rc4": "true",
 				"overrides-version-2.0.0":     "true",
 			},
@@ -555,7 +542,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 
 type ProvisioningSuite struct {
 	provisionerClient   *provisioner.FakeClient
-	provisioningManager *provisioning.StagedManager
+	provisioningManager *process.StagedManager
 	provisioningQueue   *process.Queue
 	storage             storage.BrokerStorage
 	directorClient      *director.FakeClient
@@ -565,16 +552,12 @@ type ProvisioningSuite struct {
 	reconcilerClient *reconciler.FakeClient
 }
 
-func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuite {
+func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailureTolerance string) *ProvisioningSuite {
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Minute)
 	logs := logrus.New()
 	db := storage.NewMemoryStorage()
 
 	cfg := fixConfig()
-
-	//auditLog create file here.
-	inMemoryFs, err := createInMemFS()
-	require.NoError(t, err)
 
 	provisionerClient := provisioner.NewFakeClient()
 
@@ -598,13 +581,14 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 		kebConfig.NewConfigMapConverter())
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
 		configProvider, input.Config{
-			MachineImageVersion:         "coreos",
-			KubernetesVersion:           "1.18",
-			MachineImage:                "253",
-			ProvisioningTimeout:         time.Minute,
-			URL:                         "http://localhost",
-			DefaultGardenerShootPurpose: "testing",
-			MultiZoneCluster:            multiZoneCluster,
+			MachineImageVersion:          "coreos",
+			KubernetesVersion:            "1.18",
+			MachineImage:                 "253",
+			ProvisioningTimeout:          time.Minute,
+			URL:                          "http://localhost",
+			DefaultGardenerShootPurpose:  "testing",
+			MultiZoneCluster:             multiZoneCluster,
+			ControlPlaneFailureTolerance: controlPlaneFailureTolerance,
 		}, defaultKymaVer, map[string]string{"cf-eu10": "europe"}, cfg.FreemiumProviders, oidcDefaults)
 	require.NoError(t, err)
 
@@ -640,10 +624,10 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool) *ProvisioningSuit
 
 	eventBroker := event.NewPubSub(logs)
 
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -689,7 +673,7 @@ func (s *ProvisioningSuite) CreateProvisioning(options RuntimeOptions) string {
 	operation.DashboardURL = dashboardURL
 	operation.State = orchestration.Pending
 
-	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	err = s.storage.Operations().InsertOperation(operation.Operation)
 	require.NoError(s.t, err)
 
 	err = s.storage.Instances().Insert(internal.Instance{
@@ -727,7 +711,7 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 	operation.DashboardURL = dashboardURL
 	require.NoError(s.t, err)
 
-	err = s.storage.Operations().InsertProvisioningOperation(operation)
+	err = s.storage.Operations().InsertOperation(operation.Operation)
 	require.NoError(s.t, err)
 
 	instance := &internal.Instance{
@@ -753,18 +737,18 @@ func (s *ProvisioningSuite) CreateUnsuspension(options RuntimeOptions) string {
 }
 
 func (s *ProvisioningSuite) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
-	var op *internal.ProvisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		return op.State == state, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation expected state %s. The existing operation %+v", state, op)
 }
 
 func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconciler(operationID string) {
-	var op *internal.ProvisioningOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
 		}
@@ -775,7 +759,7 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconcile
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, op.RuntimeID)
 
 	err = wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, _ = s.storage.Operations().GetOperationByID(operationID)
 		if op.ClusterConfigurationVersion != 0 {
 			return true, nil
 		}
@@ -788,9 +772,9 @@ func (s *ProvisioningSuite) FinishProvisioningOperationByProvisionerAndReconcile
 
 func (s *ProvisioningSuite) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
-	var provisioningOp *internal.ProvisioningOperation
+	var provisioningOp *internal.Operation
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.storage.Operations().GetProvisioningOperationByID(operationID)
+		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
 			provisioningOp = op
@@ -820,7 +804,7 @@ func (s *ProvisioningSuite) AssertAllStagesFinished(operationID string) {
 	}
 }
 
-func (s *ProvisioningSuite) finishOperationByReconciler(op *internal.ProvisioningOperation) {
+func (s *ProvisioningSuite) finishOperationByReconciler(op *internal.Operation) {
 	time.Sleep(50 * time.Millisecond)
 	err := wait.Poll(pollingInterval, 10*time.Second, func() (bool, error) {
 		state, err := s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
@@ -957,6 +941,16 @@ func (s *ProvisioningSuite) AssertRuntimeAdmins(admins []string) {
 	assert.ElementsMatch(s.t, currentAdmins, admins)
 }
 
+func (s *ProvisioningSuite) AssertControlPlaneFailureTolerance(level string) {
+	input := s.fetchProvisionInput()
+	if level == "" {
+		assert.Empty(s.t, input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+	} else {
+		require.NotNil(s.t, input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+		assert.Equal(s.t, level, *input.ClusterConfig.GardenerConfig.ControlPlaneFailureTolerance)
+	}
+}
+
 func regularSubscription(ht hyperscaler.Type) string {
 	return fmt.Sprintf("regular-%s", ht)
 }
@@ -987,12 +981,11 @@ func fixConfig() *Config {
 			Project:     "kyma",
 			ShootDomain: "kyma.sap.com",
 		},
-		KymaVersion:                defaultKymaVer,
-		EnableOnDemandVersion:      true,
-		UpdateProcessingEnabled:    true,
-		EnableBTPOperatorMigration: true,
+		KymaVersion:             defaultKymaVer,
+		EnableOnDemandVersion:   true,
+		UpdateProcessingEnabled: true,
 		Broker: broker.Config{
-			EnablePlans: []string{"azure", "trial", "aws"},
+			EnablePlans: []string{"azure", "trial", "aws", "own_cluster"},
 		},
 		Avs: avs.Config{},
 		IAS: ias.Config{
@@ -1001,13 +994,6 @@ func fixConfig() *Config {
 		Notification: notification.Config{
 			Url:      "http://host:8080/",
 			Disabled: false,
-		},
-		AuditLog: auditlog.Config{
-			URL:           "https://host1:8080/aaa/v2/",
-			User:          "fooUser",
-			Password:      "barPass",
-			Tenant:        "fooTen",
-			EnableSeqHttp: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,
@@ -1032,20 +1018,6 @@ func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
 
 	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.AWS, mock.Anything).Return(nil)
 	return &accountProvider
-}
-
-func createInMemFS() (afero.Fs, error) {
-
-	inMemoryFs := afero.NewMemMapFs()
-
-	fileScript := `
-		func myScript() {
-		foo: sub_account_id
-		bar: tenant_id
-		return "fooBar"
-	}`
-
-	err := afero.WriteFile(inMemoryFs, "/auditlog-script/script", []byte(fileScript), 0755)
-	return inMemoryFs, err
 }

@@ -17,7 +17,8 @@ func NewBind(log logrus.FieldLogger) *BindEndpoint {
 }
 
 // Bind creates a new service binding
-//   PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
+//
+//	PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, details domain.BindDetails, asyncAllowed bool) (domain.Binding, error) {
 	b.log.Infof("Bind instanceID:", instanceID)
 	b.log.Infof("Bind parameters: %s", string(details.RawParameters))

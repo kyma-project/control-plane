@@ -18,7 +18,7 @@ func TestNewGetKubeconfigStep(t *testing.T) {
 	step := NewGetKubeconfigStep(st.Operations(), provisionerClient)
 	op := fixture.FixProvisioningOperation("op-id", "inst-id")
 	op.Kubeconfig = ""
-	st.Operations().InsertProvisioningOperation(op)
+	st.Operations().InsertOperation(op)
 
 	// when
 	newOp, d, err := step.Run(op, logrus.New())

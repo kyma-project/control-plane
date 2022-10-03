@@ -33,7 +33,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
-	st.Operations().InsertProvisioningOperation(operation)
+	st.Operations().InsertOperation(operation)
 	st.Instances().Insert(fixture.FixInstance(operation.InstanceID))
 	rvc := &automock.RuntimeVersionConfiguratorForProvisioning{}
 	v := &internal.RuntimeVersionData{
@@ -47,7 +47,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	builder := &automock2.CreatorForPlan{}
 	builder.On("CreateProvisionInput", operation.ProvisioningParameters, *v).Return(ri, nil)
 
-	step := NewInitialisationStep(st.Operations(), st.Instances(), builder, time.Second, time.Second, rvc)
+	step := NewInitialisationStep(st.Operations(), st.Instances(), builder, rvc)
 
 	// when
 	op, retry, err := step.Run(operation, logrus.New())
@@ -63,7 +63,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 	assert.Equal(t, internal.GCP, inst.Provider)
 }
 
-func fixOperationRuntimeStatus(planId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+func fixOperationRuntimeStatus(planId string, provider internal.CloudProvider) internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperationWithProvider(statusOperationID, statusInstanceID, provider)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID
@@ -75,7 +75,7 @@ func fixOperationRuntimeStatus(planId string, provider internal.CloudProvider) i
 	return provisioningOperation
 }
 
-func fixOperationRuntimeStatusWithProvider(planId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+func fixOperationRuntimeStatusWithProvider(planId string, provider internal.CloudProvider) internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperationWithProvider(statusOperationID, statusInstanceID, provider)
 	provisioningOperation.State = ""
 	provisioningOperation.ProvisionerOperationID = statusProvisionerOperationID

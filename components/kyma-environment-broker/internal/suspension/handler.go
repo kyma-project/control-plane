@@ -83,6 +83,10 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 	}
 
 	if *newCtx.Active {
+		if instance.IsExpired() {
+			// if the instance is expired - do nothing
+			return false, nil
+		}
 		if lastDeprovisioning != nil && !lastDeprovisioning.Temporary {
 			l.Infof("Instance has a deprovisioning operation %s (%s), skipping unsuspension.", lastDeprovisioning.ID, lastDeprovisioning.State)
 			return false, nil

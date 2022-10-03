@@ -50,7 +50,7 @@ func TestResponseLabels(t *testing.T) {
 		instance := fixture.FixInstance("instanceID")
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)
@@ -70,7 +70,7 @@ func TestResponseLabels(t *testing.T) {
 		expectedMsg := fmt.Sprintf(notExpiredInfoFormat, "today")
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)
@@ -91,12 +91,29 @@ func TestResponseLabels(t *testing.T) {
 		instance.ExpiredAt = &expiryDate
 
 		// when
-		labels := ResponseLabelsWithExpireInfo(operation, instance, "https://example.com", true)
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
 
 		// then
 		require.Len(t, labels, 3)
 		assert.Contains(t, labels, trialExpiryDetailsKey)
 		assert.Contains(t, labels, trialDocsKey)
+		assert.NotContains(t, labels, kubeconfigURLKey)
+		require.Equal(t, "cluster-test", labels["Name"])
+	})
+
+	t.Run("should return labels for own cluster", func(t *testing.T) {
+		// given
+		operation := internal.ProvisioningOperation{}
+		operation.ProvisioningParameters.Parameters.Name = "cluster-test"
+
+		instance := fixture.FixInstance("instanceID")
+		instance.ServicePlanID = OwnClusterPlanID
+
+		// when
+		labels := ResponseLabelsWithExpirationInfo(operation, instance, "https://example.com", "https://trial.docs.local", true)
+
+		// then
+		require.Len(t, labels, 2)
 		assert.NotContains(t, labels, kubeconfigURLKey)
 		require.Equal(t, "cluster-test", labels["Name"])
 	})

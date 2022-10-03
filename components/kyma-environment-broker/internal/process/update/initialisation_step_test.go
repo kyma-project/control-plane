@@ -26,7 +26,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			beforeFunc: func(os storage.Operations) {
 				provisioningOperation := fixture.FixProvisioningOperation("p-id", "iid")
 				provisioningOperation.State = domain.InProgress
-				os.InsertProvisioningOperation(provisioningOperation)
+				os.InsertOperation(provisioningOperation)
 			},
 			expectedRepeat: true,
 		},
@@ -34,7 +34,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			beforeFunc: func(os storage.Operations) {
 				provisioningOperation := fixture.FixProvisioningOperation("p-id", "iid")
 				provisioningOperation.State = domain.Succeeded
-				os.InsertProvisioningOperation(provisioningOperation)
+				os.InsertOperation(provisioningOperation)
 			},
 			expectedRepeat: false,
 		},

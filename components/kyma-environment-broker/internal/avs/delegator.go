@@ -13,7 +13,7 @@ import (
 )
 
 type Delegator struct {
-	provisionManager  *process.ProvisionOperationManager
+	provisionManager  *process.OperationManager
 	avsConfig         Config
 	client            *Client
 	operationsStorage storage.Operations
@@ -26,17 +26,17 @@ type avsNonSuccessResp struct {
 
 func NewDelegator(client *Client, avsConfig Config, os storage.Operations) *Delegator {
 	return &Delegator{
-		provisionManager:  process.NewProvisionOperationManager(os),
+		provisionManager:  process.NewOperationManager(os),
 		avsConfig:         avsConfig,
 		client:            client,
 		operationsStorage: os,
 	}
 }
 
-func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, url string) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation internal.Operation, evalAssistant EvalAssistant, url string) (internal.Operation, time.Duration, error) {
 	log.Infof("starting the step avs internal id [%d] and avs external id [%d]", operation.Avs.AvsEvaluationInternalId, operation.Avs.AVSEvaluationExternalId)
 
-	var updatedOperation internal.ProvisioningOperation
+	var updatedOperation internal.Operation
 	d := 0 * time.Second
 
 	if evalAssistant.IsValid(operation.Avs) {
@@ -63,7 +63,7 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 			log.Errorf("%s: %s", errMsg, err)
 			return del.provisionManager.OperationFailed(operation, errMsg, err, log)
 		}
-		updatedOperation, d, _ = del.provisionManager.UpdateOperation(operation, func(operation *internal.ProvisioningOperation) {
+		updatedOperation, d, _ = del.provisionManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			evalAssistant.SetEvalId(&operation.Avs, evalResp.Id)
 			evalAssistant.SetDeleted(&operation.Avs, false)
 		}, log)
@@ -72,9 +72,9 @@ func (del *Delegator) CreateEvaluation(log logrus.FieldLogger, operation interna
 	return updatedOperation, d, nil
 }
 
-func (del *Delegator) AddTags(log logrus.FieldLogger, operation internal.ProvisioningOperation, evalAssistant EvalAssistant, tags []*Tag) (internal.ProvisioningOperation, time.Duration, error) {
+func (del *Delegator) AddTags(log logrus.FieldLogger, operation internal.Operation, evalAssistant EvalAssistant, tags []*Tag) (internal.Operation, time.Duration, error) {
 	log.Infof("starting the AddTag to avs internal id [%d]", operation.Avs.AvsEvaluationInternalId)
-	var updatedOperation internal.ProvisioningOperation
+	var updatedOperation internal.Operation
 	d := 0 * time.Second
 
 	log.Infof("making avs calls to add tags to the Evaluation")
@@ -97,9 +97,6 @@ func (del *Delegator) AddTags(log logrus.FieldLogger, operation internal.Provisi
 			return op, duration, err
 		}
 	}
-
-	updatedOperation, d = del.provisionManager.SimpleUpdateOperation(operation)
-
 	return updatedOperation, d, nil
 }
 
@@ -179,7 +176,7 @@ func (del *Delegator) SetStatus(log logrus.FieldLogger, lifecycleData *internal.
 	return nil
 }
 
-func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.DeprovisioningOperation, error) {
+func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Operation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.Operation, error) {
 	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
 		return deProvisioningOperation, nil
@@ -191,14 +188,14 @@ func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Depro
 
 	assistant.SetDeleted(&deProvisioningOperation.Avs, true)
 
-	updatedDeProvisioningOp, err := del.operationsStorage.UpdateDeprovisioningOperation(deProvisioningOperation)
+	updatedDeProvisioningOp, err := del.operationsStorage.UpdateOperation(deProvisioningOperation)
 	if err != nil {
 		return deProvisioningOperation, err
 	}
 	return *updatedDeProvisioningOp, nil
 }
 
-func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.DeprovisioningOperation, logger logrus.FieldLogger) error {
+func (del *Delegator) tryDeleting(assistant EvalAssistant, deProvisioningOperation internal.Operation, logger logrus.FieldLogger) error {
 	evaluationID := assistant.GetEvaluationId(deProvisioningOperation.Avs)
 	parentID := assistant.ProvideParentId(deProvisioningOperation.ProvisioningParameters)
 	err := del.client.RemoveReferenceFromParentEval(parentID, evaluationID)

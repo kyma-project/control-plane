@@ -19,7 +19,7 @@ const (
 	subAccountIDKey = "sub-account"
 )
 
-//go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 
 type Client interface {
 	ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error)

@@ -33,7 +33,6 @@ import (
 	kebOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
 	orchestrate "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration/handlers"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
@@ -52,11 +51,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	coreV1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,8 +101,8 @@ func (s *BrokerSuiteTest) TearDown() {
 
 func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	ctx := context.Background()
-	sch := runtime.NewScheme()
-	require.NoError(t, coreV1.AddToScheme(sch))
+	sch := internal.NewSchemeForTests()
+	apiextensionsv1.AddToScheme(sch)
 	additionalKymaVersions := []string{"1.19", "1.20", "main", "2.0"}
 	additionalKymaVersions = append(additionalKymaVersions, version...)
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, additionalKymaVersions)...).Build()
@@ -170,21 +167,18 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
 	edpClient := edp.NewFakeClient()
 	accountProvider := fixAccountProvider()
-	inMemoryFs, err := createInMemFS()
 	require.NoError(t, err)
 
 	// TODO put Reconciler client in the queue for steps
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, inMemoryFs, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
-	scheme := runtime.NewScheme()
-	apiextensionsv1.AddToScheme(scheme)
-	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 
 	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
@@ -193,11 +187,12 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
 		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
 	)
+	deprovisionManager.SpeedUp(10000)
 
 	deprovisioningQueue.SpeedUp(10000)
 
@@ -225,8 +220,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		Retry:              10 * time.Millisecond,
 		StatusCheck:        100 * time.Millisecond,
 		UpgradeKymaTimeout: 4 * time.Second,
-	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager,
-		cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, inMemoryFs, logs, cli, 1000)
+	}, 250*time.Millisecond, runtimeVerConfigurator, runtimeResolver, upgradeEvaluationManager, cfg, avs.NewInternalEvalAssistant(cfg.Avs), reconcilerClient, notificationBundleBuilder, logs, cli, 1000)
 
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory, &upgrade_cluster.TimeSchedule{
 		Retry:                 10 * time.Millisecond,
@@ -360,7 +354,7 @@ func (s *BrokerSuiteTest) CreateProvisionedRuntime(options RuntimeOptions) strin
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, randomInstanceId)
 
 	require.NoError(s.t, s.db.Instances().Insert(instance))
-	require.NoError(s.t, s.db.Operations().InsertProvisioningOperation(provisioningOperation))
+	require.NoError(s.t, s.db.Operations().InsertOperation(provisioningOperation))
 
 	return instance.InstanceID
 }
@@ -454,13 +448,16 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 	var op *internal.UpdatingOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
 		op, _ = s.db.Operations().GetUpdatingOperationByID(operationID)
-		if op.RuntimeID != "" {
-			return true, nil
+		if op.RuntimeID == "" {
+			return false, nil
 		}
-		return false, nil
+		if op.ProvisionerOperationID == "" {
+			return false, nil
+		}
+		return true, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.RuntimeID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.Operation.ID)
 }
 
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
@@ -537,29 +534,19 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 	assert.NoError(s.t, err)
 }
 
-func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisionerAndReconciler(operationID string) {
-	var updatingOp *internal.UpdatingOperation
+func (s *BrokerSuiteTest) FinishReconciliation(opID string) {
+	var state *reconcilerApi.HTTPClusterResponse
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+		provisioningOp, err := s.db.Operations().GetProvisioningOperationByID(opID)
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
-			updatingOp = op
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err)
-
-	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion)
+		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
 		if err != nil {
-			return false, err
+			return false, nil
 		}
 		if state.Cluster != "" {
-			s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, updatingOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
+			s.reconcilerClient.ChangeClusterState(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion, reconcilerApi.StatusReady)
 			return true, nil
 		}
 		return false, nil
@@ -600,38 +587,6 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 		return false, nil
 	})
 	assert.NoError(s.t, err)
-}
-
-func (s *BrokerSuiteTest) FinishUpdatingOperationByReconcilerBoth(operationID string) {
-	var updatingOp *internal.UpdatingOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
-		if err != nil {
-			return false, nil
-		}
-		if op.ProvisionerOperationID != "" {
-			updatingOp = op
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err)
-
-	var state *reconcilerApi.HTTPClusterResponse
-	for ccv := updatingOp.ClusterConfigurationVersion; ccv <= updatingOp.ClusterConfigurationVersion+1; ccv++ {
-		err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-			state, err = s.reconcilerClient.GetCluster(updatingOp.RuntimeID, ccv)
-			if err != nil {
-				return false, err
-			}
-			if state.Cluster != "" {
-				s.reconcilerClient.ChangeClusterState(updatingOp.RuntimeID, ccv, reconcilerApi.StatusReady)
-				return true, nil
-			}
-			return false, nil
-		})
-		assert.NoError(s.t, err)
-	}
 }
 
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
@@ -944,6 +899,12 @@ func (s *BrokerSuiteTest) AssertClusterKymaConfig(operationID string, expectedKy
 	assert.Equal(s.t, expectedKymaConfig, clusterConfig.KymaConfig)
 }
 
+func (s *BrokerSuiteTest) AssertComponent(a, b reconcilerApi.Component) {
+	sort.Slice(a.Configuration, func(i, j int) bool { return a.Configuration[i].Key < a.Configuration[j].Key })
+	sort.Slice(b.Configuration, func(i, j int) bool { return b.Configuration[i].Key < b.Configuration[j].Key })
+	assert.Equal(s.t, a, b)
+}
+
 func (s *BrokerSuiteTest) AssertClusterConfigWithKubeconfig(id string) {
 	clusterConfig := s.getClusterConfig(id)
 
@@ -1116,7 +1077,7 @@ func (s *BrokerSuiteTest) fixGardenerShootForOperationID(opID string) *unstructu
 	return &un
 }
 
-func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
+func (s *BrokerSuiteTest) processProvisioningAndReconcilingByOperationID(opID string) {
 	// Provisioner part
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
@@ -1137,10 +1098,10 @@ func (s *BrokerSuiteTest) processProvisioningByInstanceID(iid string) {
 	s.processProvisioningByOperationID(opID)
 }
 
-func (s *BrokerSuiteTest) processReconciliationByInstanceID(iid string) {
+func (s *BrokerSuiteTest) processProvisioningAndReconciliationByInstanceID(iid string) {
 	opID := s.WaitForLastOperation(iid, domain.InProgress)
 
-	s.processReconcilingByOperationID(opID)
+	s.processProvisioningAndReconcilingByOperationID(opID)
 }
 
 func (s *BrokerSuiteTest) ShootName(id string) string {
@@ -1302,6 +1263,10 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 					Key:    "cluster.id",
 					Value:  smClusterID,
 					Secret: false,
+				},
+				{
+					Key:   "manager.priorityClassName",
+					Value: "kyma-system",
 				},
 			},
 		},

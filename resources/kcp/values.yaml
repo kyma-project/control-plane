@@ -2,22 +2,22 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.31.2-6324aa52"
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:915ef227"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:915ef227"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:ef2188c0"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:ef2188c0"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1925"
+      version: "PR-2078"
     provisioner:
       dir:
-      version: "PR-1940"
+      version: "PR-2078"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1840"
     kyma_metrics_collector:
       dir:
-      version: "PR-1977"
+      version: "PR-2055"
     tests:
       provisioner:
         dir:
@@ -39,23 +39,14 @@ global:
     periodSeconds: 2
   components:
     - base
-    - busola-migrator
     - cleaner
     - connectivity-proxy
     - istio
     - ory
-    - rafter
     - eventing
     - serverless
     - cluster-essentials
     - rma
-  auditlog:
-    configMapName: "kcp-auditlog-config"
-    secretName: "kcp-auditlog-secret"
-    script:
-      configMapName: "kcp-auditlog-script"
-    enableSeqHttp: false
-    disabled: false
   provisioning:
     enabled: false
   kyma_environment_broker:
@@ -138,7 +129,7 @@ global:
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
       image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 1.8.15-a6fa9cb0
+      tag: 1.9.6-fdfefada
       persistence:
         enabled: true
         accessMode: ReadWriteOnce

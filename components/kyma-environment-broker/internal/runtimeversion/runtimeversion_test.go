@@ -21,11 +21,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		rvc := NewRuntimeVersionConfigurator("not-relevant", &AccountVersionMapping{}, nil)
 
 		// when
-		ver, err := rvc.ForProvisioning(internal.ProvisioningOperation{
-			Operation: internal.Operation{
+		ver, err := rvc.ForProvisioning(
+			internal.Operation{
 				ProvisioningParameters: internal.ProvisioningParameters{Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer}},
-			},
-		})
+			})
 
 		// then
 		require.NoError(t, err)
@@ -36,10 +35,8 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from Defaults when version not provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.1.1"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{},
-			},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{},
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{}), nil)
 
@@ -55,11 +52,9 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from GlobalAccount mapping when only GlobalAccount mapping provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.12"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
 			},
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
@@ -78,12 +73,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 	t.Run("should return version from SubAccount mapping when both GA and SA mapping provided", func(t *testing.T) {
 		// given
 		runtimeVer := "1.12"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-						SubAccountID: fixSubAccountID},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+					SubAccountID: fixSubAccountID},
 			},
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
@@ -104,11 +97,9 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.0.0"
 
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
 			},
 		}
 
@@ -133,11 +124,9 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := ""
 
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				Parameters: internal.ProvisioningParametersDTO{KymaVersion: runtimeVer},
 			},
 		}
 
@@ -154,12 +143,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.0.0"
 
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-						SubAccountID: fixSubAccountID},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+					SubAccountID: fixSubAccountID},
 			},
 		}
 
@@ -180,12 +167,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.24.5"
 		customVer := "PR-123"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					Parameters: internal.ProvisioningParametersDTO{
-						KymaVersion: customVer,
-					},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				Parameters: internal.ProvisioningParametersDTO{
+					KymaVersion: customVer,
 				},
 			},
 		}
@@ -204,12 +189,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.24.5"
 		customVer := "PR-123"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					Parameters: internal.ProvisioningParametersDTO{
-						KymaVersion: customVer,
-					},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				Parameters: internal.ProvisioningParametersDTO{
+					KymaVersion: customVer,
 				},
 			},
 		}
@@ -228,13 +211,13 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.24.5"
 		customVerGA := "PR-123"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
 			},
+			Type: internal.OperationTypeProvision,
 		}
+
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
 			fmt.Sprintf("%s%s", globalAccountPrefix, fixGlobalAccountID): customVerGA,
 		}), nil)
@@ -253,12 +236,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		runtimeVer := "1.24.5"
 		customVerGA := "PR-123"
 		customVerSA := "PR-456"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-						SubAccountID: fixSubAccountID},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+					SubAccountID: fixSubAccountID},
 			},
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
@@ -279,11 +260,9 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		// given
 		runtimeVer := "1.24.5"
 		customVerGA := "PR-123"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID, SubAccountID: versionForSA},
 			},
 		}
 		rvc := NewRuntimeVersionConfigurator(runtimeVer, fixAccountVersionMapping(t, map[string]string{
@@ -303,12 +282,10 @@ func Test_RuntimeVersionConfigurator_ForProvisioning_FromParameters(t *testing.T
 		runtimeVer := "1.24.5"
 		customVerGA := "PR-123"
 		customVerSA := "PR-456"
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
-						SubAccountID: fixSubAccountID},
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				ErsContext: internal.ERSContext{GlobalAccountID: fixGlobalAccountID,
+					SubAccountID: fixSubAccountID},
 			},
 		}
 

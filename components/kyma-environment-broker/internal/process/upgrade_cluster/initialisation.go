@@ -106,7 +106,7 @@ func (s *InitialisationStep) Run(operation internal.UpgradeClusterOperation, log
 		}
 
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpgradeClusterOperation) {
-			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+			op.ProvisioningParameters.ErsContext = internal.InheritMissingERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 			op.State = domain.InProgress
 			op.RuntimeVersion = operation.RuntimeVersion
 		}, log)

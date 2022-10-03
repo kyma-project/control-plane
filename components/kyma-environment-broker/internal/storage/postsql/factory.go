@@ -1,6 +1,8 @@
 package postsql
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -8,14 +10,14 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
-//go:generate mockery -name=Factory
+//go:generate mockery --name=Factory
 type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
 	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberr.Error)
 }
 
-//go:generate mockery -name=ReadSession
+//go:generate mockery --name=ReadSession
 type ReadSession interface {
 	FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]dbmodel.InstanceWithOperationDTO, dberr.Error)
 	FindAllInstancesForRuntimes(runtimeIdList []string) ([]dbmodel.InstanceDTO, dberr.Error)
@@ -42,6 +44,7 @@ type ReadSession interface {
 	ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]dbmodel.OrchestrationDTO, int, int, error)
 	ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.InstanceDTO, int, int, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
+	ListOperationsInTimeRange(from, to time.Time) ([]dbmodel.OperationDTO, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
@@ -49,7 +52,7 @@ type ReadSession interface {
 	GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 }
 
-//go:generate mockery -name=WriteSession
+//go:generate mockery --name=WriteSession
 type WriteSession interface {
 	InsertInstance(instance dbmodel.InstanceDTO) dberr.Error
 	UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error
@@ -66,7 +69,7 @@ type Transaction interface {
 	RollbackUnlessCommitted()
 }
 
-//go:generate mockery -name=WriteSessionWithinTransaction
+//go:generate mockery --name=WriteSessionWithinTransaction
 type WriteSessionWithinTransaction interface {
 	WriteSession
 	Transaction

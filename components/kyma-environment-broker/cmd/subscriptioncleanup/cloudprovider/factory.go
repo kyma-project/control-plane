@@ -11,7 +11,7 @@ type ResourceCleaner interface {
 	Do() error
 }
 
-//go:generate mockery -name=ProviderFactory
+//go:generate mockery --name=ProviderFactory
 type ProviderFactory interface {
 	New(hyperscalerType model.HyperscalerType, secretData map[string][]byte) (ResourceCleaner, error)
 }

@@ -34,11 +34,6 @@ func main() {
 		log.Fatalf("Cannot create OIDC Authenticator, %v", err)
 	}
 
-	err = runtime.SetupConfigMap()
-	if err != nil {
-		log.Fatalf("Cannot initialize Config Map, %v", err)
-	}
-
 	ec := endpoints.NewEndpointClient(env.Config.GraphqlURL)
 	router := mux.NewRouter()
 	router.Use(authn.AuthMiddleware(oidcAuthenticator))
@@ -49,6 +44,17 @@ func main() {
 
 	term := make(chan os.Signal)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		err := runtime.SetupConfigMap()
+		if err != nil {
+			log.Errorf("Error initializing ConfigMaps: %v", err)
+			term <- os.Interrupt
+		}
+		log.Infof("ConfigMaps initialization completed.")
+	}()
+
+	log.Infof("ConfigMaps initialization started.")
 
 	go func() {
 		err := http.ListenAndServe(fmt.Sprintf(":%d", env.Config.Port.Service), router)

@@ -79,7 +79,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			}
 			return operation, time.Second, nil
 		}
-		instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, operation.ProvisioningParameters.ErsContext)
+		instance.Parameters.ErsContext = internal.InheritMissingERSContext(instance.Parameters.ErsContext, operation.ProvisioningParameters.ErsContext)
 		if _, err := s.instanceStorage.Update(*instance); err != nil {
 			log.Errorf("unable to update the instance, retrying")
 			return operation, time.Second, err
@@ -89,9 +89,10 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		if operation.RuntimeID == "" {
 			err = s.getRuntimeIdFromProvisioningOp(&operation)
 			if err != nil {
-				return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 1*time.Minute, log)
+				return s.operationManager.RetryOperation(operation, "error while getting runtime ID", err, 5*time.Second, 1*time.Minute, log)
 			}
 		}
+		log.Infof("Got runtime ID %s", operation.RuntimeID)
 
 		version, err := s.runtimeVerConfigurator.ForUpdating(operation)
 		if err != nil {
@@ -101,11 +102,10 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 		op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 			op.State = domain.InProgress
 			op.InstanceDetails = instance.InstanceDetails
-			op.InstanceDetails.SCMigrationTriggered = op.ProvisioningParameters.ErsContext.IsMigration
 			if op.ProvisioningParameters.ErsContext.SMOperatorCredentials == nil && lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil {
 				op.ProvisioningParameters.ErsContext.SMOperatorCredentials = lastOp.ProvisioningParameters.ErsContext.SMOperatorCredentials
 			}
-			op.ProvisioningParameters.ErsContext = internal.UpdateERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+			op.ProvisioningParameters.ErsContext = internal.InheritMissingERSContext(op.ProvisioningParameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 			if version != nil {
 				op.RuntimeVersion = *version
 			}

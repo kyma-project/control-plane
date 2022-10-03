@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"time"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -25,6 +27,7 @@ type Instances interface {
 	ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error)
 }
 
+//go:generate mockery --name=Operations --output=automock --outpkg=mocks --case=underscore
 type Operations interface {
 	Provisioning
 	Deprovisioning
@@ -45,6 +48,7 @@ type Operations interface {
 	UpdateOperation(operation internal.Operation) (*internal.Operation, error)
 	ListOperationsByInstanceID(instanceID string) ([]internal.Operation, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]internal.Operation, int, int, error)
+	ListOperationsInTimeRange(from, to time.Time) ([]internal.Operation, error)
 }
 
 type Provisioning interface {

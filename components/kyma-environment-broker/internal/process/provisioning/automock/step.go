@@ -31,25 +31,25 @@ func (_m *Step) Name() string {
 }
 
 // Run provides a mock function with given fields: operation, logger
-func (_m *Step) Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (_m *Step) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	ret := _m.Called(operation, logger)
 
-	var r0 internal.ProvisioningOperation
-	if rf, ok := ret.Get(0).(func(internal.ProvisioningOperation, logrus.FieldLogger) internal.ProvisioningOperation); ok {
+	var r0 internal.Operation
+	if rf, ok := ret.Get(0).(func(internal.Operation, logrus.FieldLogger) internal.Operation); ok {
 		r0 = rf(operation, logger)
 	} else {
-		r0 = ret.Get(0).(internal.ProvisioningOperation)
+		r0 = ret.Get(0).(internal.Operation)
 	}
 
 	var r1 time.Duration
-	if rf, ok := ret.Get(1).(func(internal.ProvisioningOperation, logrus.FieldLogger) time.Duration); ok {
+	if rf, ok := ret.Get(1).(func(internal.Operation, logrus.FieldLogger) time.Duration); ok {
 		r1 = rf(operation, logger)
 	} else {
 		r1 = ret.Get(1).(time.Duration)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(internal.ProvisioningOperation, logrus.FieldLogger) error); ok {
+	if rf, ok := ret.Get(2).(func(internal.Operation, logrus.FieldLogger) error); ok {
 		r2 = rf(operation, logger)
 	} else {
 		r2 = ret.Error(2)

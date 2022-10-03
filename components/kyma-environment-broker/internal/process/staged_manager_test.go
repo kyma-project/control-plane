@@ -181,7 +181,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 
 func FixOperation(ID string) internal.Operation {
 	operation := fixture.FixOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5", internal.OperationTypeProvision)
-	operation.FinishedStages = make(map[string]struct{})
+	operation.FinishedStages = make([]string, 0)
 	operation.State = domain.InProgress
 	operation.Description = ""
 	operation.ProvisioningParameters = fixProvisioningParametersWithPlanID(broker.AzurePlanID, "westeurope")

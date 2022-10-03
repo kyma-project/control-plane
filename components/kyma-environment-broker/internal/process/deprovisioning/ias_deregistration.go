@@ -13,13 +13,13 @@ import (
 )
 
 type IASDeregistrationStep struct {
-	operationManager *process.DeprovisionOperationManager
+	operationManager *process.OperationManager
 	bundleBuilder    ias.BundleBuilder
 }
 
 func NewIASDeregistrationStep(os storage.Operations, bundleBuilder ias.BundleBuilder) *IASDeregistrationStep {
 	return &IASDeregistrationStep{
-		operationManager: process.NewDeprovisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		bundleBuilder:    bundleBuilder,
 	}
 }
@@ -28,7 +28,7 @@ func (s *IASDeregistrationStep) Name() string {
 	return "IAS_Deregistration"
 }
 
-func (s *IASDeregistrationStep) Run(operation internal.DeprovisioningOperation, log logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error) {
+func (s *IASDeregistrationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	for spID := range ias.ServiceProviderInputs {
 		spb, err := s.bundleBuilder.NewBundle(operation.InstanceID, spID)
 		if err != nil {

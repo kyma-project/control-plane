@@ -17,6 +17,7 @@ const (
 	ServiceId                   = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
 	ServiceName                 = "kymaruntime"
 	PlanId                      = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	TrialPlan                   = "7d55d31d-35ae-4438-bf13-6ffdfa107d9f"
 	PlanName                    = "azure"
 	GlobalAccountId             = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
 	SubscriptionGlobalAccountID = ""
@@ -175,7 +176,7 @@ func FixOperation(id, instanceId string, opType internal.OperationType) internal
 		Description:            description,
 		ProvisioningParameters: FixProvisioningParameters(id),
 		OrchestrationID:        orchestrationId,
-		FinishedStages:         map[string]struct{}{"prepare": struct{}{}, "check_provisioning": struct{}{}},
+		FinishedStages:         []string{"prepare", "check_provisioning"},
 	}
 }
 
@@ -189,7 +190,7 @@ func FixInputCreator(provider internal.CloudProvider) *SimpleInputCreator {
 	}
 }
 
-func FixProvisioningOperation(operationId, instanceId string) internal.ProvisioningOperation {
+func FixProvisioningOperation(operationId, instanceId string) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
 	o.RuntimeVersion = internal.RuntimeVersionData{
 		Version: KymaVersion,
@@ -197,9 +198,7 @@ func FixProvisioningOperation(operationId, instanceId string) internal.Provision
 	}
 	o.InputCreator = FixInputCreator(internal.Azure)
 	o.DashboardURL = "https://console.kyma.org"
-	return internal.ProvisioningOperation{
-		Operation: o,
-	}
+	return o
 }
 
 func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOperation {
@@ -220,7 +219,7 @@ func FixUpdatingOperation(operationId, instanceId string) internal.UpdatingOpera
 	}
 }
 
-func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.ProvisioningOperation {
+func FixProvisioningOperationWithProvider(operationId, instanceId string, provider internal.CloudProvider) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeProvision)
 	o.RuntimeVersion = internal.RuntimeVersionData{
 		Version: KymaVersion,
@@ -228,17 +227,26 @@ func FixProvisioningOperationWithProvider(operationId, instanceId string, provid
 	}
 	o.InputCreator = FixInputCreator(provider)
 	o.DashboardURL = "https://console.kyma.org"
-	return internal.ProvisioningOperation{
-		Operation: o,
-	}
+	return o
 }
 
 func FixDeprovisioningOperation(operationId, instanceId string) internal.DeprovisioningOperation {
+	return internal.DeprovisioningOperation{
+		Operation: FixDeprovisioningOperationAsOperation(operationId, instanceId),
+	}
+}
+
+func FixDeprovisioningOperationAsOperation(operationId, instanceId string) internal.Operation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
 	o.Temporary = false
-	return internal.DeprovisioningOperation{
-		Operation: o,
-	}
+	return o
+}
+
+func FixSuspensionOperationAsOperation(operationId, instanceId string) internal.Operation {
+	o := FixOperation(operationId, instanceId, internal.OperationTypeDeprovision)
+	o.Temporary = true
+	o.ProvisioningParameters.PlanID = TrialPlan
+	return o
 }
 
 func FixRuntime(id string) orchestration.Runtime {

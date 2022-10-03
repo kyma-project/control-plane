@@ -13,4 +13,6 @@ const (
 	AvSBridge               = "avs-bridge"
 	Eventing                = "eventing"
 	Connectivity            = "connectivity"
+	ConnectivityProxy       = "connectivity-proxy"
+	Connector               = "application-connector"
 )

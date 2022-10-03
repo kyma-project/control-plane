@@ -115,7 +115,10 @@ func TestGcpInput_SingleZone_ApplyParameters(t *testing.T) {
 
 func TestGcpInput_MultiZone_ApplyParameters(t *testing.T) {
 	// given
-	svc := GcpInput{MultiZone: true}
+	svc := GcpInput{
+		MultiZone:                    true,
+		ControlPlaneFailureTolerance: "zone",
+	}
 
 	// when
 	t.Run("zones with default region", func(t *testing.T) {
@@ -131,6 +134,7 @@ func TestGcpInput_MultiZone_ApplyParameters(t *testing.T) {
 		assert.Equal(t, "europe-west3", input.GardenerConfig.Region)
 		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 3)
 		assert.Subset(t, []string{"europe-west3-a", "europe-west3-b", "europe-west3-c"}, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones)
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 
 	// when
@@ -148,5 +152,6 @@ func TestGcpInput_MultiZone_ApplyParameters(t *testing.T) {
 		// then
 		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones, 3)
 		assert.Subset(t, []string{"us-central1-a", "us-central1-b", "us-central1-c"}, input.GardenerConfig.ProviderSpecificConfig.GcpConfig.Zones)
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 }

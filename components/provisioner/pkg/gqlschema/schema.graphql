@@ -33,6 +33,7 @@ type GardenerConfig {
     oidcConfig: OIDCConfig
     exposureClassName: String
     shootNetworkingFilterDisabled: Boolean
+    controlPlaneFailureTolerance: String
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -234,6 +235,7 @@ input GardenerConfigInput {
     oidcConfig: OIDCConfigInput
     exposureClassName: String                       # Name of the ExposureClass
     shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
+    controlPlaneFailureTolerance: String            # Shoot control plane HA failure tolerance level to configure. Valid values: 'nil' (left empty, no HA), "node", "zone"
 }
 
 input OIDCConfigInput {

@@ -2,6 +2,7 @@ package broker_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,15 +35,18 @@ const (
 	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
 	userID          = "test@test.pl"
 
-	instanceID       = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
-	otherInstanceID  = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
-	existOperationID = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
-	clusterName      = "cluster-testing"
-	region           = "eu"
-	brokerURL        = "example.com"
+	instanceID         = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
+	otherInstanceID    = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
+	existOperationID   = "920cbfd9-24e9-4aa2-aa77-879e9aabe140"
+	clusterName        = "cluster-testing"
+	region             = "eu"
+	brokerURL          = "example.com"
+	kubeconfigContents = "apiVersion: v1\\nkind: Config"
+	shootName          = "own-cluster-name"
+	shootDomain        = "kyma-dev.shoot.canary.k8s-hana.ondemand.com"
 )
 
-var enabledDashboardConfig dashboard.Config = dashboard.Config{Enabled: true, LandscapeURL: "https://dashboard.example.com"}
+var dashboardConfig dashboard.Config = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
 
 func TestProvision_Provision(t *testing.T) {
 	t.Run("new operation will be created", func(t *testing.T) {
@@ -76,7 +80,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -116,11 +120,135 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
 	})
 
+	t.Run("new operation for own_cluster plan with kubeconfig will be created", func(t *testing.T) {
+		// given
+		// #setup memory storage
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.OwnClusterPlanID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "own_cluster"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+			dashboardConfig,
+		)
+
+		// when
+		kubeconfigEncoded := base64.StdEncoding.EncodeToString([]byte(kubeconfigContents))
+		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.OwnClusterPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s", "kubeconfig": "%s", "shootName":"%s", "shootDomain":"%s"}`, clusterName, kubeconfigEncoded, shootName, shootDomain)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.NoError(t, err)
+		// UUID with version 4 and variant 1 i.e RFC. 4122/DCE
+		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
+		assert.NotEqual(t, instanceID, response.OperationData)
+		assert.Equal(t, `https://dashboard.example.com`, response.DashboardURL)
+		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
+		assert.NotContains(t, response.Metadata.Labels, "KubeconfigURL")
+
+		operation, err := memoryStorage.Operations().GetProvisioningOperationByID(response.OperationData)
+		require.NoError(t, err)
+		assert.Equal(t, operation.InstanceID, instanceID)
+
+		assert.Equal(t, globalAccountID, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		assert.Equal(t, clusterName, operation.ProvisioningParameters.Parameters.Name)
+		assert.Equal(t, userID, operation.ProvisioningParameters.ErsContext.UserID)
+		assert.Equal(t, "req-region", operation.ProvisioningParameters.PlatformRegion)
+
+		require.NoError(t, err)
+		assert.Equal(t, kubeconfigContents, operation.ProvisioningParameters.Parameters.Kubeconfig)
+
+		assert.Equal(t, fixDNSProviders(), operation.ShootDNSProviders)
+
+		instance, err := memoryStorage.Instances().GetByID(instanceID)
+		require.NoError(t, err)
+
+		assert.Equal(t, instance.Parameters, operation.ProvisioningParameters)
+		assert.Equal(t, `https://dashboard.example.com`, response.DashboardURL)
+		assert.Equal(t, instance.GlobalAccountID, globalAccountID)
+		assert.Equal(t, fixDNSProviders(), instance.InstanceDetails.ShootDNSProviders)
+		assert.Equal(t, shootDomain, operation.ShootDomain)
+	})
+
+	t.Run("new operation for own_cluster plan with not encoded kubeconfig will not be created", func(t *testing.T) {
+		// given
+		// #setup memory storage
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", broker.OwnClusterPlanID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure", "own_cluster"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+			dashboardConfig,
+		)
+
+		// when
+		_, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        broker.OwnClusterPlanID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s", "kubeconfig": "%s", "shootName":"%s", "shootDomain":"%s"}`, clusterName, kubeconfigContents, shootName, shootDomain)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		assert.ErrorContains(t, err, "while decoding kubeconfig")
+	})
+
 	t.Run("existing operation ID will be return", func(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(fixInstance())
 
@@ -146,7 +274,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -166,7 +294,7 @@ func TestProvision_Provision(t *testing.T) {
 	t.Run("more than one trial is not allowed", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID:      instanceID,
@@ -193,7 +321,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -211,7 +339,7 @@ func TestProvision_Provision(t *testing.T) {
 	t.Run("more than one trial is allowed", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID:      instanceID,
@@ -241,7 +369,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -302,7 +430,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -363,7 +491,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -382,7 +510,7 @@ func TestProvision_Provision(t *testing.T) {
 		// given
 		// #setup memory storage
 		memoryStorage := storage.NewMemoryStorage()
-		err := memoryStorage.Operations().InsertProvisioningOperation(fixExistOperation())
+		err := memoryStorage.Operations().InsertOperation(fixExistOperation())
 		assert.NoError(t, err)
 		err = memoryStorage.Instances().Insert(fixInstance())
 		assert.NoError(t, err)
@@ -405,7 +533,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -445,7 +573,7 @@ func TestProvision_Provision(t *testing.T) {
 			true,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -486,7 +614,7 @@ func TestProvision_Provision(t *testing.T) {
 			true,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -525,7 +653,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -571,7 +699,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -614,7 +742,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		// when
@@ -663,7 +791,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		oidcParams := `"clientID":"client-id"`
@@ -718,7 +846,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		oidcParams := `"issuerURL":"https://test.local"`
@@ -773,7 +901,7 @@ func TestProvision_Provision(t *testing.T) {
 			false,
 			planDefaults,
 			logrus.StandardLogger(),
-			enabledDashboardConfig,
+			dashboardConfig,
 		)
 
 		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
@@ -796,114 +924,6 @@ func TestProvision_Provision(t *testing.T) {
 		apierr := err.(*apiresponses.FailureResponse)
 		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
 		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
-	})
-
-	t.Run("Legacy console URL should work when dashboard config is disabled", func(t *testing.T) {
-		// given
-		disabledDashboardConfig := dashboard.Config{Enabled: false, LandscapeURL: "https://dashboard.example.com"}
-
-		// #setup memory storage
-		memoryStorage := storage.NewMemoryStorage()
-
-		queue := &automock.Queue{}
-		queue.On("Add", mock.AnythingOfType("string"))
-
-		factoryBuilder := &automock.PlanValidator{}
-		factoryBuilder.On("IsPlanSupport", planID).Return(true)
-
-		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
-			return &gqlschema.ClusterConfigInput{}, nil
-		}
-		// #create provisioner endpoint
-		provisionEndpoint := broker.NewProvision(
-			broker.Config{
-				EnablePlans:              []string{"gcp", "azure"},
-				URL:                      brokerURL,
-				OnlySingleTrialPerGA:     true,
-				EnableKubeconfigURLLabel: true,
-			},
-			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
-			memoryStorage.Operations(),
-			memoryStorage.Instances(),
-			queue,
-			factoryBuilder,
-			broker.PlansConfig{},
-			false,
-			planDefaults,
-			logrus.StandardLogger(),
-			disabledDashboardConfig,
-		)
-
-		// when
-		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
-			ServiceID:     serviceID,
-			PlanID:        planID,
-			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
-		}, true)
-		t.Logf("%+v\n", *provisionEndpoint)
-
-		// then
-		require.NoError(t, err)
-		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
-		assert.NotEqual(t, instanceID, response.OperationData)
-		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
-		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
-	})
-
-	t.Run("Should fallback to logacy consol URL if LandscapeURL is empty", func(t *testing.T) {
-		// given
-		disabledDashboardConfig := dashboard.Config{Enabled: true, LandscapeURL: ""}
-
-		// #setup memory storage
-		memoryStorage := storage.NewMemoryStorage()
-
-		queue := &automock.Queue{}
-		queue.On("Add", mock.AnythingOfType("string"))
-
-		factoryBuilder := &automock.PlanValidator{}
-		factoryBuilder.On("IsPlanSupport", planID).Return(true)
-
-		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
-			return &gqlschema.ClusterConfigInput{}, nil
-		}
-		// #create provisioner endpoint
-		provisionEndpoint := broker.NewProvision(
-			broker.Config{
-				EnablePlans:              []string{"gcp", "azure"},
-				URL:                      brokerURL,
-				OnlySingleTrialPerGA:     true,
-				EnableKubeconfigURLLabel: true,
-			},
-			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
-			memoryStorage.Operations(),
-			memoryStorage.Instances(),
-			queue,
-			factoryBuilder,
-			broker.PlansConfig{},
-			false,
-			planDefaults,
-			logrus.StandardLogger(),
-			disabledDashboardConfig,
-		)
-
-		// when
-		response, err := provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
-			ServiceID:     serviceID,
-			PlanID:        planID,
-			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s"}`, clusterName)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
-		}, true)
-		t.Logf("%+v\n", *provisionEndpoint)
-
-		// then
-		require.NoError(t, err)
-		assert.Regexp(t, "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$", response.OperationData)
-		assert.NotEqual(t, instanceID, response.OperationData)
-		assert.Equal(t, clusterName, response.Metadata.Labels["Name"])
-		assert.Equal(t, fmt.Sprintf("https://%s/kubeconfig/%s", brokerURL, instanceID), response.Metadata.Labels["KubeconfigURL"])
-		assert.Regexp(t, `^https:\/\/console\.[a-z0-9\-]{7,9}\.example\.com`, response.DashboardURL)
 	})
 
 }
@@ -983,7 +1003,7 @@ func TestRegionValidation(t *testing.T) {
 				false,
 				planDefaults,
 				logrus.StandardLogger(),
-				enabledDashboardConfig,
+				dashboardConfig,
 			)
 
 			// when
@@ -1008,7 +1028,7 @@ func TestRegionValidation(t *testing.T) {
 
 }
 
-func fixExistOperation() internal.ProvisioningOperation {
+func fixExistOperation() internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(existOperationID, instanceID)
 	provisioningOperation.ProvisioningParameters = internal.ProvisioningParameters{
 		PlanID:    planID,

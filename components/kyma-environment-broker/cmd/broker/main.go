@@ -24,7 +24,6 @@ import (
 	orchestrationExt "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/appinfo"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/auditlog"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
@@ -63,12 +62,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/vrischmann/envconfig"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	runtime2 "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -124,7 +122,6 @@ type Config struct {
 	SkrDnsProvidersValuesYAMLFilePath          string
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
-	EnableBTPOperatorMigration                 bool   `envconfig:"default=true"`
 	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
 
 	Broker          broker.Config
@@ -133,8 +130,6 @@ type Config struct {
 	Avs avs.Config
 	IAS ias.Config
 	EDP edp.Config
-
-	AuditLog auditlog.Config
 
 	Notification notification.Config
 
@@ -259,9 +254,6 @@ func main() {
 		prometheus.MustRegister(dbStatsCollector)
 	}
 
-	// Auditlog
-	fileSystem := afero.NewOsFs()
-
 	// Customer Notification
 	clientHTTPForNotification := httputil.NewClient(60, true)
 	notificationClient := notification.NewClient(clientHTTPForNotification, notification.ClientConfig{
@@ -336,7 +328,7 @@ func main() {
 
 	// metrics collectors
 	metrics.RegisterAll(eventBroker, db.Operations(), db.Instances())
-
+	metrics.StartOpsMetricService(ctx, db.Operations(), logs)
 	//setup runtime overrides appender
 	runtimeOverrides := runtimeoverrides.NewRuntimeOverrides(ctx, cli)
 
@@ -346,13 +338,13 @@ func main() {
 
 	// run queues
 	const workersAmount = 5
-	provisionManager := provisioning.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
+	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
 		runtimeOverrides, bundleBuilder,
-		edpClient, accountProvider, fileSystem, reconcilerClient, logs)
+		edpClient, accountProvider, reconcilerClient, logs)
 
-	deprovisionManager := deprovisioning.NewManager(db.Operations(), eventBroker, logs.WithField("deprovisioning", "manager"))
+	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
 		avsDel, internalEvalAssistant, externalEvalAssistant, bundleBuilder, edpClient, accountProvider, reconcilerClient,
 		k8sClientProvider, logs)
@@ -381,8 +373,7 @@ func main() {
 	runtimeLister := orchestration.NewRuntimeLister(db.Instances(), db.Operations(), runtime.NewConverter(cfg.DefaultRequestRegion), logs)
 	runtimeResolver := orchestrationExt.NewGardenerRuntimeResolver(dynamicGardener, gardenerNamespace, runtimeLister, logs)
 
-	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager,
-		&cfg, internalEvalAssistant, reconcilerClient, notificationBuilder, fileSystem, logs, cli, 1)
+	kymaQueue := NewKymaOrchestrationProcessingQueue(ctx, db, runtimeOverrides, provisionerClient, eventBroker, inputFactory, nil, time.Minute, runtimeVerConfigurator, runtimeResolver, upgradeEvalManager, &cfg, internalEvalAssistant, reconcilerClient, notificationBuilder, logs, cli, 1)
 	clusterQueue := NewClusterOrchestrationProcessingQueue(ctx, db, provisionerClient, eventBroker, inputFactory,
 		nil, time.Minute, runtimeResolver, upgradeEvalManager, notificationBuilder, logs, cli, cfg, 1)
 
@@ -432,7 +423,7 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 		return nil, err
 	}
 
-	sch := runtime2.NewScheme()
+	sch := scheme.Scheme
 	apiextensionsv1.AddToScheme(sch)
 
 	k8sCli, err := client.New(restCfg, client.Options{
@@ -611,13 +602,13 @@ func panicOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provisioning.StagedManager, workersAmount int,
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *process.StagedManager, workersAmount int,
 	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
 	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
 	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
 	bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient,
-	accountProvider hyperscaler.AccountProvider, fileSystem afero.Fs, reconcilerClient reconciler.Client, logs logrus.FieldLogger) *process.Queue {
+	accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client, logs logrus.FieldLogger) *process.Queue {
 
 	const postActionsStageName = "post_actions"
 	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName,
@@ -637,8 +628,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 	provisioningSteps := []struct {
 		disabled  bool
 		stage     string
-		step      provisioning.Step
-		condition provisioning.StepCondition
+		step      process.Step
+		condition process.StepCondition
 	}{
 		{
 			stage: startStageName,
@@ -646,11 +637,12 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, cfg.Provisioner.ProvisioningTimeout, cfg.OperationTimeout, runtimeVerConfigurator),
+			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage:    createRuntimeStageName,
@@ -658,9 +650,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			disabled: cfg.Avs.Disabled,
 		},
 		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
-			disabled: cfg.EDP.Disabled,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
+			disabled:  cfg.EDP.Disabled,
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -672,17 +665,20 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewBusolaMigratorOverridesStep(),
+			condition: skipForOwnClusterPlan,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+			condition: doForOwnClusterPlanOnly,
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateRuntimeForOwnClusterStep(db.Operations(), db.Instances()),
 		},
 		// check the runtime status
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+			condition: skipForOwnClusterPlan,
 		},
 		{
 			stage: createRuntimeStageName,
@@ -702,8 +698,9 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *provi
 			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
 		},
 		{
-			stage: postActionsStageName,
-			step:  provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			stage:     postActionsStageName,
+			step:      provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+			condition: skipForOwnClusterPlan,
 		},
 	}
 	for _, step := range provisioningSteps {
@@ -725,26 +722,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
 	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
-	ifBTPMigrationEnabled := func(c update.StepCondition) update.StepCondition {
-		if cfg.EnableBTPOperatorMigration {
-			return c
-		}
-		return func(o internal.UpdatingOperation) bool {
-			return false
-		}
-	}
-	negation := func(c update.StepCondition) update.StepCondition {
-		return func(o internal.UpdatingOperation) bool {
-			v := c(o)
-			return !v
-		}
-	}
-
-	btpMigrationEnabled := func(o internal.UpdatingOperation) bool {
-		return cfg.EnableBTPOperatorMigration
-	}
-
-	manager.DefineStages([]string{"cluster", "migration", "migration-check", "remove-sc-migration", "remove-sc-migration-check", "check"})
+	manager.DefineStages([]string{"cluster", "btp-operator", "btp-operator-check", "check"})
 	updateSteps := []struct {
 		stage     string
 		step      update.Step
@@ -755,74 +733,36 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), runtimeVerConfigurator, inputFactory),
 		},
 		{
-			stage:     "cluster",
-			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
-			condition: negation(ifBTPMigrationEnabled(update.ForMigration)),
+			stage: "cluster",
+			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
 		},
 		{
-			stage:     "migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
-			condition: btpMigrationEnabled,
+			stage: "btp-operator",
+			step:  update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
 		},
 		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: update.ForBTPOperatorCredentialsProvided,
 		},
 		{
-			stage:     "migration",
-			step:      update.NewBTPOperatorCheckStep(db.Operations()),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
-		},
-		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewBTPOperatorOverridesStep(db.Operations(), runtimeProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
+			condition: update.ForBTPOperatorCredentialsProvided,
 		},
 		{
-			stage:     "migration",
-			step:      update.NewSCMigrationStep(db.Operations(), runtimeProvider),
-			condition: ifBTPMigrationEnabled(update.ForMigration),
-		},
-		{
-			stage:     "migration",
+			stage:     "btp-operator",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdate),
+			condition: update.RequiresReconcilerUpdate,
 		},
 		{
-			stage:     "migration-check",
+			stage:     "btp-operator-check",
 			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
+			condition: update.CheckReconcilerStatus,
 		},
 		{
-			stage:     "remove-sc-migration",
-			step:      update.NewInitKymaVersionStep(db.Operations(), runtimeVerConfigurator, runtimeStatesDb),
-			condition: btpMigrationEnabled,
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
-			condition: ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided),
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewSCMigrationFinalizationStep(reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.ForMigration),
-		},
-		{
-			stage:     "remove-sc-migration",
-			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.RequiresReconcilerUpdateForMigration),
-		},
-		{
-			stage:     "remove-sc-migration-check",
-			step:      update.NewCheckReconcilerState(db.Operations(), reconcilerClient),
-			condition: ifBTPMigrationEnabled(update.CheckReconcilerStatus),
-		},
-		{
-			stage:     "check",
-			step:      update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
-			condition: negation(ifBTPMigrationEnabled(update.ForBTPOperatorCredentialsProvided)),
+			stage: "check",
+			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
 		},
 	}
 
@@ -838,50 +778,62 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 	return queue
 }
 
-func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *deprovisioning.Manager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
+func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, deprovisionManager *process.StagedManager, cfg *Config, db storage.BrokerStorage, pub event.Publisher,
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client,
 	k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
-	deprovisioningInit := deprovisioning.NewInitialisationStep(db.Operations(), db.Instances(), provisionerClient, accountProvider, cfg.OperationTimeout)
-	deprovisionManager.InitStep(deprovisioningInit)
-
 	deprovisioningSteps := []struct {
 		disabled bool
-		weight   int
-		step     deprovisioning.Step
+		step     process.Step
 	}{
 		{
-			weight: 1,
-			step:   deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+			step: deprovisioning.NewInitStep(db.Operations(), db.Instances(), 12*time.Hour),
 		},
 		{
-			weight:   1,
+			step: deprovisioning.NewBTPOperatorCleanupStep(db.Operations(), provisionerClient, k8sClientProvider),
+		},
+		{
+			step: deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
+		},
+		{
 			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
-			weight:   1,
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
 		},
 		{
-			weight: 5,
-			step:   deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
+			step: deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
 		{
-			weight: 6,
-			step:   deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
+			step: deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
 		},
 		{
-			weight: 10,
-			step:   deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
+			step: deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
+		},
+		{
+			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), db.Instances(), provisionerClient),
+		},
+		{
+			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
+		},
+		{
+			step: deprovisioning.NewRemoveInstanceStep(db.Instances(), db.Operations()),
 		},
 	}
+	var stages []string
 	for _, step := range deprovisioningSteps {
 		if !step.disabled {
-			deprovisionManager.AddStep(step.weight, step.step)
+			stages = append(stages, step.step.Name())
+		}
+	}
+	deprovisionManager.DefineStages(stages)
+	for _, step := range deprovisioningSteps {
+		if !step.disabled {
+			deprovisionManager.AddStep(step.step.Name(), step.step, nil)
 		}
 	}
 
@@ -891,13 +843,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 	return queue
 }
 
-func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage,
-	runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client,
-	pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule,
-	pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
-	runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager,
-	cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client,
-	notificationBuilder notification.BundleBuilder, fileSystem afero.Fs, logs logrus.FieldLogger, cli client.Client, speedFactor int) *process.Queue {
+func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerStorage, runtimeOverrides upgrade_kyma.RuntimeOverridesAppender, provisionerClient provisioner.Client, pub event.Publisher, inputFactory input.CreatorForPlan, icfg *upgrade_kyma.TimeSchedule, pollingInterval time.Duration, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeResolver orchestrationExt.RuntimeResolver, upgradeEvalManager *avs.EvaluationManager, cfg *Config, internalEvalAssistant *avs.InternalEvalAssistant, reconcilerClient reconciler.Client, notificationBuilder notification.BundleBuilder, logs logrus.FieldLogger, cli client.Client, speedFactor int) *process.Queue {
 
 	upgradeKymaManager := upgrade_kyma.NewManager(db.Operations(), pub, logs.WithField("upgradeKyma", "manager"))
 	upgradeKymaInit := upgrade_kyma.NewInitialisationStep(db.Operations(), db.Orchestrations(), db.Instances(),
@@ -930,10 +876,6 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 4,
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-		},
-		{
-			weight: 6,
-			step:   upgrade_kyma.NewBusolaMigratorOverridesStep(),
 		},
 		{
 			weight:   8,
@@ -1000,4 +942,12 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	queue.Run(ctx.Done(), 3)
 
 	return queue
+}
+
+func skipForOwnClusterPlan(operation internal.Operation) bool {
+	return operation.ProvisioningParameters.PlanID != broker.OwnClusterPlanID
+}
+
+func doForOwnClusterPlanOnly(operation internal.Operation) bool {
+	return !skipForOwnClusterPlan(operation)
 }

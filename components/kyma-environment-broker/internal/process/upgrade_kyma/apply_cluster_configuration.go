@@ -37,7 +37,6 @@ func (s *ApplyClusterConfigurationStep) Run(operation internal.UpgradeKymaOperat
 		log.Infof("Cluster configuration already applied")
 		return operation, 0, nil
 	}
-	operation.InputCreator.DisableOptionalComponent(internal.SCMigrationComponentName)
 	operation.InputCreator.SetRuntimeID(operation.InstanceDetails.RuntimeID).
 		SetInstanceID(operation.InstanceID).
 		SetShootName(operation.InstanceDetails.ShootName).

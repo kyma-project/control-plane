@@ -60,17 +60,17 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 	}
 
 	for _, op := range ops {
-		resp.RetryOperations = append(resp.RetryOperations, op.Operation.ID)
+		resp.RetryShoots = append(resp.RetryShoots, op.Operation.InstanceDetails.ShootName)
 	}
 	resp.Msg = "retry operations are queued for processing"
 
-	err = r.OperationsStateUpdate(ops, immediate)
-	if err != nil {
-		return resp, err
+	for _, op := range ops {
+		o.Parameters.RetryOperation.RetryOperations = append(o.Parameters.RetryOperation.RetryOperations, op.Operation.ID)
+		o.Parameters.RetryOperation.Immediate = (immediate == "true")
 	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
-	lastState, err := orchestrationStateUpdate(r.orchestrations, o.OrchestrationID, r.log)
+	lastState, err := orchestrationStateUpdate(o, r.orchestrations, o.OrchestrationID, r.log)
 	if err != nil {
 		return resp, err
 	}
@@ -167,28 +167,7 @@ func (r *kymaRetryer) latestOperationValidate(orchestrationID string, ops []inte
 	return retryOps, oldIDs, nil
 }
 
-func (r *kymaRetryer) OperationsStateUpdate(ops []internal.UpgradeKymaOperation, immediate string) error {
-	for _, op := range ops {
-		if immediate == "true" {
-			op.MaintenanceWindowBegin = time.Time{}
-			op.MaintenanceWindowEnd = time.Time{}
-		}
-		op.State = commonOrchestration.Retrying
-		op.UpdatedAt = time.Now()
-		op.Description = "queued for retrying"
-
-		_, err := r.operations.UpdateUpgradeKymaOperation(op)
-		if err != nil {
-			// one update fail then http return
-			r.log.Errorf("Cannot update operation %s in storage: %s", op.Operation.ID, err)
-			return errors.Wrapf(err, "while updating orchestration %s", op.OrchestrationID)
-		}
-	}
-
-	return nil
-}
-
-func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrationID string, log logrus.FieldLogger) (string, error) {
+func orchestrationStateUpdate(orch *internal.Orchestration, orchestrations storage.Orchestrations, orchestrationID string, log logrus.FieldLogger) (string, error) {
 	o, err := orchestrations.GetByID(orchestrationID)
 	if err != nil {
 		log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
@@ -202,6 +181,8 @@ func orchestrationStateUpdate(orchestrations storage.Orchestrations, orchestrati
 	}
 
 	o.UpdatedAt = time.Now()
+	o.Parameters.RetryOperation.RetryOperations = orch.Parameters.RetryOperation.RetryOperations
+	o.Parameters.RetryOperation.Immediate = orch.Parameters.RetryOperation.Immediate
 	if state == commonOrchestration.Failed {
 		o.Description += ", retrying"
 		o.State = commonOrchestration.Retrying

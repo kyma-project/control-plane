@@ -162,7 +162,10 @@ func TestAzureInput_SingleZone_ApplyParameters(t *testing.T) {
 
 func TestAzureInput_MultiZone_ApplyParameters(t *testing.T) {
 	// given
-	svc := AzureInput{MultiZone: true}
+	svc := AzureInput{
+		MultiZone:                    true,
+		ControlPlaneFailureTolerance: "zone",
+	}
 
 	// when
 	t.Run("defaults use three zones with dedicated subnet", func(t *testing.T) {
@@ -180,6 +183,7 @@ func TestAzureInput_MultiZone_ApplyParameters(t *testing.T) {
 		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
 			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
 		}
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 
 	// when
@@ -200,6 +204,7 @@ func TestAzureInput_MultiZone_ApplyParameters(t *testing.T) {
 		for i, zone := range input.GardenerConfig.ProviderSpecificConfig.AzureConfig.AzureZones {
 			assert.Equal(t, fmt.Sprintf("10.250.%d.0/19", 32*i), zone.Cidr)
 		}
+		assert.Equal(t, "zone", *input.GardenerConfig.ControlPlaneFailureTolerance)
 	})
 }
 

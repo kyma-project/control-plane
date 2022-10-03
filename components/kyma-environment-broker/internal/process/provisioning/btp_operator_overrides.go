@@ -11,12 +11,12 @@ import (
 )
 
 type BTPOperatorOverridesStep struct {
-	operationManager *process.ProvisionOperationManager
+	operationManager *process.OperationManager
 }
 
 func NewBTPOperatorOverridesStep(os storage.Operations) *BTPOperatorOverridesStep {
 	return &BTPOperatorOverridesStep{
-		operationManager: process.NewProvisionOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 	}
 }
 
@@ -24,10 +24,10 @@ func (s *BTPOperatorOverridesStep) Name() string {
 	return "BTPOperatorOverrides"
 }
 
-func (s *BTPOperatorOverridesStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *BTPOperatorOverridesStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	clusterID := uuid.NewString()
 	overrides := internal.GetBTPOperatorProvisioningOverrides(operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, clusterID)
-	f := func(op *internal.ProvisioningOperation) {
+	f := func(op *internal.Operation) {
 		op.InstanceDetails.ServiceManagerClusterID = clusterID
 	}
 	operation.InputCreator.AppendOverrides(internal.BTPOperatorComponentName, overrides)

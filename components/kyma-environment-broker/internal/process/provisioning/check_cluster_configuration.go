@@ -17,7 +17,7 @@ import (
 // CheckClusterConfigurationStep checks if the SKR configuration is applied (by reconciler)
 type CheckClusterConfigurationStep struct {
 	reconcilerClient    reconciler.Client
-	operationManager    *process.ProvisionOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 }
 
@@ -26,18 +26,18 @@ func NewCheckClusterConfigurationStep(os storage.Operations,
 	provisioningTimeout time.Duration) *CheckClusterConfigurationStep {
 	return &CheckClusterConfigurationStep{
 		reconcilerClient:    reconcilerClient,
-		operationManager:    process.NewProvisionOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		provisioningTimeout: provisioningTimeout,
 	}
 }
 
-var _ Step = (*CheckClusterConfigurationStep)(nil)
+var _ process.Step = (*CheckClusterConfigurationStep)(nil)
 
 func (s *CheckClusterConfigurationStep) Name() string {
 	return "Check_Cluster_Configuration"
 }
 
-func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CheckClusterConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		return s.handleTimeout(operation, log)
 	}
@@ -72,7 +72,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.ProvisioningOpera
 	}
 }
 
-func (s *CheckClusterConfigurationStep) handleTimeout(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *CheckClusterConfigurationStep) handleTimeout(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	log.Warnf("Operation has reached the time limit (%v): updated operation time: %s", s.provisioningTimeout, operation.UpdatedAt)
 	log.Infof("Deleting cluster %s", operation.RuntimeID)
 	/*

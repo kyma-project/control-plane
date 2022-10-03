@@ -171,31 +171,31 @@ func TestOperation(t *testing.T) {
 		svc := brokerStorage.Operations()
 
 		// when
-		err = svc.InsertProvisioningOperation(givenOperation)
+		err = svc.InsertOperation(givenOperation)
 		require.NoError(t, err)
-		err = svc.InsertProvisioningOperation(latestOperation)
+		err = svc.InsertOperation(latestOperation)
 		require.NoError(t, err)
-		err = svc.InsertProvisioningOperation(latestPendingOperation)
+		err = svc.InsertOperation(latestPendingOperation)
 		require.NoError(t, err)
 
 		ops, err := svc.GetNotFinishedOperationsByType(internal.OperationTypeProvision)
 		require.NoError(t, err)
 		assert.Len(t, ops, 3)
-		assertOperation(t, givenOperation.Operation, ops[0])
+		assertOperation(t, givenOperation, ops[0])
 
 		gotOperation, err := svc.GetProvisioningOperationByID("operation-id")
 		require.NoError(t, err)
 
 		op, err := svc.GetOperationByID("operation-id")
 		require.NoError(t, err)
-		assert.Equal(t, givenOperation.Operation.ID, op.ID)
+		assert.Equal(t, givenOperation.ID, op.ID)
 
 		lastOp, err := svc.GetLastOperation("inst-id")
 		require.NoError(t, err)
-		assert.Equal(t, latestOperation.Operation.ID, lastOp.ID)
+		assert.Equal(t, latestOperation.ID, lastOp.ID)
 
 		// then
-		assertProvisioningOperation(t, givenOperation, *gotOperation)
+		assertOperation(t, givenOperation, gotOperation.Operation)
 
 		// when
 		gotOperation.Description = "new modified description"
@@ -536,7 +536,7 @@ func assertProvisioningOperation(t *testing.T, expected, got internal.Provisioni
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
 	expected.ProvisioningParameters = got.ProvisioningParameters
-	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+	expected.FinishedStages = got.FinishedStages
 
 	assert.Equal(t, expected, got)
 }
@@ -548,7 +548,7 @@ func assertDeprovisioningOperation(t *testing.T, expected, got internal.Deprovis
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
-	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+	expected.FinishedStages = got.FinishedStages
 
 	assert.Equal(t, expected, got)
 }
@@ -564,7 +564,7 @@ func assertUpgradeKymaOperation(t *testing.T, expected, got internal.UpgradeKyma
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
-	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+	expected.FinishedStages = got.FinishedStages
 
 	assert.Equal(t, expected, got)
 }
@@ -580,7 +580,7 @@ func assertUpgradeClusterOperation(t *testing.T, expected, got internal.UpgradeC
 	expected.UpdatedAt = got.UpdatedAt
 	expected.MaintenanceWindowBegin = got.MaintenanceWindowBegin
 	expected.MaintenanceWindowEnd = got.MaintenanceWindowEnd
-	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+	expected.FinishedStages = got.FinishedStages
 
 	assert.Equal(t, expected, got)
 }
@@ -592,7 +592,7 @@ func assertOperation(t *testing.T, expected, got internal.Operation) {
 
 	expected.CreatedAt = got.CreatedAt
 	expected.UpdatedAt = got.UpdatedAt
-	expected.FinishedStagesOrdered = got.FinishedStagesOrdered
+	expected.FinishedStages = got.FinishedStages
 
 	assert.Equal(t, expected, got)
 }

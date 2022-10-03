@@ -74,7 +74,8 @@ func NewUpdate(cfg Config,
 }
 
 // Update modifies an existing service instance
-//  PATCH /v2/service_instances/{instance_id}
+//
+//	PATCH /v2/service_instances/{instance_id}
 func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("Updating instanceID: %s", instanceID)
@@ -89,11 +90,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
+	instanceWasExpired := instance.IsExpired()
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
-	if instance.IsExpired() {
-		logger.Infof("The instance is expired (%s)", instance.ExpiredAt)
-		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("the instance is expired"), http.StatusUnprocessableEntity, fmt.Sprintf("Could not execute update for an expired instanceID %s (expired at %s)", instanceID, instance.ExpiredAt))
-	}
 
 	var ersContext internal.ERSContext
 	err = json.Unmarshal(details.RawContext, &ersContext)
@@ -102,7 +100,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
-	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
 	// If the param contains "expired" - then process expiration (save it in the instance)
@@ -135,12 +132,12 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 
 	dashboardURL := instance.DashboardURL
-	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+	if b.dashboardConfig.LandscapeURL != "" {
 		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
 		instance.DashboardURL = dashboardURL
 	}
 
-	if b.processingEnabled {
+	if b.processingEnabled && !instanceWasExpired {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
@@ -167,7 +164,7 @@ func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ers
 	if len(details.RawParameters) != 0 {
 		return true
 	}
-	return instance.InstanceDetails.SCMigrationTriggered || ersContext.ERSUpdate()
+	return ersContext.ERSUpdate()
 }
 
 func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, ersContext internal.ERSContext, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
@@ -208,7 +205,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
-	operation.InstanceDetails.SCMigrationTriggered = ersContext.IsMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -300,12 +296,8 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
 	}
-	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
-	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, ersContext)
-	if ersContext.IsMigration {
-		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
-		instance.InstanceDetails.SCMigrationTriggered = true
-	}
+	instance.Parameters.ErsContext = internal.InheritMissingERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+	instance.Parameters.ErsContext = internal.UpdateInstanceERSContext(instance.Parameters.ErsContext, ersContext)
 
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
 	if err != nil {

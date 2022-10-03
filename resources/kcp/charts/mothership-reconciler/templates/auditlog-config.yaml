@@ -17,6 +17,10 @@ metadata:
   name: {{ .Values.global.mothership_reconciler.auditlog.configMapName }}
   namespace: {{ .Release.Namespace }}
 data:
-  auditlog-url-basic: "http://logger:8080/audit-log/v2/"
+  auditlog-url: "http://dummyauditlog:8080" # backwards-compatible for KEB Audit Log
+  auditlog-url-basic: "http://dummyauditlog:8080" # backwards-compatible for KEB Audit Log
+  auditlog-host: "http://logger"
+  auditlog-port: "8080"
+  auditlog-uri: "/audit-log/v2/"
   auditlog-tenant: "ef943440-8814-4863-9ca1-80edb623d1ce"
 {{- end }}

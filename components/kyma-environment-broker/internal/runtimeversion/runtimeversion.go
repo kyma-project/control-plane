@@ -37,7 +37,7 @@ func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.UpdatingOperation
 	return internal.NewRuntimeVersionFromDefaults(r.GetKymaVersion()), nil
 }
 
-func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {
+func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.Operation) (*internal.RuntimeVersionData, error) {
 
 	pp := op.ProvisioningParameters
 

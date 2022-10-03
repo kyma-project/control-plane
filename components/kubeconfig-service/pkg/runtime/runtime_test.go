@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,6 +27,8 @@ func NewRuntimeClientTest(kubeConfig []byte, userID string, L2L3OperatiorRole st
 	user := SAInfo{
 		ServiceAccountName:     userID,
 		ClusterRoleName:        userID,
+		ClusterRoleRulesName:   fmt.Sprintf("%s-rules", userID),
+		ClusterRoleAggrLabel:   fmt.Sprintf("rbac.authorization.k8s.io/aggregate-to-%s", userID),
 		ClusterRoleBindingName: userID,
 		Namespace:              "default",
 		TenantID:               tenant,
@@ -70,9 +73,40 @@ func TestCreateserviceaccount(t *testing.T) {
 		assert.Equal(t, expectedTenantID, rtc.User.TenantID)
 	})
 
+	t.Run("If no clusterrolerules exists one is created", func(t *testing.T) {
+		var clusterRoleName = "sa1"
+		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), clusterRoleName, "runtimeOperator", "tenantID")
+		assert.NoError(t, err)
+
+		err = rtc.createClusterRoleRules()
+		assert.Nil(t, err)
+
+		crClient := rtc.K8s.RbacV1().ClusterRoles()
+		cr, err := crClient.Get(context.TODO(), rtc.User.ClusterRoleRulesName, v1.GetOptions{})
+		assert.NotNil(t, cr)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedTenantID, rtc.User.TenantID)
+		assert.Contains(t, cr.ObjectMeta.Labels, rtc.User.ClusterRoleAggrLabel)
+		assert.Equal(t, L2L3OperatorPolicyRule["runtimeOperator"], cr.Rules)
+	})
+
+	t.Run("If input clusterrole not supported no one is created", func(t *testing.T) {
+		//`unSupportedOperation` not belong to `runtimeAdmin`/`runtimeOperator`
+		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "unSupportedOperation", "tenantID")
+		assert.NoError(t, err)
+
+		err = rtc.createClusterRoleRules()
+		assert.Error(t, err)
+
+		crClient := rtc.K8s.RbacV1().ClusterRoles()
+		cr, err := crClient.Get(context.TODO(), rtc.User.ClusterRoleRulesName, v1.GetOptions{})
+		assert.Nil(t, cr)
+		assert.Error(t, err)
+	})
+
 	t.Run("If no clusterrole exists one is created", func(t *testing.T) {
 		var clusterRoleName = "sa1"
-		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "runtimeOperator", "tenantID")
+		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), clusterRoleName, "runtimeOperator", "tenantID")
 		assert.NoError(t, err)
 
 		err = rtc.createClusterRole()
@@ -82,25 +116,25 @@ func TestCreateserviceaccount(t *testing.T) {
 		cr, err := crClient.Get(context.TODO(), rtc.User.ClusterRoleName, v1.GetOptions{})
 		assert.NotNil(t, cr)
 		assert.NoError(t, err)
-		assert.Equal(t, clusterRoleName, cr.Name)
 		assert.Equal(t, expectedTenantID, rtc.User.TenantID)
+		assert.NotNil(t, cr.AggregationRule)
+
+		expected := []v1.LabelSelector{
+			{
+				MatchLabels: map[string]string{
+					"rbac.authorization.k8s.io/aggregate-to-edit": "true",
+				},
+			},
+			{
+				MatchLabels: map[string]string{
+					"rbac.authorization.k8s.io/aggregate-to-sa1": "true",
+				},
+			},
+		}
+		assert.ElementsMatch(t, expected, cr.AggregationRule.ClusterRoleSelectors)
 	})
 
-	t.Run("If input clusterrole not supported no one is created", func(t *testing.T) {
-		//`unSupportedOperation` not belong to `runtimeAdmin`/`runtimeOperator`
-		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "unSupportedOperation", "tenantID")
-		assert.NoError(t, err)
-
-		err = rtc.createClusterRole()
-		assert.Error(t, err)
-
-		crClient := rtc.K8s.RbacV1().ClusterRoles()
-		cr, err := crClient.Get(context.TODO(), rtc.User.ClusterRoleName, v1.GetOptions{})
-		assert.Nil(t, cr)
-		assert.Error(t, err)
-	})
-
-	t.Run("If no clusterrole exists one is created", func(t *testing.T) {
+	t.Run("If no clusterrolebinding exists one is created", func(t *testing.T) {
 		var clusterRoleBindingName = "sa1"
 		rtc, err := NewRuntimeClientTest([]byte("kubeconfig"), "sa1", "runtimeOperator", "tenantID")
 		assert.NoError(t, err)

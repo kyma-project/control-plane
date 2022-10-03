@@ -211,6 +211,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 				When:     when,
 				Error:    err,
 			},
+			Operation: processedOperation,
 		})
 
 		// break the loop if:
@@ -233,5 +234,6 @@ func (m *StagedManager) callPubSubOutsideSteps(operation *internal.Operation, er
 			Duration: time.Since(operation.CreatedAt),
 			Error:    err,
 		},
+		Operation: *operation,
 	})
 }

@@ -8,12 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=CisClient -output=automock
+//go:generate mockery --name=CisClient --output=automock
 type CisClient interface {
 	FetchSubAccountsToDelete() ([]string, error)
 }
 
-//go:generate mockery -name=BrokerClient -output=automock
+//go:generate mockery --name=BrokerClient --output=automock
 type BrokerClient interface {
 	Deprovision(instance internal.Instance) (string, error)
 }

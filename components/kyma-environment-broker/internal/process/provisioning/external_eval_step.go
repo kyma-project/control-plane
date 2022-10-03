@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/sirupsen/logrus"
 
@@ -15,7 +17,7 @@ type ExternalEvalStep struct {
 }
 
 // ensure the interface is implemented
-var _ Step = (*ExternalEvalStep)(nil)
+var _ process.Step = (*ExternalEvalStep)(nil)
 
 func NewExternalEvalStep(externalEvalCreator *ExternalEvalCreator) *ExternalEvalStep {
 	return &ExternalEvalStep{
@@ -27,7 +29,7 @@ func (e ExternalEvalStep) Name() string {
 	return "AVS_Create_External_Eval_Step"
 }
 
-func (s *ExternalEvalStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *ExternalEvalStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
 		log.Debug("skipping AVS external evaluation creation for trial/freemium plan")
 		return operation, 0, nil

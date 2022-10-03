@@ -18,7 +18,7 @@ func TestExternalEvalStep_Run(t *testing.T) {
 
 	operation := fixOperationRuntimeStatus(broker.GCPPlanID, internal.GCP)
 	operation.Avs.AvsEvaluationInternalId = fixAvsEvaluationInternalId
-	err := memoryStorage.Operations().InsertProvisioningOperation(operation)
+	err := memoryStorage.Operations().InsertOperation(operation)
 	assert.NoError(t, err)
 	step := ExternalEvalStep{
 		externalEvalCreator: externalEvalCreator,

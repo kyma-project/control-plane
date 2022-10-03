@@ -19,7 +19,7 @@ func NewInternalEvalAssistant(avsConfig Config) *InternalEvalAssistant {
 	}
 }
 
-func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error) {
+func (iec *InternalEvalAssistant) CreateBasicEvaluationRequest(operations internal.Operation, url string) (*BasicEvaluationCreateRequest, error) {
 	return newBasicEvaluationCreateRequest(operations, iec, url)
 }
 

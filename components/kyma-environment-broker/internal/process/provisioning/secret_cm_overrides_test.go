@@ -28,13 +28,12 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 		defer runtimeOverridesMock.AssertExpectations(t)
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{
-					PlanID:     "ca6e5357-707f-4565-bbbd-b3ab732597c6",
-					Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion}},
-				InputCreator: inputCreatorMock,
-			},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{
+				PlanID:     "ca6e5357-707f-4565-bbbd-b3ab732597c6",
+				Parameters: internal.ProvisioningParametersDTO{KymaVersion: kymaVersion}},
+			InputCreator: inputCreatorMock,
+			Type:         internal.OperationTypeProvision,
 		}
 
 		rcvMock := &automock.RuntimeVersionConfiguratorForProvisioning{}
@@ -67,14 +66,13 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		defer runtimeOverridesMock.AssertExpectations(t)
 		runtimeOverridesMock.On("Append", inputCreatorMock, planName, kymaVersion).Return(nil).Once()
 
-		operation := internal.ProvisioningOperation{
-			Operation: internal.Operation{
-				ProvisioningParameters: internal.ProvisioningParameters{PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"},
-				InputCreator:           inputCreatorMock,
-				RuntimeVersion: internal.RuntimeVersionData{
-					Version: kymaVersion,
-				},
+		operation := internal.Operation{
+			ProvisioningParameters: internal.ProvisioningParameters{PlanID: "ca6e5357-707f-4565-bbbd-b3ab732597c6"},
+			InputCreator:           inputCreatorMock,
+			RuntimeVersion: internal.RuntimeVersionData{
+				Version: kymaVersion,
 			},
+			Type: internal.OperationTypeProvision,
 		}
 
 		rcvMock := &automock.RuntimeVersionConfiguratorForProvisioning{}
