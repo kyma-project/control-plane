@@ -685,6 +685,20 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 		nil
 }
 
+func (r readSession) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
+	var events []dbmodel.EventDTO
+	stmt := r.session.Select("*").From("events")
+	if filter.InstanceID != "" {
+		stmt.Where(dbr.Eq("instance_id", filter.InstanceID))
+	}
+	if filter.OperationID != "" {
+		stmt.Where(dbr.Eq("operation_id", filter.OperationID))
+	}
+	stmt.OrderBy("created_at")
+	_, err := stmt.Load(&events)
+	return events, err
+}
+
 func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error) {
 	var res struct {
 		Total int

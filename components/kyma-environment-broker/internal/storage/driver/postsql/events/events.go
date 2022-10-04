@@ -51,6 +51,15 @@ func Errorf(instanceID, operationID string, err error, format string, args ...st
 	ev.InsertEvent(dbmodel.ErrorEventLevel, fmt.Sprintf("%v: %v", fmt.Sprintf(format, args), err), instanceID, operationID)
 }
 
+func (e *events) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
+	if e != nil {
+		sess := e.NewReadSession()
+		return sess.ListEvents(filter)
+	} else {
+		return nil, fmt.Errorf("events are disabled")
+	}
+}
+
 func (e *events) InsertEvent(eventLevel dbmodel.EventLevel, message, instanceID, operationID string) {
 	if e != nil {
 		sess := e.NewWriteSession()
