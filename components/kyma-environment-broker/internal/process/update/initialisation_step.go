@@ -17,18 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	UpgradeInitSteps int = iota + 1
-	UpgradeFinishSteps
-)
-
-const (
-	// the time after which the operation is marked as expired
-	CheckStatusTimeout = 3 * time.Hour
-)
-
-const postUpgradeDescription = "Performing post-upgrade tasks"
-
 //go:generate mockery --name=RuntimeVersionConfiguratorForUpdating --output=automock --outpkg=automock --case=underscore
 type RuntimeVersionConfiguratorForUpdating interface {
 	ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error)
@@ -70,7 +58,7 @@ func (s *InitialisationStep) Run(operation internal.UpdatingOperation, log logru
 			return operation, time.Minute, nil
 		}
 
-		// read the instsance details (it could happen that created updating operation has outdated one)
+		// read the instance details (it could happen that created updating operation has outdated one)
 		instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 		if err != nil {
 			if dberr.IsNotFound(err) {
