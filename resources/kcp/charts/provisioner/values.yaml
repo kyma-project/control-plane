@@ -14,6 +14,7 @@ security:
   skipTLSCertificateVeryfication: false
 
 gardener:
+  resourcePolicy: keep
   project: "" # Gardener project connected to SA
   kubeconfigPath: "/gardener/kubeconfig/kubeconfig"
   kubeconfig: "" # Base64 encoded Gardener SA key
@@ -23,7 +24,7 @@ gardener:
   maintenanceWindowConfigMapName: ""
   secretName: "gardener-credentials"
   auditLogsPolicyConfigMap: ""
-  manageSecrets: true
+  manageSecrets: false 
   clusterCreationTimeout: 2h
   clusterDeletionTimeout: 30m
   waitingForClusterDeletionTimeout: 4h
