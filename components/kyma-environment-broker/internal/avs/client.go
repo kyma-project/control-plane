@@ -183,7 +183,7 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 				}
 			}
 			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d, message: %s",
-				string(msg), evaluationID)
+				evaluationID, string(msg))
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
