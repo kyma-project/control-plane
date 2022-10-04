@@ -28,7 +28,7 @@ func (iec *InternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 }
 
 func (iec *InternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
-	return iec.IsAlreadyCreated(lifecycleData) && !iec.IsAlreadyDeleted(lifecycleData)
+	return iec.IsAlreadyCreated(lifecycleData) && !iec.IsAlreadyDeletedOrEmpty(lifecycleData)
 }
 
 func (iec *InternalEvalAssistant) ProvideSuffix() string {
@@ -95,8 +95,8 @@ func (iec *InternalEvalAssistant) IsInMaintenance(lifecycleData internal.AvsLife
 	return lifecycleData.AvsInternalEvaluationStatus.Current == StatusMaintenance
 }
 
-func (iec *InternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
-	return lifecycleData.AVSInternalEvaluationDeleted
+func (iec *InternalEvalAssistant) IsAlreadyDeletedOrEmpty(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSInternalEvaluationDeleted || lifecycleData.AvsEvaluationInternalId == 0
 }
 
 func (iec *InternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {

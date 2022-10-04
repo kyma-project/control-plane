@@ -44,7 +44,8 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 
 	operation, err := ars.delegator.DeleteAvsEvaluation(operation, logger, ars.internalEvalAssistant)
 	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(operation, "error while deleting avs internal evaluation", err, 10*time.Second, 10*time.Minute, logger)
+		logger.Warnf("unable to delete internal evaluation: %s", err.Error())
+		return ars.deProvisioningManager.RetryOperationWithoutFail(operation, "error while deleting avs internal evaluation", 10*time.Second, 1*time.Minute, logger)
 	}
 
 	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
@@ -53,8 +54,15 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 	}
 	operation, err = ars.delegator.DeleteAvsEvaluation(operation, logger, ars.externalEvalAssistant)
 	if err != nil {
-		return ars.deProvisioningManager.RetryOperation(operation, "error while deleting avs external evaluation", err, 10*time.Second, 10*time.Minute, logger)
+		logger.Warnf("unable to delete external evaluation: %s", err.Error())
+		return ars.deProvisioningManager.RetryOperationWithoutFail(operation, "error while deleting avs external evaluation", 10*time.Second, 1*time.Minute, logger)
 	}
-	return operation, 0, nil
+
+	newOperation, err := ars.operationsStorage.UpdateOperation(operation)
+	if err != nil {
+		logger.Errorf("Unable to update an operation")
+		return operation, 5 * time.Second, nil
+	}
+	return *newOperation, 0, nil
 
 }

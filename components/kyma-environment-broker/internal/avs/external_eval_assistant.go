@@ -29,7 +29,7 @@ func (eea *ExternalEvalAssistant) IsAlreadyCreated(lifecycleData internal.AvsLif
 }
 
 func (eea *ExternalEvalAssistant) IsValid(lifecycleData internal.AvsLifecycleData) bool {
-	return eea.IsAlreadyCreated(lifecycleData) && !eea.IsAlreadyDeleted(lifecycleData)
+	return eea.IsAlreadyCreated(lifecycleData) && !eea.IsAlreadyDeletedOrEmpty(lifecycleData)
 }
 
 func (eea *ExternalEvalAssistant) ProvideSuffix() string {
@@ -87,8 +87,8 @@ func (eea *ExternalEvalAssistant) ProvideCheckType() string {
 	return externalEvalCheckType
 }
 
-func (eea *ExternalEvalAssistant) IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool {
-	return lifecycleData.AVSExternalEvaluationDeleted
+func (eea *ExternalEvalAssistant) IsAlreadyDeletedOrEmpty(lifecycleData internal.AvsLifecycleData) bool {
+	return lifecycleData.AVSExternalEvaluationDeleted || lifecycleData.AVSEvaluationExternalId == 0
 }
 
 func (eea *ExternalEvalAssistant) GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64 {
