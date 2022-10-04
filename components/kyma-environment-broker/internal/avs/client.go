@@ -174,7 +174,16 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
-			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationID)
+			msg, e := io.ReadAll(response.Body)
+			if e != nil {
+				msg = []byte("unable to read the response body")
+			} else {
+				if strings.Contains(strings.ToLower(string(msg)), "does not contain subevaluation") {
+					return nil
+				}
+			}
+			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d, URL: %s, message: %s",
+				evaluationID, absoluteURL, string(msg))
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {

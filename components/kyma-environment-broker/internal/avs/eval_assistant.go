@@ -15,7 +15,7 @@ type EvalAssistant interface {
 	SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string)
 	GetEvalStatus(lifecycleData internal.AvsLifecycleData) string
 	GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string
-	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
+	IsAlreadyDeletedOrEmpty(lifecycleData internal.AvsLifecycleData) bool
 	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
 	ProvideParentId(pp internal.ProvisioningParameters) int64
 	SetDeleted(lifecycleData *internal.AvsLifecycleData, deleted bool)
