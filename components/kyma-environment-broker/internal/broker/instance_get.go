@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
@@ -62,11 +64,13 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, err.Error())
 	}
 
+	parameters := b.prepareParametersToReturn(instance.Parameters)
+
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    instance.ServiceID,
 		PlanID:       instance.ServicePlanID,
 		DashboardURL: instance.DashboardURL,
-		Parameters:   instance.Parameters,
+		Parameters:   parameters,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*op, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
@@ -80,4 +84,10 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 	}
 
 	return spec, nil
+}
+
+func (b *GetInstanceEndpoint) prepareParametersToReturn(parameters internal.ProvisioningParameters) internal.ProvisioningParameters {
+	parameters.Parameters.Kubeconfig = ""
+	parameters.ErsContext.SMOperatorCredentials = nil
+	return parameters
 }
