@@ -572,15 +572,15 @@ func orchestrationDetails(obj interface{}) string {
 func PromptUser(msg string) bool {
 	fmt.Printf("%s%s", "? ", msg)
 	for {
-		fmt.Print("Type [y/N]: ")
+		fmt.Print("Type (Y/N): ")
 		var res string
 		if _, err := fmt.Scanf("%s", &res); err != nil {
 			return false
 		}
-		switch res {
+		switch strings.ToLower(res) {
 		case "yes", "y":
 			return true
-		case "No", "N", "no", "n":
+		case "no", "n":
 			return false
 		default:
 			continue
