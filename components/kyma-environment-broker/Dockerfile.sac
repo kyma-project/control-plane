@@ -8,7 +8,6 @@ COPY common common
 COPY internal internal
 COPY go.mod go.mod
 COPY go.sum go.sum
-COPY vendor vendor
 
 RUN CGO_ENABLED=0 go build -o /bin/accountcleanup ./cmd/accountcleanup/main.go
 
