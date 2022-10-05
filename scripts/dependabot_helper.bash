@@ -26,6 +26,11 @@ for pr in "${prs[@]}"; do
             git push
             sleep 5
             gh pr review "${pr}" --approve --body "${body}"
+        else
+            status=$(gh pr view --json reviewDecision | jq '.reviewDecision')
+            if [[ "$status" == '"REVIEW_REQUIRED"' ]]; then
+                gh pr review "${pr}" --approve --body "${body}"
+            fi
         fi
     )
 done
