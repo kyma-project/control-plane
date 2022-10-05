@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
-	"github.com/vburenin/nsync"
 )
 
 //go:generate mockery --name=ComponentListProvider --output=automock --outpkg=automock --case=underscore
@@ -183,7 +182,6 @@ func (f *InputBuilderFactory) CreateProvisionInput(provisioningParameters intern
 
 	return &RuntimeInput{
 		provisionRuntimeInput:     initInput,
-		mutex:                     nsync.NewNamedMutex(),
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		labels:                    make(map[string]string),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
@@ -306,7 +304,6 @@ func (f *InputBuilderFactory) CreateUpgradeInput(provisioningParameters internal
 	return &RuntimeInput{
 		provisionRuntimeInput:     kymaInput,
 		upgradeRuntimeInput:       upgradeKymaInput,
-		mutex:                     nsync.NewNamedMutex(),
 		overrides:                 make(map[string][]*gqlschema.ConfigEntryInput, 0),
 		globalOverrides:           make([]*gqlschema.ConfigEntryInput, 0),
 		optionalComponentsService: f.optComponentsSvc,
@@ -386,7 +383,6 @@ func (f *InputBuilderFactory) CreateUpgradeShootInput(provisioningParameters int
 	return &RuntimeInput{
 		upgradeShootInput:        input,
 		config:                   cfg,
-		mutex:                    nsync.NewNamedMutex(),
 		hyperscalerInputProvider: provider,
 		trialNodesNumber:         f.config.TrialNodesNumber,
 		oidcDefaultValues:        f.oidcDefaultValues,
