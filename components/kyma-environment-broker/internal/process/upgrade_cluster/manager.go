@@ -17,9 +17,16 @@ type Step interface {
 	Run(operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error)
 }
 
+type StepCondition func(operation internal.Operation) bool
+
+type StepWithCondition struct {
+	Step
+	condition StepCondition
+}
+
 type Manager struct {
 	log              logrus.FieldLogger
-	steps            map[int][]Step
+	steps            map[int][]StepWithCondition
 	operationStorage storage.Operations
 
 	publisher event.Publisher
@@ -28,21 +35,21 @@ type Manager struct {
 func NewManager(storage storage.Operations, pub event.Publisher, logger logrus.FieldLogger) *Manager {
 	return &Manager{
 		log:              logger,
-		steps:            make(map[int][]Step, 0),
+		steps:            make(map[int][]StepWithCondition, 0),
 		operationStorage: storage,
 		publisher:        pub,
 	}
 }
 
 func (m *Manager) InitStep(step Step) {
-	m.AddStep(0, step)
+	m.AddStep(0, step, nil)
 }
 
-func (m *Manager) AddStep(weight int, step Step) {
+func (m *Manager) AddStep(weight int, step Step, condition StepCondition) {
 	if weight <= 0 {
 		weight = 1
 	}
-	m.steps[weight] = append(m.steps[weight], step)
+	m.steps[weight] = append(m.steps[weight], StepWithCondition{Step: step, condition: condition})
 }
 
 func (m *Manager) runStep(step Step, operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
@@ -90,6 +97,11 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 		steps := m.steps[weightStep]
 		for _, step := range steps {
 			logStep := logOperation.WithField("step", step.Name())
+
+			if step.condition != nil && !step.condition(operation.Operation) {
+				logStep.Debugf("Skipping due to not met condition")
+				continue
+			}
 			logStep.Infof("Start step")
 
 			operation, when, err = m.runStep(step, operation, logStep)
