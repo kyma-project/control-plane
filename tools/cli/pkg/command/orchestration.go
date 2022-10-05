@@ -253,17 +253,11 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 			if err != nil {
 				return errors.Wrap(err, "while getting orchestration")
 			}
-			if !PromptUser(fmt.Sprintf("%s operation will be cancelled. Are you sure you want to continue?", sr.Type)) {
-				return errors.New("Cancel command aborted")
-			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
 			sr, err := cmd.client.GetOrchestration(args[0])
 			if err != nil {
 				return errors.Wrap(err, "while getting orchestration")
-			}
-			if !PromptUser(fmt.Sprintf("%s operation will be retried. Are you sure you want to continue?", sr.Type)) {
-				return errors.New("Retry command aborted")
 			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
@@ -433,11 +427,7 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
-	fmt.Print("Do you want to continue? (Y/N) ")
-	scanner.Scan()
-	if scanner.Text() != "Y" {
+	if !PromptUser(fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to continue?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
 		fmt.Println("Aborted.")
 		return nil
 	}
@@ -583,6 +573,7 @@ func PromptUser(msg string) bool {
 		case "no", "n":
 			return false
 		default:
+			fmt.Print("Invalid input, please try again!")
 			continue
 		}
 	}
