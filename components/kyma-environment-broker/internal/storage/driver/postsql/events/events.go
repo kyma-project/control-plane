@@ -2,7 +2,6 @@ package events
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -58,8 +57,6 @@ func (e *events) InsertEvent(eventLevel dbmodel.EventLevel, message, instanceID,
 		if err := sess.InsertEvent(eventLevel, message, instanceID, operationID); err != nil {
 			e.log.Errorf("failed to insert event [%v] %v/%v %q: %v", eventLevel, instanceID, operationID, message, err)
 		}
-	} else {
-		log.Printf("no event sink set for event [%v] %v/%v %q\n", eventLevel, instanceID, operationID, message)
 	}
 }
 
