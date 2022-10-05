@@ -47,10 +47,9 @@ type RuntimeInput struct {
 	provisionRuntimeInput gqlschema.ProvisionRuntimeInput
 	upgradeRuntimeInput   gqlschema.UpgradeRuntimeInput
 	upgradeShootInput     gqlschema.UpgradeShootInput
-	//mutex                 *nsync.NamedMutex
-	overrides       map[string][]*gqlschema.ConfigEntryInput
-	labels          map[string]string
-	globalOverrides []*gqlschema.ConfigEntryInput
+	overrides             map[string][]*gqlschema.ConfigEntryInput
+	labels                map[string]string
+	globalOverrides       []*gqlschema.ConfigEntryInput
 
 	config                    *internal.ConfigForPlan
 	hyperscalerInputProvider  HyperscalerInputProvider
