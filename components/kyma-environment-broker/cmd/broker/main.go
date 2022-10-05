@@ -166,8 +166,6 @@ type ProfilerConfig struct {
 
 const (
 	createRuntimeStageName = "create_runtime"
-	checkRuntimeStageName  = "check_runtime"
-	createKymaStageName    = "create_kyma"
 	checkKymaStageName     = "check_kyma"
 	startStageName         = "start"
 )
@@ -733,8 +731,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), runtimeVerConfigurator, inputFactory),
 		},
 		{
-			stage: "cluster",
-			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			stage:     "cluster",
+			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			condition: update.SkipForOwnClusterPlan,
 		},
 		{
 			stage: "btp-operator",
@@ -761,8 +760,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			condition: update.CheckReconcilerStatus,
 		},
 		{
-			stage: "check",
-			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			stage:     "check",
+			step:      update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			condition: update.SkipForOwnClusterPlan,
 		},
 	}
 
@@ -945,7 +945,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 }
 
 func skipForOwnClusterPlan(operation internal.Operation) bool {
-	return operation.ProvisioningParameters.PlanID != broker.OwnClusterPlanID
+	return !broker.IsOwnClusterPlan(operation.ProvisioningParameters.PlanID)
 }
 
 func doForOwnClusterPlanOnly(operation internal.Operation) bool {

@@ -128,7 +128,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			logStep := logOperation.WithField("step", step.Name()).
 				WithField("stage", stage.name)
 			if step.condition != nil && !step.condition(processedOperation) {
-				logStep.Debugf("Skipping")
+				logStep.Debugf("Skipping due to condition not met")
 				continue
 			}
 			logStep.Infof("Start step")
