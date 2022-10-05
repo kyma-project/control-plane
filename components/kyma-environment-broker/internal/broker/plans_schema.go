@@ -88,7 +88,7 @@ func NameProperty() NameType {
 		Type: Type{
 			Type:  "string",
 			Title: "Cluster Name",
-			// Allows for all alphanumeric characters, '_', and '-'
+			// Allows for all alphanumeric characters and '-'
 			Pattern:   "^[a-zA-Z0-9-]*$",
 			MinLength: 1,
 		},
@@ -107,15 +107,19 @@ func KubeconfigProperty() *Type {
 
 func ShootNameProperty() *Type {
 	return &Type{
-		Type:  "string",
-		Title: "Shoot name",
+		Type:      "string",
+		Title:     "Shoot name",
+		Pattern:   "^[a-zA-Z0-9-]*$",
+		MinLength: 1,
 	}
 }
 
 func ShootDomainProperty() *Type {
 	return &Type{
-		Type:  "string",
-		Title: "Shoot domain",
+		Type:      "string",
+		Title:     "Shoot domain",
+		Pattern:   "^[a-zA-Z0-9-\\.]*$",
+		MinLength: 1,
 	}
 }
 
