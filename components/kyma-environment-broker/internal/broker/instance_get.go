@@ -3,9 +3,10 @@ package broker
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"

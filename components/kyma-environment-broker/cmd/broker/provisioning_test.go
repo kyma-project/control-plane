@@ -3,10 +3,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
