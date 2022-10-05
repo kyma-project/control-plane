@@ -74,6 +74,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+// testing if build pipelines are operational
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
