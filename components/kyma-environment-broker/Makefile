@@ -17,7 +17,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 custom-verify: testing-with-database-network mod-verify go-mod-check check-fmt
 
-verify:: custom-verify build-image push-image
+verify:: custom-verify
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -81,28 +81,3 @@ testing-with-database-network:
 
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK) || true
-
-# overide build-image to build separate images - broker and cleanup jobs
-build-image:
-	docker build -t $(IMG_NAME) -f Dockerfile.keb .
-	docker build -t $(CLEANUP_IMG_NAME) -f Dockerfile.cleanup .
-	docker build -t $(SUBACCOUNT_CLEANUP_IMG_NAME) -f Dockerfile.sac .
-	docker build -t $(SUBSCRIPTION_CLEANUP_IMG_NAME) -f Dockerfile.scj .
-	docker build -t $(TRIAL_CLEANUP_IMG_NAME) -f Dockerfile.tcj .
-
-# overide push-image to push separate images - broker and cleanup jobs
-push-image:
-	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
-	docker push $(IMG_NAME):$(TAG)
-
-	docker tag $(CLEANUP_IMG_NAME) $(CLEANUP_IMG_NAME):$(TAG)
-	docker push $(CLEANUP_IMG_NAME):$(TAG)
-
-	docker tag $(SUBACCOUNT_CLEANUP_IMG_NAME) $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
-	docker push $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
-
-	docker tag $(SUBSCRIPTION_CLEANUP_IMG_NAME) $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
-	docker push $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
-
-	docker tag $(TRIAL_CLEANUP_IMG_NAME) $(TRIAL_CLEANUP_IMG_NAME):$(TAG)
-	docker push $(TRIAL_CLEANUP_IMG_NAME):$(TAG)
