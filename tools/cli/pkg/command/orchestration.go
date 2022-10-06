@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -249,13 +248,13 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
-			sr, err := cmd.client.GetOrchestration(args[0])
+			_, err := cmd.client.GetOrchestration(args[0])
 			if err != nil {
 				return errors.Wrap(err, "while getting orchestration")
 			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
-			sr, err := cmd.client.GetOrchestration(args[0])
+			_, err := cmd.client.GetOrchestration(args[0])
 			if err != nil {
 				return errors.Wrap(err, "while getting orchestration")
 			}
@@ -427,7 +426,7 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
-	if !PromptUser(fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to continue?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
+	if !PromptUser(fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to continue?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
 		fmt.Println("Aborted.")
 		return nil
 	}
