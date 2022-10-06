@@ -248,16 +248,8 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
-			_, err := cmd.client.GetOrchestration(args[0])
-			if err != nil {
-				return errors.Wrap(err, "while getting orchestration")
-			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
-			_, err := cmd.client.GetOrchestration(args[0])
-			if err != nil {
-				return errors.Wrap(err, "while getting orchestration")
-			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
@@ -426,8 +418,8 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
-	if !PromptUser(fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to continue?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
-		fmt.Println("Aborted.")
+	if !PromptUser(fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to cancel?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
+		fmt.Println("cancel is not run.")
 		return nil
 	}
 
