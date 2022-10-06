@@ -56,6 +56,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
 	"github.com/pkg/errors"
@@ -156,6 +157,8 @@ type Config struct {
 	// under /tmp/profiler directory. Based on the deployment strategy, this will be
 	// either ephemeral container filesystem or persistent storage
 	Profiler ProfilerConfig
+
+	Events events.Config
 }
 
 type ProfilerConfig struct {
@@ -245,7 +248,7 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, cfg.Events, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)

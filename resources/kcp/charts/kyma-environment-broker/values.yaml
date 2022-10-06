@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2095"
+      version: "PR-2094"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-1978"
@@ -36,6 +36,8 @@ broker:
   operationTimeout: "24h"
   profiler:
     memory: false
+  events:
+    enabled: false
 
 service:
   type: ClusterIP
