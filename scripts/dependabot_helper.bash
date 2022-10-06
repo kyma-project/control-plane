@@ -16,6 +16,7 @@ body="/lgtm
 /approve"
 
 # iterate over each PR, run go mod tidy under the KCP CLI dir, commit, push
+git pull origin --rebase
 for pr in "${prs[@]}"; do
     gh pr checkout "${pr}"
     (
