@@ -44,6 +44,10 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 		"runtimeID":       instance.RuntimeID,
 		"globalAccountID": instance.GlobalAccountID,
 	})
+	if instance.IsExpired() {
+		l.Info("Expired instance cannot be unsuspended")
+		return false, nil
+	}
 
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
