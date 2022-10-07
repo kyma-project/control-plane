@@ -21,6 +21,6 @@ type EventDTO struct {
 }
 
 type EventFilter struct {
-	InstanceID  string
-	OperationID string
+	InstanceIDs  []string
+	OperationIDs []string
 }

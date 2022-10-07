@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/printer"
@@ -98,6 +99,7 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes")
+	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events")
 
 	return cobraCmd
 }
@@ -112,7 +114,19 @@ func (cmd *RuntimeCommand) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "while listing runtimes")
 	}
-	err = cmd.printRuntimes(rp)
+	var eventList []events.EventDTO
+	if cmd.params.Events && rp.Count > 0 {
+		ev := events.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
+		var instanceIds []string
+		for _, i := range rp.Data {
+			instanceIds = append(instanceIds, i.InstanceID)
+		}
+		eventList, err = ev.ListEvents(instanceIds)
+		if err != nil {
+			return errors.Wrap(err, "while listing events")
+		}
+	}
+	err = cmd.printRuntimes(rp, eventList)
 	if err != nil {
 		return errors.Wrap(err, "while printing runtimes")
 	}
@@ -146,7 +160,7 @@ func (cmd *RuntimeCommand) Validate() error {
 	return nil
 }
 
-func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
+func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage, eventList []events.EventDTO) error {
 	switch {
 	case cmd.output == tableOutput:
 		if cmd.display.SubscriptionGlobalAccountID {
@@ -171,6 +185,9 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage) error {
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
 		jp.PrintObj(runtimes)
+		if eventList != nil {
+			jp.PrintObj(eventList)
+		}
 	case strings.HasPrefix(cmd.output, customOutput):
 		_, templateFile := printer.ParseOutputToTemplateTypeAndElement(cmd.output)
 		column, err := printer.ParseColumnToHeaderAndFieldSpec(templateFile)
