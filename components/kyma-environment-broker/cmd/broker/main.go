@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"io"
 	"log"
 	"math/rand"
@@ -450,11 +451,13 @@ func isVersionFollowingSemanticVersioning(version string) bool {
 	return false
 }
 
-func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, logger lager.Logger, logs logrus.FieldLogger, planDefaults broker.PlanDefaults) {
+func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planValidator broker.PlanValidator, cfg *Config, db storage.BrokerStorage, provisionQueue, deprovisionQueue, updateQueue *process.Queue, log lager.Logger, logs logrus.FieldLogger, planDefaults broker.PlanDefaults) {
 	suspensionCtxHandler := suspension.NewContextUpdateHandler(db.Operations(), provisionQueue, deprovisionQueue, logs)
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
+
+	log := logger.BrokerLogger{}
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
@@ -477,7 +480,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 		"/oauth/{region}/", // oauth2 handled by Ory with region
 	} {
 		route := router.PathPrefix(prefix).Subrouter()
-		broker.AttachRoutes(route, kymaEnvBroker, logger)
+		broker.AttachRoutes(route, kymaEnvBroker, log)
 	}
 
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)

@@ -137,7 +137,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		instance.DashboardURL = dashboardURL
 	}
 
-	if b.processingEnabled && !instanceWasExpired {
+	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err

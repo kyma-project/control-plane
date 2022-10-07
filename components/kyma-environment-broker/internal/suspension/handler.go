@@ -125,6 +125,10 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 }
 
 func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) error {
+	if instance.IsExpired() {
+		h.log.Infof("Expired instance cannot be unsuspended")
+		return nil
+	}
 	id := uuid.New().String()
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
 	operation.InstanceDetails, err = instance.GetInstanceDetails()
