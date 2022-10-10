@@ -617,6 +617,58 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
 	suite.AssertAWSRegionAndZone("us-east-1")
 }
 
+func TestUpdateWithOwnClusterPlan(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "03e3cb66-a4c6-4c6a-b4b0-5d42224debea",
+				   "context": {
+					   "sm_operator_credentials": {
+						   "clientid": "cid",
+						   "clientsecret": "cs",
+						   "url": "url",
+						   "sm_url": "sm_url"
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"shootName": "shoot-name",
+						"shootDomain": "kyma-dev.shoot.canary.k8s-hana.ondemand.com",
+						"kubeconfig": "YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCg==",
+						"kymaVersion": "2.4.0"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.FinishReconciliation(opID)
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com"
+       },
+		"parameters": {
+			"kubeconfig": "YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCg==",
+			"kymaVersion": "2.5.0"
+		}
+   }`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	upgradeOperationID := suite.DecodeOperationID(resp)
+
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+}
+
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)

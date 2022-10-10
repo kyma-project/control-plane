@@ -3,8 +3,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -106,6 +109,40 @@ func TestProvisioning_OwnCluster(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	// get instance OSB API call
+	// when
+	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s", iid), ``)
+	r, e := io.ReadAll(resp.Body)
+
+	// then
+	require.NoError(t, e)
+	assert.JSONEq(t, `{
+  "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+  "plan_id": "03e3cb66-a4c6-4c6a-b4b0-5d42224debea",
+  "parameters": {
+    "plan_id": "03e3cb66-a4c6-4c6a-b4b0-5d42224debea",
+    "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+    "ers_context": {
+      "subaccount_id": "sub-id",
+      "globalaccount_id": "g-account-id",
+      "user_id": "john.smith@email.com"
+    },
+    "parameters": {
+      "name": "testing-cluster",
+      "shootName": "sh1",
+      "shootDomain": "sh1.avs.sap.nothing"
+    },
+    "platform_region": "",
+    "platform_provider": "unknown"
+  },
+  "metadata": {
+    "labels": {
+      "Name": "testing-cluster"
+    }
+  }
+}`, string(r))
+
 }
 
 func TestProvisioning_TrialAtEU(t *testing.T) {

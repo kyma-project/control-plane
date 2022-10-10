@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -249,22 +248,8 @@ func (cmd *OrchestrationCommand) Run(args []string) error {
 		// Called with orchestration ID and subcommand
 		switch cmd.subCommand {
 		case cancelCommand:
-			sr, err := cmd.client.GetOrchestration(args[0])
-			if err != nil {
-				return errors.Wrap(err, "while getting orchestration")
-			}
-			if !PromptUser(fmt.Sprintf("%s operation will be cancelled. Are you sure you want to continue?", sr.Type)) {
-				return errors.New("Cancel command aborted")
-			}
 			return cmd.cancelOrchestration(args[0])
 		case retryCommand:
-			sr, err := cmd.client.GetOrchestration(args[0])
-			if err != nil {
-				return errors.Wrap(err, "while getting orchestration")
-			}
-			if !PromptUser(fmt.Sprintf("%s operation will be retried. Are you sure you want to continue?", sr.Type)) {
-				return errors.New("Retry command aborted")
-			}
 			return cmd.retryOrchestration(args[0])
 		case operationsCommand, opsCommand:
 			return cmd.showOperations(args[0])
@@ -433,12 +418,8 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
-	fmt.Print("Do you want to continue? (Y/N) ")
-	scanner.Scan()
-	if scanner.Text() != "Y" {
-		fmt.Println("Aborted.")
+	if !PromptUser(fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to cancel?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
+		fmt.Println("cancel is not run.")
 		return nil
 	}
 
@@ -572,17 +553,18 @@ func orchestrationDetails(obj interface{}) string {
 func PromptUser(msg string) bool {
 	fmt.Printf("%s%s", "? ", msg)
 	for {
-		fmt.Print("Type [y/N]: ")
+		fmt.Print("Type (Y/N): ")
 		var res string
 		if _, err := fmt.Scanf("%s", &res); err != nil {
 			return false
 		}
-		switch res {
+		switch strings.ToLower(res) {
 		case "yes", "y":
 			return true
-		case "No", "N", "no", "n":
+		case "no", "n":
 			return false
 		default:
+			fmt.Print("Invalid input, please try again!")
 			continue
 		}
 	}

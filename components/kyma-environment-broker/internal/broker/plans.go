@@ -172,7 +172,7 @@ func TrialSchema(additionalParams, update bool) *map[string]interface{} {
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func OwnClusterSchema(additionalParams, update bool) *map[string]interface{} {
+func OwnClusterSchema(update bool) *map[string]interface{} {
 	properties := ProvisioningProperties{
 		Name:        NameProperty(),
 		ShootName:   ShootNameProperty(),
@@ -180,9 +180,6 @@ func OwnClusterSchema(additionalParams, update bool) *map[string]interface{} {
 		UpdateProperties: UpdateProperties{
 			Kubeconfig: KubeconfigProperty(),
 		},
-	}
-	if additionalParams {
-		properties.IncludeAdditional()
 	}
 
 	if update {
@@ -298,7 +295,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 	azureLiteSchema := AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, false)
 	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false)
 	trialSchema := TrialSchema(includeAdditionalParamsInSchema, false)
-	ownClusterSchema := OwnClusterSchema(includeAdditionalParamsInSchema, false)
+	ownClusterSchema := OwnClusterSchema(false)
 
 	// Schemas exposed on v2/catalog endpoint - different than provisioningRawSchema to allow backwards compatibility
 	// when a machine type switch is introduced
@@ -321,7 +318,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, true)),
 		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
-		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(includeAdditionalParamsInSchema, true)),
+		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(true)),
 	}
 
 	return outputPlans

@@ -49,3 +49,19 @@ type InstanceERSContextStatsEntry struct {
 	LicenseType sql.NullString
 	Total       int
 }
+
+type EventLevel string
+
+const (
+	InfoEventLevel  EventLevel = "info"
+	ErrorEventLevel EventLevel = "error"
+)
+
+type EventDTO struct {
+	ID          string
+	Level       EventLevel
+	InstanceID  sql.NullString
+	OperationID sql.NullString
+	Message     string
+	CreatedAt   time.Time
+}

@@ -6,7 +6,6 @@ COPY cmd cmd
 COPY common/gardener common/gardener
 COPY go.mod go.mod
 COPY go.sum go.sum
-COPY vendor vendor
 
 RUN CGO_ENABLED=0 go build -o /app/subscriptioncleanup ./cmd/subscriptioncleanup/main.go
 

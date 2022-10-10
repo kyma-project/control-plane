@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
+
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-
-	"time"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -136,9 +136,11 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 				logStep.Debugf("Skipping")
 				continue
 			}
+			events.Infof(operation.InstanceID, operation.ID, "processing step: %v", step.Name())
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
 			if err != nil {
+				events.Errorf(operation.InstanceID, operation.ID, err, "step failed: %v", step.Name())
 				logStep.Errorf("Process operation failed: %s", err)
 				return 0, err
 			}

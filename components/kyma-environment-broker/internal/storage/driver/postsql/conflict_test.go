@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -81,7 +82,7 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -131,7 +132,7 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -181,7 +182,7 @@ func TestConflict(t *testing.T) {
 			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -230,7 +231,7 @@ func TestConflict(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 

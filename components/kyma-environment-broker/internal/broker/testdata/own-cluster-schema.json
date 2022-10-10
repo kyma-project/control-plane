@@ -24,10 +24,14 @@
       "type": "string"
     },
     "shootDomain": {
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-\\.]*$",
       "title": "Shoot domain",
       "type": "string"
     },
     "shootName": {
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
       "title": "Shoot name",
       "type": "string"
     }

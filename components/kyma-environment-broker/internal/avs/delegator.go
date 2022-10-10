@@ -177,7 +177,7 @@ func (del *Delegator) SetStatus(log logrus.FieldLogger, lifecycleData *internal.
 }
 
 func (del *Delegator) DeleteAvsEvaluation(deProvisioningOperation internal.Operation, logger logrus.FieldLogger, assistant EvalAssistant) (internal.Operation, error) {
-	if assistant.IsAlreadyDeleted(deProvisioningOperation.Avs) {
+	if assistant.IsAlreadyDeletedOrEmpty(deProvisioningOperation.Avs) {
 		logger.Infof("Evaluations have been deleted previously")
 		return deProvisioningOperation, nil
 	}

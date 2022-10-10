@@ -56,6 +56,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
 	"github.com/pkg/errors"
@@ -156,6 +157,8 @@ type Config struct {
 	// under /tmp/profiler directory. Based on the deployment strategy, this will be
 	// either ephemeral container filesystem or persistent storage
 	Profiler ProfilerConfig
+
+	Events events.Config
 }
 
 type ProfilerConfig struct {
@@ -166,8 +169,6 @@ type ProfilerConfig struct {
 
 const (
 	createRuntimeStageName = "create_runtime"
-	checkRuntimeStageName  = "check_runtime"
-	createKymaStageName    = "create_kyma"
 	checkKymaStageName     = "check_kyma"
 	startStageName         = "start"
 )
@@ -247,7 +248,7 @@ func main() {
 	if cfg.DbInMemory {
 		db = storage.NewMemoryStorage()
 	} else {
-		store, conn, err := storage.NewFromConfig(cfg.Database, cipher, logs.WithField("service", "storage"))
+		store, conn, err := storage.NewFromConfig(cfg.Database, cfg.Events, cipher, logs.WithField("service", "storage"))
 		fatalOnError(err)
 		db = store
 		dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
@@ -733,8 +734,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			step:  update.NewInitialisationStep(db.Instances(), db.Operations(), runtimeVerConfigurator, inputFactory),
 		},
 		{
-			stage: "cluster",
-			step:  update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			stage:     "cluster",
+			step:      update.NewUpgradeShootStep(db.Operations(), db.RuntimeStates(), provisionerClient),
+			condition: update.SkipForOwnClusterPlan,
 		},
 		{
 			stage: "btp-operator",
@@ -761,8 +763,9 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, work
 			condition: update.CheckReconcilerStatus,
 		},
 		{
-			stage: "check",
-			step:  update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			stage:     "check",
+			step:      update.NewCheckStep(db.Operations(), provisionerClient, 40*time.Minute),
+			condition: update.SkipForOwnClusterPlan,
 		},
 	}
 
@@ -913,24 +916,32 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	upgradeClusterManager.InitStep(upgradeClusterInit)
 
 	upgradeClusterSteps := []struct {
-		disabled bool
-		weight   int
-		step     upgrade_cluster.Step
+		disabled  bool
+		weight    int
+		step      upgrade_cluster.Step
+		condition upgrade_cluster.StepCondition
 	}{
 		{
-			weight:   10,
-			step:     upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled: cfg.Notification.Disabled,
+			weight:    1,
+			step:      upgrade_cluster.NewLogSkippingUpgradeStep(db.Operations()),
+			condition: doForOwnClusterPlanOnly,
 		},
 		{
-			weight: 10,
-			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
+			weight:    10,
+			step:      upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
+			disabled:  cfg.Notification.Disabled,
+			condition: skipForOwnClusterPlan,
+		},
+		{
+			weight:    10,
+			step:      upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
+			condition: skipForOwnClusterPlan,
 		},
 	}
 
 	for _, step := range upgradeClusterSteps {
 		if !step.disabled {
-			upgradeClusterManager.AddStep(step.weight, step.step)
+			upgradeClusterManager.AddStep(step.weight, step.step, step.condition)
 		}
 	}
 
@@ -945,7 +956,7 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 }
 
 func skipForOwnClusterPlan(operation internal.Operation) bool {
-	return operation.ProvisioningParameters.PlanID != broker.OwnClusterPlanID
+	return !broker.IsOwnClusterPlan(operation.ProvisioningParameters.PlanID)
 }
 
 func doForOwnClusterPlanOnly(operation internal.Operation) bool {

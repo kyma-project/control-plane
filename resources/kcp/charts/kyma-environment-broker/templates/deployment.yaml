@@ -364,6 +364,8 @@ spec:
               value: "{{ .Values.broker.profiler.memory }}"
             - name: APP_KYMA_DASHBOARD_CONFIG_LANDSCAPE_URL
               value: "{{ .Values.dashboardConfig.landscapeURL }}"
+            - name: APP_EVENTS_ENABLED
+              value: "{{ .Values.broker.events.enabled }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}

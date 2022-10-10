@@ -109,3 +109,7 @@ type Updating interface {
 	ListUpdatingOperationsByInstanceID(instanceID string) ([]internal.UpdatingOperation, error)
 	UpdateUpdatingOperation(operation internal.UpdatingOperation) (*internal.UpdatingOperation, error)
 }
+
+type Events interface {
+	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string)
+}

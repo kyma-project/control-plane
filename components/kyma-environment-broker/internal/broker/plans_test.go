@@ -84,7 +84,7 @@ func TestSchemaGenerator(t *testing.T) {
 		{
 			name: "Own cluster schema is correct",
 			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
-				return OwnClusterSchema(additionalParams, update)
+				return OwnClusterSchema(update)
 			},
 			machineTypes:   []string{},
 			file:           "own-cluster-schema.json",

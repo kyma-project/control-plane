@@ -126,10 +126,10 @@ const (
 )
 
 type AutoScalerParameters struct {
-	AutoScalerMin  *int `json:"autoScalerMin"`
-	AutoScalerMax  *int `json:"autoScalerMax"`
-	MaxSurge       *int `json:"maxSurge"`
-	MaxUnavailable *int `json:"maxUnavailable"`
+	AutoScalerMin  *int `json:"autoScalerMin,omitempty"`
+	AutoScalerMax  *int `json:"autoScalerMax,omitempty"`
+	MaxSurge       *int `json:"maxSurge,omitempty"`
+	MaxUnavailable *int `json:"maxUnavailable,omitempty"`
 }
 
 // FIXME: this is a makeshift check until the provisioner is capable of returning error messages
@@ -160,26 +160,26 @@ type ProvisioningParametersDTO struct {
 	AutoScalerParameters `json:",inline"`
 
 	Name         string  `json:"name"`
-	TargetSecret *string `json:"targetSecret"`
-	VolumeSizeGb *int    `json:"volumeSizeGb"`
-	MachineType  *string `json:"machineType"`
-	Region       *string `json:"region"`
-	Purpose      *string `json:"purpose"`
+	TargetSecret *string `json:"targetSecret,omitempty"`
+	VolumeSizeGb *int    `json:"volumeSizeGb,omitempty"`
+	MachineType  *string `json:"machineType,omitempty"`
+	Region       *string `json:"region,omitempty"`
+	Purpose      *string `json:"purpose,omitempty"`
 	// LicenceType - based on this parameter, some options can be enabled/disabled when preparing the input
 	// for the provisioner e.g. use default overrides for SKR instead overrides from resource
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
-	LicenceType                 *string  `json:"licence_type"`
-	Zones                       []string `json:"zones"`
-	OptionalComponentsToInstall []string `json:"components"`
-	KymaVersion                 string   `json:"kymaVersion"`
-	OverridesVersion            string   `json:"overridesVersion"`
-	RuntimeAdministrators       []string `json:"administrators"`
+	LicenceType                 *string  `json:"licence_type,omitempty"`
+	Zones                       []string `json:"zones,omitempty"`
+	OptionalComponentsToInstall []string `json:"components,omitempty"`
+	KymaVersion                 string   `json:"kymaVersion,omitempty"`
+	OverridesVersion            string   `json:"overridesVersion,omitempty"`
+	RuntimeAdministrators       []string `json:"administrators,omitempty"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
-	Provider *CloudProvider `json:"provider"`
+	Provider *CloudProvider `json:"provider,omitempty"`
 
-	Kubeconfig  string `json:"kubeconfig"`
-	ShootName   string `json:"shootName"`
-	ShootDomain string `json:"shootDomain"`
+	Kubeconfig  string `json:"kubeconfig,omitempty"`
+	ShootName   string `json:"shootName,omitempty"`
+	ShootDomain string `json:"shootDomain,omitempty"`
 
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }
@@ -216,7 +216,7 @@ func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bo
 }
 
 type ERSContext struct {
-	TenantID              string                             `json:"tenant_id"`
+	TenantID              string                             `json:"tenant_id,omitempty"`
 	SubAccountID          string                             `json:"subaccount_id"`
 	GlobalAccountID       string                             `json:"globalaccount_id"`
 	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`

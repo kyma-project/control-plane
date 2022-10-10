@@ -40,11 +40,9 @@ func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logr
 		version = &operation.RuntimeVersion
 	}
 	var lrs internal.RuntimeState
-	if version.MajorVersion == 2 {
-		lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
-		if err != nil {
-			return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
-		}
+	lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
 	}
 	op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
 		if version != nil {
