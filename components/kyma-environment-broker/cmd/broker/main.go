@@ -916,24 +916,32 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 	upgradeClusterManager.InitStep(upgradeClusterInit)
 
 	upgradeClusterSteps := []struct {
-		disabled bool
-		weight   int
-		step     upgrade_cluster.Step
+		disabled  bool
+		weight    int
+		step      upgrade_cluster.Step
+		condition upgrade_cluster.StepCondition
 	}{
 		{
-			weight:   10,
-			step:     upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled: cfg.Notification.Disabled,
+			weight:    1,
+			step:      upgrade_cluster.NewLogSkippingUpgradeStep(db.Operations()),
+			condition: doForOwnClusterPlanOnly,
 		},
 		{
-			weight: 10,
-			step:   upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
+			weight:    10,
+			step:      upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
+			disabled:  cfg.Notification.Disabled,
+			condition: skipForOwnClusterPlan,
+		},
+		{
+			weight:    10,
+			step:      upgrade_cluster.NewUpgradeClusterStep(db.Operations(), db.RuntimeStates(), provisionerClient, icfg),
+			condition: skipForOwnClusterPlan,
 		},
 	}
 
 	for _, step := range upgradeClusterSteps {
 		if !step.disabled {
-			upgradeClusterManager.AddStep(step.weight, step.step)
+			upgradeClusterManager.AddStep(step.weight, step.step, step.condition)
 		}
 	}
 
