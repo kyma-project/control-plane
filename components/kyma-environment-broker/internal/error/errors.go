@@ -170,3 +170,32 @@ func checkK8SError(cause error) LastError {
 
 	return lastErr
 }
+
+// UnwrapOnce accesses the direct cause of the error if any, otherwise
+// returns nil.
+//
+// It supports both errors implementing causer (`Cause()` method, from
+// github.com/pkg/errors) and `Wrapper` (`Unwrap()` method, from the
+// Go 2 error proposal).
+func UnwrapOnce(err error) (cause error) {
+	switch e := err.(type) {
+	case interface{ Cause() error }:
+		return e.Cause()
+	case interface{ Unwrap() error }:
+		return e.Unwrap()
+	}
+	return nil
+}
+
+// UnwrapAll accesses the root cause object of the error.
+// If the error has no cause (leaf error), it is returned directly.
+func UnwrapAll(err error) error {
+	for {
+		if cause := UnwrapOnce(err); cause != nil {
+			err = cause
+			continue
+		}
+		break
+	}
+	return err
+}
