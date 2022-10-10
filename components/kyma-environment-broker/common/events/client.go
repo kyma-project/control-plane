@@ -18,7 +18,6 @@ const (
 )
 
 type EventDTO struct {
-	ID          string
 	Level       EventLevel
 	InstanceID  *string
 	OperationID *string

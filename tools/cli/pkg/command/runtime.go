@@ -181,6 +181,7 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage, eventLis
 		if err != nil {
 			return err
 		}
+		tp.SetRuntimeEvents(eventList)
 		return tp.PrintObj(runtimes.Data)
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
