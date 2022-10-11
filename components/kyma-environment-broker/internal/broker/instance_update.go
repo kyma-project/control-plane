@@ -100,7 +100,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
-	//wasExpired := instance.IsExpired()
+
 	// If the param contains "expired" - then process expiration (save it in the instance)
 	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
 	if err != nil {

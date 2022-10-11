@@ -73,7 +73,6 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 			return false, nil
 		}
 		if !isActivated {
-			l.Debugf("not activated, %s", lastDeprovisioning.State)
 			// instance is inactive and incoming context update is suspension - verify if KEB should retrigger the operation
 			if lastDeprovisioning.Temporary && (lastDeprovisioning.State == domain.Failed) {
 				l.Infof("Retriggering suspension for instance id %s", instance.InstanceID)
