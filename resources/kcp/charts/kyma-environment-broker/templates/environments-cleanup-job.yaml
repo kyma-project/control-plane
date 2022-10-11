@@ -79,11 +79,13 @@ spec:
                   secretKeyRef:
                     key: postgresql-broker-db-name
                     name: kcp-postgresql
-              - name: APP_DATABASE_SSL
+              - name: APP_DATABASE_SSLMODE
                 valueFrom:
                   secretKeyRef:
                     key: postgresql-sslMode
                     name: kcp-postgresql
+              - name: APP_DATABASE_SSLROOTCERT
+                value: /secrets/cloudsql-sslrootcert/server-ca.pem
               - name: APP_BROKER_URL
                 value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_BROKER_TOKEN_URL
@@ -110,6 +112,9 @@ spec:
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
+              - name: cloudsql-sslrootcert
+                mountPath: /secrets/cloudsql-sslrootcert
+                readOnly: true
           - name: cloudsql-proxy
             image: {{ .Values.global.images.cloudsql_proxy_image }}
             command: [ "/cloud_sql_proxy",
@@ -127,6 +132,13 @@ spec:
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+            - name: cloudsql-sslrootcert
+              secret:
+                secretName: kcp-postgresql
+                items: 
+                - key: postgresql-sslRootCert
+                  path: server-ca.pem
+                optional: true
             {{- end}}
             - name: gardener-kubeconfig
               secret:

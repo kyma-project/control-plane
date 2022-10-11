@@ -30,6 +30,8 @@ To install KCP with GCP managed Postgres database, set the **database.embedded.e
 | `global.database.managedGCP.host` | Specifies cloudsql-proxy host | string | "localhost" |
 | `global.database.managedGCP.hostPort` | Specifies cloudsql-proxy port | string | "5432" |
 | `global.database.managedGCP.sslMode` | Specifies SSL connection mode | string | "" |
+| `global.database.managedGCP.sslRootCert` | Specifies the location of CA cert of PostgreSQL. (Optional) | string | None |
+
 
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `serviceAccountKey` and `instanceConnectionName` values.
 
@@ -45,3 +47,5 @@ For the `director.user`, `provisioner.user`, `broker.user`, `director.password`,
 The `host` and the `hostPort` values specifies the cloudsql-proxy host and port. These are used directly by application to connect to proxy, and further to database.
 
 The `sslMode` value specifies SSL connection mode to database. Check possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html) under `SSL Mode Descriptions` section.
+
+The `sslRootCert` value specifies the location of CA cert of database. (Optional)
