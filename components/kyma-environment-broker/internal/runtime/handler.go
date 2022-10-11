@@ -170,6 +170,7 @@ func (h *Handler) setRuntimeAllOperations(instance internal.Instance, dto *pkg.R
 	if len(deprovOprs) != 0 {
 		for _, op := range deprovOprs {
 			if !op.Temporary {
+				op := op
 				deprovOp = &op
 				break
 			}
