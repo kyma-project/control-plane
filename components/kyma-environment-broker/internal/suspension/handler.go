@@ -44,10 +44,6 @@ func (h *ContextUpdateHandler) Handle(instance *internal.Instance, newCtx intern
 		"runtimeID":       instance.RuntimeID,
 		"globalAccountID": instance.GlobalAccountID,
 	})
-	if instance.IsExpired() {
-		l.Info("Expired instance cannot be unsuspended")
-		return false, nil
-	}
 
 	if !broker.IsTrialPlan(instance.ServicePlanID) {
 		l.Info("Context update for non-trial instance, skipping")
@@ -77,8 +73,9 @@ func (h *ContextUpdateHandler) handleContextChange(newCtx internal.ERSContext, i
 			return false, nil
 		}
 		if !isActivated {
+			l.Debugf("not activated, %s", lastDeprovisioning.State)
 			// instance is inactive and incoming context update is suspension - verify if KEB should retrigger the operation
-			if lastDeprovisioning.Temporary && lastDeprovisioning.State == domain.Failed {
+			if lastDeprovisioning.Temporary && (lastDeprovisioning.State == domain.Failed) {
 				l.Infof("Retriggering suspension for instance id %s", instance.InstanceID)
 				return true, h.suspend(instance, l)
 			}
@@ -129,6 +126,10 @@ func (h *ContextUpdateHandler) suspend(instance *internal.Instance, log logrus.F
 }
 
 func (h *ContextUpdateHandler) unsuspend(instance *internal.Instance, log logrus.FieldLogger) error {
+	if instance.IsExpired() {
+		log.Info("Expired instance cannot be unsuspended")
+		return nil
+	}
 	id := uuid.New().String()
 	operation, err := internal.NewProvisioningOperationWithID(id, instance.InstanceID, instance.Parameters)
 	operation.InstanceDetails, err = instance.GetInstanceDetails()

@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"testing"
-
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -12,6 +9,8 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"testing"
 )
 
 func TestUpdate(t *testing.T) {
@@ -162,6 +161,7 @@ func TestExpiration(t *testing.T) {
    }`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	// when
 	// OSB update:
@@ -179,6 +179,10 @@ func TestExpiration(t *testing.T) {
 		}
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.WaitForLastOperation(iid, domain.InProgress)
+	opID = suite.LastOperation(iid).ID
+	suite.FailDeprovisioningByReconciler(opID)
+	suite.FailDeprovisioningOperationByProvisioner(opID)
 	instance := suite.GetInstance(iid)
 	assert.True(suite.t, instance.IsExpired())
 
@@ -192,13 +196,33 @@ func TestExpiration(t *testing.T) {
            "globalaccount_id": "g-account-id",
            "user_id": "john.smith@email.com",
            "active": true
-       }
+       },
        "parameters": {
 			
 		}
    }`)
 	// expired instance does not support an update
-	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// when
+	// OSB update: retrigger suspension when lat suspension failed
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+       "parameters": {
+			
+		}
+   }`)
+	// expired instance does not support an update
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// we expect new suspension in progress operation (the last operation before is failed)
+	suite.WaitForLastOperation(iid, domain.InProgress)
 }
 
 func TestExpirationOfNonTrial(t *testing.T) {
