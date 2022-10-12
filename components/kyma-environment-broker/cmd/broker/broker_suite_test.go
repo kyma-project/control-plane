@@ -394,6 +394,11 @@ func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOper
 	return op.ID
 }
 
+func (s *BrokerSuiteTest) LastOperation(iid string) *internal.Operation {
+	op, _ := s.db.Operations().GetLastOperation(iid)
+	return op
+}
+
 func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -420,6 +425,20 @@ func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID str
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
+}
+
+func (s *BrokerSuiteTest) FailDeprovisioningOperationByProvisioner(operationID string) {
+	var op *internal.DeprovisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetDeprovisioningOperationByID(operationID)
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
@@ -566,6 +585,23 @@ func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
 			return false, err
 		}
 		s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleted)
+		return true, nil
+	})
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) FailDeprovisioningByReconciler(opID string) {
+
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetDeprovisioningOperationByID(opID)
+		if err != nil {
+			return false, nil
+		}
+		_, err = s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleteError)
 		return true, nil
 	})
 	assert.NoError(s.t, err)

@@ -182,9 +182,9 @@ func TestUpdateEndpoint_UpdateExpirationOfExpiredTrial(t *testing.T) {
 
 	// then
 
-	// we do not expect any action, handler won't be called
+	// we expect the handler is called. The handler is responsible to skip processing
 	assert.Equal(t, internal.ERSContext{
-		Active: nil,
+		Active: ptr.Bool(false),
 	}, handler.ersContext)
 
 	assert.Len(t, response.Metadata.Labels, 1)
