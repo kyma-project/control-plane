@@ -90,7 +90,6 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		logger.Errorf("unable to get instance: %s", err.Error())
 		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
 	}
-	instanceWasExpired := instance.IsExpired()
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
 
 	var ersContext internal.ERSContext
@@ -137,7 +136,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		instance.DashboardURL = dashboardURL
 	}
 
-	if b.processingEnabled && !instanceWasExpired {
+	if b.processingEnabled {
 		instance, suspendStatusChange, err := b.processContext(instance, details, lastProvisioningOperation, logger)
 		if err != nil {
 			return domain.UpdateServiceSpec{}, err
@@ -145,7 +144,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 		// NOTE: KEB currently can't process update parameters in one call along with context update
 		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
-		if !suspendStatusChange {
+		if !suspendStatusChange && !instance.IsExpired() {
 			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext, logger)
 		}
 	}

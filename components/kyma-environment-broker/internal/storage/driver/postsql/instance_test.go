@@ -40,7 +40,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{Enabled: true}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -105,6 +105,10 @@ func TestInstance(t *testing.T) {
 		assert.NotEmpty(t, inst.UpdatedAt)
 		assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
 		assert.True(t, expired.IsExpired())
+
+		// insert event
+		events.Infof(fixInstance.InstanceID, fixProvisioningOperation2.ID, "some event")
+		events.Errorf(fixInstance.InstanceID, fixProvisioningOperation2.ID, fmt.Errorf(""), "asdasd %s", "")
 
 		// when
 		err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
