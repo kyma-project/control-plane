@@ -105,7 +105,6 @@ func TestProvisioning_Conflict(t *testing.T) {
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningAndReconcilingByOperationID(opID)
 
-	// then
 	// when
 	resp = suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
@@ -125,6 +124,7 @@ func TestProvisioning_Conflict(t *testing.T) {
 						"kymaVersion": "2.5.0"
 					}
 		}`)
+	// then
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 }
 
