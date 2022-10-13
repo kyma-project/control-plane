@@ -40,7 +40,7 @@ Follow these steps to obtain a new access token:
     ```
     > **NOTE:** Get the value from [Kyma Control Plane API / CLI](https://github.tools.sap/kyma/documentation/blob/main/how-to-guides/identity-authentication.md#systems-connected-to-identity-authenticationn) and remove the `https://kyma-env-broker` prefix. The resulting domain for dev environment should be: `cp.dev.kyma.cloud.sap`.
 
-  - The scope of your cluster:
+  - The scope of your credentials:
 
     ```bash
     export SCOPE="broker:write cld:read"
