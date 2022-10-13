@@ -3,12 +3,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -126,7 +125,7 @@ func TestProvisioning_Conflict(t *testing.T) {
 						"kymaVersion": "2.5.0"
 					}
 		}`)
-	time.Sleep(time.Second)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 }
 
 func TestProvisioning_OwnCluster(t *testing.T) {
