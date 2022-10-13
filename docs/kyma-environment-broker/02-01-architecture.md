@@ -20,12 +20,5 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 5. KEB creates a cluster configuration in the Reconciler (for Kyma 2.x).
 
-6. Reconciler installs Kyma (for Kyma 2.x).
+6. Reconciler installs Kyma (for Kyma 2.x).  
 
-7. When the operation is successful, KEB keeps sending a request for a Dashboard URL to the [Management Plane](https://github.com/kyma-incubator/compass) (Director):
-
-    a. KEB sends a request to Hydra to refresh the OAuth token, if needed.
-
-    b. KEB passes the OAuth token to Director through Gateway.
-
-    c. Director returns the Dashboard URL to KEB through Gateway. The Dashboard URL is the URL to the newly created cluster.
