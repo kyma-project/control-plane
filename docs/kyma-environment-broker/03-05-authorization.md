@@ -38,7 +38,13 @@ Follow these steps to obtain a new access token:
     ```bash
     export DOMAIN={CLUSTER_DOMAIN}
     ```
+    > **NOTE:** Get the value from [Kyma Control Plane API / CLI](https://github.tools.sap/kyma/documentation/blob/main/how-to-guides/identity-authentication.md#systems-connected-to-identity-authenticationn) and remove the `https://kyma-env-broker` prefix. The resulting domain for dev environment should be: `cp.dev.kyma.cloud.sap`.
 
+  - The scope of your credentials:
+
+    ```bash
+    export SCOPE="broker:write cld:read"
+    ```
 2. Create an OAuth2 client:
 
 ```bash
@@ -55,8 +61,6 @@ spec:
   secretName: $CLIENT_NAME
 EOF
 ```
-
-> **NOTE:** The valid scopes are `broker:write` and `cld:read`.
 
 3. Export the credentials of the created client as environment variables. Run:
 
