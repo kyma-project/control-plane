@@ -38,7 +38,7 @@ Follow these steps to obtain a new access token:
     ```bash
     export DOMAIN={CLUSTER_DOMAIN}
     ```
-    > **NOTE:** Take the value from [here](https://github.tools.sap/kyma/documentation/blob/main/how-to-guides/identity-authentication.md#systems-connected-to-identity-authenticationn) - "Kyma Control Plane API / CLI" and remove the `https://kyma-env-broker` prefix. The resulting domain for dev environment should be: `cp.dev.kyma.cloud.sap`.
+    > **NOTE:** Get the value from [Kyma Control Plane API / CLI](https://github.tools.sap/kyma/documentation/blob/main/how-to-guides/identity-authentication.md#systems-connected-to-identity-authenticationn) and remove the `https://kyma-env-broker` prefix. The resulting domain for dev environment should be: `cp.dev.kyma.cloud.sap`.
 
   - The scope of your cluster:
 
