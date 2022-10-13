@@ -109,6 +109,7 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
+      sslRootCert: ""
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
