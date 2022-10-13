@@ -84,6 +84,7 @@ func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Dur
 		if err == nil {
 			return connection, nil
 		}
+		log.Warnf("Database Connection failed: %s\n", err.Error())
 
 		err = connection.Close()
 		if err != nil {
