@@ -46,6 +46,6 @@ For the `director.user`, `provisioner.user`, `broker.user`, `director.password`,
 
 The `host` and the `hostPort` values specifies the cloudsql-proxy host and port. These are used directly by application to connect to proxy, and further to database.
 
-The `sslMode` value specifies SSL connection mode to database. Check possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html) under `SSL Mode Descriptions` section.
+The `sslMode` value specifies SSL connection mode to database. See [all the possible values](https://www.postgresql.org/docs/9.1/libpq-ssl.html) under `SSL Mode Descriptions` section.
 
 The `sslRootCert` value specifies the location of CA cert of database. (Optional)
