@@ -212,8 +212,6 @@ func main() {
 
 	// create logger
 	logger := lager.NewLogger("kyma-env-broker")
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
-	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.ERROR))
 
 	logger.Info("Starting Kyma Environment Broker")
 
@@ -455,6 +453,13 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 
 	defaultPlansConfig, err := servicesConfig.DefaultPlansConfig()
 	fatalOnError(err)
+
+	debugSink, err := lager.NewRedactingSink(lager.NewWriterSink(os.Stdout, lager.DEBUG), []string{"instance-details"}, []string{})
+	fatalOnError(err)
+	logger.RegisterSink(debugSink)
+	errorSink, err := lager.NewRedactingSink(lager.NewWriterSink(os.Stderr, lager.ERROR), []string{"instance-details"}, []string{})
+	fatalOnError(err)
+	logger.RegisterSink(errorSink)
 
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
