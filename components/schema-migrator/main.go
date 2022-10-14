@@ -70,7 +70,7 @@ func invokeMigration() error {
 
 	_, present := os.LookupEnv("DB_SSLROOTCERT")
 	if present {
-		dbName = fmt.Sprintf("%s?sslrootcert=%s", dbName, os.Getenv("DB_SSLROOTCERT"))
+		dbName = fmt.Sprintf("%s&sslrootcert=%s", dbName, os.Getenv("DB_SSLROOTCERT"))
 	}
 
 	hostPort := net.JoinHostPort(
