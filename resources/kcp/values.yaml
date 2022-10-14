@@ -11,7 +11,7 @@ global:
       version: "PR-2140"
     provisioner:
       dir:
-      version: "PR-2078"
+      version: "PR-2153"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1840"
