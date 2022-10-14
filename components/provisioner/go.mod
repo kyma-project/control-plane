@@ -11,9 +11,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.4.0
 	github.com/kubernetes-sigs/service-catalog v0.3.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220125140301-bfb0c437ad31
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220126084901-92232f5eced0
 	github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f
-	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20200902131640-31c29c8feb0c
+	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20221014105541-fb0caf22fdd0
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
 	github.com/lib/pq v1.10.4
 	github.com/matryer/is v1.4.0
@@ -21,15 +21,15 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	github.com/testcontainers/testcontainers-go v0.14.0
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.25.0
-	k8s.io/apiextensions-apiserver v0.25.0
-	k8s.io/apimachinery v0.25.0
+	k8s.io/api v0.25.3
+	k8s.io/apiextensions-apiserver v0.25.3
+	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	sigs.k8s.io/controller-runtime v0.13.0
 )
@@ -128,7 +128,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/component-base v0.25.0 // indirect
+	k8s.io/component-base v0.25.3 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
@@ -143,12 +143,13 @@ replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.14
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.25+incompatible
+	github.com/docker/docker => github.com/docker/docker v20.10.18+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
 	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	golang.org/x/text => golang.org/x/text v0.3.8
-	k8s.io/apimachinery => k8s.io/apimachinery v0.25.0
-	k8s.io/apiserver => k8s.io/apiserver v0.25.0
-	k8s.io/client-go => k8s.io/client-go v0.25.0
+	k8s.io/apimachinery => k8s.io/apimachinery v0.25.3
+	k8s.io/apiserver => k8s.io/apiserver v0.25.3
+	k8s.io/client-go => k8s.io/client-go v0.25.3
 )
