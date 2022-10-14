@@ -20,8 +20,8 @@ require (
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.25.2
-	k8s.io/apimachinery v0.25.2
+	k8s.io/api v0.25.3
+	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
