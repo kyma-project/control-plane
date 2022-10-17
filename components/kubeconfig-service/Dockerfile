@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220920-b10d5457 as builder
+FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221017-733bfd36 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kubeconfig-service
 ENV CGO_ENABLED 0
