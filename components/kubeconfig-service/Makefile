@@ -1,7 +1,7 @@
 APP_NAME = kubeconfig-service
 APP_PATH = components/kubeconfig-service
 ENTRYPOINT = cmd/generator/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221017-733bfd36
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 
 export GO111MODULE=on

@@ -99,6 +99,7 @@ replace (
 	k8s.io/cri-api => k8s.io/cri-api v0.25.2
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.25.2
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.25.2
+	k8s.io/kube-apiserver => k8s.io/kube-apiserver v0.25.2
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.25.2
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.25.2
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.25.2
