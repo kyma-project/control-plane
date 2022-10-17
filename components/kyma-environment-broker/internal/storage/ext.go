@@ -112,4 +112,5 @@ type Updating interface {
 
 type Events interface {
 	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string)
+	ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error)
 }

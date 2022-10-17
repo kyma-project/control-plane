@@ -30,6 +30,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	eventshandler "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
@@ -488,6 +489,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 	respWriter := httputil.NewResponseWriter(logs, cfg.DevelopmentMode)
 	runtimesInfoHandler := appinfo.NewRuntimeInfoHandler(db.Instances(), db.Operations(), defaultPlansConfig, cfg.DefaultRequestRegion, respWriter)
 	router.Handle("/info/runtimes", runtimesInfoHandler)
+	router.Handle("/events", eventshandler.NewHandler(db.Events(), db.Instances()))
 }
 
 // queues all in progress operations by type
