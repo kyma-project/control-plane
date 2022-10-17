@@ -67,15 +67,10 @@ const (
 	defaultRegion          = "cf-eu10"
 	globalAccountID        = "dummy-ga-id"
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
-	brokerID               = "fake-broker-id"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
 	instanceID             = "instance-id"
-	smRegion               = "eu"
 	dbSecretKey            = "1234567890123456"
-
-	subscriptionNameRegular = "regular"
-	subscriptionNameShared  = "shared"
 
 	pollingInterval = 3 * time.Millisecond
 )
@@ -627,7 +622,7 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(cli), logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)

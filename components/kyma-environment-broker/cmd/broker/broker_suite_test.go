@@ -169,16 +169,14 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	accountProvider := fixAccountProvider()
 	require.NoError(t, err)
 
-	// TODO put Reconciler client in the queue for steps
+	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
 	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
 		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
+		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
-
-	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
@@ -252,19 +250,6 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
-	}
-}
-
-func defaultDNSValues() gardener.DNSProvidersData {
-	return gardener.DNSProvidersData{
-		Providers: []gardener.DNSProviderData{
-			{
-				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
-				Primary:        true,
-				SecretName:     "aws_dns_domain_secrets_test_insuite",
-				Type:           "route53_type_test",
-			},
-		},
 	}
 }
 
