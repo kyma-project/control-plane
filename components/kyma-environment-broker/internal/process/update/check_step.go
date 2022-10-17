@@ -16,7 +16,7 @@ import (
 // CheckStep checks if the SKR is updated
 type CheckStep struct {
 	provisionerClient   provisioner.Client
-	operationManager    *process.UpdateOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 }
 
@@ -25,18 +25,18 @@ func NewCheckStep(os storage.Operations,
 	provisioningTimeout time.Duration) *CheckStep {
 	return &CheckStep{
 		provisionerClient:   provisionerClient,
-		operationManager:    process.NewUpdateOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		provisioningTimeout: provisioningTimeout,
 	}
 }
 
-var _ Step = (*CheckStep)(nil)
+var _ process.Step = (*CheckStep)(nil)
 
 func (s *CheckStep) Name() string {
 	return "Check_Runtime"
 }
 
-func (s *CheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *CheckStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Errorf("Runtime ID is empty")
 		return s.operationManager.OperationFailed(operation, "Runtime ID is empty", nil, log)
@@ -44,7 +44,7 @@ func (s *CheckStep) Run(operation internal.UpdatingOperation, log logrus.FieldLo
 	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeID))
 }
 
-func (s *CheckStep) checkRuntimeStatus(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *CheckStep) checkRuntimeStatus(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if time.Since(operation.UpdatedAt) > s.provisioningTimeout {
 		log.Infof("operation has reached the time limit: updated operation time: %s", operation.UpdatedAt)
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", s.provisioningTimeout), nil, log)

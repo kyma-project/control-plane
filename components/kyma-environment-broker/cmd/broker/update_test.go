@@ -2085,7 +2085,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
 	instance2 := suite.GetInstance(id)
@@ -2152,7 +2152,7 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	instance2 := suite.GetInstance(id)
 	// license_type should be stored in the instance table for ERS context and future upgrades

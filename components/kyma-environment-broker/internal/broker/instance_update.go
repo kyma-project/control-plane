@@ -222,7 +222,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		logger.Errorf("invalid autoscaler parameters: %s", err.Error())
 		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
 	}
-	err = b.operationStorage.InsertUpdatingOperation(operation)
+	err = b.operationStorage.InsertOperation(operation)
 	if err != nil {
 		return domain.UpdateServiceSpec{}, err
 	}

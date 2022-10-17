@@ -5,18 +5,18 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 )
 
-func RequiresReconcilerUpdate(op internal.UpdatingOperation) bool {
+func RequiresReconcilerUpdate(op internal.Operation) bool {
 	return op.RequiresReconcilerUpdate
 }
 
-func ForBTPOperatorCredentialsProvided(op internal.UpdatingOperation) bool {
+func ForBTPOperatorCredentialsProvided(op internal.Operation) bool {
 	return op.ProvisioningParameters.ErsContext.SMOperatorCredentials != nil
 }
 
-func CheckReconcilerStatus(op internal.UpdatingOperation) bool {
+func CheckReconcilerStatus(op internal.Operation) bool {
 	return op.CheckReconcilerStatus
 }
 
-func SkipForOwnClusterPlan(op internal.UpdatingOperation) bool {
-	return !broker.IsOwnClusterPlan(op.Operation.ProvisioningParameters.PlanID)
+func SkipForOwnClusterPlan(op internal.Operation) bool {
+	return !broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID)
 }
