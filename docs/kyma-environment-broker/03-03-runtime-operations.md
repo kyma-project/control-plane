@@ -34,9 +34,9 @@ The timeout for processing the whole provisioning operation is set to `24h`. In 
 
 ## Deprovisioning
 
-Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. The first step finds the previous operation and copies those data.
+Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. The first step finds the previous operation and copies the data.
 
-Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
+None of the deprovisioning steps should block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip a step in case of a retry timeout. Set a 5-minute, at the most, timeout for retries in a step.
 Each step has its own separate `stage`, so once the step is successfully executed, it won't be retried.
 The deprovisioning process contains the following steps:
 
@@ -104,9 +104,9 @@ You can configure Runtime operations by providing additional steps. To add a new
   Provisioning
   </summary>
 
-1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning) directory.
+1. Create a new file in [this directory](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning).
 
-2. Implement this interface in your provisioning or deprovisioning step:
+2. Implement the following interface in your provisioning or deprovisioning step:
 
     ```go
     type Step interface {
@@ -214,7 +214,7 @@ You can configure Runtime operations by providing additional steps. To add a new
 
         // If a call or any other action is time-consuming, you can save the result in the operation
         // If you need an extra field in the Operation structure, add it first
-        // in the step below; beforehand, you can check if a given value already exists in the operation
+        // In the following step, you can check beforehand if a given value already exists in the operation
         operation.HelloWorlds = body.data
         updatedOperation, err := s.operationStorage.UpdateOperation(operation)
         if err != nil {
