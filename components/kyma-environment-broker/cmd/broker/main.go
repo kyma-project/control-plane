@@ -349,7 +349,7 @@ func main() {
 		avsDel, internalEvalAssistant, externalEvalAssistant, bundleBuilder, edpClient, accountProvider, reconcilerClient,
 		k8sClientProvider, logs)
 
-	updateManager := update.NewManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs)
+	updateManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("update", "manager"))
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 20, db, inputFactory, provisionerClient, eventBroker,
 		runtimeVerConfigurator, db.RuntimeStates(), componentsProvider, reconcilerClient, cfg, k8sClientProvider, logs)
 
@@ -726,15 +726,15 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 	return queue
 }
 
-func NewUpdateProcessingQueue(ctx context.Context, manager *update.Manager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
+func NewUpdateProcessingQueue(ctx context.Context, manager *process.StagedManager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
 	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
 
 	manager.DefineStages([]string{"cluster", "btp-operator", "btp-operator-check", "check"})
 	updateSteps := []struct {
 		stage     string
-		step      update.Step
-		condition update.StepCondition
+		step      process.Step
+		condition process.StepCondition
 	}{
 		{
 			stage: "cluster",

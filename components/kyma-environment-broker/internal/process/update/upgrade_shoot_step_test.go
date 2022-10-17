@@ -38,7 +38,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 		UsernamePrefix: "-",
 	}
 	operation.InputCreator = fixInputCreator(t)
-	os.InsertUpdatingOperation(operation)
+	os.InsertOperation(operation.Operation)
 	runtimeState := fixture.FixRuntimeState("runtime-id", "runtime-id", "provisioning-op-1")
 	runtimeState.ClusterConfig.OidcConfig = &gqlschema.OIDCConfigInput{
 		ClientID:       "clientID",
@@ -51,7 +51,7 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 	rs.Insert(runtimeState)
 
 	// when
-	newOperation, d, err := step.Run(operation, logrus.New())
+	newOperation, d, err := step.Run(operation.Operation, logrus.New())
 	require.NoError(t, err)
 	assert.Zero(t, d)
 	assert.True(t, cli.IsShootUpgraded("runtime-id"))

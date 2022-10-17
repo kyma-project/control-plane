@@ -50,7 +50,7 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 			st := storage.NewMemoryStorage()
 			operation := fixOperationRuntimeStatus(broker.GCPPlanID)
 			operation.RuntimeID = statusRuntimeID
-			err := st.Operations().InsertUpdatingOperation(operation)
+			err := st.Operations().InsertOperation(operation)
 			assert.NoError(t, err)
 
 			step := NewCheckStep(st.Operations(), provisionerClient, 1*time.Second)
@@ -66,16 +66,14 @@ func TestCheckRuntimeStep_RunProvisioningSucceeded(t *testing.T) {
 	}
 }
 
-func fixOperationRuntimeStatus(id string) internal.UpdatingOperation {
-	return internal.UpdatingOperation{
-		Operation: internal.Operation{
-			ID:                     id,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			ProvisionerOperationID: statusProvisionerOperationID,
-			State:                  domain.InProgress,
-			UpdatingParameters:     internal.UpdatingParametersDTO{},
-			InputCreator:           nil,
-		},
+func fixOperationRuntimeStatus(id string) internal.Operation {
+	return internal.Operation{
+		ID:                     id,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
+		ProvisionerOperationID: statusProvisionerOperationID,
+		State:                  domain.InProgress,
+		UpdatingParameters:     internal.UpdatingParametersDTO{},
+		InputCreator:           nil,
 	}
 }
