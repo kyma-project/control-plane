@@ -79,15 +79,30 @@ spec:
                           secretKeyRef:
                             name: kcp-postgresql
                             key: postgresql-sslMode
+                      - name: DB_SSLROOTCERT
+                        value: /secrets/cloudsql-sslrootcert/server-ca.pem
                       - name: MIGRATION_PATH
                         value: "kyma-environment-broker"
                       - name: DIRECTION
                         value: "up"
+                {{if eq .Values.global.database.embedded.enabled false}}
+                  volumeMounts:
+                      - name: cloudsql-sslrootcert
+                        mountPath: /secrets/cloudsql-sslrootcert
+                        readOnly: true
+                {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+              - name: cloudsql-sslrootcert
+                secret:
+                  secretName: kcp-postgresql
+                  items:
+                  - key: postgresql-sslRootCert
+                    path: server-ca.pem
+                  optional: true
             {{end}}
 ---
 apiVersion: batch/v1
@@ -170,14 +185,29 @@ spec:
                           secretKeyRef:
                             name: kcp-postgresql
                             key: postgresql-sslMode
+                      - name: DB_SSLROOTCERT
+                        value: /secrets/cloudsql-sslrootcert/server-ca.pem
                       - name: MIGRATION_PATH
                         value: "provisioner"
                       - name: DIRECTION
                         value: "up"
+                {{if eq .Values.global.database.embedded.enabled false}}
+                  volumeMounts:
+                      - name: cloudsql-sslrootcert
+                        mountPath: /secrets/cloudsql-sslrootcert
+                        readOnly: true
+                {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+              - name: cloudsql-sslrootcert
+                secret:
+                  secretName: kcp-postgresql
+                  items:
+                  - key: postgresql-sslRootCert
+                    path: server-ca.pem
+                  optional: true
             {{end}}
 {{ end }}

@@ -53,7 +53,8 @@ This table lists the environment variables, their descriptions, and default valu
 | **APP_DATABASE_HOST** | Database host | `localhost` |
 | **APP_DATABASE_PORT** | Database port | `5432` |
 | **APP_DATABASE_NAME** | Database name | `provisioner` |
-| **APP_DATABASE_SSL_MODE** | SSL Mode for PostgrSQL. See all the possible values [here](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **APP_DATABASE_SSLMODE** | SSL Mode for PostgrSQL. See [all the possible values](https://www.postgresql.org/docs/9.1/libpq-ssl.html)  | `disable`|
+| **APP_DATABASE_SSLROOTCERT** | Location of the PostgreSQL CA cert (Optional) | **optional** |
 | **APP_PROVISIONING_TIMEOUT_INSTALLATION** | Kyma installation timeout | `60m`|
 | **APP_PROVISIONING_TIMEOUT_UPGRADE** | Kyma installation timeout | `60m`|
 | **APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION** | Runtime Agent configuration timeout | `15m`|
