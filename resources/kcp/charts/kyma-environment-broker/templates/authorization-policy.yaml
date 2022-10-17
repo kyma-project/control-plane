@@ -144,6 +144,46 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  name: istio-events
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /events
+    from:
+      - source:
+          requestPrincipals:
+          - {{ tpl .Values.oidc.issuer $ }}/*
+    when:
+    - key: request.auth.claims[groups]
+      values:
+      - {{ .Values.oidc.groups.admin }}
+      - {{ .Values.oidc.groups.operator }}
+  - to:
+    - operation:
+        methods:
+        - GET
+        paths:
+        - /events
+    from:
+    - source:
+        principals:
+{{- with .Values.runtimeAllowedPrincipals }}
+{{ tpl . $ | indent 10 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
   name: istio-orchestrations
   namespace: kcp-system
 spec:
@@ -169,6 +209,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "kyma-env-broker.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+      
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
