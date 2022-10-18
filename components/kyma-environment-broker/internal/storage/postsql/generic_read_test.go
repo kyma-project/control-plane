@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -41,27 +42,25 @@ func TestGenericRead(t *testing.T) {
 
 		instanceId := "instance_id"
 
-		session := connection.NewSession(nil)
-		defer session.Close()
+		session := postsql.NewFactory(connection).
+			NewWriteSession()
 
-		tx, err := session.Begin()
-		assert.NoError(t, err)
+		instance := dbmodel.InstanceDTO{
+			InstanceID:                  instanceId,
+			RuntimeID:                   "RuntimeID",
+			GlobalAccountID:             "GlobalAccount",
+			SubscriptionGlobalAccountID: "SubsGlobalAccount",
+			SubAccountID:                "SubAccountID",
+			ServiceID:                   "ServiceID",
+			ServiceName:                 "ServiceName",
+			ServicePlanID:               "ServicePlanID",
+			ServicePlanName:             "ServicePlanName",
 
-		testServiceName := "Test Service Name"
-
-		_, err = session.InsertInto(postsql.InstancesTableName).
-			Pair("instance_id", instanceId).
-			Pair("runtime_id", "runtime_id").
-			Pair("global_account_id", "global_account_id").
-			Pair("service_id", "service_id").
-			Pair("service_plan_id", "service_plan_id").
-			Pair("dashboard_url", "dashboard_url").
-			Pair("service_name", testServiceName).
-			Pair("provisioning_parameters", "provisioning_parameters").
-			Exec()
-		assert.NoError(t, err)
-
-		err = tx.Commit()
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: time.Now(),
+		}
+		err = session.InsertInstance(instance)
 		assert.NoError(t, err)
 
 		readInstances := postsql.GenericRead[dbmodel.InstanceDTO]{
@@ -72,10 +71,18 @@ func TestGenericRead(t *testing.T) {
 				return dbmodel.InstanceDTO{}
 			},
 		}
-		instance, err := readInstances.GetInstanceByID(instanceId)
+		dbInstance, err := readInstances.GetByID(instanceId)
 
 		assert.NoError(t, err)
-		assert.NotNil(t, instance)
-		assert.Equal(t, testServiceName, instance.ServiceName)
+		assert.NotNil(t, dbInstance)
+		assert.Equal(t, instance.InstanceID, dbInstance.InstanceID)
+		assert.Equal(t, instance.RuntimeID, dbInstance.RuntimeID)
+		assert.Equal(t, instance.GlobalAccountID, dbInstance.GlobalAccountID)
+		assert.Equal(t, instance.SubscriptionGlobalAccountID, dbInstance.SubscriptionGlobalAccountID)
+		assert.Equal(t, instance.SubAccountID, dbInstance.SubAccountID)
+		assert.Equal(t, instance.ServiceID, dbInstance.ServiceID)
+		assert.Equal(t, instance.ServiceName, dbInstance.ServiceName)
+		assert.Equal(t, instance.ServicePlanID, dbInstance.ServicePlanID)
+		assert.Equal(t, instance.ServicePlanName, dbInstance.ServicePlanName)
 	})
 }
