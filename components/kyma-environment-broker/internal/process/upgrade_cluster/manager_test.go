@@ -66,6 +66,7 @@ func TestManager_Execute(t *testing.T) {
 			sInit := testStep{t: t, name: "init", storage: operations}
 			s1 := testStep{t: t, name: "one", storage: operations}
 			s2 := testStep{t: t, name: "two", storage: operations}
+			s3 := testStep{t: t, name: "to be skipped", storage: operations}
 			sFinal := testStep{t: t, name: "final", storage: operations}
 
 			eventBroker := event.NewPubSub(logrus.New())
@@ -75,9 +76,10 @@ func TestManager_Execute(t *testing.T) {
 			manager := NewManager(operations, eventBroker, log)
 			manager.InitStep(&sInit)
 
-			manager.AddStep(2, &sFinal)
-			manager.AddStep(1, &s1)
-			manager.AddStep(1, &s2)
+			manager.AddStep(2, &sFinal, nil)
+			manager.AddStep(1, &s1, nil)
+			manager.AddStep(1, &s2, func(operation internal.Operation) bool { return true })
+			manager.AddStep(1, &s3, func(operation internal.Operation) bool { return false })
 
 			// when
 			repeat, err := manager.Execute(tc.operationID)
@@ -103,12 +105,12 @@ func TestManager_Execute(t *testing.T) {
 func fixOperation(ID string) internal.UpgradeClusterOperation {
 	return internal.UpgradeClusterOperation{
 		Operation: internal.Operation{
-			ID:          ID,
-			State:       domain.InProgress,
-			InstanceID:  "fea2c1a1-139d-43f6-910a-a618828a79d5",
-			Description: "",
+			ID:               ID,
+			State:            domain.InProgress,
+			InstanceID:       "fea2c1a1-139d-43f6-910a-a618828a79d5",
+			Description:      "",
+			RuntimeOperation: orchestration.RuntimeOperation{},
 		},
-		RuntimeOperation: orchestration.RuntimeOperation{},
 	}
 }
 

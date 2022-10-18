@@ -53,7 +53,8 @@ Use the following environment variables to configure the application:
 | **APP_DATABASE_HOST** | Specifies the host of the database.
 | **APP_DATABASE_PORT** | Specifies the port for the database.
 | **APP_DATABASE_NAME** | Specifies the name of the database.
-| **APP_DATABASE_SSL_MODE** | Activates the SSL mode for PostgreSQL. For reference, see the list of [all the possible values](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  
+| **APP_DATABASE_SSLMODE** | Activates the SSL mode for PostgrSQL. See [all the possible values](https://www.postgresql.org/docs/9.1/libpq-ssl.html).  
+| **APP_DATABASE_SSLROOTCERT** | Specifies the location of CA cert of PostgreSQL. (Optional)
 | **APP_BROKER_URL**  | Specifies the Kyma Environment Broker URL. |
 | **APP_BROKER_TOKEN_URL** | Specifies the endpoint for Kyma Environment Broker OAuth token. |
 | **APP_BROKER_CLIENT_ID** | Specifies the username for the OAuth2 authentication in KEB. |

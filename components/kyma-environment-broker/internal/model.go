@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	log "github.com/sirupsen/logrus"
 )
 
 type ProvisionerInputCreator interface {
@@ -33,6 +34,7 @@ type ProvisionerInputCreator interface {
 	EnableOptionalComponent(componentName string) ProvisionerInputCreator
 	DisableOptionalComponent(componentName string) ProvisionerInputCreator
 	Provider() CloudProvider
+	Configuration() *ConfigForPlan
 
 	CreateClusterConfiguration() (reconcilerApi.Cluster, error)
 	CreateProvisionClusterInput() (gqlschema.ProvisionRuntimeInput, error)
@@ -132,9 +134,14 @@ type Instance struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
+	ExpiredAt *time.Time
 
 	Version  int
 	Provider CloudProvider
+}
+
+func (i *Instance) IsExpired() bool {
+	return i.ExpiredAt != nil
 }
 
 func (i *Instance) GetSubscriptionGlobalAccoundID() string {
@@ -187,10 +194,41 @@ type Operation struct {
 	Description            string                    `json:"-"`
 	ProvisioningParameters ProvisioningParameters    `json:"-"`
 
+	InputCreator ProvisionerInputCreator `json:"-"`
+
 	// OrchestrationID specifies the origin orchestration which triggers the operation, empty for OSB operations (provisioning/deprovisioning)
-	OrchestrationID string              `json:"-"`
-	FinishedStages  map[string]struct{} `json:"-"`
-	LastError       kebError.LastError  `json:"-"`
+	OrchestrationID string             `json:"-"`
+	FinishedStages  []string           `json:"-"`
+	LastError       kebError.LastError `json:"-"`
+
+	// PROVISIONING
+	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
+	DashboardURL   string             `json:"dashboardURL"`
+
+	// DEPROVISIONING
+	// Temporary indicates that this deprovisioning operation must not remove the instance
+	Temporary                   bool      `json:"temporary"`
+	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
+	Retries                     int       `json:"-"`
+	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
+
+	// UPDATING
+	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
+	CheckReconcilerStatus bool                  `json:"check_reconciler_status"`
+	K8sClient             client.Client         `json:"-"`
+
+	// following fields are not stored in the storage
+
+	// Last runtime state payload
+	LastRuntimeState RuntimeState `json:"-"`
+
+	// Flag used by the steps regarding BTP-Operator credentials update
+	// denotes whether the payload to reconciler differs from last runtime state
+	RequiresReconcilerUpdate bool `json:"-"`
+
+	// UPGRADE KYMA
+	orchestration.RuntimeOperation `json:"runtime_operation"`
+	ClusterConfigurationApplied    bool `json:"cluster_configuration_applied"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -245,19 +283,12 @@ type InstanceDetails struct {
 	ClusterConfigurationVersion int64  `json:"cluster_configuration_version"`
 	Kubeconfig                  string `json:"-"`
 
-	SCMigrationTriggered    bool   `json:"migration_triggered"`
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
 type ProvisioningOperation struct {
 	Operation
-
-	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
-	DashboardURL   string             `json:"dashboardURL"`
-
-	// following fields are not stored in the storage
-	InputCreator ProvisionerInputCreator `json:"-"`
 }
 
 type MonitoringData struct {
@@ -268,60 +299,27 @@ type MonitoringData struct {
 // DeprovisioningOperation holds all information about de-provisioning operation
 type DeprovisioningOperation struct {
 	Operation
-
-	// Temporary indicates that this deprovisioning operation must not remove the instance
-	Temporary                   bool          `json:"temporary"`
-	ClusterConfigurationDeleted bool          `json:"clusterConfigurationDeleted"`
-	IsServiceInstanceDeleted    bool          `json:"isServiceInstanceDeleted"`
-	Retries                     int           `json:"-"`
-	ReconcilerDeregistrationAt  time.Time     `json:"reconcilerDeregistrationAt"`
-	K8sClient                   client.Client `json:"-"`
 }
 
-func (op *DeprovisioningOperation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
+func (op *Operation) TimeSinceReconcilerDeregistrationTriggered() time.Duration {
 	if op.ReconcilerDeregistrationAt.IsZero() {
-		return time.Since(op.CreatedAt)
+		return 0
 	}
 	return time.Since(op.ReconcilerDeregistrationAt)
 }
 
 type UpdatingOperation struct {
 	Operation
-
-	RuntimeVersion        RuntimeVersionData    `json:"runtime_version"`
-	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
-	CheckReconcilerStatus bool                  `json:"check_reconciler_status"`
-
-	// following fields are not stored in the storage
-	InputCreator ProvisionerInputCreator `json:"-"`
-
-	// Last runtime state payload
-	LastRuntimeState RuntimeState `json:"-"`
-
-	// Flag used by the steps regarding Service Catalog migration
-	// denotes whether the payload to reconciler differs from last runtime state
-	RequiresReconcilerUpdate bool          `json:"-"`
-	K8sClient                client.Client `json:"-"`
 }
 
 // UpgradeKymaOperation holds all information about upgrade Kyma operation
 type UpgradeKymaOperation struct {
 	Operation
-
-	orchestration.RuntimeOperation `json:"runtime_operation"`
-	InputCreator                   ProvisionerInputCreator `json:"-"`
-
-	RuntimeVersion RuntimeVersionData `json:"runtime_version"`
-
-	ClusterConfigurationApplied bool `json:"cluster_configuration_applied"`
 }
 
 // UpgradeClusterOperation holds all information about upgrade cluster (shoot) operation
 type UpgradeClusterOperation struct {
 	Operation
-
-	orchestration.RuntimeOperation `json:"runtime_operation"`
-	InputCreator                   ProvisionerInputCreator `json:"-"`
 }
 
 func NewRuntimeState(runtimeID, operationID string, kymaConfig *gqlschema.KymaConfigInput, clusterConfig *gqlschema.GardenerConfigInput) RuntimeState {
@@ -457,8 +455,9 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			ProvisioningParameters: parameters,
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
+				Kubeconfig:   parameters.Parameters.Kubeconfig,
 			},
-			FinishedStages: make(map[string]struct{}, 0),
+			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},
 		},
 	}, nil
@@ -472,24 +471,9 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 	}
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:              operationID,
-			Version:         0,
-			Description:     "Operation created",
-			InstanceID:      instance.InstanceID,
-			State:           orchestration.Pending,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-			Type:            OperationTypeDeprovision,
-			InstanceDetails: details,
-			FinishedStages:  make(map[string]struct{}, 0),
-		},
-	}, nil
-}
-
-func NewUpdateOperation(operationID string, instance *Instance, updatingParams UpdatingParametersDTO) UpdatingOperation {
-
-	op := UpdatingOperation{
-		Operation: Operation{
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{GlobalAccountID: instance.GlobalAccountID, RuntimeID: instance.RuntimeID},
+			},
 			ID:                     operationID,
 			Version:                0,
 			Description:            "Operation created",
@@ -497,12 +481,29 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 			State:                  orchestration.Pending,
 			CreatedAt:              time.Now(),
 			UpdatedAt:              time.Now(),
-			Type:                   OperationTypeUpdate,
-			InstanceDetails:        instance.InstanceDetails,
-			FinishedStages:         make(map[string]struct{}, 0),
+			Type:                   OperationTypeDeprovision,
+			InstanceDetails:        details,
+			FinishedStages:         make([]string, 0),
 			ProvisioningParameters: instance.Parameters,
 		},
-		UpdatingParameters: updatingParams,
+	}, nil
+}
+
+func NewUpdateOperation(operationID string, instance *Instance, updatingParams UpdatingParametersDTO) Operation {
+
+	op := Operation{
+		ID:                     operationID,
+		Version:                0,
+		Description:            "Operation created",
+		InstanceID:             instance.InstanceID,
+		State:                  orchestration.Pending,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
+		Type:                   OperationTypeUpdate,
+		InstanceDetails:        instance.InstanceDetails,
+		FinishedStages:         make([]string, 0),
+		ProvisioningParameters: instance.Parameters,
+		UpdatingParameters:     updatingParams,
 	}
 
 	if updatingParams.OIDC != nil {
@@ -531,19 +532,33 @@ func NewSuspensionOperationWithID(operationID string, instance *Instance) Deprov
 			UpdatedAt:       time.Now(),
 			Type:            OperationTypeDeprovision,
 			InstanceDetails: instance.InstanceDetails,
-			FinishedStages:  make(map[string]struct{}, 0),
+			FinishedStages:  make([]string, 0),
+			Temporary:       true,
 		},
-		Temporary: true,
 	}
 }
 
 func (o *Operation) FinishStage(stageName string) {
-	o.FinishedStages[stageName] = struct{}{}
+	if stageName == "" {
+		log.Warnf("Attempt to add empty stage.")
+		return
+	}
+
+	if exists := o.IsStageFinished(stageName); exists {
+		log.Warnf("Attempt to add stage (%s) which is already saved.", stageName)
+		return
+	}
+
+	o.FinishedStages = append(o.FinishedStages, stageName)
 }
 
 func (o *Operation) IsStageFinished(stage string) bool {
-	_, found := o.FinishedStages[stage]
-	return found
+	for _, value := range o.FinishedStages {
+		if value == stage {
+			return true
+		}
+	}
+	return false
 }
 
 type ComponentConfigurationInputList []*gqlschema.ComponentConfigurationInput
@@ -571,4 +586,20 @@ func (l ComponentConfigurationInputList) DeepCopy() []*gqlschema.ComponentConfig
 		})
 	}
 	return copiedList
+}
+
+// KymaComponent represents single Kyma component
+type KymaComponent struct {
+	Name        string           `json:"name"`
+	ReleaseName string           `json:"release"`
+	Namespace   string           `json:"namespace"`
+	Source      *ComponentSource `json:"source,omitempty"`
+}
+
+type ComponentSource struct {
+	URL string `json:"url"`
+}
+
+type ConfigForPlan struct {
+	AdditionalComponents []KymaComponent `json:"additional-components" yaml:"additional-components"`
 }

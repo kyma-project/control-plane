@@ -20,11 +20,11 @@ type RuntimeOverridesAppender interface {
 
 //go:generate mockery --name=RuntimeVersionConfiguratorForProvisioning --output=automock --outpkg=automock --case=underscore
 type RuntimeVersionConfiguratorForProvisioning interface {
-	ForProvisioning(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error)
+	ForProvisioning(op internal.Operation) (*internal.RuntimeVersionData, error)
 }
 
 type OverridesFromSecretsAndConfigStep struct {
-	operationManager       *process.ProvisionOperationManager
+	operationManager       *process.OperationManager
 	runtimeOverrides       RuntimeOverridesAppender
 	runtimeVerConfigurator RuntimeVersionConfiguratorForProvisioning
 }
@@ -32,7 +32,7 @@ type OverridesFromSecretsAndConfigStep struct {
 func NewOverridesFromSecretsAndConfigStep(os storage.Operations, runtimeOverrides RuntimeOverridesAppender,
 	rvc RuntimeVersionConfiguratorForProvisioning) *OverridesFromSecretsAndConfigStep {
 	return &OverridesFromSecretsAndConfigStep{
-		operationManager:       process.NewProvisionOperationManager(os),
+		operationManager:       process.NewOperationManager(os),
 		runtimeOverrides:       runtimeOverrides,
 		runtimeVerConfigurator: rvc,
 	}
@@ -42,7 +42,7 @@ func (s *OverridesFromSecretsAndConfigStep) Name() string {
 	return "Overrides_From_Secrets_And_Config_Step"
 }
 
-func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningOperation, log logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error) {
+func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	planName, exists := broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	if !exists {
 		log.Errorf("cannot map planID '%s' to planName", operation.ProvisioningParameters.PlanID)
@@ -73,7 +73,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.ProvisioningO
 	return operation, 0, nil
 }
 
-func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(op internal.ProvisioningOperation) (*internal.RuntimeVersionData, error) {
+func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(op internal.Operation) (*internal.RuntimeVersionData, error) {
 	// for some previously stored operations the RuntimeVersion property may not be initialized
 	if op.RuntimeVersion.Version != "" {
 		return &op.RuntimeVersion, nil
@@ -85,7 +85,7 @@ func (s *OverridesFromSecretsAndConfigStep) getRuntimeVersion(op internal.Provis
 	return s.runtimeVerConfigurator.ForProvisioning(op)
 }
 
-func (s *OverridesFromSecretsAndConfigStep) getOverridesVersion(op internal.ProvisioningOperation) string {
+func (s *OverridesFromSecretsAndConfigStep) getOverridesVersion(op internal.Operation) string {
 	if op.ProvisioningParameters.Parameters.OverridesVersion != "" {
 		return op.ProvisioningParameters.Parameters.OverridesVersion
 	}

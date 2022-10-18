@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"time"
 
@@ -17,10 +18,16 @@ import (
 	"github.com/int128/kubelogin/pkg/usecases/authentication/authcode"
 	"github.com/int128/kubelogin/pkg/usecases/authentication/ropc"
 	"github.com/int128/kubelogin/pkg/usecases/credentialplugin"
+
+	authn "github.com/kyma-project/control-plane/components/kubeconfig-service/pkg/authn"
+
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/util/homedir"
 )
+
+const UNKNOWN = "Unknown"
 
 var defaultTokenCacheDir = homedir.HomeDir() + "/.kube/cache/oidc-login"
 var defaultListenAddress = []string{"127.0.0.1:8000", "127.0.0.1:18000"}
@@ -30,12 +37,14 @@ const defaultAuthenticationTimeout = 180 * time.Second
 // Manager is a client for an OIDC provider capable of authenticating users and retrieving ID tokens through
 //   - Authorization code grant flow using browser for interactive use
 //   - Resource owner password credentials flow for non-interactive use
+//
 // Manager implements the oauth2.TokenSource interface to interact with client libraries depending on the oauth2 package for obtaining auth token.
 type Manager interface {
 	GetTokenByAuthCode(ctx context.Context) (string, error)
 	GetTokenByROPC(ctx context.Context, username, password string) (string, error)
 	TokenExpiry() time.Time
 	Token() (*oauth2.Token, error)
+	GetUserIDByParseToken() (string, error)
 }
 
 type manager struct {
@@ -177,4 +186,13 @@ func (mgr *manager) TokenExpiry() time.Time {
 func (mgr *manager) cacheToken(token string, expiry time.Time) {
 	mgr.token = token
 	mgr.expiry = expiry
+}
+
+func (mgr *manager) GetUserIDByParseToken() (string, error) {
+	token, _ := mgr.Token()
+	dat, errMsg, _ := authn.ParseToken(token.AccessToken)
+	if dat == nil || reflect.ValueOf(dat).IsNil() {
+		return UNKNOWN, errors.New(errMsg)
+	}
+	return authn.ExtractUserID(dat), nil
 }

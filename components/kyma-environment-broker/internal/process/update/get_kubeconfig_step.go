@@ -15,7 +15,7 @@ import (
 
 type GetKubeconfigStep struct {
 	provisionerClient   provisioner.Client
-	operationManager    *process.UpdateOperationManager
+	operationManager    *process.OperationManager
 	provisioningTimeout time.Duration
 	k8sClientProvider   func(kcfg string) (client.Client, error)
 }
@@ -23,18 +23,18 @@ type GetKubeconfigStep struct {
 func NewGetKubeconfigStep(os storage.Operations, provisionerClient provisioner.Client, k8sClientProvider func(kcfg string) (client.Client, error)) *GetKubeconfigStep {
 	return &GetKubeconfigStep{
 		provisionerClient: provisionerClient,
-		operationManager:  process.NewUpdateOperationManager(os),
+		operationManager:  process.NewOperationManager(os),
 		k8sClientProvider: k8sClientProvider,
 	}
 }
 
-var _ Step = (*GetKubeconfigStep)(nil)
+var _ process.Step = (*GetKubeconfigStep)(nil)
 
 func (s *GetKubeconfigStep) Name() string {
 	return "Get_Kubeconfig"
 }
 
-func (s *GetKubeconfigStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.Kubeconfig != "" {
 		cli, err := s.k8sClientProvider(operation.Kubeconfig)
 		if err != nil {

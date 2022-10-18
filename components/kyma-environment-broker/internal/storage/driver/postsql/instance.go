@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -344,6 +345,12 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 	if err != nil {
 		return internal.Instance{}, errors.Wrap(err, "while decrypting parameters")
 	}
+
+	err = s.cipher.DecryptKubeconfig(&params)
+	if err != nil {
+		log.Warn("decrypting skipped because kubeconfig is in a plain text")
+	}
+
 	return internal.Instance{
 		InstanceID:                  dto.InstanceID,
 		RuntimeID:                   dto.RuntimeID,
@@ -360,6 +367,7 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 		CreatedAt:                   dto.CreatedAt,
 		UpdatedAt:                   dto.UpdatedAt,
 		DeletedAt:                   dto.DeletedAt,
+		ExpiredAt:                   dto.ExpiredAt,
 		Version:                     dto.Version,
 		Provider:                    internal.CloudProvider(dto.Provider),
 	}, nil
@@ -429,6 +437,10 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 	if err != nil {
 		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting parameters")
 	}
+	err = s.cipher.EncryptKubeconfig(&instance.Parameters)
+	if err != nil {
+		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting kubeconfig")
+	}
 	params, err := json.Marshal(instance.Parameters)
 	if err != nil {
 		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while marshaling parameters")
@@ -449,6 +461,7 @@ func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDT
 		CreatedAt:                   instance.CreatedAt,
 		UpdatedAt:                   instance.UpdatedAt,
 		DeletedAt:                   instance.DeletedAt,
+		ExpiredAt:                   instance.ExpiredAt,
 		Version:                     instance.Version,
 		Provider:                    string(instance.Provider),
 	}, nil
@@ -484,7 +497,7 @@ func (s *Instance) GetERSContextStats() (internal.ERSContextStats, error) {
 		LicenseType: make(map[string]int),
 	}
 	for _, e := range entries {
-		result.LicenseType[e.LicenseType] += e.Total
+		result.LicenseType[strings.Trim(e.LicenseType.String, `"`)] += e.Total
 	}
 	return result, nil
 }

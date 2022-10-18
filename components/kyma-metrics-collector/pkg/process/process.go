@@ -80,6 +80,7 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 		var secret *corev1.Secret
 		secret, err = p.SecretClient.Get(ctx, shootName)
 		if err != nil {
+			p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, shootName).Error("Failed to get secret")
 			return
 		}
 
@@ -94,6 +95,7 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 	var shoot *gardenerv1beta1.Shoot
 	shoot, err = p.ShootClient.Get(ctx, shootName)
 	if err != nil {
+		p.namedLogger().With(log.KeyError, err.Error()).With(log.KeyShoot, shootName).Error("Failed to get shoot")
 		return
 	}
 
@@ -391,7 +393,7 @@ func (p *Process) populateCacheAndQueue(runtimes *kebruntime.RuntimesPage) {
 				if err != nil {
 					p.namedLogger().With(log.KeyResult, log.ValueFail).With(log.KeyError, err.Error()).
 						With(log.KeySubAccountID, runtime.SubAccountID).With(log.KeyRuntimeID, runtime.RuntimeID).
-						Error("add subAccountID to cache hence skipping queueing it")
+						Error("Failed to add subAccountID to cache hence skipping queueing it")
 					continue
 				}
 				p.Queue.Add(runtime.SubAccountID)

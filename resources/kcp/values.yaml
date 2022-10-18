@@ -1,23 +1,23 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.30.1-alpine-3cba814e
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:b5001a84"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:b5001a84"
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.31.2-6324aa52"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:e5264c61"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:e5264c61"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-1851"
+      version: "PR-2140"
     provisioner:
       dir:
-      version: "PR-1837"
+      version: "PR-2153"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-1651"
+      version: "PR-1840"
     kyma_metrics_collector:
       dir:
-      version: "PR-1861"
+      version: "PR-2055"
     tests:
       provisioner:
         dir:
@@ -39,25 +39,14 @@ global:
     periodSeconds: 2
   components:
     - base
-    - busola-migrator
     - cleaner
     - connectivity-proxy
-    - istio-configuration
     - istio
     - ory
-    - rafter
     - eventing
     - serverless
     - cluster-essentials
     - rma
-    - sc-migration
-  auditlog:
-    configMapName: "kcp-auditlog-config"
-    secretName: "kcp-auditlog-secret"
-    script:
-      configMapName: "kcp-auditlog-script"
-    enableSeqHttp: false
-    disabled: false
   provisioning:
     enabled: false
   kyma_environment_broker:
@@ -120,6 +109,7 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
+      sslRootCert: ""
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
@@ -140,7 +130,7 @@ global:
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
       image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 1.8.15-a6fa9cb0
+      tag: 1.9.6-fdfefada
       persistence:
         enabled: true
         accessMode: ReadWriteOnce

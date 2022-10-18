@@ -118,6 +118,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 
 	orchestrationID := mux.Vars(r)["orchestration_id"]
 	operationIDs := []string{}
+	var immediateID string
 
 	if r.Body != nil {
 		if err := r.ParseForm(); err != nil {
@@ -127,6 +128,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 		}
 
 		operationIDs = r.Form["operation-id"]
+		immediateID = r.FormValue("immediate")
 	}
 
 	o, err := h.orchestrations.GetByID(orchestrationID)
@@ -150,7 +152,7 @@ func (h *orchestrationHandler) retryOrchestrationByID(w http.ResponseWriter, r *
 			return
 		}
 
-		response, err = h.kymaRetryer.orchestrationRetry(o, allOps, operationIDs)
+		response, err = h.kymaRetryer.orchestrationRetry(o, allOps, operationIDs, immediateID)
 		if err != nil {
 			httputil.WriteErrorResponse(w, http.StatusInternalServerError, err)
 			return

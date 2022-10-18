@@ -280,8 +280,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc1,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -323,8 +323,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance2.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc2,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -404,8 +404,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Failed,
 				Description: suspensionOpDesc1,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -419,8 +419,8 @@ func TestRuntimeInfoHandlerOperationRecognition(t *testing.T) {
 				InstanceID:  testInstance1.InstanceID,
 				State:       domain.Succeeded,
 				Description: suspensionOpDesc2,
+				Temporary:   true,
 			},
-			Temporary: true,
 		})
 		require.NoError(t, err)
 
@@ -549,19 +549,21 @@ func newInMemoryStorage(t *testing.T,
 }
 
 func fixProvisionOperation(idx int) internal.ProvisioningOperation {
-	return internal.ProvisioningOperation{
-		Operation: fixSucceededOperation(idx),
+	o := internal.ProvisioningOperation{
+		Operation: fixSucceededOperation(internal.OperationTypeProvision, idx),
 	}
+	o.Type = internal.OperationTypeProvision
+	return o
 }
 func fixDeprovisionOperation(idx int) internal.DeprovisioningOperation {
 	return internal.DeprovisioningOperation{
-		Operation: fixSucceededOperation(idx),
+		Operation: fixSucceededOperation(internal.OperationTypeDeprovision, idx),
 	}
 }
 
-func fixSucceededOperation(idx int) internal.Operation {
+func fixSucceededOperation(operationType internal.OperationType, idx int) internal.Operation {
 	return internal.Operation{
-		ID:                     fmt.Sprintf("Operation ID field. IDX: %d", idx),
+		ID:                     fmt.Sprintf("Operation %v ID field. IDX: %d", operationType, idx),
 		Version:                0,
 		CreatedAt:              fixTime().Add(time.Duration(idx) * 24 * time.Hour),
 		UpdatedAt:              fixTime().Add(time.Duration(idx) * 48 * time.Hour),
@@ -569,5 +571,6 @@ func fixSucceededOperation(idx int) internal.Operation {
 		ProvisionerOperationID: fmt.Sprintf("ProvisionerOperationID field. IDX: %d", idx),
 		State:                  domain.Succeeded,
 		Description:            fmt.Sprintf("esc for succeeded op.. IDX: %d", idx),
+		Type:                   operationType,
 	}
 }

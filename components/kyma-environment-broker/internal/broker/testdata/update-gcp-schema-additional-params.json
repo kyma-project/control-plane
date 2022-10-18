@@ -10,17 +10,15 @@
   "properties": {
     "administrators": {
       "description": "Specifies the list of runtime administrators",
-      "items": [
-        {
-          "type": "string"
-        }
-      ],
+      "items": {
+        "type": "string"
+      },
       "title": "Administrators",
       "type": "array"
     },
     "autoScalerMax": {
       "description": "Specifies the maximum number of virtual machines to create",
-      "maximum": 40,
+      "maximum": 80,
       "minimum": 2,
       "type": "integer"
     },
@@ -46,11 +44,9 @@
         },
         "signingAlgs": {
           "description": "List of allowed JOSE asymmetric signing algorithms.",
-          "items": [
-            {
-              "type": "string"
-            }
-          ],
+          "items": {
+            "type": "string"
+          },
           "type": "array"
         },
         "usernameClaim": {

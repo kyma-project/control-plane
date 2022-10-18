@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/external/golang:1.18.2-alpine3.15 as builder
+FROM eu.gcr.io/kyma-project/external/golang:1.19.2-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/provisioner
 WORKDIR ${BASE_APP_DIR}
@@ -11,7 +11,6 @@ COPY ./go.sum ${BASE_APP_DIR}/go.sum
 # Run go mod download first to take advantage of Docker caching
 RUN apk --no-cache add git && go mod download
 
-COPY ./licenses ${BASE_APP_DIR}/licenses
 COPY ./cmd/ ${BASE_APP_DIR}/cmd
 COPY ./third_party/ ${BASE_APP_DIR}/third_party
 COPY ./pkg/ ${BASE_APP_DIR}/pkg/
@@ -21,9 +20,8 @@ RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 
 RUN go build -v -o main ./cmd/
 RUN mkdir /app && mv ./main /app/main
-RUN mv ./licenses /app/licenses
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.15.4
+FROM eu.gcr.io/kyma-project/external/alpine:3.16.2
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

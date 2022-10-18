@@ -187,6 +187,20 @@ func (_m *ProvisionerInputCreator) EnableOptionalComponent(componentName string)
 	return r0
 }
 
+// Configuration provides a mock function with given fields:
+func (_m *ProvisionerInputCreator) Configuration() *internal.ConfigForPlan {
+	ret := _m.Called()
+
+	var r0 *internal.ConfigForPlan
+	if rf, ok := ret.Get(0).(func() *internal.ConfigForPlan); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(*internal.ConfigForPlan)
+	}
+
+	return r0
+}
+
 // Provider provides a mock function with given fields:
 func (_m *ProvisionerInputCreator) Provider() internal.CloudProvider {
 	ret := _m.Called()

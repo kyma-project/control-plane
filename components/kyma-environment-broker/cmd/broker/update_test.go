@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
@@ -27,9 +25,11 @@ func TestUpdate(t *testing.T) {
 				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
+					   "sm_operator_credentials": {
+						   "clientid": "cid",
+						   "clientsecret": "cs",
+						   "url": "url",
+						   "sm_url": "sm_url"
 					   },
 					   "globalaccount_id": "g-account-id",
 					   "subaccount_id": "sub-id",
@@ -45,7 +45,7 @@ func TestUpdate(t *testing.T) {
 			}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -72,6 +72,7 @@ func TestUpdate(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -82,6 +83,7 @@ func TestUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -98,9 +100,11 @@ func TestUpdateFailedInstance(t *testing.T) {
 				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
+					   "sm_operator_credentials": {
+						   "clientid": "cid",
+						   "clientsecret": "cs",
+						   "url": "url",
+						   "sm_url": "sm_url"
 					   },
 					   "globalaccount_id": "g-account-id",
 					   "subaccount_id": "sub-id",
@@ -137,6 +141,134 @@ func TestUpdateFailedInstance(t *testing.T) {
 	assert.Equal(t, "Unable to process an update of a failed instance", errResponse.Description)
 }
 
+func TestExpiration(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+				   "context": {
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+		"parameters": {
+			"expired": true
+		}
+   }`)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.WaitForLastOperation(iid, domain.InProgress)
+	opID = suite.LastOperation(iid).ID
+	suite.FailDeprovisioningByReconciler(opID)
+	suite.FailDeprovisioningOperationByProvisioner(opID)
+	instance := suite.GetInstance(iid)
+	assert.True(suite.t, instance.IsExpired())
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": true
+       },
+       "parameters": {
+			
+		}
+   }`)
+	// expired instance does not support an update
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// when
+	// OSB update: retrigger suspension when lat suspension failed
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+       "parameters": {
+			
+		}
+   }`)
+	// expired instance does not support an update
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// we expect new suspension in progress operation (the last operation before is failed)
+	suite.WaitForLastOperation(iid, domain.InProgress)
+}
+
+func TestExpirationOfNonTrial(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// create an AWS instance
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "361c511f-f939-4621-b228-d0fb79a1fe15",
+				   "context": {
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "361c511f-f939-4621-b228-d0fb79a1fe15",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+		"parameters": {
+			"expired": true
+		}
+   }`)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	instance := suite.GetInstance(iid)
+	assert.False(suite.t, instance.IsExpired())
+}
+
 func TestUpdateDeprovisioningInstance(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
@@ -148,9 +280,11 @@ func TestUpdateDeprovisioningInstance(t *testing.T) {
 				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
+					   "sm_operator_credentials": {
+						   "clientid": "cid",
+						   "clientsecret": "cs",
+						   "url": "url",
+						   "sm_url": "sm_url"
 					   },
 					   "globalaccount_id": "g-account-id",
 					   "subaccount_id": "sub-id",
@@ -161,7 +295,7 @@ func TestUpdateDeprovisioningInstance(t *testing.T) {
 				}
    }`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// deprovision
 	resp = suite.CallAPI("DELETE", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
@@ -202,23 +336,25 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster"
-				}
-   }`)
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -240,9 +376,11 @@ func TestUpdateWithNoOIDCParams(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
-			OidcConfig: defaultOIDCConfig(),
+			OidcConfig:                    defaultOIDCConfig(),
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -256,28 +394,30 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-							"signingAlgs": ["RS256"],
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS256"],
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	// OSB update:
@@ -300,6 +440,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -310,6 +451,7 @@ func TestUpdateWithNoOidcOnUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -323,28 +465,30 @@ func TestUpdateContext(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-							"signingAlgs": ["RS384"],
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS384"],
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	// OSB update
@@ -367,24 +511,26 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-                         "kymaVersion":"2.0"
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				 "kymaVersion":"2.0"
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -422,7 +568,7 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
        
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	suite.processReconciliationByInstanceID(iid)
+	suite.processProvisioningAndReconciliationByInstanceID(iid)
 
 }
 
@@ -433,23 +579,25 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-us10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster"
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -488,10 +636,62 @@ func TestUnsuspensionTrialWithDefaultProviderChangedForNonDefaultRegion(t *testi
        
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	suite.processReconciliationByInstanceID(iid)
+	suite.processProvisioningAndReconciliationByInstanceID(iid)
 
 	// check that the region and zone is set
 	suite.AssertAWSRegionAndZone("us-east-1")
+}
+
+func TestUpdateWithOwnClusterPlan(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+				   "plan_id": "03e3cb66-a4c6-4c6a-b4b0-5d42224debea",
+				   "context": {
+					   "sm_operator_credentials": {
+						   "clientid": "cid",
+						   "clientsecret": "cs",
+						   "url": "url",
+						   "sm_url": "sm_url"
+					   },
+					   "globalaccount_id": "g-account-id",
+					   "subaccount_id": "sub-id",
+					   "user_id": "john.smith@email.com"
+				   },
+					"parameters": {
+						"name": "testing-cluster",
+						"shootName": "shoot-name",
+						"shootDomain": "kyma-dev.shoot.canary.k8s-hana.ondemand.com",
+						"kubeconfig":"YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCmN1cnJlbnQtY29udGV4dDogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKY29udGV4dHM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY29udGV4dDoKICAgICAgY2x1c3Rlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKICAgICAgdXNlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUtdG9rZW4KY2x1c3RlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2FwaS5jbHVzdGVyLW5hbWUua3ltYS1kZXYuc2hvb3QuY2FuYXJ5Lms4cy1oYW5hLm9uZGVtYW5kLmNvbQogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogPi0KICAgICAgICBMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHQKdXNlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZS10b2tlbgogICAgdXNlcjoKICAgICAgdG9rZW46ID4tCiAgICAgICAgdE9rRW4K",
+						"kymaVersion": "2.4.0"
+			}
+   }`)
+	opID := suite.DecodeOperationID(resp)
+	suite.FinishReconciliation(opID)
+
+	// when
+	// OSB update:
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com"
+       },
+		"parameters": {
+			"kubeconfig":"YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCmN1cnJlbnQtY29udGV4dDogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKY29udGV4dHM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY29udGV4dDoKICAgICAgY2x1c3Rlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKICAgICAgdXNlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUtdG9rZW4KY2x1c3RlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2FwaS5jbHVzdGVyLW5hbWUua3ltYS1kZXYuc2hvb3QuY2FuYXJ5Lms4cy1oYW5hLm9uZGVtYW5kLmNvbQogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogPi0KICAgICAgICBMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHQKdXNlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZS10b2tlbgogICAgdXNlcjoKICAgICAgdG9rZW46ID4tCiAgICAgICAgdE9rRW4K",
+			"kymaVersion": "2.5.0"
+		}
+   }`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	upgradeOperationID := suite.DecodeOperationID(resp)
+
+	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
 }
 
 func TestUpdateOidcForSuspendedInstance(t *testing.T) {
@@ -504,28 +704,30 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-							"signingAlgs": ["RS256"],
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS256"],
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -592,7 +794,7 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	suite.DecodeOperationID(resp)
 	// WHEN
-	suite.processReconciliationByInstanceID(iid)
+	suite.processProvisioningAndReconciliationByInstanceID(iid)
 
 	// THEN
 	instance = suite.GetInstance(iid)
@@ -609,28 +811,30 @@ func TestUpdateNotExistingInstance(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-							"signingAlgs": ["RS256"],
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS256"],
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	// provisioning done, let's start an update
 
 	// when
@@ -655,24 +859,26 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster"
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -696,6 +902,7 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -706,6 +913,7 @@ func TestUpdateDefaultAdminNotChanged(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -720,28 +928,30 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -765,6 +975,7 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -775,6 +986,7 @@ func TestUpdateDefaultAdminNotChangedWithCustomOIDC(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -789,24 +1001,26 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster"
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -838,6 +1052,7 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -848,6 +1063,7 @@ func TestUpdateDefaultAdminNotChangedWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "new-username-claim",
 				UsernamePrefix: "->",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -862,24 +1078,26 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster"
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -904,6 +1122,7 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -914,6 +1133,7 @@ func TestUpdateDefaultAdminOverwritten(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -929,25 +1149,27 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				 "user_id": "john.smith@email.com"
+			 },
+			"parameters": {
+				"name": "testing-cluster",
+				"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -971,6 +1193,7 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -981,6 +1204,7 @@ func TestUpdateCustomAdminsNotChanged(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -996,25 +1220,27 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1042,6 +1268,7 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1052,6 +1279,7 @@ func TestUpdateCustomAdminsNotChangedWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1067,25 +1295,27 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				 "subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1110,6 +1340,7 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1120,6 +1351,7 @@ func TestUpdateCustomAdminsOverwritten(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1135,25 +1367,27 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1184,6 +1418,7 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1194,6 +1429,7 @@ func TestUpdateCustomAdminsOverwrittenWithOIDCUpdate(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins,
 	})
@@ -1210,25 +1446,27 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"administrators":["newAdmin1@kyma.cx", "newAdmin2@kyma.cx"]
 			}
-   }`)
+		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id),
@@ -1253,6 +1491,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1263,6 +1502,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins1,
 	})
@@ -1294,6 +1534,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 	upgradeOperationID = suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
 
+	disabled = false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1304,6 +1545,7 @@ func TestUpdateCustomAdminsOverwrittenTwice(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "->",
 			},
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: expectedAdmins2,
 	})
@@ -1321,9 +1563,11 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 	"context": {
-		"sm_platform_credentials": {
-			"url": "https://sm.url",
-			"credentials": {}
+		"sm_operator_credentials": {
+			"clientid": "cid",
+			"clientsecret": "cs",
+			"url": "url",
+			"sm_url": "sm_url"
 		},
 		"globalaccount_id": "g-account-id",
 		"subaccount_id": "sub-id",
@@ -1339,7 +1583,7 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1368,6 +1612,7 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 	min, max, surge, unav := 15, 25, 10, 7
 	// then
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1378,10 +1623,11 @@ func TestUpdateAutoscalerParams(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMin:  &min,
-			AutoScalerMax:  &max,
-			MaxSurge:       &surge,
-			MaxUnavailable: &unav,
+			AutoScalerMin:                 &min,
+			AutoScalerMax:                 &max,
+			MaxSurge:                      &surge,
+			MaxUnavailable:                &unav,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1398,9 +1644,11 @@ func TestUpdateAutoscalerWrongParams(t *testing.T) {
 	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 	"context": {
-		"sm_platform_credentials": {
-			"url": "https://sm.url",
-			"credentials": {}
+		"sm_operator_credentials": {
+			"clientid": "cid",
+			"clientsecret": "cs",
+			"url": "url",
+			"sm_url": "sm_url"
 		},
 		"globalaccount_id": "g-account-id",
 		"subaccount_id": "sub-id",
@@ -1416,7 +1664,7 @@ func TestUpdateAutoscalerWrongParams(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1450,9 +1698,11 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 	"context": {
-		"sm_platform_credentials": {
-			"url": "https://sm.url",
-			"credentials": {}
+		"sm_operator_credentials": {
+			"clientid": "cid",
+			"clientsecret": "cs",
+			"url": "url",
+			"sm_url": "sm_url"
 		},
 		"globalaccount_id": "g-account-id",
 		"subaccount_id": "sub-id",
@@ -1464,7 +1714,7 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1501,8 +1751,9 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	upgradeOperationID := suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
-	max := 15
 	suite.WaitForOperationState(upgradeOperationID, domain.Succeeded)
+	max := 15
+	disabled := false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1513,7 +1764,8 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMax: &max,
+			AutoScalerMax:                 &max,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1538,6 +1790,7 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 	upgradeOperationID = suite.DecodeOperationID(resp)
 	suite.FinishUpdatingOperationByProvisioner(upgradeOperationID)
 	min := 14
+	disabled = false
 	suite.AssertShootUpgrade(upgradeOperationID, gqlschema.UpgradeShootInput{
 		GardenerConfig: &gqlschema.GardenerUpgradeInput{
 			OidcConfig: &gqlschema.OIDCConfigInput{
@@ -1548,7 +1801,8 @@ func TestUpdateAutoscalerPartialSequence(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
-			AutoScalerMin: &min,
+			AutoScalerMin:                 &min,
+			ShootNetworkingFilterDisabled: &disabled,
 		},
 		Administrators: []string{"john.smith@email.com"},
 	})
@@ -1581,28 +1835,30 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
 		`{
-				   "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-				   "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-				   "context": {
-					   "sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					   },
-					   "globalaccount_id": "g-account-id",
-					   "subaccount_id": "sub-id",
-					   "user_id": "john.smith@email.com"
-				   },
-					"parameters": {
-						"name": "testing-cluster",
-						"oidc": {
-							"clientID": "id-ooo",
-							"signingAlgs": ["RS256"],
-                            "issuerURL": "https://issuer.url.com"
-						}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS256"],
+					"issuerURL": "https://issuer.url.com"
+				}
 			}
-   }`)
+		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	suite.Log("*** Suspension ***")
 
@@ -1639,26 +1895,23 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 	assert.Len(t, updateOps, 0, "should not create any update operations")
 }
 
-func TestUpdateSCMigrationSuccess(t *testing.T) {
+func TestUpdateBTPOperatorCredsSuccess(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
 	mockBTPOperatorClusterID()
 	defer suite.TearDown()
-	id := "InstanceID-SCMigration"
+	id := "InstanceID-BTPOperator"
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
 {
 	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
 	"context": {
-		"sm_platform_credentials": {
-			"url": "https://sm.url",
-			"credentials": {
-				"basic": {
-					"username": "u-name",
-					"password": "pass"
-				}
-			}
+		"sm_operator_credentials": {
+			"clientid": "cid",
+			"clientsecret": "cs",
+			"url": "url",
+			"sm_url": "sm_url"
 		},
 		"globalaccount_id": "g-account-id",
 		"subaccount_id": "sub-id",
@@ -1671,7 +1924,7 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 }`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 	i, err := suite.db.Instances().GetByID(id)
 	assert.NoError(t, err, "getting instance after provisioning, before update")
@@ -1685,7 +1938,36 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 	assert.Equal(t, opID, rs.OperationID, "runtime state provisioning operation ID")
 	assert.NoError(t, err, "getting runtime state after provisioning, before update")
 	assert.ElementsMatch(t, rs.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring"})
+	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
+
+	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "getting runtime after update")
+	i, err = suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after update")
+	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
+	assert.ElementsMatch(t, componentNames(rsu1.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
+	for _, c := range rsu1.ClusterSetup.KymaConfig.Components {
+		if c.Component == "btp-operator" {
+			exp := reconcilerApi.Component{
+				Component: "btp-operator",
+				Namespace: "kyma-system",
+				URL:       "https://btp-operator",
+				Configuration: []reconcilerApi.Configuration{
+					{Key: "global.domainName", Value: i.InstanceDetails.ShootName + ".kyma.sap.com", Secret: false},
+					{Key: "foo", Value: "bar", Secret: false},
+					{Key: "global.booleanOverride.enabled", Value: false, Secret: false},
+					{Key: "manager.secret.clientid", Value: "cid", Secret: true},
+					{Key: "manager.secret.clientsecret", Value: "cs", Secret: true},
+					{Key: "manager.secret.url", Value: "sm_url"},
+					{Key: "manager.secret.sm_url", Value: "sm_url"},
+					{Key: "manager.secret.tokenurl", Value: "url"},
+					{Key: "cluster.id", Value: i.InstanceDetails.ServiceManagerClusterID},
+					{Key: "manager.priorityClassName", Value: "kyma-system"},
+				},
+			}
+			suite.AssertComponent(exp, c)
+		}
+	}
 
 	// when
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -1700,34 +1982,21 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 			"sm_url": "https://service-manager.kyma.com",
 			"url": "https://test.auth.com",
 			"xsappname": "testXsappname"
-		},
-		"isMigration": true
+		}
 	}
 }`)
 
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	time.Sleep(5 * time.Millisecond)
-	rsu1, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
-	assert.NoError(t, err, "getting runtime mid update")
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
-	// check first call to reconciler installing BTP-Operator and sc-migration, disabling SVCAT
-	assert.Equal(t, updateOperationID, rsu1.OperationID, "runtime state update operation ID")
-	assert.ElementsMatch(t, rsu1.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rs.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
-
-	// check second call to reconciler and see that sc-migration is no longer present and svcat related components are gone as well
-	time.Sleep(5 * time.Millisecond)
-	suite.FinishUpdatingOperationByReconciler(updateOperationID)
-
-	i, err = suite.db.Instances().GetByID(id)
-	assert.NoError(t, err, "getting instance after update")
-	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after update")
+	// check call to reconciler and see that creds are updated
 	rsu2, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
 	assert.NoError(t, err, "getting runtime after update")
-	assert.NotEqual(t, rsu1.ID, rsu2.ID, "runtime_state ID from first call should differ runtime_state ID from second call")
-	assert.Equal(t, updateOperationID, rsu2.OperationID, "runtime state update operation ID")
+	i, err = suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "getting instance after update")
 	assert.ElementsMatch(t, rsu2.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
 	assert.ElementsMatch(t, componentNames(rsu2.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator"})
 	for _, c := range rsu2.ClusterSetup.KymaConfig.Components {
@@ -1742,74 +2011,13 @@ func TestUpdateSCMigrationSuccess(t *testing.T) {
 					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
 					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
-					{Key: "cluster.id", Value: "cluster_id"},
+					{Key: "cluster.id", Value: i.InstanceDetails.ServiceManagerClusterID},
+					{Key: "manager.priorityClassName", Value: "kyma-system"},
 				},
 			}
-			assert.Equal(t, exp, c)
+			suite.AssertComponent(exp, c)
 		}
 	}
-
-	// finalize second call to reconciler and wait for the operation to finish
-	//suite.AssertReconcilerStartedReconcilingWhenUpgrading(instanceID)
-	time.Sleep(5 * time.Millisecond)
-	suite.FinishUpdatingOperationByReconciler(updateOperationID)
-	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
-
-	// change component input (additional components) and see if it works with update operation
-	suite.componentProvider.decorator["btp-operator"] = runtime.KymaComponent{
-		Name:      "btp-operator",
-		Namespace: "kyma-system",
-		Source:    &runtime.ComponentSource{URL: "https://btp-operator/updated"},
-	}
-	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
-{
-	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-	"context": {
-		"globalaccount_id": "g-account-id",
-		"user_id": "john.smith@email.com",
-		"sm_operator_credentials": {
-			"clientid": "testClientID",
-			"clientsecret": "testClientSecret",
-			"sm_url": "https://service-manager.kyma.com",
-			"url": "https://test.auth.com",
-			"xsappname": "testXsappname"
-		},
-		"isMigration": true
-	}
-}`)
-
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
-	update2OperationID := suite.DecodeOperationID(resp)
-	time.Sleep(5 * time.Millisecond)
-	suite.FinishUpdatingOperationByReconciler(update2OperationID)
-	i, err = suite.db.Instances().GetByID(id)
-	assert.NoError(t, err, "getting instance after second update")
-	assert.True(t, i.InstanceDetails.SCMigrationTriggered, "instance SCMigrationTriggered after second update")
-	rsu3, err := suite.db.RuntimeStates().GetLatestWithReconcilerInputByRuntimeID(i.RuntimeID)
-	assert.NoError(t, err, "getting runtime after second update")
-	assert.NotEqual(t, rsu2.ID, rsu3.ID, "runtime_state ID from second call should differ runtime_state ID from third call")
-	assert.Equal(t, update2OperationID, rsu3.OperationID, "runtime state second update operation ID")
-	assert.ElementsMatch(t, rsu3.KymaConfig.Components, []*gqlschema.ComponentConfigurationInput{})
-	assert.ElementsMatch(t, componentNames(rsu3.ClusterSetup.KymaConfig.Components), []string{"ory", "monitoring", "btp-operator", "sc-migration"})
-	for _, c := range rsu3.ClusterSetup.KymaConfig.Components {
-		if c.Component == "btp-operator" {
-			exp := reconcilerApi.Component{
-				Component: "btp-operator",
-				Namespace: "kyma-system",
-				URL:       "https://btp-operator/updated",
-				Configuration: []reconcilerApi.Configuration{
-					{Key: "manager.secret.clientid", Value: "testClientID", Secret: true},
-					{Key: "manager.secret.clientsecret", Value: "testClientSecret", Secret: true},
-					{Key: "manager.secret.url", Value: "https://service-manager.kyma.com"},
-					{Key: "manager.secret.sm_url", Value: "https://service-manager.kyma.com"},
-					{Key: "manager.secret.tokenurl", Value: "https://test.auth.com"},
-					{Key: "cluster.id", Value: "cluster_id"},
-				},
-			}
-			assert.Equal(t, exp, c)
-		}
-	}
-
 }
 
 func TestUpdateNetworkFilterPersisted(t *testing.T) {
@@ -1841,7 +2049,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 	instance := suite.GetInstance(id)
 
@@ -1874,119 +2082,15 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
 	instance2 := suite.GetInstance(id)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
 }
-
-/* test disabled due to flakiness
-func TestUpdateStoreNetworkFilterWhileSVCATMigration(t *testing.T) {
-	// given
-	suite := NewBrokerSuiteTest(t, "2.0")
-	mockBTPOperatorClusterID()
-	defer suite.TearDown()
-	id := uuid.New().String()
-
-	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", id),
-		`{
-			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-			"context": {
-				"sm_platform_credentials": {
-					"url": "https://sm.url",
-					"credentials": {
-						"basic": {
-							"username": "u-name",
-							"password": "pass"
-						}
-					}
-				},
-				"globalaccount_id": "g-account-id",
-				"subaccount_id": "sub-id",
-				"user_id": "john.smith@email.com"
-			},
-			"parameters": {
-				"name": "testing-cluster"
-			}
-		}`)
-
-	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
-	suite.WaitForOperationState(opID, domain.Succeeded)
-	instance := suite.GetInstance(id)
-
-	// then
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
-	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
-	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
-
-	// when
-	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
-		{
-			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-			"context": {
-				"globalaccount_id": "g-account-id",
-				"user_id": "john.smith@email.com",
-				"sm_operator_credentials": {
-					"clientid": "testClientID",
-					"clientsecret": "testClientSecret",
-					"sm_url": "https://service-manager.kyma.com",
-					"url": "https://test.auth.com",
-					"xsappname": "testXsappname2"
-				},
-				"license_type": "CUSTOMER",
-				"isMigration": true
-			}
-		}`)
-
-	// then
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
-	updateOperationID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByReconcilerBoth(updateOperationID)
-	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
-	instance2 := suite.GetInstance(id)
-	// license_type should be stored in the instance table for ERS context and future upgrades
-	// but shouldn't be sent to provisioner when migration is triggered
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
-	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
-
-	// when
-	// second update without triggering migration
-	// it should be fine if ERS omits license_type and KEB should reuse the last applied value
-	// because migration wasn't triggered, KEB should send payload to provisioner with network filter disabled
-	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
-		{
-			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-			"context": {
-				"globalaccount_id": "g-account-id",
-				"user_id": "john.smith@email.com",
-				"sm_operator_credentials": {
-					"clientid": "testClientID",
-					"clientsecret": "testClientSecret",
-					"sm_url": "https://service-manager.kyma.com",
-					"url": "https://test.auth.com",
-					"xsappname": "testXsappname2"
-				}
-			}
-		}`)
-
-	// then
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
-	updateOperation2ID := suite.DecodeOperationID(resp)
-	suite.FinishUpdatingOperationByProvisioner(updateOperation2ID)
-	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
-	instance3 := suite.GetInstance(id)
-	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
-	disabled := true
-	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
-}
-*/
 
 func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// given
@@ -2017,12 +2121,13 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 	instance := suite.GetInstance(id)
 
 	// then
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
+	disabled := false
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
 	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
 
 	// when
@@ -2047,15 +2152,15 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	instance2 := suite.GetInstance(id)
 	// license_type should be stored in the instance table for ERS context and future upgrades
-	// as well as sent to provisioner because the migration has not been triggered
-	disabled := true
+	disabled = true
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
-	suite.FinishUpdatingOperationByProvisionerAndReconciler(updateOperationID)
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 }
 
@@ -2088,13 +2193,14 @@ func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
 		}`)
 
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
 	instance := suite.GetInstance(id)
 
 	// then
-	suite.AssertDisabledNetworkFilterForProvisioning(nil)
-	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, nil)
+	disabled := false
+	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
+	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, opID, &disabled)
 	assert.Nil(suite.t, instance.Parameters.ErsContext.LicenseType)
 
 	// when
@@ -2109,6 +2215,8 @@ func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 	instance2 := suite.GetInstance(id)
 	assert.Equal(suite.t, "CUSTOMER", *instance2.Parameters.ErsContext.LicenseType)
@@ -2120,18 +2228,20 @@ func TestMultipleUpdateNetworkFilterPersisted(t *testing.T) {
 			"context":{},
 			"parameters":{
 			    "name":"$instance",
-			    "administrators":["jan.wozniak@sap.com", "wozniak.jan@gmail.com", "jan@kubermatic.com"]
+			    "administrators":["xyz@sap.com", "xyz@gmail.com", "xyz@abc.com"]
 			}
 		}`)
 
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperation2ID := suite.DecodeOperationID(resp)
+	suite.WaitForLastOperation(id, domain.InProgress)
 	suite.FinishUpdatingOperationByProvisioner(updateOperation2ID)
+	suite.FinishUpdatingOperationByReconciler(updateOperation2ID)
 	suite.WaitForOperationState(updateOperation2ID, domain.Succeeded)
 	instance3 := suite.GetInstance(id)
 	assert.Equal(suite.t, "CUSTOMER", *instance3.Parameters.ErsContext.LicenseType)
-	disabled := true
+	disabled = true
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperation2ID, &disabled)
 }
 

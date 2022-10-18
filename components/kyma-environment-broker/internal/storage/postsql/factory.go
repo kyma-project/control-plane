@@ -1,6 +1,8 @@
 package postsql
 
 import (
+	"time"
+
 	dbr "github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -8,14 +10,14 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 )
 
-//go:generate mockery -name=Factory
+//go:generate mockery --name=Factory
 type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
 	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberr.Error)
 }
 
-//go:generate mockery -name=ReadSession
+//go:generate mockery --name=ReadSession
 type ReadSession interface {
 	FindAllInstancesJoinedWithOperation(prct ...predicate.Predicate) ([]dbmodel.InstanceWithOperationDTO, dberr.Error)
 	FindAllInstancesForRuntimes(runtimeIdList []string) ([]dbmodel.InstanceDTO, dberr.Error)
@@ -26,7 +28,9 @@ type ReadSession interface {
 	GetNotFinishedOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
 	CountNotFinishedOperationsByInstanceID(instanceID string) (int, dberr.Error)
 	GetOperationByTypeAndInstanceID(inID string, opType internal.OperationType) (dbmodel.OperationDTO, dberr.Error)
+	GetOperationByInstanceID(inID string) (dbmodel.OperationDTO, dberr.Error)
 	GetOperationsByTypeAndInstanceID(inID string, opType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
+	GetOperationsByInstanceID(inID string) ([]dbmodel.OperationDTO, dberr.Error)
 	GetOperationsForIDs(opIdList []string) ([]dbmodel.OperationDTO, dberr.Error)
 	ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
 	ListOperationsByType(operationType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error)
@@ -40,14 +44,16 @@ type ReadSession interface {
 	ListOrchestrations(filter dbmodel.OrchestrationFilter) ([]dbmodel.OrchestrationDTO, int, int, error)
 	ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.InstanceDTO, int, int, error)
 	ListOperationsByOrchestrationID(orchestrationID string, filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error)
+	ListOperationsInTimeRange(from, to time.Time) ([]dbmodel.OperationDTO, error)
 	GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error)
 	GetLatestRuntimeStateByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
+	ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error)
 }
 
-//go:generate mockery -name=WriteSession
+//go:generate mockery --name=WriteSession
 type WriteSession interface {
 	InsertInstance(instance dbmodel.InstanceDTO) dberr.Error
 	UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error
@@ -57,6 +63,8 @@ type WriteSession interface {
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
+	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string) dberr.Error
+	DeleteEvents(until time.Time) dberr.Error
 }
 
 type Transaction interface {
@@ -64,7 +72,7 @@ type Transaction interface {
 	RollbackUnlessCommitted()
 }
 
-//go:generate mockery -name=WriteSessionWithinTransaction
+//go:generate mockery --name=WriteSessionWithinTransaction
 type WriteSessionWithinTransaction interface {
 	WriteSession
 	Transaction

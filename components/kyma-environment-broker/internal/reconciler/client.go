@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=Client -output=automock -outpkg=automock -case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 
 type Client interface {
 	ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerApi.HTTPClusterResponse, error)
@@ -69,6 +70,8 @@ func (c *client) ApplyClusterConfig(cluster reconcilerApi.Cluster) (*reconcilerA
 	switch {
 	case res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated:
 	case res.StatusCode >= 400 && res.StatusCode < 500:
+		message, _ := io.ReadAll(res.Body)
+		logrus.Errorf("Reconciler response: %s", string(message))
 		return nil, httpStatusCodeError(res.StatusCode)
 	case res.StatusCode >= 500:
 		return nil, kebError.WrapNewTemporaryError(httpStatusCodeError(res.StatusCode))

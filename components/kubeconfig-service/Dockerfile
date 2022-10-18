@@ -1,4 +1,4 @@
-FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18.2 as builder
+FROM eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220920-b10d5457 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kubeconfig-service
 ENV CGO_ENABLED 0
@@ -15,9 +15,9 @@ COPY . .
 #
 
 RUN go build -v -o main ./cmd/generator/main.go
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN mkdir /app && mv ./main /app/main
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.15.4
+FROM eu.gcr.io/kyma-project/external/alpine:3.16.2
 LABEL source = git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

@@ -24,7 +24,7 @@ type operationDebugLogsCmd struct {
 	opts          operationDebugLogsOpts
 }
 
-func (cmd operationDebugLogsCmd) Validate() error {
+func (cmd *operationDebugLogsCmd) Validate() error {
 
 	cmd.reconcilerURL = GlobalOpts.MothershipAPIURL()
 	cmd.auth = CLICredentialManager(logger.New())
@@ -40,7 +40,7 @@ func (cmd operationDebugLogsCmd) Validate() error {
 	return nil
 }
 
-func (cmd operationDebugLogsCmd) Run() error {
+func (cmd *operationDebugLogsCmd) Run() error {
 	ctx, cancel := context.WithCancel(cmd.ctx)
 	defer cancel()
 

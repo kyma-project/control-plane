@@ -26,6 +26,13 @@ else
 SUBSCRIPTION_CLEANUP_IMG_NAME := $(APP_SUBSCRIPTION_CLEANUP_NAME)
 endif
 
+# Configuration for Kyma Environment Broker trial cleanup job image
+ifneq ($(strip $(DOCKER_PUSH_REPOSITORY)),)
+TRIAL_CLEANUP_IMG_NAME := $(DOCKER_PUSH_REPOSITORY)$(DOCKER_PUSH_DIRECTORY)/$(APP_TRIAL_CLEANUP_NAME)
+else
+TRIAL_CLEANUP_IMG_NAME := $(APP_TRIAL_CLEANUP_NAME)
+endif
+
 TAG := $(DOCKER_TAG)
 # BASE_PKG is a root package of the component
 BASE_PKG := github.com/kyma-project/control-plane
@@ -105,23 +112,17 @@ endef
 verify:: test check-imports check-fmt errcheck
 format:: imports fmt
 
-release: resolve dep-status verify build-image push-image
+release: resolve dep-status verify
 
-.PHONY: build-image push-image
-build-image: pull-licenses
-	docker build -t $(IMG_NAME) .
-push-image:
-	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
-	docker push $(IMG_NAME):$(TAG)
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
-build-to-minikube: pull-licenses
+build-to-minikube:
 	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME) .
 
 build-local:
@@ -177,12 +178,6 @@ check-gqlgen:
 		exit 1; \
 	fi;
 
-pull-licenses-local:
-ifdef LICENSE_PULLER_PATH
-	bash $(LICENSE_PULLER_PATH)
-else
-	mkdir -p licenses
-endif
 
 # Targets copying sources to buildpack
 COPY_TARGETS = test

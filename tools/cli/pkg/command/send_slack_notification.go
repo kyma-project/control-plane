@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/tools/cli/pkg/credential"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -38,9 +40,14 @@ var upgradeOpts = []string{"parallel-workers", "schedule", "strategy",
 	"target", "target-exclude", "verbose", "version"}
 
 // SendSlackNotification will post message including attachments to slackhookUrl.
-func SendSlackNotification(title string, cobraCmd *cobra.Command, output string) error {
+func SendSlackNotification(title string, cobraCmd *cobra.Command, output string, mgr credential.Manager) error {
+	userID, err := mgr.GetUserIDByParseToken()
+	if err != nil {
+		return errors.Wrap(err, "while parsinng oauth2 token")
+	}
+
 	slackhookUrl := GlobalOpts.SlackAPIURL()
-	text_msg := "New " + title + " is triggerred on " + getClusterType()
+	text_msg := "New " + title + " is triggerred on " + getClusterType() + " by " + userID
 	triggeredCmd := revertUpgradeOpts(title, cobraCmd)
 	attachment := Attachment{
 		Color: SLACK_COLOR,

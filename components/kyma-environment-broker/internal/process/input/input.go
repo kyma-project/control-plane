@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
@@ -14,7 +15,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
-	"github.com/vburenin/nsync"
 )
 
 const (
@@ -35,17 +35,23 @@ type Config struct {
 	OpenstackFloatingPoolName     string                 `envconfig:"default=FloatingIP-external-cp-kyma"`
 	AutoUpdateKubernetesVersion   bool                   `envconfig:"default=false"`
 	AutoUpdateMachineImageVersion bool                   `envconfig:"default=false"`
+	MultiZoneCluster              bool                   `envconfig:"default=false"`
+	ControlPlaneFailureTolerance  string                 `envconfig:"optional"`
 }
 
 type RuntimeInput struct {
+	muOptionalComponents sync.Mutex
+	muLabels             sync.Mutex
+	muOverrides          sync.Mutex
+
 	provisionRuntimeInput gqlschema.ProvisionRuntimeInput
 	upgradeRuntimeInput   gqlschema.UpgradeRuntimeInput
 	upgradeShootInput     gqlschema.UpgradeShootInput
-	mutex                 *nsync.NamedMutex
 	overrides             map[string][]*gqlschema.ConfigEntryInput
 	labels                map[string]string
 	globalOverrides       []*gqlschema.ConfigEntryInput
 
+	config                    *internal.ConfigForPlan
 	hyperscalerInputProvider  HyperscalerInputProvider
 	optionalComponentsService OptionalComponentService
 	provisioningParameters    internal.ProvisioningParameters
@@ -65,16 +71,20 @@ type RuntimeInput struct {
 	clusterName       string
 }
 
+func (r *RuntimeInput) Configuration() *internal.ConfigForPlan {
+	return r.config
+}
+
 func (r *RuntimeInput) EnableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
-	r.mutex.Lock("enabledOptionalComponents")
-	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.muOptionalComponents.Lock()
+	defer r.muOptionalComponents.Unlock()
 	r.enabledOptionalComponents[componentName] = struct{}{}
 	return r
 }
 
 func (r *RuntimeInput) DisableOptionalComponent(componentName string) internal.ProvisionerInputCreator {
-	r.mutex.Lock("enabledOptionalComponents")
-	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.muOptionalComponents.Lock()
+	defer r.muOptionalComponents.Unlock()
 
 	r.optionalComponentsService.AddComponentToDisable(componentName, runtime.NewGenericComponentDisabler(componentName))
 	delete(r.enabledOptionalComponents, componentName)
@@ -128,13 +138,13 @@ func (r *RuntimeInput) SetOIDCLastValues(oidcConfig gqlschema.OIDCConfigInput) i
 	return r
 }
 
-// AppendOverrides sets the overrides for the given component and discard the previous ones.
+// SetOverrides sets the overrides for the given component and discard the previous ones.
 //
 // Deprecated: use AppendOverrides
 func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
 	// currently same as in AppendOverrides function, as we working on the same underlying object.
-	r.mutex.Lock("AppendOverrides")
-	defer r.mutex.Unlock("AppendOverrides")
+	r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	r.overrides[component] = overrides
 	return r
@@ -142,8 +152,8 @@ func (r *RuntimeInput) SetOverrides(component string, overrides []*gqlschema.Con
 
 // AppendOverrides appends overrides for the given components, the existing overrides are preserved.
 func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
-	r.mutex.Lock("AppendOverrides")
-	defer r.mutex.Unlock("AppendOverrides")
+	r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	for _, o2 := range overrides {
 		found := false
@@ -163,8 +173,8 @@ func (r *RuntimeInput) AppendOverrides(component string, overrides []*gqlschema.
 
 // AppendGlobalOverrides appends overrides, the existing overrides are preserved.
 func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryInput) internal.ProvisionerInputCreator {
-	r.mutex.Lock("AppendGlobalOverrides")
-	defer r.mutex.Unlock("AppendGlobalOverrides")
+	r.muOverrides.Lock()
+	defer r.muOverrides.Unlock()
 
 	for _, o2 := range overrides {
 		found := false
@@ -183,8 +193,8 @@ func (r *RuntimeInput) AppendGlobalOverrides(overrides []*gqlschema.ConfigEntryI
 }
 
 func (r *RuntimeInput) SetLabel(key, value string) internal.ProvisionerInputCreator {
-	r.mutex.Lock("Labels")
-	defer r.mutex.Unlock("Labels")
+	r.muLabels.Lock()
+	defer r.muLabels.Unlock()
 
 	if r.provisionRuntimeInput.RuntimeInput.Labels == nil {
 		r.provisionRuntimeInput.RuntimeInput.Labels = gqlschema.Labels{}
@@ -321,6 +331,7 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, erro
 	if err != nil {
 		return reconcilerApi.Cluster{}, err
 	}
+
 	if r.runtimeID == "" {
 		return reconcilerApi.Cluster{}, errors.New("missing runtime ID")
 	}
@@ -388,10 +399,14 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, erro
 			ServicePlanName: broker.PlanNamesMapping[r.provisioningParameters.PlanID],
 			ShootName:       *r.shootName,
 			InstanceID:      r.instanceID,
-			Region:          r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region,
 		},
 		Kubeconfig: r.kubeconfig,
 	}
+
+	if r.provisionRuntimeInput.ClusterConfig != nil && r.provisionRuntimeInput.ClusterConfig.GardenerConfig != nil {
+		result.Metadata.Region = r.provisionRuntimeInput.ClusterConfig.GardenerConfig.Region
+	}
+
 	return result, nil
 }
 
@@ -421,6 +436,10 @@ func (r *RuntimeInput) CreateProvisionClusterInput() (gqlschema.ProvisionRuntime
 func (r *RuntimeInput) applyProvisioningParametersForProvisionRuntime() error {
 	params := r.provisioningParameters.Parameters
 	updateString(&r.provisionRuntimeInput.RuntimeInput.Name, &params.Name)
+
+	if r.provisioningParameters.PlanID == broker.OwnClusterPlanID {
+		return nil
+	}
 
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxUnavailable, params.MaxUnavailable)
 	updateInt(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.MaxSurge, params.MaxSurge)
@@ -472,9 +491,6 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 		}
 	}
 
-	// use autoscaler value in provisioningParameters if it is not nil
-	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMin, r.provisioningParameters.Parameters.AutoScalerMin)
-	updateInt(r.upgradeShootInput.GardenerConfig.AutoScalerMax, r.provisioningParameters.Parameters.AutoScalerMax)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxSurge, r.provisioningParameters.Parameters.MaxSurge)
 	updateInt(r.upgradeShootInput.GardenerConfig.MaxUnavailable, r.provisioningParameters.Parameters.MaxUnavailable)
 
@@ -482,8 +498,8 @@ func (r *RuntimeInput) applyProvisioningParametersForUpgradeShoot() error {
 }
 
 func (r *RuntimeInput) resolveOptionalComponentsForProvisionRuntime() error {
-	r.mutex.Lock("enabledOptionalComponents")
-	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.muOptionalComponents.Lock()
+	defer r.muOptionalComponents.Unlock()
 
 	componentsToInstall := []string{}
 	componentsToInstall = append(componentsToInstall, r.provisioningParameters.Parameters.OptionalComponentsToInstall...)
@@ -503,8 +519,8 @@ func (r *RuntimeInput) resolveOptionalComponentsForProvisionRuntime() error {
 }
 
 func (r *RuntimeInput) resolveOptionalComponentsForUpgradeRuntime() error {
-	r.mutex.Lock("enabledOptionalComponents")
-	defer r.mutex.Unlock("enabledOptionalComponents")
+	r.muOptionalComponents.Lock()
+	defer r.muOptionalComponents.Unlock()
 
 	componentsToInstall := []string{}
 	componentsToInstall = append(componentsToInstall, r.provisioningParameters.Parameters.OptionalComponentsToInstall...)
@@ -628,7 +644,8 @@ func (r *RuntimeInput) configureDNS() error {
 
 	dnsParamsToSet.Domain = r.shootDomain
 
-	if r.provisionRuntimeInput.ClusterConfig != nil {
+	if r.provisionRuntimeInput.ClusterConfig != nil &&
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig != nil {
 		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.DNSConfig = &dnsParamsToSet
 	}
 

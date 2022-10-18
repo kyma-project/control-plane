@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/dlmiddlecote/sqlstats"
@@ -34,6 +36,9 @@ type provisionerConfig struct {
 }
 
 func main() {
+
+	time.Sleep(20 * time.Second)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(errors.Wrap(err, "while loading cleanup config"))
@@ -51,7 +56,7 @@ func main() {
 
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, conn, err := storage.NewFromConfig(cfg.Database, cipher, log.WithField("service", "storage"))
+	db, conn, err := storage.NewFromConfig(cfg.Database, events.Config{}, cipher, log.WithField("service", "storage"))
 	fatalOnError(err)
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)
@@ -63,7 +68,21 @@ func main() {
 	if err != nil {
 		fatalOnError(err)
 	}
+
+	err = conn.Close()
+	if err != nil {
+		fatalOnError(err)
+	}
+
+	// do not use defer, close must be done before halting
+	err = cleaner.Halt()
+	if err != nil {
+		fatalOnError(err)
+	}
+
 	log.Info("Kyma Environments cleanup performed successfully")
+
+	time.Sleep(5 * time.Second)
 }
 
 func fatalOnError(err error) {

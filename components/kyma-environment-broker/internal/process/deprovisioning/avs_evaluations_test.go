@@ -32,10 +32,10 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	logger := logrus.New()
 	memoryStorage := storage.NewMemoryStorage()
 
-	deProvisioningOperation := fixDeprovisioningOperation()
+	deProvisioningOperation := fixDeprovisioningOperation().Operation
 	deProvisioningOperation.Avs.AvsEvaluationInternalId = internalEvalId
 	deProvisioningOperation.Avs.AVSEvaluationExternalId = externalEvalId
-	err := memoryStorage.Operations().InsertDeprovisioningOperation(deProvisioningOperation)
+	err := memoryStorage.Operations().InsertOperation(deProvisioningOperation)
 	assert.NoError(t, err)
 	assert.False(t, deProvisioningOperation.Avs.AVSInternalEvaluationDeleted)
 	assert.False(t, deProvisioningOperation.Avs.AVSExternalEvaluationDeleted)

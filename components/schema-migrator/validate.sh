@@ -34,6 +34,7 @@ trap cleanup EXIT
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
+GO111MODULE=on go mod vendor -v
 docker build -t ${IMG_NAME} ./
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"

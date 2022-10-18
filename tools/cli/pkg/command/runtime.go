@@ -67,7 +67,11 @@ func NewRuntimeCmd() *cobra.Command {
 		Aliases: []string{"runtime", "rt"},
 		Short:   "Displays Kyma Runtimes.",
 		Long: `Displays Kyma Runtimes and their primary attributes, such as identifiers, region, or states.
-The command supports filtering Runtimes based on various attributes. See the list of options for more details.`,
+The command supports filtering Runtimes based on various attributes. See the list of options for more details.
+
+Progress of each operation can be tracked by looking at finished stages. 
+https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-broker/03-03-runtime-operations.md
+`,
 		Example: `  kcp runtimes                                           Display table overview about all Runtimes.
   kcp rt -c c-178e034 -o json                            Display all details about one Runtime identified by a Shoot name in the JSON format.
   kcp runtimes --account CA4836781TID000000000123456789  Display all Runtimes of a given global account.
@@ -93,6 +97,7 @@ The command supports filtering Runtimes based on various attributes. See the lis
 	cobraCmd.Flags().BoolVar(&cmd.opDetail, "ops", false, "Get all operations for the runtimes instead of just querying the last operation.")
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
+	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes")
 
 	return cobraCmd
 }

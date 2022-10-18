@@ -17,7 +17,8 @@ func NewUnbind(log logrus.FieldLogger) *UnbindEndpoint {
 }
 
 // Unbind deletes an existing service binding
-//   DELETE /v2/service_instances/{instance_id}/service_bindings/{binding_id}
+//
+//	DELETE /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *UnbindEndpoint) Unbind(ctx context.Context, instanceID, bindingID string, details domain.UnbindDetails, asyncAllowed bool) (domain.UnbindSpec, error) {
 	b.log.Infof("Unbind instanceID: %s", instanceID)
 	b.log.Infof("Unbind details: %+v", details)

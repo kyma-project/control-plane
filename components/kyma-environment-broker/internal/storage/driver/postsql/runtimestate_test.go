@@ -12,6 +12,7 @@ import (
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -67,7 +68,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -108,7 +109,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -175,7 +176,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -238,7 +239,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -295,7 +296,7 @@ func TestRuntimeState(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 

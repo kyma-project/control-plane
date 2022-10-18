@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 
@@ -75,7 +74,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				tc.given.managedRuntimeComponentsYAMLPath,
 				tc.given.newAdditionalRuntimeComponentsYAMLPath).WithHTTPClient(fakeHTTPClient)
 
-			expAdditionalComponents := make([]runtime.KymaComponent, 0)
+			expAdditionalComponents := make([]internal.KymaComponent, 0)
 			if tc.given.kymaVersion.MajorVersion > 1 {
 				expAdditionalComponents = readManagedComponentsFromFile(t, tc.given.newAdditionalRuntimeComponentsYAMLPath)
 			} else {
@@ -83,7 +82,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 			}
 
 			// when
-			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion, broker.AzurePlanName)
+			allComponents, err := listProvider.AllComponents(tc.given.kymaVersion, nil)
 
 			// then
 			require.NoError(t, err)
@@ -157,7 +156,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 				WithHTTPClient(fakeHTTPClient)
 
 			// when
-			components, err := listProvider.AllComponents(tc.given.kymaVersion, broker.AzurePlanName)
+			components, err := listProvider.AllComponents(tc.given.kymaVersion, nil)
 
 			// then
 			assert.Nil(t, components)
@@ -167,7 +166,7 @@ func TestRuntimeComponentProviderGetFailures(t *testing.T) {
 	}
 }
 
-func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []runtime.KymaComponent) {
+func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedComponents []internal.KymaComponent) {
 	t.Helper()
 
 	assert.NotPanics(t, func() {
@@ -178,14 +177,14 @@ func assertManagedComponentsAtTheEndOfList(t *testing.T, allComponents, managedC
 	})
 }
 
-func readManagedComponentsFromFile(t *testing.T, path string) []runtime.KymaComponent {
+func readManagedComponentsFromFile(t *testing.T, path string) []internal.KymaComponent {
 	t.Helper()
 
 	yamlFile, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 
 	var managedList struct {
-		Components []runtime.KymaComponent `json:"components"`
+		Components []internal.KymaComponent `json:"components"`
 	}
 	err = yaml.Unmarshal(yamlFile, &managedList)
 	require.NoError(t, err)

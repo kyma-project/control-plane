@@ -11,14 +11,14 @@ import (
 )
 
 type InitKymaVersionStep struct {
-	operationManager       *process.UpdateOperationManager
+	operationManager       *process.OperationManager
 	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator
 	runtimeStatesDb        storage.RuntimeStates
 }
 
 func NewInitKymaVersionStep(os storage.Operations, rvc *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates) *InitKymaVersionStep {
 	return &InitKymaVersionStep{
-		operationManager:       process.NewUpdateOperationManager(os),
+		operationManager:       process.NewOperationManager(os),
 		runtimeVerConfigurator: rvc,
 		runtimeStatesDb:        runtimeStatesDb,
 	}
@@ -28,7 +28,7 @@ func (s *InitKymaVersionStep) Name() string {
 	return "Update_Init_Kyma_Version"
 }
 
-func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *InitKymaVersionStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	var version *internal.RuntimeVersionData
 	var err error
 	if operation.RuntimeVersion.IsEmpty() {
@@ -40,18 +40,16 @@ func (s *InitKymaVersionStep) Run(operation internal.UpdatingOperation, log logr
 		version = &operation.RuntimeVersion
 	}
 	var lrs internal.RuntimeState
-	if version.MajorVersion == 2 {
-		lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
-		if err != nil {
-			return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
-		}
+	lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
+	if err != nil {
+		return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
 	}
-	op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+	op, delay, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		if version != nil {
 			op.RuntimeVersion = *version
 		}
 		op.LastRuntimeState = lrs
 	}, log)
-	log.Info("Init runtime version: ", op.RuntimeVersion.MajorVersion, ", last runtime state: ", op.LastRuntimeState.ID, ", service catalog migration triggered: ", operation.InstanceDetails.SCMigrationTriggered)
+	log.Info("Init runtime version: ", op.RuntimeVersion.MajorVersion, ", last runtime state: ", op.LastRuntimeState.ID)
 	return op, delay, nil
 }

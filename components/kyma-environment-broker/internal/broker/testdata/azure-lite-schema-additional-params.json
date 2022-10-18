@@ -13,11 +13,9 @@
   "properties": {
     "administrators": {
       "description": "Specifies the list of runtime administrators",
-      "items": [
-        {
-          "type": "string"
-        }
-      ],
+      "items": {
+        "type": "string"
+      },
       "title": "Administrators",
       "type": "array"
     },
@@ -35,6 +33,9 @@
       "type": "integer"
     },
     "machineType": {
+      "_enumDisplayName": {
+        "Standard_D4_v3": "Standard_D4_v3 (4vCPU, 16GB RAM)"
+      },
       "enum": [
         "Standard_D4_v3"
       ],
@@ -68,11 +69,9 @@
         },
         "signingAlgs": {
           "description": "List of allowed JOSE asymmetric signing algorithms.",
-          "items": [
-            {
-              "type": "string"
-            }
-          ],
+          "items": {
+            "type": "string"
+          },
           "type": "array"
         },
         "usernameClaim": {

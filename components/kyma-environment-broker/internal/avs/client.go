@@ -174,7 +174,16 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		var responseObject avsNonSuccessResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
-			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d", evaluationID)
+			msg, e := io.ReadAll(response.Body)
+			if e != nil {
+				msg = []byte("unable to read the response body")
+			} else {
+				if strings.Contains(strings.ToLower(string(msg)), "does not contain subevaluation") {
+					return nil
+				}
+			}
+			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d, URL: %s, message: %s",
+				evaluationID, absoluteURL, string(msg))
 		}
 
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
@@ -252,7 +261,8 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return response, NewAvsError("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
 	}
 
-	return response, NewAvsError("unsupported status code: %d for %s", response.StatusCode, request.URL.String())
+	message, _ := io.ReadAll(response.Body)
+	return response, NewAvsError("unsupported status code: %d for %s. Message: %s", response.StatusCode, request.URL.String(), string(message))
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

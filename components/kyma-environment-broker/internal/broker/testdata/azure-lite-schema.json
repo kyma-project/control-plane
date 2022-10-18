@@ -23,6 +23,9 @@
       "type": "integer"
     },
     "machineType": {
+      "_enumDisplayName": {
+        "Standard_D4_v3": "Standard_D4_v3 (4vCPU, 16GB RAM)"
+      },
       "enum": [
         "Standard_D4_v3"
       ],

@@ -8,12 +8,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -35,15 +40,20 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{Enabled: true}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
 		// given
 		testInstanceId := "test"
+		expiredID := "expired-id"
 		fixInstance := fixture.FixInstance(testInstanceId)
+		expiredInstance := fixture.FixInstance(expiredID)
+		expiredInstance.ExpiredAt = ptr.Time(time.Now())
 
 		err = brokerStorage.Instances().Insert(fixInstance)
+		require.NoError(t, err)
+		err = brokerStorage.Instances().Insert(expiredInstance)
 		require.NoError(t, err)
 
 		fixInstance.DashboardURL = "diff"
@@ -53,12 +63,12 @@ func TestInstance(t *testing.T) {
 
 		fixProvisioningOperation1 := fixture.FixProvisioningOperation("op-id", fixInstance.InstanceID)
 
-		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation1)
+		err = brokerStorage.Operations().InsertOperation(fixProvisioningOperation1)
 		require.NoError(t, err)
 
 		fixProvisioningOperation2 := fixture.FixProvisioningOperation("latest-op-id", fixInstance.InstanceID)
 
-		err = brokerStorage.Operations().InsertProvisioningOperation(fixProvisioningOperation2)
+		err = brokerStorage.Operations().InsertOperation(fixProvisioningOperation2)
 		require.NoError(t, err)
 
 		upgradeOperation := fixture.FixUpgradeKymaOperation("operation-id-3", "inst-id")
@@ -77,6 +87,8 @@ func TestInstance(t *testing.T) {
 		// then
 		inst, err := brokerStorage.Instances().GetByID(testInstanceId)
 		assert.NoError(t, err)
+		expired, err := brokerStorage.Instances().GetByID(expiredID)
+		assert.NoError(t, err)
 		require.NotNil(t, inst)
 
 		assert.Equal(t, fixInstance.InstanceID, inst.InstanceID)
@@ -88,9 +100,15 @@ func TestInstance(t *testing.T) {
 		assert.Equal(t, fixInstance.DashboardURL, inst.DashboardURL)
 		assert.Equal(t, fixInstance.Parameters, inst.Parameters)
 		assert.Equal(t, fixInstance.Provider, inst.Provider)
+		assert.False(t, inst.IsExpired())
 		assert.NotEmpty(t, inst.CreatedAt)
 		assert.NotEmpty(t, inst.UpdatedAt)
 		assert.Equal(t, "0001-01-01 00:00:00 +0000 UTC", inst.DeletedAt.String())
+		assert.True(t, expired.IsExpired())
+
+		// insert event
+		events.Infof(fixInstance.InstanceID, fixProvisioningOperation2.ID, "some event")
+		events.Errorf(fixInstance.InstanceID, fixProvisioningOperation2.ID, fmt.Errorf(""), "asdasd %s", "")
 
 		// when
 		err = brokerStorage.Instances().Delete(fixInstance.InstanceID)
@@ -115,7 +133,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -160,7 +178,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -176,14 +194,14 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		fixProvisionOps := []internal.ProvisioningOperation{
+		fixProvisionOps := []internal.Operation{
 			fixProvisionOperation("A1"),
 			fixProvisionOperation("B1"),
 			fixProvisionOperation("C1"),
 		}
 
 		for _, op := range fixProvisionOps {
-			err = brokerStorage.Operations().InsertProvisioningOperation(op)
+			err = brokerStorage.Operations().InsertOperation(op)
 			require.NoError(t, err)
 		}
 
@@ -236,7 +254,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -276,7 +294,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -286,7 +304,7 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "2"}),
 			*fixInstance(instanceData{val: "3"}),
 		}
-		fixOperations := []internal.ProvisioningOperation{
+		fixOperations := []internal.Operation{
 			fixture.FixProvisioningOperation("op1", "1"),
 			fixture.FixProvisioningOperation("op2", "2"),
 			fixture.FixProvisioningOperation("op3", "3"),
@@ -298,7 +316,7 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 		for _, i := range fixOperations {
-			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			err = brokerStorage.Operations().InsertOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -333,7 +351,7 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
@@ -342,11 +360,13 @@ func TestInstance(t *testing.T) {
 			*fixInstance(instanceData{val: "inst1"}),
 			*fixInstance(instanceData{val: "inst2"}),
 			*fixInstance(instanceData{val: "inst3"}),
+			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
 		}
-		fixOperations := []internal.ProvisioningOperation{
+		fixOperations := []internal.Operation{
 			fixture.FixProvisioningOperation("op1", "inst1"),
 			fixture.FixProvisioningOperation("op2", "inst2"),
 			fixture.FixProvisioningOperation("op3", "inst3"),
+			fixture.FixProvisioningOperation("op4", "expiredinstance"),
 		}
 		for i, v := range fixInstances {
 			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
@@ -355,7 +375,7 @@ func TestInstance(t *testing.T) {
 			require.NoError(t, err)
 		}
 		for _, i := range fixOperations {
-			err = brokerStorage.Operations().InsertProvisioningOperation(i)
+			err = brokerStorage.Operations().InsertOperation(i)
 			require.NoError(t, err)
 		}
 		// when
@@ -427,9 +447,24 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, 1, totalCount)
 
 		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(true)})
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[3].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(false)})
+		require.NoError(t, err)
+		require.Equal(t, 3, count)
+		require.Equal(t, 3, totalCount)
+
 	})
 
-	t.Run("Should list instances based on state filters", func(t *testing.T) {
+	t.Run("Should list instances based on filters", func(t *testing.T) {
 		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 		require.NoError(t, err)
 		defer containerCleanupFunc()
@@ -439,14 +474,137 @@ func TestInstance(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// populate database with samples
+		fixInstances := []internal.Instance{
+			*fixInstance(instanceData{val: "inst1"}),
+			*fixInstance(instanceData{val: "inst2"}),
+			*fixInstance(instanceData{val: "inst3"}),
+			*fixInstance(instanceData{val: "expiredinstance", expired: true}),
+		}
+		fixOperations := []internal.Operation{
+			fixture.FixProvisioningOperation("op1", "inst1"),
+			fixture.FixProvisioningOperation("op2", "inst2"),
+			fixture.FixProvisioningOperation("op3", "inst3"),
+			fixture.FixProvisioningOperation("op4", "expiredinstance"),
+		}
+		for i, v := range fixInstances {
+			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
+			fixInstances[i] = v
+			err = brokerStorage.Instances().Insert(v)
+			require.NoError(t, err)
+		}
+		for _, i := range fixOperations {
+			err = brokerStorage.Operations().InsertOperation(i)
+			require.NoError(t, err)
+		}
+		// when
+		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{InstanceIDs: []string{fixInstances[0].InstanceID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[0].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{GlobalAccountIDs: []string{fixInstances[1].GlobalAccountID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{SubAccountIDs: []string{fixInstances[1].SubAccountID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{RuntimeIDs: []string{fixInstances[1].RuntimeID}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Plans: []string{fixInstances[1].ServicePlanName}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Shoots: []string{"Shoot-inst2"}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Regions: []string{"inst2"}})
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[1].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(true)})
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, 1, totalCount)
+
+		assert.Equal(t, fixInstances[3].InstanceID, out[0].InstanceID)
+
+		// when
+		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{Expired: ptr.Bool(false)})
+		require.NoError(t, err)
+		require.Equal(t, 3, count)
+		require.Equal(t, 3, totalCount)
+
+	})
+
+	t.Run("Should list trial instances", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
 		inst1 := fixInstance(instanceData{val: "inst1"})
-		inst2 := fixInstance(instanceData{val: "inst2"})
-		inst3 := fixInstance(instanceData{val: "inst3"})
+		inst2 := fixInstance(instanceData{val: "inst2", trial: true, expired: true})
+		inst3 := fixInstance(instanceData{val: "inst3", trial: true})
 		inst4 := fixInstance(instanceData{val: "inst4"})
 		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
 
@@ -458,13 +616,13 @@ func TestInstance(t *testing.T) {
 		// inst1 is in succeeded state
 		provOp1 := fixProvisionOperation("inst1")
 		provOp1.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp1)
+		err = brokerStorage.Operations().InsertOperation(provOp1)
 		require.NoError(t, err)
 
 		// inst2 is in error state
 		provOp2 := fixProvisionOperation("inst2")
 		provOp2.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp2)
+		err = brokerStorage.Operations().InsertOperation(provOp2)
 		require.NoError(t, err)
 		upgrOp2 := fixUpgradeKymaOperation("inst2")
 		upgrOp2.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
@@ -475,7 +633,7 @@ func TestInstance(t *testing.T) {
 		// inst3 is in suspended state
 		provOp3 := fixProvisionOperation("inst3")
 		provOp3.State = domain.Succeeded
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp3)
+		err = brokerStorage.Operations().InsertOperation(provOp3)
 		require.NoError(t, err)
 		upgrOp3 := fixUpgradeKymaOperation("inst3")
 		upgrOp3.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
@@ -492,29 +650,12 @@ func TestInstance(t *testing.T) {
 		// inst4 is in failed state
 		provOp4 := fixProvisionOperation("inst4")
 		provOp4.State = domain.Failed
-		err = brokerStorage.Operations().InsertProvisioningOperation(provOp4)
+		err = brokerStorage.Operations().InsertOperation(provOp4)
 		require.NoError(t, err)
 
 		// when
-		out, count, totalCount, err := brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceSucceeded}})
-
-		// then
-		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst1.InstanceID, out[0].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceError}})
-
-		// then
-		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceDeprovisioned}})
+		nonExpiredTrialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}, Expired: &[]bool{false}[0]}
+		out, count, totalCount, err := brokerStorage.Instances().List(nonExpiredTrialInstancesFilter)
 
 		// then
 		require.NoError(t, err)
@@ -523,23 +664,15 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, inst3.InstanceID, out[0].InstanceID)
 
 		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceNotDeprovisioned}})
+		trialInstancesFilter := dbmodel.InstanceFilter{PlanIDs: []string{broker.TrialPlanID}}
+		out, count, totalCount, err = brokerStorage.Instances().List(trialInstancesFilter)
 
 		// then
 		require.NoError(t, err)
-		require.Equal(t, 3, count)
-		require.Equal(t, 3, totalCount)
-		require.NotEqual(t, inst3.InstanceID, out[0].InstanceID)
-		require.NotEqual(t, inst3.InstanceID, out[1].InstanceID)
-		require.NotEqual(t, inst3.InstanceID, out[2].InstanceID)
-
-		// when
-		out, count, totalCount, err = brokerStorage.Instances().List(dbmodel.InstanceFilter{States: []dbmodel.InstanceState{dbmodel.InstanceFailed}})
-
-		// then
-		require.Equal(t, 1, count)
-		require.Equal(t, 1, totalCount)
-		require.Equal(t, inst4.InstanceID, out[0].InstanceID)
+		require.Equal(t, 2, count)
+		require.Equal(t, 2, totalCount)
+		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
+		require.Equal(t, inst3.InstanceID, out[1].InstanceID)
 	})
 }
 
@@ -548,6 +681,7 @@ func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {
 	want.CreatedAt, got.CreatedAt = time.Time{}, time.Time{}
 	want.UpdatedAt, got.UpdatedAt = time.Time{}, time.Time{}
 	want.DeletedAt, got.DeletedAt = time.Time{}, time.Time{}
+	want.ExpiredAt, got.ExpiredAt = nil, nil
 
 	assert.EqualValues(t, want, got)
 }
@@ -570,6 +704,8 @@ type instanceData struct {
 	val             string
 	globalAccountID string
 	subAccountID    string
+	expired         bool
+	trial           bool
 }
 
 func fixInstance(testData instanceData) *internal.Instance {
@@ -594,15 +730,22 @@ func fixInstance(testData instanceData) *internal.Instance {
 	instance.GlobalAccountID = gaid
 	instance.SubscriptionGlobalAccountID = gaid
 	instance.SubAccountID = suid
-	instance.ServiceID = testData.val
-	instance.ServiceName = testData.val
-	instance.ServicePlanID = testData.val
+	if testData.trial {
+		instance.ServicePlanID = broker.TrialPlanID
+		instance.ServicePlanName = broker.TrialPlanName
+	} else {
+		instance.ServiceID = testData.val
+		instance.ServiceName = testData.val
+	}
 	instance.ServicePlanName = testData.val
 	instance.DashboardURL = fmt.Sprintf("https://console.%s.kyma.local", testData.val)
 	instance.ProviderRegion = testData.val
 	instance.Parameters.ErsContext.SubAccountID = suid
 	instance.Parameters.ErsContext.GlobalAccountID = gaid
 	instance.InstanceDetails = internal.InstanceDetails{}
+	if testData.expired {
+		instance.ExpiredAt = ptr.Time(time.Now().Add(-10 * time.Hour))
+	}
 
 	return &instance
 }
@@ -615,7 +758,7 @@ func fixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 	return runtimeOperation
 }
 
-func fixProvisionOperation(instanceId string) internal.ProvisioningOperation {
+func fixProvisionOperation(instanceId string) internal.Operation {
 	operationId := fmt.Sprintf("%s-%d", instanceId, rand.Int())
 	return fixture.FixProvisioningOperation(operationId, instanceId)
 

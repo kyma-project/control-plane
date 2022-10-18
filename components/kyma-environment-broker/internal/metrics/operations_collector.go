@@ -22,10 +22,8 @@ import (
 var (
 	supportedPlansIDs = []string{
 		broker.AzurePlanID,
-		broker.AzureHAPlanID,
 		broker.AzureLitePlanID,
 		broker.AWSPlanID,
-		broker.AWSHAPlanID,
 		broker.GCPPlanID,
 		broker.OpenStackPlanID,
 		broker.TrialPlanID,

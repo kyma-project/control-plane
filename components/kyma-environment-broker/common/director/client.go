@@ -17,7 +17,7 @@ const (
 	accountIDKey = "tenant"
 )
 
-//go:generate mockery -name=GraphQLClient -output=automock
+//go:generate mockery --name=GraphQLClient --output=automock
 type GraphQLClient interface {
 	Run(ctx context.Context, req *machineGraph.Request, resp interface{}) error
 }

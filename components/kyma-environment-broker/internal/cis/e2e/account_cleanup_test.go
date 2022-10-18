@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/cis"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,7 @@ func TestSubAccountCleanup(t *testing.T) {
 
 		t.Log("create storage manager")
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		storageManager, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		storageManager, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		t.Log("fill instances table")
@@ -91,7 +92,7 @@ func TestSubAccountCleanup(t *testing.T) {
 
 		t.Log("create storage manager")
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		storageManager, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		storageManager, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 
 		t.Log("fill instances table")

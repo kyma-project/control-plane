@@ -126,10 +126,10 @@ const (
 )
 
 type AutoScalerParameters struct {
-	AutoScalerMin  *int `json:"autoScalerMin"`
-	AutoScalerMax  *int `json:"autoScalerMax"`
-	MaxSurge       *int `json:"maxSurge"`
-	MaxUnavailable *int `json:"maxUnavailable"`
+	AutoScalerMin  *int `json:"autoScalerMin,omitempty"`
+	AutoScalerMax  *int `json:"autoScalerMax,omitempty"`
+	MaxSurge       *int `json:"maxSurge,omitempty"`
+	MaxUnavailable *int `json:"maxUnavailable,omitempty"`
 }
 
 // FIXME: this is a makeshift check until the provisioner is capable of returning error messages
@@ -160,23 +160,26 @@ type ProvisioningParametersDTO struct {
 	AutoScalerParameters `json:",inline"`
 
 	Name         string  `json:"name"`
-	TargetSecret *string `json:"targetSecret"`
-	VolumeSizeGb *int    `json:"volumeSizeGb"`
-	MachineType  *string `json:"machineType"`
-	Region       *string `json:"region"`
-	Purpose      *string `json:"purpose"`
+	TargetSecret *string `json:"targetSecret,omitempty"`
+	VolumeSizeGb *int    `json:"volumeSizeGb,omitempty"`
+	MachineType  *string `json:"machineType,omitempty"`
+	Region       *string `json:"region,omitempty"`
+	Purpose      *string `json:"purpose,omitempty"`
 	// LicenceType - based on this parameter, some options can be enabled/disabled when preparing the input
 	// for the provisioner e.g. use default overrides for SKR instead overrides from resource
 	// with "provisioning-runtime-override" label when LicenceType is "TestDevelopmentAndDemo"
-	LicenceType                 *string  `json:"licence_type"`
-	Zones                       []string `json:"zones"`
-	ZonesCount                  *int     `json:"zonesCount"`
-	OptionalComponentsToInstall []string `json:"components"`
-	KymaVersion                 string   `json:"kymaVersion"`
-	OverridesVersion            string   `json:"overridesVersion"`
-	RuntimeAdministrators       []string `json:"administrators"`
+	LicenceType                 *string  `json:"licence_type,omitempty"`
+	Zones                       []string `json:"zones,omitempty"`
+	OptionalComponentsToInstall []string `json:"components,omitempty"`
+	KymaVersion                 string   `json:"kymaVersion,omitempty"`
+	OverridesVersion            string   `json:"overridesVersion,omitempty"`
+	RuntimeAdministrators       []string `json:"administrators,omitempty"`
 	//Provider - used in Trial plan to determine which cloud provider to use during provisioning
-	Provider *CloudProvider `json:"provider"`
+	Provider *CloudProvider `json:"provider,omitempty"`
+
+	Kubeconfig  string `json:"kubeconfig,omitempty"`
+	ShootName   string `json:"shootName,omitempty"`
+	ShootDomain string `json:"shootDomain,omitempty"`
 
 	OIDC *OIDCConfigDTO `json:"oidc,omitempty"`
 }
@@ -186,6 +189,9 @@ type UpdatingParametersDTO struct {
 
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+
+	// Expired - means that the trial SKR is marked as expired
+	Expired bool `json:"expired"`
 }
 
 func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bool {
@@ -210,13 +216,12 @@ func (u UpdatingParametersDTO) UpdateAutoScaler(p *ProvisioningParametersDTO) bo
 }
 
 type ERSContext struct {
-	TenantID              string                             `json:"tenant_id"`
+	TenantID              string                             `json:"tenant_id,omitempty"`
 	SubAccountID          string                             `json:"subaccount_id"`
 	GlobalAccountID       string                             `json:"globalaccount_id"`
 	SMOperatorCredentials *ServiceManagerOperatorCredentials `json:"sm_operator_credentials,omitempty"`
 	Active                *bool                              `json:"active,omitempty"`
 	UserID                string                             `json:"user_id"`
-	IsMigration           bool                               `json:"isMigration"`
 	CommercialModel       *string                            `json:"commercial_model,omitempty"`
 	LicenseType           *string                            `json:"license_type,omitempty"`
 	Origin                *string                            `json:"origin,omitempty"`
@@ -224,7 +229,7 @@ type ERSContext struct {
 	Region                *string                            `json:"region,omitempty"`
 }
 
-func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext {
+func InheritMissingERSContext(currentOperation, previousOperation ERSContext) ERSContext {
 	if currentOperation.SMOperatorCredentials == nil {
 		currentOperation.SMOperatorCredentials = previousOperation.SMOperatorCredentials
 	}
@@ -246,19 +251,48 @@ func UpdateERSContext(currentOperation, previousOperation ERSContext) ERSContext
 	return currentOperation
 }
 
+func UpdateInstanceERSContext(instance, operation ERSContext) ERSContext {
+	if operation.SMOperatorCredentials != nil {
+		instance.SMOperatorCredentials = operation.SMOperatorCredentials
+	}
+	if operation.CommercialModel != nil {
+		instance.CommercialModel = operation.CommercialModel
+	}
+	if operation.LicenseType != nil {
+		instance.LicenseType = operation.LicenseType
+	}
+	if operation.Origin != nil {
+		instance.Origin = operation.Origin
+	}
+	if operation.Platform != nil {
+		instance.Platform = operation.Platform
+	}
+	if operation.Region != nil {
+		instance.Region = operation.Region
+	}
+	return instance
+}
+
 func (e ERSContext) DisableEnterprisePolicyFilter() *bool {
+	// the provisioner and gardener API expects the feature to be enabled by disablement flag
+	// it feels counterintuitive but there is currently no plan in changing it, therefore
+	// following code is written the way it's written
+	disable := false
 	if e.LicenseType == nil {
-		return nil
+		return &disable
 	}
 	switch *e.LicenseType {
 	case "CUSTOMER", "PARTNER", "TRIAL":
-		disable := true
+		disable = true
 		return &disable
 	}
-	return nil
+	return &disable
 }
 
 func (e ERSContext) ERSUpdate() bool {
+	if e.SMOperatorCredentials != nil {
+		return true
+	}
 	if e.CommercialModel != nil {
 		return true
 	}

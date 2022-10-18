@@ -37,14 +37,7 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 			components.NatsStreaming:           {},
 			components.KnativeProvisionerNatss: {},
 		},
-		broker.AzureHAPlanID: {
-			components.NatsStreaming:           {},
-			components.KnativeProvisionerNatss: {},
-		},
 		broker.AWSPlanID: {
-			components.KnativeEventingKafka: {},
-		},
-		broker.AWSHAPlanID: {
 			components.KnativeEventingKafka: {},
 		},
 		broker.TrialPlanID: {
@@ -52,6 +45,12 @@ func NewDisabledComponentsProvider() DisabledComponentsProvider {
 		},
 		broker.FreemiumPlanID: {
 			components.KnativeEventingKafka: {},
+		},
+		broker.OwnClusterPlanID: {
+			components.KnativeEventingKafka: {},
+			components.Connectivity:         {},
+			components.ConnectivityProxy:    {},
+			components.Connector:            {},
 		},
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func handleError(stepName string, operation internal.DeprovisioningOperation, err error,
-	log logrus.FieldLogger, msg string) (internal.DeprovisioningOperation, time.Duration, error) {
+func handleError(stepName string, operation internal.Operation, err error,
+	log logrus.FieldLogger, msg string) (internal.Operation, time.Duration, error) {
 
 	if kebError.IsTemporaryError(err) {
 		if time.Since(operation.CreatedAt) < 30*time.Minute {

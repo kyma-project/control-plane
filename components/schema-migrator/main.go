@@ -2,10 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,25 +18,47 @@ import (
 )
 
 func main() {
-	envs := []string{"DB_USER", "DB_HOST", "DB_NAME", "DB_PORT",
-		"DB_PASSWORD", "MIGRATION_PATH", "DIRECTION"}
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	time.Sleep(20 * time.Second)
+	migrateErr := invokeMigration()
+	if migrateErr != nil {
+		log.Printf("while invoking migration: %s", migrateErr)
+	}
+
+	// continue with cleanup
+	err := cleaner.Halt()
+
+	time.Sleep(5 * time.Second)
+
+	if err != nil || migrateErr != nil {
+		log.Printf("error during migration: %s\n", migrateErr)
+		log.Printf("error during cleanup: %s\n", err)
+		os.Exit(-1)
+	}
+}
+
+func invokeMigration() error {
+	envs := []string{
+		"DB_USER", "DB_HOST", "DB_NAME", "DB_PORT",
+		"DB_PASSWORD", "MIGRATION_PATH", "DIRECTION",
+	}
+
 	for _, env := range envs {
 		_, present := os.LookupEnv(env)
 		if !present {
-			fmt.Printf("ERROR: %s is not set\n", env)
-			os.Exit(1)
+			return fmt.Errorf("ERROR: %s is not set", env)
 		}
 	}
 
 	direction := os.Getenv("DIRECTION")
 	switch direction {
 	case "up":
-		fmt.Println("Migration UP")
+		log.Println("Migration UP")
 	case "down":
-		fmt.Println("Migration DOWN")
+		log.Println("Migration DOWN")
 	default:
-		fmt.Println("ERROR: DIRECTION variable accepts only two values: up or down")
-		os.Exit(1)
+		return errors.New("ERROR: DIRECTION variable accepts only two values: up or down")
 	}
 
 	dbName := os.Getenv("DB_NAME")
@@ -40,6 +66,11 @@ func main() {
 	_, present := os.LookupEnv("DB_SSL")
 	if present {
 		dbName = fmt.Sprintf("%s?sslmode=%s", dbName, os.Getenv("DB_SSL"))
+
+		_, present := os.LookupEnv("DB_SSLROOTCERT")
+		if present {
+			dbName = fmt.Sprintf("%s&sslrootcert=%s", dbName, os.Getenv("DB_SSLROOTCERT"))
+		}
 	}
 
 	hostPort := net.JoinHostPort(
@@ -54,7 +85,7 @@ func main() {
 		dbName,
 	)
 
-	fmt.Println("# WAITING FOR CONNECTION WITH DATABASE #")
+	log.Println("# WAITING FOR CONNECTION WITH DATABASE #")
 	db, err := sql.Open("postgres", connectionString)
 
 	for i := 0; i < 30 && err != nil; i++ {
@@ -64,11 +95,10 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("# COULD NOT ESTABLISH CONNECTION TO DATABASE #")
-		os.Exit(1)
+		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
 
-	fmt.Println("# STARTING MIGRATION #")
+	log.Println("# STARTING MIGRATION #")
 
 	migrationPath := fmt.Sprintf("file:///migrate/migrations/%s", os.Getenv("MIGRATION_PATH"))
 
@@ -79,29 +109,41 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
+	if err != nil {
+		return fmt.Errorf("# COULD NOT CREATE DATABASE CONNECTION: %w", err)
+	}
+
+	migrateInstance, err := migrate.NewWithDatabaseInstance(
 		migrationPath,
 		"postgres", driver)
 	if err != nil {
-		fmt.Printf("Error during migration initialization, %s\n", err)
+		return fmt.Errorf("error during migration initialization: %w", err)
 	}
 
-	defer m.Close()
-	m.Log = &Logger{}
+	defer func(migrateInstance *migrate.Migrate) {
+		err, _ := migrateInstance.Close()
+		if err != nil {
+			log.Printf("error during migrate instance close: %s\n", err)
+		}
+	}(migrateInstance)
+	migrateInstance.Log = &Logger{}
 
 	if direction == "up" {
-		err = m.Up()
+		err = migrateInstance.Up()
 	} else if direction == "down" {
-		err = m.Down()
+		err = migrateInstance.Down()
 	}
 
-	if err != nil {
-		fmt.Printf("Error during migration, %s\n", err)
+	if err != nil && !errors.Is(migrate.ErrNoChange, err) {
+		return fmt.Errorf("during migration: %w", err)
+	} else if errors.Is(migrate.ErrNoChange, err) {
+		log.Println("No Changes. Migration done.")
 	}
+
+	return nil
 }
 
-type Logger struct {
-}
+type Logger struct{}
 
 func (l *Logger) Printf(format string, v ...interface{}) {
 	fmt.Printf(format, v...)

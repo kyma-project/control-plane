@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,107 @@ func TestConflict(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Conflict Operations", func(t *testing.T) {
+
+		t.Run("Plain operations - provisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+			require.NoError(t, err)
+
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+			defer tablesCleanupFunc()
+			defer containerCleanupFunc()
+			require.NoError(t, err)
+
+			cipher := storage.NewEncrypter(cfg.SecretKey)
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+
+			givenOperation := fixture.FixOperation("operation-001", "inst-id", internal.OperationTypeProvision)
+			givenOperation.State = domain.InProgress
+			givenOperation.ProvisionerOperationID = "target-op-id"
+
+			svc := brokerStorage.Operations()
+
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+			err = svc.InsertOperation(givenOperation)
+			require.NoError(t, err)
+
+			// when
+			gotOperation1, err := svc.GetOperationByID("operation-001")
+			require.NoError(t, err)
+
+			gotOperation2, err := svc.GetOperationByID("operation-001")
+			require.NoError(t, err)
+
+			// when
+			gotOperation1.Description = "new modified description 1"
+			gotOperation2.Description = "new modified description 2"
+			_, err = svc.UpdateOperation(*gotOperation1)
+			require.NoError(t, err)
+
+			_, err = svc.UpdateOperation(*gotOperation2)
+
+			// then
+			assertError(t, dberr.CodeConflict, err)
+
+			// when
+			err = svc.InsertOperation(*gotOperation1)
+
+			// then
+			assertError(t, dberr.CodeAlreadyExists, err)
+		})
+
+		t.Run("Plain operations - deprovisioning", func(t *testing.T) {
+			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+			require.NoError(t, err)
+
+			tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+			defer tablesCleanupFunc()
+			defer containerCleanupFunc()
+			require.NoError(t, err)
+
+			cipher := storage.NewEncrypter(cfg.SecretKey)
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+
+			givenOperation := fixture.FixOperation("operation-001", "inst-id", internal.OperationTypeDeprovision)
+			givenOperation.State = domain.InProgress
+			givenOperation.ProvisionerOperationID = "target-op-id"
+
+			svc := brokerStorage.Operations()
+
+			require.NoError(t, err)
+			require.NotNil(t, brokerStorage)
+			err = svc.InsertOperation(givenOperation)
+			require.NoError(t, err)
+
+			// when
+			gotOperation1, err := svc.GetOperationByID("operation-001")
+			require.NoError(t, err)
+
+			gotOperation2, err := svc.GetOperationByID("operation-001")
+			require.NoError(t, err)
+
+			// when
+			gotOperation1.Description = "new modified description 1"
+			gotOperation2.Description = "new modified description 2"
+			_, err = svc.UpdateOperation(*gotOperation1)
+			require.NoError(t, err)
+
+			_, err = svc.UpdateOperation(*gotOperation2)
+
+			// then
+			assertError(t, dberr.CodeConflict, err)
+
+			// when
+			err = svc.InsertOperation(*gotOperation1)
+
+			// then
+			assertError(t, dberr.CodeAlreadyExists, err)
+		})
+
 		t.Run("Provisioning", func(t *testing.T) {
 			containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
 			require.NoError(t, err)
@@ -30,7 +132,7 @@ func TestConflict(t *testing.T) {
 			require.NoError(t, err)
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -38,11 +140,11 @@ func TestConflict(t *testing.T) {
 			givenOperation.State = domain.InProgress
 			givenOperation.ProvisionerOperationID = "target-op-id"
 
-			svc := brokerStorage.Provisioning()
+			svc := brokerStorage.Operations()
 
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
-			err = svc.InsertProvisioningOperation(givenOperation)
+			err = svc.InsertOperation(givenOperation)
 			require.NoError(t, err)
 
 			// when
@@ -80,7 +182,7 @@ func TestConflict(t *testing.T) {
 			defer tablesCleanupFunc()
 
 			cipher := storage.NewEncrypter(cfg.SecretKey)
-			brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+			brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 			require.NoError(t, err)
 			require.NotNil(t, brokerStorage)
 
@@ -129,7 +231,7 @@ func TestConflict(t *testing.T) {
 		defer tablesCleanupFunc()
 
 		cipher := storage.NewEncrypter(cfg.SecretKey)
-		brokerStorage, _, err := storage.NewFromConfig(cfg, cipher, logrus.StandardLogger())
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
 		require.NoError(t, err)
 		require.NotNil(t, brokerStorage)
 

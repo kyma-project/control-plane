@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -126,6 +128,28 @@ func (c *OperationResultCollector) OnUpgradeClusterStepProcessed(ctx context.Con
 	return nil
 }
 
+func (c *OperationResultCollector) OnOperationStepProcessed(ctx context.Context, ev interface{}) error {
+	e, ok := ev.(process.OperationStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected OperationStepProcessed but got %+v", ev)
+	}
+
+	switch e.Operation.Type {
+	case internal.OperationTypeProvision:
+		return c.OnProvisioningStepProcessed(ctx, process.ProvisioningStepProcessed{
+			StepProcessed: e.StepProcessed,
+			Operation:     internal.ProvisioningOperation{Operation: e.Operation},
+		})
+	case internal.OperationTypeDeprovision:
+		return c.OnDeprovisioningStepProcessed(ctx, process.DeprovisioningStepProcessed{
+			StepProcessed: e.StepProcessed,
+			Operation:     internal.DeprovisioningOperation{Operation: e.Operation},
+		})
+	default:
+		return fmt.Errorf("expected OperationStep of types [%s, %s] but got %+v", internal.OperationTypeProvision, internal.OperationTypeDeprovision, e.Operation.Type)
+	}
+}
+
 func (c *OperationResultCollector) OnProvisioningSucceeded(ctx context.Context, ev interface{}) error {
 	provisioningSucceeded, ok := ev.(process.ProvisioningSucceeded)
 	if !ok {
@@ -203,4 +227,25 @@ func (c *OperationResultCollector) mapResult(state domain.LastOperationState) fl
 	}
 
 	return resultValue
+}
+
+func (c *OperationResultCollector) OnOperationSucceeded(ctx context.Context, ev interface{}) error {
+	operationSucceeded, ok := ev.(process.OperationSucceeded)
+	if !ok {
+		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
+	}
+
+	if operationSucceeded.Operation.Type == internal.OperationTypeProvision {
+		provisioningOperation := process.ProvisioningSucceeded{
+			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
+		}
+		err := c.OnProvisioningSucceeded(ctx, provisioningOperation)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("expected OperationStep of type %s but got %+v", internal.OperationTypeProvision, operationSucceeded.Operation.Type)
+	}
+
+	return nil
 }

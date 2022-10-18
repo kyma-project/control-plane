@@ -3,6 +3,7 @@ package postsql
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -111,6 +112,20 @@ func (r readSession) GetLastOperation(instanceID string) (dbmodel.OperationDTO, 
 		switch {
 		case dberr.IsNotFound(err):
 			return dbmodel.OperationDTO{}, dberr.NotFound("for instance ID: %s %s", instanceID, err)
+		default:
+			return dbmodel.OperationDTO{}, err
+		}
+	}
+	return operation, nil
+}
+
+func (r readSession) GetOperationByInstanceID(instanceId string) (dbmodel.OperationDTO, dberr.Error) {
+	condition := dbr.Eq("instance_id", instanceId)
+	operation, err := r.getOperation(condition)
+	if err != nil {
+		switch {
+		case dberr.IsNotFound(err):
+			return dbmodel.OperationDTO{}, dberr.NotFound("for instance_id: %s %s", instanceId, err)
 		default:
 			return dbmodel.OperationDTO{}, err
 		}
@@ -283,6 +298,23 @@ func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType intern
 	return operations, nil
 }
 
+func (r readSession) GetOperationsByInstanceID(inID string) ([]dbmodel.OperationDTO, dberr.Error) {
+	idCondition := dbr.Eq("instance_id", inID)
+	var operations []dbmodel.OperationDTO
+
+	_, err := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(idCondition).
+		OrderDesc(CreatedAtField).
+		Load(&operations)
+
+	if err != nil {
+		return []dbmodel.OperationDTO{}, dberr.Internal("Failed to get operations: %s", err)
+	}
+	return operations, nil
+}
+
 func (r readSession) GetOperationsForIDs(opIDlist []string) ([]dbmodel.OperationDTO, dberr.Error) {
 	var operations []dbmodel.OperationDTO
 
@@ -344,6 +376,26 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, fil
 		len(ops),
 		totalCount,
 		nil
+}
+
+func (r readSession) ListOperationsInTimeRange(from, to time.Time) ([]dbmodel.OperationDTO, error) {
+	var ops []dbmodel.OperationDTO
+	condition := dbr.Or(
+		dbr.And(dbr.Gte("created_at", from), dbr.Lte("created_at", to)),
+		dbr.And(dbr.Gte("updated_at", from), dbr.Lte("updated_at", to)),
+	)
+
+	stmt := r.session.
+		Select("*").
+		From(OperationTableName).
+		Where(condition)
+
+	_, err := stmt.Load(&ops)
+	if err != nil {
+		return nil, dberr.Internal("Failed to get operations: %s", err)
+	}
+
+	return ops, nil
 }
 
 func (r readSession) GetRuntimeStateByOperationID(operationID string) (dbmodel.RuntimeStateDTO, dberr.Error) {
@@ -547,7 +599,7 @@ func (r readSession) GetOperationStats() ([]dbmodel.OperationStatEntry, error) {
 
 func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) ([]dbmodel.OperationStatEntry, error) {
 	var rows []dbmodel.OperationStatEntry
-	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, provisioning_parameters ->> 'plan_id' AS plan_id from %s where orchestration_id='%s'",
+	_, err := r.session.SelectBySql(fmt.Sprintf("select type, state, instance_id, provisioning_parameters ->> 'plan_id' AS plan_id from %s where orchestration_id='%s'",
 		OperationTableName, orchestrationID)).Load(&rows)
 	return rows, err
 }
@@ -563,7 +615,7 @@ func (r readSession) GetERSContextStats() ([]dbmodel.InstanceERSContextStatsEntr
 	var rows []dbmodel.InstanceERSContextStatsEntry
 	// group existing instances by license_Type from the last operation that is not pending or canceled
 	_, err := r.session.SelectBySql(`
-SELECT license_type, count(1)
+SELECT license_type, count(1) as total
 FROM (
     SELECT DISTINCT ON (instances.instance_id) instances.instance_id, operations.id, state, type, (operations.provisioning_parameters->'ers_context'->'license_type')::VARCHAR AS license_type
     FROM operations
@@ -631,6 +683,20 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 		len(instances),
 		totalCount,
 		nil
+}
+
+func (r readSession) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
+	var events []dbmodel.EventDTO
+	stmt := r.session.Select("*").From("events")
+	if filter.InstanceID != "" {
+		stmt.Where(dbr.Eq("instance_id", filter.InstanceID))
+	}
+	if filter.OperationID != "" {
+		stmt.Where(dbr.Eq("operation_id", filter.OperationID))
+	}
+	stmt.OrderBy("created_at")
+	_, err := stmt.Load(&events)
+	return events, err
 }
 
 func (r readSession) getInstanceCount(filter dbmodel.InstanceFilter) (int, error) {
@@ -735,10 +801,23 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 	if len(filter.Plans) > 0 {
 		stmt.Where("instances.service_plan_name IN ?", filter.Plans)
 	}
+	if len(filter.PlanIDs) > 0 {
+		stmt.Where("instances.service_plan_id IN ?", filter.PlanIDs)
+	}
 	if len(filter.Shoots) > 0 {
 		shootNameMatch := fmt.Sprintf(`^(%s)$`, strings.Join(filter.Shoots, "|"))
 		stmt.Where("o1.data::json->>'shoot_name' ~ ?", shootNameMatch)
 	}
+
+	if filter.Expired != nil {
+		if *filter.Expired {
+			stmt.Where("instances.expired_at IS NOT NULL")
+		}
+		if !*filter.Expired {
+			stmt.Where("instances.expired_at IS NULL")
+		}
+	}
+
 }
 
 func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {

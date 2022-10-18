@@ -54,7 +54,7 @@ func (q *Queue) Run(stop <-chan struct{}, workersAmount int) {
 }
 
 // SpeedUp changes speedFactor parameter to reduce time between processing operations.
-//This method should only be used for testing purposes
+// This method should only be used for testing purposes
 func (q *Queue) SpeedUp(speedFactor int64) {
 	q.speedFactor = speedFactor
 }

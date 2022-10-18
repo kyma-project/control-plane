@@ -55,9 +55,12 @@ func (c *converter) applyOperation(source *internal.Operation, target *pkg.Opera
 	if source != nil {
 		target.OperationID = source.ID
 		target.CreatedAt = source.CreatedAt
+		target.UpdatedAt = source.UpdatedAt
 		target.State = string(source.State)
 		target.Description = source.Description
 		target.OrchestrationID = source.OrchestrationID
+		target.RuntimeVersion = source.RuntimeVersion.Version
+		target.FinishedStages = source.FinishedStages
 	}
 }
 
@@ -79,6 +82,7 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 		Status: pkg.RuntimeStatus{
 			CreatedAt:  instance.CreatedAt,
 			ModifiedAt: instance.UpdatedAt,
+			ExpiredAt:  instance.ExpiredAt,
 		},
 	}
 
@@ -211,11 +215,14 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 		if dto.Status.Unsuspension == nil ||
 			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
-			dto.Status.State = pkg.StateSuspended
-			if dto.Status.Suspension.Data[0].State == string(domain.InProgress) {
+			switch dto.Status.Suspension.Data[0].State {
+			case string(domain.InProgress):
 				dto.Status.State = pkg.StateDeprovisioning
+			case string(domain.Failed):
+				dto.Status.State = pkg.StateFailed
+			default:
+				dto.Status.State = pkg.StateSuspended
 			}
 		}
 	}
-
 }

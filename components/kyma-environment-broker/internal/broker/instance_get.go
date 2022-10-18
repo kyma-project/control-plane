@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -12,6 +15,8 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 	"github.com/sirupsen/logrus"
 )
+
+const allSubaccountsIDs = "all"
 
 type GetInstanceEndpoint struct {
 	config            Config
@@ -36,7 +41,7 @@ func NewGetInstance(cfg Config,
 }
 
 // GetInstance fetches information about a service instance
-//   GET /v2/service_instances/{instance_id}
+// GET /v2/service_instances/{instance_id}
 func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, _ domain.FetchInstanceDetails) (domain.GetInstanceDetailsSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("GetInstance called")
@@ -59,14 +64,30 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, err.Error())
 	}
 
+	parameters := b.prepareParametersToReturn(instance.Parameters)
+
 	spec := domain.GetInstanceDetailsSpec{
 		ServiceID:    instance.ServiceID,
 		PlanID:       instance.ServicePlanID,
 		DashboardURL: instance.DashboardURL,
-		Parameters:   instance.Parameters,
+		Parameters:   parameters,
 		Metadata: domain.InstanceMetadata{
 			Labels: ResponseLabels(*op, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
 	}
+
+	if b.config.ShowTrialExpirationInfo &&
+		instance.ServicePlanID == TrialPlanID &&
+		(b.config.SubaccountsIdsToShowTrialExpirationInfo == allSubaccountsIDs ||
+			strings.Contains(b.config.SubaccountsIdsToShowTrialExpirationInfo, instance.SubAccountID)) {
+		spec.Metadata.Labels = ResponseLabelsWithExpirationInfo(*op, *instance, b.config.URL, b.config.TrialDocsURL, b.config.EnableKubeconfigURLLabel)
+	}
+
 	return spec, nil
+}
+
+func (b *GetInstanceEndpoint) prepareParametersToReturn(parameters internal.ProvisioningParameters) internal.ProvisioningParameters {
+	parameters.Parameters.Kubeconfig = ""
+	parameters.ErsContext.SMOperatorCredentials = nil
+	return parameters
 }

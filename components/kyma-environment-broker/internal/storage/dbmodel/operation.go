@@ -34,9 +34,10 @@ type OperationDTO struct {
 }
 
 type OperationStatEntry struct {
-	Type   string
-	State  string
-	PlanID string
+	Type       string
+	State      string
+	PlanID     string
+	InstanceID string
 }
 
 type InstanceByGlobalAccountIDStatEntry struct {
@@ -45,6 +46,6 @@ type InstanceByGlobalAccountIDStatEntry struct {
 }
 
 type InstanceERSContextStatsEntry struct {
-	LicenseType string
+	LicenseType sql.NullString
 	Total       int
 }

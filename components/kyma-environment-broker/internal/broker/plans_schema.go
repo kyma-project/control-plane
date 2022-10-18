@@ -18,12 +18,14 @@ type ProvisioningProperties struct {
 	UpdateProperties
 
 	Name        NameType `json:"name"`
+	ShootName   *Type    `json:"shootName,omitempty"`
+	ShootDomain *Type    `json:"shootDomain,omitempty"`
 	Region      *Type    `json:"region,omitempty"`
 	MachineType *Type    `json:"machineType,omitempty"`
-	ZonesCount  *Type    `json:"zonesCount,omitempty"`
 }
 
 type UpdateProperties struct {
+	Kubeconfig     *Type     `json:"kubeconfig,omitempty"`
 	AutoScalerMin  *Type     `json:"autoScalerMin,omitempty"`
 	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
 	OIDC           *OIDCType `json:"oidc,omitempty"`
@@ -61,13 +63,14 @@ type Type struct {
 
 	// Regex pattern to match against string type of fields.
 	// If not specified for strings user can pass empty string with whitespaces only.
-	Pattern         string        `json:"pattern,omitempty"`
-	Default         interface{}   `json:"default,omitempty"`
-	Example         interface{}   `json:"example,omitempty"`
-	Enum            []interface{} `json:"enum,omitempty"`
-	Items           []Type        `json:"items,omitempty"`
-	AdditionalItems *bool         `json:"additionalItems,omitempty"`
-	UniqueItems     *bool         `json:"uniqueItems,omitempty"`
+	Pattern         string            `json:"pattern,omitempty"`
+	Default         interface{}       `json:"default,omitempty"`
+	Example         interface{}       `json:"example,omitempty"`
+	Enum            []interface{}     `json:"enum,omitempty"`
+	EnumDisplayName map[string]string `json:"_enumDisplayName,omitempty"`
+	Items           *Type             `json:"items,omitempty"`
+	AdditionalItems *bool             `json:"additionalItems,omitempty"`
+	UniqueItems     *bool             `json:"uniqueItems,omitempty"`
 }
 
 type NameType struct {
@@ -85,7 +88,7 @@ func NameProperty() NameType {
 		Type: Type{
 			Type:  "string",
 			Title: "Cluster Name",
-			// Allows for all alphanumeric characters, '_', and '-'
+			// Allows for all alphanumeric characters and '-'
 			Pattern:   "^[a-zA-Z0-9-]*$",
 			MinLength: 1,
 		},
@@ -95,23 +98,48 @@ func NameProperty() NameType {
 	}
 }
 
+func KubeconfigProperty() *Type {
+	return &Type{
+		Type:  "string",
+		Title: "Kubeconfig contents",
+	}
+}
+
+func ShootNameProperty() *Type {
+	return &Type{
+		Type:      "string",
+		Title:     "Shoot name",
+		Pattern:   "^[a-zA-Z0-9-]*$",
+		MinLength: 1,
+	}
+}
+
+func ShootDomainProperty() *Type {
+	return &Type{
+		Type:      "string",
+		Title:     "Shoot domain",
+		Pattern:   "^[a-zA-Z0-9-\\.]*$",
+		MinLength: 1,
+	}
+}
+
 // NewProvisioningProperties creates a new properties for different plans
 // Note that the order of properties will be the same in the form on the website
-func NewProvisioningProperties(machineTypes []string, regions []string, update bool) ProvisioningProperties {
+func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTypes, regions []string, update bool) ProvisioningProperties {
 
 	properties := ProvisioningProperties{
 		UpdateProperties: UpdateProperties{
 			AutoScalerMin: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Default:     2,
+				Default:     3,
 				Description: "Specifies the minimum number of virtual machines to create",
 			},
 			AutoScalerMax: &Type{
 				Type:        "integer",
 				Minimum:     2,
-				Maximum:     40,
-				Default:     10,
+				Maximum:     80,
+				Default:     20,
 				Description: "Specifies the maximum number of virtual machines to create",
 			},
 		},
@@ -121,8 +149,9 @@ func NewProvisioningProperties(machineTypes []string, regions []string, update b
 			Enum: ToInterfaceSlice(regions),
 		},
 		MachineType: &Type{
-			Type: "string",
-			Enum: ToInterfaceSlice(machineTypes),
+			Type:            "string",
+			Enum:            ToInterfaceSlice(machineTypes),
+			EnumDisplayName: machineTypesDisplay,
 		},
 	}
 
@@ -145,9 +174,9 @@ func NewOIDCSchema() *OIDCType {
 			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
 			SigningAlgs: Type{
 				Type: "array",
-				Items: []Type{{
+				Items: &Type{
 					Type: "string",
-				}},
+				},
 				Description: "List of allowed JOSE asymmetric signing algorithms.",
 			},
 		},
@@ -155,7 +184,11 @@ func NewOIDCSchema() *OIDCType {
 	}
 }
 
-func NewSchema(properties interface{}, update bool) *RootSchema {
+func NewSchemaWithOnlyNameRequired(properties interface{}, update bool) *RootSchema {
+	return NewSchemaForOwnCluster(properties, update, []string{"name"})
+}
+
+func NewSchemaForOwnCluster(properties interface{}, update bool, required []string) *RootSchema {
 	schema := &RootSchema{
 		Schema: "http://json-schema.org/draft-04/schema#",
 		Type: Type{
@@ -163,7 +196,7 @@ func NewSchema(properties interface{}, update bool) *RootSchema {
 		},
 		Properties:   properties,
 		ShowFormView: true,
-		Required:     []string{"name"},
+		Required:     required,
 	}
 
 	if update {
@@ -185,7 +218,7 @@ func unmarshalOrPanic(from, to interface{}) interface{} {
 }
 
 func DefaultControlsOrder() []string {
-	return []string{"name", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
+	return []string{"name", "kubeconfig", "shootName", "shootDomain", "region", "machineType", "autoScalerMin", "autoScalerMax", "zonesCount", "oidc", "administrators"}
 }
 
 func ToInterfaceSlice(input []string) []interface{} {
@@ -201,8 +234,8 @@ func AdministratorsProperty() *Type {
 		Type:        "array",
 		Title:       "Administrators",
 		Description: "Specifies the list of runtime administrators",
-		Items: []Type{{
+		Items: &Type{
 			Type: "string",
-		}},
+		},
 	}
 }

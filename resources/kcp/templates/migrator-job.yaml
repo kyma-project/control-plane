@@ -38,7 +38,17 @@ spec:
                 - name: migrator
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}schema-migrator:{{ .Values.global.images.schema_migrator.version }}
                   imagePullPolicy: IfNotPresent
+                  command: 
+                    - /bin/program
                   env:
+                      {{if eq .Values.global.database.embedded.enabled true}}
+                      - name: DATABASE_EMBEDDED
+                        value: "true"
+                      {{end}}
+                      {{if eq .Values.global.database.embedded.enabled false}}
+                      - name: DATABASE_EMBEDDED
+                        value: "false"
+                      {{end}}
                       - name: DB_USER
                         valueFrom:
                             secretKeyRef:
@@ -69,27 +79,30 @@ spec:
                           secretKeyRef:
                             name: kcp-postgresql
                             key: postgresql-sslMode
+                      - name: DB_SSLROOTCERT
+                        value: /secrets/cloudsql-sslrootcert/server-ca.pem
                       - name: MIGRATION_PATH
                         value: "kyma-environment-broker"
                       - name: DIRECTION
                         value: "up"
-
-                  command:
-                    - "/bin/bash"
-                  args:
-                    - "-c"
-                    {{if eq .Values.global.database.embedded.enabled false}}
-                    # There is no Istio sidecar injected so there is no need to quit it
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING CLOUD SQL PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
-                    {{else}}
-                    # There is no Cloud SQL Proxy so there is no need to kill it
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# QUITTING ISTIO SIDECAR #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-                    {{end}}
+                {{if eq .Values.global.database.embedded.enabled false}}
+                  volumeMounts:
+                      - name: cloudsql-sslrootcert
+                        mountPath: /secrets/cloudsql-sslrootcert
+                        readOnly: true
+                {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+              - name: cloudsql-sslrootcert
+                secret:
+                  secretName: kcp-postgresql
+                  items:
+                  - key: postgresql-sslRootCert
+                    path: server-ca.pem
+                  optional: true
             {{end}}
 ---
 apiVersion: batch/v1
@@ -131,7 +144,17 @@ spec:
                 - name: migrator
                   image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}schema-migrator:{{ .Values.global.images.schema_migrator.version }}
                   imagePullPolicy: IfNotPresent
+                  command:
+                    - /bin/program
                   env:
+                      {{if eq .Values.global.database.embedded.enabled true}}
+                      - name: DATABASE_EMBEDDED
+                        value: "true"
+                      {{end}}
+                      {{if eq .Values.global.database.embedded.enabled false}}
+                      - name: DATABASE_EMBEDDED
+                        value: "false"
+                      {{end}}
                       - name: DB_USER
                         valueFrom:
                             secretKeyRef:
@@ -162,26 +185,29 @@ spec:
                           secretKeyRef:
                             name: kcp-postgresql
                             key: postgresql-sslMode
+                      - name: DB_SSLROOTCERT
+                        value: /secrets/cloudsql-sslrootcert/server-ca.pem
                       - name: MIGRATION_PATH
                         value: "provisioner"
                       - name: DIRECTION
                         value: "up"
-
-                  command:
-                    - "/bin/bash"
-                  args:
-                    - "-c"
-                    {{if eq .Values.global.database.embedded.enabled false}}
-                    # There is no Istio sidecar injected so there is no need to quit it
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# KILLING CLOUD SQL PROXY #'; pkill -INT cloud_sql_proxy; sleep 5; exit $exit_code;"
-                    {{else}}
-                    # There is no Cloud SQL Proxy so there is no need to kill it
-                    - "sleep 20; ./run.sh; exit_code=$?; echo '# QUITTING ISTIO SIDECAR #'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
-                    {{end}}
+                {{if eq .Values.global.database.embedded.enabled false}}
+                  volumeMounts:
+                      - name: cloudsql-sslrootcert
+                        mountPath: /secrets/cloudsql-sslrootcert
+                        readOnly: true
+                {{end}}
             {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+              - name: cloudsql-sslrootcert
+                secret:
+                  secretName: kcp-postgresql
+                  items:
+                  - key: postgresql-sslRootCert
+                    path: server-ca.pem
+                  optional: true
             {{end}}
 {{ end }}

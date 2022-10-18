@@ -17,23 +17,25 @@ func TestLastOperationWithoutOperationIDHappyPath(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
-					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-					"context": {
-						"sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					    },
-						"globalaccount_id": "g-account-id",
-						"subaccount_id": "sub-id",
-						"user_id": "john.smith@email.com"
-					},
-					"parameters": {
-						"name": "testing-cluster"
-					}
-		}`)
+		"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+		"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+		"context": {
+			"sm_operator_credentials": {
+				"clientid": "cid",
+				"clientsecret": "cs",
+				"url": "url",
+				"sm_url": "sm_url"
+			},
+			"globalaccount_id": "g-account-id",
+			"subaccount_id": "sub-id",
+			"user_id": "john.smith@email.com"
+		},
+		"parameters": {
+			"name": "testing-cluster"
+		}
+	}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation", iid), "")
@@ -50,23 +52,25 @@ func TestLastOperationWithOperationIDHappyPath(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
-					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-					"context": {
-						"sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					    },
-						"globalaccount_id": "g-account-id",
-						"subaccount_id": "sub-id",
-						"user_id": "john.smith@email.com"
-					},
-					"parameters": {
-						"name": "testing-cluster"
-					}
-		}`)
+		"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+		"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+		"context": {
+			"sm_operator_credentials": {
+				"clientid": "cid",
+				"clientsecret": "cs",
+				"url": "url",
+				"sm_url": "sm_url"
+			},
+			"globalaccount_id": "g-account-id",
+			"subaccount_id": "sub-id",
+			"user_id": "john.smith@email.com"
+		},
+		"parameters": {
+			"name": "testing-cluster"
+		}
+	}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	//when
 	resp = suite.CallAPI("GET", fmt.Sprintf("oauth/v2/service_instances/%s/last_operation?operation=%s", iid, opID), "")
@@ -114,23 +118,25 @@ func TestLastOperationWithOperationIDAndNotExistingInstanceID(t *testing.T) {
 
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
-					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
-					"context": {
-						"sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					    },
-						"globalaccount_id": "g-account-id",
-						"subaccount_id": "sub-id",
-						"user_id": "john.smith@email.com"
-					},
-					"parameters": {
-						"name": "testing-cluster"
-					}
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster"
+			}
 		}`)
 	opID := suite.DecodeOperationID(resp)
-	suite.processReconcilingByOperationID(opID)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	oid := uuid.New().String()
 

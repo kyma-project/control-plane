@@ -24,10 +24,11 @@ var testKubeconfig = filepath.Join(".", "test", "kubeconfig.yaml")
 const reconcilerUrlEnv = "RECONCILER_URL"
 const testKubeconfigPathKey = "TEST_KUBECONFIG_PATH"
 
-/**
+/*
+*
 Those tests perform operation on the Reconciler inventory using the client. Before running any test set the following envs:
- - RECONCILER_URL - url to locally running instance of reconciler mothership for example "http://localhost:8080"
- - TEST_KUBECONFIG_PATH - path to kubeconfig for the cluster to reconcile
+  - RECONCILER_URL - url to locally running instance of reconciler mothership for example "http://localhost:8080"
+  - TEST_KUBECONFIG_PATH - path to kubeconfig for the cluster to reconcile
 
 EXAMPLE USAGE:
 kind create cluster

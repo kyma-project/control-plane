@@ -14,13 +14,13 @@ import (
 )
 
 type CheckReconcilerState struct {
-	operationManager *process.UpdateOperationManager
+	operationManager *process.OperationManager
 	reconcilerClient reconciler.Client
 }
 
 func NewCheckReconcilerState(os storage.Operations, reconcilerClient reconciler.Client) *CheckReconcilerState {
 	return &CheckReconcilerState{
-		operationManager: process.NewUpdateOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		reconcilerClient: reconcilerClient,
 	}
 }
@@ -29,7 +29,7 @@ func (s *CheckReconcilerState) Name() string {
 	return "CheckReconcilerState"
 }
 
-func (s *CheckReconcilerState) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *CheckReconcilerState) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	state, err := s.reconcilerClient.GetCluster(operation.RuntimeID, operation.ClusterConfigurationVersion)
 
 	if kebError.IsTemporaryError(err) {

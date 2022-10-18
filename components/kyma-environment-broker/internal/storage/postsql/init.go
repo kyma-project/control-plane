@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/gocraft/dbr"
@@ -74,6 +75,10 @@ func CheckIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Duration, log logrus.FieldLogger) (*dbr.Connection, error) {
 	var connection *dbr.Connection
 	var err error
+
+	re := regexp.MustCompile(`password=.*?\s`)
+	log.Info(re.ReplaceAllString(connString, ""))
+
 	for ; retryCount > 0; retryCount-- {
 		connection, err = dbr.Open("postgres", connString, nil)
 		if err != nil {
@@ -84,6 +89,7 @@ func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Dur
 		if err == nil {
 			return connection, nil
 		}
+		log.Warnf("Database Connection failed: %s", err.Error())
 
 		err = connection.Close()
 		if err != nil {

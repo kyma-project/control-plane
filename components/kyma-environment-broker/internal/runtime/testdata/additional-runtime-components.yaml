@@ -1,6 +1,4 @@
 components:
-  - name: "service-manager-proxy"
-    namespace: "kyma-system"
   - name: "compass-runtime-agent"
     namespace: "compass-system"
   - name: "new-component1"

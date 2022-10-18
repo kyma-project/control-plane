@@ -57,6 +57,7 @@ See the **Global Options** section of each command for the description of these 
 		NewTaskRunCmd(),
 		NewCompletionCommand(),
 		NewReconciliationCmd(),
+		NewDeprovisionCmd(),
 	)
 	return cmd
 }

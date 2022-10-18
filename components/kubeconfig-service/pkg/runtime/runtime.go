@@ -21,14 +21,11 @@ import (
 	rbacv1helpers "k8s.io/kubernetes/pkg/apis/rbac/v1"
 )
 
-type retryConfig struct {
-	RetryAttempts int
-	RetrySleep    int
-}
-
 type SAInfo struct {
 	ServiceAccountName     string
 	ClusterRoleName        string
+	ClusterRoleAggrLabel   string
+	ClusterRoleRulesName   string
 	ClusterRoleBindingName string
 	Namespace              string
 	SecretName             string
@@ -45,13 +42,30 @@ const ServiceAccount = "ServiceAccount"
 const Token = "token"
 
 var L2L3OperatorPolicyRule = map[string][]rbacv1.PolicyRule{
-	RUNTIME_ADMIN: []rbacv1.PolicyRule{
+	RUNTIME_ADMIN: {
 		rbacv1helpers.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
 		rbacv1helpers.NewRule("*").URLs("*").RuleOrDie(),
 	},
-	RUNTIME_OPERATOR: []rbacv1.PolicyRule{
+	RUNTIME_OPERATOR: {
 		rbacv1helpers.NewRule("get", "list", "watch").Groups("*").Resources("*").RuleOrDie(),
 		rbacv1helpers.NewRule("get", "list", "watch").URLs("*").RuleOrDie(),
+	},
+}
+
+var L2L3OperatorAggregationRule = map[string][]metav1.LabelSelector{
+	RUNTIME_ADMIN: {
+		{
+			MatchLabels: map[string]string{
+				"rbac.authorization.k8s.io/aggregate-to-admin": "true",
+			},
+		},
+	},
+	RUNTIME_OPERATOR: {
+		{
+			MatchLabels: map[string]string{
+				"rbac.authorization.k8s.io/aggregate-to-edit": "true",
+			},
+		},
 	},
 }
 
@@ -84,6 +98,8 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 	user := SAInfo{
 		ServiceAccountName:     userID,
 		ClusterRoleName:        userID,
+		ClusterRoleAggrLabel:   fmt.Sprintf("rbac.authorization.k8s.io/aggregate-to-%s", userID),
+		ClusterRoleRulesName:   fmt.Sprintf("%s-rules", userID),
 		ClusterRoleBindingName: userID,
 		Namespace:              Namespace,
 		TenantID:               tenant,
@@ -92,7 +108,7 @@ func NewRuntimeClient(kubeConfig []byte, userID string, L2L3OperatiorRole string
 	return &RuntimeClient{clientset, coreClientset, user, L2L3OperatiorRole, RollbackE}, nil
 }
 
-//kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
+// kubeconfig access runtime, create sa and clusterrole and clusterrolebinding according to userID and l2L3OperatiorRole
 func (rtc *RuntimeClient) Run() (string, error) {
 	var resultE error
 	defer func() {
@@ -106,21 +122,27 @@ func (rtc *RuntimeClient) Run() (string, error) {
 		return "", errors.Wrapf(err, "while createServiceAccount %s in %s", rtc.User.ServiceAccountName, rtc.User.Namespace)
 	}
 
-	err = rtc.createClusterRole()
+	err = rtc.createClusterRoleRules()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA)
 		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
 	}
 
+	err = rtc.createClusterRole()
+	if err != nil {
+		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
+		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
+	}
+
 	saToken, err := rtc.getSecretToken()
 	if err != nil {
-		rtc.RollbackE.Data = append(rtc.RollbackE.Data, ClusterRole)
+		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
 		return "", errors.Wrapf(err, "while getSecretToken from %s", rtc.User.ServiceAccountName)
 	}
 
 	err = rtc.createClusterRoleBinding()
 	if err != nil {
-		rtc.RollbackE.Data = append(append(rtc.RollbackE.Data, SA), ClusterRole)
+		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
 		return "", errors.Wrapf(err, "while createClusterRoleBinding %s", rtc.User.ClusterRoleBindingName)
 	}
 	return string(saToken), resultE
@@ -140,20 +162,35 @@ func (rtc *RuntimeClient) createServiceAccount() error {
 	return err
 }
 
-func (rtc *RuntimeClient) createClusterRole() error {
+func (rtc *RuntimeClient) createClusterRoleRules() error {
 	if rtc.L2L3OperatiorRole != RUNTIME_ADMIN && rtc.L2L3OperatiorRole != RUNTIME_OPERATOR {
 		return fmt.Errorf("role %s not in [%s,%s]", rtc.L2L3OperatiorRole, RUNTIME_ADMIN, RUNTIME_OPERATOR)
 	}
 
-	crExist, err := rtc.verifyClusterRole(rtc.L2L3OperatiorRole)
+	crExist, err := rtc.verifyClusterRoleRules(rtc.L2L3OperatiorRole)
 	if err != nil {
-		return errors.Wrapf(err, "in verifyClusterRole")
+		return errors.Wrapf(err, "in verifyClusterRoleRules")
 	}
 	if crExist {
 		return nil
 	}
 
-	clusterrole := initClusterRole(rtc.User.ClusterRoleName, rtc.L2L3OperatiorRole)
+	clusterrole := initClusterRoleRules(rtc.User.ClusterRoleRulesName, rtc.L2L3OperatiorRole, rtc.User.ClusterRoleAggrLabel)
+	_, err = rtc.K8s.RbacV1().ClusterRoles().Create(context.TODO(), clusterrole, metav1.CreateOptions{})
+	return err
+}
+
+func (rtc *RuntimeClient) createClusterRole() error {
+
+	crExist, err := rtc.verifyClusterRole(rtc.L2L3OperatiorRole, rtc.User.ClusterRoleAggrLabel)
+	if err != nil {
+		return errors.Wrapf(err, "in verifyClusterRoleAggregation")
+	}
+	if crExist {
+		return nil
+	}
+
+	clusterrole := initClusterRole(rtc.User.ClusterRoleName, rtc.L2L3OperatiorRole, rtc.User.ClusterRoleAggrLabel)
 	_, err = rtc.K8s.RbacV1().ClusterRoles().Create(context.TODO(), clusterrole, metav1.CreateOptions{})
 	return err
 }
@@ -188,8 +225,8 @@ func (rtc *RuntimeClient) deleteCRBinding() error {
 	return err
 }
 
-func (rtc *RuntimeClient) deleteClusterRole() (bool, error) {
-	err := rtc.K8s.RbacV1().ClusterRoles().Delete(context.TODO(), rtc.User.ClusterRoleName, metav1.DeleteOptions{})
+func (rtc *RuntimeClient) deleteClusterRole(name string) (bool, error) {
+	err := rtc.K8s.RbacV1().ClusterRoles().Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err == nil || apierr.IsNotFound(err) {
 		return true, nil
 	}
@@ -199,11 +236,27 @@ func (rtc *RuntimeClient) deleteClusterRole() (bool, error) {
 func (rtc *RuntimeClient) verifyServiceAccount() (bool, error) {
 	sa, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).Get(context.TODO(), rtc.User.ServiceAccountName, metav1.GetOptions{})
 	if sa != nil && err == nil {
-		_, err = rtc.deleteServiceAccount()
-		if err == nil || apierr.IsNotFound(err) {
-			return false, nil
+		return true, nil
+	}
+
+	if apierr.IsNotFound(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func (rtc *RuntimeClient) verifyClusterRoleRules(l2L3OperatiorRole string) (bool, error) {
+	cr, err := rtc.K8s.RbacV1().ClusterRoles().Get(context.TODO(), rtc.User.ClusterRoleRulesName, metav1.GetOptions{})
+	if cr != nil && err == nil {
+		if reflect.DeepEqual(cr.Rules, L2L3OperatorPolicyRule[l2L3OperatiorRole]) {
+			return true, nil
 		} else {
-			return false, errors.Wrapf(err, "in deleteServiceAccount")
+			_, err = rtc.deleteClusterRole(rtc.User.ClusterRoleRulesName)
+			if err == nil {
+				return false, nil
+			} else {
+				return false, errors.Wrapf(err, "in deleteClusterRole")
+			}
 		}
 	}
 
@@ -213,13 +266,20 @@ func (rtc *RuntimeClient) verifyServiceAccount() (bool, error) {
 	return false, err
 }
 
-func (rtc *RuntimeClient) verifyClusterRole(l2L3OperatiorRole string) (bool, error) {
+func (rtc *RuntimeClient) verifyClusterRole(l2L3OperatiorRole string, aggregationLabel string) (bool, error) {
 	cr, err := rtc.K8s.RbacV1().ClusterRoles().Get(context.TODO(), rtc.User.ClusterRoleName, metav1.GetOptions{})
 	if cr != nil && err == nil {
-		if reflect.DeepEqual(cr.Rules, L2L3OperatorPolicyRule[l2L3OperatiorRole]) {
+		expectedSelectors := []metav1.LabelSelector{}
+		expectedSelectors = append(expectedSelectors, L2L3OperatorAggregationRule[l2L3OperatiorRole]...)
+		expectedSelectors = append(expectedSelectors, metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				aggregationLabel: "true",
+			},
+		})
+		if cr.AggregationRule != nil && reflect.DeepEqual(cr.AggregationRule.ClusterRoleSelectors, expectedSelectors) {
 			return true, nil
 		} else {
-			_, err = rtc.deleteClusterRole()
+			_, err = rtc.deleteClusterRole(rtc.User.ClusterRoleName)
 			if err == nil {
 				return false, nil
 			} else {
@@ -256,17 +316,33 @@ func (rtc *RuntimeClient) verifyCRBinding(roleRef rbacv1.RoleRef, subjects []rba
 }
 
 func (rtc *RuntimeClient) getSecretToken() ([]byte, error) {
+	var token []byte
 	// Wait for the TokenController to provision a ServiceAccount token
-	config := retryConfig{3, 10}
-	secretName, err := rtc.getSASecretName(config.RetryAttempts, config.RetrySleep, rtc.User)
-	if err != nil {
-		return nil, errors.Wrapf(err, "in getSASecretName")
-	}
-	secret, err := rtc.K8s.CoreV1().Secrets(rtc.User.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return secret.Data[Token], nil
+	err := retry.Do(func() error {
+		var secretName string
+		sa, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).Get(context.TODO(), rtc.User.ServiceAccountName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if len(sa.Secrets) == 0 {
+			return errors.New("SA secret is not provisioned")
+		}
+
+		secretName = sa.Secrets[0].Name
+		secret, err := rtc.K8s.CoreV1().Secrets(rtc.User.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		token = secret.Data[Token]
+		return nil
+	},
+		retry.Attempts(30),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+	)
+
+	return token, err
 }
 
 func initServiceAccount(user SAInfo) *corev1.ServiceAccount {
@@ -278,13 +354,35 @@ func initServiceAccount(user SAInfo) *corev1.ServiceAccount {
 	}
 }
 
-func initClusterRole(clusterRoleName string, l2L3OperatiorRole string) *rbacv1.ClusterRole {
+func initClusterRoleRules(clusterRoleName string, l2L3OperatiorRole string, aggregationLabel string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterRoleName,
+			Labels: map[string]string{
+				aggregationLabel: "true",
+			},
 		},
 		Rules: L2L3OperatorPolicyRule[l2L3OperatiorRole],
 	}
+}
+
+func initClusterRole(clusterRoleName string, l2L3OperatiorRole string, aggregationLabel string) *rbacv1.ClusterRole {
+	clusterrole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterRoleName,
+		},
+		AggregationRule: &rbacv1.AggregationRule{
+			ClusterRoleSelectors: []metav1.LabelSelector{},
+		},
+	}
+	clusterrole.AggregationRule.ClusterRoleSelectors = append(clusterrole.AggregationRule.ClusterRoleSelectors, L2L3OperatorAggregationRule[l2L3OperatiorRole]...)
+	clusterrole.AggregationRule.ClusterRoleSelectors = append(clusterrole.AggregationRule.ClusterRoleSelectors, metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			aggregationLabel: "true",
+		},
+	})
+
+	return clusterrole
 }
 
 func initCRBindingE(user SAInfo) (metav1.ObjectMeta, rbacv1.RoleRef, []rbacv1.Subject) {
@@ -315,36 +413,7 @@ func initCRBinding(objectMeta metav1.ObjectMeta, roleRef rbacv1.RoleRef, subject
 	}
 }
 
-func (rtc *RuntimeClient) getSASecretName(attempts int, sleep int, user SAInfo) (string, error) {
-	info := &SAInfo{}
-
-	err := retry.Do(rtc.getServiceAccount(info),
-		retry.Attempts(uint(attempts)),
-		retry.Delay(time.Duration(sleep)*time.Second),
-		retry.LastErrorOnly(true))
-
-	if err == nil {
-		return info.SecretName, nil
-	}
-
-	return "", err
-}
-
-func (rtc *RuntimeClient) getServiceAccount(info *SAInfo) func() error {
-	return func() error {
-		sa, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).Get(context.TODO(), rtc.User.ServiceAccountName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if len(sa.Secrets) != 0 {
-			info.SecretName = sa.Secrets[0].Name
-			return nil
-		}
-		return nil
-	}
-}
-
-//Clean service account and cluster role
+// Clean service account and cluster role
 func (rtc *RuntimeClient) Cleaner() error {
 	if len(rtc.RollbackE.Data) == 0 {
 		return nil
@@ -360,7 +429,7 @@ func (rtc *RuntimeClient) Cleaner() error {
 		case SA:
 			go rtc.RetryDeleteServiceAccount(&wg, errorCh)
 		case ClusterRole:
-			go rtc.RetryDeleteClusterRole(&wg, errorCh)
+			go rtc.RetryDeleteClusterRoles(&wg, errorCh)
 		case ClusterRoleBinding:
 			go rtc.RetryDeleteClusterRoleBinding(&wg, errorCh)
 		default:
@@ -414,25 +483,28 @@ func (rtc *RuntimeClient) RetryDeleteServiceAccount(wg *sync.WaitGroup, errorCh 
 	log.Infof(fmt.Sprintf("SA \"%s\" is removed", rtc.User.ServiceAccountName))
 }
 
-func (rtc *RuntimeClient) RetryDeleteClusterRole(wg *sync.WaitGroup, errorCh chan error) {
+func (rtc *RuntimeClient) RetryDeleteClusterRoles(wg *sync.WaitGroup, errorCh chan error) {
 	defer wg.Done()
+	clusterroles := []string{rtc.User.ClusterRoleName, rtc.User.ClusterRoleRulesName}
+	var err error
 
-	err := retry.Do(func() error {
-		err := rtc.K8s.RbacV1().ClusterRoles().Delete(context.TODO(), rtc.User.ClusterRoleName, metav1.DeleteOptions{})
+	err = retry.Do(func() error {
+		for _, name := range clusterroles {
+			err = rtc.K8s.RbacV1().ClusterRoles().Delete(context.TODO(), name, metav1.DeleteOptions{})
 
-		if err != nil && !apierr.IsNotFound(err) {
-			errorCh <- err
-		} else if apierr.IsNotFound(err) {
-			return nil
+			if err != nil && !apierr.IsNotFound(err) {
+				errorCh <- err
+			} else if apierr.IsNotFound(err) {
+				return nil
+			}
 		}
-
-		return errors.Wrapf(err, "Cluster Role \"%s\" still exists", rtc.User.ClusterRoleName)
+		return errors.Wrapf(err, "ClusterRoles \"%v\" still exist", clusterroles)
 	})
 	if err != nil {
 		errorCh <- err
 		return
 	}
-	log.Infof(fmt.Sprintf("Cluster Role \"%s\" is removed", rtc.User.ClusterRoleName))
+	log.Infof(fmt.Sprintf("ClusterRoles \"%v\" are removed", clusterroles))
 }
 
 func (rtc *RuntimeClient) RetryDeleteClusterRoleBinding(wg *sync.WaitGroup, errorCh chan error) {

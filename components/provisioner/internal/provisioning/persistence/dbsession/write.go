@@ -19,7 +19,7 @@ type writeSession struct {
 	transaction *dbr.Tx
 }
 
-//TODO: Remove after schema migration
+// TODO: Remove after schema migration
 func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
 	res, err := ws.update("gardener_config").
 		Where(dbr.Eq("id", id)).
@@ -33,7 +33,7 @@ func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificC
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
 }
 
-//TODO: Remove after schema migration
+// TODO: Remove after schema migration
 func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
 	_, err := ws.insertInto("kyma_release").
 		Columns("id", "version", "tiller_yaml", "installer_yaml").
@@ -125,6 +125,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
+		Pair("control_plane_failure_tolerance", config.ControlPlaneFailureTolerance).
 		Exec()
 
 	if err != nil {
@@ -227,6 +228,7 @@ func (ws writeSession) UpdateGardenerClusterConfig(config model.GardenerConfig) 
 		Set("exposure_class_name", config.ExposureClassName).
 		Set("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Set("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
+		Set("control_plane_failure_tolerance", config.ControlPlaneFailureTolerance).
 		Exec()
 
 	if config.OIDCConfig != nil {

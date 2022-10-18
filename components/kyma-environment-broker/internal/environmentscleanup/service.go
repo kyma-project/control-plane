@@ -23,17 +23,17 @@ const (
 	shootLabelAccountId      = "account"
 )
 
-//go:generate mockery -name=GardenerClient -output=automock
+//go:generate mockery --name=GardenerClient --output=automock
 type GardenerClient interface {
 	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
 }
 
-//go:generate mockery -name=BrokerClient -output=automock
+//go:generate mockery --name=BrokerClient --output=automock
 type BrokerClient interface {
 	Deprovision(instance internal.Instance) (string, error)
 }
 
-//go:generate mockery -name=ProvisionerClient -output=automock
+//go:generate mockery --name=ProvisionerClient --output=automock
 type ProvisionerClient interface {
 	DeprovisionRuntime(accountID, runtimeID string) (string, error)
 }

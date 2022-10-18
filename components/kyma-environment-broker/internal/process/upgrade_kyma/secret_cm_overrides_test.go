@@ -31,8 +31,8 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionComputed(t *testing.T)
 		operation := internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: fixProvisioningParameters(),
+				InputCreator:           inputCreatorMock,
 			},
-			InputCreator: inputCreatorMock,
 		}
 
 		rvcMock := &automock.RuntimeVersionConfiguratorForUpgrade{}
@@ -67,10 +67,10 @@ func TestOverridesFromSecretsAndConfigStep_Run_WithVersionFromOperation(t *testi
 		operation := internal.UpgradeKymaOperation{
 			Operation: internal.Operation{
 				ProvisioningParameters: fixProvisioningParameters(),
-			},
-			InputCreator: inputCreatorMock,
-			RuntimeVersion: internal.RuntimeVersionData{
-				Version: kymaVersion,
+				InputCreator:           inputCreatorMock,
+				RuntimeVersion: internal.RuntimeVersionData{
+					Version: kymaVersion,
+				},
 			},
 		}
 

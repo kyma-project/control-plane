@@ -3,9 +3,10 @@ APP_PATH = components/kyma-environment-broker
 APP_CLEANUP_NAME = kyma-environments-cleanup-job
 APP_SUBACCOUNT_CLEANUP_NAME = kyma-environment-subaccount-cleanup-job
 APP_SUBSCRIPTION_CLEANUP_NAME = kyma-environment-subscription-cleanup-job
+APP_TRIAL_CLEANUP_NAME = kyma-environment-trial-cleanup-job
 
 ENTRYPOINT = cmd/broker/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220217-8d32835a
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220809-002bc8cf3
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
@@ -16,7 +17,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 custom-verify: testing-with-database-network mod-verify go-mod-check check-fmt
 
-verify:: custom-verify build-image push-image
+verify:: custom-verify
 
 resolve-local:
 	GO111MODULE=on go mod vendor -v
@@ -80,24 +81,3 @@ testing-with-database-network:
 
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK) || true
-
-# overide build-image to build two separate images - broker and cleanup job
-build-image:
-	docker build -t $(IMG_NAME) -f Dockerfile.keb .
-	docker build -t $(CLEANUP_IMG_NAME) -f Dockerfile.cleanup .
-	docker build -t $(SUBACCOUNT_CLEANUP_IMG_NAME) -f Dockerfile.sac .
-	docker build -t $(SUBSCRIPTION_CLEANUP_IMG_NAME) -f Dockerfile.scj .
-
-# overide push-image to push two separate images - broker and cleanup job
-push-image:
-	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
-	docker push $(IMG_NAME):$(TAG)
-
-	docker tag $(CLEANUP_IMG_NAME) $(CLEANUP_IMG_NAME):$(TAG)
-	docker push $(CLEANUP_IMG_NAME):$(TAG)
-
-	docker tag $(SUBACCOUNT_CLEANUP_IMG_NAME) $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
-	docker push $(SUBACCOUNT_CLEANUP_IMG_NAME):$(TAG)
-
-	docker tag $(SUBSCRIPTION_CLEANUP_IMG_NAME) $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)
-	docker push $(SUBSCRIPTION_CLEANUP_IMG_NAME):$(TAG)

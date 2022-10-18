@@ -4,16 +4,6 @@
     "finished": false,
     "operations": [
       {
-        "component": "rafter",
-        "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--75e1c7af-e3f6-4668-8a3e-64f885d07e10",
-        "created": "2021-11-22T12:38:03.908391Z",
-        "priority": 2,
-        "reason": "",
-        "schedulingID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--ee94f393-b972-44dd-807c-4c0a4f2d77f5",
-        "state": "orphan",
-        "updated": "2021-11-22T12:48:33.504173Z"
-      },
-      {
         "component": "istio-config",
         "correlationID": "6f8ec1bc-f300-4f00-bb65-6fec5dcd0ba5--b327c940-5895-417b-ad17-82738066a3f9",
         "created": "2021-11-22T12:38:03.906083Z",

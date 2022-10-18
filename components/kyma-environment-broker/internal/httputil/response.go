@@ -9,8 +9,8 @@ import (
 
 // Writer provides syntactic sugar for writing http responses.
 // Works in two modes:
-//   * devMode: true - returns a given error in the response under `details` field
-//   * devMode: false - only log the given error in context of the requestID but do not return it in response
+//   - devMode: true - returns a given error in the response under `details` field
+//   - devMode: false - only log the given error in context of the requestID but do not return it in response
 type Writer struct {
 	log     logrus.FieldLogger
 	devMode bool

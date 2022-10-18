@@ -30,7 +30,7 @@ type Client interface {
 	UpgradeKyma(params Parameters) (UpgradeResponse, error)
 	UpgradeCluster(params Parameters) (UpgradeResponse, error)
 	CancelOrchestration(orchestrationID string) error
-	RetryOrchestration(orchestrationID string, operationIDs []string) (RetryResponse, error)
+	RetryOrchestration(orchestrationID string, operationIDs []string, now bool) (RetryResponse, error)
 }
 
 type client struct {
@@ -163,6 +163,13 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 	}
 
 	for !fetchedAll {
+		if params.Page > 1 {
+			failedFound, failedIndex := c.searchFilter(params.States, "failed")
+			if failedFound {
+				params.States = c.removeIndex(params.States, failedIndex)
+			}
+		}
+
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return operations, errors.Wrap(err, "while creating request")
@@ -199,6 +206,7 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 
 		operations.TotalCount = orl.TotalCount
 		operations.Count += orl.Count
+
 		operations.Data = append(operations.Data, orl.Data...)
 		if getAll {
 			params.Page++
@@ -209,6 +217,31 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 	}
 
 	return operations, nil
+}
+
+func (c client) searchFilter(states []string, inputState string) (bool, int) {
+	var failedFound bool
+	var failedIndex int
+	for index, state := range states {
+		if strings.Contains(state, inputState) {
+			failedFound = true
+			failedIndex = index
+			break
+		}
+	}
+	return failedFound, failedIndex
+}
+
+func (c client) removeIndex(arr []string, index int) []string {
+	var temp = make([]string, len(arr)-1)
+	j := 0
+	for i := range arr {
+		if i != index {
+			temp[j] = arr[i]
+			j = j + 1
+		}
+	}
+	return temp
 }
 
 // GetOperation fetches detailed Runtime operation corresponding to the given orchestration and operation ID.
@@ -315,16 +348,21 @@ func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse
 	return ur, nil
 }
 
-func (c client) RetryOrchestration(orchestrationID string, operationIDs []string) (RetryResponse, error) {
+func (c client) RetryOrchestration(orchestrationID string, operationIDs []string, now bool) (RetryResponse, error) {
 	rr := RetryResponse{}
-	url := fmt.Sprintf("%s/orchestrations/%s/retry", c.url, orchestrationID)
+	uri := fmt.Sprintf("%s/orchestrations/%s/retry", c.url, orchestrationID)
 
 	for i, id := range operationIDs {
 		operationIDs[i] = "operation-id=" + id
 	}
-	body := strings.NewReader(strings.Join(operationIDs, "&"))
 
-	req, err := http.NewRequest(http.MethodPost, url, body)
+	str := strings.Join(operationIDs, "&")
+	if now {
+		str = str + "&immediate=true"
+	}
+	body := strings.NewReader(str)
+
+	req, err := http.NewRequest(http.MethodPost, uri, body)
 	if err != nil {
 		return rr, errors.Wrap(err, "while creating retry request")
 	}
@@ -332,7 +370,7 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return rr, errors.Wrapf(err, "while calling %s", url)
+		return rr, errors.Wrapf(err, "while calling %s", uri)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -348,7 +386,7 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 	}()
 
 	if resp.StatusCode != http.StatusAccepted {
-		return rr, fmt.Errorf("calling %s returned %s status", url, resp.Status)
+		return rr, fmt.Errorf("calling %s returned %s status", uri, resp.Status)
 	}
 
 	decoder := json.NewDecoder(resp.Body)

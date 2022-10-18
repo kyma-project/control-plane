@@ -7,7 +7,7 @@ import (
 )
 
 type EvalAssistant interface {
-	CreateBasicEvaluationRequest(operations internal.ProvisioningOperation, url string) (*BasicEvaluationCreateRequest, error)
+	CreateBasicEvaluationRequest(operations internal.Operation, url string) (*BasicEvaluationCreateRequest, error)
 	IsAlreadyCreated(lifecycleData internal.AvsLifecycleData) bool
 	IsValid(lifecycleData internal.AvsLifecycleData) bool
 	IsInMaintenance(lifecycleData internal.AvsLifecycleData) bool
@@ -15,7 +15,7 @@ type EvalAssistant interface {
 	SetEvalStatus(lifecycleData *internal.AvsLifecycleData, status string)
 	GetEvalStatus(lifecycleData internal.AvsLifecycleData) string
 	GetOriginalEvalStatus(lifecycleData internal.AvsLifecycleData) string
-	IsAlreadyDeleted(lifecycleData internal.AvsLifecycleData) bool
+	IsAlreadyDeletedOrEmpty(lifecycleData internal.AvsLifecycleData) bool
 	GetEvaluationId(lifecycleData internal.AvsLifecycleData) int64
 	ProvideParentId(pp internal.ProvisioningParameters) int64
 	SetDeleted(lifecycleData *internal.AvsLifecycleData, deleted bool)

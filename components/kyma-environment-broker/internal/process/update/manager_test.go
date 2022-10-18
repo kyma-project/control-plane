@@ -137,7 +137,7 @@ func (s *onceRetryingStep) Run(operation internal.UpdatingOperation, logger logr
 
 func FixUpdatingOperation(ID string) internal.UpdatingOperation {
 	operation := fixture.FixUpdatingOperation(ID, "fea2c1a1-139d-43f6-910a-a618828a79d5")
-	operation.FinishedStages = make(map[string]struct{})
+	operation.FinishedStages = make([]string, 0)
 	operation.State = domain.InProgress
 	operation.Description = ""
 	return operation

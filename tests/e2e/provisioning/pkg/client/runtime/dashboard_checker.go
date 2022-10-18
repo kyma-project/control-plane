@@ -28,7 +28,7 @@ func NewDashboardChecker(clientHttp http.Client, log logrus.FieldLogger) *Dashbo
 	}
 }
 
-// AssertRedirectedToBusola sends request to the old dashboardUrl and expects to be redirected to the Busola Migrator.
+// AssertRedirectedToBusola sends request to the dashboardUrl and expects to be redirected to the Busola.
 func (c *DashboardChecker) AssertRedirectedToBusola(dashboardURL string, busolaurl string) error {
 	targetURL := c.buildTargetURL(dashboardURL)
 

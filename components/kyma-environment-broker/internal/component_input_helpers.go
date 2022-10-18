@@ -20,34 +20,22 @@ import (
 )
 
 const (
-	SCMigrationComponentName          = "sc-migration"
-	BTPOperatorComponentName          = "btp-operator"
-	HelmBrokerComponentName           = "helm-broker"
-	ServiceCatalogComponentName       = "service-catalog"
-	ServiceCatalogAddonsComponentName = "service-catalog-addons"
-	ServiceManagerComponentName       = "service-manager-proxy"
+	BTPOperatorComponentName = "btp-operator"
 
 	// BTP Operator overrides keys
-	BTPOperatorClientID     = "manager.secret.clientid"
-	BTPOperatorClientSecret = "manager.secret.clientsecret"
-	BTPOperatorURL          = "manager.secret.url"    // deprecated, for btp-operator v0.2.0
-	BTPOperatorSMURL        = "manager.secret.sm_url" // for btp-operator v0.2.3
-	BTPOperatorTokenURL     = "manager.secret.tokenurl"
-	BTPOperatorClusterID    = "cluster.id"
+	BTPOperatorClientID           = "manager.secret.clientid"
+	BTPOperatorClientSecret       = "manager.secret.clientsecret"
+	BTPOperatorURL                = "manager.secret.url"    // deprecated, for btp-operator v0.2.0
+	BTPOperatorSMURL              = "manager.secret.sm_url" // for btp-operator v0.2.3
+	BTPOperatorTokenURL           = "manager.secret.tokenurl"
+	BTPOperatorClusterID          = "cluster.id"
+	BTPOperatorPriorityClass      = "manager.priorityClassName"
+	BTPOperatorPriorityClassValue = "kyma-system"
 )
 
-var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID}
+var btpOperatorRequiredKeys = []string{BTPOperatorClientID, BTPOperatorClientSecret, BTPOperatorURL, BTPOperatorSMURL, BTPOperatorTokenURL, BTPOperatorClusterID, BTPOperatorPriorityClass}
 
 type ClusterIDGetter func(string) (string, error)
-
-func DisableServiceManagementComponents(r ProvisionerInputCreator) {
-	r.DisableOptionalComponent(SCMigrationComponentName)
-	r.DisableOptionalComponent(HelmBrokerComponentName)
-	r.DisableOptionalComponent(ServiceCatalogComponentName)
-	r.DisableOptionalComponent(ServiceCatalogAddonsComponentName)
-	r.DisableOptionalComponent(ServiceManagerComponentName)
-	r.DisableOptionalComponent(BTPOperatorComponentName)
-}
 
 func GetBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredentials, clusterId string) []*gqlschema.ConfigEntryInput {
 	return []*gqlschema.ConfigEntryInput{
@@ -76,6 +64,10 @@ func GetBTPOperatorProvisioningOverrides(creds *ServiceManagerOperatorCredential
 		{
 			Key:   BTPOperatorClusterID,
 			Value: clusterId,
+		},
+		{
+			Key:   BTPOperatorPriorityClass,
+			Value: BTPOperatorPriorityClassValue,
 		},
 	}
 }

@@ -2734,18 +2734,8 @@
           },
           {
             "selected": false,
-            "text": "aws_ha",
-            "value": "aecef2e6-49f1-4094-8433-eba0e135eb6a"
-          },
-          {
-            "selected": false,
             "text": "azure",
             "value": "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-          },
-          {
-            "selected": false,
-            "text": "azure_ha",
-            "value": "f2951649-02ca-43a5-9188-9c07fb612491"
           },
           {
             "selected": false,
@@ -2773,7 +2763,7 @@
             "value": "b1a5764e-2ea1-4f95-94c0-2b4538b37b55"
           }
         ],
-        "query": "aws : 361c511f-f939-4621-b228-d0fb79a1fe15, aws_ha : aecef2e6-49f1-4094-8433-eba0e135eb6a, azure : 4deee563-e5ec-4731-b9b1-53b42d855f0c, azure_ha : f2951649-02ca-43a5-9188-9c07fb612491, azure_lite : 8cb22518-aa26-44c5-91a0-e669ec9bf443, gcp : ca6e5357-707f-4565-bbbd-b3ab732597c6, openstack : 03b812ac-c991-4528-b5bd-08b303523a63, trial : 7d55d31d-35ae-4438-bf13-6ffdfa107d9f, free : b1a5764e-2ea1-4f95-94c0-2b4538b37b55",
+        "query": "aws : 361c511f-f939-4621-b228-d0fb79a1fe15, azure : 4deee563-e5ec-4731-b9b1-53b42d855f0c, azure_lite : 8cb22518-aa26-44c5-91a0-e669ec9bf443, gcp : ca6e5357-707f-4565-bbbd-b3ab732597c6, openstack : 03b812ac-c991-4528-b5bd-08b303523a63, trial : 7d55d31d-35ae-4438-bf13-6ffdfa107d9f, free : b1a5764e-2ea1-4f95-94c0-2b4538b37b55",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

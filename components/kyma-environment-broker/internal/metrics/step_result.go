@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
@@ -109,5 +111,37 @@ func (c *StepResultCollector) OnDeprovisioningStepProcessed(ctx context.Context,
 		stepProcessed.StepName,
 		pp.ErsContext.GlobalAccountID,
 		pp.PlanID).Set(resultValue)
+	return nil
+}
+
+func (c *StepResultCollector) OnOperationStepProcessed(ctx context.Context, ev interface{}) error {
+	stepProcessed, ok := ev.(process.OperationStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected OperationStepProcessed but got %+v", ev)
+	}
+
+	switch {
+	case stepProcessed.Operation.Type == internal.OperationTypeProvision:
+		provisioningStepProcessed := process.ProvisioningStepProcessed{
+			Operation:     internal.ProvisioningOperation{Operation: stepProcessed.Operation},
+			StepProcessed: stepProcessed.StepProcessed,
+		}
+		err := c.OnProvisioningStepProcessed(ctx, provisioningStepProcessed)
+		if err != nil {
+			return err
+		}
+	case stepProcessed.Operation.Type == internal.OperationTypeDeprovision:
+		deprovisioningStepProcessed := process.DeprovisioningStepProcessed{
+			Operation:     internal.DeprovisioningOperation{Operation: stepProcessed.Operation},
+			StepProcessed: stepProcessed.StepProcessed,
+		}
+		err := c.OnDeprovisioningStepProcessed(ctx, deprovisioningStepProcessed)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("expected OperationStep of types [%s, %s] but got %+v", internal.OperationTypeProvision, internal.OperationTypeDeprovision, stepProcessed.Operation.Type)
+	}
+
 	return nil
 }

@@ -10,12 +10,14 @@ var jsonRegexp = regexp.MustCompile(`^\{\.?([^{}]+)\}$|^\.?([^{}]+)$`)
 var templateFormat = []string{"custom="}
 
 // RelaxedJSONPathExpression attempts to be flexible with JSONPath expressions, it accepts:
-//   * metadata.name (no leading '.' or curly braces '{...}'
-//   * {metadata.name} (no leading '.')
-//   * .metadata.name (no curly braces '{...}')
-//   * {.metadata.name} (complete expression)
+//   - metadata.name (no leading '.' or curly braces '{...}'
+//   - {metadata.name} (no leading '.')
+//   - .metadata.name (no curly braces '{...}')
+//   - {.metadata.name} (complete expression)
+//
 // And transforms them all into a valid jsonpath expression:
-//   {.metadata.name}
+//
+//	{.metadata.name}
 func RelaxedJSONPathExpression(pathExpression string) (string, error) {
 	if len(pathExpression) == 0 {
 		return pathExpression, nil
@@ -36,9 +38,9 @@ func RelaxedJSONPathExpression(pathExpression string) (string, error) {
 	return fmt.Sprintf("{.%s}", fieldSpec), nil
 }
 
-//ParseOutputToTemplateTypeAndElement parses the output into templateType and templateElement
-//e.g. kcp runtimes  -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName"
-//After parsing, the templateType = "custom" and  templateElement = "INSTANCE ID:instanceID,SHOOTNAME:shootName"
+// ParseOutputToTemplateTypeAndElement parses the output into templateType and templateElement
+// e.g. kcp runtimes  -o custom="INSTANCE ID:instanceID,SHOOTNAME:shootName"
+// After parsing, the templateType = "custom" and  templateElement = "INSTANCE ID:instanceID,SHOOTNAME:shootName"
 func ParseOutputToTemplateTypeAndElement(output string) (string, string) {
 	var templateType, templateElement string
 	for _, format := range templateFormat {

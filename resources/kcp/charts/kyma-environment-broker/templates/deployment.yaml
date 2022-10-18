@@ -73,6 +73,12 @@ spec:
               value: "{{ .Values.enableKubeconfigURLLabel }}"
             - name: APP_BROKER_INCLUDE_ADDITIONAL_PARAMS_IN_SCHEMA
               value: "{{ .Values.includeAdditionalParamsInSchema }}"
+            - name: APP_BROKER_SHOW_TRIAL_EXPIRATION_INFO
+              value: "{{ .Values.showTrialExpirationInfo }}"
+            - name: APP_BROKER_SUBACCOUNTS_IDS_TO_SHOW_TRIAL_EXPIRATION_INFO
+              value: "{{ .Values.subaccountsIdsToShowTrialExpirationInfo }}"
+            - name: APP_BROKER_TRIAL_DOCS_URL
+              value: "{{ .Values.trialDocsURL }}"
             - name: APP_OPERATION_TIMEOUT
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_RECONCILER_URL
@@ -187,11 +193,13 @@ spec:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-broker-db-name
-            - name: APP_DATABASE_SSL
+            - name: APP_DATABASE_SSLMODE
               valueFrom:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-sslMode
+            - name: APP_DATABASE_SSLROOTCERT
+              value: /secrets/cloudsql-sslrootcert/server-ca.pem
             - name: APP_AVS_OAUTH_TOKEN_ENDPOINT
               valueFrom:
                 secretKeyRef:
@@ -315,7 +323,7 @@ spec:
             - name: APP_KUBECONFIG_ALLOW_ORIGINS
               value: "{{ .Values.kubeconfig.allowOrigins }}"
             - name: APP_PROVISIONER_KUBERNETES_VERSION
-              value: {{ .Values.gardener.kubernetesVersion }}
+              value: "{{ .Values.gardener.kubernetesVersion }}"
             - name: APP_PROVISIONER_MACHINE_IMAGE
               value: {{ .Values.gardener.machineImage }}
             - name: APP_PROVISIONER_MACHINE_IMAGE_VERSION
@@ -326,34 +334,14 @@ spec:
               value: "{{ .Values.gardener.autoUpdateKubernetesVersion }}"
             - name: APP_PROVISIONER_AUTO_UPDATE_MACHINE_IMAGE_VERSION
               value: "{{ .Values.gardener.autoUpdateMachineImageVersion }}"
+            - name: APP_PROVISIONER_MULTI_ZONE_CLUSTER
+              value: "{{ .Values.gardener.multiZoneCluster }}"
+            - name: APP_PROVISIONER_CONTROL_PLANE_FAILURE_TOLERANCE
+              value: "{{ .Values.gardener.controlPlaneFailureTolerance }}"
             - name: APP_DEFAULT_REQUEST_REGION
               value: "{{ .Values.broker.defaultRequestRegion }}"
             - name: APP_UPDATE_PROCESSING_ENABLED
               value: "{{ .Values.osbUpdateProcessingEnabled }}"
-            - name: APP_AUDITLOG_ENABLE_SEQ_HTTP
-              value: "{{ .Values.global.auditlog.enableSeqHttp }}"
-            - name: APP_AUDITLOG_DISABLED
-              value: "{{ .Values.global.auditlog.disabled }}"
-            - name: APP_AUDITLOG_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configMapName }}
-                  key: auditlog-url-basic
-            - name: APP_AUDITLOG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-user
-            - name: APP_AUDITLOG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.auditlog.secretName }}
-                  key: auditlog-password
-            - name: APP_AUDITLOG_TENANT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.global.auditlog.configMapName }}
-                  key: auditlog-tenant
             - name: APP_NOTIFICATION_URL
               value: "{{ .Values.notification.url }}"
             - name: APP_NOTIFICATION_DISABLED
@@ -376,10 +364,10 @@ spec:
               value: /config/newAdditionalRuntimeComponents.yaml
             - name: APP_PROFILER_MEMORY
               value: "{{ .Values.broker.profiler.memory }}"
-            - name: APP_KYMA_DASHBOARD_CONFIG_ENABLED
-              value: "{{ .Values.dashboardConfig.enabled }}"
             - name: APP_KYMA_DASHBOARD_CONFIG_LANDSCAPE_URL
               value: "{{ .Values.dashboardConfig.landscapeURL }}"
+            - name: APP_EVENTS_ENABLED
+              value: "{{ .Values.broker.events.enabled }}"
           ports:
             - name: http
               containerPort: {{ .Values.broker.port }}
@@ -408,11 +396,12 @@ spec:
               name: config-volume
             - mountPath: /swagger/schema
               name: swagger-volume
-            - mountPath: /auditlog-script
-              name: auditlog-script
           {{- if eq .Values.global.database.embedded.enabled false}}
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
+            - name: cloudsql-sslrootcert
+              mountPath: /secrets/cloudsql-sslrootcert
               readOnly: true
           {{- end }}
           {{- if .Values.broker.profiler.memory }}
@@ -447,13 +436,17 @@ spec:
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
+      - name: cloudsql-sslrootcert
+        secret:
+          secretName: kcp-postgresql
+          items: 
+          - key: postgresql-sslRootCert
+            path: server-ca.pem
+          optional: true
       {{- end}}
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      - name: auditlog-script
-        configMap:
-          name: {{ .Values.global.auditlog.script.configMapName }}
       {{- if .Values.broker.profiler.memory }}
       - name: keb-memory-profile
         persistentVolumeClaim:

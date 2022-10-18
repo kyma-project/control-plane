@@ -28,8 +28,9 @@ type RuntimeOperation struct {
 	DryRun  bool   `json:"dryRun"`
 }
 
-//go:generate mockery --name=RuntimeResolver --output=automock --outpkg=automock --case=underscore
 // RuntimeResolver given an input slice of target specs to include and exclude, resolves and returns a list of unique Runtime objects.
+//
+//go:generate mockery --name=RuntimeResolver --output=automock --outpkg=automock --case=underscore
 type RuntimeResolver interface {
 	Resolve(targets TargetSpec) ([]Runtime, error)
 }
@@ -40,8 +41,9 @@ type OperationExecutor interface {
 	Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error
 }
 
-//go:generate mockery --name=Strategy --output=automock --outpkg=automock --case=underscore
 // Strategy interface encapsulates the strategy how the orchestration is performed.
+//
+//go:generate mockery --name=Strategy --output=automock --outpkg=automock --case=underscore
 type Strategy interface {
 	// Execute invokes OperationExecutor's Execute(operationID string) method for each operation according to the encapsulated strategy.
 	// The strategy is executed asynchronously. Successful call to the function returns a unique identifier, which can be used in a subsequent call to Wait().

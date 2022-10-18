@@ -3,6 +3,7 @@ package postsql
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gocraft/dbr"
@@ -36,6 +37,7 @@ func (ws writeSession) InsertInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Pair("provider", instance.Provider).
 		// in postgres database it will be equal to "0001-01-01 00:00:00+00"
 		Pair("deleted_at", time.Time{}).
+		Pair("expired_at", instance.ExpiredAt).
 		Pair("version", instance.Version).
 		Exec()
 
@@ -78,6 +80,7 @@ func (ws writeSession) UpdateInstance(instance dbmodel.InstanceDTO) dberr.Error 
 		Set("provider", instance.Provider).
 		Set("updated_at", time.Now()).
 		Set("version", instance.Version+1).
+		Set("expired_at", instance.ExpiredAt).
 		Exec()
 	if err != nil {
 		return dberr.Internal("Failed to update record to Instance table: %s", err)
@@ -233,6 +236,31 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 		return dberr.NotFound("Cannot find Operation with ID:'%s' Version: %v", op.ID, op.Version)
 	}
 
+	return nil
+}
+
+func (ws writeSession) InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string) dberr.Error {
+	_, err := ws.insertInto("events").
+		Pair("id", uuid.NewString()).
+		Pair("level", level).
+		Pair("instance_id", instanceID).
+		Pair("operation_id", operationID).
+		Pair("message", message).
+		Pair("created_at", time.Now()).
+		Exec()
+	if err != nil {
+		return dberr.Internal("Failed to insert event: %s", err)
+	}
+	return nil
+}
+
+func (ws writeSession) DeleteEvents(until time.Time) dberr.Error {
+	_, err := ws.deleteFrom("events").
+		Where(dbr.Lte("created_at", until)).
+		Exec()
+	if err != nil {
+		return dberr.Internal("failed to delete events created until %v: %v", until.Format(time.RFC1123Z), err)
+	}
 	return nil
 }
 

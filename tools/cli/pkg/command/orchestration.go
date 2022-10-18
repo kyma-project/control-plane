@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -32,6 +31,7 @@ type OrchestrationCommand struct {
 	states     []string
 	operations []string
 	subCommand string
+	now        bool
 	listParams orchestration.ListParameters
 }
 
@@ -152,7 +152,7 @@ Kyma Version:       {{with .KymaConfig}}{{.Version}}{{end}}
 `
 
 var retryOchestrationTpl = `Orchestration ID:   {{.OrchestrationID}}
-Retry Operations:   {{ stringsJoin .RetryOperations ", " }}
+Retry Shoots:       {{ stringsJoin .RetryShoots ", " }}
 Old Operations:     {{ stringsJoin .OldOperations ", " }}
 Invalid Operations: {{ stringsJoin .InvalidOperations ", " }}
 Message:            {{ .Msg }}
@@ -182,7 +182,8 @@ The command has the following modes:
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 operations                  Display the operations of the given orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 cancel                      Cancel the given orchestration.
   kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry                       Retry all failed operations of the given orchestration.
-  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration.`,
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --operation OID1,OID2 Retry the given operations of the given orchestration
+  kcp orchestration 0c4357f5-83e0-4b72-9472-49b5cd417c00 retry --now --operation OID1 Retry the given operations of the given orchestration schedule immediately`,
 		Args:    cobra.MaximumNArgs(2),
 		PreRunE: func(_ *cobra.Command, args []string) error { return cmd.Validate(args) },
 		RunE:    func(_ *cobra.Command, args []string) error { return cmd.Run(args) },
@@ -192,6 +193,7 @@ The command has the following modes:
 	SetOutputOpt(cobraCmd, &cmd.output)
 	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "s", nil, fmt.Sprintf("Filter output by state. You can provide multiple values, either separated by a comma (e.g. failed,inprogress), or by specifying the option multiple times. The possible values are: %s.", strings.Join(cliOrchestrationStates(), ", ")))
 	cobraCmd.Flags().StringSliceVar(&cmd.operations, "operation", nil, "Option that displays details of the specified Runtime operation when a given orchestration is selected.")
+	cobraCmd.Flags().BoolVarP(&cmd.now, "now", "n", false, "retry failed operations with schedule immediate.")
 	return cobraCmd
 }
 
@@ -416,12 +418,8 @@ func (cmd *OrchestrationCommand) cancelOrchestration(orchestrationID string) err
 		return fmt.Errorf("orchestration is already %s", sr.State)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed.\n", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])
-	fmt.Print("Do you want to continue? (Y/N) ")
-	scanner.Scan()
-	if scanner.Text() != "Y" {
-		fmt.Println("Aborted.")
+	if !PromptUser(fmt.Sprintf("%d pending or retrying operations(s) will be canceled, %d in progress operation(s) will still be completed. \n Do you want to cancel?", sr.OperationStats[orchestration.Pending]+sr.OperationStats[orchestration.Retrying], sr.OperationStats[orchestration.InProgress])) {
+		fmt.Println("cancel is not run.")
 		return nil
 	}
 
@@ -443,7 +441,7 @@ func (cmd *OrchestrationCommand) retryOrchestration(orchestrationID string) erro
 		return nil
 	}
 
-	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations)
+	rr, err := cmd.client.RetryOrchestration(orchestrationID, cmd.operations, cmd.now)
 	if err != nil {
 		return errors.Wrap(err, "while triggering retrying orchestration")
 	}
@@ -550,4 +548,24 @@ func orchestrationDetails(obj interface{}) string {
 	}
 
 	return sb.String()
+}
+
+func PromptUser(msg string) bool {
+	fmt.Printf("%s%s", "? ", msg)
+	for {
+		fmt.Print("Type (Y/N): ")
+		var res string
+		if _, err := fmt.Scanf("%s", &res); err != nil {
+			return false
+		}
+		switch strings.ToLower(res) {
+		case "yes", "y":
+			return true
+		case "no", "n":
+			return false
+		default:
+			fmt.Print("Invalid input, please try again!")
+			continue
+		}
+	}
 }

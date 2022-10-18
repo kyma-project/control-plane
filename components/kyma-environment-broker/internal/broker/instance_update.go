@@ -17,7 +17,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -40,7 +39,7 @@ type UpdateEndpoint struct {
 
 	operationStorage storage.Operations
 
-	updatingQueue *process.Queue
+	updatingQueue Queue
 
 	planDefaults PlanDefaults
 
@@ -54,7 +53,7 @@ func NewUpdate(cfg Config,
 	ctxUpdateHandler ContextUpdateHandler,
 	processingEnabled bool,
 	subAccountMovementEnabled bool,
-	queue *process.Queue,
+	queue Queue,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 	dashboardConfig dashboard.Config,
@@ -75,7 +74,8 @@ func NewUpdate(cfg Config,
 }
 
 // Update modifies an existing service instance
-//  PATCH /v2/service_instances/{instance_id}
+//
+//	PATCH /v2/service_instances/{instance_id}
 func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details domain.UpdateDetails, asyncAllowed bool) (domain.UpdateServiceSpec, error) {
 	logger := b.log.WithField("instanceID", instanceID)
 	logger.Infof("Updating instanceID: %s", instanceID)
@@ -99,8 +99,14 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
-	logger.Infof("Migration triggered: %v", ersContext.IsMigration)
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
+
+	// If the param contains "expired" - then process expiration (save it in the instance)
+	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
+	if err != nil {
+		logger.Errorf("Unable to update the instance: %s", err.Error())
+		return domain.UpdateServiceSpec{}, err
+	}
 
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
@@ -125,7 +131,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 
 	dashboardURL := instance.DashboardURL
-	if b.dashboardConfig.Enabled && b.dashboardConfig.LandscapeURL != "" {
+	if b.dashboardConfig.LandscapeURL != "" {
 		dashboardURL = fmt.Sprintf("%s/?kubeconfigID=%s", b.dashboardConfig.LandscapeURL, instanceID)
 		instance.DashboardURL = dashboardURL
 	}
@@ -138,7 +144,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 		// NOTE: KEB currently can't process update parameters in one call along with context update
 		// this block makes it that KEB ignores any parameters updates if context update changed suspension state
-		if !suspendStatusChange {
+		if !suspendStatusChange && !instance.IsExpired() {
 			return b.processUpdateParameters(instance, details, lastProvisioningOperation, asyncAllowed, ersContext, logger)
 		}
 	}
@@ -157,7 +163,7 @@ func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ers
 	if len(details.RawParameters) != 0 {
 		return true
 	}
-	return instance.InstanceDetails.SCMigrationTriggered || ersContext.ERSUpdate()
+	return ersContext.ERSUpdate()
 }
 
 func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, details domain.UpdateDetails, lastProvisioningOperation *internal.ProvisioningOperation, asyncAllowed bool, ersContext internal.ERSContext, logger logrus.FieldLogger) (domain.UpdateServiceSpec, error) {
@@ -198,7 +204,6 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 
 	logger.Debugf("creating update operation %v", params)
 	operation := internal.NewUpdateOperation(operationID, instance, params)
-	operation.InstanceDetails.SCMigrationTriggered = ersContext.IsMigration
 	planID := instance.Parameters.PlanID
 	if len(details.PlanID) != 0 {
 		planID = details.PlanID
@@ -217,7 +222,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		logger.Errorf("invalid autoscaler parameters: %s", err.Error())
 		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusUnprocessableEntity, err.Error())
 	}
-	err = b.operationStorage.InsertUpdatingOperation(operation)
+	err = b.operationStorage.InsertOperation(operation)
 	if err != nil {
 		return domain.UpdateServiceSpec{}, err
 	}
@@ -290,12 +295,8 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	if err != nil {
 		return nil, false, errors.New("unable to process the update")
 	}
-	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
-	instance.Parameters.ErsContext = internal.UpdateERSContext(instance.Parameters.ErsContext, ersContext)
-	if ersContext.IsMigration {
-		instance.Parameters.ErsContext.IsMigration = ersContext.IsMigration
-		instance.InstanceDetails.SCMigrationTriggered = true
-	}
+	instance.Parameters.ErsContext = internal.InheritMissingERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
+	instance.Parameters.ErsContext = internal.UpdateInstanceERSContext(instance.Parameters.ErsContext, ersContext)
 
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
 	if err != nil {
@@ -347,4 +348,37 @@ func (b *UpdateEndpoint) isKyma2(instance *internal.Instance) (bool, string, err
 	}
 	kv := s.GetKymaVersion()
 	return internal.DetermineMajorVersion(kv) == 2, kv, nil
+}
+
+// processExpirationParam returns true, if expired
+func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, details domain.UpdateDetails, ers internal.ERSContext, logger logrus.FieldLogger) (*internal.Instance, error) {
+	// if the instance was expired before (in the past), then no need to do any work
+	if instance.IsExpired() {
+		return instance, nil
+	}
+	if len(details.RawParameters) != 0 {
+		var params internal.UpdatingParametersDTO
+		err := json.Unmarshal(details.RawParameters, &params)
+		if err != nil {
+			return instance, err
+		}
+		if params.Expired {
+			if !IsTrialPlan(instance.ServicePlanID) {
+				logger.Warn("Expiration of a non-trial instance is not supported")
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("expiration of a non-trial instance is not supported"), http.StatusBadRequest, "")
+			}
+
+			if ers.Active == nil || *ers.Active {
+				logger.Warn("Parameter 'expired' requires `context.active=false`")
+				return instance, apiresponses.NewFailureResponse(fmt.Errorf("context.active=false is required for expiration"), http.StatusBadRequest, "")
+			}
+
+			logger.Infof("Saving expiration param for an instance created at %s", instance.CreatedAt)
+			instance.ExpiredAt = ptr.Time(time.Now())
+			instance, err := b.instanceStorage.Update(*instance)
+			return instance, err
+		}
+	}
+	return instance, nil
+
 }

@@ -1,17 +1,16 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: kyma-metrics-collector
-  name: kyma-metrics-collector
+    app: kmc-dev
+  name: kmc-dev
   namespace: kcp-system
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: kyma-metrics-collector
+      app: kmc-dev
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -20,32 +19,46 @@ spec:
   template:
     metadata:
       labels:
-        app: kyma-metrics-collector
+        app: kmc-dev
     spec:
       containers:
-      - image: ko://github.com/kyma-project/control-plane/kyma-metrics-collector/cmd
+      - image: ko://github.com/kyma-project/control-plane/components/kyma-metrics-collector/cmd
         imagePullPolicy: Always
-        name: kyma-metrics-collector
+        name: kmc-dev
         args:
-          - "-log-level=debug"
+          - --scrape-interval=5m
+          - --worker-pool-size=5
+          - --log-level=debug
+          - --listen-addr=8080
+          - --gardener-namespace=garden-kyma-dev
         env:
-          - name: PUBLIC_CLOUD_SPECS
-            valueFrom:
-              configMapKeyRef:
-                name: public-cloud-specs
-                key: providers
-          - name: KEB_URL
-            value: http://kcp-kyma-environment-broker.kcp-system/runtimes
           - name: EDP_URL
-#           value: http://edp-mock.kcp-system:8080
+            value: http://edp-mock.kcp-system:8080
           - name: EDP_NAMESPACE
             value: kyma-dev
+          - name: EDP_TIMEOUT
+            value: 1s
+          - name: EDP_RETRY
+            value: "1"
           - name: EDP_DATASTREAM_NAME
             value: consumption-metrics-new-test
           - name: EDP_DATASTREAM_VERSION
             value: "1"
           - name: EDP_DATASTREAM_ENV
             value: dev
+          - name: KEB_URL
+            value: http://kcp-kyma-environment-broker.kcp-system/runtimes
+          - name: KEB_TIMEOUT
+            value: 30s
+          - name: KEB_RETRY_COUNT
+            value: "5"
+          - name: KEB_POLL_WAIT_DURATION
+            value: 10m
+          - name: PUBLIC_CLOUD_SPECS
+            valueFrom:
+              configMapKeyRef:
+                key: providers
+                name: kcp-kyma-metrics-collector-public-cloud-spec
         volumeMounts:
           - mountPath: /gardener
             name: gardener-kubeconfig
@@ -53,20 +66,25 @@ spec:
           - mountPath: /edp-credentials
             name: edp
             readOnly: true
+          - mountPath: /tmp
+            name: tmp
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
-
-        ## readiness and liveness probe
       restartPolicy: Always
       schedulerName: default-scheduler
+      serviceAccountName: kcp-kyma-metrics-collector
       terminationGracePeriodSeconds: 30
       volumes:
       - name: gardener-kubeconfig
         secret:
+          defaultMode: 420
           secretName: gardener-credentials
       - name: edp
         secret:
-          secretName: kyma-metrics-collector
-
+          defaultMode: 420
+          secretName: kcp-kyma-metrics-collector
+      - emptyDir: {}
+        name: tmp
+---

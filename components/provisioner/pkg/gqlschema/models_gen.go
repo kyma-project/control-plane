@@ -163,6 +163,7 @@ type GardenerConfig struct {
 	OidcConfig                          *OIDCConfig            `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
+	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
 }
 
 type GardenerConfigInput struct {
@@ -192,6 +193,7 @@ type GardenerConfigInput struct {
 	OidcConfig                          *OIDCConfigInput       `json:"oidcConfig"`
 	ExposureClassName                   *string                `json:"exposureClassName"`
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
+	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
 }
 
 type GardenerUpgradeInput struct {
