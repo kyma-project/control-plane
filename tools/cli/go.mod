@@ -102,6 +102,7 @@ replace (
 	github.com/kyma-project/control-plane/components/kyma-environment-broker => ../../components/kyma-environment-broker
 	github.com/kyma-project/control-plane/components/provisioner => ../../components/provisioner
 	github.com/kyma-project/control-plane/components/reconciler => ../../components/reconciler
+	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b // CVE-2022-27664
 	k8s.io/api => k8s.io/api v0.24.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.23.5
 	k8s.io/apiserver => k8s.io/apiserver v0.23.5
