@@ -16,13 +16,13 @@ const BTPOperatorComponentName = "btp-operator"
 var ConfigMapGetter internal.ClusterIDGetter = internal.GetClusterIDWithKubeconfig
 
 type BTPOperatorOverridesStep struct {
-	operationManager *process.UpdateOperationManager
+	operationManager *process.OperationManager
 	components       input.ComponentListProvider
 }
 
 func NewBTPOperatorOverridesStep(os storage.Operations, components input.ComponentListProvider) *BTPOperatorOverridesStep {
 	return &BTPOperatorOverridesStep{
-		operationManager: process.NewUpdateOperationManager(os),
+		operationManager: process.NewOperationManager(os),
 		components:       components,
 	}
 }
@@ -31,14 +31,14 @@ func (s *BTPOperatorOverridesStep) Name() string {
 	return "BTPOperatorOverrides"
 }
 
-func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, logger logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *BTPOperatorOverridesStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	// get btp-operator component input and calculate overrides
 	ci, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion, operation.InputCreator.Configuration())
 	if err != nil {
-		return s.operationManager.OperationFailed(operation, "failed to get components", err, logger)
+		return s.operationManager.RetryOperation(operation, "failed to get components", err, 5*time.Second, 30*time.Second, logger)
 	}
 	if err := s.setBTPOperatorOverrides(&ci, operation, logger); err != nil {
-		return s.operationManager.OperationFailed(operation, "failed to create BTP Operator input", err, logger)
+		return s.operationManager.RetryOperation(operation, "failed to create BTP Operator input", err, 5*time.Second, 30*time.Second, logger)
 	}
 
 	// find last btp-operator config if any
@@ -66,7 +66,7 @@ func (s *BTPOperatorOverridesStep) Run(operation internal.UpdatingOperation, log
 	return operation, 0, nil
 }
 
-func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Component, operation internal.UpdatingOperation, logger logrus.FieldLogger) error {
+func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Component, operation internal.Operation, logger logrus.FieldLogger) error {
 	clusterID := operation.InstanceDetails.ServiceManagerClusterID
 	if clusterID == "" {
 		var err error
@@ -78,7 +78,7 @@ func (s *BTPOperatorOverridesStep) setBTPOperatorOverrides(c *reconcilerApi.Comp
 	creds := operation.ProvisioningParameters.ErsContext.SMOperatorCredentials
 	c.Configuration = internal.GetBTPOperatorReconcilerOverrides(creds, clusterID)
 	if clusterID != operation.InstanceDetails.ServiceManagerClusterID {
-		f := func(op *internal.UpdatingOperation) {
+		f := func(op *internal.Operation) {
 			op.InstanceDetails.ServiceManagerClusterID = clusterID
 		}
 		_, _, err := s.operationManager.UpdateOperation(operation, f, logger)

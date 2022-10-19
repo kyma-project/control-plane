@@ -489,23 +489,21 @@ func NewDeprovisioningOperationWithID(operationID string, instance *Instance) (D
 	}, nil
 }
 
-func NewUpdateOperation(operationID string, instance *Instance, updatingParams UpdatingParametersDTO) UpdatingOperation {
+func NewUpdateOperation(operationID string, instance *Instance, updatingParams UpdatingParametersDTO) Operation {
 
-	op := UpdatingOperation{
-		Operation: Operation{
-			ID:                     operationID,
-			Version:                0,
-			Description:            "Operation created",
-			InstanceID:             instance.InstanceID,
-			State:                  orchestration.Pending,
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			Type:                   OperationTypeUpdate,
-			InstanceDetails:        instance.InstanceDetails,
-			FinishedStages:         make([]string, 0),
-			ProvisioningParameters: instance.Parameters,
-			UpdatingParameters:     updatingParams,
-		},
+	op := Operation{
+		ID:                     operationID,
+		Version:                0,
+		Description:            "Operation created",
+		InstanceID:             instance.InstanceID,
+		State:                  orchestration.Pending,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
+		Type:                   OperationTypeUpdate,
+		InstanceDetails:        instance.InstanceDetails,
+		FinishedStages:         make([]string, 0),
+		ProvisioningParameters: instance.Parameters,
+		UpdatingParameters:     updatingParams,
 	}
 
 	if updatingParams.OIDC != nil {

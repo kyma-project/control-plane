@@ -13,11 +13,11 @@ type RuntimeVersionConfiguratorForUpdating struct {
 }
 
 // ForUpdating provides a mock function with given fields: op
-func (_m *RuntimeVersionConfiguratorForUpdating) ForUpdating(op internal.UpdatingOperation) (*internal.RuntimeVersionData, error) {
+func (_m *RuntimeVersionConfiguratorForUpdating) ForUpdating(op internal.Operation) (*internal.RuntimeVersionData, error) {
 	ret := _m.Called(op)
 
 	var r0 *internal.RuntimeVersionData
-	if rf, ok := ret.Get(0).(func(internal.UpdatingOperation) *internal.RuntimeVersionData); ok {
+	if rf, ok := ret.Get(0).(func(internal.Operation) *internal.RuntimeVersionData); ok {
 		r0 = rf(op)
 	} else {
 		if ret.Get(0) != nil {
@@ -26,7 +26,7 @@ func (_m *RuntimeVersionConfiguratorForUpdating) ForUpdating(op internal.Updatin
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(internal.UpdatingOperation) error); ok {
+	if rf, ok := ret.Get(1).(func(internal.Operation) error); ok {
 		r1 = rf(op)
 	} else {
 		r1 = ret.Error(1)

@@ -43,13 +43,13 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 		log.Infof("instance already deleted", err)
 		return operation, 0 * time.Second, nil
 	default:
-		log.Errorf("unable to get instance from storage: %s", err)
+		log.Errorf("unable to get instance from the storage: %s", err)
 		return operation, 1 * time.Second, nil
 	}
 
 	if operation.Temporary {
 		log.Info("Removing the RuntimeID field from the instance")
-		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID)
+		backoff = s.removeRuntimeIDFromInstance(operation.InstanceID, log)
 		if backoff != 0 {
 			return operation, backoff, nil
 		}
@@ -60,7 +60,7 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 		}, log)
 	} else {
 		log.Info("Removing the instance permanently")
-		backoff = s.removeInstancePermanently(operation.InstanceID)
+		backoff = s.removeInstancePermanently(operation.InstanceID, log)
 		if backoff != 0 {
 			return operation, backoff, nil
 		}
@@ -74,11 +74,12 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 	return operation, backoff, nil
 }
 
-func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.Duration {
+func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string, log logrus.FieldLogger) time.Duration {
 	backoff := time.Second
 
 	instance, err := s.instanceStorage.GetByID(instanceID)
 	if err != nil {
+		log.Errorf("unable to get instance %s from the storage: %s", instanceID, err)
 		return backoff
 	}
 
@@ -86,15 +87,17 @@ func (s RemoveInstanceStep) removeRuntimeIDFromInstance(instanceID string) time.
 	instance.RuntimeID = ""
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
+		log.Errorf("unable to update instance %s in the storage: %s", instanceID, err)
 		return backoff
 	}
 
 	return 0
 }
 
-func (s RemoveInstanceStep) removeInstancePermanently(instanceID string) time.Duration {
+func (s RemoveInstanceStep) removeInstancePermanently(instanceID string, log logrus.FieldLogger) time.Duration {
 	err := s.instanceStorage.Delete(instanceID)
 	if err != nil {
+		log.Errorf("unable to remove instance %s from the storage: %s", instanceID, err)
 		return 10 * time.Second
 	}
 

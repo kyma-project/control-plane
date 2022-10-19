@@ -42,7 +42,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
-const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 
 // TODO: Remove after data migration
 const migrationErrThreshold = 10
@@ -57,12 +57,13 @@ type config struct {
 	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
 
 	Database struct {
-		User     string `envconfig:"default=postgres"`
-		Password string `envconfig:"default=password"`
-		Host     string `envconfig:"default=localhost"`
-		Port     string `envconfig:"default=5432"`
-		Name     string `envconfig:"default=provisioner"`
-		SSLMode  string `envconfig:"default=disable"`
+		User        string `envconfig:"default=postgres"`
+		Password    string `envconfig:"default=password"`
+		Host        string `envconfig:"default=localhost"`
+		Port        string `envconfig:"default=5432"`
+		Name        string `envconfig:"default=provisioner"`
+		SSLMode     string `envconfig:"default=disable"`
+		SSLRootCert string `envconfig:"optional"`
 	}
 
 	ProvisioningTimeout            queue.ProvisioningTimeouts
@@ -157,7 +158,7 @@ func main() {
 	log.Infof("Config: %s", cfg.String())
 
 	connString := fmt.Sprintf(connStringFormat, cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
-		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode)
+		cfg.Database.Password, cfg.Database.Name, cfg.Database.SSLMode, cfg.Database.SSLRootCert)
 
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")

@@ -193,11 +193,13 @@ spec:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-broker-db-name
-            - name: APP_DATABASE_SSL
+            - name: APP_DATABASE_SSLMODE
               valueFrom:
                 secretKeyRef:
                   name: kcp-postgresql
                   key: postgresql-sslMode
+            - name: APP_DATABASE_SSLROOTCERT
+              value: /secrets/cloudsql-sslrootcert/server-ca.pem
             - name: APP_AVS_OAUTH_TOKEN_ENDPOINT
               valueFrom:
                 secretKeyRef:
@@ -398,6 +400,9 @@ spec:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
+            - name: cloudsql-sslrootcert
+              mountPath: /secrets/cloudsql-sslrootcert
+              readOnly: true
           {{- end }}
           {{- if .Values.broker.profiler.memory }}
             - name: keb-memory-profile
@@ -431,6 +436,13 @@ spec:
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
+      - name: cloudsql-sslrootcert
+        secret:
+          secretName: kcp-postgresql
+          items: 
+          - key: postgresql-sslRootCert
+            path: server-ca.pem
+          optional: true
       {{- end}}
       - name: gardener-kubeconfig
         secret:
