@@ -2,9 +2,7 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strings"
-	"text/template"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/tools/cli/pkg/logger"
@@ -94,10 +92,7 @@ func (cmd *UpgradeKymaCommand) Validate() error {
 	if GlobalOpts.SlackAPIURL() == "" {
 		fmt.Println("Note: Ignore sending slack notification when slackAPIURL is empty")
 	}
-	err = cmd.promtUserWithOrchestration()
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -118,41 +113,4 @@ func ValidateUpgradeKymaVersionFmt(version string) error {
 	}
 
 	return fmt.Errorf("unsupported version format: %s", version)
-}
-
-func (cmd *UpgradeKymaCommand) promtUserWithOrchestration() error {
-	statusResponse := cmd.prepareUpgradeCommandDetails()
-
-	funcMap := template.FuncMap{
-		"orchestrationTarget": orchestrationTarget,
-		"orchestrationStates": orchestrationStates,
-	}
-	tmpl, err := template.New("kymaUpgradePreview").Funcs(funcMap).Parse(kymaUpgradePreviewTpl)
-	if err != nil {
-		return errors.Wrap(err, "while parsing kyma upgrade preview template")
-	}
-	err = tmpl.Execute(os.Stdout, statusResponse)
-	if err != nil {
-		return errors.Wrap(err, "while printing kyma upgrade preview")
-	}
-
-	if !PromptUser("The following upgrade operation will be orchestrated. Are you sure you want to continue?") {
-		return errors.New("Upgrade operation aborted")
-	}
-
-	return nil
-}
-
-func (cmd *UpgradeKymaCommand) prepareUpgradeCommandDetails() orchestration.StatusResponse {
-	orchestrationParameters := orchestration.Parameters{
-		Targets:  cmd.orchestrationParams.Targets,
-		Strategy: cmd.orchestrationParams.Strategy,
-		Kyma:     cmd.orchestrationParams.Kyma,
-	}
-	orchestration := orchestration.StatusResponse{
-		Type:       "Kyma Upgrade Preview",
-		Parameters: orchestrationParameters,
-	}
-
-	return orchestration
 }
