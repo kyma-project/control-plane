@@ -16,6 +16,7 @@ type BrokerStorage interface {
 	Deprovisioning() Deprovisioning
 	Orchestrations() Orchestrations
 	RuntimeStates() RuntimeStates
+	Events() Events
 }
 
 const (
@@ -87,4 +88,8 @@ func (s storage) Orchestrations() Orchestrations {
 
 func (s storage) RuntimeStates() RuntimeStates {
 	return s.runtimeStates
+}
+
+func (s storage) Events() Events {
+	return s.events
 }

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -281,6 +283,10 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 			return ersContext, parameters, errors.Wrap(err, "while decoding kubeconfig")
 		}
 		parameters.Kubeconfig = string(decodedKubeconfig)
+		err = validateKubeconfig(parameters.Kubeconfig)
+		if err != nil {
+			return ersContext, parameters, errors.Wrap(err, "while validating kubeconfig")
+		}
 	}
 
 	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {
@@ -303,6 +309,19 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 
 	return ersContext, parameters, nil
+}
+
+// Rudimentary kubeconfig validation
+func validateKubeconfig(kubeconfig string) error {
+	config, err := clientcmd.Load([]byte(kubeconfig))
+	if err != nil {
+		return err
+	}
+	err = clientcmd.Validate(*config)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (internal.ERSContext, error) {

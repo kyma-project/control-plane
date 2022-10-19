@@ -16,7 +16,7 @@ const DryRunPrefix = "dry_run-"
 const retryDuration = 10 * time.Second
 
 type UpgradeShootStep struct {
-	operationManager    *process.UpdateOperationManager
+	operationManager    *process.OperationManager
 	provisionerClient   provisioner.Client
 	runtimeStateStorage storage.RuntimeStates
 }
@@ -27,7 +27,7 @@ func NewUpgradeShootStep(
 	cli provisioner.Client) *UpgradeShootStep {
 
 	return &UpgradeShootStep{
-		operationManager:    process.NewUpdateOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		provisionerClient:   cli,
 		runtimeStateStorage: runtimeStorage,
 	}
@@ -37,7 +37,7 @@ func (s *UpgradeShootStep) Name() string {
 	return "Upgrade_Shoot"
 }
 
-func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *UpgradeShootStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.RuntimeID == "" {
 		log.Infof("Runtime does not exists, skipping a call to Provisioner")
 		return operation, 0, nil
@@ -65,7 +65,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 		}
 
 		repeat := time.Duration(0)
-		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+		operation, repeat, _ = s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ProvisionerOperationID = *provisionerResponse.ID
 			op.Description = "update in progress"
 		}, log)
@@ -77,7 +77,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 	log.Infof("call to provisioner succeeded for update, got operation ID %q", *provisionerResponse.ID)
 
-	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.Operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, nil, gardenerUpgradeInputToConfigInput(input))
 	rs.KymaVersion = operation.RuntimeVersion.Version
 	err = s.runtimeStateStorage.Insert(rs)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s *UpgradeShootStep) Run(operation internal.UpdatingOperation, log logrus.
 
 }
 
-func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.UpdatingOperation) (gqlschema.UpgradeShootInput, error) {
+func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.Operation) (gqlschema.UpgradeShootInput, error) {
 	operation.InputCreator.SetProvisioningParameters(operation.ProvisioningParameters)
 	if operation.LastRuntimeState.ClusterConfig.OidcConfig != nil {
 		operation.InputCreator.SetOIDCLastValues(*operation.LastRuntimeState.ClusterConfig.OidcConfig)

@@ -180,7 +180,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 
-	updateManager := update.NewManager(db.Operations(), eventBroker, time.Hour, logs)
+	updateManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
 	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
 		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
@@ -394,6 +394,11 @@ func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOper
 	return op.ID
 }
 
+func (s *BrokerSuiteTest) LastOperation(iid string) *internal.Operation {
+	op, _ := s.db.Operations().GetLastOperation(iid)
+	return op
+}
+
 func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -422,6 +427,20 @@ func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID str
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, gqlschema.OperationStateFailed, op.RuntimeID)
 }
 
+func (s *BrokerSuiteTest) FailDeprovisioningOperationByProvisioner(operationID string) {
+	var op *internal.DeprovisioningOperation
+	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+		op, _ = s.db.Operations().GetDeprovisioningOperationByID(operationID)
+		if op.RuntimeID != "" {
+			return true, nil
+		}
+		return false, nil
+	})
+	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
+
+	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, gqlschema.OperationStateFailed, op.RuntimeID)
+}
+
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
 	var op *internal.DeprovisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -445,9 +464,9 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 }
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
-	var op *internal.UpdatingOperation
+	var op *internal.Operation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.db.Operations().GetUpdatingOperationByID(operationID)
+		op, _ = s.db.Operations().GetOperationByID(operationID)
 		if op.RuntimeID == "" {
 			return false, nil
 		}
@@ -457,7 +476,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 		return true, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.Operation.ID)
+	s.finishOperatioByOpIDnByProvisioner(gqlschema.OperationTypeUpgradeShoot, gqlschema.OperationStateSucceeded, op.ID)
 }
 
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
@@ -571,8 +590,25 @@ func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
 	assert.NoError(s.t, err)
 }
 
+func (s *BrokerSuiteTest) FailDeprovisioningByReconciler(opID string) {
+
+	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+		op, err := s.db.Operations().GetDeprovisioningOperationByID(opID)
+		if err != nil {
+			return false, nil
+		}
+		_, err = s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
+		if err != nil {
+			return false, err
+		}
+		s.reconcilerClient.ChangeClusterState(op.RuntimeID, op.ClusterConfigurationVersion, reconcilerApi.StatusDeleteError)
+		return true, nil
+	})
+	assert.NoError(s.t, err)
+}
+
 func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string) {
-	op, err := s.db.Operations().GetUpdatingOperationByID(operationID)
+	op, err := s.db.Operations().GetOperationByID(operationID)
 	assert.NoError(s.t, err)
 	var state *reconcilerApi.HTTPClusterResponse
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {

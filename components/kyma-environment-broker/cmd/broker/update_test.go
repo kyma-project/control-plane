@@ -162,6 +162,7 @@ func TestExpiration(t *testing.T) {
    }`)
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	// when
 	// OSB update:
@@ -179,6 +180,10 @@ func TestExpiration(t *testing.T) {
 		}
    }`)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	suite.WaitForLastOperation(iid, domain.InProgress)
+	opID = suite.LastOperation(iid).ID
+	suite.FailDeprovisioningByReconciler(opID)
+	suite.FailDeprovisioningOperationByProvisioner(opID)
 	instance := suite.GetInstance(iid)
 	assert.True(suite.t, instance.IsExpired())
 
@@ -192,13 +197,33 @@ func TestExpiration(t *testing.T) {
            "globalaccount_id": "g-account-id",
            "user_id": "john.smith@email.com",
            "active": true
-       }
+       },
        "parameters": {
 			
 		}
    }`)
 	// expired instance does not support an update
-	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// when
+	// OSB update: retrigger suspension when lat suspension failed
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com",
+           "active": false
+       },
+       "parameters": {
+			
+		}
+   }`)
+	// expired instance does not support an update
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// we expect new suspension in progress operation (the last operation before is failed)
+	suite.WaitForLastOperation(iid, domain.InProgress)
 }
 
 func TestExpirationOfNonTrial(t *testing.T) {
@@ -642,7 +667,7 @@ func TestUpdateWithOwnClusterPlan(t *testing.T) {
 						"name": "testing-cluster",
 						"shootName": "shoot-name",
 						"shootDomain": "kyma-dev.shoot.canary.k8s-hana.ondemand.com",
-						"kubeconfig": "YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCg==",
+						"kubeconfig":"YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCmN1cnJlbnQtY29udGV4dDogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKY29udGV4dHM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY29udGV4dDoKICAgICAgY2x1c3Rlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKICAgICAgdXNlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUtdG9rZW4KY2x1c3RlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2FwaS5jbHVzdGVyLW5hbWUua3ltYS1kZXYuc2hvb3QuY2FuYXJ5Lms4cy1oYW5hLm9uZGVtYW5kLmNvbQogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogPi0KICAgICAgICBMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHQKdXNlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZS10b2tlbgogICAgdXNlcjoKICAgICAgdG9rZW46ID4tCiAgICAgICAgdE9rRW4K",
 						"kymaVersion": "2.4.0"
 			}
    }`)
@@ -659,7 +684,7 @@ func TestUpdateWithOwnClusterPlan(t *testing.T) {
            "user_id": "john.smith@email.com"
        },
 		"parameters": {
-			"kubeconfig": "YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCg==",
+			"kubeconfig":"YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnCmN1cnJlbnQtY29udGV4dDogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKY29udGV4dHM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY29udGV4dDoKICAgICAgY2x1c3Rlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUKICAgICAgdXNlcjogc2hvb3QtLWt5bWEtZGV2LS1jbHVzdGVyLW5hbWUtdG9rZW4KY2x1c3RlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZQogICAgY2x1c3RlcjoKICAgICAgc2VydmVyOiBodHRwczovL2FwaS5jbHVzdGVyLW5hbWUua3ltYS1kZXYuc2hvb3QuY2FuYXJ5Lms4cy1oYW5hLm9uZGVtYW5kLmNvbQogICAgICBjZXJ0aWZpY2F0ZS1hdXRob3JpdHktZGF0YTogPi0KICAgICAgICBMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHQKdXNlcnM6CiAgLSBuYW1lOiBzaG9vdC0ta3ltYS1kZXYtLWNsdXN0ZXItbmFtZS10b2tlbgogICAgdXNlcjoKICAgICAgdG9rZW46ID4tCiAgICAgICAgdE9rRW4K",
 			"kymaVersion": "2.5.0"
 		}
    }`)
@@ -2060,7 +2085,7 @@ func TestUpdateNetworkFilterPersisted(t *testing.T) {
 	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
 	suite.FinishUpdatingOperationByReconciler(updateOperationID)
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	suite.AssertDisabledNetworkFilterRuntimeState(instance.RuntimeID, updateOperationID, &disabled)
 	instance2 := suite.GetInstance(id)
@@ -2127,7 +2152,7 @@ func TestUpdateStoreNetworkFilterAndUpdate(t *testing.T) {
 	// then
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOperationID := suite.DecodeOperationID(resp)
-	updateOp, _ := suite.db.Operations().GetUpdatingOperationByID(updateOperationID)
+	updateOp, _ := suite.db.Operations().GetOperationByID(updateOperationID)
 	assert.NotNil(suite.t, updateOp.ProvisioningParameters.ErsContext.LicenseType)
 	instance2 := suite.GetInstance(id)
 	// license_type should be stored in the instance table for ERS context and future upgrades

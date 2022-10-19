@@ -86,7 +86,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			}
 			rvc := &automock2.RuntimeVersionConfiguratorForUpdating{}
 			rvc.On("ForUpdating",
-				mock.AnythingOfType("internal.UpdatingOperation")).
+				mock.AnythingOfType("internal.Operation")).
 				Return(ver, nil)
 			builder := &automock.CreatorForPlan{}
 			builder.On("CreateUpgradeShootInput",
@@ -95,11 +95,11 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 			step := NewInitialisationStep(is, os, rvc, builder)
 			updatingOperation := fixture.FixUpdatingOperation("up-id", "iid")
 			updatingOperation.State = orchestration.Pending
-			os.InsertUpdatingOperation(updatingOperation)
+			os.InsertOperation(updatingOperation.Operation)
 			tc.beforeFunc(os)
 
 			// when
-			_, d, err := step.Run(updatingOperation, logrus.New())
+			_, d, err := step.Run(updatingOperation.Operation, logrus.New())
 
 			// then
 			require.NoError(t, err)

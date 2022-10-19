@@ -6,16 +6,17 @@ import (
 )
 
 const (
-	connectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s"
+	connectionURLFormat = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 )
 
 type Config struct {
-	User     string `envconfig:"default=postgres"`
-	Password string `envconfig:"default=password"`
-	Host     string `envconfig:"default=localhost"`
-	Port     string `envconfig:"default=5432"`
-	Name     string `envconfig:"default=broker"`
-	SSLMode  string `envconfig:"default=disable"`
+	User        string `envconfig:"default=postgres"`
+	Password    string `envconfig:"default=password"`
+	Host        string `envconfig:"default=localhost"`
+	Port        string `envconfig:"default=5432"`
+	Name        string `envconfig:"default=broker"`
+	SSLMode     string `envconfig:"default=disable"`
+	SSLRootCert string `envconfig:"optional"`
 
 	SecretKey string `envconfig:"optional"`
 
@@ -26,5 +27,5 @@ type Config struct {
 
 func (cfg *Config) ConnectionURL() string {
 	return fmt.Sprintf(connectionURLFormat, cfg.Host, cfg.Port, cfg.User,
-		cfg.Password, cfg.Name, cfg.SSLMode)
+		cfg.Password, cfg.Name, cfg.SSLMode, cfg.SSLRootCert)
 }

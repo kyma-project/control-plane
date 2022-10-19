@@ -317,6 +317,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrchestrationError'
+  
+  /events:
+    get:
+      tags:
+        - Events
+      summary: returns a list of tracing events
+      operationId: listEvents
+      description: |
+        Lists all tracing events passing query parameters
+      parameters:
+        - in: query
+          name: runtimeIds
+          required: false
+          description: Filter by runtime IDs
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: instanceIds
+          required: false
+          description: Filter by instance IDs
+          schema:
+            type: array
+            items:
+              type: string
+        - in: query
+          name: operationIds
+          required: false
+          description: Filter by operation IDs
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "runtime_id=test not found"
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "internal error"
 
   /kubeconfig/{instance_id}:
     get:
@@ -1742,6 +1805,31 @@ components:
           example: azure
         status:
           $ref: '#/components/schemas/StatusDTO'
+
+    EventDTO:
+      type: object
+      properties:
+        level:
+          type: string
+          example: info
+          enum: [
+              "info",
+              "error"
+          ]
+        instanceID:
+          type: string
+          example: test-instance-123
+        operationID:
+          type: string
+          format: uuid
+          example: 054ac2c2-318f-45dd-855c-eee41513d40d
+        message:
+          type: string
+          example: "processing step: [Remove_Runtime]"
+        createdAt:
+          type: string
+          format: timestamp
+          example: "2022-10-18T13:52:24.598517Z"
 
     RuntimePage:
       type: object

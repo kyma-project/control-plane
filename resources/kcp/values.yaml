@@ -2,22 +2,22 @@ global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.31.2-6324aa52"
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:001a6ccb"
-    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:001a6ccb"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:e5264c61"
+    component_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/component:e5264c61"
     containerRegistry:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-2094"
+      version: "PR-2155"
     provisioner:
       dir:
-      version: "PR-2078"
+      version: "PR-2155"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1840"
     kyma_metrics_collector:
       dir:
-      version: "PR-2055"
+      version: "PR-2115"
     tests:
       provisioner:
         dir:
@@ -109,6 +109,7 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
+      sslRootCert: ""
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""

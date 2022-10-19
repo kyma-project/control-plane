@@ -118,6 +118,34 @@ func TestConverting_Deprovisioning(t *testing.T) {
 	assert.Equal(t, runtime.StateDeprovisioning, dto.Status.State)
 }
 
+func TestConverting_DeprovisionFailed(t *testing.T) {
+	// given
+	instance := fixInstance()
+	svc := NewConverter("eu")
+
+	// when
+	dto, _ := svc.NewDTO(instance)
+	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+	svc.ApplyDeprovisioningOperation(&dto, fixDeprovisionOperation(domain.Failed, time.Now().Add(time.Second)))
+
+	// then
+	assert.Equal(t, runtime.StateFailed, dto.Status.State)
+}
+
+func TestConverting_SuspendFailed(t *testing.T) {
+	// given
+	instance := fixInstance()
+	svc := NewConverter("eu")
+
+	// when
+	dto, _ := svc.NewDTO(instance)
+	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+	svc.ApplySuspensionOperations(&dto, fixSuspensionOperation(domain.Failed, time.Now().Add(time.Second)))
+
+	// then
+	assert.Equal(t, runtime.StateFailed, dto.Status.State)
+}
+
 func TestConverting_SuspendedAndUpdated(t *testing.T) {
 	// given
 	instance := fixInstance()

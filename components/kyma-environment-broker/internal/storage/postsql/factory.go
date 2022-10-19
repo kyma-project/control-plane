@@ -50,6 +50,7 @@ type ReadSession interface {
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
+	ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error)
 }
 
 //go:generate mockery --name=WriteSession

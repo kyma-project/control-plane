@@ -215,11 +215,14 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 		if dto.Status.Unsuspension == nil ||
 			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
-			dto.Status.State = pkg.StateSuspended
-			if dto.Status.Suspension.Data[0].State == string(domain.InProgress) {
+			switch dto.Status.Suspension.Data[0].State {
+			case string(domain.InProgress):
 				dto.Status.State = pkg.StateDeprovisioning
+			case string(domain.Failed):
+				dto.Status.State = pkg.StateFailed
+			default:
+				dto.Status.State = pkg.StateSuspended
 			}
 		}
 	}
-
 }

@@ -16,14 +16,14 @@ import (
 
 type ApplyReconcilerConfigurationStep struct {
 	reconcilerClient    reconciler.Client
-	operationManager    *process.UpdateOperationManager
+	operationManager    *process.OperationManager
 	runtimeStateStorage storage.RuntimeStates
 }
 
 func NewApplyReconcilerConfigurationStep(os storage.Operations, runtimeStorage storage.RuntimeStates, reconcilerClient reconciler.Client) *ApplyReconcilerConfigurationStep {
 	return &ApplyReconcilerConfigurationStep{
 		reconcilerClient:    reconcilerClient,
-		operationManager:    process.NewUpdateOperationManager(os),
+		operationManager:    process.NewOperationManager(os),
 		runtimeStateStorage: runtimeStorage,
 	}
 }
@@ -32,7 +32,7 @@ func (s *ApplyReconcilerConfigurationStep) Name() string {
 	return "Apply_Reconciler_Configuration"
 }
 
-func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperation, log logrus.FieldLogger) (internal.UpdatingOperation, time.Duration, error) {
+func (s *ApplyReconcilerConfigurationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if err := internal.CheckBTPCredsValid(*operation.LastRuntimeState.ClusterSetup); err != nil {
 		log.Errorf("Sanity check for BTP operator configuration failed: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "invalid BTP Operator configuration", err, log)
@@ -56,7 +56,7 @@ func (s *ApplyReconcilerConfigurationStep) Run(operation internal.UpdatingOperat
 	}
 
 	log.Infof("Reconciler configuration version %d", state.ConfigurationVersion)
-	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.UpdatingOperation) {
+	updatedOperation, repeat, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		op.ClusterConfigurationVersion = state.ConfigurationVersion
 		op.CheckReconcilerStatus = true
 	}, log)

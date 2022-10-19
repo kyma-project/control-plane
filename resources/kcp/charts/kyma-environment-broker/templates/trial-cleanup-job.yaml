@@ -67,11 +67,13 @@ spec:
                     secretKeyRef:
                       name: kcp-postgresql
                       key: postgresql-broker-db-name
-                - name: APP_DATABASE_SSL
+                - name: APP_DATABASE_SSLMODE
                   valueFrom:
                     secretKeyRef:
                       name: kcp-postgresql
                       key: postgresql-sslMode
+                - name: APP_DATABASE_SSLROOTCERT
+                  value: /secrets/cloudsql-sslrootcert/server-ca.pem
                 - name: APP_BROKER_URL
                   value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
                 - name: APP_BROKER_TOKEN_URL
@@ -98,6 +100,9 @@ spec:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
+                - name: cloudsql-sslrootcert
+                  mountPath: /secrets/cloudsql-sslrootcert
+                  readOnly: true
               {{ end }}
 
             {{- if eq .Values.global.database.embedded.enabled false }}
@@ -118,5 +123,12 @@ spec:
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+            - name: cloudsql-sslrootcert
+              secret:
+                secretName: kcp-postgresql
+                items: 
+                - key: postgresql-sslRootCert
+                  path: server-ca.pem
+                optional: true
             {{end}}
   schedule: "{{ .Values.trialCleanup.schedule }}"
