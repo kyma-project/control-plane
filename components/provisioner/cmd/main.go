@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/avast/retry-go"
@@ -308,6 +309,7 @@ func main() {
 	gqlHandler := handler.New(executableSchema)
 	gqlHandler.AddTransport(transport.POST{})
 	gqlHandler.AddTransport(transport.GET{})
+	gqlHandler.Use(extension.Introspection{})
 	gqlHandler.SetErrorPresenter(presenter.Do)
 	router.Handle(cfg.APIEndpoint, gqlHandler)
 	router.HandleFunc("/healthz", healthz.NewHTTPHandler(log.StandardLogger()))
