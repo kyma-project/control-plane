@@ -34,22 +34,25 @@ The timeout for processing the whole provisioning operation is set to `24h`. In 
 
 ## Deprovisioning
 
-Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning/initialisation.go#L46) step.
+Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. The first step finds the previous operation and copies the data.
 
-Any deprovisioning step shouldn't block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip your step in case of retry timeout. Set at most 5min timeout for retries in your step.
-
+None of the deprovisioning steps should block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip a step in case of a retry timeout. Set a 5-minute, at the most, timeout for retries in a step.
+Each step has its own separate `stage`, so once the step is successfully executed, it won't be retried.
 The deprovisioning process contains the following steps:
 
-| Step                         | Domain                           | Description                                                        | Owner                 |
-|------------------------------|----------------------------------|--------------------------------------------------------------------|-----------------------|
-| BTPOperator_Cleanup          | BTP                              | Deletes service instances and service bindings from the cluster.    | Team Gopher           |
-| De-provision_AVS_Evaluations | AvS                              | Removes external and internal monitoring of Kyma Runtime.          | Team Gopher           |
-| EDP_Deregistration           | Event Data Platform              | Removes all SKR entries from the Event Data Platform.              | Team Gopher           |
-| IAS_Deregistration           | Identity Authentication Service  | Removes the ServiceProvider from IAS.                              | Team Gopher           |
-| Deregister_Cluster           | Reconciler                       | Removes the cluster from the Reconciler.                           | Team Gopher           |
-| Check_Cluster_Deregistration | Reconciler                       | Checks if the cluster deregistration is complete                   | Team Gopher           |
-| Remove_Runtime               | Deprovisioning                   | Triggers deprovisioning of a Runtime in the Runtime Provisioner.   | Team Gopher           | 
-
+| Step                         | Domain                          | Description                                                                                                                                                          |
+|------------------------------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Init_Step                    | Deprovisioning                  | Changes the state from `pending` to `in progress` if there is no other operation in progress. It initializes the `InstanceDetails` from the last finished operation. |
+| BTPOperator_Cleanup          | BTP                             | Deletes service instances and service bindings from the cluster.                                                                                                     | 
+| De-provision_AVS_Evaluations | AvS                             | Removes external and internal monitoring of Kyma Runtime.                                                                                                            |
+| EDP_Deregistration           | Event Data Platform             | Removes all SKR entries from the Event Data Platform.                                                                                                                |
+| IAS_Deregistration           | Identity Authentication Service | Removes the ServiceProvider from IAS.                                                                                                                                | 
+| Deregister_Cluster           | Reconciler                      | Removes the cluster from the Reconciler.                                                                                                                             | 
+| Check_Cluster_Deregistration | Reconciler                      | Checks if the cluster deregistration is complete.                                                                                                                    | 
+| Remove_Runtime               | Provisioner                     | Triggers deprovisioning of a Runtime in the Runtime Provisioner.                                                                                                     | 
+| Check_Runtime_Removal        | Provisioner                     | Checks if the cluster deprovisioning is complete.                                                                                                                    |
+| Release_Subscription         | Subscriptions                   | Releases the subscription used by the cluster.                                                                                                                       |
+| Remove_Instance              | Deprovisioning                  | Removes the instance from the database.                                                                                                                              |
 >**NOTE:** The timeout for processing this operation is set to `24h`.
 
 ## Upgrade Kyma
@@ -101,14 +104,14 @@ You can configure Runtime operations by providing additional steps. To add a new
   Provisioning
   </summary>
 
-1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning) directory.
+1. Create a new file in [this directory](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning).
 
-2. Implement this interface in your provisioning step:
+2. Implement the following interface in your provisioning or deprovisioning step:
 
     ```go
     type Step interface {
         Name() string
-        Run(operation internal.ProvisioningOperation, logger logrus.FieldLogger) (internal.ProvisioningOperation, time.Duration, error)
+        Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error)
     }
     ```
 
@@ -134,13 +137,10 @@ You can configure Runtime operations by providing additional steps. To add a new
     To do this, add this field to the provisioning operation in which you want to save data:
 
     ```go
-    type ProvisioningOperation struct {
-        Operation `json:"-"`
+    type Operation struct {
 
         // These fields are serialized to JSON and stored in the storage
-        ProvisioningParameters string `json:"provisioning_parameters"`
-
-        NewFieldFromCustomStep string `json:"new_field_from_custom_step"`    
+        RuntimeVersion RuntimeVersionData `json:"runtime_version"`
 
         // These fields are not stored in the storage
         InputCreator ProvisionerInputCreator `json:"-"`
@@ -188,7 +188,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
 
     // Your step can be repeated in case any other step fails, even if your step has already done its job
-    func (s *HelloWorldStep) Run(operation internal.ProvisioningOperation, log *logrus.Entry) (internal.ProvisioningOperation, time.Duration, error) {
+    func (s *HelloWorldStep) Run(operation internal.Operation, log *logrus.Entry) (internal.Operation, time.Duration, error) {
         log.Info("Start step")
 
         // Check whether your step should be run or if its job has been done in the previous iteration
@@ -213,10 +213,10 @@ You can configure Runtime operations by providing additional steps. To add a new
         }
 
         // If a call or any other action is time-consuming, you can save the result in the operation
-        // If you need an extra field in the ProvisioningOperation structure, add it first
-        // in the step below; beforehand, you can check if a given value already exists in the operation
+        // If you need an extra field in the Operation structure, add it first
+        // In the following step, you can check beforehand if a given value already exists in the operation
         operation.HelloWorlds = body.data
-        updatedOperation, err := s.operationStorage.UpdateProvisioningOperation(operation)
+        updatedOperation, err := s.operationStorage.UpdateOperation(operation)
         if err != nil {
             log.Errorf("error: %s", err)
             // Handle a process failure by returning an error or time.Duration
@@ -253,144 +253,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     Once all steps in the stage have finished succeeded, the stage won't be retried even if the application is restarted.
 
   </details>
-  <details>
-  <summary label="deprovisioning">
-  Deprovisioning
-  </summary>
-
-  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/deprovisioning) directory.
-
-2. Implement this interface in your deprovisioning step:
-
-    ```go
-    type Step interface {
-        Name() string
-        Run(operation internal.DeprovisioningOperation, logger logrus.FieldLogger) (internal.DeprovisioningOperation, time.Duration, error)
-    }
-    ```
-
-    - `Name()` method returns the name of the step that is used in logs.
-    - `Run()` method implements the functionality of the step. The method receives operations as an argument to which it can add appropriate overrides or save other used variables.
-
-
-    If your functionality contains long-term processes, you can store data in the storage.
-    To do this, add this field to the deprovisioning operation in which you want to save data:
-
-    ```go
-    type DeprovisioningOperation struct {
-        Operation `json:"-"`
-
-        // add additional data here
-    }
-    ```
-
-    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You should always return the modified operation from the method.
-
-    See the example of the step implementation:
-
-    ```go
-    package deprovisioning
-
-    import (
-        "encoding/json"
-        "net/http"
-        "time"
-
-        "github.com/kyma-incubator/compass/components/provisioner/pkg/gqlschema"
-        "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal"
-        "github.com/kyma-incubator/compass/components/kyma-environment-broker/internal/storage"
-
-        "github.com/sirupsen/logrus"
-    )
-
-    type HelloWorldStep struct {
-        operationStorage storage.Operations
-        client           *http.Client
-    }
-
-    type ExternalBodyResponse struct {
-        data  string
-        token string
-    }
-
-    func NewHelloWorldStep(operationStorage storage.Operations, client *http.Client) *HelloWorldStep {
-        return &HelloWorldStep{
-            operationStorage: operationStorage,
-            client:           client,
-        }
-    }
-
-    func (s *HelloWorldStep) Name() string {
-        return "Hello_World"
-    }
-
-    // Your step can be repeated in case any other step fails, even if your step has already done its job
-    func (s *HelloWorldStep) Run(operation internal.DeprovisioningOperation, log *logrus.Entry) (internal.DeprovisioningOperation, time.Duration, error) {
-        log.Info("Start step")
-
-        // Check whether your step should be run or if its job has been done in the previous iteration
-        // All non-save operation data are empty (e.g. InputCreator overrides)
-
-        // Add your logic here
-
-        // Add a call to an external service (optional)
-        response, err := s.client.Get("http://example.com")
-        if err != nil {
-            // Error during a call to an external service may be temporary so you should return time.Duration
-            // All steps will be repeated in X seconds/minutes
-            return operation, 1 * time.Second, nil
-        }
-        defer response.Body.Close()
-
-        body := ExternalBodyResponse{}
-        err = json.NewDecoder(response.Body).Decode(&body)
-        if err != nil {
-            log.Errorf("error: %s", err)
-            // Handle a process failure by returning an error or time.Duration
-        }
-
-        // If a call or any other action is time-consuming, you can save the result in the operation
-        // If you need an extra field in the DeprovisioningOperation structure, add it first
-        // in the step below; beforehand, you can check if a given value already exists in the operation
-        operation.HelloWorlds = body.data
-        updatedOperation, err := s.operationStorage.UpdateDeprovisioningOperation(operation)
-        if err != nil {
-            log.Errorf("error: %s", err)
-            // Handle a process failure by returning an error or time.Duration
-        }
-
-        // If your step finishes with data which should be added to override used during the Runtime deprovisioning,
-        // add an extra value to operation.InputCreator, then return the updated version of the Application
-        updatedOperation.InputCreator.SetOverrides("component-name", []*gqlschema.ConfigEntryInput{
-            {
-                Key:   "some.key",
-                Value: body.token,
-            },
-        })
-
-        // Return the updated version of the Application
-        return *updatedOperation, 0, nil
-    }
-    ```
-
-3. Add the step to the [`/cmd/broker/main.go`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/cmd/broker/main.go) file:
-
-    ```go
-    deprovisioningSteps := []struct {
-   		weight   int
-   		step     deprovisioning.Step
-   	}{
-   		{
-   			weight: 1,
-   			step:   deprovisioning.NewHelloWorldStep(db.Operations(), &http.Client{}),
-   		},
-    }
-    ```
-
-    The weight of the step should be greater than or equal to 1. If you want the step to be performed before a call to the Runtime Provisioner, its weight must be lower than the weight of the `remove_runtime` step.
-
-   </details>
-
+  
   <details>
   <summary label="upgrade">
   Upgrade
