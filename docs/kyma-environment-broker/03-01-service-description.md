@@ -194,7 +194,7 @@ The mapping between the platform region and the provider region (Azure, AWS or G
 
 ## Own cluster plan
 
-These are the provisioning parameters for the `own_cluster` plan that you can configure:
+These are the provisioning parameters for the `own_cluster` plan that you configure:
 
 <div tabs name="own_cluster-plan" group="own_cluster-plan">
   <details>
@@ -204,7 +204,7 @@ These are the provisioning parameters for the `own_cluster` plan that you can co
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|----------|---------------|
-| **kubeconfig** | string | Kubeconfig that points to the cluster that Kyma should be installed on. | Yes | None |
-| **shootDomain** | string | Domain of the shoot that the Kyma should be installed on. | Yes | None |
-| **shootName** | string | Name of the shoot that the Kyma should be installed on. | Yes | None |
+| **kubeconfig** | string | Kubeconfig that points to the cluster where you install Kyma. | Yes | None |
+| **shootDomain** | string | Domain of the shoot where you install Kyma. | Yes | None |
+| **shootName** | string | Name of the shoot where you install Kyma. | Yes | None |
 
