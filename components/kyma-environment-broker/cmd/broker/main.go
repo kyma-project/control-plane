@@ -125,6 +125,7 @@ type Config struct {
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
+	LifecycleManagerIntegrationDisabled        bool   `envconfig:"default=true"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -169,9 +170,10 @@ type ProfilerConfig struct {
 }
 
 const (
-	createRuntimeStageName = "create_runtime"
-	checkKymaStageName     = "check_kyma"
-	startStageName         = "start"
+	createRuntimeStageName      = "create_runtime"
+	checkKymaStageName          = "check_kyma"
+	createKymaResourceStageName = "create_kyma_resource"
+	startStageName              = "start"
 )
 
 func periodicProfile(logger lager.Logger, profiler ProfilerConfig) {
@@ -620,7 +622,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 
 	const postActionsStageName = "post_actions"
 	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName,
-		checkKymaStageName, postActionsStageName})
+		checkKymaStageName, createKymaResourceStageName, postActionsStageName})
 	/*
 			The provisioning process contains the following stages:
 			1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
@@ -707,6 +709,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 			condition: skipForPreviewPlan,
+		},
+		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			stage:    createKymaResourceStageName,
+			step:     provisioning.NewApplyKymaStep(db.Operations()),
 		},
 		// post actions
 		{
