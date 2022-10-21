@@ -666,6 +666,8 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
+			// Preview plan does not calls Reconciler so it does not need overrides
+			condition: skipForPreviewPlan,
 		},
 		{
 			condition: provisioning.WhenBTPOperatorCredentialsProvided,
@@ -693,12 +695,14 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:  provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 		},
 		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			stage:     createRuntimeStageName,
+			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			condition: skipForPreviewPlan,
 		},
 		{
-			stage: checkKymaStageName,
-			step:  provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
+			stage:     checkKymaStageName,
+			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
+			condition: skipForPreviewPlan,
 		},
 		// post actions
 		{
@@ -872,7 +876,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 1,
 			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
-			cnd:    upgrade_kyma.ForKyma2,
+			cnd:    upgrade_kyma.SkipForPreviewPlan,
 		},
 		{
 			weight: 2,
@@ -895,6 +899,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 10,
 			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			cnd:    upgrade_kyma.SkipForPreviewPlan,
 		},
 	}
 	for _, step := range upgradeKymaSteps {
@@ -964,6 +969,10 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 func skipForOwnClusterPlan(operation internal.Operation) bool {
 	return !broker.IsOwnClusterPlan(operation.ProvisioningParameters.PlanID)
+}
+
+func skipForPreviewPlan(operation internal.Operation) bool {
+	return !broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID)
 }
 
 func doForOwnClusterPlanOnly(operation internal.Operation) bool {

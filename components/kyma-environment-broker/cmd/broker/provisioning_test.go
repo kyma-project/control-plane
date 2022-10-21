@@ -56,25 +56,20 @@ func TestProvisioning_Preview(t *testing.T) {
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"plan_id": "683b232e-b5b3-4c81-8238-f6f9d8385de7",
 					"context": {
-						"sm_platform_credentials": {
-							  "url": "https://sm.url",
-							  "credentials": {}
-					    },
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
 					"parameters": {
-						"name": "testing-cluster",
-						"region":""
+						"name": "testing-cluster"
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
 
 	// TODO: the goal is the preview plan is not playing with reconciler, this test should be modified in the next tasks
-	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.processProvisioningByOperationID(opID)
 
 	suite.WaitForOperationState(opID, domain.Succeeded)
 	// todo: assert Kyma resource is created

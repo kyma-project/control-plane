@@ -2,6 +2,7 @@ package upgrade_kyma
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
@@ -76,6 +77,11 @@ func (s *InitialisationStep) Name() string {
 }
 
 func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+
+	if broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID) {
+		log.Infof("Preview Plan  does not support upgrade Kyma process, setting the operation state to succeeded")
+		return s.operationManager.OperationSucceeded(operation, fmt.Sprintf("Preview Plan does not support upgrade kyma"), log)
+	}
 
 	// Check concurrent deprovisioning (or suspension) operation (launched after target resolution)
 	// Terminate (preempt) upgrade immediately with succeeded
