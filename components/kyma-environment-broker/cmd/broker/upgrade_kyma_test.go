@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -116,4 +117,73 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 		Administrators: []string{"john.smith@email.com"},
 	})
 
+}
+
+func TestKymaUpgradeScheduledToFutureMaintenanceWindow(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// Create an SKR with a default autoscaler params
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+					"context": {
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com",
+                        "sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    }
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"kymaVersion": "2.0"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	nextWeek := time.Now().AddDate(0, 0, 7)
+	orchestrationResp := suite.CallAPI("POST", "upgrade/kyma", fmt.Sprintf(`
+{
+	"strategy": {
+		"type": "parallel",
+		"schedule": "maintenanceWindow",
+		"scheduleAfter":"%s",
+		"parallel": {
+			"workers": 1
+		}
+	},
+	"dryRun": false,
+	"targets": {
+		"include": [
+			{
+				"subAccount": "sub-id"
+			}
+		]
+	},
+	"kyma": {
+		"version": "2.0.0"
+	}
+}`, nextWeek.Format("2006-01-02T15:04:05Z07:00")))
+
+	oID := suite.DecodeOrchestrationID(orchestrationResp)
+
+	var upgradeKymaOperation *orchestration.OperationResponse
+	err := wait.PollImmediate(5*time.Millisecond, 400*time.Millisecond, func() (bool, error) {
+		var err error
+		opResponse := suite.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", oID), "")
+		upgradeKymaOperation, err = suite.DecodeLastUpgradeKymaOperationFromOrchestration(opResponse)
+		return err == nil, nil
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, upgradeKymaOperation)
+	assert.GreaterOrEqual(t, upgradeKymaOperation.MaintenanceWindowEnd, nextWeek)
 }

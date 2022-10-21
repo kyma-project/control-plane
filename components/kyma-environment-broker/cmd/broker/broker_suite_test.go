@@ -804,7 +804,7 @@ func (s *BrokerSuiteTest) DecodeOrchestrationID(resp *http.Response) string {
 	return upgradeResponse.OrchestrationID
 }
 
-func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationFromOrchestration(resp *http.Response) (*orchestration.OperationResponse, error) {
 	m, err := ioutil.ReadAll(resp.Body)
 	s.Log(string(m))
 	require.NoError(s.t, err)
@@ -813,10 +813,19 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	require.NoError(s.t, err)
 
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
-		return "", errors.New("no operations found for given orchestration")
+		return nil, errors.New("no operations found for given orchestration")
 	}
 
-	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+	return &operationsList.Data[len(operationsList.Data)-1], nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+	operation, err := s.DecodeLastUpgradeKymaOperationFromOrchestration(resp)
+	if err == nil {
+		return operation.OperationID, err
+	} else {
+		return "", err
+	}
 }
 
 func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
