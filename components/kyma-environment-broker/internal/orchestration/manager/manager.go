@@ -178,10 +178,10 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			days := []string{}
 
 			if o.State == orchestration.Pending && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleAfter)
 			}
 			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate && o.Parameters.Strategy.Schedule == orchestration.MaintenanceWindow {
-				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy)
+				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleAfter)
 			}
 
 			r.MaintenanceWindowBegin = windowBegin
@@ -403,7 +403,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 }
 
 // resolves the next exact maintenance window time for the runtime
-func resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy) (time.Time, time.Time, []string) {
+func resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.MaintenancePolicy, after time.Time) (time.Time, time.Time, []string) {
 	ruleMatched := false
 
 	for _, p := range policy.Rules {
@@ -464,6 +464,10 @@ func resolveMaintenanceWindowTime(r orchestration.Runtime, policy orchestration.
 	}
 
 	n := time.Now()
+	// If 'after' is in the future, set it as timepoint for the maintenance window calculation
+	if after.After(n) {
+		n = after
+	}
 	availableDays := orchestration.ConvertSliceOfDaysToMap(r.MaintenanceDays)
 	start := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowBegin.Hour(), r.MaintenanceWindowBegin.Minute(), r.MaintenanceWindowBegin.Second(), r.MaintenanceWindowBegin.Nanosecond(), r.MaintenanceWindowBegin.Location())
 	end := time.Date(n.Year(), n.Month(), n.Day(), r.MaintenanceWindowEnd.Hour(), r.MaintenanceWindowEnd.Minute(), r.MaintenanceWindowEnd.Second(), r.MaintenanceWindowEnd.Nanosecond(), r.MaintenanceWindowEnd.Location())
