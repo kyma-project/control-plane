@@ -15,6 +15,7 @@ The supported plans are as follows:
 | `gcp` | `ca6e5357-707f-4565-bbbd-b3ab732597c6` | Installs Kyma Runtime on the GCP cluster. |
 | `trial` | `7d55d31d-35ae-4438-bf13-6ffdfa107d9f` | Installs Kyma trial plan on Azure, AWS or GCP. |
 | `free` | `b1a5764e-2ea1-4f95-94c0-2b4538b37b55` | Installs Kyma free plan on Azure or AWS. |
+| `own_cluster` | `b1a5764e-2ea1-4f95-94c0-2b4538b37b55` | Installs Kyma on custom K8S cluster. |
 
 ## Provisioning parameters
 
@@ -191,11 +192,19 @@ The mapping between the platform region and the provider region (Azure, AWS or G
  </details>
  </div>
 
-## Free plan
+## Own cluster plan
 
-Free plan allows you to install Kyma on Azure or AWS. The configurable provisioning parameters are the same as for the trial plan.
+These are the provisioning parameters for the `own_cluster` plan that you configure:
 
-___
+<div tabs name="own_cluster-plan" group="own_cluster-plan">
+  <details>
+  <summary label="own_cluster-plan">
+  Own cluster plan
+  </summary>
 
+| Parameter name | Type | Description | Required | Default value |
+| ---------------|-------|-------------|----------|---------------|
+| **kubeconfig** | string | Kubeconfig that points to the cluster where you install Kyma. | Yes | None |
+| **shootDomain** | string | Domain of the shoot where you install Kyma. | Yes | None |
+| **shootName** | string | Name of the shoot where you install Kyma. | Yes | None |
 
-<a name="update"><sup>1</sup> This parameter is available for `PATCH` as well, and can be updated with the same constraints as during provisioning.</a>
