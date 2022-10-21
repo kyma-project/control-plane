@@ -146,6 +146,11 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 	case broker.OwnClusterPlanID:
 		provider = &cloudProvider.NoHyperscalerInput{}
 		// insert cases for other providers like AWS or GCP
+	case broker.PreviewPlanID:
+		provider = &cloudProvider.AWSInput{
+			MultiZone:                    f.config.MultiZoneCluster,
+			ControlPlaneFailureTolerance: f.config.ControlPlaneFailureTolerance,
+		}
 	default:
 		return nil, errors.Errorf("case with plan %s is not supported", planID)
 	}
