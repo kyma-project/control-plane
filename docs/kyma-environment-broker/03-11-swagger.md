@@ -12,7 +12,6 @@ You can either use Virtual Service or port-forward the Pod to expose and use the
 
 Open one of the following websites:
 
-   ```
    https://kyma-env-broker.cp.dev.kyma.cloud.sap/
    ```
    ```
