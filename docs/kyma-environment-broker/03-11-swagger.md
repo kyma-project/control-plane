@@ -10,7 +10,9 @@ You can either use Virtual Service or port-forward the Pod to expose and use the
 
 ## Use Virtual Service
 
-Open Kyma Environment Broker APIs on [development env](https://kyma-env-broker.cp.dev.kyma.cloud.sap/) or on [stage env](https://kyma-env-broker.cp.stage.kyma.cloud.sap/).
+Open the KEB APIs in the desired environment:
+- [DEV environment](https://kyma-env-broker.cp.dev.kyma.cloud.sap/) 
+- [STAGE environment](https://kyma-env-broker.cp.stage.kyma.cloud.sap/)
 
  
 
