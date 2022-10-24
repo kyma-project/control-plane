@@ -68,7 +68,6 @@ func TestProvisioning_Preview(t *testing.T) {
 		}`)
 	opID := suite.DecodeOperationID(resp)
 
-	// TODO: the goal is the preview plan is not playing with reconciler, this test should be modified in the next tasks
 	suite.processProvisioningByOperationID(opID)
 
 	suite.WaitForOperationState(opID, domain.Succeeded)
