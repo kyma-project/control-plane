@@ -159,12 +159,12 @@ These are the provisioning parameters for Openstack that you can configure:
 ## Trial plan
 
 Trial plan allows you to install Kyma on Azure, AWS, or GCP. The trial plan assumptions are as follows:
-- Kyma is uninstalled after 30 days and the Kyma cluster is deprovisioned after this time.
+- Kyma is uninstalled after 14 days and the Kyma cluster is deprovisioned after this time.
 - It's possible to provision only one Kyma Runtime per global account.
 
-To reduce the costs, the Trial plan skips some of the [provisioning steps](./03-03-runtime-operations.md#provisioning).
-- `Provision_Azure_Event_Hubs`
-- `AVS External Evaluation` (part of the post actions during the `Initialisation` step)
+To reduce the costs, the Trial plan skips one of the [provisioning steps](./03-03-runtime-operations.md#provisioning).
+
+- `AVS External Evaluation` 
 
 ### Provisioning parameters
 
