@@ -96,7 +96,7 @@ The upgrade process contains the following steps:
 
 ## Provide additional steps
 
-You can configure Runtime operations by providing additional steps. To add a new step, follow the tutorials:
+You can configure Runtime operations by providing additional steps. To add a new step, follow these tutorials:
 
 <div tabs name="runtime-provisioning-deprovisioning" group="runtime-provisioning-deprovisioning">
   <details>
