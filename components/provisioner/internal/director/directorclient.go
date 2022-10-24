@@ -208,7 +208,7 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 }
 
 func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, apperrors.AppError) {
-	runtimeQuery := cc.queryProvider.requestOneTimeTokeneMutation(id)
+	runtimeQuery := cc.queryProvider.requestOneTimeTokenMutation(id)
 
 	var response OneTimeTokenResponse
 	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
