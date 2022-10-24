@@ -4,7 +4,7 @@
 
 Kyma Control Plane (KCP) is a central system to manage Kyma Runtimes.
 
-For more information on KCP and its components, read the [documentation](https://github.com/kyma-project/control-plane/tree/main/docs).
+For more information on KCP and its components, read the [KCP documentation](https://github.com/kyma-project/control-plane/tree/main/docs).
 
 ## Prerequisites
 
