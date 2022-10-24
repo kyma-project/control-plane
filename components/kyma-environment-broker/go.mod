@@ -10,7 +10,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.9.21
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.21
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.22
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.63.1
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/docker/docker v20.10.20+incompatible
@@ -51,9 +51,9 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.0
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.23 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.17 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.17 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.24 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.18 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.18 // indirect
 	github.com/aws/smithy-go v1.13.3 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
