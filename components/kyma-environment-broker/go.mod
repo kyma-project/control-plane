@@ -36,7 +36,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/exp v0.0.0-20220921164117-439092de6870
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
@@ -115,7 +115,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/tidwall/gjson v1.14.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
