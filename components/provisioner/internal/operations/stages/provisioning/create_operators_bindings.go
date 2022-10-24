@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	v12 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 )
 
 const (
@@ -128,7 +129,11 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 					administrator,
 					ownerClusterRoleBindingRoleRefName,
 					userKindSubject,
-					map[string]string{"app": "kyma", "type": "admin"}))
+					map[string]string{
+						"app":                                   "kyma",
+						"reconciler.kyma-project.io/managed-by": "reconciler",
+						"type":                                  "admin",
+					}))
 		}
 	}
 
@@ -136,7 +141,11 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, err
 	}
 
+	//TODO: remove me after all clusters migrated
 	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin"}); err != nil {
+		return operations.StageResult{}, util.K8SErrorToAppError(errors.Wrap(err, "failed to delete cluster role bindings")).SetComponent(apperrors.ErrClusterK8SClient)
+	}
+	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin,reconciler.kyma-project.io/managed-by=reconciler"}); err != nil {
 		return operations.StageResult{}, util.K8SErrorToAppError(errors.Wrap(err, "failed to delete cluster role bindings")).SetComponent(apperrors.ErrClusterK8SClient)
 	}
 
