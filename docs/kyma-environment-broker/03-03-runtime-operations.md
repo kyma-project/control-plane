@@ -9,7 +9,7 @@ Kyma Environment Broker allows you to configure operations that you can run on a
 
 ## Provisioning
 
-Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_runtime`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_runtime.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
+Each provisioning step is responsible for a separate part of preparing Runtime parameters. For example, in a step you can provide tokens, credentials, or URLs to integrate Kyma Runtime with external systems. All data collected in provisioning steps are used in the step called [`create_cluster_configuration`](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/provisioning/create_cluster_configuration.go) which transforms the data into a request input. The request is sent to the Runtime Provisioner component which provisions a Runtime.
 The provisioning process contains the following steps:
 
 | Stage          | Step                                   | Domain                   | Description                                                                                                                                 | Owner           |
@@ -57,7 +57,7 @@ The deprovisioning process contains the following steps:
 
 ## Upgrade Kyma
 
-Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade/initialisation.go) step.
+Each upgrade step is responsible for a separate part of upgrading Runtime dependencies. To properly upgrade the Runtime, you need the data used during the Runtime provisioning. You can fetch this data from the **ProvisioningOperation** struct in the [initialization](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/upgrade_kyma/initialisation.go) step.
 
 The upgrade process contains the following steps:
 
@@ -84,7 +84,7 @@ The upgrade process contains the following steps:
 
 | Stage               | Step                           | Description                                                                                   |
 |---------------------|--------------------------------|-----------------------------------------------------------------------------------------------|
-| cluster             | Update_Kyma_Initialisation     | Changes the state from `pending` to `in progress` if there is no other operation in progress. |                                                                                                                     
+| cluster             | Update_Kyma_Initialization     | Changes the state from `pending` to `in progress` if there is no other operation in progress. |                                                                                                                     
 | cluster             | Upgrade_Shoot                  | Sends the updated cluster parameters to the Provisioner.                                      |                                                                                                                     
 | btp-operator        | Update_Init_Kyma_Version       | Specifies the Kyma version to install.                                                        |                                                                                                                      
 | btp-operator        | Get_Kubeconfig                 | Gets the kubeconfig file.                                                                     |                                                                                                                      
@@ -134,7 +134,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     ```
 
     If your functionality contains long-term processes, you can store data in the storage.
-    To do this, add this field to the provisioning operation in which you want to save data:
+    To do this, add the following field to the provisioning operation in which you want to save data:
 
     ```go
     type Operation struct {
@@ -147,7 +147,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You should always return the modified operation from the method.
+    By saving data in the storage, you can check if you already have the necessary data and avoid time-consuming processes. You must always return the modified operation from the method.
 
     See the example of the step implementation:
 
@@ -250,7 +250,7 @@ You can configure Runtime operations by providing additional steps. To add a new
     }
     ```
 
-    Once all steps in the stage have finished succeeded, the stage won't be retried even if the application is restarted.
+    Once all the steps in the stage have run successfully, the stage is  not retried even if the application is restarted.
 
   </details>
   
@@ -259,9 +259,9 @@ You can configure Runtime operations by providing additional steps. To add a new
   Upgrade
   </summary>
 
-  1. Create a new file in [this](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade) directory.
+  1. Create a new file in [this directory](https://github.com/kyma-project/control-plane/blob/main/components/kyma-environment-broker/internal/process/kyma_upgrade).
 
-2. Implement this interface in your upgrade step:
+2. Implement the following interface in your upgrade step:
 
     ```go
     type Step interface {
