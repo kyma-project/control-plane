@@ -152,6 +152,8 @@ type ListParameters struct {
 	States []State
 	// Expired parameter filters runtimes to show only expired ones.
 	Expired bool
+	// Events parameter fetches tracing events per instance
+	Events bool
 }
 
 func (rt RuntimeDTO) LastOperation() Operation {
