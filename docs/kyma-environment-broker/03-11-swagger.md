@@ -12,7 +12,7 @@ You can either use Virtual Service or port-forward the Pod to expose and use the
 
 Open Kyma Environment Broker APIs on [development env](https://kyma-env-broker.cp.dev.kyma.cloud.sap/) or on [stage env](https://kyma-env-broker.cp.stage.kyma.cloud.sap/).
 
-   ```
+ 
 
 To use the `Try it out` feature on Virtual Service, you need this [Chrome browser extension](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf).
 
