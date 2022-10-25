@@ -30,7 +30,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
-	eventshandler "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
+	eventshandler "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events/handler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/health"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ias"
