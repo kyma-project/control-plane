@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/gocraft/dbr"
@@ -239,7 +240,7 @@ func (ws writeSession) UpdateOperation(op dbmodel.OperationDTO) dberr.Error {
 	return nil
 }
 
-func (ws writeSession) InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string) dberr.Error {
+func (ws writeSession) InsertEvent(level events.EventLevel, message, instanceID, operationID string) dberr.Error {
 	_, err := ws.insertInto("events").
 		Pair("id", uuid.NewString()).
 		Pair("level", level).
