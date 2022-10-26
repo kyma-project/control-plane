@@ -9,7 +9,8 @@ db:
     port: {{ .Values.db.servicePort }}
     user: {{ .Values.db.reconcilerUsername }}
     password: {{ .Values.db.reconcilerPassword }}
-    useSsl: {{ .Values.db.useSsl }}
+    sslMode: {{ .Values.db.sslMode }} 
+    sslRootCert: {{ .Values.db.sslRootCert }}
     migrationsDir: "./configs/db/postgres"
     maxOpenConns: {{ .Values.db.maxOpenConns }}
     maxIdleConns: {{ .Values.db.maxIdleConns }}

@@ -20,7 +20,8 @@ db:
   reconcilerUsername: ""
   serviceHost: "localhost"
   servicePort: "5432"
-  useSsl: false
+  sslMode: "require"
+  sslRootCert: ""
   file: "reconciler.db"
   deploySchema: true
   resetDatabase: false

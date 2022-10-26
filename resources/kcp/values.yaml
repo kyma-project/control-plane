@@ -81,6 +81,8 @@ global:
       port: 15020
   database:
     manageSecrets: true
+    cloudsql-proxy:
+      enabled: false
     embedded:
       enabled: true
       provisioner:
