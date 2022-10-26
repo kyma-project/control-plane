@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/deprovisioning"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/provisioning"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/update"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_cluster"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/upgrade_kyma"
@@ -349,7 +350,7 @@ func main() {
 
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("update", "manager"))
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 20, db, inputFactory, provisionerClient, eventBroker,
-		runtimeVerConfigurator, db.RuntimeStates(), componentsProvider, reconcilerClient, cfg, k8sClientProvider, logs)
+		runtimeVerConfigurator, db.RuntimeStates(), componentsProvider, reconcilerClient, cfg, k8sClientProvider, cli, logs)
 
 	/***/
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
@@ -696,6 +697,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:      provisioning.NewInjectBTPOperatorCredentialsStep(db.Operations(), k8sClientProvider),
 		},
 		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			stage:    createRuntimeStageName,
+			step:     steps.SyncKubeconfig(db.Operations(), cli),
+		},
+		{
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			condition: skipForPreviewPlan,
@@ -738,7 +744,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 
 func NewUpdateProcessingQueue(ctx context.Context, manager *process.StagedManager, workersAmount int, db storage.BrokerStorage, inputFactory input.CreatorForPlan,
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
-	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
+	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, logs logrus.FieldLogger) *process.Queue {
 
 	manager.DefineStages([]string{"cluster", "btp-operator", "btp-operator-check", "check"})
 	updateSteps := []struct {
@@ -850,6 +856,10 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
 		},
 		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			step:     steps.DeleteKubeconfig(db.Operations(), cli),
+		},
+		{
 			step: deprovisioning.NewRemoveInstanceStep(db.Instances(), db.Operations()),
 		},
 	}
@@ -896,6 +906,11 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		{
 			weight: 2,
 			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
+		},
+		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			weight:   2,
+			step:     steps.SyncKubeconfigUpgradeKyma(db.Operations(), cli),
 		},
 		{
 			weight: 3,
