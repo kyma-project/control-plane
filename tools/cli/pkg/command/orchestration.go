@@ -138,7 +138,11 @@ var kymaUpgradePreviewTpl = `Kyma Upgrade Preview
 Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+{{- if eq .Parameters.Kyma.Version "" }}
+Kyma Version:     <determined after start>
+{{- else }}
 Kyma Version:     {{with .Parameters.Kyma}}{{.Version}}{{end}}
+{{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
   {{ orchestrationTarget $t }}
@@ -155,7 +159,7 @@ var kubernetesUpgradePreviewTpl = `Kubernetes Upgrade Preview
 Strategy:         {{.Parameters.Strategy.Type}}
 Schedule:         {{.Parameters.Strategy.Schedule}}
 Workers:          {{.Parameters.Strategy.Parallel.Workers}}
-K8s Version:      {{with .Parameters.Kubernetes}}{{.KubernetesVersion}}{{end}}
+K8s Version:      <determined after start>
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
   {{ orchestrationTarget $t }}
