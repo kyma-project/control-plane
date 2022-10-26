@@ -84,6 +84,21 @@ spec:
           host: {{ include "kyma-env-broker.fullname" . }}
           port:
             number: 80
+  - corsPolicy:
+      allowHeaders:
+        - Authorization
+        - Content-Type
+      allowMethods: ["GET"]
+      allowOrigins:
+      - regex: ".*"
+    match:
+      - uri:
+          regex: /events
+    route:
+      - destination:
+          host: {{ include "kyma-env-broker.fullname" . }}
+          port:
+            number: 80
   # kubeconfig endpoint exposed without authorization
   - corsPolicy:
       allowHeaders:
