@@ -24,6 +24,11 @@ const (
 	tabwriterFlags    = tabwriter.RememberWidths
 )
 
+type event struct {
+	events.EventDTO
+	Occurrence string
+}
+
 // newTabWriter returns a tabwriter that translates tabbed columns in input into properly aligned text.
 func newTabWriter(output io.Writer) *tabwriter.Writer {
 	return tabwriter.NewWriter(output, tabwriterMinWidth, tabwriterWidth, tabwriterPadding, tabwriterPadChar, tabwriterFlags)
@@ -52,7 +57,7 @@ type TablePrinter interface {
 type tablePrinter struct {
 	writer         *tabwriter.Writer
 	columns        []Column
-	events         map[string][]events.EventDTO
+	events         map[string][]event
 	eventsColumns  []Column
 	noHeaders      bool
 	headersPrinted bool
@@ -107,9 +112,64 @@ func (t *tablePrinter) PrintObj(obj interface{}) error {
 	return nil
 }
 
-func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
-	t.events = make(map[string][]events.EventDTO)
+func key(e events.EventDTO) string {
+	iid := ""
+	if e.InstanceID != nil {
+		iid = *e.InstanceID
+	}
+	oid := ""
+	if e.OperationID != nil {
+		oid = *e.OperationID
+	}
+	return fmt.Sprintf("%v/%v/%v/%v", iid, oid, e.Level, e.Message)
+}
+
+func occurrence(now, start, end time.Time, count int) string {
+	l := duration.HumanDuration(now.Sub(end))
+	if count == 1 {
+		return l
+	}
+	f := duration.HumanDuration(now.Sub(start))
+	return fmt.Sprintf("%v ago (%vx in last %v)", l, count, f)
+}
+
+func (t *tablePrinter) deduplicateEvents(eventList []events.EventDTO) []event {
+	m := make(map[string]int)
+	start := make(map[string]time.Time)
+	end := make(map[string]time.Time)
 	for _, e := range eventList {
+		k := key(e)
+		m[k] += 1
+		if start[k].IsZero() || start[k].After(e.CreatedAt) {
+			start[k] = e.CreatedAt
+		}
+		if end[k].Before(e.CreatedAt) {
+			end[k] = e.CreatedAt
+		}
+	}
+	var events []event
+	processed := make(map[string]int)
+	for _, e := range eventList {
+		k := key(e)
+		count := m[k]
+		processed[k] += 1
+		pCount := processed[k]
+		if count == pCount {
+			event := event{
+				EventDTO:   e,
+				Occurrence: occurrence(t.now, start[k], end[k], count),
+			}
+			events = append(events, event)
+		}
+	}
+
+	return events
+}
+
+func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
+	deduplicated := t.deduplicateEvents(eventList)
+	t.events = make(map[string][]event)
+	for _, e := range deduplicated {
 		if e.InstanceID != nil {
 			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
 		}
@@ -120,8 +180,8 @@ func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
 			FieldSpec: "{.Level}",
 		},
 		{
-			Header:         "AGE",
-			FieldFormatter: t.printElapsedTime,
+			Header:    "OCCURRENCE",
+			FieldSpec: "{.Occurrence}",
 		},
 		{
 			Header:    "MESSAGE",
@@ -199,7 +259,7 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 	return nil
 }
 
-func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e events.EventDTO) error {
+func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e event) error {
 	fmt.Fprintf(eventTabWriter, "  %v", sep)
 	for _, col := range t.eventsColumns {
 		if col.FieldFormatter != nil {
@@ -214,11 +274,6 @@ func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e events
 	}
 	fmt.Fprintln(eventTabWriter)
 	return nil
-}
-
-func (t *tablePrinter) printElapsedTime(obj any) string {
-	e := obj.(events.EventDTO)
-	return duration.HumanDuration(t.now.Sub(e.CreatedAt))
 }
 
 func printOperation(w io.Writer, op string) {
