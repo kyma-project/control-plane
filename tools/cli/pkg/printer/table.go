@@ -5,8 +5,14 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
+	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/liggitt/tabwriter"
+
+	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/client-go/util/jsonpath"
 )
 
@@ -17,6 +23,11 @@ const (
 	tabwriterPadChar  = ' '
 	tabwriterFlags    = tabwriter.RememberWidths
 )
+
+type event struct {
+	events.EventDTO
+	Occurrence string
+}
 
 // newTabWriter returns a tabwriter that translates tabbed columns in input into properly aligned text.
 func newTabWriter(output io.Writer) *tabwriter.Writer {
@@ -40,13 +51,17 @@ type Column struct {
 // TablePrinter prints objects in table format, according to the given column definitions.
 type TablePrinter interface {
 	PrintObj(obj interface{}) error
+	SetRuntimeEvents(eventList []events.EventDTO)
 }
 
 type tablePrinter struct {
 	writer         *tabwriter.Writer
 	columns        []Column
+	events         map[string][]event
+	eventsColumns  []Column
 	noHeaders      bool
 	headersPrinted bool
+	now            time.Time
 }
 
 // NewTablePrinter creates a new TablePrinter.
@@ -57,6 +72,7 @@ func NewTablePrinter(columns []Column, noHeaders bool) (TablePrinter, error) {
 		writer:    newTabWriter(os.Stdout),
 		columns:   columns,
 		noHeaders: noHeaders,
+		now:       time.Now(),
 	}
 	for idx := range t.columns {
 		if t.columns[idx].FieldFormatter == nil && t.columns[idx].FieldSpec != "" {
@@ -96,6 +112,88 @@ func (t *tablePrinter) PrintObj(obj interface{}) error {
 	return nil
 }
 
+func key(e events.EventDTO) string {
+	iid := ""
+	if e.InstanceID != nil {
+		iid = *e.InstanceID
+	}
+	oid := ""
+	if e.OperationID != nil {
+		oid = *e.OperationID
+	}
+	return fmt.Sprintf("%v/%v/%v/%v", iid, oid, e.Level, e.Message)
+}
+
+func occurrence(now, start, end time.Time, count int) string {
+	l := duration.HumanDuration(now.Sub(end))
+	if count == 1 {
+		return l
+	}
+	f := duration.HumanDuration(now.Sub(start))
+	return fmt.Sprintf("%v ago (%vx in last %v)", l, count, f)
+}
+
+func (t *tablePrinter) deduplicateEvents(eventList []events.EventDTO) []event {
+	m := make(map[string]int)
+	start := make(map[string]time.Time)
+	end := make(map[string]time.Time)
+	for _, e := range eventList {
+		k := key(e)
+		m[k] += 1
+		if start[k].IsZero() || start[k].After(e.CreatedAt) {
+			start[k] = e.CreatedAt
+		}
+		if end[k].Before(e.CreatedAt) {
+			end[k] = e.CreatedAt
+		}
+	}
+	var events []event
+	processed := make(map[string]int)
+	for _, e := range eventList {
+		k := key(e)
+		count := m[k]
+		processed[k] += 1
+		pCount := processed[k]
+		if count == pCount {
+			event := event{
+				EventDTO:   e,
+				Occurrence: occurrence(t.now, start[k], end[k], count),
+			}
+			events = append(events, event)
+		}
+	}
+
+	return events
+}
+
+func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
+	deduplicated := t.deduplicateEvents(eventList)
+	t.events = make(map[string][]event)
+	for _, e := range deduplicated {
+		if e.InstanceID != nil {
+			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+		}
+	}
+	t.eventsColumns = []Column{
+		{
+			Header:    "LEVEL",
+			FieldSpec: "{.Level}",
+		},
+		{
+			Header:    "OCCURRENCE",
+			FieldSpec: "{.Occurrence}",
+		},
+		{
+			Header:    "MESSAGE",
+			FieldSpec: "{.Message}",
+		},
+	}
+	for i := range t.eventsColumns {
+		t.eventsColumns[i].parser = jsonpath.New(fmt.Sprintf("column%d", i)).AllowMissingKeys(true)
+		t.eventsColumns[i].parser.Parse(t.eventsColumns[i].FieldSpec)
+	}
+}
+
 func toInterfaceSlice(obj interface{}) []interface{} {
 	s := reflect.ValueOf(obj)
 	ret := make([]interface{}, s.Len())
@@ -127,6 +225,57 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 		}
 	}
 
-	fmt.Fprint(t.writer, "\n")
+	fmt.Fprintln(t.writer)
+	if r, ok := obj.(runtime.RuntimeDTO); ok {
+		if eventList, ok := t.events[r.InstanceID]; ok {
+			if len(eventList) == 0 {
+				return nil
+			}
+			lastOp := *eventList[0].OperationID
+			buffer := strings.Builder{}
+			eventTabWriter := newTabWriter(&buffer)
+			printOperation(eventTabWriter, lastOp)
+			for _, e := range eventList[:len(eventList)-1] {
+				if lastOp != *e.OperationID {
+					lastOp = *e.OperationID
+					printOperation(eventTabWriter, lastOp)
+				}
+				if err := t.printEvent("˫", eventTabWriter, e); err != nil {
+					return err
+				}
+			}
+			if lastOp != *eventList[len(eventList)-1].OperationID {
+				lastOp = *eventList[len(eventList)-1].OperationID
+				printOperation(eventTabWriter, lastOp)
+			}
+			if err := t.printEvent("˪", eventTabWriter, eventList[len(eventList)-1]); err != nil {
+				return err
+			}
+			fmt.Fprintln(eventTabWriter)
+			eventTabWriter.Flush()
+			t.writer.Write([]byte(buffer.String()))
+		}
+	}
 	return nil
+}
+
+func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e event) error {
+	fmt.Fprintf(eventTabWriter, "  %v", sep)
+	for _, col := range t.eventsColumns {
+		if col.FieldFormatter != nil {
+			fmt.Fprintf(eventTabWriter, "%s\t", col.FieldFormatter(e))
+		} else {
+			err := col.parser.Execute(eventTabWriter, e)
+			fmt.Fprint(eventTabWriter, "\t")
+			if err != nil {
+				return err
+			}
+		}
+	}
+	fmt.Fprintln(eventTabWriter)
+	return nil
+}
+
+func printOperation(w io.Writer, op string) {
+	fmt.Fprintf(w, " ˫operation %v\n", op)
 }

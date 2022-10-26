@@ -10,11 +10,11 @@ You can either use Virtual Service or port-forward the Pod to expose and use the
 
 ## Use Virtual Service
 
-Open the following website:
+Open the KEB APIs in the desired environment:
+- [DEV environment](https://kyma-env-broker.cp.dev.kyma.cloud.sap/) 
+- [STAGE environment](https://kyma-env-broker.cp.stage.kyma.cloud.sap/)
 
-   ```
-   https://$BROKER_URL/
-   ```
+ 
 
 To use the `Try it out` feature on Virtual Service, you need this [Chrome browser extension](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf).
 

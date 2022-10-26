@@ -688,11 +688,11 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 func (r readSession) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
 	var events []dbmodel.EventDTO
 	stmt := r.session.Select("*").From("events")
-	if filter.InstanceID != "" {
-		stmt.Where(dbr.Eq("instance_id", filter.InstanceID))
+	if len(filter.InstanceIDs) != 0 {
+		stmt.Where(dbr.Eq("instance_id", filter.InstanceIDs))
 	}
-	if filter.OperationID != "" {
-		stmt.Where(dbr.Eq("operation_id", filter.OperationID))
+	if len(filter.OperationIDs) != 0 {
+		stmt.Where(dbr.Eq("operation_id", filter.OperationIDs))
 	}
 	stmt.OrderBy("created_at")
 	_, err := stmt.Load(&events)

@@ -43,12 +43,12 @@ func New(cfg Config, sess postsql.Factory, log logrus.FieldLogger) *events {
 	return ev
 }
 
-func Infof(instanceID, operationID, format string, args ...string) {
-	ev.InsertEvent(dbmodel.InfoEventLevel, fmt.Sprintf(format, args), instanceID, operationID)
+func Infof(instanceID, operationID, format string, args ...any) {
+	ev.InsertEvent(dbmodel.InfoEventLevel, fmt.Sprintf(format, args...), instanceID, operationID)
 }
 
-func Errorf(instanceID, operationID string, err error, format string, args ...string) {
-	ev.InsertEvent(dbmodel.ErrorEventLevel, fmt.Sprintf("%v: %v", fmt.Sprintf(format, args), err), instanceID, operationID)
+func Errorf(instanceID, operationID string, err error, format string, args ...any) {
+	ev.InsertEvent(dbmodel.ErrorEventLevel, fmt.Sprintf("%v: %v", fmt.Sprintf(format, args...), err), instanceID, operationID)
 }
 
 func (e *events) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
