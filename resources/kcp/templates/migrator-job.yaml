@@ -24,7 +24,7 @@ spec:
             restartPolicy: Never
             shareProcessNamespace: true
             containers:
-                {{if eq .Values.global.database.embedded.enabled false}}
+                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
                 - name: cloudsql-proxy
                   image: {{ .Values.global.images.cloudsql_proxy_image }}
                   command: [ "/cloud_sql_proxy",
@@ -85,17 +85,19 @@ spec:
                         value: "kyma-environment-broker"
                       - name: DIRECTION
                         value: "up"
-                {{if eq .Values.global.database.embedded.enabled false}}
+                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
                   volumeMounts:
                       - name: cloudsql-sslrootcert
                         mountPath: /secrets/cloudsql-sslrootcert
                         readOnly: true
                 {{end}}
-            {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+            {{end}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
               - name: cloudsql-sslrootcert
                 secret:
                   secretName: kcp-postgresql
@@ -130,7 +132,7 @@ spec:
             restartPolicy: Never
             shareProcessNamespace: true
             containers:
-                {{if eq .Values.global.database.embedded.enabled false}}
+                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
                 - name: cloudsql-proxy
                   image: {{ .Values.global.images.cloudsql_proxy_image }}
                   command: [ "/cloud_sql_proxy",
@@ -191,17 +193,19 @@ spec:
                         value: "provisioner"
                       - name: DIRECTION
                         value: "up"
-                {{if eq .Values.global.database.embedded.enabled false}}
+                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
                   volumeMounts:
                       - name: cloudsql-sslrootcert
                         mountPath: /secrets/cloudsql-sslrootcert
                         readOnly: true
                 {{end}}
-            {{if eq .Values.global.database.embedded.enabled false}}
             volumes:
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 secret:
                   secretName: cloudsql-instance-credentials
+            {{end}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
               - name: cloudsql-sslrootcert
                 secret:
                   secretName: kcp-postgresql
