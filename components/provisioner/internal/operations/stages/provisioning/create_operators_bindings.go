@@ -85,7 +85,10 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 	clusterRoles = append(clusterRoles,
 		buildClusterRole(
 			l2OperatorClusterRoleName,
-			map[string]string{"app": "kyma"},
+			map[string]string{
+				"app":                                   "kyma",
+				"reconciler.kyma-project.io/managed-by": "reconciler",
+			},
 			[]metav1.LabelSelector{
 				{MatchLabels: map[string]string{l2OperatorBaseRolesLabelKey: "true"}},
 				{MatchLabels: map[string]string{l2OperatorExtendedRolesLabelKey: "true"}},
@@ -96,7 +99,11 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 	clusterRoles = append(clusterRoles,
 		buildClusterRole(
 			l2OperatorRulesClusterRoleName,
-			map[string]string{"app": "kyma", l2OperatorExtendedRolesLabelKey: "true"},
+			map[string]string{
+				"app":                                   "kyma",
+				"reconciler.kyma-project.io/managed-by": "reconciler",
+				l2OperatorExtendedRolesLabelKey:         "true",
+			},
 			nil,
 			[]v12.PolicyRule{
 				{APIGroups: []string{"*"}, Resources: []string{"*"}, Verbs: []string{"get", "list", "watch"}},
