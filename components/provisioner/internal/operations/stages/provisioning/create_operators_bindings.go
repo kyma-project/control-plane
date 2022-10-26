@@ -141,11 +141,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		return operations.StageResult{}, err
 	}
 
-	//TODO: remove me after all clusters migrated
 	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin"}); err != nil {
-		return operations.StageResult{}, util.K8SErrorToAppError(errors.Wrap(err, "failed to delete cluster role bindings")).SetComponent(apperrors.ErrClusterK8SClient)
-	}
-	if err := k8sClient.RbacV1().ClusterRoleBindings().DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: "type=admin,reconciler.kyma-project.io/managed-by=reconciler"}); err != nil {
 		return operations.StageResult{}, util.K8SErrorToAppError(errors.Wrap(err, "failed to delete cluster role bindings")).SetComponent(apperrors.ErrClusterK8SClient)
 	}
 
