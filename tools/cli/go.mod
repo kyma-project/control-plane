@@ -65,7 +65,7 @@ require (
 	github.com/onrik/logrus v0.9.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
-	github.com/pivotal-cf/brokerapi/v8 v8.2.2 // indirect
+	github.com/pivotal-cf/brokerapi/v8 v8.2.3 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
