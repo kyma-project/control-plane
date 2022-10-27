@@ -50,7 +50,7 @@ spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-proxy
         image: {{ .Values.global.images.cloudsql_proxy_image }}
         command: [ "/cloud_sql_proxy",
@@ -127,7 +127,7 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
         {{- end }}
-        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
         - mountPath: /secrets/cloudsql-sslrootcert
           name: cloudsql-sslrootcert
           readOnly: true
@@ -172,12 +172,12 @@ spec:
           mountPath: /fluent-bit/etc/
       {{- end }}
       volumes:
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
       {{- end }}
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
       - name: cloudsql-sslrootcert
         secret:
           items:
