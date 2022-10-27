@@ -29,6 +29,8 @@ const (
 	FreemiumPlanName   = "free"
 	OwnClusterPlanID   = "03e3cb66-a4c6-4c6a-b4b0-5d42224debea"
 	OwnClusterPlanName = "own_cluster"
+	PreviewPlanID      = "683b232e-b5b3-4c81-8238-f6f9d8385de7"
+	PreviewPlanName    = "preview"
 )
 
 var PlanNamesMapping = map[string]string{
@@ -40,6 +42,7 @@ var PlanNamesMapping = map[string]string{
 	OpenStackPlanID:  OpenStackPlanName,
 	FreemiumPlanID:   FreemiumPlanName,
 	OwnClusterPlanID: OwnClusterPlanName,
+	PreviewPlanID:    PreviewPlanName,
 }
 
 var PlanIDsMapping = map[string]string{
@@ -51,6 +54,7 @@ var PlanIDsMapping = map[string]string{
 	OpenStackPlanName:  OpenStackPlanID,
 	FreemiumPlanName:   FreemiumPlanID,
 	OwnClusterPlanName: OwnClusterPlanID,
+	PreviewPlanName:    PreviewPlanID,
 }
 
 type TrialCloudRegion string
@@ -319,6 +323,7 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(true)),
+		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true)),
 	}
 
 	return outputPlans
@@ -368,6 +373,15 @@ func defaultMetadata(planName string, plans PlansConfig) *domain.ServicePlanMeta
 func IsTrialPlan(planID string) bool {
 	switch planID {
 	case TrialPlanID:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsPreviewPlan(planID string) bool {
+	switch planID {
+	case PreviewPlanID:
 		return true
 	default:
 		return false
