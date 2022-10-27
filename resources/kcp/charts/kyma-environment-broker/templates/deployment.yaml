@@ -424,7 +424,7 @@ spec:
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
-       {{end}}
+       {{- end}}
       volumes:
       - name: config-volume
         configMap:
