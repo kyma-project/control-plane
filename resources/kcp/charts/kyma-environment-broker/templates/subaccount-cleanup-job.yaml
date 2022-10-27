@@ -121,7 +121,7 @@ spec:
                 - name: cloudsql-sslrootcert
                   mountPath: /secrets/cloudsql-sslrootcert
                   readOnly: true
-              {{ end }}
+              {{- end}}
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
@@ -140,14 +140,14 @@ spec:
               securityContext:
                 {{ toYaml . | nindent 16 }}
               {{- end }}
-            {{ end }}
+            {{- end}}
 
           volumes:
           {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
-          {{ end }}
+          {{- end}}
           {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
@@ -156,7 +156,7 @@ spec:
                 - key: postgresql-sslRootCert
                   path: server-ca.pem
                 optional: true
-          {{end}}
+          {{- end}}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -280,7 +280,7 @@ spec:
               - name: cloudsql-sslrootcert
                 mountPath: /secrets/cloudsql-sslrootcert
                 readOnly: true
-              {{ end }}
+              {{- end}}
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
@@ -299,14 +299,14 @@ spec:
               securityContext:
                 {{ toYaml . | nindent 16 }}
               {{- end }}
-            {{ end }}
+            {{- end}}
 
           volumes:
           {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
-          {{ end }}
+          {{- end}}
           {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
@@ -315,5 +315,5 @@ spec:
                 - key: postgresql-sslRootCert
                   path: server-ca.pem
                 optional: true
-          {{ end }}
+          {{- end}}
 {{ end }}

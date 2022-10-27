@@ -112,7 +112,7 @@ spec:
               - name: cloudsql-sslrootcert
                 mountPath: /secrets/cloudsql-sslrootcert
                 readOnly: true
-          {{end}}
+          {{- end}}
           {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
@@ -128,7 +128,7 @@ spec:
                 readOnly: true
             securityContext:
               runAsUser: 2000
-          {{end}}
+          {{- end}}
           volumes:
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
