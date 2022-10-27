@@ -64,7 +64,7 @@ spec:
         securityContext:
 {{ toYaml . | indent 10 }}
             {{- end }}
-      {{ end }}
+      {{- end }}
       - image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
