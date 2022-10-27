@@ -1,3 +1,9 @@
+global:
+  images:
+    provisioner:
+      dir:
+      version: "PR-2209"
+
 deployment:
   replicaCount: 1
   image:
