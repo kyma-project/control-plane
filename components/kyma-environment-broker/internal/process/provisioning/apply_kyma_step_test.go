@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -60,6 +62,31 @@ func TestCreatingKymaResource(t *testing.T) {
 	assertLabelsExists(t, aList.Items[0])
 
 	svc.Run(operation, logrus.New())
+}
+
+func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
+	// given
+	operation, cli := fixOperationForApplyKymaResource(t)
+	operation.KymaResourceNamespace = "namespace-in-time-of-creation"
+	storage := storage.NewMemoryStorage()
+	storage.Operations().InsertOperation(operation)
+	svc := NewApplyKymaStep(storage.Operations(), cli)
+
+	// when
+	_, backoff, err := svc.Run(operation, logrus.New())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, backoff)
+	aList := unstructured.UnstructuredList{}
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
+
+	cli.List(context.Background(), &aList)
+	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExists(t, aList.Items[0])
+
+	svc.Run(operation, logrus.New())
+	assert.Equal(t, "namespace-in-time-of-creation", operation.KymaResourceNamespace)
 }
 
 func TestUpdatingKymaResourceIfExists(t *testing.T) {
@@ -122,7 +149,7 @@ spec:
 			t.Fatal(err.Error())
 		}
 		// controller-runtime lib
-		scheme.Scheme.AddKnownTypeWithName(kymaGVK, &unstructured.Unstructured{})
+		scheme.Scheme.AddKnownTypeWithName(steps.KymaResourceGroupVersionKind(), &unstructured.Unstructured{})
 
 		cli, err = client.New(config, client.Options{})
 		if err != nil {
