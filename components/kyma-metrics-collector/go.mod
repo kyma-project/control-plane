@@ -3,8 +3,8 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.19
 
 require (
-	github.com/gardener/gardener v1.55.0
-	github.com/gardener/gardener-extension-provider-aws v1.37.0
+	github.com/gardener/gardener v1.56.0
+	github.com/gardener/gardener-extension-provider-aws v1.39.1
 	github.com/gardener/gardener-extension-provider-azure v1.30.0
 	github.com/gardener/gardener-extension-provider-gcp v1.25.0
 	github.com/google/uuid v1.3.0
@@ -16,8 +16,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	go.uber.org/zap v1.23.0
-	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
+	k8s.io/api v0.25.0
+	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
@@ -63,10 +63,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/klog/v2 v2.70.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 // indirect
-	k8s.io/utils v0.0.0-20220706174534-f6158b442e7c // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	k8s.io/klog/v2 v2.70.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
+	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
