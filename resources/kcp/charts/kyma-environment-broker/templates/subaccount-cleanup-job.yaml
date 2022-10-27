@@ -117,12 +117,12 @@ spec:
                 - "-c"
                 - "./bin/accountcleanup"
               volumeMounts:
-              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                 - name: cloudsql-sslrootcert
                   mountPath: /secrets/cloudsql-sslrootcert
                   readOnly: true
               {{ end }}
-            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
@@ -143,12 +143,12 @@ spec:
             {{ end }}
 
           volumes:
-          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
           {{ end }}
-          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
                 secretName: kcp-postgresql
@@ -276,12 +276,12 @@ spec:
                 - "-c"
                 - "./bin/accountcleanup"
               volumeMounts:
-              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
               - name: cloudsql-sslrootcert
                 mountPath: /secrets/cloudsql-sslrootcert
                 readOnly: true
               {{ end }}
-            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
@@ -302,12 +302,12 @@ spec:
             {{ end }}
 
           volumes:
-          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled true)}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
           {{ end }}
-          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsql-proxy.enabled false)}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
                 secretName: kcp-postgresql
