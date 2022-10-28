@@ -66,10 +66,6 @@ func TestInjectBTPOperatorCredentialsStep(t *testing.T) {
 		operation := fixture.FixProvisioningOperation("operation-id", "inst-id")
 		operation.RuntimeID = ""
 
-		namespaces := apicorev1.NamespaceList{}
-		err := k8sClient.List(context.Background(), &namespaces)
-		require.NoError(t, err)
-
 		step := NewInjectBTPOperatorCredentialsStep(memoryStorage.Operations(), func(k string) (client.Client, error) { return k8sClient, nil })
 
 		// when
