@@ -148,14 +148,9 @@ func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expec
 }
 
 func assertTheNamespaceIsPresent(t *testing.T, k8sClient client.WithWatch) {
-	namespaces := apicorev1.NamespaceList{}
-	err := k8sClient.List(context.Background(), &namespaces)
+	namespace := apicorev1.Namespace{}
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: secretNamespace}, &namespace)
 	require.NoError(t, err)
-	var names []string
-	for _, namespace := range namespaces.Items {
-		names = append(names, namespace.GetName())
-	}
-	assert.Contains(t, names, secretNamespace)
 }
 
 func createExpectedSecretData(credentials *internal.ServiceManagerOperatorCredentials, clusterID string) map[string]string {
