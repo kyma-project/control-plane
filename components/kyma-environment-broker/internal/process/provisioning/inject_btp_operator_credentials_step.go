@@ -142,7 +142,7 @@ func (s *InjectBTPOperatorCredentialsStep) createOrRetry(k8sClient client.Client
 		}
 		log.Errorf("failed to create the secret for BTP Manager: %w", err)
 	} else {
-		log.Error("failed to get the secret for BTP Manager: %w", err)
+		log.Errorf("failed to get the secret for BTP Manager: %w", err)
 	}
 	return err
 }
