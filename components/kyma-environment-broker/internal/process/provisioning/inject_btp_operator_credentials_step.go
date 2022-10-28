@@ -135,7 +135,8 @@ func (s *InjectBTPOperatorCredentialsStep) createOrRetry(k8sClient client.Client
 			if apierrors.IsAlreadyExists(err) {
 				log.Warnf("could not create %s namespace: %w - the namespace already exists", secretNamespace)
 			} else {
-				log.Warnf("could not create %s namespace: %w - ignoring", secretNamespace, err)
+				log.Warnf("could not create %s namespace: %w", secretNamespace, err)
+				return err
 			}
 		}
 
