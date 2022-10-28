@@ -34,7 +34,7 @@ k3d kubeconfig get --all > kubeconfig.yaml
 
 export KUBECONFIG=kubeconfig.yaml
 
-USE_KUBECONFIG=true go test -run Test{XXXX}
+USE_KUBECONFIG=true go test -run TestCreatingKymaResource
 
 kubectl get kymas -o yaml -n kyma-system
 */
