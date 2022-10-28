@@ -20,11 +20,11 @@ const (
 	TenantHeader        = "Tenant"
 )
 
-//go:generate mockery -name=DirectorClient
+//go:generate mockery --name=DirectorClient
 type DirectorClient interface {
 	CreateRuntime(config *gqlschema.RuntimeInput, tenant string) (string, apperrors.AppError)
 	GetRuntime(id, tenant string) (graphql.RuntimeExt, apperrors.AppError)
-	UpdateRuntime(id string, config *graphql.RuntimeInput, tenant string) apperrors.AppError
+	UpdateRuntime(id string, config *graphql.RuntimeUpdateInput, tenant string) apperrors.AppError
 	DeleteRuntime(id, tenant string) apperrors.AppError
 	SetRuntimeStatusCondition(id string, statusCondition graphql.RuntimeStatusCondition, tenant string) apperrors.AppError
 	GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, apperrors.AppError)
@@ -62,13 +62,13 @@ func (cc *directorClient) CreateRuntime(config *gqlschema.RuntimeInput, tenant s
 		labels = l
 	}
 
-	directorInput := graphql.RuntimeInput{
+	directorInput := graphql.RuntimeRegisterInput{
 		Name:        config.Name,
 		Description: config.Description,
 		Labels:      labels,
 	}
 
-	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(directorInput)
+	runtimeInput, err := cc.graphqlizer.RuntimeRegisterInputToGQL(directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return "", apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error()).SetComponent(apperrors.ErrCompassDirectorClient).SetReason(apperrors.ErrDirectorClientGraphqlizer)
@@ -113,14 +113,14 @@ func (cc *directorClient) GetRuntime(id, tenant string) (graphql.RuntimeExt, app
 	return *response.Result, nil
 }
 
-func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.RuntimeInput, tenant string) apperrors.AppError {
+func (cc *directorClient) UpdateRuntime(id string, directorInput *graphql.RuntimeUpdateInput, tenant string) apperrors.AppError {
 	log.Infof("Updating Runtime in Director service")
 
 	if directorInput == nil {
 		return apperrors.BadRequest("Cannot update runtime in Director: missing Runtime config")
 	}
 
-	runtimeInput, err := cc.graphqlizer.RuntimeInputToGQL(*directorInput)
+	runtimeInput, err := cc.graphqlizer.RuntimeUpdateInputToGQL(*directorInput)
 	if err != nil {
 		log.Infof("Failed to create graphQLized Runtime input")
 		return apperrors.Internal("Failed to create graphQLized Runtime input: %s", err.Error()).SetComponent(apperrors.ErrCompassDirectorClient).SetReason(apperrors.ErrDirectorClientGraphqlizer)
@@ -193,7 +193,7 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 		log.Errorf("Failed to get Runtime by ID: %s", err.Error())
 		return err.Append("failed to get runtime by ID")
 	}
-	runtimeInput := &graphql.RuntimeInput{
+	runtimeInput := &graphql.RuntimeUpdateInput{
 		Name:            runtime.Name,
 		Description:     runtime.Description,
 		StatusCondition: &statusCondition,
@@ -208,7 +208,7 @@ func (cc *directorClient) SetRuntimeStatusCondition(id string, statusCondition g
 }
 
 func (cc *directorClient) GetConnectionToken(id, tenant string) (graphql.OneTimeTokenForRuntimeExt, apperrors.AppError) {
-	runtimeQuery := cc.queryProvider.requestOneTimeTokeneMutation(id)
+	runtimeQuery := cc.queryProvider.requestOneTimeTokenMutation(id)
 
 	var response OneTimeTokenResponse
 	err := cc.executeDirectorGraphQLCall(runtimeQuery, tenant, &response)
