@@ -86,8 +86,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		buildClusterRole(
 			l2OperatorClusterRoleName,
 			map[string]string{
-				"app":                                   "kyma",
-				"reconciler.kyma-project.io/managed-by": "reconciler",
+				"app": "kyma",
 			},
 			[]metav1.LabelSelector{
 				{MatchLabels: map[string]string{l2OperatorBaseRolesLabelKey: "true"}},
@@ -100,9 +99,8 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 		buildClusterRole(
 			l2OperatorRulesClusterRoleName,
 			map[string]string{
-				"app":                                   "kyma",
-				"reconciler.kyma-project.io/managed-by": "reconciler",
-				l2OperatorExtendedRolesLabelKey:         "true",
+				"app":                           "kyma",
+				l2OperatorExtendedRolesLabelKey: "true",
 			},
 			nil,
 			[]v12.PolicyRule{
@@ -119,14 +117,20 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 			s.operatorRoleBindingConfig.L2SubjectName,
 			l2OperatorClusterRoleBindingName,
 			groupKindSubject,
-			map[string]string{"app": "kyma"}))
+			map[string]string{
+				"app":                                   "kyma",
+				"reconciler.kyma-project.io/managed-by": "reconciler",
+			}))
 	clusterRoleBindings = append(clusterRoleBindings,
 		buildClusterRoleBinding(
 			l3OperatorClusterRoleBindingName,
 			s.operatorRoleBindingConfig.L3SubjectName,
 			l3OperatorClusterRoleBindingRoleRefName,
 			groupKindSubject,
-			map[string]string{"app": "kyma"}))
+			map[string]string{
+				"app":                                   "kyma",
+				"reconciler.kyma-project.io/managed-by": "reconciler",
+			}))
 
 	if s.operatorRoleBindingConfig.CreatingForAdmin {
 		for i, administrator := range cluster.Administrators {
