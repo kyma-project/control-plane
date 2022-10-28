@@ -520,7 +520,20 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			},
 		},
 		Data: map[string]string{
-			"default": `additional-components:
+			"default": `
+kyma-template: |-
+  apiVersion: operator.kyma-project.io/v1alpha1
+  kind: Kyma
+  metadata:
+      name: my-kyma
+      namespace: kyma-system
+  spec:
+      sync:
+          strategy: secret
+      channel: stable
+      modules: []
+
+additional-components:
   - name: "additional-component1"
     namespace: "kyma-system"`,
 		},
