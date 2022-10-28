@@ -3,6 +3,7 @@ package provisioning
 import (
 	"bytes"
 	"context"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -41,10 +42,8 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	if operation.K8sClient == nil {
 		return a.operationManager.OperationFailed(operation, "operation does not contain initialized k8s client", nil, logger)
 	}
-	name := operation.RuntimeID
 	k8s := operation.K8sClient
 
-	// todo: handle error
 	template, err := a.createUnstructuredKyma(operation)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
@@ -55,12 +54,12 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	var existingKyma unstructured.Unstructured
 	existingKyma.SetGroupVersionKind(kymaGVK)
 	err = k8s.Get(context.Background(), client.ObjectKey{
-		Namespace: kymaResourceNamespace,
-		Name:      name,
+		Namespace: template.GetNamespace(),
+		Name:      template.GetName(),
 	}, &existingKyma)
 	switch {
 	case err == nil:
-		logger.Infof("Kyma already resource exists, updating")
+		logger.Infof("Kyma resource already exists, updating")
 		v, found, err := unstructured.NestedMap(template.Object, "spec")
 		if err != nil {
 			return a.operationManager.OperationFailed(operation, "unable to get spec from the kyma template", err, logger)
@@ -72,18 +71,17 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 		a.addLabelsAndName(operation, &existingKyma)
 		err = k8s.Update(context.Background(), &existingKyma)
 		if err != nil {
-			logger.Warnf("unable to update the Kyma resource (%s), retrying", existingKyma.GetName())
-			return operation, time.Second, nil
+			logger.Errorf("unable to update a Kyma resource: %s", err.Error())
+			return a.operationManager.RetryOperation(operation, "unable to update the Kyma resource", err, time.Second, 10*time.Second, logger)
 		}
-		return operation, 0, nil
 	case errors.IsNotFound(err):
 		err := k8s.Create(context.Background(), template)
 		if err != nil {
-			logger.Warnf("")
-			return operation, time.Second, nil
+			logger.Errorf("unable to create a Kyma resource: %s", err.Error())
+			return a.operationManager.RetryOperation(operation, "unable to create the Kyma resource", err, time.Second, 10*time.Second, logger)
 		}
 	default:
-		return operation, time.Second, nil
+		return a.operationManager.RetryOperation(operation, "unable to get the Kyma resource", err, time.Second, 10*time.Second, logger)
 	}
 
 	return operation, 0, nil
@@ -91,12 +89,16 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 
 func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unstructured.Unstructured) {
 	labels := obj.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
 	// todo: define labels
 	labels["kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
 	labels["kyma-project.io/global-account-id"] = operation.GlobalAccountID
 	labels["kyma-project.io/runtime-id"] = operation.RuntimeID
+	labels["kyma-project.io/instance-id"] = operation.InstanceID
 	// todo: what should we use for Kyma name?
-	obj.SetName(operation.RuntimeID)
+	obj.SetName(strings.ToLower(operation.RuntimeID))
 }
 
 func (a *ApplyKymaStep) createUnstructuredKyma(operation internal.Operation) (*unstructured.Unstructured, error) {

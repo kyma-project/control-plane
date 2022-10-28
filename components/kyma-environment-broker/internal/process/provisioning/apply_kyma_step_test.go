@@ -2,14 +2,15 @@ package provisioning
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,6 +21,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+/*
+Running tests with real K8S cluster instead of fake client.
+
+k3d cluster create
+
+kubectl create ns kyma-system
+
+kubectl apply -f https://raw.githubusercontent.com/kyma-project/lifecycle-manager/main/operator/config/crd/bases/operator.kyma-project.io_kymas.yaml
+
+k3d kubeconfig get --all > kubeconfig.yaml
+
+export KUBECONFIG=kubeconfig.yaml
+
+USE_KUBECONFIG=true go test -run Test{XXXX}
+
+kubectl get kymas -o yaml -n kyma-system
+*/
+
 func TestCreatingKymaResource(t *testing.T) {
 	// given
 	operation := fixOperationForApplyKymaResource(t)
@@ -28,7 +47,7 @@ func TestCreatingKymaResource(t *testing.T) {
 	svc := NewApplyKymaStep(storage.Operations())
 
 	// when
-	_, backoff, err := svc.Run(operation, logger.NewLogSpy().Logger)
+	_, backoff, err := svc.Run(operation, logrus.New())
 
 	// then
 	require.NoError(t, err)
@@ -39,6 +58,8 @@ func TestCreatingKymaResource(t *testing.T) {
 	operation.K8sClient.List(context.Background(), &aList)
 
 	assert.Equal(t, 1, len(aList.Items))
+
+	fmt.Println(aList.Items[0])
 
 }
 
@@ -56,12 +77,11 @@ spec:
     channel: stable
     modules: []
 `
-	if len(os.Getenv("KUBECONFIG")) > 0 && strings.ToLower(os.Getenv("USE_CKUBECONFIG")) == "true" {
+	if len(os.Getenv("KUBECONFIG")) > 0 && strings.ToLower(os.Getenv("USE_KUBECONFIG")) == "true" {
 		config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-
 		// controller-runtime lib
 		scheme.Scheme.AddKnownTypeWithName(kymaGVK, &unstructured.Unstructured{})
 
@@ -69,7 +89,9 @@ spec:
 		if err != nil {
 			t.Fatal(err.Error())
 		}
+		fmt.Println("using kubeconfig")
 	} else {
+		fmt.Println("using fake client")
 		operation.K8sClient = fake.NewClientBuilder().Build()
 	}
 
