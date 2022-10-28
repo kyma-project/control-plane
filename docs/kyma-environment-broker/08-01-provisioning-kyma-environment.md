@@ -29,7 +29,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    ```
 Alternatively, you can perform `kubectl port-forward` on the chosen pod to expose it on your local machine. Assuming that KEB is installed in the default namespace, expose it to port `8080`:
 ```bash
-  kubectl port-forward deployments/kcp-kyma-environment-broker 8080
+  kubectl port-forward -n kcp-system deployments/kcp-kyma-environment-broker 8080
 ```
 You should get information about the successful forwarding. For example:  
 ```bash
