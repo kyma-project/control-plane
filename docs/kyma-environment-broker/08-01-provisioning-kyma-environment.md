@@ -54,13 +54,13 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    }"
    ```
 
-A successful call returns the operation ID:
+   A successful call returns the operation ID:
 
-   ```json
+    ```json
    {
        "operation":"8a7bfd9b-f2f5-43d1-bb67-177d2434053c"
    }
-   ```
+   ```  
 
 1. Check the operation status as described [here](08-03-operation-status.md).
 
