@@ -28,7 +28,7 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
    ```  
 
-     Alternatively, you can perform `kubectl port-forward` on the chosen pod to expose it on your local machine. Expose it to port `8080`:  
+     Alternatively, you can perform `kubectl port-forward` on the chosen Pod to expose it on your local machine. Expose it on port `8080`:  
 
    ```bash
      kubectl port-forward -n kcp-system deployments/kcp-kyma-environment-broker 8080
