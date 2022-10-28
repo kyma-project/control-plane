@@ -110,7 +110,7 @@ func (s *InjectBTPOperatorCredentialsStep) createOrUpdateSecret(k8sClient client
 	updateSecretData(&clusterSecret, parametersBasedSecret)
 	err = k8sClient.Update(context.Background(), &clusterSecret)
 	if err != nil {
-		log.Error("failed to update the secret for BTP Manager")
+		log.Errorf("failed to update the secret for BTP Manager: %w", err)
 		return err
 	}
 	log.Info("the secret for BTP Manager updated")
@@ -129,14 +129,20 @@ func updateSecretData(secret *apicorev1.Secret, secretFromParameters *apicorev1.
 
 func (s *InjectBTPOperatorCredentialsStep) createOrRetry(k8sClient client.Client, newSecret *apicorev1.Secret, err error, log logrus.FieldLogger) error {
 	if apierrors.IsNotFound(err) {
+		namespace := &apicorev1.Namespace{ObjectMeta: v1.ObjectMeta{Name: secretNamespace}}
+		err = k8sClient.Create(context.Background(), namespace)
+		if err != nil {
+			log.Warnf("could not create %s namespace: %w", secretNamespace, err)
+		}
+
 		err = k8sClient.Create(context.Background(), newSecret)
 		if err == nil {
 			log.Info("the secret for BTP Manager created")
 			return nil
 		}
-		log.Error("failed to create the secret for BTP Manager")
+		log.Errorf("failed to create the secret for BTP Manager: %w", err)
 	} else {
-		log.Error("failed to get the secret for BTP Manager")
+		log.Error("failed to get the secret for BTP Manager: %w", err)
 	}
 	return err
 }

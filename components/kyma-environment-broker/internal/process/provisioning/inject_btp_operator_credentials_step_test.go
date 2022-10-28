@@ -41,6 +41,7 @@ func TestInjectBTPOperatorCredentialsStep(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
+		assertTheNamespaceIsPresent(t, k8sClient)
 		assertTheSecretIsAsExpected(t, k8sClient, expectedSecretData)
 
 		// when
@@ -64,6 +65,10 @@ func TestInjectBTPOperatorCredentialsStep(t *testing.T) {
 
 		operation := fixture.FixProvisioningOperation("operation-id", "inst-id")
 		operation.RuntimeID = ""
+
+		namespaces := apicorev1.NamespaceList{}
+		err := k8sClient.List(context.Background(), &namespaces)
+		require.NoError(t, err)
 
 		step := NewInjectBTPOperatorCredentialsStep(memoryStorage.Operations(), func(k string) (client.Client, error) { return k8sClient, nil })
 
@@ -140,6 +145,17 @@ func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expec
 	assert.True(t, reflect.DeepEqual(expected, secretFromCluster.StringData))
 	assert.True(t, reflect.DeepEqual(labels, secretFromCluster.Labels))
 	assert.True(t, reflect.DeepEqual(annotations, secretFromCluster.Annotations))
+}
+
+func assertTheNamespaceIsPresent(t *testing.T, k8sClient client.WithWatch) {
+	namespaces := apicorev1.NamespaceList{}
+	err := k8sClient.List(context.Background(), &namespaces)
+	require.NoError(t, err)
+	var names []string
+	for _, namespace := range namespaces.Items {
+		names = append(names, namespace.GetName())
+	}
+	assert.Contains(t, names, secretNamespace)
 }
 
 func createExpectedSecretData(credentials *internal.ServiceManagerOperatorCredentials, clusterID string) map[string]string {
