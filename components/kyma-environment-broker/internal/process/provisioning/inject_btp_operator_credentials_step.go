@@ -61,7 +61,7 @@ func (s *InjectBTPOperatorCredentialsStep) Run(operation internal.Operation, log
 			op.InstanceDetails.ServiceManagerClusterID = clusterID
 		}, log)
 		if err != nil {
-			log.Errorf("failed to update operation: %w", err)
+			log.Errorf("failed to update operation: %s", err)
 		}
 		if backoff != 0 {
 			log.Error("cannot save cluster ID")
@@ -110,7 +110,7 @@ func (s *InjectBTPOperatorCredentialsStep) createOrUpdateSecret(k8sClient client
 	updateSecretData(&clusterSecret, parametersBasedSecret)
 	err = k8sClient.Update(context.Background(), &clusterSecret)
 	if err != nil {
-		log.Errorf("failed to update the secret for BTP Manager: %w", err)
+		log.Errorf("failed to update the secret for BTP Manager: %s", err)
 		return err
 	}
 	log.Info("the secret for BTP Manager updated")
@@ -133,9 +133,9 @@ func (s *InjectBTPOperatorCredentialsStep) createOrRetry(k8sClient client.Client
 		err = k8sClient.Create(context.Background(), namespace)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
-				log.Warnf("could not create %s namespace: %w - the namespace already exists", secretNamespace)
+				log.Warnf("could not create %s namespace: %s - the namespace already exists", secretNamespace)
 			} else {
-				log.Warnf("could not create %s namespace: %w", secretNamespace, err)
+				log.Warnf("could not create %s namespace: %s", secretNamespace, err)
 				return err
 			}
 		}
@@ -145,9 +145,9 @@ func (s *InjectBTPOperatorCredentialsStep) createOrRetry(k8sClient client.Client
 			log.Info("the secret for BTP Manager created")
 			return nil
 		}
-		log.Errorf("failed to create the secret for BTP Manager: %w", err)
+		log.Errorf("failed to create the secret for BTP Manager: %s", err)
 	} else {
-		log.Errorf("failed to get the secret for BTP Manager: %w", err)
+		log.Errorf("failed to get the secret for BTP Manager: %s", err)
 	}
 	return err
 }
