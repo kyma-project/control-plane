@@ -22,20 +22,17 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
 
    > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
+1. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
+   ```  
+
+     Alternatively, you can perform `kubectl port-forward` on the chosen pod to expose it on your local machine. Expose it to port `8080`:  
+
+   ```bash
+     kubectl port-forward -n kcp-system deployments/kcp-kyma-environment-broker 8080
    ```
-Alternatively, you can perform `kubectl port-forward` on the chosen pod to expose it on your local machine. Expose it to port `8080`:
-```bash
-  kubectl port-forward -n kcp-system deployments/kcp-kyma-environment-broker 8080
-```
-You should get information about the successful forwarding. For example:  
-```bash
-  Forwarding from 127.0.0.1:8080 -> 8080
-  Forwarding from [::1]:8080 -> 8080
-```  
 
 1. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](03-01-service-description.md).
 
@@ -65,7 +62,7 @@ A successful call returns the operation ID:
    }
    ```
 
-4. Check the operation status as described [here](08-03-operation-status.md).
+1. Check the operation status as described [here](08-03-operation-status.md).
 
 ## BTP Operator
 
@@ -103,4 +100,4 @@ If you need a BTP Operator component installed, obtain [BTP Operator access cred
 						  "url": "https://test.auth.com",
 						  "xsappname": "testXsappname"
 						},
-```
+``` 
