@@ -41,6 +41,7 @@ func TestInjectBTPOperatorCredentialsStep(t *testing.T) {
 
 		// then
 		assert.NoError(t, err)
+		assertTheNamespaceIsPresent(t, k8sClient)
 		assertTheSecretIsAsExpected(t, k8sClient, expectedSecretData)
 
 		// when
@@ -140,6 +141,12 @@ func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expec
 	assert.True(t, reflect.DeepEqual(expected, secretFromCluster.StringData))
 	assert.True(t, reflect.DeepEqual(labels, secretFromCluster.Labels))
 	assert.True(t, reflect.DeepEqual(annotations, secretFromCluster.Annotations))
+}
+
+func assertTheNamespaceIsPresent(t *testing.T, k8sClient client.WithWatch) {
+	namespace := apicorev1.Namespace{}
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: secretNamespace}, &namespace)
+	require.NoError(t, err)
 }
 
 func createExpectedSecretData(credentials *internal.ServiceManagerOperatorCredentials, clusterID string) map[string]string {
