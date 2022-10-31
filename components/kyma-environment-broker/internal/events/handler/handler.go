@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 )
@@ -41,7 +42,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			instanceIds = append(instanceIds, i.InstanceID)
 		}
 	}
-	events, err := h.e.ListEvents(dbmodel.EventFilter{InstanceIDs: instanceIds, OperationIDs: operationIds})
+	events, err := h.e.ListEvents(events.EventFilter{InstanceIDs: instanceIds, OperationIDs: operationIds})
 	if err != nil {
 		http.Error(w, err.Error(), 503)
 		return
