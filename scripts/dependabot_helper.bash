@@ -11,7 +11,7 @@ set -xeuo pipefail
 DIR=$(dirname "${BASH_SOURCE[0]}")/..
 
 # list open PRs from dependabot touching KEB go modules
-prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | startswith("gomod(deps)")) | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
+prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
 body="/lgtm
 /approve"
 
