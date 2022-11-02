@@ -60,6 +60,8 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	switch {
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating")
+
+		// todo: maybe we should not copy spec because the existing resource is the source of truth
 		v, found, err := unstructured.NestedMap(template.Object, "spec")
 		if err != nil {
 			return a.operationManager.OperationFailed(operation, "unable to get spec from the kyma template", err, logger)
