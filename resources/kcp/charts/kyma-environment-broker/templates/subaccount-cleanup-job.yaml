@@ -112,10 +112,7 @@ spec:
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
               command:
-                - "/bin/sh"
-              args:
-                - "-c"
-                - "./bin/accountcleanup"
+                - "/bin/accountcleanup"
               volumeMounts:
               {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                 - name: cloudsql-sslrootcert
@@ -271,10 +268,7 @@ spec:
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
               command:
-                - "/bin/sh"
-              args:
-                - "-c"
-                - "./bin/accountcleanup"
+                - "/bin/accountcleanup"
               volumeMounts:
               {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
               - name: cloudsql-sslrootcert

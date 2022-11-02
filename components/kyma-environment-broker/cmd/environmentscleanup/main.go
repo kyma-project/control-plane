@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	"k8s.io/client-go/dynamic"
 

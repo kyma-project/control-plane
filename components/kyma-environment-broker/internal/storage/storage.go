@@ -2,11 +2,13 @@ package storage
 
 import (
 	"github.com/gocraft/dbr"
+	"github.com/sirupsen/logrus"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
+	eventstorage "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-	"github.com/sirupsen/logrus"
 )
 
 type BrokerStorage interface {
@@ -44,7 +46,7 @@ func NewFromConfig(cfg Config, evcfg events.Config, cipher postgres.Cipher, log 
 		operation:      operation,
 		orchestrations: postgres.NewOrchestrations(fact),
 		runtimeStates:  postgres.NewRuntimeStates(fact, cipher),
-		events:         events.New(evcfg, fact, log),
+		events:         events.New(evcfg, eventstorage.New(fact, log)),
 	}, connection, nil
 }
 

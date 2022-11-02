@@ -4,6 +4,7 @@ import (
 	"time"
 
 	dbr "github.com/gocraft/dbr"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -50,7 +51,7 @@ type ReadSession interface {
 	GetLatestRuntimeStateWithReconcilerInputByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithKymaVersionByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
 	GetLatestRuntimeStateWithOIDCConfigByRuntimeID(runtimeID string) (dbmodel.RuntimeStateDTO, dberr.Error)
-	ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error)
+	ListEvents(filter events.EventFilter) ([]events.EventDTO, error)
 }
 
 //go:generate mockery --name=WriteSession
@@ -63,7 +64,7 @@ type WriteSession interface {
 	InsertOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	UpdateOrchestration(o dbmodel.OrchestrationDTO) dberr.Error
 	InsertRuntimeState(state dbmodel.RuntimeStateDTO) dberr.Error
-	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string) dberr.Error
+	InsertEvent(level events.EventLevel, message, instanceID, operationID string) dberr.Error
 	DeleteEvents(until time.Time) dberr.Error
 }
 
