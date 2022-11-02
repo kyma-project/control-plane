@@ -92,12 +92,11 @@ func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unst
 	if labels == nil {
 		labels = map[string]string{}
 	}
-	// todo: define labels
-	labels["kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
-	labels["kyma-project.io/global-account-id"] = operation.GlobalAccountID
-	labels["kyma-project.io/runtime-id"] = operation.RuntimeID
-	labels["kyma-project.io/instance-id"] = operation.InstanceID
-	// todo: what should we use for Kyma name?
+	labels["operator.kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
+	labels["operator.kyma-project.io/global-account-id"] = operation.GlobalAccountID
+	labels["operator.kyma-project.io/runtime-id"] = operation.RuntimeID
+	labels["operator.kyma-project.io/instance-id"] = operation.InstanceID
+	obj.SetLabels(labels)
 	obj.SetName(strings.ToLower(operation.RuntimeID))
 }
 

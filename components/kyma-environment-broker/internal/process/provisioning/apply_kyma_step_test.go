@@ -56,11 +56,47 @@ func TestCreatingKymaResource(t *testing.T) {
 	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
 
 	operation.K8sClient.List(context.Background(), &aList)
-
 	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExists(t, aList.Items[0])
+}
 
-	fmt.Println(aList.Items[0])
+func TestUpdateingKymaResourceIfExists(t *testing.T) {
+	// given
+	operation := fixOperationForApplyKymaResource(t)
+	storage := storage.NewMemoryStorage()
+	storage.Operations().InsertOperation(operation)
+	svc := NewApplyKymaStep(storage.Operations())
+	err := operation.K8sClient.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "operator.kyma-project.io/v1alpha1",
+		"kind":       "Kyma",
+		"metadata": map[string]interface{}{
+			"name":      operation.RuntimeID,
+			"namespace": "kyma-system",
+		},
+		"spec": map[string]interface{}{
+			"channel": "stable",
+		},
+	}})
+	require.NoError(t, err)
 
+	// when
+	_, backoff, err := svc.Run(operation, logrus.New())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, backoff)
+	aList := unstructured.UnstructuredList{}
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
+
+	operation.K8sClient.List(context.Background(), &aList)
+	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExists(t, aList.Items[0])
+}
+
+func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
+	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/instance-id")
+	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/runtime-id")
+	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/global-account-id")
 }
 
 func fixOperationForApplyKymaResource(t *testing.T) internal.Operation {
