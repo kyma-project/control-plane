@@ -131,7 +131,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 
 func FixInstance(id string) internal.Instance {
 	var (
-		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		runtimeId    = fmt.Sprintf("runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 	)
 
