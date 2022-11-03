@@ -41,10 +41,10 @@ kubectl get kymas -o yaml -n kyma-system
 
 func TestCreatingKymaResource(t *testing.T) {
 	// given
-	operation := fixOperationForApplyKymaResource(t)
+	operation, cli := fixOperationForApplyKymaResource(t)
 	storage := storage.NewMemoryStorage()
 	storage.Operations().InsertOperation(operation)
-	svc := NewApplyKymaStep(storage.Operations())
+	svc := NewApplyKymaStep(storage.Operations(), cli)
 
 	// when
 	_, backoff, err := svc.Run(operation, logrus.New())
@@ -55,18 +55,18 @@ func TestCreatingKymaResource(t *testing.T) {
 	aList := unstructured.UnstructuredList{}
 	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
 
-	operation.K8sClient.List(context.Background(), &aList)
+	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
 	assertLabelsExists(t, aList.Items[0])
 }
 
-func TestUpdateingKymaResourceIfExists(t *testing.T) {
+func TestUpdatingKymaResourceIfExists(t *testing.T) {
 	// given
-	operation := fixOperationForApplyKymaResource(t)
+	operation, cli := fixOperationForApplyKymaResource(t)
 	storage := storage.NewMemoryStorage()
 	storage.Operations().InsertOperation(operation)
-	svc := NewApplyKymaStep(storage.Operations())
-	err := operation.K8sClient.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
+	svc := NewApplyKymaStep(storage.Operations(), cli)
+	err := cli.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
 		"apiVersion": "operator.kyma-project.io/v1alpha1",
 		"kind":       "Kyma",
 		"metadata": map[string]interface{}{
@@ -88,7 +88,7 @@ func TestUpdateingKymaResourceIfExists(t *testing.T) {
 	aList := unstructured.UnstructuredList{}
 	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
 
-	operation.K8sClient.List(context.Background(), &aList)
+	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
 	assertLabelsExists(t, aList.Items[0])
 }
@@ -99,7 +99,7 @@ func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
 	assert.Contains(t, obj.GetLabels(), "kyma-project.io/global-account-id")
 }
 
-func fixOperationForApplyKymaResource(t *testing.T) internal.Operation {
+func fixOperationForApplyKymaResource(t *testing.T) (internal.Operation, client.Client) {
 	operation := fixture.FixOperation("op-id", "inst-id", internal.OperationTypeProvision)
 	operation.KymaTemplate = `
 apiVersion: operator.kyma-project.io/v1alpha1
@@ -113,6 +113,7 @@ spec:
     channel: stable
     modules: []
 `
+	var cli client.Client
 	if len(os.Getenv("KUBECONFIG")) > 0 && strings.ToLower(os.Getenv("USE_KUBECONFIG")) == "true" {
 		config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 		if err != nil {
@@ -121,15 +122,15 @@ spec:
 		// controller-runtime lib
 		scheme.Scheme.AddKnownTypeWithName(kymaGVK, &unstructured.Unstructured{})
 
-		operation.K8sClient, err = client.New(config, client.Options{})
+		cli, err = client.New(config, client.Options{})
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 		fmt.Println("using kubeconfig")
 	} else {
 		fmt.Println("using fake client")
-		operation.K8sClient = fake.NewClientBuilder().Build()
+		cli = fake.NewClientBuilder().Build()
 	}
 
-	return operation
+	return operation, cli
 }

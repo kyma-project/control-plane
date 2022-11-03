@@ -26,13 +26,14 @@ const (
 
 type ApplyKymaStep struct {
 	operationManager *process.OperationManager
+	k8sClient        client.Client
 }
 
 var _ process.Step = &ApplyKymaStep{}
 var kymaGVK = schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
 
-func NewApplyKymaStep(os storage.Operations) *ApplyKymaStep {
-	return &ApplyKymaStep{operationManager: process.NewOperationManager(os)}
+func NewApplyKymaStep(os storage.Operations, cli client.Client) *ApplyKymaStep {
+	return &ApplyKymaStep{operationManager: process.NewOperationManager(os), k8sClient: cli}
 }
 
 func (a *ApplyKymaStep) Name() string {
@@ -40,11 +41,6 @@ func (a *ApplyKymaStep) Name() string {
 }
 
 func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	if operation.K8sClient == nil {
-		return a.operationManager.OperationFailed(operation, "operation does not contain initialized k8s client", nil, logger)
-	}
-	k8s := operation.K8sClient
-
 	template, err := a.createUnstructuredKyma(operation)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
@@ -54,7 +50,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 
 	var existingKyma unstructured.Unstructured
 	existingKyma.SetGroupVersionKind(kymaGVK)
-	err = k8s.Get(context.Background(), client.ObjectKey{
+	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: template.GetNamespace(),
 		Name:      template.GetName(),
 	}, &existingKyma)
@@ -62,13 +58,13 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating")
 		a.addLabelsAndName(operation, &existingKyma)
-		err = k8s.Update(context.Background(), &existingKyma)
+		err = a.k8sClient.Update(context.Background(), &existingKyma)
 		if err != nil {
 			logger.Errorf("unable to update a Kyma resource: %s", err.Error())
 			return a.operationManager.RetryOperation(operation, "unable to update the Kyma resource", err, time.Second, 10*time.Second, logger)
 		}
 	case errors.IsNotFound(err):
-		err := k8s.Create(context.Background(), template)
+		err := a.k8sClient.Create(context.Background(), template)
 		if err != nil {
 			logger.Errorf("unable to create a Kyma resource: %s", err.Error())
 			return a.operationManager.RetryOperation(operation, "unable to create the Kyma resource", err, time.Second, 10*time.Second, logger)

@@ -619,9 +619,6 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
-	iasFakeClient := ias.NewFakeClient()
-	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
@@ -633,9 +630,9 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	eventBroker := event.NewPubSub(logs)
 
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(cli), logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, inputFactory, avsDel,
+		internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, edpClient, accountProvider,
+		reconcilerClient, fakeK8sClientProvider(cli), cli, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
