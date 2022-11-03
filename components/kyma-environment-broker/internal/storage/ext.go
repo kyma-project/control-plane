@@ -3,6 +3,7 @@ package storage
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -111,6 +112,6 @@ type Updating interface {
 }
 
 type Events interface {
-	InsertEvent(level dbmodel.EventLevel, message, instanceID, operationID string)
-	ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error)
+	InsertEvent(level events.EventLevel, message, instanceID, operationID string)
+	ListEvents(filter events.EventFilter) ([]events.EventDTO, error)
 }

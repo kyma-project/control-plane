@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
@@ -685,14 +686,14 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 		nil
 }
 
-func (r readSession) ListEvents(filter dbmodel.EventFilter) ([]dbmodel.EventDTO, error) {
-	var events []dbmodel.EventDTO
+func (r readSession) ListEvents(filter events.EventFilter) ([]events.EventDTO, error) {
+	var events []events.EventDTO
 	stmt := r.session.Select("*").From("events")
-	if filter.InstanceID != "" {
-		stmt.Where(dbr.Eq("instance_id", filter.InstanceID))
+	if len(filter.InstanceIDs) != 0 {
+		stmt.Where(dbr.Eq("instance_id", filter.InstanceIDs))
 	}
-	if filter.OperationID != "" {
-		stmt.Where(dbr.Eq("operation_id", filter.OperationID))
+	if len(filter.OperationIDs) != 0 {
+		stmt.Where(dbr.Eq("operation_id", filter.OperationIDs))
 	}
 	stmt.OrderBy("created_at")
 	_, err := stmt.Load(&events)

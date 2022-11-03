@@ -28,6 +28,7 @@ var (
 		broker.OpenStackPlanID,
 		broker.TrialPlanID,
 		broker.FreemiumPlanID,
+		broker.PreviewPlanName,
 	}
 )
 

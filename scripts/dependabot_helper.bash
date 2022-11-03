@@ -11,15 +11,28 @@ set -xeuo pipefail
 DIR=$(dirname "${BASH_SOURCE[0]}")/..
 
 # list open PRs from dependabot touching KEB go modules
-prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | startswith("gomod(deps)")) | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
+prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
 body="/lgtm
 /approve"
 
 # iterate over each PR, run go mod tidy under the KCP CLI dir, commit, push
+git checkout main
 git pull origin --rebase
 for pr in "${prs[@]}"; do
     gh pr checkout "${pr}"
     (
+        while true; do
+            mergeable=$(gh pr view --json mergeable | jq --raw-output '.mergeable')
+            case "${mergeable}" in
+                MERGEABLE)
+                    break
+                    ;;
+                *)
+                    echo "pr ${pr} has status ${mergeable}, waiting"
+                    sleep 10
+                    ;;
+            esac
+        done
         cd "$DIR/tools/cli"
         go mod tidy
         if [[ -n "$(git diff)" ]]; then
@@ -28,10 +41,22 @@ for pr in "${prs[@]}"; do
             sleep 5
             gh pr review "${pr}" --approve --body "${body}"
         else
-            status=$(gh pr view --json reviewDecision | jq '.reviewDecision')
-            if [[ "$status" == '"REVIEW_REQUIRED"' ]]; then
+            status=$(gh pr view --json reviewDecision | jq --raw-output '.reviewDecision')
+            if [[ "$status" == 'REVIEW_REQUIRED' ]]; then
                 gh pr review "${pr}" --approve --body "${body}"
             fi
         fi
+        while true; do
+            state=$(gh pr view "${pr}" --json state | jq --raw-output '.state')
+            case "$state" in
+                MERGED)
+                    break
+                    ;;
+                *)
+                    echo "PR ${pr} not merged yet"
+                    sleep 5
+                    ;;
+            esac
+        done
     )
 done

@@ -2,11 +2,9 @@
 
 ## Overview
 
->**CAUTION:** This repository is in a very early stage. Use it at your own risk.
-
 Kyma Control Plane (KCP) is a central system to manage Kyma Runtimes.
 
-For more information on KCP and its components, read the [documentation](https://kyma-project.io/docs/control-plane/).
+For more information on KCP and its components, read the [KCP documentation](https://github.com/kyma-project/control-plane/tree/main/docs).
 
 ## Prerequisites
 
@@ -33,16 +31,6 @@ You can also specify Kyma version, such as 1.6 or newer:
 ```bash
 ./installation/cmd/run.sh {version}
 ```
-
-## Testing
-
-Kyma Control Plane, as a part of Kyma, uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/README.md) for testing. To run the Kyma Control Plane tests, run:
-
-```bash
-./installation/scripts/testing.sh
-```
-
-Read [this](https://kyma-project.io/docs/root/kyma#details-testing-kyma) document to learn more about testing in Kyma.
 
 ## Reconciler
 

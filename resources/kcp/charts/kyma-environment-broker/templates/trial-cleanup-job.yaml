@@ -92,10 +92,7 @@ spec:
                   value: {{.Values.kebClient.scope}}
               {{if eq .Values.global.database.embedded.enabled false}}
               command:
-                - "/bin/sh"
-              args:
-                - "-c"
-                - "./app/trialcleanup"
+                - "/app/trialcleanup"
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
