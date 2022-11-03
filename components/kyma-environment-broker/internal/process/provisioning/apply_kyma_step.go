@@ -3,6 +3,7 @@ package provisioning
 import (
 	"bytes"
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
@@ -57,7 +58,10 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	switch {
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating")
-		a.addLabelsAndName(operation, &existingKyma)
+		changed := a.addLabelsAndName(operation, &existingKyma)
+		if !changed {
+			logger.Infof("Kyma resource does not need any change")
+		}
 		err = a.k8sClient.Update(context.Background(), &existingKyma)
 		if err != nil {
 			logger.Errorf("unable to update a Kyma resource: %s", err.Error())
@@ -76,9 +80,15 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	return operation, 0, nil
 }
 
-func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unstructured.Unstructured) {
+func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unstructured.Unstructured) bool {
+	oldLabels := obj.GetLabels()
 	steps.ApplyLabelsForLM(obj, operation)
 	obj.SetName(steps.KymaName(operation))
+	if !reflect.DeepEqual(obj.GetLabels(), oldLabels) {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (a *ApplyKymaStep) createUnstructuredKyma(operation internal.Operation) (*unstructured.Unstructured, error) {

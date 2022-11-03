@@ -58,6 +58,8 @@ func TestCreatingKymaResource(t *testing.T) {
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
 	assertLabelsExists(t, aList.Items[0])
+
+	svc.Run(operation, logrus.New())
 }
 
 func TestUpdatingKymaResourceIfExists(t *testing.T) {
