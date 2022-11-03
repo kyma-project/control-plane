@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -78,6 +79,8 @@ type BrokerSuiteTest struct {
 	inputBuilderFactory input.CreatorForPlan
 
 	componentProvider componentProviderDecorated
+
+	k8sCli client.Client
 }
 
 type componentProviderDecorated struct {
@@ -204,6 +207,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
+		k8sCli:              fakeK8sSKRClient,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -1292,6 +1296,25 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 			},
 		},
 	}
+}
+
+func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
+
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+
+	obj := &unstructured.Unstructured{}
+	obj.SetName(operation.RuntimeID)
+	obj.SetNamespace("kyma-system")
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1alpha1",
+		Kind:    "Kyma",
+	})
+
+	err = s.k8sCli.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+
+	//assert.NoError(s.t, err)
 }
 
 func mockBTPOperatorClusterID() {
