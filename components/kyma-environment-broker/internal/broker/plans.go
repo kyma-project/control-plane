@@ -29,7 +29,7 @@ const (
 	FreemiumPlanName   = "free"
 	OwnClusterPlanID   = "03e3cb66-a4c6-4c6a-b4b0-5d42224debea"
 	OwnClusterPlanName = "own_cluster"
-	PreviewPlanID      = "683b232e-b5b3-4c81-8238-f6f9d8385de7"
+	PreviewPlanID      = "5cb3d976-b85c-42ea-a636-79cadda109a9"
 	PreviewPlanName    = "preview"
 )
 
