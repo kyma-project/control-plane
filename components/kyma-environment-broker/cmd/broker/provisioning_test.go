@@ -56,7 +56,7 @@ func TestProvisioning_Preview(t *testing.T) {
 	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
-					"plan_id": "683b232e-b5b3-4c81-8238-f6f9d8385de7",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
 					"context": {
 						"globalaccount_id": "g-account-id",
 						"subaccount_id": "sub-id",
