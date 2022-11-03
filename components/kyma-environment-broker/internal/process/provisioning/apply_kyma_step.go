@@ -3,8 +3,9 @@ package provisioning
 import (
 	"bytes"
 	"context"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
