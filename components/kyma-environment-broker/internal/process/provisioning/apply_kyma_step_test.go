@@ -94,9 +94,9 @@ func TestUpdateingKymaResourceIfExists(t *testing.T) {
 }
 
 func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
-	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/instance-id")
-	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/runtime-id")
-	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/global-account-id")
+	assert.Contains(t, obj.GetLabels(), "kyma-project.io/instance-id")
+	assert.Contains(t, obj.GetLabels(), "kyma-project.io/runtime-id")
+	assert.Contains(t, obj.GetLabels(), "kyma-project.io/global-account-id")
 }
 
 func fixOperationForApplyKymaResource(t *testing.T) internal.Operation {

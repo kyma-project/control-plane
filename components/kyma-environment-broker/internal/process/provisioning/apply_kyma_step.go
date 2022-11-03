@@ -3,7 +3,7 @@ package provisioning
 import (
 	"bytes"
 	"context"
-	"strings"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -60,16 +60,6 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	switch {
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating")
-
-		// todo: maybe we should not copy spec because the existing resource is the source of truth
-		v, found, err := unstructured.NestedMap(template.Object, "spec")
-		if err != nil {
-			return a.operationManager.OperationFailed(operation, "unable to get spec from the kyma template", err, logger)
-		}
-		if !found {
-			return a.operationManager.OperationFailed(operation, "unable to find spec in the kyma template", nil, logger)
-		}
-		unstructured.SetNestedMap(existingKyma.Object, v, "spec")
 		a.addLabelsAndName(operation, &existingKyma)
 		err = k8s.Update(context.Background(), &existingKyma)
 		if err != nil {
@@ -90,16 +80,8 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 }
 
 func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unstructured.Unstructured) {
-	labels := obj.GetLabels()
-	if labels == nil {
-		labels = map[string]string{}
-	}
-	labels["operator.kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
-	labels["operator.kyma-project.io/global-account-id"] = operation.GlobalAccountID
-	labels["operator.kyma-project.io/runtime-id"] = operation.RuntimeID
-	labels["operator.kyma-project.io/instance-id"] = operation.InstanceID
-	obj.SetLabels(labels)
-	obj.SetName(strings.ToLower(operation.RuntimeID))
+	steps.ApplyLabelsForLM(obj, operation)
+	obj.SetName(steps.KymaName(operation))
 }
 
 func (a *ApplyKymaStep) createUnstructuredKyma(operation internal.Operation) (*unstructured.Unstructured, error) {
