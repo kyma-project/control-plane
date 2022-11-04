@@ -84,11 +84,7 @@ func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unst
 	oldLabels := obj.GetLabels()
 	steps.ApplyLabelsForLM(obj, operation)
 	obj.SetName(steps.KymaName(operation))
-	if !reflect.DeepEqual(obj.GetLabels(), oldLabels) {
-		return true
-	} else {
-		return false
-	}
+	return !reflect.DeepEqual(obj.GetLabels(), oldLabels) {
 }
 
 func (a *ApplyKymaStep) createUnstructuredKyma(operation internal.Operation) (*unstructured.Unstructured, error) {
