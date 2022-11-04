@@ -25,7 +25,7 @@ func NewCanceler(orchestrations storage.Orchestrations, logger logrus.FieldLogge
 func (c *Canceler) CancelForID(orchestrationID string) error {
 	o, err := c.orchestrations.GetByID(orchestrationID)
 	if err != nil {
-		return fmt.Errorf("while getting orchestration: %s", err)
+		return fmt.Errorf("while getting orchestration: %w", err)
 	}
 	if o.IsFinished() || o.State == orchestrationExt.Canceling {
 		return nil
