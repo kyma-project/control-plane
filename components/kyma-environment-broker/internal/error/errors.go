@@ -170,3 +170,27 @@ func checkK8SError(cause error) LastError {
 
 	return lastErr
 }
+
+// UnwrapOnce accesses the direct cause of the error if any, otherwise
+// returns nil.
+func UnwrapOnce(err error) (cause error) {
+	switch e := err.(type) {
+	case interface{ Unwrap() error }:
+		return e.Unwrap()
+	}
+	return nil
+}
+
+// UnwrapAll accesses the root cause object of the error.
+// If the error has no cause (leaf error), it is returned directly.
+// this is a replacement for github.com/pkg/errors.Cause
+func UnwrapAll(err error) error {
+	for {
+		if cause := UnwrapOnce(err); cause != nil {
+			err = cause
+			continue
+		}
+		break
+	}
+	return err
+}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 )
 
 type RuntimeVersionConfigurator struct {
@@ -49,7 +48,7 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.Operation) (*
 		if found {
 			majorVer, err := determineMajorVersion(version, rvc.defaultVersion)
 			if err != nil {
-				return nil, errors.Wrap(err, "while determining Kyma's major version")
+				return nil, fmt.Errorf("while determining Kyma's major version: %w", err)
 			}
 			return internal.NewRuntimeVersionFromAccountMapping(version, majorVer), nil
 		}
@@ -58,7 +57,7 @@ func (rvc *RuntimeVersionConfigurator) ForProvisioning(op internal.Operation) (*
 
 	majorVer, err := determineMajorVersion(pp.Parameters.KymaVersion, rvc.defaultVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while determining Kyma's major version")
+		return nil, fmt.Errorf("while determining Kyma's major version: %w", err)
 	}
 	return internal.NewRuntimeVersionFromParameters(pp.Parameters.KymaVersion, majorVer), nil
 }
@@ -91,7 +90,7 @@ func (rvc *RuntimeVersionConfigurator) ForUpgrade(op internal.UpgradeKymaOperati
 	if found {
 		majorVer, err := determineMajorVersion(version, rvc.defaultVersion)
 		if err != nil {
-			return nil, errors.Wrap(err, "while determining Kyma's major version")
+			return nil, fmt.Errorf("while determining Kyma's major version: %w", err)
 		}
 		return internal.NewRuntimeVersionFromAccountMapping(version, majorVer), nil
 	}

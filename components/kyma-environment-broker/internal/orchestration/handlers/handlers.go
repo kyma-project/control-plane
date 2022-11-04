@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,7 +35,7 @@ func (h *handler) AttachRoutes(router *mux.Router) {
 
 func validateTarget(spec orchestration.TargetSpec) error {
 	if spec.Include == nil || len(spec.Include) == 0 {
-		return errors.New("targets.include array must be not empty")
+		return fmt.Errorf("at least one target must be specified")
 	}
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -66,7 +65,7 @@ func (r *kymaRetryer) orchestrationRetry(o *internal.Orchestration, opsByOrch []
 
 	for _, op := range ops {
 		o.Parameters.RetryOperation.RetryOperations = append(o.Parameters.RetryOperation.RetryOperations, op.Operation.ID)
-		o.Parameters.RetryOperation.Immediate = (immediate == "true")
+		o.Parameters.RetryOperation.Immediate = immediate == "true"
 	}
 
 	// get orchestration state again in case in progress changed to failed, need to put in queue
@@ -125,8 +124,7 @@ func (r *kymaRetryer) latestOperationValidate(orchestrationID string, ops []inte
 		if err != nil {
 			// fail for listing operations of one instance, then http return and report fail
 			r.log.Errorf("while getting operations by instanceID %s: %v", instanceID, err)
-			err = errors.Wrapf(err, "while getting operations by instanceID %s", instanceID)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("while getting operations by instanceID %s: %w", instanceID, err)
 		}
 
 		var errFound, newerExist bool
@@ -153,8 +151,7 @@ func (r *kymaRetryer) latestOperationValidate(orchestrationID string, ops []inte
 
 		if num == 0 || errFound {
 			r.log.Errorf("while getting operations by instanceID %s: %v", instanceID, err)
-			err = errors.Wrapf(err, "while getting operations by instanceID %s", instanceID)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("while getting operations by instanceID %s: %w", instanceID, err)
 		}
 
 		if newerExist {
@@ -171,7 +168,7 @@ func orchestrationStateUpdate(orch *internal.Orchestration, orchestrations stora
 	o, err := orchestrations.GetByID(orchestrationID)
 	if err != nil {
 		log.Errorf("while getting orchestration %s: %v", orchestrationID, err)
-		return "", errors.Wrapf(err, "while getting orchestration %s", orchestrationID)
+		return "", fmt.Errorf("while getting orchestration %s: %w", orchestrationID, err)
 	}
 	// last minute check in case in progress one got canceled.
 	state := o.State
@@ -190,7 +187,7 @@ func orchestrationStateUpdate(orch *internal.Orchestration, orchestrations stora
 	err = orchestrations.Update(*o)
 	if err != nil {
 		log.Errorf("while updating orchestration %s: %v", orchestrationID, err)
-		return state, errors.Wrapf(err, "while updating orchestration %s", orchestrationID)
+		return state, fmt.Errorf("while updating orchestration %s: %w", orchestrationID, err)
 	}
 	return state, nil
 }
