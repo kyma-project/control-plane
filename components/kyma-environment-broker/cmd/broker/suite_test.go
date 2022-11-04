@@ -520,7 +520,20 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			},
 		},
 		Data: map[string]string{
-			"default": `additional-components:
+			"default": `
+kyma-template: |-
+  apiVersion: operator.kyma-project.io/v1alpha1
+  kind: Kyma
+  metadata:
+      name: my-kyma
+      namespace: kyma-system
+  spec:
+      sync:
+          strategy: secret
+      channel: stable
+      modules: []
+
+additional-components:
   - name: "additional-component1"
     namespace: "kyma-system"`,
 		},
@@ -606,9 +619,6 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
-	iasFakeClient := ias.NewFakeClient()
-	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
@@ -620,9 +630,9 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	eventBroker := event.NewPubSub(logs)
 
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(cli), logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, inputFactory, avsDel,
+		internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, edpClient, accountProvider,
+		reconcilerClient, fakeK8sClientProvider(cli), cli, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)

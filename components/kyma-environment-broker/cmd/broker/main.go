@@ -125,6 +125,7 @@ type Config struct {
 	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
+	LifecycleManagerIntegrationDisabled        bool   `envconfig:"default=true"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -169,9 +170,10 @@ type ProfilerConfig struct {
 }
 
 const (
-	createRuntimeStageName = "create_runtime"
-	checkKymaStageName     = "check_kyma"
-	startStageName         = "start"
+	createRuntimeStageName      = "create_runtime"
+	checkKymaStageName          = "check_kyma"
+	createKymaResourceStageName = "create_kyma_resource"
+	startStageName              = "start"
 )
 
 func periodicProfile(logger lager.Logger, profiler ProfilerConfig) {
@@ -237,9 +239,6 @@ func main() {
 	fatalOnError(err)
 	cli, err := initClient(k8sCfg)
 	fatalOnError(err)
-
-	// create director client
-	directorClient := director.NewDirectorClient(ctx, cfg.Director, logs.WithField("service", "directorClient"))
 
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
@@ -339,10 +338,9 @@ func main() {
 	// run queues
 	const workersAmount = 5
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, directorClient, inputFactory,
+	provisionQueue := NewProvisioningProcessingQueue(ctx, provisionManager, 60, &cfg, db, provisionerClient, inputFactory,
 		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder,
-		edpClient, accountProvider, reconcilerClient, k8sClientProvider, logs)
+		runtimeOverrides, edpClient, accountProvider, reconcilerClient, k8sClientProvider, cli, logs)
 
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
@@ -610,17 +608,16 @@ func panicOnError(err error) {
 	}
 }
 
-func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *process.StagedManager, workersAmount int,
-	cfg *Config, db storage.BrokerStorage, provisionerClient provisioner.Client, directorClient provisioning.DirectorClient,
-	inputFactory input.CreatorForPlan, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
-	externalEvalCreator *provisioning.ExternalEvalCreator, internalEvalUpdater *provisioning.InternalEvalUpdater,
-	runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeOverrides provisioning.RuntimeOverridesAppender,
-	bundleBuilder ias.BundleBuilder, edpClient provisioning.EDPClient,
-	accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client, k8sClientProvider func(kcfg string) (client.Client, error), logs logrus.FieldLogger) *process.Queue {
+func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *process.StagedManager, workersAmount int, cfg *Config,
+	db storage.BrokerStorage, provisionerClient provisioner.Client, inputFactory input.CreatorForPlan, avsDel *avs.Delegator,
+	internalEvalAssistant *avs.InternalEvalAssistant, externalEvalCreator *provisioning.ExternalEvalCreator,
+	internalEvalUpdater *provisioning.InternalEvalUpdater, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator,
+	runtimeOverrides provisioning.RuntimeOverridesAppender, edpClient provisioning.EDPClient, accountProvider hyperscaler.AccountProvider,
+	reconcilerClient reconciler.Client, k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, logs logrus.FieldLogger) *process.Queue {
 
 	const postActionsStageName = "post_actions"
 	provisionManager.DefineStages([]string{startStageName, createRuntimeStageName,
-		checkKymaStageName, postActionsStageName})
+		checkKymaStageName, createKymaResourceStageName, postActionsStageName})
 	/*
 			The provisioning process contains the following stages:
 			1. "start" - changes the state from pending to in progress if no deprovisioning is ongoing.
@@ -707,6 +704,11 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 			condition: skipForPreviewPlan,
+		},
+		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			stage:    createKymaResourceStageName,
+			step:     provisioning.NewApplyKymaStep(db.Operations(), cli),
 		},
 		// post actions
 		{

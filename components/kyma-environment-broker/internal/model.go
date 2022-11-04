@@ -229,6 +229,9 @@ type Operation struct {
 	// UPGRADE KYMA
 	orchestration.RuntimeOperation `json:"runtime_operation"`
 	ClusterConfigurationApplied    bool `json:"cluster_configuration_applied"`
+
+	// KymaTemplate is read from the configuration then used in the apply_kyma step
+	KymaTemplate string `json:"KymaTemplate"`
 }
 
 func (o *Operation) IsFinished() bool {
@@ -602,4 +605,5 @@ type ComponentSource struct {
 
 type ConfigForPlan struct {
 	AdditionalComponents []KymaComponent `json:"additional-components" yaml:"additional-components"`
+	KymaTemplate         string          `json:"kyma-template" yaml:"kyma-template"`
 }

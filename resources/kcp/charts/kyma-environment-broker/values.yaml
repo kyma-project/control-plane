@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2233"
+      version: "PR-2181"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2175"
@@ -64,6 +64,9 @@ reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
   # Defines how long KEB checks the status of the provisioning reconciliation.
   provisioningTimeout: "2h"
+
+lifecycleManager:
+  disabled: "true"
 
 provisioner:
   URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"

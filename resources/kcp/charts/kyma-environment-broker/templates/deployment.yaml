@@ -83,6 +83,8 @@ spec:
               value: "{{ .Values.broker.operationTimeout }}"
             - name: APP_RECONCILER_URL
               value: "{{ .Values.reconciler.URL }}"
+            - name: APP_LIFECYCLE_MANAGER_INTEGRATION_DISABLED
+              value: "{{ .Values.lifecycleManager.disabled}}"
             - name: APP_RECONCILER_PROVISIONING_TIMEOUT
               value: "{{ .Values.reconciler.provisioningTimeout }}"
             - name: APP_PROVISIONER_URL
