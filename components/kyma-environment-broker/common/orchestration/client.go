@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
@@ -67,13 +66,13 @@ func (c client) ListOrchestrations(params ListParameters) (StatusResponseList, e
 	for !fetchedAll {
 		req, err := http.NewRequest("GET", fmt.Sprintf("%s/orchestrations", c.url), nil)
 		if err != nil {
-			return orchestrations, errors.Wrap(err, "while creating request")
+			return orchestrations, fmt.Errorf("while creating request: %w", err)
 		}
 		setQuery(req.URL, params)
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			return orchestrations, errors.Wrapf(err, "while calling %s", req.URL.String())
+			return orchestrations, fmt.Errorf("while calling %s: %w", req.URL.String(), err)
 		}
 
 		// Drain response body and close, return error to context if there isn't any.
@@ -96,7 +95,7 @@ func (c client) ListOrchestrations(params ListParameters) (StatusResponseList, e
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&srl)
 		if err != nil {
-			return orchestrations, errors.Wrap(err, "while decoding response body")
+			return orchestrations, fmt.Errorf("while decoding response body: %w", err)
 		}
 
 		orchestrations.TotalCount = srl.TotalCount
@@ -119,7 +118,7 @@ func (c client) GetOrchestration(orchestrationID string) (StatusResponse, error)
 	url := fmt.Sprintf("%s/orchestrations/%s", c.url, orchestrationID)
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
-		return orchestration, errors.Wrapf(err, "while calling %s", url)
+		return orchestration, fmt.Errorf("while calling %s: %w", url, err)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -141,7 +140,7 @@ func (c client) GetOrchestration(orchestrationID string) (StatusResponse, error)
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&orchestration)
 	if err != nil {
-		return orchestration, errors.Wrap(err, "while decoding response body")
+		return orchestration, fmt.Errorf("while decoding response body: %w", err)
 	}
 
 	return orchestration, nil
@@ -172,13 +171,13 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
-			return operations, errors.Wrap(err, "while creating request")
+			return operations, fmt.Errorf("while creating request: %w", err)
 		}
 		setQuery(req.URL, params)
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			return operations, errors.Wrapf(err, "while calling %s", url)
+			return operations, fmt.Errorf("while calling %s: %w", url, err)
 		}
 
 		// Drain response body and close, return error to context if there isn't any.
@@ -201,7 +200,7 @@ func (c client) ListOperations(orchestrationID string, params ListParameters) (O
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&orl)
 		if err != nil {
-			return operations, errors.Wrap(err, "while decoding response body")
+			return operations, fmt.Errorf("while decoding response body: %w", err)
 		}
 
 		operations.TotalCount = orl.TotalCount
@@ -250,7 +249,7 @@ func (c client) GetOperation(orchestrationID, operationID string) (OperationDeta
 	url := fmt.Sprintf("%s/orchestrations/%s/operations/%s", c.url, orchestrationID, operationID)
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
-		return operation, errors.Wrapf(err, "while calling %s", url)
+		return operation, fmt.Errorf("while calling %s: %w", url, err)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -272,7 +271,7 @@ func (c client) GetOperation(orchestrationID, operationID string) (OperationDeta
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&operation)
 	if err != nil {
-		return operation, errors.Wrap(err, "while decoding response body")
+		return operation, fmt.Errorf("while decoding response body: %w", err)
 	}
 
 	return operation, nil
@@ -285,7 +284,7 @@ func (c client) UpgradeKyma(params Parameters) (UpgradeResponse, error) {
 
 	ur, err := c.upgradeOperation(uri, params)
 	if err != nil {
-		return ur, errors.Wrap(err, "while calling kyma upgrade operation")
+		return ur, fmt.Errorf("while calling kyma upgrade operation: %w", err)
 	}
 
 	return ur, nil
@@ -298,7 +297,7 @@ func (c client) UpgradeCluster(params Parameters) (UpgradeResponse, error) {
 
 	ur, err := c.upgradeOperation(uri, params)
 	if err != nil {
-		return ur, errors.Wrap(err, "while calling cluster upgrade operation")
+		return ur, fmt.Errorf("while calling cluster upgrade operation: %w", err)
 	}
 
 	return ur, nil
@@ -309,18 +308,18 @@ func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse
 	ur := UpgradeResponse{}
 	blob, err := json.Marshal(params)
 	if err != nil {
-		return ur, errors.Wrap(err, "while converting upgrade parameters to JSON")
+		return ur, fmt.Errorf("while converting upgrade parameters to JSON: %w", err)
 	}
 
 	u, err := url.Parse(c.url)
 	if err != nil {
-		return ur, errors.Wrapf(err, "while parsing %s", c.url)
+		return ur, fmt.Errorf("while parsing %s: %w", c.url, err)
 	}
 	u.Path = path.Join(u.Path, uri)
 
 	resp, err := c.httpClient.Post(u.String(), "application/json", bytes.NewBuffer(blob))
 	if err != nil {
-		return ur, errors.Wrapf(err, "while calling %s", u)
+		return ur, fmt.Errorf("while calling %s: %w", u, err)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -342,7 +341,7 @@ func (c client) upgradeOperation(uri string, params Parameters) (UpgradeResponse
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&ur)
 	if err != nil {
-		return ur, errors.Wrap(err, "while decoding response body")
+		return ur, fmt.Errorf("while decoding response body: %w", err)
 	}
 
 	return ur, nil
@@ -364,13 +363,13 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 
 	req, err := http.NewRequest(http.MethodPost, uri, body)
 	if err != nil {
-		return rr, errors.Wrap(err, "while creating retry request")
+		return rr, fmt.Errorf("while creating retry request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return rr, errors.Wrapf(err, "while calling %s", uri)
+		return rr, fmt.Errorf("while calling %s: %w", uri, err)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
@@ -392,7 +391,7 @@ func (c client) RetryOrchestration(orchestrationID string, operationIDs []string
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&rr)
 	if err != nil {
-		return rr, errors.Wrap(err, "while decoding response body")
+		return rr, fmt.Errorf("while decoding response body: %w", err)
 	}
 
 	return rr, nil
@@ -403,12 +402,12 @@ func (c client) CancelOrchestration(orchestrationID string) error {
 
 	req, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
-		return errors.Wrap(err, "while creating cancel request")
+		return fmt.Errorf("while creating cancel request: %w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return errors.Wrapf(err, "while calling %s", url)
+		return fmt.Errorf("while calling %s: %w", url, err)
 	}
 
 	// Drain response body and close, return error to context if there isn't any.
