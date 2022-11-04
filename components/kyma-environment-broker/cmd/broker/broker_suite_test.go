@@ -54,6 +54,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +79,8 @@ type BrokerSuiteTest struct {
 	inputBuilderFactory input.CreatorForPlan
 
 	componentProvider componentProviderDecorated
+
+	k8sKcp client.Client
 }
 
 type componentProviderDecorated struct {
@@ -204,6 +207,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
+		k8sKcp:              cli,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -1292,6 +1296,25 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 			},
 		},
 	}
+}
+
+func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
+
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+
+	obj := &unstructured.Unstructured{}
+	obj.SetName(operation.RuntimeID)
+	obj.SetNamespace("kyma-system")
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1alpha1",
+		Kind:    "Kyma",
+	})
+
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+
+	assert.NoError(s.t, err)
 }
 
 func mockBTPOperatorClusterID() {
