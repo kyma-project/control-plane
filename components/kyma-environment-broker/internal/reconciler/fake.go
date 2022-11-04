@@ -1,11 +1,11 @@
 package reconciler
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
-	"github.com/pkg/errors"
 )
 
 /*
@@ -61,11 +61,11 @@ func (c *FakeClient) GetCluster(clusterName string, configVersion int64) (*recon
 
 	existingCluster, exists := c.inventoryClusters[clusterName]
 	if !exists {
-		return &reconcilerApi.HTTPClusterResponse{}, errors.New("not found")
+		return &reconcilerApi.HTTPClusterResponse{}, fmt.Errorf("not found")
 	}
 	state, exists := existingCluster.clusterStates[configVersion]
 	if !exists {
-		return &reconcilerApi.HTTPClusterResponse{}, errors.New("not found")
+		return &reconcilerApi.HTTPClusterResponse{}, fmt.Errorf("not found")
 	}
 	return state, nil
 }
@@ -156,7 +156,7 @@ func (c *FakeClient) ChangeClusterState(clusterName string, clusterVersion int64
 func (c *FakeClient) LastClusterConfig(runtimeID string) (*reconcilerApi.Cluster, error) {
 	cluster, found := c.inventoryClusters[runtimeID]
 	if !found {
-		return nil, errors.New("cluster not found in clusters inventory")
+		return nil, fmt.Errorf("cluster not found in clusters inventory")
 	}
 	return getLastClusterConfig(cluster)
 }
@@ -180,7 +180,7 @@ func (c *FakeClient) ClusterExists(id string) bool {
 func getLastClusterConfig(cluster *registeredCluster) (*reconcilerApi.Cluster, error) {
 	clusterConfig, found := cluster.clusterConfigs[int64(len(cluster.clusterConfigs))]
 	if !found {
-		return nil, errors.New("cluster config not found in cluster configs inventory")
+		return nil, fmt.Errorf("cluster config not found in cluster configs inventory")
 	}
 	return &clusterConfig, nil
 }
