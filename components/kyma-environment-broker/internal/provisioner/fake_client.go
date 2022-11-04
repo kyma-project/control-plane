@@ -2,6 +2,7 @@ package provisioner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -175,16 +176,22 @@ func (c *FakeClient) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeS
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return schema.RuntimeStatus{
-		RuntimeConfiguration: &schema.RuntimeConfig{
-			ClusterConfig: &schema.GardenerConfig{
-				Name:   ptr.String("fake-name"),
-				Region: ptr.String("fake-region"),
-				Seed:   ptr.String("fake-seed"),
-			},
-			Kubeconfig: ptr.String("kubeconfig-content"),
-		},
-	}, nil
+	for _, ops := range c.operations {
+		if ops.RuntimeID == &runtimeID {
+			return schema.RuntimeStatus{
+				RuntimeConfiguration: &schema.RuntimeConfig{
+					ClusterConfig: &schema.GardenerConfig{
+						Name:   ptr.String("fake-name"),
+						Region: ptr.String("fake-region"),
+						Seed:   ptr.String("fake-seed"),
+					},
+					Kubeconfig: ptr.String("kubeconfig-content"),
+				},
+			}, nil
+		}
+	}
+
+	return schema.RuntimeStatus{}, errors.New("no status for given runtime id")
 }
 
 func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {
