@@ -1314,7 +1314,7 @@ func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
 
 	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
 
-	//assert.NoError(s.t, err)
+	assert.NoError(s.t, err)
 }
 
 func mockBTPOperatorClusterID() {
