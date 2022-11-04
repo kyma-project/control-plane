@@ -80,7 +80,7 @@ type BrokerSuiteTest struct {
 
 	componentProvider componentProviderDecorated
 
-	k8sCli client.Client
+	k8sKcp client.Client
 }
 
 type componentProviderDecorated struct {
@@ -207,7 +207,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
-		k8sCli:              fakeK8sSKRClient,
+		k8sKcp:              cli,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -1312,7 +1312,7 @@ func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
 		Kind:    "Kyma",
 	})
 
-	err = s.k8sCli.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
 
 	//assert.NoError(s.t, err)
 }
