@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
@@ -672,7 +670,7 @@ func (r readSession) ListInstances(filter dbmodel.InstanceFilter) ([]dbmodel.Ins
 
 	_, err := stmt.Load(&instances)
 	if err != nil {
-		return nil, -1, -1, errors.Wrap(err, "while fetching instances")
+		return nil, -1, -1, fmt.Errorf("while fetching instances: %w", err)
 	}
 
 	totalCount, err := r.getInstanceCount(filter)
