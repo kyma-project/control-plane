@@ -515,7 +515,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" || op.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -690,7 +690,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" || op.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -820,7 +820,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
-		if op.ProvisionerOperationID != "" || op.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}

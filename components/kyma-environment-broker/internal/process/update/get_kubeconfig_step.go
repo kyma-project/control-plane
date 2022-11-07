@@ -36,7 +36,7 @@ func (s *GetKubeconfigStep) Name() string {
 }
 
 func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	if operation.ProvisioningParameters.PlanID == broker.OwnClusterPlanID {
+	if broker.IsOwnClusterPlan(operation.ProvisioningParameters.PlanID) {
 		operation.Kubeconfig = operation.ProvisioningParameters.Parameters.Kubeconfig
 	}
 
