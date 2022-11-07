@@ -519,7 +519,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -694,7 +694,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -824,13 +824,13 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	var shootUpgrade gqlschema.UpgradeShootInput
 	var found bool
@@ -841,7 +841,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	assert.Equal(s.t, config, shootUpgrade)
 }
@@ -1110,6 +1110,11 @@ func (s *BrokerSuiteTest) processProvisioningAndReconcilingByOperationID(opID st
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
+	// Reconciler part
+	s.processReconcilingByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	// Reconciler part
 	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)
 	s.FinishProvisioningOperationByReconciler(opID)
