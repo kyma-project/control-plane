@@ -44,6 +44,10 @@ func TestGetKubeconfigStep(t *testing.T) {
 		operation.Kubeconfig = ""
 		st.Operations().InsertOperation(operation)
 
+		input, err := operation.InputCreator.CreateProvisionRuntimeInput()
+		require.NoError(t, err)
+		provisionerClient.ProvisionRuntimeWithIDs(operation.GlobalAccountID, operation.SubAccountID, operation.RuntimeID, operation.ID, input)
+
 		// when
 		processedOperation, d, err := step.Run(operation, logrus.New())
 

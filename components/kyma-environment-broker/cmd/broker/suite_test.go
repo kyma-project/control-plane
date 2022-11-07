@@ -353,6 +353,10 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
+
+	provisioningOperation.InputCreator = fixture.FixInputCreator(internal.Azure)
+	s.provisionerClient.Provision(provisioningOperation)
+
 	return runtimeID
 }
 
