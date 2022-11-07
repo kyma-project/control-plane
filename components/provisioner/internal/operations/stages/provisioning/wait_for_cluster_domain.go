@@ -78,7 +78,7 @@ func (s *WaitForClusterDomainStep) Run(cluster model.Cluster, _ model.Operation,
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 }
 
-func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeInput, error) {
+func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtimeId, tenant string, shoot *gardener_types.Shoot) (*graphql.RuntimeUpdateInput, error) {
 	var runtime graphql.RuntimeExt
 
 	err := util.RetryOnError(5*time.Second, 3, "Error while getting runtime from Director: %s", func() (err apperrors.AppError) {
@@ -86,7 +86,7 @@ func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtime
 		return
 	})
 	if err != nil {
-		return &graphql.RuntimeInput{}, errors.Wrap(err, fmt.Sprintf("failed to get Runtime by ID: %s", runtimeId))
+		return &graphql.RuntimeUpdateInput{}, errors.Wrap(err, fmt.Sprintf("failed to get Runtime by ID: %s", runtimeId))
 	}
 
 	if runtime.Labels == nil {
@@ -96,11 +96,11 @@ func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtime
 	runtime.Labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
 	statusCondition := graphql.RuntimeStatusConditionProvisioning
 
-	runtimeInput := &graphql.RuntimeInput{
+	runtimeUpdateInput := &graphql.RuntimeUpdateInput{
 		Name:            runtime.Name,
 		Description:     runtime.Description,
 		Labels:          runtime.Labels,
 		StatusCondition: &statusCondition,
 	}
-	return runtimeInput, nil
+	return runtimeUpdateInput, nil
 }

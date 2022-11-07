@@ -112,10 +112,7 @@ spec:
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
               command:
-                - "/bin/sh"
-              args:
-                - "-c"
-                - "./bin/accountcleanup"
+                - "/bin/accountcleanup"
               {{if eq .Values.global.database.embedded.enabled false}}
               volumeMounts:
                 - name: cloudsql-instance-credentials
@@ -267,10 +264,7 @@ spec:
                 - name: APP_BROKER_SCOPE
                   value: {{ .Values.kebClient.scope }}
               command:
-                - "/bin/sh"
-              args:
-                - "-c"
-                - "./bin/accountcleanup"
+                - "/bin/accountcleanup"
               {{if eq .Values.global.database.embedded.enabled false}}
               volumeMounts:
               - name: cloudsql-instance-credentials

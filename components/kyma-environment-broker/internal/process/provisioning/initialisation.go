@@ -67,6 +67,7 @@ func (s *InitialisationStep) Run(operation internal.Operation, log logrus.FieldL
 		if err != nil {
 			return s.operationManager.RetryOperation(operation, "error while creating provisioning input creator", err, 1*time.Second, 5*time.Second, log)
 		}
+		operation.KymaTemplate = creator.Configuration().KymaTemplate
 
 		return operation, 0, nil
 	case kebError.IsTemporaryError(err):

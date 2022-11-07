@@ -106,7 +106,7 @@ func FixProvisioningParameters(id string) internal.ProvisioningParameters {
 
 func FixInstanceDetails(id string) internal.InstanceDetails {
 	var (
-		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		runtimeId    = fmt.Sprintf("runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 		shootName    = fmt.Sprintf("Shoot-%s", id)
 		shootDomain  = fmt.Sprintf("shoot-%s.domain.com", id)
@@ -131,7 +131,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 
 func FixInstance(id string) internal.Instance {
 	var (
-		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		runtimeId    = fmt.Sprintf("runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 	)
 

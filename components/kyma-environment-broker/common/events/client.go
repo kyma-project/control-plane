@@ -18,6 +18,7 @@ const (
 )
 
 type EventDTO struct {
+	ID          string
 	Level       EventLevel
 	InstanceID  *string
 	OperationID *string
@@ -26,8 +27,8 @@ type EventDTO struct {
 }
 
 type EventFilter struct {
-	InstanceID  string
-	OperationID string
+	InstanceIDs  []string
+	OperationIDs []string
 }
 
 // Client is the interface to interact with the KEB /events API as an HTTP client using OIDC ID token in JWT format.

@@ -46,6 +46,35 @@ func TestProvisioning_HappyPath(t *testing.T) {
 	suite.AssertProvisioningRequest()
 }
 
+func TestProvisioning_Preview(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+					"context": {
+						"globalaccount_id": "g-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+
+	suite.processProvisioningByOperationID(opID)
+
+	suite.WaitForOperationState(opID, domain.Succeeded)
+
+	suite.AssertKymaResourceExists(opID)
+}
+
 func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
@@ -334,6 +363,8 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Components:     suite.fixExpectedComponentListWithSMOperator(opID, clusterID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
+
+	suite.AssertKymaResourceExists(opID)
 }
 
 func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {

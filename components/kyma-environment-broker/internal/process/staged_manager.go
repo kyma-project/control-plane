@@ -9,8 +9,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql/events"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -140,13 +140,13 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 
 			processedOperation, when, err = m.runStep(step, processedOperation, logStep)
 			if err != nil {
-				events.Errorf(operation.InstanceID, operation.ID, err, "step %v processing returned error", step.Name())
 				logStep.Errorf("Process operation failed: %s", err)
+				events.Errorf(operation.InstanceID, operation.ID, err, "step %v processing returned error", step.Name())
 				return 0, err
 			}
 			if processedOperation.State == domain.Failed || processedOperation.State == domain.Succeeded {
 				logStep.Infof("Operation %q got status %s. Process finished.", operation.ID, processedOperation.State)
-				events.Infof(operation.InstanceID, operation.ID, "operation processing finished %v", processedOperation.State)
+				events.Infof(operation.InstanceID, operation.ID, "operation processing %v", processedOperation.State)
 				return 0, nil
 			}
 
