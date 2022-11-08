@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )

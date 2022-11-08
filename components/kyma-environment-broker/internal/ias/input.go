@@ -1,5 +1,7 @@
 package ias
 
+import "fmt"
+
 type SPInputID int
 
 const ( // enum SPInputID
@@ -33,5 +35,5 @@ func (id SPInputID) isValid() error {
 	case SPGrafanaID, SPDexID:
 		return nil
 	}
-	returnfmt.Errorf("Invalid Service Provider input ID: %d", id)
+	return fmt.Errorf("invalid Service Provider input ID: %d", id)
 }

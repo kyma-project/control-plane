@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type HyperscalerType string
 
 const (

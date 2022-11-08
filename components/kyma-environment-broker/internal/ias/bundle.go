@@ -250,7 +250,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
 	err := b.removeSecrets()
 	if err != nil {
-		fmt.Printf("while removing existing secrets: %w", err)
+		return &ServiceProviderSecret{}, fmt.Errorf("while removing existing secrets: %w", err)
 	}
 
 	secretCfg := SecretConfiguration{

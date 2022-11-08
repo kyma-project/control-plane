@@ -1,6 +1,7 @@
 package manager_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
