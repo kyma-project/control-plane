@@ -287,6 +287,8 @@ type InstanceDetails struct {
 	Kubeconfig                  string `json:"-"`
 
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
+
+	KymaResourceNamespace string `json:"kyma_resource_namespace"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation

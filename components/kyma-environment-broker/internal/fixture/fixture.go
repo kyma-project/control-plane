@@ -118,14 +118,15 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:               internal.AvsLifecycleData{},
-		EventHub:          internal.EventHub{Deleted: false},
-		SubAccountID:      subAccountId,
-		RuntimeID:         runtimeId,
-		ShootName:         shootName,
-		ShootDomain:       shootDomain,
-		ShootDNSProviders: FixDNSProvidersConfig(),
-		Monitoring:        monitoringData,
+		Avs:                   internal.AvsLifecycleData{},
+		EventHub:              internal.EventHub{Deleted: false},
+		SubAccountID:          subAccountId,
+		RuntimeID:             runtimeId,
+		ShootName:             shootName,
+		ShootDomain:           shootDomain,
+		ShootDNSProviders:     FixDNSProvidersConfig(),
+		Monitoring:            monitoringData,
+		KymaResourceNamespace: "kyma-system",
 	}
 }
 

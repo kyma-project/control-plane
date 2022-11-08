@@ -15,14 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	kymaResourceNamespace = "kcp-system"
 )
 
 type ApplyKymaStep struct {
@@ -31,7 +26,6 @@ type ApplyKymaStep struct {
 }
 
 var _ process.Step = &ApplyKymaStep{}
-var kymaGVK = schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
 
 func NewApplyKymaStep(os storage.Operations, cli client.Client) *ApplyKymaStep {
 	return &ApplyKymaStep{operationManager: process.NewOperationManager(os), k8sClient: cli}
@@ -42,6 +36,7 @@ func (a *ApplyKymaStep) Name() string {
 }
 
 func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+
 	template, err := a.createUnstructuredKyma(operation)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
@@ -49,10 +44,20 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	}
 	a.addLabelsAndName(operation, template)
 
+	if operation.KymaResourceNamespace == "" {
+		updatedOperation, backoff, _ := a.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+			operation.KymaResourceNamespace = template.GetNamespace()
+		}, logger)
+		if backoff > 0 {
+			return operation, backoff, nil
+		}
+		operation = updatedOperation
+	}
+
 	var existingKyma unstructured.Unstructured
-	existingKyma.SetGroupVersionKind(kymaGVK)
+	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
-		Namespace: template.GetNamespace(),
+		Namespace: operation.KymaResourceNamespace,
 		Name:      template.GetName(),
 	}, &existingKyma)
 	switch {

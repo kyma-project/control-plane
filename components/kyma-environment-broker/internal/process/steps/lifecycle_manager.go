@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,6 +26,10 @@ func ApplyLabelsForLM(object client.Object, operation internal.Operation) {
 
 func KymaKubeconfigName(operation internal.Operation) string {
 	return fmt.Sprintf("kubeconfig-%v", KymaName(operation))
+}
+
+func KymaResourceGroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
 }
 
 func KymaName(operation internal.Operation) string {
