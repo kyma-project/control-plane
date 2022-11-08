@@ -3,8 +3,8 @@ package error
 import (
 	"strings"
 
+	"errors"
 	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
-	"github.com/pkg/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	apierr2 "k8s.io/apimachinery/pkg/api/meta"
 )
@@ -92,7 +92,7 @@ func ReasonForError(err error) LastError {
 		return LastError{}
 	}
 
-	cause := errors.Cause(err)
+	cause := UnwrapAll(err)
 
 	if lastErr := checkK8SError(cause); lastErr.component == ErrK8SClient {
 		lastErr.message = err.Error()

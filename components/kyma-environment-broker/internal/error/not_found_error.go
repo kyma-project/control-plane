@@ -1,7 +1,5 @@
 package error
 
-import "github.com/pkg/errors"
-
 type NotFoundError struct {
 }
 
@@ -22,7 +20,7 @@ func (NotFoundError) Component() ErrComponent {
 }
 
 func IsNotFoundError(err error) bool {
-	cause := errors.Cause(err)
+	cause := UnwrapAll(err)
 	nfe, ok := cause.(interface {
 		IsNotFound() bool
 	})
