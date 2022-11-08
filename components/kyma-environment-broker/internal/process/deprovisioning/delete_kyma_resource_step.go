@@ -54,7 +54,7 @@ func (step *DeleteKymaResourceStep) Run(operation internal.Operation, logger log
 		if errors.IsNotFound(err) {
 			logger.Info("no Kyma resource to delete - ignoring")
 		} else {
-			logger.Error("unable to delete the Kyma resource")
+			logger.Errorf("unable to delete the Kyma resource: %s", err)
 			return step.operationManager.RetryOperationWithoutFail(operation, "unable to delete the Kyma resource", backoffForK8SOperation, timeoutForK8sOperation, logger)
 		}
 	}
