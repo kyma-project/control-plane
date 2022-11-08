@@ -10,11 +10,11 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20220818142135-1cfedf72f748
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221108071341-0e3dd93e1f50
 	github.com/onsi/gomega v1.22.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	go.uber.org/zap v1.23.0
 	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
@@ -22,7 +22,7 @@ require (
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.13 // indirect
+	github.com/99designs/gqlgen v0.17.20 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220706110254-3d5dce79e48d // indirect
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220707063253-fd8dedcdb5cf // indirect
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220929072045-bfb8d6dac310 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vektah/gqlparser/v2 v2.4.6 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.1.0 // indirect
