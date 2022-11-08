@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
@@ -37,18 +36,18 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 
 	objAsBytes, err := json.Marshal(evaluationRequest)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while marshaling evaluation request")
+		return &responseObject, fmt.Errorf("while marshaling evaluation request: %w", err)
 	}
 
 	request, err := http.NewRequest(http.MethodPost, c.avsConfig.ApiEndpoint, bytes.NewReader(objAsBytes))
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating request")
+		return &responseObject, fmt.Errorf("while creating request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, false, true)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing CreateEvaluation request")
+		return &responseObject, fmt.Errorf("while executing CreateEvaluation request: %w", err)
 	}
 	defer func() {
 		if closeErr := c.closeResponseBody(response); closeErr != nil {
@@ -58,7 +57,7 @@ func (c *Client) CreateEvaluation(evaluationRequest *BasicEvaluationCreateReques
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decode create evaluation response")
+		return nil, fmt.Errorf("while decode create evaluation response: %w", err)
 	}
 
 	return &responseObject, nil
@@ -70,13 +69,13 @@ func (c *Client) GetEvaluation(evaluationID int64) (*BasicEvaluationCreateRespon
 
 	request, err := http.NewRequest(http.MethodGet, absoluteURL, nil)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating request")
+		return &responseObject, fmt.Errorf("while creating request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, false, true)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing GetEvaluation request")
+		return &responseObject, fmt.Errorf("while executing GetEvaluation request: %w", err)
 	}
 	defer func() {
 		if closeErr := c.closeResponseBody(response); closeErr != nil {
@@ -86,7 +85,7 @@ func (c *Client) GetEvaluation(evaluationID int64) (*BasicEvaluationCreateRespon
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decode create evaluation response")
+		return nil, fmt.Errorf("while decode create evaluation response: %w", err)
 	}
 
 	return &responseObject, nil
@@ -97,19 +96,19 @@ func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateRes
 
 	objAsBytes, err := json.Marshal(tag)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while marshaling AddTag request")
+		return &responseObject, fmt.Errorf("while marshaling AddTag request: %w", err)
 	}
 	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
 
 	request, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/tag", absoluteURL), bytes.NewReader(objAsBytes))
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating AddTag request")
+		return &responseObject, fmt.Errorf("while creating AddTag request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, false, true)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing AddTag request")
+		return &responseObject, fmt.Errorf("while executing AddTag request: %w", err)
 	}
 	defer func() {
 		if closeErr := c.closeResponseBody(response); closeErr != nil {
@@ -119,7 +118,7 @@ func (c *Client) AddTag(evaluationID int64, tag *Tag) (*BasicEvaluationCreateRes
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decode AddTag response")
+		return nil, fmt.Errorf("while decode AddTag response: %w", err)
 	}
 
 	return &responseObject, nil
@@ -130,19 +129,19 @@ func (c *Client) SetStatus(evaluationID int64, status string) (*BasicEvaluationC
 
 	objAsBytes, err := json.Marshal(status)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while marshaling SetStatus request")
+		return &responseObject, fmt.Errorf("while marshaling SetStatus request: %w", err)
 	}
 	absoluteURL := appendId(c.avsConfig.ApiEndpoint, evaluationID)
 
 	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/lifecycle", absoluteURL), bytes.NewReader(objAsBytes))
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while creating SetStatus request")
+		return &responseObject, fmt.Errorf("while creating SetStatus request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	response, err := c.execute(request, true, true)
 	if err != nil {
-		return &responseObject, errors.Wrap(err, "while executing SetStatus request")
+		return &responseObject, fmt.Errorf("while executing SetStatus request: %w", err)
 	}
 	defer func() {
 		if closeErr := c.closeResponseBody(response); closeErr != nil {
@@ -152,7 +151,7 @@ func (c *Client) SetStatus(evaluationID int64, status string) (*BasicEvaluationC
 
 	err = json.NewDecoder(response.Body).Decode(&responseObject)
 	if err != nil {
-		return nil, errors.Wrap(err, "while decode SetStatus response")
+		return nil, fmt.Errorf("while decode SetStatus response: %w", err)
 	}
 
 	return &responseObject, nil
@@ -182,16 +181,14 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 					return nil
 				}
 			}
-			return errors.Wrapf(err, "while decoding avs non success response body for ID: %d, URL: %s, message: %s",
-				evaluationID, absoluteURL, string(msg))
+			return fmt.Errorf("while decoding avs non success response body for ID: %d, URL: %s, message: %s: %w",
+				evaluationID, absoluteURL, string(msg), err)
 		}
-
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
 			return nil
 		}
 	}
-
-	return errors.Wrapf(err, "unexpected response for evaluationId: %d while deleting reference from parent evaluation, error", evaluationID)
+	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %w", evaluationID, err)
 }
 
 func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
@@ -203,7 +200,7 @@ func (c *Client) DeleteEvaluation(evaluationId int64) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrap(err, "while deleting evaluation")
+		return fmt.Errorf("while deleting evaluation: %w", err)
 	}
 
 	return nil
@@ -220,12 +217,12 @@ func appendId(baseUrl string, id int64) string {
 func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodDelete, absoluteURL, nil)
 	if err != nil {
-		return &http.Response{}, errors.Wrap(err, "while creating delete request")
+		return nil, fmt.Errorf("while creating delete request: %w", err)
 	}
 
 	response, err := c.execute(req, true, true)
 	if err != nil {
-		return response, errors.Wrapf(err, "while executing delete request for path: %s", absoluteURL)
+		return response, fmt.Errorf("while executing delete request for path: %s: %w", absoluteURL, err)
 	}
 
 	return response, nil
@@ -234,7 +231,7 @@ func (c *Client) deleteRequest(absoluteURL string) (*http.Response, error) {
 func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetToken bool) (*http.Response, error) {
 	httpClient, err := getHttpClient(c.ctx, c.avsConfig)
 	if err != nil {
-		return &http.Response{}, errors.Wrap(err, "while getting http client")
+		return &http.Response{}, fmt.Errorf("while getting http client: %w", err)
 	}
 	defer httpClient.CloseIdleConnections()
 	response, err := httpClient.Do(request)

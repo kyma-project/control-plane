@@ -47,7 +47,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -781,7 +780,7 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	require.NoError(s.t, err)
 
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
-		return "", errors.New("no operations found for given orchestration")
+		return "", fmt.Errorf("no operations found for given orchestration")
 	}
 
 	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
@@ -808,7 +807,7 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(o
 	})
 	require.NoError(s.t, err)
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
-		return "", errors.New("no operations found for given orchestration")
+		return "", fmt.Errorf("no operations found for given orchestration")
 	}
 
 	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil

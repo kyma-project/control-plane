@@ -2,7 +2,6 @@ package cloudprovider
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -63,7 +62,7 @@ func (ac awsResourceCleaner) deleteVolumes(ec2Client ec2.Client) error {
 
 	for _, volume := range volumes.Volumes {
 		if volume.State == types.VolumeStateInUse {
-			return errors.New(fmt.Sprintf("There is an EC2 instance which uses this volume with id: %v", *volume.VolumeId))
+			return fmt.Errorf(fmt.Sprintf("There is an EC2 instance which uses this volume with id: %v", *volume.VolumeId))
 		}
 	}
 
@@ -95,12 +94,12 @@ func (ac awsResourceCleaner) getAllRegions() (ec2.DescribeRegionsOutput, error) 
 func (ac awsResourceCleaner) toAwsConfig(secretData map[string][]byte) (awsCredentialsConfig, error) {
 	accessKeyID, exists := secretData["accessKeyID"]
 	if !exists {
-		return awsCredentialsConfig{}, errors.New("AccessKeyID was not provided in secret!")
+		return awsCredentialsConfig{}, fmt.Errorf("AccessKeyID was not provided in secret!")
 	}
 
 	secretAccessKey, exists := secretData["secretAccessKey"]
 	if !exists {
-		return awsCredentialsConfig{}, errors.New("SecretAccessKey was not provided in secret!")
+		return awsCredentialsConfig{}, fmt.Errorf("SecretAccessKey was not provided in secret!")
 	}
 
 	return awsCredentialsConfig{

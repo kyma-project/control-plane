@@ -1,7 +1,5 @@
 package ias
 
-import "github.com/pkg/errors"
-
 type SPInputID int
 
 const ( // enum SPInputID
@@ -35,5 +33,5 @@ func (id SPInputID) isValid() error {
 	case SPGrafanaID, SPDexID:
 		return nil
 	}
-	return errors.Errorf("Invalid Service Provider input ID: %d", id)
+	returnfmt.Errorf("Invalid Service Provider input ID: %d", id)
 }

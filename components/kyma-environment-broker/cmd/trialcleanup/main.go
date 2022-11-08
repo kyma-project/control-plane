@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
@@ -98,7 +98,7 @@ func (s *TrialCleanupService) PerformCleanup() error {
 	nonExpiredTrialInstances, nonExpiredTrialInstancesCount, err := s.getInstances(nonExpiredTrialInstancesFilter)
 
 	if err != nil {
-		log.Error(errors.Wrap(err, "while getting non expired trial instances"))
+		log.Error(fmt.Sprintf("while getting non-expired trial instances: %s", err))
 		return err
 	}
 
@@ -147,7 +147,7 @@ func (s *TrialCleanupService) cleanupInstances(instances []internal.Instance) (i
 		suspensionUnderWay, err := s.expireInstance(instance)
 		if err != nil {
 			// ignoring errors - only logging
-			log.Error(errors.Wrapf(err, "while sending expiration request for instanceID: %s", instance.InstanceID))
+			log.Error(fmt.Sprintf("while sending expiration request for instanceID: %s, error: %s", instance.InstanceID, err))
 			continue
 		}
 		if suspensionUnderWay {
@@ -171,7 +171,7 @@ func (s *TrialCleanupService) expireInstance(instance internal.Instance) (proces
 	log.Infof("About to make instance suspended for instanceId: %+v", instance.InstanceID)
 	suspensionUnderWay, err := s.brokerClient.SendExpirationRequest(instance)
 	if err != nil {
-		log.Error(errors.Wrapf(err, "while sending expiration request for instance ID %q", instance.InstanceID))
+		log.Error(fmt.Sprintf("while sending expiration request for instance ID %q: %s", instance.InstanceID, err))
 		return suspensionUnderWay, err
 	}
 	return suspensionUnderWay, nil

@@ -1,7 +1,6 @@
 package process
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ func Test_Provision_RetryOperationOnce(t *testing.T) {
 	op := internal.ProvisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
-	errMsg := errors.New("ups ... ")
+	errMsg := fmt.Errorf("ups ... ")
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := operations.InsertProvisioningOperation(op)
@@ -53,7 +52,7 @@ func Test_Provision_RetryOperation(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := "ups ... "
-	errOut := errors.New("error occurred")
+	errOut := fmt.Errorf("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)

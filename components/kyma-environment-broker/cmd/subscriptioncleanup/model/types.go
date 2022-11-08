@@ -1,7 +1,5 @@
 package model
 
-import "github.com/pkg/errors"
-
 type HyperscalerType string
 
 const (
@@ -18,5 +16,5 @@ func NewHyperscalerType(provider string) (HyperscalerType, error) {
 	case GCP, Azure, AWS:
 		return hyperscalerType, nil
 	}
-	return "", errors.Errorf("unknown Hyperscaler provider type: %s", provider)
+	return "", fmt.Errorf("unknown Hyperscaler provider type: %s", provider)
 }

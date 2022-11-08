@@ -1,7 +1,6 @@
 package manager_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -836,7 +835,7 @@ func (t *retryTestExecutor) Execute(opID string) (time.Duration, error) {
 		return 0, err
 	}
 
-	return 0, errors.New("unknown upgrade type")
+	return 0, fmt.Errorf("unknown upgrade type")
 }
 
 func (t *retryTestExecutor) Reschedule(operationID string, maintenanceWindowBegin, maintenanceWindowEnd time.Time) error {

@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -153,6 +152,6 @@ func (p *ComponentsProvider) checkStatusCode(resp *http.Response) error {
 	case resp.StatusCode >= http.StatusInternalServerError:
 		return kebError.NewTemporaryError(msg)
 	default:
-		return errors.New(msg)
+		return fmt.Errorf(msg)
 	}
 }

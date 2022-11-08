@@ -85,7 +85,7 @@ func (b *ServiceProviderBundle) FetchServiceProviderData() error {
 		}
 	}
 	if b.providerID == "" {
-		return errors.Errorf("provider ID for %s name does not exist", b.config.IdentityProvider)
+		returnfmt.Errorf("provider ID for %s name does not exist", b.config.IdentityProvider)
 	}
 
 	for _, provider := range company.ServiceProviders {
@@ -179,7 +179,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProviderType(dashboardURL string
 	case OIDC:
 		err = b.configureServiceProviderOIDCType(serviceProviderDNS, redirectURI)
 	default:
-		err = errors.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
+		err = fmt.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
 	}
 
 	if err != nil {

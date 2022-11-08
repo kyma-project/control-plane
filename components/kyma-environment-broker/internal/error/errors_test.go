@@ -26,6 +26,7 @@ func TestLastError(t *testing.T) {
 		expectEdpConfMsg := "Resource id already exists"
 
 		avsErr := errors.Wrap(avs.NewAvsError("avs server returned %d status code", http.StatusUnauthorized), "something")
+		avsErr = fmt.Errorf("something else: %w", avsErr)
 		expectAvsMsg := fmt.Sprintf("something: avs server returned %d status code", http.StatusUnauthorized)
 
 		reccErr := errors.Wrap(reconciler.NewReconcilerError(nil, "reconciler error"), "something")
@@ -34,7 +35,7 @@ func TestLastError(t *testing.T) {
 		dbErr := errors.Wrap(dberr.NotFound("Some NotFound apperror, %s", "Some pkg err"), "something")
 		expectDbErr := fmt.Sprintf("something: Some NotFound apperror, Some pkg err")
 
-		timeoutErr := errors.Wrap(errors.New("operation has reached the time limit: 2h"), "something")
+		timeoutErr := errors.Wrap(fmt.Errorf("operation has reached the time limit: 2h"), "something")
 		expectTimeoutMsg := "something: operation has reached the time limit: 2h"
 
 		// when
