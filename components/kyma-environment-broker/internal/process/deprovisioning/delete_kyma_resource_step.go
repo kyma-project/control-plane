@@ -52,8 +52,9 @@ func (step *DeleteKymaResourceStep) Run(operation internal.Operation, logger log
 	err := step.kcpClient.Delete(context.Background(), kymaUnstructured)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Infof("no Kyma resource to delete - ignoring")
+			logger.Info("no Kyma resource to delete - ignoring")
 		} else {
+			logger.Error("unable to delete the Kyma resource")
 			return step.operationManager.RetryOperationWithoutFail(operation, "unable to delete the Kyma resource", backoffForK8SOperation, timeoutForK8sOperation, logger)
 		}
 	}
