@@ -35,7 +35,8 @@ func (step *CheckKymaResourceDeletedStep) Name() string {
 
 func (step *CheckKymaResourceDeletedStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	if operation.KymaResourceNamespace == "" {
-		return step.operationManager.OperationFailed(operation, "namespace for Kyma resource not specified", nil, logger)
+		logger.Warnf("namespace for Kyma resource not specified")
+		return operation, 0, nil
 	}
 
 	kymaUnstructured := &unstructured.Unstructured{}
