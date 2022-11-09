@@ -14,21 +14,21 @@ import (
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-type InitKymaTempalate struct {
+type InitKymaTemplate struct {
 	operationManager *process.OperationManager
 }
 
-var _ process.Step = &InitKymaTempalate{}
+var _ process.Step = &InitKymaTemplate{}
 
-func NewInitKymaTempalate(os storage.Operations) *InitKymaTempalate {
-	return &InitKymaTempalate{operationManager: process.NewOperationManager(os)}
+func NewInitKymaTempalate(os storage.Operations) *InitKymaTemplate {
+	return &InitKymaTemplate{operationManager: process.NewOperationManager(os)}
 }
 
-func (s *InitKymaTempalate) Name() string {
+func (s *InitKymaTemplate) Name() string {
 	return "Init_Kyma_Template"
 }
 
-func (s *InitKymaTempalate) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (s *InitKymaTemplate) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	tmpl := operation.InputCreator.Configuration().KymaTemplate
 	obj, err := DecodeKymaTemplate(tmpl)
 	if err != nil {
@@ -44,7 +44,7 @@ func (s *InitKymaTempalate) Run(operation internal.Operation, logger logrus.Fiel
 
 // NOTE: adapter for upgrade_kyma which is currently not using shared staged_manager
 type initKymaTempalateUpgradeKyma struct {
-	*InitKymaTempalate
+	*InitKymaTemplate
 }
 
 func InitKymaTempalateUpgradeKyma(os storage.Operations) initKymaTempalateUpgradeKyma {
@@ -52,7 +52,7 @@ func InitKymaTempalateUpgradeKyma(os storage.Operations) initKymaTempalateUpgrad
 }
 
 func (s initKymaTempalateUpgradeKyma) Run(o internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
-	operation, w, err := s.InitKymaTempalate.Run(o.Operation, logger)
+	operation, w, err := s.InitKymaTemplate.Run(o.Operation, logger)
 	return internal.UpgradeKymaOperation{operation}, w, err
 }
 
