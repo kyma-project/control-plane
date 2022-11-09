@@ -363,8 +363,6 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Components:     suite.fixExpectedComponentListWithSMOperator(opID, clusterID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
-
-	suite.AssertKymaResourceExists(opID)
 }
 
 func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {
