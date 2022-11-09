@@ -42,16 +42,6 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	}
 	a.addLabelsAndName(operation, template)
 
-	if operation.KymaResourceNamespace == "" {
-		updatedOperation, backoff, _ := a.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-			operation.KymaResourceNamespace = template.GetNamespace()
-		}, logger)
-		if backoff > 0 {
-			return operation, backoff, nil
-		}
-		operation = updatedOperation
-	}
-
 	var existingKyma unstructured.Unstructured
 	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
