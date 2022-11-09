@@ -27,10 +27,10 @@ func TestConfigProvider(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
-	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger, kymaVersion)
 	cfgValidator := config.NewConfigMapKeysValidator()
 	cfgConverter := config.NewConfigMapConverter()
-	cfgProvider := config.NewConfigProvider(kymaVersion, cfgReader, cfgValidator, cfgConverter)
+	cfgProvider := config.NewConfigProvider(cfgReader, cfgValidator, cfgConverter)
 
 	t.Run("should provide config for Kyma 2.4.0 azure plan", func(t *testing.T) {
 		// given

@@ -275,8 +275,7 @@ func main() {
 
 	// provides configuration for specified Kyma version and plan
 	configProvider := kebConfig.NewConfigProvider(
-		cfg.KymaVersion,
-		kebConfig.NewConfigMapReader(ctx, cli, logs),
+		kebConfig.NewConfigMapReader(ctx, cli, logs, cfg.KymaVersion),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 	componentsProvider := runtime.NewComponentsProvider()
