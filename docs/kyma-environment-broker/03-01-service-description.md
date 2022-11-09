@@ -208,3 +208,26 @@ These are the provisioning parameters for the `own_cluster` plan that you config
 | **shootDomain** | string | Domain of the shoot where you install Kyma. | Yes | None |
 | **shootName** | string | Name of the shoot where you install Kyma. | Yes | None |
 
+## Preview cluster plan
+
+These are the provisioning parameters for the `preview` plan that you configure:
+
+<div tabs name="own_cluster-plan" group="own_cluster-plan">
+  <details>
+  <summary label="own_cluster-plan">
+  Own cluster plan
+  </summary>
+</details>
+</div>
+
+| Parameter name | Type | Description | Required | Default value |
+| ---------------|-------|-------------|:----------:|---------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5.2xlarge` |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
+| **region** | string | Defines the cluster region. | No | `westeurope` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+

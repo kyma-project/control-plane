@@ -16,5 +16,5 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 6. KEB creates Kyma resource.
 
-7. Lifecycle Manager 
+7. Lifecycle Manager manages Kyma modules.
 
