@@ -9,6 +9,8 @@ While processing requests, KEB reads a configuration from a ConfigMap which hold
 
 > **NOTE:** As this is the first iteration of the KEB configuration concept, only the additional components list can be configured.
 
+> **NOTE:** If there is no configuration defined for custom Kyma version (starting with `PR-*` or `main-*`), then KEB reads the configuration for the latest official Kyma release version.
+
 ## ConfigMap  
 
 The appropriate ConfigMap is selected by filtering the resources using labels. KEB recognizes the ConfigMaps with configurations when they contain these two labels:
@@ -33,6 +35,8 @@ data:
 ```
 
 You must define a default configuration that is selected when the supported plan key is missing. This means that, for example, if there are no other plan keys under the `data` object, the default configuration applies to all the plans. 
+
+> **NOTE:** `additional-components` configuration is required.
 
 See the example of a ConfigMap with a configuration for Kyma version `2.5.3` and `plan1`, `plan2`, and `trial` plans:
 
