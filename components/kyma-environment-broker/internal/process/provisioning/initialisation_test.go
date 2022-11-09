@@ -43,6 +43,9 @@ func TestInitialisationStep_Run(t *testing.T) {
 	rvc.On("ForProvisioning", mock.Anything).Return(v, nil)
 	ri := &simpleInputCreator{
 		provider: internal.GCP,
+		config: &internal.ConfigForPlan{
+			KymaTemplate: "kyma-template",
+		},
 	}
 	builder := &automock2.CreatorForPlan{}
 	builder.On("CreateProvisionInput", operation.ProvisioningParameters, *v).Return(ri, nil)

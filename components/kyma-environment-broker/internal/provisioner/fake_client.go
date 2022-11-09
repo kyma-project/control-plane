@@ -2,11 +2,13 @@ package provisioner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,6 +92,23 @@ func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 // Provisioner Client methods
 
 func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
+	rid := uuid.New().String()
+	opId := uuid.New().String()
+
+	return c.ProvisionRuntimeWithIDs(accountID, subAccountID, rid, opId, config)
+}
+
+func (c *FakeClient) Provision(operation internal.ProvisioningOperation) (schema.OperationStatus, error) {
+	input, err := operation.InputCreator.CreateProvisionClusterInput()
+
+	if err != nil {
+		return schema.OperationStatus{}, err
+	}
+
+	return c.ProvisionRuntimeWithIDs(operation.GlobalAccountID, operation.SubAccountID, operation.RuntimeID, operation.ID, input)
+}
+
+func (c *FakeClient) ProvisionRuntimeWithIDs(accountID, subAccountID, runtimeID, operationID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -98,14 +117,12 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 		fmt.Println(gql)
 	}
 
-	rid := uuid.New().String()
-	opId := uuid.New().String()
 	c.runtimes = append(c.runtimes, runtime{
 		runtimeInput: config,
 	})
-	c.operations[opId] = schema.OperationStatus{
-		ID:        &opId,
-		RuntimeID: &rid,
+	c.operations[operationID] = schema.OperationStatus{
+		ID:        &operationID,
+		RuntimeID: &runtimeID,
 		Operation: schema.OperationTypeProvision,
 		State:     schema.OperationStateInProgress,
 	}
@@ -118,7 +135,7 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 				"metadata": map[string]interface{}{
 					"name": config.ClusterConfig.GardenerConfig.Name,
 					"annotations": map[string]interface{}{
-						"kcp.provisioner.kyma-project.io/runtime-id": rid,
+						"kcp.provisioner.kyma-project.io/runtime-id": runtimeID,
 					},
 				},
 				"spec": map[string]interface{}{
@@ -135,8 +152,8 @@ func (c *FakeClient) ProvisionRuntime(accountID, subAccountID string, config sch
 	}
 
 	return schema.OperationStatus{
-		RuntimeID: &rid,
-		ID:        &opId,
+		RuntimeID: &runtimeID,
+		ID:        &operationID,
 	}, nil
 }
 
@@ -175,16 +192,22 @@ func (c *FakeClient) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeS
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return schema.RuntimeStatus{
-		RuntimeConfiguration: &schema.RuntimeConfig{
-			ClusterConfig: &schema.GardenerConfig{
-				Name:   ptr.String("fake-name"),
-				Region: ptr.String("fake-region"),
-				Seed:   ptr.String("fake-seed"),
-			},
-			Kubeconfig: ptr.String("kubeconfig-content"),
-		},
-	}, nil
+	for _, ops := range c.operations {
+		if *ops.RuntimeID == runtimeID {
+			return schema.RuntimeStatus{
+				RuntimeConfiguration: &schema.RuntimeConfig{
+					ClusterConfig: &schema.GardenerConfig{
+						Name:   ptr.String("fake-name"),
+						Region: ptr.String("fake-region"),
+						Seed:   ptr.String("fake-seed"),
+					},
+					Kubeconfig: ptr.String("kubeconfig-content"),
+				},
+			}, nil
+		}
+	}
+
+	return schema.RuntimeStatus{}, errors.New("no status for given runtime id")
 }
 
 func (c *FakeClient) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {

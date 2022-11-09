@@ -8,6 +8,17 @@ metadata:
     runtime-version-2.4.0: "true"
 data:
   default: |-
+    kyma-template: |-
+      apiVersion: operator.kyma-project.io/v1alpha1
+      kind: Kyma
+      metadata:
+        name: tbd
+        namespace: kyma-system
+      spec:
+        sync:
+            strategy: secret
+        channel: stable
+        modules: []
     additional-components:
       - name: "additional-component1"
         namespace: "kyma-system"

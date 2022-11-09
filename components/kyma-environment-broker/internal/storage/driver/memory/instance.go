@@ -2,6 +2,7 @@ package memory
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -153,6 +154,14 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		return nil, dberr.NotFound("instance with id %s not exist", instanceID)
 	}
 
+	// In database instance details are marshalled and kept as strings.
+	// If marshaling is ommited below, fields with `json:"-"` are never cleared
+	// when stored in memory db. Marshaling in the current contenxt allows for
+	// memory db to behave similary to production env.
+	marshaled, err := json.Marshal(inst)
+	unmarshaledInstance := internal.Instance{}
+	err = json.Unmarshal(marshaled, &unmarshaledInstance)
+
 	op, err := s.operationsStorage.GetLastOperation(instanceID)
 	if err != nil {
 		if dberr.IsNotFound(err) {
@@ -160,8 +169,13 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		}
 		return nil, err
 	}
-	inst.InstanceDetails = op.InstanceDetails
-	return &inst, nil
+
+	detailsMarshaled, err := json.Marshal(op.InstanceDetails)
+	detailsUnmarshaled := internal.InstanceDetails{}
+	err = json.Unmarshal(detailsMarshaled, &detailsUnmarshaled)
+	unmarshaledInstance.InstanceDetails = detailsUnmarshaled
+
+	return &unmarshaledInstance, nil
 }
 
 func (s *instances) Delete(instanceID string) error {

@@ -106,7 +106,7 @@ func FixProvisioningParameters(id string) internal.ProvisioningParameters {
 
 func FixInstanceDetails(id string) internal.InstanceDetails {
 	var (
-		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		runtimeId    = fmt.Sprintf("runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 		shootName    = fmt.Sprintf("Shoot-%s", id)
 		shootDomain  = fmt.Sprintf("shoot-%s.domain.com", id)
@@ -118,20 +118,21 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:               internal.AvsLifecycleData{},
-		EventHub:          internal.EventHub{Deleted: false},
-		SubAccountID:      subAccountId,
-		RuntimeID:         runtimeId,
-		ShootName:         shootName,
-		ShootDomain:       shootDomain,
-		ShootDNSProviders: FixDNSProvidersConfig(),
-		Monitoring:        monitoringData,
+		Avs:                   internal.AvsLifecycleData{},
+		EventHub:              internal.EventHub{Deleted: false},
+		SubAccountID:          subAccountId,
+		RuntimeID:             runtimeId,
+		ShootName:             shootName,
+		ShootDomain:           shootDomain,
+		ShootDNSProviders:     FixDNSProvidersConfig(),
+		Monitoring:            monitoringData,
+		KymaResourceNamespace: "kyma-system",
 	}
 }
 
 func FixInstance(id string) internal.Instance {
 	var (
-		runtimeId    = fmt.Sprintf("Runtime-%s", id)
+		runtimeId    = fmt.Sprintf("runtime-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 	)
 
@@ -276,6 +277,7 @@ func FixRuntimeOperation(operationId string) orchestration.RuntimeOperation {
 
 func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKymaOperation {
 	o := FixOperation(operationId, instanceId, internal.OperationTypeUpgradeKyma)
+	o.RuntimeID = operationId
 	o.RuntimeOperation = FixRuntimeOperation(operationId)
 	o.InputCreator = FixInputCreator(internal.Azure)
 	o.RuntimeVersion = internal.RuntimeVersionData{
