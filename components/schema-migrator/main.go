@@ -4,16 +4,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"time"
-
-	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	_ "github.com/lib/pq"
 )
 
@@ -98,9 +100,30 @@ func invokeMigration() error {
 		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
 
+	log.Println("# STARTING COPY MIGRATION FILES #")
+	migrationTempPath := fmt.Sprintf("tmp-migrations-%s-*", os.Getenv("MIGRATION_PATH"))
+
+	tmpDir, err := os.MkdirTemp("/migrate", migrationTempPath)
+	if err != nil {
+		return fmt.Errorf("# COULD NOT CREATE TEMPORARY FILE FOR MIGRATION: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	migrationNewPath := fmt.Sprintf("new-migrations/%s", os.Getenv("MIGRATION_PATH"))
+	err = copyDir(migrationNewPath, tmpDir)
+	if err != nil {
+		return fmt.Errorf("# COULD NOT COPY MIGRATION FILES: %w", err)
+	}
+
+	migrationOldPath := fmt.Sprintf("migrations/%s", os.Getenv("MIGRATION_PATH"))
+	err = copyDir(migrationOldPath, tmpDir)
+	if err != nil {
+		return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
+	}
+
 	log.Println("# STARTING MIGRATION #")
 
-	migrationPath := fmt.Sprintf("file:///migrate/migrations/%s", os.Getenv("MIGRATION_PATH"))
+	migrationPath := fmt.Sprintf("file:///%s", tmpDir)
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	for i := 0; i < 30 && err != nil; i++ {
@@ -151,4 +174,51 @@ func (l *Logger) Printf(format string, v ...interface{}) {
 
 func (l *Logger) Verbose() bool {
 	return false
+}
+
+func copyFile(src, dst string) error {
+	rd, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("opening file: %w", err)
+	}
+	defer rd.Close()
+
+	wr, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("creating file: %w", err)
+	}
+	defer wr.Close()
+
+	_, err = io.Copy(wr, rd)
+	if err != nil {
+		return fmt.Errorf("copying file content: %w", err)
+	}
+
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("retrieving fileinfo: %w", err)
+	}
+
+	return os.Chmod(dst, srcInfo.Mode())
+}
+
+func copyDir(src string, dst string) error {
+	files, err := os.ReadDir(src)
+	if err != nil {
+		return fmt.Errorf("error during reading directory content: %w", err)
+	}
+
+	for _, file := range files {
+		srcFile := path.Join(src, file.Name())
+		dstFile := path.Join(dst, file.Name())
+		fileExt := filepath.Ext(srcFile)
+		if fileExt == ".sql" {
+			err = copyFile(srcFile, dstFile)
+			if err != nil {
+				log.Printf("error during: %s\n", err)
+			}
+		}
+	}
+
+	return nil
 }
