@@ -12,10 +12,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	_ "github.com/lib/pq"
 )
 
@@ -112,7 +113,7 @@ func invokeMigration() error {
 	migrationNewPath := fmt.Sprintf("new-migrations/%s", os.Getenv("MIGRATION_PATH"))
 	err = copyDir(migrationNewPath, tmpDir)
 	if err != nil {
-		return fmt.Errorf("# COULD NOT COPY MIGRATION FILES: %w", err)
+		log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
 	}
 
 	migrationOldPath := fmt.Sprintf("migrations/%s", os.Getenv("MIGRATION_PATH"))
@@ -215,7 +216,7 @@ func copyDir(src string, dst string) error {
 		if fileExt == ".sql" {
 			err = copyFile(srcFile, dstFile)
 			if err != nil {
-				log.Printf("error during: %s\n", err)
+				return fmt.Errorf("error during: %w", err)
 			}
 		}
 	}
