@@ -38,7 +38,7 @@ func (s *InitKymaTempalate) Run(operation internal.Operation, logger logrus.Fiel
 	logger.Infof("Decoded kyma template: %v", obj)
 	return s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 		op.KymaResourceNamespace = obj.GetNamespace()
-		op.KymaTemplate = string(tmpl)
+		op.KymaTemplate = tmpl
 	}, logger)
 }
 
