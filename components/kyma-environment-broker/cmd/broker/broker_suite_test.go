@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -15,6 +13,9 @@ import (
 	"sort"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/google/uuid"

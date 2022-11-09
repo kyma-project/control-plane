@@ -36,8 +36,7 @@ func (a *ApplyKymaStep) Name() string {
 }
 
 func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-
-	template, err := a.createUnstructuredKyma(operation)
+	template, err := steps.DecodeKymaTemplate(operation.KymaTemplate)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
 	}

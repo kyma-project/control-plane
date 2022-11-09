@@ -29,7 +29,8 @@ func (s *InitKymaTempalate) Name() string {
 }
 
 func (s *InitKymaTempalate) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	obj, tmpl, err := s.createUnstructuredKyma(operation)
+	tmpl := operation.InputCreator.Configuration().KymaTemplate
+	obj, err := DecodeKymaTemplate(tmpl)
 	if err != nil {
 		logger.Errorf("Unable to create kyma template: %s", err.Error())
 		return s.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
@@ -39,28 +40,6 @@ func (s *InitKymaTempalate) Run(operation internal.Operation, logger logrus.Fiel
 		op.KymaResourceNamespace = obj.GetNamespace()
 		op.KymaTemplate = string(tmpl)
 	}, logger)
-}
-
-func (s *InitKymaTempalate) createUnstructuredKyma(operation internal.Operation) (*unstructured.Unstructured, []byte, error) {
-	tmpl := []byte(operation.InputCreator.Configuration().KymaTemplate)
-
-	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(tmpl), 512)
-	var rawObj runtime.RawExtension
-	if err := decoder.Decode(&rawObj); err != nil {
-		return nil, []byte{}, err
-	}
-	obj, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
-	if err != nil {
-		return nil, []byte{}, err
-	}
-
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
-	unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
-	return unstructuredObj, tmpl, nil
-}
-
-func (s *InitKymaTempalate) kymaTemplate(operation internal.Operation) []byte {
-	return []byte(operation.KymaTemplate)
 }
 
 // NOTE: adapter for upgrade_kyma which is currently not using shared staged_manager
@@ -75,4 +54,22 @@ func InitKymaTempalateUpgradeKyma(os storage.Operations) initKymaTempalateUpgrad
 func (s initKymaTempalateUpgradeKyma) Run(o internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	operation, w, err := s.InitKymaTempalate.Run(o.Operation, logger)
 	return internal.UpgradeKymaOperation{operation}, w, err
+}
+
+func DecodeKymaTemplate(template string) (*unstructured.Unstructured, error) {
+	tmpl := []byte(template)
+
+	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(tmpl), 512)
+	var rawObj runtime.RawExtension
+	if err := decoder.Decode(&rawObj); err != nil {
+		return nil, err
+	}
+	obj, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
+	return unstructuredObj, err
 }
