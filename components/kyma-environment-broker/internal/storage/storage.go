@@ -1,9 +1,13 @@
 package storage
 
 import (
+	"log"
+	"time"
+
 	"github.com/gocraft/dbr"
 	"github.com/sirupsen/logrus"
 
+	eventsapi "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/memory"
 	postgres "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/driver/postsql"
@@ -57,7 +61,56 @@ func NewMemoryStorage() BrokerStorage {
 		instance:       memory.NewInstance(op),
 		orchestrations: memory.NewOrchestrations(),
 		runtimeStates:  memory.NewRuntimeStates(),
+		events:         events.New(events.Config{}, NewInMemoryEvents()),
 	}
+}
+
+type inMemoryEvents struct {
+	events []eventsapi.EventDTO
+}
+
+func NewInMemoryEvents() *inMemoryEvents {
+	return &inMemoryEvents{
+		events: make([]eventsapi.EventDTO, 0),
+	}
+}
+
+func (_ inMemoryEvents) RunGarbageCollection(pollingPeriod, retention time.Duration) {
+	return
+}
+
+func (e *inMemoryEvents) InsertEvent(eventLevel eventsapi.EventLevel, message, instanceID, operationID string) {
+	e.events = append(e.events, eventsapi.EventDTO{Level: eventLevel, InstanceID: &instanceID, OperationID: &operationID, Message: message})
+	log.Printf("EVENT [%v/%v] %v: %v\n", instanceID, operationID, eventLevel, message)
+}
+
+func (e *inMemoryEvents) ListEvents(filter eventsapi.EventFilter) ([]eventsapi.EventDTO, error) {
+	var events []eventsapi.EventDTO
+	for _, ev := range e.events {
+		if !requiredContains(ev.InstanceID, filter.InstanceIDs) {
+			continue
+		}
+		if !requiredContains(ev.OperationID, filter.OperationIDs) {
+			continue
+		}
+		events = append(events, ev)
+	}
+	return events, nil
+}
+
+func requiredContains[T comparable](el *T, sl []T) bool {
+	if len(sl) == 0 {
+		return true
+	}
+	if el == nil {
+		return false
+	}
+	for _, x := range sl {
+		if *el == x {
+			return true
+		}
+	}
+	return false
 }
 
 type storage struct {
