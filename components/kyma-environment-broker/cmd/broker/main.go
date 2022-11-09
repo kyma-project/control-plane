@@ -712,9 +712,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			condition: skipForPreviewPlan,
 		},
 		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			stage:    createKymaResourceStageName,
-			step:     provisioning.NewApplyKymaStep(db.Operations(), cli),
+			disabled:  cfg.LifecycleManagerIntegrationDisabled,
+			condition: onlyForPreviewPlan,
+			stage:     createKymaResourceStageName,
+			step:      provisioning.NewApplyKymaStep(db.Operations(), cli),
 		},
 		// post actions
 		{
@@ -999,4 +1000,8 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 func skipForPreviewPlan(operation internal.Operation) bool {
 	return !broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID)
+}
+
+func onlyForPreviewPlan(operation internal.Operation) bool {
+	return broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID)
 }
