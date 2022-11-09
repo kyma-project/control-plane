@@ -40,7 +40,6 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	template, err := a.createUnstructuredKyma(operation)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
-
 	}
 	a.addLabelsAndName(operation, template)
 
