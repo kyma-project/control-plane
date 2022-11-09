@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -84,6 +85,7 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 	deprovisionManager.SpeedUp(1000)
 	scheme := runtime.NewScheme()
 	apiextensionsv1.AddToScheme(scheme)
+	corev1.AddToScheme(scheme)
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
