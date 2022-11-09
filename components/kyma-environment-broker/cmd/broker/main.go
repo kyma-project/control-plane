@@ -823,14 +823,6 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewBTPOperatorCleanupStep(db.Operations(), provisionerClient, k8sClientProvider),
 		},
 		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli),
-		},
-		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			step:     deprovisioning.NewCheckKymaResourceDeletedStep(db.Operations(), cli),
-		},
-		{
 			step: deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
@@ -840,6 +832,14 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		{
 			step:     deprovisioning.NewIASDeregistrationStep(db.Operations(), bundleBuilder),
 			disabled: cfg.IAS.Disabled,
+		},
+		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli),
+		},
+		{
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			step:     deprovisioning.NewCheckKymaResourceDeletedStep(db.Operations(), cli),
 		},
 		{
 			step: deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
