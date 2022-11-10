@@ -74,7 +74,6 @@ func (h *clusterHandler) createOrchestration(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("while inserting orchestration to storage: %w", err))
-
 		return
 	}
 

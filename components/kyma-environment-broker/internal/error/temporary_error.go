@@ -29,6 +29,7 @@ func IsTemporaryError(err error) bool {
 	nfe, ok := cause.(interface {
 		Temporary() bool
 	})
+
 	return ok && nfe.Temporary()
 }
 

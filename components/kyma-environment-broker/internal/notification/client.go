@@ -115,9 +115,7 @@ func (c *Client) callPost(path string, payload interface{}) (err error) {
 	}()
 	if err != nil {
 		return fmt.Errorf("while making request for path %s: %w", path, err)
-
 	}
-
 	return nil
 }
 

@@ -178,8 +178,7 @@ func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_
 
 	err = json.NewDecoder(response.Body).Decode(secretResponse)
 	if err != nil {
-		//return secretResponse, errors.Wrap(err, "while decoding response with secret provider")
-		return
+		return secretResponse, fmt.Errorf("while decoding response with secret provider: %w", err)
 	}
 
 	return secretResponse, nil

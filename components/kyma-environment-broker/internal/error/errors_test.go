@@ -80,7 +80,7 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 			SetMessage(fmt.Sprintf("Got status %d", 502)).
 			SetReason(kebError.ErrHttpStatusCode).
 			SetComponent(kebError.ErrReconciler)
-		tempErr := fmt.Errorf("something: %w", kebError.WrapNewTemporaryError(fmt.Errorf("something: %w", err)))
+		tempErr := fmt.Errorf("something else: %w", kebError.WrapNewTemporaryError(fmt.Errorf("something: %w", err)))
 		expectMsg := fmt.Sprintf("something else: something: Got status %d", 502)
 
 		avsTempErr := kebError.WrapNewTemporaryError(avs.NewAvsError("avs server returned %d status code", 503))
