@@ -23,24 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-/*
-Running tests with real K8S cluster instead of fake client.
-
-k3d cluster create
-
-kubectl create ns kyma-system
-
-kubectl apply -f https://raw.githubusercontent.com/kyma-project/lifecycle-manager/main/operator/config/crd/bases/operator.kyma-project.io_kymas.yaml
-
-k3d kubeconfig get --all > kubeconfig.yaml
-
-export KUBECONFIG=kubeconfig.yaml
-
-USE_KUBECONFIG=true go test -run TestCreatingKymaResource
-
-kubectl get kymas -o yaml -n kyma-system
-*/
-
 func TestCreatingKymaResource(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)

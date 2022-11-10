@@ -72,7 +72,7 @@ func TestInitialisationStep_OtherOperationIsInProgress(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			db := storage.NewMemoryStorage()
+			db := c
 			os := db.Operations()
 			is := db.Instances()
 			rs := db.RuntimeStates()
