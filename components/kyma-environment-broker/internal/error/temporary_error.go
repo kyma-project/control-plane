@@ -26,6 +26,7 @@ func (TemporaryError) Component() ErrComponent { return ErrKEB }
 
 func IsTemporaryError(err error) bool {
 	cause := UnwrapAll(err)
+
 	nfe, ok := cause.(interface {
 		Temporary() bool
 	})
