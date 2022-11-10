@@ -39,7 +39,6 @@ export KUBECONFIG=kubeconfig.yaml
 USE_KUBECONFIG=true go test -run TestCreatingKymaResource
 
 kubectl get kymas -o yaml -n kyma-system
-
 */
 
 func TestCreatingKymaResource(t *testing.T) {
