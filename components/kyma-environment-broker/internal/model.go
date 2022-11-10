@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -236,6 +237,14 @@ type Operation struct {
 
 func (o *Operation) IsFinished() bool {
 	return o.State != orchestration.InProgress && o.State != orchestration.Pending && o.State != orchestration.Canceling && o.State != orchestration.Retrying
+}
+
+func (o *Operation) EventInfof(fmt string, args ...any) {
+	events.Infof(o.InstanceID, o.ID, fmt, args...)
+}
+
+func (o *Operation) EventErrorf(err error, fmt string, args ...any) {
+	events.Errorf(o.InstanceID, o.ID, err, fmt, args...)
 }
 
 // Orchestration holds all information about an orchestration.
