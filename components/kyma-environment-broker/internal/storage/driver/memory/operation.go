@@ -890,7 +890,10 @@ func (s *operations) filterOperations(orchestrationID string, filter dbmodel.Ope
 func (s *operations) filterUpgradeKymaByInstanceID(instanceID string, filter dbmodel.OperationFilter) []internal.UpgradeKymaOperation {
 	operations := make([]internal.UpgradeKymaOperation, 0)
 	for _, v := range s.operations {
-		if instanceID != "" && instanceID != v.InstanceID && v.Type != internal.OperationTypeUpgradeKyma {
+		if instanceID != "" && instanceID != v.InstanceID {
+			continue
+		}
+		if v.Type != internal.OperationTypeUpgradeKyma {
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
