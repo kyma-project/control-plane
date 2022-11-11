@@ -9,7 +9,7 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
-    verbs: ["list", "get"]
+    verbs: ["*"]
   - apiGroups: ["*"]
     resources: ["configmaps"]
     verbs: ["list", "get"]
