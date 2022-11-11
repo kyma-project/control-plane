@@ -1,13 +1,14 @@
 package steps
 
 import (
+	"testing"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestInitKymaTemplate_Run(t *testing.T) {
@@ -15,7 +16,7 @@ func TestInitKymaTemplate_Run(t *testing.T) {
 	db := storage.NewMemoryStorage()
 	operation := fixture.FixOperation("op-id", "inst-id", internal.OperationTypeProvision)
 	db.Operations().InsertOperation(operation)
-	svc := NewInitKymaTempalate(db.Operations())
+	svc := NewInitKymaTemplate(db.Operations())
 	ic := fixture.FixInputCreator("aws")
 	ic.Config = &internal.ConfigForPlan{
 		KymaTemplate: `

@@ -20,7 +20,7 @@ type InitKymaTemplate struct {
 
 var _ process.Step = &InitKymaTemplate{}
 
-func NewInitKymaTempalate(os storage.Operations) *InitKymaTemplate {
+func NewInitKymaTemplate(os storage.Operations) *InitKymaTemplate {
 	return &InitKymaTemplate{operationManager: process.NewOperationManager(os)}
 }
 
@@ -43,15 +43,15 @@ func (s *InitKymaTemplate) Run(operation internal.Operation, logger logrus.Field
 }
 
 // NOTE: adapter for upgrade_kyma which is currently not using shared staged_manager
-type initKymaTempalateUpgradeKyma struct {
+type initKymaTemplateUpgradeKyma struct {
 	*InitKymaTemplate
 }
 
-func InitKymaTempalateUpgradeKyma(os storage.Operations) initKymaTempalateUpgradeKyma {
-	return initKymaTempalateUpgradeKyma{NewInitKymaTempalate(os)}
+func InitKymaTemplateUpgradeKyma(os storage.Operations) initKymaTemplateUpgradeKyma {
+	return initKymaTemplateUpgradeKyma{NewInitKymaTemplate(os)}
 }
 
-func (s initKymaTempalateUpgradeKyma) Run(o internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (s initKymaTemplateUpgradeKyma) Run(o internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
 	operation, w, err := s.InitKymaTemplate.Run(o.Operation, logger)
 	return internal.UpgradeKymaOperation{operation}, w, err
 }

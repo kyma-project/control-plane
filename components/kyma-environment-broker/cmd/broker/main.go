@@ -647,7 +647,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		},
 		{
 			stage: createRuntimeStageName,
-			step:  steps.NewInitKymaTempalate(db.Operations()),
+			step:  steps.NewInitKymaTemplate(db.Operations()),
 		},
 		{
 			stage:     createRuntimeStageName,
@@ -910,7 +910,7 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		},
 		{
 			weight: 1,
-			step:   steps.InitKymaTempalateUpgradeKyma(db.Operations()),
+			step:   steps.InitKymaTemplateUpgradeKyma(db.Operations()),
 		},
 		{
 			weight: 2,
