@@ -14,6 +14,9 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -54,6 +57,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +82,8 @@ type BrokerSuiteTest struct {
 	inputBuilderFactory input.CreatorForPlan
 
 	componentProvider componentProviderDecorated
+
+	k8sKcp client.Client
 }
 
 type componentProviderDecorated struct {
@@ -169,28 +175,26 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	accountProvider := fixAccountProvider()
 	require.NoError(t, err)
 
-	// TODO put Reconciler client in the queue for steps
+	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, logs)
+	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient, inputFactory,
+		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides,
+		edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), cli, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
 
-	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
-
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
 	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
-		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
+		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), cli, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
-		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), fakeK8sSKRClient, logs,
 	)
 	deprovisionManager.SpeedUp(10000)
 
@@ -206,6 +210,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
+		k8sKcp:              cli,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -252,19 +257,6 @@ func defaultOIDCValues() internal.OIDCConfigDTO {
 		SigningAlgs:    []string{"RS256"},
 		UsernameClaim:  "sub",
 		UsernamePrefix: "-",
-	}
-}
-
-func defaultDNSValues() gardener.DNSProvidersData {
-	return gardener.DNSProvidersData{
-		Providers: []gardener.DNSProviderData{
-			{
-				DomainsInclude: []string{"devtest.kyma.ondemand.com"},
-				Primary:        true,
-				SecretName:     "aws_dns_domain_secrets_test_insuite",
-				Type:           "route53_type_test",
-			},
-		},
 	}
 }
 
@@ -530,7 +522,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -705,7 +697,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -835,13 +827,13 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	var shootUpgrade gqlschema.UpgradeShootInput
 	var found bool
@@ -852,7 +844,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	assert.Equal(s.t, config, shootUpgrade)
 }
@@ -1122,6 +1114,11 @@ func (s *BrokerSuiteTest) processProvisioningAndReconcilingByOperationID(opID st
 	require.NoError(s.t, err)
 
 	// Reconciler part
+	s.processReconcilingByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
+	// Reconciler part
 	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)
 	s.FinishProvisioningOperationByReconciler(opID)
 
@@ -1307,6 +1304,40 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 			},
 		},
 	}
+}
+
+func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+
+	obj := &unstructured.Unstructured{}
+	obj.SetName(operation.RuntimeID)
+	obj.SetNamespace("kyma-system")
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1alpha1",
+		Kind:    "Kyma",
+	})
+
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertSecretWithKubeconfigExists(opId string) {
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kyma-system",
+			Name:      fmt.Sprintf("kubeconfig-%s", operation.RuntimeID),
+		},
+		StringData: map[string]string{},
+	}
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(secret), secret)
+
+	assert.NoError(s.t, err)
+
 }
 
 func mockBTPOperatorClusterID() {

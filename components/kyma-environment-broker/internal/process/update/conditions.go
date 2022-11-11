@@ -6,7 +6,8 @@ import (
 )
 
 func RequiresReconcilerUpdate(op internal.Operation) bool {
-	return op.RequiresReconcilerUpdate
+	// preview plan does not need any interaction with the Reconciler
+	return op.RequiresReconcilerUpdate && !broker.IsPreviewPlan(op.ProvisioningParameters.PlanID)
 }
 
 func ForBTPOperatorCredentialsProvided(op internal.Operation) bool {

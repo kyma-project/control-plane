@@ -50,7 +50,7 @@ spec:
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
-      {{- if eq .Values.global.database.embedded.enabled false}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-proxy
         image: {{ .Values.global.images.cloudsql_proxy_image }}
         command: [ "/cloud_sql_proxy",
@@ -64,7 +64,7 @@ spec:
         securityContext:
 {{ toYaml . | indent 10 }}
             {{- end }}
-          {{ end }}
+      {{- end }}
       - image: "{{ .Values.global.images.mothership_reconciler }}"
         imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
         args:
@@ -127,6 +127,11 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
         {{- end }}
+        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
+        - mountPath: /secrets/cloudsql-sslrootcert
+          name: cloudsql-sslrootcert
+          readOnly: true
+        {{- end }}
         {{- if .Values.global.mothership_reconciler.auditlog.enabled }}
       - name: fluentbit-sidecar
         image: {{ .Values.global.mothership_reconciler.auditlog.image }}:{{ .Values.global.mothership_reconciler.auditlog.tag }}
@@ -167,10 +172,19 @@ spec:
           mountPath: /fluent-bit/etc/
       {{- end }}
       volumes:
-      {{- if eq .Values.global.database.embedded.enabled false }}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
+      {{- end }}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
+      - name: cloudsql-sslrootcert
+        secret:
+          items:
+          - key: postgresql-sslRootCert
+            path: server-ca.pem
+          optional: true
+          secretName: {{ .Values.configurationSecret }}
       {{- end }}
       - name: encryption-key
         secret:

@@ -22,13 +22,19 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
 
    > **NOTE:** INSTANCE_ID and NAME must be unique. It is recommended to use UUID as an INSTANCE_ID.
 
-2. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
+1. Get the [access token](03-05-authorization.md#get-the-access-token). Export this variable based on the token you got from the OAuth client:
 
    ```bash
    export AUTHORIZATION_HEADER="Authorization: Bearer $ACCESS_TOKEN"
+   ```  
+
+     Alternatively, you can perform `kubectl port-forward` on the chosen Pod to expose it on your local machine. Expose it on port `8080`:  
+
+   ```bash
+     kubectl port-forward -n kcp-system deployments/kcp-kyma-environment-broker 8080
    ```
 
-3. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](03-01-service-description.md).
+1. Make a call to the Kyma Environment Broker to create a Runtime on Azure. Find the list of possible request parameters [here](03-01-service-description.md).
 
    ```bash
    curl --request PUT "https://$BROKER_URL/oauth/v2/service_instances/$INSTANCE_ID?accepts_incomplete=true" \
@@ -48,15 +54,15 @@ This tutorial shows how to provision Kyma Runtime on Azure using Kyma Environmen
    }"
    ```
 
-A successful call returns the operation ID:
+   A successful call returns the operation ID:
 
-   ```json
+    ```json
    {
        "operation":"8a7bfd9b-f2f5-43d1-bb67-177d2434053c"
    }
-   ```
+   ```  
 
-4. Check the operation status as described [here](08-03-operation-status.md).
+1. Check the operation status as described [here](08-03-operation-status.md).
 
 ## BTP Operator
 
@@ -94,4 +100,4 @@ If you need a BTP Operator component installed, obtain [BTP Operator access cred
 						  "url": "https://test.auth.com",
 						  "xsappname": "testXsappname"
 						},
-```
+``` 
