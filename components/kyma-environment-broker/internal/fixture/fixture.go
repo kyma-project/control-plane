@@ -284,6 +284,7 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 		Version: KymaVersion,
 		Origin:  internal.Defaults,
 	}
+	o.Type = internal.OperationTypeUpgradeKyma
 	return internal.UpgradeKymaOperation{
 		Operation: o,
 	}

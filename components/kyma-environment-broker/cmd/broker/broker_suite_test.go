@@ -14,6 +14,9 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -1304,7 +1307,6 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 }
 
 func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
-
 	operation, err := s.db.Operations().GetOperationByID(opId)
 	assert.NoError(s.t, err)
 
@@ -1320,6 +1322,22 @@ func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
 	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
 
 	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertSecretWithKubeconfigExists(opId string) {
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kyma-system",
+			Name:      fmt.Sprintf("kubeconfig-%s", operation.RuntimeID),
+		},
+		StringData: map[string]string{},
+	}
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(secret), secret)
+
+	assert.NoError(s.t, err)
+
 }
 
 func mockBTPOperatorClusterID() {

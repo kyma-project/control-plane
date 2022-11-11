@@ -646,6 +646,10 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
 		},
 		{
+			stage: createRuntimeStageName,
+			step:  steps.NewInitKymaTemplate(db.Operations()),
+		},
+		{
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
 			condition: provisioning.SkipForOwnClusterPlan,
@@ -903,6 +907,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			weight: 1,
 			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
 			cnd:    upgrade_kyma.SkipForPreviewPlan,
+		},
+		{
+			weight: 1,
+			step:   steps.InitKymaTemplateUpgradeKyma(db.Operations()),
 		},
 		{
 			weight: 2,
