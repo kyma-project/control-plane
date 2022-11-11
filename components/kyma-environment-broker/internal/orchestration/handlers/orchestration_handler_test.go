@@ -95,6 +95,7 @@ func TestStatusHandler_AttachRoutes(t *testing.T) {
 				RuntimeOperation: orchestration.RuntimeOperation{
 					ID: fixID,
 				},
+				Type: internal.OperationTypeUpgradeKyma,
 			},
 		})
 		err = db.Operations().InsertProvisioningOperation(internal.ProvisioningOperation{

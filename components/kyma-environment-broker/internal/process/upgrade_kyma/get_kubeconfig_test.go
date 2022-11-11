@@ -14,9 +14,14 @@ func TestNewGetKubeconfigStep(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	provisionerClient := provisioner.NewFakeClient()
-	step := NewGetKubeconfigStep(st.Operations(), provisionerClient)
 	op := fixOperation("op-id")
 	op.Kubeconfig = ""
+
+	input, err := op.InputCreator.CreateProvisionRuntimeInput()
+	require.NoError(t, err)
+	provisionerClient.ProvisionRuntimeWithIDs(op.GlobalAccountID, op.SubAccountID, op.RuntimeID, op.ID, input)
+
+	step := NewGetKubeconfigStep(st.Operations(), provisionerClient)
 	st.Operations().InsertUpgradeKymaOperation(op)
 
 	// when
