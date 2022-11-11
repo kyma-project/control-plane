@@ -635,7 +635,7 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	t.Run("should update Runtime", func(t *testing.T) {
 		// given
 		conditionConnected := graphql.RuntimeStatusConditionConnected
-		runtimeInput := &graphql.RuntimeInput{
+		runtimeInput := &graphql.RuntimeUpdateInput{
 			Name: runtimeTestingName,
 			Labels: graphql.Labels{
 				"label1": "something",
@@ -681,7 +681,7 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 		}
 
 		conditionConnected := graphql.RuntimeStatusConditionConnected
-		runtimeInput := &graphql.RuntimeInput{
+		runtimeInput := &graphql.RuntimeUpdateInput{
 			Name: runtimeTestingName,
 			Labels: graphql.Labels{
 				"label1": "something",
@@ -705,7 +705,7 @@ func TestDirectorClient_UpdateRuntime(t *testing.T) {
 	t.Run("should return error when Director returns nil response", func(t *testing.T) {
 		// given
 		conditionConnected := graphql.RuntimeStatusConditionConnected
-		runtimeInput := &graphql.RuntimeInput{
+		runtimeInput := &graphql.RuntimeUpdateInput{
 			Name: runtimeTestingName,
 			Labels: graphql.Labels{
 				"label1": "something",
