@@ -3,21 +3,21 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.19
 
 require (
-	github.com/gardener/gardener v1.58.0
+	github.com/gardener/gardener v1.59.1
 	github.com/gardener/gardener-extension-provider-aws v1.39.1
-	github.com/gardener/gardener-extension-provider-azure v1.30.0
-	github.com/gardener/gardener-extension-provider-gcp v1.25.0
+	github.com/gardener/gardener-extension-provider-azure v1.31.0
+	github.com/gardener/gardener-extension-provider-gcp v1.25.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221108071341-0e3dd93e1f50
-	github.com/onsi/gomega v1.22.1
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221113093926-d9af61f0717d
+	github.com/onsi/gomega v1.24.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.13.1
+	github.com/prometheus/client_golang v1.14.0
 	go.uber.org/zap v1.23.0
-	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
+	k8s.io/api v0.25.4
+	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
@@ -43,7 +43,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/onrik/logrus v0.9.0 // indirect
-	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
@@ -52,9 +52,9 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
@@ -71,30 +71,30 @@ require (
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.22.12
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.12
-	k8s.io/apimachinery => k8s.io/apimachinery v0.22.12
-	k8s.io/apiserver => k8s.io/apiserver v0.22.12
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.22.12
-	k8s.io/client-go => k8s.io/client-go v0.22.12
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.22.12
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.22.12
-	k8s.io/code-generator => k8s.io/code-generator v0.22.12
-	k8s.io/component-base => k8s.io/component-base v0.22.12
-	k8s.io/component-helpers => k8s.io/component-helpers v0.22.12
-	k8s.io/controller-manager => k8s.io/controller-manager v0.22.12
-	k8s.io/cri-api => k8s.io/cri-api v0.22.12
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.22.12
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.12
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.22.12
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.22.12
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.22.12
-	k8s.io/kubectl => k8s.io/kubectl v0.22.12
-	k8s.io/kubelet => k8s.io/kubelet v0.22.12
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.22.12
-	k8s.io/metrics => k8s.io/metrics v0.22.12
-	k8s.io/mount-utils => k8s.io/mount-utils v0.22.12
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.12
+	k8s.io/api => k8s.io/api v0.22.15
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.22.15
+	k8s.io/apimachinery => k8s.io/apimachinery v0.22.15
+	k8s.io/apiserver => k8s.io/apiserver v0.22.15
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.22.15
+	k8s.io/client-go => k8s.io/client-go v0.22.15
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.22.15
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.22.15
+	k8s.io/code-generator => k8s.io/code-generator v0.22.15
+	k8s.io/component-base => k8s.io/component-base v0.22.15
+	k8s.io/component-helpers => k8s.io/component-helpers v0.22.15
+	k8s.io/controller-manager => k8s.io/controller-manager v0.22.15
+	k8s.io/cri-api => k8s.io/cri-api v0.22.15
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.22.15
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.22.15
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.22.15
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.22.15
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.22.15
+	k8s.io/kubectl => k8s.io/kubectl v0.22.15
+	k8s.io/kubelet => k8s.io/kubelet v0.22.15
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.22.15
+	k8s.io/metrics => k8s.io/metrics v0.22.15
+	k8s.io/mount-utils => k8s.io/mount-utils v0.22.15
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.15
 )
 
 replace (
