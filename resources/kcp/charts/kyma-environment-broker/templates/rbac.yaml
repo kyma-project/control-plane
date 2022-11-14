@@ -19,6 +19,9 @@ rules:
   - apiGroups: ["core.gardener.cloud"]
     resources: ["secretbindings"]
     verbs: ["list", "get", "update"]
+  - apiGroups: [ "operator.kyma-project.io" ]
+    resources: [ "kymas" ]
+    verbs: [ "list", "get", "update", "create" ]
 
 ---
 kind: RoleBinding
