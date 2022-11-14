@@ -6,6 +6,7 @@ metadata:
   labels:
     keb-config: "true"
     runtime-version-2.4.0: "true"
+    runtime-version-PR-1000: "true"
 data:
   default: |-
     kyma-template: |-

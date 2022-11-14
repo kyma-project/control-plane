@@ -127,7 +127,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
 	configProvider := kebConfig.NewConfigProvider(
-		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 
