@@ -9,6 +9,9 @@ global:
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1840"
+    kyma_metrics_collector:
+      dir:
+      version: "PR-2242"
     tests:
       provisioner:
         dir:
