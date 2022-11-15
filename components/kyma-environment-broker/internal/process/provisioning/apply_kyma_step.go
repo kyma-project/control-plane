@@ -67,6 +67,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 			return a.operationManager.RetryOperation(operation, "unable to create the Kyma resource", err, time.Second, 10*time.Second, logger)
 		}
 	default:
+		logger.Errorf("Unable to get Kyma: %s", err.Error())
 		return a.operationManager.RetryOperation(operation, "unable to get the Kyma resource", err, time.Second, 10*time.Second, logger)
 	}
 
