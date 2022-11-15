@@ -85,6 +85,7 @@ replace (
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1 // CVE-2022-21698
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // CVE-2022-27191
 	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b // CVE-2022-27664
+	golang.org/x/text => golang.org/x/text v0.3.8 // CVE-2022-32149
 	k8s.io/api => k8s.io/api v0.25.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.2

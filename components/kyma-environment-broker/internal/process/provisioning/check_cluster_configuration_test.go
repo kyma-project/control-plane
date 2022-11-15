@@ -212,7 +212,7 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 
 	cli := fake.NewClientBuilder().WithRuntimeObjects(fixConfigMap(kymaVersion)).Build()
 	configProvider := kebConfig.NewConfigProvider(
-		kebConfig.NewConfigMapReader(context.TODO(), cli, logrus.New()),
+		kebConfig.NewConfigMapReader(context.TODO(), cli, logrus.New(), kymaVersion),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 	ibf, err := input.NewInputBuilderFactory(optComponentsSvc, runtime.NewDisabledComponentsProvider(), componentsProvider,

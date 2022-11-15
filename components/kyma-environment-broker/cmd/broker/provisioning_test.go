@@ -73,6 +73,7 @@ func TestProvisioning_Preview(t *testing.T) {
 	suite.WaitForOperationState(opID, domain.Succeeded)
 
 	suite.AssertKymaResourceExists(opID)
+	suite.AssertSecretWithKubeconfigExists(opID)
 }
 
 func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {
@@ -363,8 +364,6 @@ func TestProvisioningWithReconciler_HappyPath(t *testing.T) {
 		Components:     suite.fixExpectedComponentListWithSMOperator(opID, clusterID),
 	})
 	suite.AssertClusterConfigWithKubeconfig(opID)
-
-	suite.AssertKymaResourceExists(opID)
 }
 
 func TestProvisioningWithReconcilerWithBTPOperator_HappyPath(t *testing.T) {

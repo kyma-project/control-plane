@@ -118,14 +118,15 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 	}
 
 	return internal.InstanceDetails{
-		Avs:               internal.AvsLifecycleData{},
-		EventHub:          internal.EventHub{Deleted: false},
-		SubAccountID:      subAccountId,
-		RuntimeID:         runtimeId,
-		ShootName:         shootName,
-		ShootDomain:       shootDomain,
-		ShootDNSProviders: FixDNSProvidersConfig(),
-		Monitoring:        monitoringData,
+		Avs:                   internal.AvsLifecycleData{},
+		EventHub:              internal.EventHub{Deleted: false},
+		SubAccountID:          subAccountId,
+		RuntimeID:             runtimeId,
+		ShootName:             shootName,
+		ShootDomain:           shootDomain,
+		ShootDNSProviders:     FixDNSProvidersConfig(),
+		Monitoring:            monitoringData,
+		KymaResourceNamespace: "kyma-system",
 	}
 }
 
@@ -283,6 +284,7 @@ func FixUpgradeKymaOperation(operationId, instanceId string) internal.UpgradeKym
 		Version: KymaVersion,
 		Origin:  internal.Defaults,
 	}
+	o.Type = internal.OperationTypeUpgradeKyma
 	return internal.UpgradeKymaOperation{
 		Operation: o,
 	}

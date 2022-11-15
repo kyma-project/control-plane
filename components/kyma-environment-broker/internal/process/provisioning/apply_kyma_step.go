@@ -15,14 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	kymaResourceNamespace = "kcp-system"
 )
 
 type ApplyKymaStep struct {
@@ -31,7 +26,6 @@ type ApplyKymaStep struct {
 }
 
 var _ process.Step = &ApplyKymaStep{}
-var kymaGVK = schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
 
 func NewApplyKymaStep(os storage.Operations, cli client.Client) *ApplyKymaStep {
 	return &ApplyKymaStep{operationManager: process.NewOperationManager(os), k8sClient: cli}
@@ -42,17 +36,16 @@ func (a *ApplyKymaStep) Name() string {
 }
 
 func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	template, err := a.createUnstructuredKyma(operation)
+	template, err := steps.DecodeKymaTemplate(operation.KymaTemplate)
 	if err != nil {
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
-
 	}
 	a.addLabelsAndName(operation, template)
 
 	var existingKyma unstructured.Unstructured
-	existingKyma.SetGroupVersionKind(kymaGVK)
+	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
-		Namespace: template.GetNamespace(),
+		Namespace: operation.KymaResourceNamespace,
 		Name:      template.GetName(),
 	}, &existingKyma)
 	switch {
@@ -74,6 +67,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 			return a.operationManager.RetryOperation(operation, "unable to create the Kyma resource", err, time.Second, 10*time.Second, logger)
 		}
 	default:
+		logger.Errorf("Unable to get Kyma: %s", err.Error())
 		return a.operationManager.RetryOperation(operation, "unable to get the Kyma resource", err, time.Second, 10*time.Second, logger)
 	}
 

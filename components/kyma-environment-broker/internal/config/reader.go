@@ -18,24 +18,34 @@ const (
 )
 
 type ConfigMapReader struct {
-	ctx       context.Context
-	k8sClient client.Client
-	logger    logrus.FieldLogger
+	ctx                context.Context
+	k8sClient          client.Client
+	logger             logrus.FieldLogger
+	defaultKymaVersion string
 }
 
-func NewConfigMapReader(ctx context.Context, k8sClient client.Client, logger logrus.FieldLogger) *ConfigMapReader {
+func NewConfigMapReader(ctx context.Context, k8sClient client.Client, logger logrus.FieldLogger, defaultKymaVersion string) *ConfigMapReader {
 	return &ConfigMapReader{
-		ctx:       ctx,
-		k8sClient: k8sClient,
-		logger:    logger,
+		ctx:                ctx,
+		k8sClient:          k8sClient,
+		logger:             logger,
+		defaultKymaVersion: defaultKymaVersion,
 	}
 }
 
 func (r *ConfigMapReader) Read(kymaVersion, planName string) (string, error) {
 	r.logger.Infof("getting configuration for Kyma version %v and %v plan", kymaVersion, planName)
+	var cfgMapList *coreV1.ConfigMapList
 	cfgMapList, err := r.getConfigMapList(kymaVersion)
 	if err != nil {
 		return "", err
+	}
+	if len(cfgMapList.Items) == 0 && isCustomVersion(kymaVersion) {
+		r.logger.Infof("configuration for Kyma version %v does not exist. Getting configuration for the latest official release version: %v", kymaVersion, r.defaultKymaVersion)
+		cfgMapList, err = r.getConfigMapList(r.defaultKymaVersion)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if err = r.verifyConfigMapExistence(cfgMapList); err != nil {
@@ -96,4 +106,8 @@ func (r *ConfigMapReader) getConfigStringForPlanOrDefaults(cfgMap *coreV1.Config
 		}
 	}
 	return cfgString, nil
+}
+
+func isCustomVersion(version string) bool {
+	return strings.HasPrefix(version, "PR-") || strings.HasPrefix(version, "main-")
 }

@@ -398,21 +398,21 @@ spec:
               name: config-volume
             - mountPath: /swagger/schema
               name: swagger-volume
-          {{- if eq .Values.global.database.embedded.enabled false}}
-            - name: cloudsql-instance-credentials
-              mountPath: /secrets/cloudsql-instance-credentials
-              readOnly: true
-            - name: cloudsql-sslrootcert
-              mountPath: /secrets/cloudsql-sslrootcert
-              readOnly: true
-          {{- end }}
           {{- if .Values.broker.profiler.memory }}
             - name: keb-memory-profile
               mountPath: /tmp/profiler
               readOnly: false
           {{- end }}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
+            - name: cloudsql-sslrootcert
+              mountPath: /secrets/cloudsql-sslrootcert
+              readOnly: true
+          {{- end }}
+        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql-instance-credentials
+              readOnly: true
 
-        {{- if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: {{ .Values.global.images.cloudsql_proxy_image }}
           command: ["/cloud_sql_proxy",
@@ -426,7 +426,7 @@ spec:
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
-         {{end}}
+       {{- end}}
       volumes:
       - name: config-volume
         configMap:
@@ -434,10 +434,12 @@ spec:
       - name: swagger-volume
         configMap:
           name: {{ include "kyma-env-broker.fullname" . }}-swagger
-      {{- if eq .Values.global.database.embedded.enabled false}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials
+      {{- end}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
       - name: cloudsql-sslrootcert
         secret:
           secretName: kcp-postgresql
