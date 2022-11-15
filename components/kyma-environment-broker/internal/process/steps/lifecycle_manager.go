@@ -2,8 +2,9 @@ package steps
 
 import (
 	"fmt"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"strings"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
