@@ -21,7 +21,7 @@ rules:
     verbs: ["list", "get", "update"]
   - apiGroups: [ "operator.kyma-project.io" ]
     resources: [ "kymas" ]
-    verbs: [ "list", "get", "update", "create" ]
+    verbs: [ "*" ]
 
 ---
 kind: RoleBinding

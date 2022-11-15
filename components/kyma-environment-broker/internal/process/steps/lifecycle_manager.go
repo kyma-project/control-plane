@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -19,8 +21,10 @@ func ApplyLabelsForLM(object client.Object, operation internal.Operation) {
 	l["kyma-project.io/instance-id"] = operation.InstanceID
 	l["kyma-project.io/runtime-id"] = operation.RuntimeID
 	l["kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
+	l["kyma-project.io/broker-plan-name"] = broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	l["kyma-project.io/global-account-id"] = operation.GlobalAccountID
 	l["operator.kyma-project.io/kyma-name"] = KymaName(operation)
+	l["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 	object.SetLabels(l)
 }
 

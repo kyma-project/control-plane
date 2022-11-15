@@ -467,6 +467,11 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			UpdatedAt:              time.Now(),
 			Type:                   OperationTypeProvision,
 			ProvisioningParameters: parameters,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{
+					GlobalAccountID: parameters.ErsContext.GlobalAccountID,
+				},
+			},
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 				Kubeconfig:   parameters.Parameters.Kubeconfig,
