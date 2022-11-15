@@ -14,7 +14,7 @@ The diagram and steps describe the Kyma Environment Broker (KEB) workflow and th
 
 5. Reconciler installs Kyma (except preview plan). 
 
-6. KEB creates Kyma resource.
+6. KEB creates Kyma resource (only for preview plan).
 
-7. Lifecycle Manager manages Kyma modules.
+7. Lifecycle Manager manages Kyma modules (only for preview plan).
 
