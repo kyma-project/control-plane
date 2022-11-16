@@ -542,17 +542,18 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:              operationID,
-			Version:         0,
-			Description:     "Operation created",
-			InstanceID:      instance.InstanceID,
-			State:           orchestration.Pending,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-			Type:            OperationTypeDeprovision,
-			InstanceDetails: instance.InstanceDetails,
-			FinishedStages:  make([]string, 0),
-			Temporary:       true,
+			ID:                     operationID,
+			Version:                0,
+			Description:            "Operation created",
+			InstanceID:             instance.InstanceID,
+			State:                  orchestration.Pending,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			Type:                   OperationTypeDeprovision,
+			InstanceDetails:        instance.InstanceDetails,
+			ProvisioningParameters: instance.Parameters,
+			FinishedStages:         make([]string, 0),
+			Temporary:              true,
 		},
 	}
 }
