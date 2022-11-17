@@ -532,6 +532,8 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningAndReconcilingByOperationID(opID)
 
+	suite.fixServiceBindingAndInstances(t)
+
 	suite.Log("*** Suspension ***")
 
 	// Process Suspension
@@ -553,6 +555,8 @@ func TestUnsuspensionTrialKyma20(t *testing.T) {
 	suite.FinishDeprovisioningOperationByProvisioner(suspensionOpID)
 	suite.WaitForOperationState(suspensionOpID, domain.Succeeded)
 	suite.RemoveFromReconcilerByInstanceID(iid)
+
+	suite.assertServiceBindingAndInstancesAreRemoved(t)
 
 	// OSB update
 	suite.Log("*** Unsuspension ***")
