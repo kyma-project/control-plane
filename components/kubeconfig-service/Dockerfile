@@ -34,8 +34,5 @@ WORKDIR /
 # Copy binary
 COPY --from=builder /app /app
 COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=alpine /usr/bin/openssl /usr/bin/
-COPY --from=alpine /bin/busybox /bin/
-COPY --from=alpine /usr/lib/* /usr/lib/
 # Run app
 CMD ["/app/main"]
