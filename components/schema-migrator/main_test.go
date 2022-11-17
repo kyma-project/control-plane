@@ -103,7 +103,6 @@ func Test_copyDir(t *testing.T) {
 	t.Run("Should succesfully copy files", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
-		mfs.On("Create", "src").Return(os.Create("src"))
 		mfs.On("ReadDir", "src").Return([]fs.DirEntry{}, nil)
 
 		// when
