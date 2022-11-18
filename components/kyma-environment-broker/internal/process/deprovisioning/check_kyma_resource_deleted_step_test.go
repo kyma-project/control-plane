@@ -62,7 +62,7 @@ func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 
 	// Then
 	require.NoError(t, err)
-	assert.Equal(t, backoff, backoffForK8SOperation)
+	assert.NotZero(t, backoff)
 }
 
 func assertNoKymaResourceWithGivenRuntimeID(t *testing.T, kcpClient client.Client, kymaResourceNamespace string, resourceName string) {
