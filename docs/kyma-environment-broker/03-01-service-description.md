@@ -213,7 +213,7 @@ These are the provisioning parameters for the `own_cluster` plan that you config
 
 ## Preview cluster plan
 
-Preview plan allows to test an integration with Lifecycle Manager. The preview plan skips steps which integrsates Kyma Environment Broker and Reconciler.
+Preview plan allows to test an integration with Lifecycle Manager. The preview plan skips steps which integrates Kyma Environment Broker and Reconciler.
 
 ### Provisioning parameters
 
