@@ -202,6 +202,7 @@ These are the provisioning parameters for the `own_cluster` plan that you config
   <summary label="own_cluster-plan">
   Own cluster plan
   </summary>
+</details>
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|----------|---------------|
