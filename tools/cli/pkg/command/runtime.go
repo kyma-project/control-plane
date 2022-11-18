@@ -98,8 +98,9 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().BoolVar(&cmd.opDetail, "ops", false, "Get all operations for the runtimes instead of just querying the last operation.")
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
-	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes")
-	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events")
+	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes.")
+	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events.")
+	cobraCmd.Flags().BoolVar(&cmd.params.IncludeDeleted, "include-deleted", false, "Try best effort to include at least partial information regarding deprovisioned instances.")
 
 	return cobraCmd
 }
@@ -155,6 +156,9 @@ func (cmd *RuntimeCommand) Validate() error {
 	cmd.params.OperationDetail = runtime.LastOperation
 	if cmd.opDetail {
 		cmd.params.OperationDetail = runtime.AllOperation
+	}
+	if cmd.params.IncludeDeleted == true && len(cmd.params.InstanceIDs) == 0 {
+		return fmt.Errorf("need to provide some Instance IDs when using --include-deleted")
 	}
 
 	return nil
