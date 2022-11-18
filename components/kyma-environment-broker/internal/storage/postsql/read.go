@@ -834,6 +834,12 @@ func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	if len(filter.States) > 0 {
 		stmt.Where("state IN ?", filter.States)
 	}
+	if filter.InstanceFilter != nil {
+		fi := filter.InstanceFilter
+		if len(fi.InstanceIDs) != 0 {
+			stmt.Where("instance_id IN ?", fi.InstanceIDs)
+		}
+	}
 }
 
 func (r readSession) getOperationCount(filter dbmodel.OperationFilter) (int, error) {
