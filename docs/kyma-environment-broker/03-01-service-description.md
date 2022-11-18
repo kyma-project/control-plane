@@ -203,6 +203,7 @@ These are the provisioning parameters for the `own_cluster` plan that you config
   Own cluster plan
   </summary>
 </details>
+</div>
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|----------|---------------|
@@ -212,12 +213,16 @@ These are the provisioning parameters for the `own_cluster` plan that you config
 
 ## Preview cluster plan
 
+Preview plan allows to test an integration with Lifecycle Manager. The preview plan skips steps which integrsates Kyma Environment Broker and Reconciler.
+
+### Provisioning parameters
+
 These are the provisioning parameters for the `preview` plan that you configure:
 
 <div tabs name="own_cluster-plan" group="own_cluster-plan">
   <details>
   <summary label="own_cluster-plan">
-  Own cluster plan
+  Preview cluster plan
   </summary>
 </details>
 </div>
