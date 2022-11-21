@@ -76,7 +76,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 
 func (a *ApplyKymaStep) addLabelsAndName(operation internal.Operation, obj *unstructured.Unstructured) bool {
 	oldLabels := obj.GetLabels()
-	steps.ApplyLabelsForLM(obj, operation)
+	steps.ApplyLabelsAndAnnotationsForLM(obj, operation)
 	obj.SetName(steps.KymaName(operation))
 	return !reflect.DeepEqual(obj.GetLabels(), oldLabels)
 }

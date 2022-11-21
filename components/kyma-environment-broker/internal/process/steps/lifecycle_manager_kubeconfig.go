@@ -79,7 +79,7 @@ func initSecret(o internal.Operation) *corev1.Secret {
 			"config": o.Kubeconfig,
 		},
 	}
-	ApplyLabelsForLM(secret, o)
+	ApplyLabelsAndAnnotationsForLM(secret, o)
 	return secret
 }
 
