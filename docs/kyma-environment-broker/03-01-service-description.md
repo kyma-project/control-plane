@@ -16,6 +16,7 @@ The supported plans are as follows:
 | `trial` | `7d55d31d-35ae-4438-bf13-6ffdfa107d9f` | Installs Kyma trial plan on Azure, AWS or GCP. |
 | `free` | `b1a5764e-2ea1-4f95-94c0-2b4538b37b55` | Installs Kyma free plan on Azure or AWS. |
 | `own_cluster` | `b1a5764e-2ea1-4f95-94c0-2b4538b37b55` | Installs Kyma on custom K8S cluster. |
+| `preview` | `5cb3d976-b85c-42ea-a636-79cadda109a9` | Installs Kyma on AWS using Lifecycle Manager. |
 
 ## Provisioning parameters
 
@@ -207,4 +208,35 @@ These are the provisioning parameters for the `own_cluster` plan that you config
 | **kubeconfig** | string | Kubeconfig that points to the cluster where you install Kyma. | Yes | None |
 | **shootDomain** | string | Domain of the shoot where you install Kyma. | Yes | None |
 | **shootName** | string | Name of the shoot where you install Kyma. | Yes | None |
+
+</details>
+</div>
+
+## Preview cluster plan
+
+The preview plan allows to test integration with Lifecycle Manager. The preview plan skips steps which integrate Kyma Environment Broker and Reconciler.
+
+### Provisioning parameters
+
+These are the provisioning parameters for the `preview` plan that you configure:
+
+<div tabs name="own_cluster-plan" group="own_cluster-plan">
+  <details>
+  <summary label="own_cluster-plan">
+  Preview cluster plan
+  </summary>
+
+| Parameter name | Type | Description | Required | Default value |
+| ---------------|-------|-------------|:----------:|---------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5.2xlarge` |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
+| **region** | string | Defines the cluster region. | No | `westeurope` |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+
+</details>
+</div>
 
