@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ApplyLabelsForLM Set common labels for kyma lifecycle manager
-func ApplyLabelsForLM(object client.Object, operation internal.Operation) {
+// ApplyLabelsAndAnnotationsForLM Set common labels and annotations for kyma lifecycle manager
+func ApplyLabelsAndAnnotationsForLM(object client.Object, operation internal.Operation) {
 	l := object.GetLabels()
 	if l == nil {
 		l = make(map[string]string)
@@ -26,6 +26,13 @@ func ApplyLabelsForLM(object client.Object, operation internal.Operation) {
 	l["operator.kyma-project.io/kyma-name"] = KymaName(operation)
 	l["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 	object.SetLabels(l)
+
+	a := object.GetAnnotations()
+	if a == nil {
+		a = make(map[string]string)
+	}
+	a["skr-domain"] = operation.ShootDomain
+	object.SetAnnotations(a)
 }
 
 func KymaKubeconfigName(operation internal.Operation) string {
