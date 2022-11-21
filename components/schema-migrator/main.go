@@ -157,7 +157,11 @@ func invokeMigration() error {
 	migrationNewPath := fmt.Sprintf("new-migrations/%s", os.Getenv("MIGRATION_PATH"))
 	err = copyDir(migrationNewPath, tmpDir, fs)
 	if err != nil {
-		log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
+		if os.IsNotExist(err) {
+			log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
+		} else {
+			return fmt.Errorf("# COULD NOT COPY NEW MIGRATION FILES: %w", err)
+		}
 	}
 
 	migrationOldPath := fmt.Sprintf("migrations/%s", os.Getenv("MIGRATION_PATH"))
@@ -250,7 +254,7 @@ func copyFile(src, dst string, fs FileSystem) error {
 func copyDir(src, dst string, fs FileSystem) error {
 	files, err := fs.ReadDir(src)
 	if err != nil {
-		return fmt.Errorf("error during reading directory content: %w", err)
+		return err
 	}
 
 	for _, file := range files {
