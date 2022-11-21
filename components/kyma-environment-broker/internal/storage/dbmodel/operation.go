@@ -9,9 +9,10 @@ import (
 
 // OperationFilter holds the filters when listing multiple operations
 type OperationFilter struct {
-	Page     int
-	PageSize int
-	States   []string
+	InstanceFilter *InstanceFilter
+	Page           int
+	PageSize       int
+	States         []string
 }
 
 type OperationDTO struct {

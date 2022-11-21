@@ -113,6 +113,9 @@ func setQuery(url *url.URL, params ListParameters) {
 	if params.Expired {
 		query.Add(ExpiredParam, "true")
 	}
+	if params.IncludeDeleted {
+		query.Add(IncludeDeletedParam, "true")
+	}
 	setParamList(query, GlobalAccountIDParam, params.GlobalAccountIDs)
 	setParamList(query, SubAccountIDParam, params.SubAccountIDs)
 	setParamList(query, InstanceIDParam, params.InstanceIDs)

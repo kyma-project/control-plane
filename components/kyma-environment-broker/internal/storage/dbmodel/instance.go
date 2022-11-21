@@ -34,6 +34,7 @@ type InstanceFilter struct {
 	Shoots                       []string
 	States                       []InstanceState
 	Expired                      *bool
+	IncludeDeleted               *bool
 }
 
 type InstanceDTO struct {
