@@ -202,14 +202,15 @@ These are the provisioning parameters for the `own_cluster` plan that you config
   <summary label="own_cluster-plan">
   Own cluster plan
   </summary>
-</details>
-</div>
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|----------|---------------|
 | **kubeconfig** | string | Kubeconfig that points to the cluster where you install Kyma. | Yes | None |
 | **shootDomain** | string | Domain of the shoot where you install Kyma. | Yes | None |
 | **shootName** | string | Name of the shoot where you install Kyma. | Yes | None |
+
+</details>
+</div>
 
 ## Preview cluster plan
 
@@ -224,8 +225,6 @@ These are the provisioning parameters for the `preview` plan that you configure:
   <summary label="own_cluster-plan">
   Preview cluster plan
   </summary>
-</details>
-</div>
 
 | Parameter name | Type | Description | Required | Default value |
 | ---------------|-------|-------------|:----------:|---------------|
@@ -237,4 +236,7 @@ These are the provisioning parameters for the `preview` plan that you configure:
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
 | **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
 | **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that can be unavailable during an update. | No | `1` |
+
+</details>
+</div>
 
