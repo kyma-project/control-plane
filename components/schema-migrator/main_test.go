@@ -80,7 +80,7 @@ func Test_copyFile(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("Should copy the file", func(t *testing.T) {
+	t.Run("Should not return error", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfi := &mocks.MyFileInfo{}
@@ -100,7 +100,7 @@ func Test_copyFile(t *testing.T) {
 }
 
 func Test_copyDir(t *testing.T) {
-	t.Run("Should succesfully copy files", func(t *testing.T) {
+	t.Run("Should not return error", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("ReadDir", "src").Return([]fs.DirEntry{}, nil)
