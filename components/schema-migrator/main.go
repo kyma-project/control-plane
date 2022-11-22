@@ -21,6 +21,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const connRetries = 30
+
 //go:generate mockery --name=FileSystem
 type FileSystem interface {
 	Open(name string) (*os.File, error)
@@ -42,6 +44,10 @@ type MyFileInfo interface {
 }
 
 type osFS struct{}
+
+type migrationScript struct {
+	fs FileSystem
+}
 
 func (osFS) Open(name string) (*os.File, error) {
 	return os.Open(name)
@@ -145,7 +151,6 @@ func invokeMigration() error {
 
 	log.Println("# STARTING TO COPY MIGRATION FILES #")
 
-	var fs FileSystem = osFS{}
 	migrationEnvPath := os.Getenv("MIGRATION_PATH")
 
 	migrationTempPath := fmt.Sprintf("tmp-migrations-%s-*", migrationEnvPath)
@@ -156,8 +161,11 @@ func invokeMigration() error {
 	}
 	defer os.RemoveAll(migrationExecPath)
 
+	ms := migrationScript{
+		fs: osFS{},
+	}
 	newMigrationsSrc := fmt.Sprintf("new-migrations/%s", migrationEnvPath)
-	err = copyDir(newMigrationsSrc, migrationExecPath, fs)
+	err = ms.copyDir(newMigrationsSrc, migrationExecPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
@@ -167,7 +175,7 @@ func invokeMigration() error {
 	}
 
 	oldMigrationsSrc := fmt.Sprintf("migrations/%s", migrationEnvPath)
-	err = copyDir(oldMigrationsSrc, migrationExecPath, fs)
+	err = ms.copyDir(oldMigrationsSrc, migrationExecPath)
 	if err != nil {
 		return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
 	}
@@ -177,7 +185,8 @@ func invokeMigration() error {
 	migrationPath := fmt.Sprintf("file:///%s", migrationExecPath)
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	for i := 0; i < 30 && err != nil; i++ {
+
+	for i := 0; i < connRetries && err != nil; i++ {
 		fmt.Printf("Error during driver initialization, %s\n", err)
 		driver, err = postgres.WithInstance(db, &postgres.Config{})
 		time.Sleep(1 * time.Second)
@@ -227,34 +236,34 @@ func (l *Logger) Verbose() bool {
 	return false
 }
 
-func copyFile(src, dst string, fs FileSystem) error {
-	rd, err := fs.Open(src)
+func (m *migrationScript) copyFile(src, dst string) error {
+	rd, err := m.fs.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening file: %w", err)
 	}
 	defer rd.Close()
 
-	wr, err := fs.Create(dst)
+	wr, err := m.fs.Create(dst)
 	if err != nil {
 		return fmt.Errorf("creating file: %w", err)
 	}
 	defer wr.Close()
 
-	_, err = fs.Copy(wr, rd)
+	_, err = m.fs.Copy(wr, rd)
 	if err != nil {
 		return fmt.Errorf("copying file content: %w", err)
 	}
 
-	srcInfo, err := fs.Stat(src)
+	srcInfo, err := m.fs.Stat(src)
 	if err != nil {
 		return fmt.Errorf("retrieving fileinfo: %w", err)
 	}
 
-	return fs.Chmod(dst, srcInfo.Mode())
+	return m.fs.Chmod(dst, srcInfo.Mode())
 }
 
-func copyDir(src, dst string, fs FileSystem) error {
-	files, err := fs.ReadDir(src)
+func (m *migrationScript) copyDir(src, dst string) error {
+	files, err := m.fs.ReadDir(src)
 	if err != nil {
 		return err
 	}
@@ -264,7 +273,7 @@ func copyDir(src, dst string, fs FileSystem) error {
 		dstFile := path.Join(dst, file.Name())
 		fileExt := filepath.Ext(srcFile)
 		if fileExt == ".sql" {
-			err = copyFile(srcFile, dstFile, fs)
+			err = m.copyFile(srcFile, dstFile)
 			if err != nil {
 				return fmt.Errorf("error during: %w", err)
 			}

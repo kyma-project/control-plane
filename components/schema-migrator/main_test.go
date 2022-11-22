@@ -12,14 +12,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_copyFile(t *testing.T) {
+func Test_migrationScript_copyFile(t *testing.T) {
 	t.Run("Should return error while opening source file fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("Open", "src").Return(nil, fmt.Errorf("failed to open file"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Error(t, err)
@@ -29,9 +32,12 @@ func Test_copyFile(t *testing.T) {
 		mfs := &mocks.FileSystem{}
 		mfs.On("Open", "src").Return(&os.File{}, nil)
 		mfs.On("Create", "dst").Return(nil, fmt.Errorf("failed to create file"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Error(t, err)
@@ -42,9 +48,12 @@ func Test_copyFile(t *testing.T) {
 		mfs.On("Open", "src").Return(&os.File{}, nil)
 		mfs.On("Create", "dst").Return(&os.File{}, nil)
 		mfs.On("Copy", &os.File{}, &os.File{}).Return(int64(0), fmt.Errorf("failed to copy file"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Error(t, err)
@@ -57,9 +66,12 @@ func Test_copyFile(t *testing.T) {
 		mfs.On("Create", "dst").Return(&os.File{}, nil)
 		mfs.On("Copy", &os.File{}, &os.File{}).Return(int64(65), nil)
 		mfs.On("Stat", "src").Return(mfi, fmt.Errorf("failed to get FileInfo"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Error(t, err)
@@ -74,8 +86,12 @@ func Test_copyFile(t *testing.T) {
 		mfs.On("Stat", "src").Return(mfi, nil)
 		mfi.On("Mode").Return(fs.FileMode(0666))
 		mfs.On("Chmod", "dst", fs.FileMode(0666)).Return(fmt.Errorf("failed to change file mode"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
+
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Error(t, err)
@@ -90,23 +106,29 @@ func Test_copyFile(t *testing.T) {
 		mfs.On("Stat", "src").Return(mfi, nil)
 		mfi.On("Mode").Return(fs.FileMode(0666))
 		mfs.On("Chmod", "dst", fs.FileMode(0666)).Return(nil)
+		ms := &migrationScript{
+			fs: mfs,
+		}
+
 		// when
-		err := copyFile("src", "dst", mfs)
+		err := ms.copyFile("src", "dst")
 
 		// then
 		assert.Nil(t, err)
 	})
-
 }
 
-func Test_copyDir(t *testing.T) {
+func Test_migrationScript_copyDir(t *testing.T) {
 	t.Run("Should not return error", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("ReadDir", "src").Return([]fs.DirEntry{}, nil)
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyDir("src", "dst", mfs)
+		err := ms.copyDir("src", "dst")
 
 		// then
 		assert.Nil(t, err)
@@ -116,13 +138,15 @@ func Test_copyDir(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("ReadDir", "src").Return(nil, fmt.Errorf("failed to read directory"))
+		ms := &migrationScript{
+			fs: mfs,
+		}
 
 		// when
-		err := copyDir("src", "dst", mfs)
+		err := ms.copyDir("src", "dst")
 
 		// then
 		assert.Error(t, err)
 
 	})
-
 }
