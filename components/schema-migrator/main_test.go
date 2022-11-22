@@ -13,7 +13,7 @@ import (
 )
 
 func Test_copyFile(t *testing.T) {
-	t.Run("Should return error while opening source file", func(t *testing.T) {
+	t.Run("Should return error while opening source file fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("Open", "src").Return(nil, fmt.Errorf("failed to open file"))
@@ -24,7 +24,7 @@ func Test_copyFile(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("Should return error while creating destination file", func(t *testing.T) {
+	t.Run("Should return error while creating destination file fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("Open", "src").Return(&os.File{}, nil)
@@ -36,7 +36,7 @@ func Test_copyFile(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("Should return error while copying file", func(t *testing.T) {
+	t.Run("Should return error while copying file fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("Open", "src").Return(&os.File{}, nil)
@@ -49,7 +49,7 @@ func Test_copyFile(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("Should return error while returning FileInfo", func(t *testing.T) {
+	t.Run("Should return error while returning FileInfo fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfi := &mocks.MyFileInfo{}
@@ -64,7 +64,7 @@ func Test_copyFile(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-	t.Run("Should return error while changing the mode of the file", func(t *testing.T) {
+	t.Run("Should return error while changing the mode of the file fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfi := &mocks.MyFileInfo{}
@@ -112,7 +112,7 @@ func Test_copyDir(t *testing.T) {
 		assert.Nil(t, err)
 
 	})
-	t.Run("Should return error while reading directory", func(t *testing.T) {
+	t.Run("Should return error while reading directory fails", func(t *testing.T) {
 		// given
 		mfs := &mocks.FileSystem{}
 		mfs.On("ReadDir", "src").Return(nil, fmt.Errorf("failed to read directory"))
