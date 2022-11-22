@@ -143,19 +143,21 @@ func invokeMigration() error {
 		return fmt.Errorf("# COULD NOT ESTABLISH CONNECTION TO DATABASE WITH CONNECTION STRING: %w", err)
 	}
 
-	log.Println("# STARTING COPY MIGRATION FILES #")
+	log.Println("# STARTING TO COPY MIGRATION FILES #")
 
 	var fs FileSystem = osFS{}
-	migrationTempPath := fmt.Sprintf("tmp-migrations-%s-*", os.Getenv("MIGRATION_PATH"))
+	migrationEnvPath := os.Getenv("MIGRATION_PATH")
 
-	tmpDir, err := os.MkdirTemp("/migrate", migrationTempPath)
+	migrationTempPath := fmt.Sprintf("tmp-migrations-%s-*", migrationEnvPath)
+
+	migrationExecPath, err := os.MkdirTemp("/migrate", migrationTempPath)
 	if err != nil {
-		return fmt.Errorf("# COULD NOT CREATE TEMPORARY FILE FOR MIGRATION: %w", err)
+		return fmt.Errorf("# COULD NOT CREATE TEMPORARY DIRECTORY FOR MIGRATION: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(migrationExecPath)
 
-	migrationNewPath := fmt.Sprintf("new-migrations/%s", os.Getenv("MIGRATION_PATH"))
-	err = copyDir(migrationNewPath, tmpDir, fs)
+	newMigrationsSrc := fmt.Sprintf("new-migrations/%s", migrationEnvPath)
+	err = copyDir(newMigrationsSrc, migrationExecPath, fs)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Printf("# COULD NOT COPY NEW MIGRATION FILES: %s\n", err)
@@ -164,15 +166,15 @@ func invokeMigration() error {
 		}
 	}
 
-	migrationOldPath := fmt.Sprintf("migrations/%s", os.Getenv("MIGRATION_PATH"))
-	err = copyDir(migrationOldPath, tmpDir, fs)
+	oldMigrationsSrc := fmt.Sprintf("migrations/%s", migrationEnvPath)
+	err = copyDir(oldMigrationsSrc, migrationExecPath, fs)
 	if err != nil {
 		return fmt.Errorf("# COULD NOT COPY OLD MIGRATION FILES: %w", err)
 	}
 
 	log.Println("# STARTING MIGRATION #")
 
-	migrationPath := fmt.Sprintf("file:///%s", tmpDir)
+	migrationPath := fmt.Sprintf("file:///%s", migrationExecPath)
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	for i := 0; i < 30 && err != nil; i++ {
