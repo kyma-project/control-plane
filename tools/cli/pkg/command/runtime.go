@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -116,20 +117,28 @@ func (cmd *RuntimeCommand) Run() error {
 		return errors.Wrap(err, "while listing runtimes")
 	}
 	var eventList []events.EventDTO
+	var eventsSkipped bool
 	if cmd.params.Events && rp.Count > 0 {
-		ev := events.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
-		var instanceIds []string
-		for _, i := range rp.Data {
-			instanceIds = append(instanceIds, i.InstanceID)
-		}
-		eventList, err = ev.ListEvents(instanceIds)
-		if err != nil {
-			return errors.Wrap(err, "while listing events")
+		if rp.Count > 100 {
+			eventsSkipped = true
+		} else {
+			ev := events.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
+			var instanceIds []string
+			for _, i := range rp.Data {
+				instanceIds = append(instanceIds, i.InstanceID)
+			}
+			eventList, err = ev.ListEvents(instanceIds)
+			if err != nil {
+				return errors.Wrap(err, "while listing events")
+			}
 		}
 	}
 	err = cmd.printRuntimes(rp, eventList)
 	if err != nil {
 		return errors.Wrap(err, "while printing runtimes")
+	}
+	if eventsSkipped {
+		fmt.Fprintln(os.Stderr, "\nPlease narrow down the instance list by additional filters. fetching events limitted to 100 instances, received", rp.Count)
 	}
 
 	return nil
