@@ -83,25 +83,20 @@ func recreateInstances(operations []internal.Operation) []internal.Instance {
 }
 
 func (h *Handler) listInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	instances, count, totalCount, err := h.instancesDb.List(filter)
-	if err != nil {
-		return instances, count, totalCount, err
-	}
-	if filter.IncludeDeleted != nil && *filter.IncludeDeleted {
+	if filter.OnlyDeleted != nil && *filter.OnlyDeleted {
 		opFilter := dbmodel.OperationFilter{}
 		opFilter.InstanceFilter = &filter
 		opFilter.Page = filter.Page
 		opFilter.PageSize = filter.PageSize
 		operations, _, _, err := h.operationsDb.ListOperations(opFilter)
 		if err != nil {
-			return instances, count, totalCount, err
+			return []internal.Instance{}, 0, 0, err
 		}
 		instancesFromOperations := recreateInstances(operations)
-		instances = append(instances, instancesFromOperations...)
-		count += len(instancesFromOperations)
-		totalCount += len(instancesFromOperations)
+		count := len(instancesFromOperations)
+		return instancesFromOperations, count, count, nil
 	}
-	return instances, count, totalCount, err
+	return h.instancesDb.List(filter)
 }
 
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
@@ -391,8 +386,8 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Shoots = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
-	if v, exists := query[pkg.IncludeDeletedParam]; exists && v[0] == "true" {
-		filter.IncludeDeleted = ptr.Bool(true)
+	if v, exists := query[pkg.OnlyDeletedParam]; exists && v[0] == "true" {
+		filter.OnlyDeleted = ptr.Bool(true)
 	}
 	if v, exists := query[pkg.ExpiredParam]; exists && v[0] == "true" {
 		filter.Expired = ptr.Bool(true)
