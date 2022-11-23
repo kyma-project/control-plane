@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -599,7 +599,7 @@ func (s *operations) ListOperations(filter dbmodel.OperationFilter) ([]internal.
 
 	operations, err := s.filterAll(filter)
 	if err != nil {
-		return nil, 0, 0, errors.Wrap(err, "while listing operations")
+		return nil, 0, 0, fmt.Errorf("while listing operations: %w", err)
 	}
 	s.sortByCreatedAt(operations)
 

@@ -3,7 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var dashboardConfig dashboard.Config = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
+var dashboardConfig = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
 
 type handler struct {
 	Instance   internal.Instance
@@ -448,7 +448,7 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
 		// given
 		oidcParams := `"clientID":"{clientID}","groupsClaim":"groups","issuerURL":"{issuerURL}","signingAlgs":["RS256"],"usernameClaim":"email","usernamePrefix":"-"`
-		errMsg := errors.New("issuerURL must be a valid URL, issuerURL must have https scheme")
+		errMsg := fmt.Errorf("issuerURL must be a valid URL, issuerURL must have https scheme")
 		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
 
 		// when
@@ -472,7 +472,7 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	t.Run("Should fail on insufficient OIDC params (missing issuerURL)", func(t *testing.T) {
 		// given
 		oidcParams := `"clientID":"client-id"`
-		errMsg := errors.New("issuerURL must not be empty")
+		errMsg := fmt.Errorf("issuerURL must not be empty")
 		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
 
 		// when
@@ -496,7 +496,7 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	t.Run("Should fail on insufficient OIDC params (missing clientID)", func(t *testing.T) {
 		// given
 		oidcParams := `"issuerURL":"https://test.local"`
-		errMsg := errors.New("clientID must not be empty")
+		errMsg := fmt.Errorf("clientID must not be empty")
 		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
 
 		// when
@@ -520,7 +520,7 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	t.Run("Should fail on invalid OIDC signingAlgs param", func(t *testing.T) {
 		// given
 		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
-		errMsg := errors.New("signingAlgs must contain valid signing algorithm(s)")
+		errMsg := fmt.Errorf("signingAlgs must contain valid signing algorithm(s)")
 		expectedErr := apiresponses.NewFailureResponse(errMsg, http.StatusUnprocessableEntity, errMsg.Error())
 
 		// when

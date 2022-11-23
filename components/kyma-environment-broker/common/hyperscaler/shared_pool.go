@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -31,7 +30,7 @@ func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type
 	labelSelector := fmt.Sprintf("shared=true,hyperscalerType=%s", hyperscalerType)
 	secretBindings, err := sp.getSecretBindings(labelSelector)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting secret binding")
+		return nil, fmt.Errorf("getting secret binding: %w", err)
 	}
 
 	return sp.getLeastUsed(secretBindings)
@@ -42,11 +41,12 @@ func (sp *sharedAccountPool) getSecretBindings(labelSelector string) ([]unstruct
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "error listing secret bindings for %s label selector", labelSelector)
+		return nil, fmt.Errorf("error listing secret bindings for %s label selector: %w", labelSelector, err)
 	}
 
 	if secretBindings == nil || len(secretBindings.Items) == 0 {
-		return nil, errors.Errorf("sharedAccountPool error: no shared secret binding found for %s label selector, namespace %s", labelSelector, sp.namespace)
+		return nil, fmt.Errorf("sharedAccountPool error: no shared secret binding found for %s label selector, "+
+			"namespace %s", labelSelector, sp.namespace)
 	}
 
 	return secretBindings.Items, nil
@@ -60,7 +60,7 @@ func (sp *sharedAccountPool) getLeastUsed(secretBindings []unstructured.Unstruct
 
 	shoots, err := sp.gardenerClient.Resource(gardener.ShootResource).Namespace(sp.namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "error while listing Shoots")
+		return nil, fmt.Errorf("error while listing Shoots: %w", err)
 	}
 
 	if shoots == nil || len(shoots.Items) == 0 {

@@ -1,7 +1,6 @@
 package kubeconfig
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -98,7 +97,7 @@ func (h *Handler) GetKubeconfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if operation.InstanceID != instanceID {
-		h.handleResponse(w, http.StatusBadRequest, errors.New("mismatch between operation and instance"))
+		h.handleResponse(w, http.StatusBadRequest, fmt.Errorf("mismatch between operation and instance"))
 		return
 	}
 

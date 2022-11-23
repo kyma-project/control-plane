@@ -2,12 +2,12 @@ package kubeconfig
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -36,23 +36,23 @@ type kubeconfigData struct {
 func (b *Builder) BuildFromAdminKubeconfig(instance *internal.Instance, adminKubeconfig string) (string, error) {
 	status, err := b.provisionerClient.RuntimeStatus(instance.GlobalAccountID, instance.RuntimeID)
 	if err != nil {
-		return "", errors.Wrapf(err, "while fetching runtime status from provisioner")
+		return "", fmt.Errorf("while fetching runtime status from provisioner: %w", err)
 	}
 
 	var kubeCfg kubeconfig
 	if adminKubeconfig == "" {
 		if status.RuntimeConfiguration.Kubeconfig == nil {
-			return "", errors.New("Kubeconfig is nil (nil response from Provisioner)")
+			return "", fmt.Errorf("kubeconfig is nil (nil response from Provisioner)")
 		}
 		adminKubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	}
 	err = yaml.Unmarshal([]byte(adminKubeconfig), &kubeCfg)
 	if err != nil {
-		return "", errors.Wrapf(err, "while unmarshaling kubeconfig")
+		return "", fmt.Errorf("while unmarshaling kubeconfig: %w", err)
 	}
 
 	if err := b.validKubeconfig(kubeCfg); err != nil {
-		return "", errors.Wrap(err, "while validation kubeconfig fetched by provisioner")
+		return "", fmt.Errorf("while validation kubeconfig fetched by provisioner: %w", err)
 	}
 
 	return b.parseTemplate(kubeconfigData{
@@ -73,25 +73,25 @@ func (b *Builder) parseTemplate(payload kubeconfigData) (string, error) {
 	t := template.New("kubeconfigParser")
 	t, err := t.Parse(kubeconfigTemplate)
 	if err != nil {
-		return "", errors.Wrap(err, "while parsing kubeconfig template")
+		return "", fmt.Errorf("while parsing kubeconfig template: %w", err)
 	}
 
 	err = t.Execute(&result, payload)
 	if err != nil {
-		return "", errors.Wrap(err, "while executing kubeconfig template")
+		return "", fmt.Errorf("while executing kubeconfig template: %w", err)
 	}
 	return result.String(), nil
 }
 
 func (b *Builder) validKubeconfig(kc kubeconfig) error {
 	if kc.CurrentContext == "" {
-		return errors.New("current context is empty")
+		return fmt.Errorf("current context is empty")
 	}
 	if len(kc.Clusters) == 0 {
-		return errors.New("there are no defined clusters")
+		return fmt.Errorf("there are no defined clusters")
 	}
 	if kc.Clusters[0].Cluster.CertificateAuthorityData == "" || kc.Clusters[0].Cluster.Server == "" {
-		return errors.New("there are no cluster certificate or server info")
+		return fmt.Errorf("there are no cluster certificate or server info")
 	}
 
 	return nil

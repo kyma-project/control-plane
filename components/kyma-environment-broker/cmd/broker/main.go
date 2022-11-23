@@ -61,7 +61,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/suspension"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/swagger"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -434,7 +433,7 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 func checkDefaultVersions(versions ...string) error {
 	for _, version := range versions {
 		if !isVersionFollowingSemanticVersioning(version) {
-			return errors.New("Kyma default versions are not following semantic versioning")
+			return fmt.Errorf("Kyma default versions are not following semantic versioning")
 		}
 	}
 	return nil
@@ -495,7 +494,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 func processOperationsInProgressByType(opType internal.OperationType, op storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	operations, err := op.GetNotFinishedOperationsByType(opType)
 	if err != nil {
-		return errors.Wrap(err, "while getting in progress operations from storage")
+		return fmt.Errorf("while getting in progress operations from storage: %w", err)
 	}
 	for _, operation := range operations {
 		queue.Add(operation.ID)
@@ -506,16 +505,16 @@ func processOperationsInProgressByType(opType internal.OperationType, op storage
 
 func reprocessOrchestrations(orchestrationType orchestrationExt.Type, orchestrationsStorage storage.Orchestrations, operationsStorage storage.Operations, queue *process.Queue, log logrus.FieldLogger) error {
 	if err := processCancelingOrchestrations(orchestrationType, orchestrationsStorage, operationsStorage, queue, log); err != nil {
-		return errors.Wrapf(err, "while processing canceled %s orchestrations", orchestrationType)
+		return fmt.Errorf("while processing canceled %s orchestrations: %w", orchestrationType, err)
 	}
 	if err := processOrchestration(orchestrationType, orchestrationExt.InProgress, orchestrationsStorage, queue, log); err != nil {
-		return errors.Wrapf(err, "while processing in progress %s orchestrations", orchestrationType)
+		return fmt.Errorf("while processing in progress %s orchestrations: %w", orchestrationType, err)
 	}
 	if err := processOrchestration(orchestrationType, orchestrationExt.Pending, orchestrationsStorage, queue, log); err != nil {
-		return errors.Wrapf(err, "while processing pending %s orchestrations", orchestrationType)
+		return fmt.Errorf("while processing pending %s orchestrations: %w", orchestrationType, err)
 	}
 	if err := processOrchestration(orchestrationType, orchestrationExt.Retrying, orchestrationsStorage, queue, log); err != nil {
-		return errors.Wrapf(err, "while processing retrying %s orchestrations", orchestrationType)
+		return fmt.Errorf("while processing retrying %s orchestrations: %w", orchestrationType, err)
 	}
 	return nil
 }
@@ -527,7 +526,7 @@ func processOrchestration(orchestrationType orchestrationExt.Type, state string,
 	}
 	orchestrations, _, _, err := orchestrationsStorage.List(filter)
 	if err != nil {
-		return errors.Wrapf(err, "while getting %s %s orchestrations from storage", state, orchestrationType)
+		return fmt.Errorf("while getting %s %s orchestrations from storage: %w", state, orchestrationType, err)
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -549,7 +548,7 @@ func processCancelingOrchestrations(orchestrationType orchestrationExt.Type, orc
 	}
 	orchestrations, _, _, err := orchestrationsStorage.List(filter)
 	if err != nil {
-		return errors.Wrapf(err, "while getting canceling %s orchestrations from storage", orchestrationType)
+		return fmt.Errorf("while getting canceling %s orchestrations from storage: %w", orchestrationType, err)
 	}
 	sort.Slice(orchestrations, func(i, j int) bool {
 		return orchestrations[i].CreatedAt.Before(orchestrations[j].CreatedAt)
@@ -564,7 +563,7 @@ func processCancelingOrchestrations(orchestrationType orchestrationExt.Type, orc
 			_, count, _, err = operationsStorage.ListUpgradeClusterOperationsByOrchestrationID(o.OrchestrationID, dbmodel.OperationFilter{States: []string{orchestrationExt.InProgress}})
 		}
 		if err != nil {
-			return errors.Wrapf(err, "while listing %s operations for orchestration %s", orchestrationType, o.OrchestrationID)
+			return fmt.Errorf("while listing %s operations for orchestration %s: %w", orchestrationType, o.OrchestrationID, err)
 		}
 
 		if count > 0 {
@@ -587,12 +586,12 @@ func initClient(cfg *rest.Config) (client.Client, error) {
 			return true, nil
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "while waiting for client mapper")
+			return nil, fmt.Errorf("while waiting for client mapper: %w", err)
 		}
 	}
 	cli, err := client.New(cfg, client.Options{Mapper: mapper})
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating a client")
+		return nil, fmt.Errorf("while creating a client: %w", err)
 	}
 	return cli, nil
 }

@@ -2,6 +2,7 @@ package postsql
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -9,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -35,7 +35,7 @@ func (s *Instance) InsertWithoutEncryption(instance internal.Instance) error {
 	}
 	params, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return errors.Wrap(err, "while marshaling parameters")
+		return fmt.Errorf("while marshaling parameters: %w", err)
 	}
 	dto := dbmodel.InstanceDTO{
 		InstanceID:             instance.InstanceID,
@@ -77,7 +77,7 @@ func (s *Instance) ListWithoutDecryption(filter dbmodel.InstanceFilter) ([]inter
 		var params internal.ProvisioningParameters
 		err := json.Unmarshal([]byte(dto.ProvisioningParameters), &params)
 		if err != nil {
-			return nil, 0, 0, errors.Wrap(err, "while unmarshal parameters")
+			return nil, 0, 0, fmt.Errorf("while unmarshal parameters: %w", err)
 		}
 		instance := internal.Instance{
 			InstanceID:      dto.InstanceID,
@@ -106,7 +106,7 @@ func (s *Instance) UpdateWithoutEncryption(instance internal.Instance) (*interna
 	sess := s.NewWriteSession()
 	params, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return nil, errors.Wrap(err, "while marshaling parameters")
+		return nil, fmt.Errorf("while marshaling parameters: %w", err)
 	}
 	dto := dbmodel.InstanceDTO{
 		InstanceID:             instance.InstanceID,
@@ -137,7 +137,7 @@ func (s *Instance) UpdateWithoutEncryption(instance internal.Instance) (*interna
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
 			if lastErr != nil {
-				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
+				log.Errorf(fmt.Sprintf("while getting Operation: %v", lastErr))
 				return false, nil
 			}
 
@@ -212,7 +212,7 @@ func (s *Instance) toProvisioningOp(dto *dbmodel.InstanceWithOperationDTO) (*int
 	var provOp internal.ProvisioningOperation
 	err := json.Unmarshal([]byte(dto.Data.String), &provOp)
 	if err != nil {
-		return nil, errors.New("unable to unmarshall provisioning data")
+		return nil, fmt.Errorf("unable to unmarshall provisioning data")
 	}
 
 	return &provOp, nil
@@ -222,7 +222,7 @@ func (s *Instance) toDeprovisioningOp(dto *dbmodel.InstanceWithOperationDTO) (*i
 	var deprovOp internal.DeprovisioningOperation
 	err := json.Unmarshal([]byte(dto.Data.String), &deprovOp)
 	if err != nil {
-		return nil, errors.New("unable to unmarshall deprovisioning data")
+		return nil, fmt.Errorf("unable to unmarshall deprovisioning data")
 	}
 
 	return &deprovOp, nil
@@ -339,11 +339,11 @@ func (s *Instance) toInstance(dto dbmodel.InstanceDTO) (internal.Instance, error
 	var params internal.ProvisioningParameters
 	err := json.Unmarshal([]byte(dto.ProvisioningParameters), &params)
 	if err != nil {
-		return internal.Instance{}, errors.Wrap(err, "while unmarshal parameters")
+		return internal.Instance{}, fmt.Errorf("while unmarshal parameters: %w", err)
 	}
 	err = s.cipher.DecryptSMCreds(&params)
 	if err != nil {
-		return internal.Instance{}, errors.Wrap(err, "while decrypting parameters")
+		return internal.Instance{}, fmt.Errorf("while decrypting parameters: %w", err)
 	}
 
 	err = s.cipher.DecryptKubeconfig(&params)
@@ -412,7 +412,7 @@ func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error
 				return false, dberr.NotFound("Instance with id %s not exist", instance.InstanceID)
 			}
 			if lastErr != nil {
-				log.Warn(errors.Wrapf(lastErr, "while getting Operation").Error())
+				log.Warn(fmt.Errorf("while getting Operation: %w", lastErr))
 				return false, nil
 			}
 
@@ -435,15 +435,15 @@ func (s *Instance) Update(instance internal.Instance) (*internal.Instance, error
 func (s *Instance) toInstanceDTO(instance internal.Instance) (dbmodel.InstanceDTO, error) {
 	err := s.cipher.EncryptSMCreds(&instance.Parameters)
 	if err != nil {
-		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting parameters")
+		return dbmodel.InstanceDTO{}, fmt.Errorf("while encrypting parameters: %w", err)
 	}
 	err = s.cipher.EncryptKubeconfig(&instance.Parameters)
 	if err != nil {
-		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while encrypting kubeconfig")
+		return dbmodel.InstanceDTO{}, fmt.Errorf("while encrypting kubeconfig: %w", err)
 	}
 	params, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return dbmodel.InstanceDTO{}, errors.Wrap(err, "while marshaling parameters")
+		return dbmodel.InstanceDTO{}, fmt.Errorf("while marshaling parameters: %w", err)
 	}
 	return dbmodel.InstanceDTO{
 		InstanceID:                  instance.InstanceID,

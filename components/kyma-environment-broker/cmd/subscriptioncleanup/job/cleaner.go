@@ -7,7 +7,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/cloudprovider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,17 +82,17 @@ func (p *cleaner) Do() error {
 func (p *cleaner) releaseResources(secretBinding unstructured.Unstructured) error {
 	hyperscalerType, err := model.NewHyperscalerType(secretBinding.GetLabels()["hyperscalerType"])
 	if err != nil {
-		return errors.Wrap(err, "starting releasing resources")
+		return fmt.Errorf("starting releasing resources: %w", err)
 	}
 
 	secret, err := p.getBoundSecret(secretBinding)
 	if err != nil {
-		return errors.Wrap(err, "getting referenced secret")
+		return fmt.Errorf("getting referenced secret: %w", err)
 	}
 
 	cleaner, err := p.providerFactory.New(hyperscalerType, secret.Data)
 	if err != nil {
-		return errors.Wrap(err, "initializing cloud provider cleaner")
+		return fmt.Errorf("initializing cloud provider cleaner: %w", err)
 	}
 
 	return cleaner.Do()
@@ -105,8 +104,8 @@ func (p *cleaner) getBoundSecret(sb unstructured.Unstructured) (*apiv1.Secret, e
 		Secrets(secretBinding.GetSecretRefNamespace()).
 		Get(p.context, secretBinding.GetSecretRefName(), metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting %s/%s secret",
-			secretBinding.GetSecretRefNamespace(), secretBinding.GetSecretRefName())
+		return nil, fmt.Errorf("getting %s/%s secret: %w", secretBinding.GetSecretRefNamespace(),
+			secretBinding.GetSecretRefName(), err)
 	}
 	return secret, nil
 }
@@ -124,7 +123,7 @@ func (p *cleaner) returnSecretBindingToThePool(secretBinding unstructured.Unstru
 
 	_, err = p.secretBindingsClient.Update(p.context, sb, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to return secret binding to the hyperscaler account pool")
+		return fmt.Errorf("failed to return secret binding to the hyperscaler account pool: %w", err)
 	}
 
 	return nil
@@ -140,7 +139,7 @@ func (p *cleaner) getSecretBindingsToRelease() ([]unstructured.Unstructured, err
 func (p *cleaner) checkIfSecretCanBeReleased(binding unstructured.Unstructured) (bool, error) {
 	list, err := p.shootClient.List(p.context, metav1.ListOptions{})
 	if err != nil {
-		return false, errors.Wrap(err, "failed to list shoots")
+		return false, fmt.Errorf("failed to list shoots: %w", err)
 	}
 
 	for _, sh := range list.Items {
@@ -158,8 +157,7 @@ func getSecretBindings(ctx context.Context, secretBindingsClient dynamic.Resourc
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return nil,
-			errors.Wrapf(err, "listing secrets bindings for LabelSelector: %s", labelSelector)
+		return nil, fmt.Errorf("listing secrets bindings for LabelSelector: %s: %w", labelSelector, err)
 	}
 
 	return secrets.Items, nil

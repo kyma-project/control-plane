@@ -2,7 +2,6 @@ package update
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -112,7 +111,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
 			return time.Second, err
 		}
-		return 0, errors.New("operation has reached the time limit")
+		return 0, fmt.Errorf("operation has reached the time limit")
 	}
 
 	var when time.Duration

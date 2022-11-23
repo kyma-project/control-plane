@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/httputil"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/go-github/github"
@@ -53,7 +52,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 		err := json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
 			h.log.Errorf("while decoding request body: %v", err)
-			httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
+			httputil.WriteErrorResponse(w, http.StatusBadRequest, fmt.Errorf("while decoding request body: %v", err))
 			return
 		}
 	}
@@ -62,7 +61,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err := validateTarget(params.Targets)
 	if err != nil {
 		h.log.Errorf("while validating target: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating target"))
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, fmt.Errorf("while validating target: %w", err))
 		return
 	}
 
@@ -70,7 +69,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err = h.ValidateKymaVersion(params.Kyma.Version)
 	if err != nil {
 		h.log.Errorf("while validating kyma version: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating kyma version"))
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, fmt.Errorf("while validating kyma version: %w", err))
 		return
 	}
 
@@ -91,7 +90,7 @@ func (h *kymaHandler) createOrchestration(w http.ResponseWriter, r *http.Request
 	err = h.orchestrations.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("while inserting orchestration to storage: %w", err))
 		return
 	}
 
@@ -142,7 +141,7 @@ func (h *kymaHandler) ValidateKymaVersion(version string) error {
 
 	// handle iff GitHub API responded
 	if shouldHandle(resp) {
-		return errors.Wrapf(err, "invalid Kyma version, version %s not found", version)
+		return fmt.Errorf("invalid Kyma version, version %s not found: %w", version, err)
 	}
 
 	return nil
