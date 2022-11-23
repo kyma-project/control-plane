@@ -8,12 +8,17 @@
 
 set -xeuo pipefail
 
-DIR=$(dirname "${BASH_SOURCE[0]}")/..
-
 # list open PRs from dependabot touching KEB go modules
 prs=( $(gh pr list --json number,author,title --jq '.[] | select(.author.login == "dependabot") | select(.title | endswith("/components/kyma-environment-broker")) | .number') )
 body="/lgtm
 /approve"
+
+git worktree prune
+if [ ! -d /tmp/keb ]; then
+    git worktree add /tmp/keb
+fi
+cd /tmp/keb
+DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # iterate over each PR, run go mod tidy under the KCP CLI dir, commit, push
 git checkout main
@@ -33,6 +38,8 @@ for pr in "${prs[@]}"; do
                     ;;
             esac
         done
+        pwd
+        echo "$DIR/tools/cli"
         cd "$DIR/tools/cli"
         go mod tidy
         if [[ -n "$(git diff)" ]]; then
