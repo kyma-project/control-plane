@@ -863,11 +863,10 @@ func TestUpdateOidcForPreview(t *testing.T) {
    }`)
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	updateOpID := suite.DecodeOperationID(resp)
-	//time.Sleep(time.Second)
-	suite.processUpdatingByOperationID(updateOpID)
-	//time.Sleep(time.Second)
-	suite.WaitForOperationState(updateOpID, domain.Succeeded)
 
+	suite.FinishUpdatingOperationByProvisioner(updateOpID)
+
+	suite.WaitForOperationState(updateOpID, domain.Succeeded)
 }
 
 func TestUpdateNotExistingInstance(t *testing.T) {

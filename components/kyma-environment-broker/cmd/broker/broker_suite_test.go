@@ -430,20 +430,6 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 	s.finishOperationByProvisioner(gqlschema.OperationTypeProvision, operationState, op.RuntimeID)
 }
 
-func (s *BrokerSuiteTest) FinishUpdateOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
-	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
-		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
-		if op.RuntimeID != "" {
-			return true, nil
-		}
-		return false, nil
-	})
-	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
-
-	s.finishOperationByProvisioner(gqlschema.OperationTypeUpgradeShoot, operationState, op.RuntimeID)
-}
-
 func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
 	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
@@ -1105,7 +1091,7 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 func (s *BrokerSuiteTest) processUpdatingByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 
-	s.FinishUpdateOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
+	s.FinishUpdatingOperationByProvisioner(opID)
 
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
