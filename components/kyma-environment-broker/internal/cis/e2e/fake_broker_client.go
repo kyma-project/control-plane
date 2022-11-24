@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 )

@@ -2,6 +2,7 @@ package hyperscaler
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 )
 

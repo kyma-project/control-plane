@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	hyperscalerMocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
