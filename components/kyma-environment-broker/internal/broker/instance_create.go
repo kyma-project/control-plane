@@ -303,8 +303,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 
 		if count > 0 {
 			logger.Info("Provisioning Trial SKR rejected, such instance was already created for this Global Account")
-			return ersContext, parameters, fmt.Errorf("trial Kyma was created for the global account, " +
-				"but there is only one allowed")
+			return ersContext, parameters, fmt.Errorf("trial Kyma was created for the global account, but there is only one allowed")
 		}
 	}
 

@@ -15,7 +15,7 @@ func TestTemporaryError(t *testing.T) {
 
 	// when
 	e1 := fmt.Errorf("wrap err %s: %w", "arg1", err1)
-	e2 := fmt.Errorf("wrap err %s: %w", "arg1", err2)
+	e2 := AsTemporaryError(err2, "wrap err %s", "arg1")
 	e3 := fmt.Errorf("wrap err %s: %w", "arg1", err3)
 
 	// then
