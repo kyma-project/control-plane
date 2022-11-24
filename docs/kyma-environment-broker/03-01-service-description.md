@@ -10,7 +10,7 @@ The supported plans are as follows:
 |-----------|---------|-------------|
 | `azure` | `4deee563-e5ec-4731-b9b1-53b42d855f0c` |Installs Kyma Runtime on the Azure cluster. |
 | `azure_lite` | `8cb22518-aa26-44c5-91a0-e669ec9bf443` | Installs Kyma Lite on the Azure cluster. |
-| `aws` | `a361c511f-f939-4621-b228-d0fb79a1fe15` | Installs Kyma Runtime on the AWS cluster. |
+| `aws` | `361c511f-f939-4621-b228-d0fb79a1fe15` | Installs Kyma Runtime on the AWS cluster. |
 | `openstack` | `03b812ac-c991-4528-b5bd-08b303523a63` | Installs Kyma Runtime on the Openstack cluster. |
 | `gcp` | `ca6e5357-707f-4565-bbbd-b3ab732597c6` | Installs Kyma Runtime on the GCP cluster. |
 | `trial` | `7d55d31d-35ae-4438-bf13-6ffdfa107d9f` | Installs Kyma trial plan on Azure, AWS or GCP. |
