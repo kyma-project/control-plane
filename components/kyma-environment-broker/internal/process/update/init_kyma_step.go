@@ -1,8 +1,9 @@
 package update
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"time"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
