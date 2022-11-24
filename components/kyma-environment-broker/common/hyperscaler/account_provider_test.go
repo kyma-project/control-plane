@@ -250,6 +250,6 @@ func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
 
 		//when
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to release subscription for tenant. Gardener Account pool is not configured")
+		assert.Contains(t, err.Error(), "failed to release subscription for tenant tenant1. Gardener Account pool is not configured")
 	})
 }

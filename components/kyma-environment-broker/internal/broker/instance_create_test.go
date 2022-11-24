@@ -475,7 +475,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, "The Trial Kyma was created for the global account, but there is only one allowed")
+		assert.EqualError(t, err, "trial Kyma was created for the global account, but there is only one allowed")
 	})
 
 	t.Run("more than one trial is allowed", func(t *testing.T) {
@@ -645,7 +645,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		require.ErrorContains(t, err, "Invalid region specified in request for trial.")
+		require.ErrorContains(t, err, "invalid region specified in request for trial")
 	})
 
 	t.Run("conflict should be handled", func(t *testing.T) {
