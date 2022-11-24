@@ -2,6 +2,7 @@ package runtimeversion
 
 import (
 	"fmt"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,9 @@ func NewRuntimeVersionConfigurator(defaultVersion string, accountMapping *Accoun
 
 func (rvc *RuntimeVersionConfigurator) ForUpdating(op internal.Operation) (*internal.RuntimeVersionData, error) {
 	r, err := rvc.runtimeStateDB.GetLatestWithKymaVersionByRuntimeID(op.RuntimeID)
+	if dberr.IsNotFound(err) {
+		return internal.NewEmptyRuntimeVersion(), nil
+	}
 	if err != nil {
 		return nil, err
 	}

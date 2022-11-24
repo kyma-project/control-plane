@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"testing"
-
 	"github.com/google/uuid"
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -12,6 +9,8 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"testing"
 )
 
 func TestUpdate(t *testing.T) {
@@ -805,6 +804,69 @@ func TestUpdateOidcForSuspendedInstance(t *testing.T) {
 	assert.Equal(t, "id-oooxx", instance.Parameters.Parameters.OIDC.ClientID)
 	input := suite.LastProvisionInput(iid)
 	assert.Equal(t, "id-oooxx", input.ClusterConfig.GardenerConfig.OidcConfig.ClientID)
+}
+
+func TestUpdateOidcForPreview(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	// uncomment to see graphql queries
+	//suite.EnableDumpingProvisionerRequests()
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", iid),
+		`{
+			"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+			"plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+			"context": {
+				"sm_operator_credentials": {
+					"clientid": "cid",
+					"clientsecret": "cs",
+					"url": "url",
+					"sm_url": "sm_url"
+				},
+				"globalaccount_id": "g-account-id",
+				"subaccount_id": "sub-id",
+				"user_id": "john.smith@email.com"
+			},
+			"parameters": {
+				"name": "testing-cluster",
+				"oidc": {
+					"clientID": "id-ooo",
+					"signingAlgs": ["RS256"],
+					"issuerURL": "https://issuer.url.com"
+				}
+			}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningByOperationID(opID)
+
+	// WHEN
+	// OSB update
+	suite.Log("*** Update ***")
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+       "service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+       "plan_id": "5cb3d976-b85c-42ea-a636-79cadda109a9",
+       "context": {
+           "globalaccount_id": "g-account-id",
+           "user_id": "john.smith@email.com"
+       },
+       "parameters": {
+       		"oidc": {
+				"clientID": "id-oooxx",
+				"signingAlgs": ["RS256"],
+                "issuerURL": "https://issuer.url.com"
+			}
+       }
+   }`)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOpID := suite.DecodeOperationID(resp)
+	//time.Sleep(time.Second)
+	suite.processUpdatingByOperationID(updateOpID)
+	//time.Sleep(time.Second)
+	suite.WaitForOperationState(updateOpID, domain.Succeeded)
+
 }
 
 func TestUpdateNotExistingInstance(t *testing.T) {

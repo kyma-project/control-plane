@@ -21,3 +21,7 @@ func CheckReconcilerStatus(op internal.Operation) bool {
 func SkipForOwnClusterPlan(op internal.Operation) bool {
 	return !broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID)
 }
+
+func RequiresBTPOperatorCredentials(op internal.Operation) bool {
+	return ForBTPOperatorCredentialsProvided(op) && !broker.IsPreviewPlan(op.ProvisioningParameters.PlanID)
+}
