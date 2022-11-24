@@ -1088,6 +1088,15 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForOperationState(opID, domain.Succeeded)
 }
 
+func (s *BrokerSuiteTest) processUpdatingByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+
+	s.FinishUpdatingOperationByProvisioner(opID)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
 func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)

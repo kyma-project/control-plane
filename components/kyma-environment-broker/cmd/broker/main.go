@@ -778,7 +778,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *process.StagedManage
 		{
 			stage:     "btp-operator",
 			step:      update.NewBTPOperatorOverridesStep(db.Operations(), runtimeProvider),
-			condition: update.ForBTPOperatorCredentialsProvided,
+			condition: update.RequiresBTPOperatorCredentials,
 		},
 		{
 			stage:     "btp-operator",

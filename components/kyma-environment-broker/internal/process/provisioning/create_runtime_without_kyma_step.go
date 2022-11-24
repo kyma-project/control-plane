@@ -88,9 +88,10 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		return operation, 5 * time.Second, nil
 	}
 
-	err = s.runtimeStateStorage.Insert(
-		internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig),
-	)
+	rs := internal.NewRuntimeState(*provisionerResponse.RuntimeID, operation.ID, requestInput.KymaConfig, requestInput.ClusterConfig.GardenerConfig)
+	rs.KymaVersion = operation.RuntimeVersion.Version
+	err = s.runtimeStateStorage.Insert(rs)
+
 	if err != nil {
 		log.Errorf("cannot insert runtimeState: %s", err)
 		return operation, 10 * time.Second, nil

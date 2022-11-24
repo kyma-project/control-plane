@@ -92,6 +92,10 @@ func (rv RuntimeVersionData) IsEmpty() bool {
 	return rv.Version == ""
 }
 
+func NewEmptyRuntimeVersion() *RuntimeVersionData {
+	return &RuntimeVersionData{Version: "not-defined", Origin: Defaults, MajorVersion: 2}
+}
+
 func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: Parameters, MajorVersion: majorVersion}
 }
