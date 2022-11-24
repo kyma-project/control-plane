@@ -39,7 +39,7 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
-	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger, kymaVersion)
 
 	t.Run("should read default KEB config for Kyma version 2.4.0", func(t *testing.T) {
 		// when
@@ -66,6 +66,36 @@ func TestConfigReaderSuccessFlow(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, cfgMap.Data[broker.TrialPlanName], rawCfg)
+	})
+
+	t.Run("should read KEB config for custom Kyma version and azure plan", func(t *testing.T) {
+		// when
+		customVersion := "PR-1000"
+		rawCfg, err := cfgReader.Read(customVersion, broker.AzurePlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cfgMap.Data[broker.AzurePlanName], rawCfg)
+	})
+
+	t.Run("should read KEB config for the latest official Kyma version and azure plan when config for custom main-* version is missing", func(t *testing.T) {
+		// when
+		customVersion := "main-fffff"
+		rawCfg, err := cfgReader.Read(customVersion, broker.AzurePlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cfgMap.Data[broker.AzurePlanName], rawCfg)
+	})
+
+	t.Run("should read KEB config for the latest official Kyma version and azure plan when config for custom PR-* version is missing", func(t *testing.T) {
+		// when
+		customVersion := "PR-1234"
+		rawCfg, err := cfgReader.Read(customVersion, broker.AzurePlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, cfgMap.Data[broker.AzurePlanName], rawCfg)
 	})
 }
 
@@ -96,7 +126,7 @@ func TestConfigReaderErrors(t *testing.T) {
 
 	t.Run("should return error while fetching configmap on List() of K8s client", func(t *testing.T) {
 		// given
-		cfgReader := config.NewConfigMapReader(ctx, k8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, k8sClient, logger, kymaVersion)
 
 		// when
 		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
@@ -109,7 +139,7 @@ func TestConfigReaderErrors(t *testing.T) {
 
 	t.Run("should return error while verifying configuration configmap existence", func(t *testing.T) {
 		// given
-		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger, kymaVersion)
 
 		// when
 		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)
@@ -140,7 +170,7 @@ func TestConfigReaderErrors(t *testing.T) {
 		err = fakeK8sClient.Delete(ctx, cfgMap)
 		require.NoError(t, err)
 
-		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+		cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger, kymaVersion)
 
 		// when
 		rawCfg, err := cfgReader.Read(kymaVersion, broker.AzurePlanName)

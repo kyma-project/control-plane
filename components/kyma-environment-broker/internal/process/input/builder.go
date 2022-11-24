@@ -316,6 +316,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(provisioningParameters internal
 		trialNodesNumber:          f.config.TrialNodesNumber,
 		oidcDefaultValues:         f.oidcDefaultValues,
 		hyperscalerInputProvider:  provider,
+		config:                    cfg,
 	}, nil
 }
 

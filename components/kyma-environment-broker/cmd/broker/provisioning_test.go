@@ -71,7 +71,9 @@ func TestProvisioning_Preview(t *testing.T) {
 	suite.processProvisioningByOperationID(opID)
 
 	suite.WaitForOperationState(opID, domain.Succeeded)
-	// todo: assert Kyma resource is created
+
+	suite.AssertKymaResourceExists(opID)
+	suite.AssertSecretWithKubeconfigExists(opID)
 }
 
 func TestProvisioning_TrialWithEmptyRegion(t *testing.T) {

@@ -52,6 +52,8 @@ func TestUpgradeShootStep_Run(t *testing.T) {
 
 	// when
 	newOperation, d, err := step.Run(operation.Operation, logrus.New())
+
+	// then
 	require.NoError(t, err)
 	assert.Zero(t, d)
 	assert.True(t, cli.IsShootUpgraded("runtime-id"))

@@ -123,7 +123,7 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	kymaVer := "2.4.0"
 	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(kymaVer, additionalKymaVersions)...).Build()
 	configProvider := kebConfig.NewConfigProvider(
-		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
@@ -353,6 +353,10 @@ func (s *OrchestrationSuite) CreateProvisionedRuntime(options RuntimeOptions) st
 	require.NoError(s.t, s.storage.RuntimeStates().Insert(runtimeState))
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(s.gardenerNamespace).Create(context.Background(), shoot, v1.CreateOptions{})
 	require.NoError(s.t, err)
+
+	provisioningOperation.InputCreator = fixture.FixInputCreator(internal.Azure)
+	s.provisionerClient.Provision(provisioningOperation)
+
 	return runtimeID
 }
 
@@ -520,7 +524,20 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 			},
 		},
 		Data: map[string]string{
-			"default": `additional-components:
+			"default": `
+kyma-template: |-
+  apiVersion: operator.kyma-project.io/v1alpha1
+  kind: Kyma
+  metadata:
+      name: my-kyma
+      namespace: kyma-system
+  spec:
+      sync:
+          strategy: secret
+      channel: stable
+      modules: []
+
+additional-components:
   - name: "additional-component1"
     namespace: "kyma-system"`,
 		},
@@ -571,7 +588,7 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	additionalKymaVersions := []string{"1.19", "1.20", "main"}
 	cli := fake.NewFakeClientWithScheme(sch, fixK8sResources(defaultKymaVer, additionalKymaVersions)...)
 	configProvider := kebConfig.NewConfigProvider(
-		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentListProvider,
@@ -606,9 +623,6 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	accountVersionMapping := runtimeversion.NewAccountVersionMapping(ctx, cli, cfg.VersionConfig.Namespace, cfg.VersionConfig.Name, logs)
 	runtimeVerConfigurator := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, accountVersionMapping, nil)
 
-	iasFakeClient := ias.NewFakeClient()
-	bundleBuilder := ias.NewBundleBuilder(iasFakeClient, cfg.IAS)
-
 	edpClient := edp.NewFakeClient()
 
 	accountProvider := fixAccountProvider()
@@ -620,9 +634,9 @@ func NewProvisioningSuite(t *testing.T, multiZoneCluster bool, controlPlaneFailu
 	eventBroker := event.NewPubSub(logs)
 
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(cli), logs)
+	provisioningQueue := NewProvisioningProcessingQueue(ctx, provisionManager, workersAmount, cfg, db, provisionerClient, inputFactory, avsDel,
+		internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides, edpClient, accountProvider,
+		reconcilerClient, fakeK8sClientProvider(cli), cli, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)

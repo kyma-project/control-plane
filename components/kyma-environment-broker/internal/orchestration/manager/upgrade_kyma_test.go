@@ -422,6 +422,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 					DryRun:  false,
 				},
 				InputCreator: nil,
+				Type:         internal.OperationTypeUpgradeKyma,
 			},
 		})
 		require.NoError(t, err)

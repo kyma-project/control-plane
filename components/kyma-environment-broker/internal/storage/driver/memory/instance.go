@@ -2,6 +2,8 @@ package memory
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -28,13 +30,13 @@ func NewInstance(operations *operations) *instances {
 }
 
 func (s *instances) InsertWithoutEncryption(instance internal.Instance) error {
-	return fmt.Errorf("not implemented")
+	return errors.New("not implemented")
 }
 func (s *instances) UpdateWithoutEncryption(instance internal.Instance) (*internal.Instance, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, errors.New("not implemented")
 }
 func (s *instances) ListWithoutDecryption(dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	return nil, 0, 0, fmt.Errorf("not implemented")
+	return nil, 0, 0, errors.New("not implemented")
 }
 
 func (s *instances) FindAllJoinedWithOperations(prct ...predicate.Predicate) ([]internal.InstanceWithOperation, error) {
@@ -152,6 +154,14 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		return nil, dberr.NotFound("instance with id %s not exist", instanceID)
 	}
 
+	// In database instance details are marshalled and kept as strings.
+	// If marshaling is ommited below, fields with `json:"-"` are never cleared
+	// when stored in memory db. Marshaling in the current contenxt allows for
+	// memory db to behave similary to production env.
+	marshaled, err := json.Marshal(inst)
+	unmarshaledInstance := internal.Instance{}
+	err = json.Unmarshal(marshaled, &unmarshaledInstance)
+
 	op, err := s.operationsStorage.GetLastOperation(instanceID)
 	if err != nil {
 		if dberr.IsNotFound(err) {
@@ -159,8 +169,13 @@ func (s *instances) GetByID(instanceID string) (*internal.Instance, error) {
 		}
 		return nil, err
 	}
-	inst.InstanceDetails = op.InstanceDetails
-	return &inst, nil
+
+	detailsMarshaled, err := json.Marshal(op.InstanceDetails)
+	detailsUnmarshaled := internal.InstanceDetails{}
+	err = json.Unmarshal(detailsMarshaled, &detailsUnmarshaled)
+	unmarshaledInstance.InstanceDetails = detailsUnmarshaled
+
+	return &unmarshaledInstance, nil
 }
 
 func (s *instances) Delete(instanceID string) error {

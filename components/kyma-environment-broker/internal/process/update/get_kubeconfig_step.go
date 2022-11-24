@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -35,6 +36,10 @@ func (s *GetKubeconfigStep) Name() string {
 }
 
 func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	if broker.IsOwnClusterPlan(operation.ProvisioningParameters.PlanID) {
+		operation.Kubeconfig = operation.ProvisioningParameters.Parameters.Kubeconfig
+	}
+
 	if operation.Kubeconfig != "" {
 		cli, err := s.k8sClientProvider(operation.Kubeconfig)
 		if err != nil {

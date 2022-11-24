@@ -149,9 +149,9 @@ func (r readSession) GetOperationByID(opID string) (dbmodel.OperationDTO, dberr.
 func (r readSession) ListOperations(filter dbmodel.OperationFilter) ([]dbmodel.OperationDTO, int, int, error) {
 	var operations []dbmodel.OperationDTO
 
-	stmt := r.session.Select("*").
-		From(OperationTableName).
-		OrderBy(CreatedAtField)
+	stmt := r.session.Select("o.*").
+		From(dbr.I(OperationTableName).As("o")).
+		OrderBy("o.created_at")
 
 	// Add pagination if provided
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -348,10 +348,10 @@ func (r readSession) ListOperationsByOrchestrationID(orchestrationID string, fil
 	condition := dbr.Eq("orchestration_id", orchestrationID)
 
 	stmt := r.session.
-		Select("*").
-		From(OperationTableName).
+		Select("o.*").
+		From(dbr.I(OperationTableName).As("o")).
 		Where(condition).
-		OrderBy(CreatedAtField)
+		OrderBy("o.created_at")
 
 	// Add pagination if provided
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -830,7 +830,17 @@ func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationF
 
 func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	if len(filter.States) > 0 {
-		stmt.Where("state IN ?", filter.States)
+		stmt.Where("o.state IN ?", filter.States)
+	}
+	if filter.InstanceFilter != nil {
+		fi := filter.InstanceFilter
+		if fi.OnlyDeleted != nil && *fi.OnlyDeleted {
+			stmt.LeftJoin(dbr.I(InstancesTableName).As("i"), "i.instance_id = o.instance_id").
+				Where("i.instance_id IS NULL")
+		}
+		if len(fi.InstanceIDs) != 0 {
+			stmt.Where("o.instance_id IN ?", fi.InstanceIDs)
+		}
 	}
 }
 
@@ -838,8 +848,8 @@ func (r readSession) getOperationCount(filter dbmodel.OperationFilter) (int, err
 	var res struct {
 		Total int
 	}
-	stmt := r.session.Select("count(*) as total").
-		From(OperationTableName)
+	stmt := r.session.Select("count(1) as total").
+		From(dbr.I(OperationTableName).As("o"))
 	addOperationFilters(stmt, filter)
 	err := stmt.LoadOne(&res)
 
@@ -850,9 +860,9 @@ func (r readSession) getUpgradeOperationCount(orchestrationID string, filter dbm
 	var res struct {
 		Total int
 	}
-	stmt := r.session.Select("count(*) as total").
-		From(OperationTableName).
-		Where(dbr.Eq("orchestration_id", orchestrationID))
+	stmt := r.session.Select("count(1) as total").
+		From(dbr.I(OperationTableName).As("o")).
+		Where(dbr.Eq("o.orchestration_id", orchestrationID))
 	addOperationFilters(stmt, filter)
 	err := stmt.LoadOne(&res)
 

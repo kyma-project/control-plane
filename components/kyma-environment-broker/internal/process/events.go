@@ -48,7 +48,8 @@ type ProvisioningSucceeded struct {
 
 type OperationStepProcessed struct {
 	StepProcessed
-	Operation internal.Operation
+	OldOperation internal.Operation
+	Operation    internal.Operation
 }
 
 type OperationSucceeded struct {

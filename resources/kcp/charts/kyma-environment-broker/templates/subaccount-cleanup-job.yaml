@@ -113,17 +113,17 @@ spec:
                   value: {{ .Values.kebClient.scope }}
               command:
                 - "/bin/accountcleanup"
-              {{if eq .Values.global.database.embedded.enabled false}}
               volumeMounts:
-                - name: cloudsql-instance-credentials
-                  mountPath: /secrets/cloudsql-instance-credentials
-                  readOnly: true
+              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                 - name: cloudsql-sslrootcert
                   mountPath: /secrets/cloudsql-sslrootcert
                   readOnly: true
-              {{ end }}
+              {{- end}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
 
-            {{- if eq .Values.global.database.embedded.enabled false }}
             - name: cloudsql-proxy
               image: {{ .Values.global.images.cloudsql_proxy_image }}
               command: [ "/cloud_sql_proxy",
@@ -137,11 +137,15 @@ spec:
               securityContext:
                 {{ toYaml . | nindent 16 }}
               {{- end }}
+            {{- end}}
 
           volumes:
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+          {{- end}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
                 secretName: kcp-postgresql
@@ -149,7 +153,7 @@ spec:
                 - key: postgresql-sslRootCert
                   path: server-ca.pem
                 optional: true
-            {{end}}
+          {{- end}}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -265,17 +269,17 @@ spec:
                   value: {{ .Values.kebClient.scope }}
               command:
                 - "/bin/accountcleanup"
-              {{if eq .Values.global.database.embedded.enabled false}}
               volumeMounts:
-              - name: cloudsql-instance-credentials
-                mountPath: /secrets/cloudsql-instance-credentials
-                readOnly: true
+              {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
               - name: cloudsql-sslrootcert
                 mountPath: /secrets/cloudsql-sslrootcert
                 readOnly: true
-              {{ end }}
+              {{- end}}
+            {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+              - name: cloudsql-instance-credentials
+                mountPath: /secrets/cloudsql-instance-credentials
+                readOnly: true
 
-            {{- if eq .Values.global.database.embedded.enabled false }}
             - name: cloudsql-proxy
               image: {{ .Values.global.images.cloudsql_proxy_image }}
               command: [ "/cloud_sql_proxy",
@@ -289,11 +293,15 @@ spec:
               securityContext:
                 {{ toYaml . | nindent 16 }}
               {{- end }}
+            {{- end}}
 
           volumes:
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
             - name: cloudsql-instance-credentials
               secret:
                 secretName: cloudsql-instance-credentials
+          {{- end}}
+          {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
             - name: cloudsql-sslrootcert
               secret:
                 secretName: kcp-postgresql
@@ -301,5 +309,5 @@ spec:
                 - key: postgresql-sslRootCert
                   path: server-ca.pem
                 optional: true
-            {{end}}
+          {{- end}}
 {{ end }}

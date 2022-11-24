@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Enabled       bool          `envconfig:"default=false"`
-	Retention     time.Duration `envconfig:"default=72h"`
+	Retention     time.Duration `envconfig:"default=336h"` // two weeks: 24*14 = 336
 	PollingPeriod time.Duration `envconfig:"default=1h"`
 }
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -43,6 +44,61 @@ func (h *Handler) AttachRoutes(router *mux.Router) {
 	router.HandleFunc("/runtimes", h.getRuntimes)
 }
 
+func findLastDeprovisioning(operations []internal.Operation) internal.Operation {
+	for i := len(operations) - 1; i > 0; i-- {
+		o := operations[i]
+		if o.Type != internal.OperationTypeDeprovision {
+			continue
+		}
+		if o.State != domain.Succeeded {
+			continue
+		}
+		return o
+	}
+	return operations[len(operations)-1]
+}
+
+func recreateInstances(operations []internal.Operation) []internal.Instance {
+	byInstance := make(map[string][]internal.Operation)
+	for _, o := range operations {
+		byInstance[o.InstanceID] = append(byInstance[o.InstanceID], o)
+	}
+	var instances []internal.Instance
+	for id, op := range byInstance {
+		o := op[0]
+		last := findLastDeprovisioning(op)
+		instances = append(instances, internal.Instance{
+			InstanceID:      id,
+			GlobalAccountID: o.GlobalAccountID,
+			SubAccountID:    o.SubAccountID,
+			RuntimeID:       o.RuntimeID,
+			CreatedAt:       o.CreatedAt,
+			ServicePlanID:   o.ProvisioningParameters.PlanID,
+			DeletedAt:       last.UpdatedAt,
+			InstanceDetails: last.InstanceDetails,
+			Parameters:      last.ProvisioningParameters,
+		})
+	}
+	return instances
+}
+
+func (h *Handler) listInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
+	if filter.OnlyDeleted != nil && *filter.OnlyDeleted {
+		opFilter := dbmodel.OperationFilter{}
+		opFilter.InstanceFilter = &filter
+		opFilter.Page = filter.Page
+		opFilter.PageSize = filter.PageSize
+		operations, _, _, err := h.operationsDb.ListOperations(opFilter)
+		if err != nil {
+			return []internal.Instance{}, 0, 0, err
+		}
+		instancesFromOperations := recreateInstances(operations)
+		count := len(instancesFromOperations)
+		return instancesFromOperations, count, count, nil
+	}
+	return h.instancesDb.List(filter)
+}
+
 func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	toReturn := make([]pkg.RuntimeDTO, 0)
 
@@ -58,7 +114,7 @@ func (h *Handler) getRuntimes(w http.ResponseWriter, req *http.Request) {
 	kymaConfig := getBoolParam(pkg.KymaConfigParam, req)
 	clusterConfig := getBoolParam(pkg.ClusterConfigParam, req)
 
-	instances, count, totalCount, err := h.instancesDb.List(filter)
+	instances, count, totalCount, err := h.listInstances(filter)
 	if err != nil {
 		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("while fetching instances: %w", err))
 		return
@@ -330,6 +386,9 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Shoots = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
+	if v, exists := query[pkg.OnlyDeletedParam]; exists && v[0] == "true" {
+		filter.OnlyDeleted = ptr.Bool(true)
+	}
 	if v, exists := query[pkg.ExpiredParam]; exists && v[0] == "true" {
 		filter.Expired = ptr.Bool(true)
 	}

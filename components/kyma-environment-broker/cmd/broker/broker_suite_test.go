@@ -14,6 +14,9 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -53,6 +56,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,6 +64,29 @@ import (
 )
 
 const fixedGardenerNamespace = "garden-test"
+
+const (
+	btpOperatorGroup           = "services.cloud.sap.com"
+	btpOperatorApiVer          = "v1"
+	btpOperatorServiceInstance = "ServiceInstance"
+	btpOperatorServiceBinding  = "ServiceBinding"
+	instanceName               = "my-service-instance"
+	bindingName                = "my-binding"
+	kymaNamespace              = "kyma-system"
+)
+
+var (
+	serviceBindingGvk = schema.GroupVersionKind{
+		Group:   btpOperatorGroup,
+		Version: btpOperatorApiVer,
+		Kind:    btpOperatorServiceBinding,
+	}
+	serviceInstanceGvk = schema.GroupVersionKind{
+		Group:   btpOperatorGroup,
+		Version: btpOperatorApiVer,
+		Kind:    btpOperatorServiceInstance,
+	}
+)
 
 // BrokerSuiteTest is a helper which allows to write simple tests of any KEB processes (provisioning, deprovisioning, update).
 // The starting point of a test could be an HTTP call to Broker API.
@@ -77,6 +104,9 @@ type BrokerSuiteTest struct {
 	inputBuilderFactory input.CreatorForPlan
 
 	componentProvider componentProviderDecorated
+
+	k8sKcp client.Client
+	k8sSKR client.Client
 }
 
 type componentProviderDecorated struct {
@@ -120,7 +150,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	fakeHTTPClient := kebRuntime.NewTestClient(t, installerYAML, componentsYAML, http.StatusOK)
 
 	configProvider := kebConfig.NewConfigProvider(
-		kebConfig.NewConfigMapReader(ctx, cli, logrus.New()),
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
 
@@ -170,9 +200,9 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(sch).Build()
 	provisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("provisioning", "manager"))
-	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient,
-		directorClient, inputFactory, avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator,
-		runtimeOverrides, bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs)
+	provisioningQueue := NewProvisioningProcessingQueue(context.Background(), provisionManager, workersAmount, cfg, db, provisionerClient, inputFactory,
+		avsDel, internalEvalAssistant, externalEvalCreator, internalEvalUpdater, runtimeVerConfigurator, runtimeOverrides,
+		edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), cli, logs)
 
 	provisioningQueue.SpeedUp(10000)
 	provisionManager.SpeedUp(10000)
@@ -180,14 +210,14 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs)
 	rvc := runtimeversion.NewRuntimeVersionConfigurator(cfg.KymaVersion, nil, db.RuntimeStates())
 	updateQueue := NewUpdateProcessingQueue(context.Background(), updateManager, 1, db, inputFactory, provisionerClient,
-		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), logs)
+		eventBroker, rvc, db.RuntimeStates(), decoratedComponentListProvider, reconcilerClient, *cfg, fakeK8sClientProvider(fakeK8sSKRClient), cli, logs)
 	updateQueue.SpeedUp(10000)
 	updateManager.SpeedUp(10000)
 
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, time.Hour, logs.WithField("deprovisioning", "manager"))
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
-		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), fakeK8sSKRClient, logs,
 	)
 	deprovisionManager.SpeedUp(10000)
 
@@ -203,6 +233,8 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		t:                   t,
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
+		k8sKcp:              cli,
+		k8sSKR:              fakeK8sSKRClient,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -514,7 +546,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -689,7 +721,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 		if err != nil {
 			return false, nil
 		}
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
@@ -819,13 +851,13 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
-		if op.ProvisionerOperationID != "" {
+		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
 			provisioningOp = op
 			return true, nil
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	var shootUpgrade gqlschema.UpgradeShootInput
 	var found bool
@@ -836,7 +868,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 		}
 		return false, nil
 	})
-	assert.NoError(s.t, err)
+	require.NoError(s.t, err)
 
 	assert.Equal(s.t, config, shootUpgrade)
 }
@@ -1055,6 +1087,15 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.WaitForOperationState(opID, domain.Succeeded)
 }
 
+func (s *BrokerSuiteTest) processUpdatingByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+
+	s.FinishUpdatingOperationByProvisioner(opID)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
 func (s *BrokerSuiteTest) failProvisioningByOperationID(opID string) {
 	s.WaitForProvisioningState(opID, domain.InProgress)
 	s.AssertProvisionerStartedProvisioning(opID)
@@ -1105,6 +1146,11 @@ func (s *BrokerSuiteTest) processProvisioningAndReconcilingByOperationID(opID st
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
 
+	// Reconciler part
+	s.processReconcilingByOperationID(opID)
+}
+
+func (s *BrokerSuiteTest) processReconcilingByOperationID(opID string) {
 	// Reconciler part
 	s.AssertReconcilerStartedReconcilingWhenProvisioning(opID)
 	s.FinishProvisioningOperationByReconciler(opID)
@@ -1291,6 +1337,67 @@ func (s *BrokerSuiteTest) fixExpectedComponentListWithSMOperator(opID, smCluster
 			},
 		},
 	}
+}
+
+func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+
+	obj := &unstructured.Unstructured{}
+	obj.SetName(operation.RuntimeID)
+	obj.SetNamespace("kyma-system")
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1alpha1",
+		Kind:    "Kyma",
+	})
+
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+
+	assert.NoError(s.t, err)
+}
+
+func (s *BrokerSuiteTest) AssertSecretWithKubeconfigExists(opId string) {
+	operation, err := s.db.Operations().GetOperationByID(opId)
+	assert.NoError(s.t, err)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "kyma-system",
+			Name:      fmt.Sprintf("kubeconfig-%s", operation.RuntimeID),
+		},
+		StringData: map[string]string{},
+	}
+	err = s.k8sKcp.Get(context.Background(), client.ObjectKeyFromObject(secret), secret)
+
+	assert.NoError(s.t, err)
+
+}
+
+func (s *BrokerSuiteTest) fixServiceBindingAndInstances(t *testing.T) {
+	createResource(t, serviceInstanceGvk, s.k8sSKR, kymaNamespace, instanceName)
+	createResource(t, serviceBindingGvk, s.k8sSKR, kymaNamespace, bindingName)
+}
+
+func (s *BrokerSuiteTest) assertServiceBindingAndInstancesAreRemoved(t *testing.T) {
+	assertResourcesAreRemoved(t, serviceInstanceGvk, s.k8sSKR)
+	assertResourcesAreRemoved(t, serviceBindingGvk, s.k8sSKR)
+}
+
+func assertResourcesAreRemoved(t *testing.T, gvk schema.GroupVersionKind, k8sClient client.Client) {
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(gvk)
+	err := k8sClient.List(context.TODO(), list)
+	assert.NoError(t, err)
+	assert.Zero(t, len(list.Items))
+}
+
+func createResource(t *testing.T, gvk schema.GroupVersionKind, k8sClient client.Client, namespace string, name string) {
+	object := &unstructured.Unstructured{}
+	object.SetGroupVersionKind(gvk)
+	object.SetNamespace(namespace)
+	object.SetName(name)
+	err := k8sClient.Create(context.TODO(), object)
+	assert.NoError(t, err)
 }
 
 func mockBTPOperatorClusterID() {
