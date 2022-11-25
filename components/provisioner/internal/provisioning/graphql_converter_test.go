@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	kymaSystemNamespace      = "kyma-system"
-	kymaIntegrationNamespace = "kyma-integration"
+	kymaSystemNamespace = "kyma-system"
 )
 
 func TestOperationStatusToGQLOperationStatus(t *testing.T) {
@@ -556,7 +555,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 			},
 			{
 				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -636,7 +635,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			ID:           "id",
 			KymaConfigID: "id",
 			Component:    applicationConnectorComponent,
-			Namespace:    kymaIntegrationNamespace,
+			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
 					model.NewConfigEntry("test.config.key", "value", false),

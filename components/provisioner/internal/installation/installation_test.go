@@ -33,8 +33,7 @@ const (
 	tillerYAML    = "tillerYAML"
 	installerYAML = "installerYAML"
 
-	kymaSystemNamespace      = "kyma-system"
-	kymaIntegrationNamespace = "kyma-integration"
+	kymaSystemNamespace = "kyma-system"
 
 	rafterSourceURL = "github.com/kyma-project/kyma.git//resources/rafter"
 )
@@ -164,7 +163,7 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 			assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
 			assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
 			assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
-			assertComponent(t, "application-connector", kymaIntegrationNamespace, nil, installationCR.Spec.Components[3])
+			assertComponent(t, "application-connector", kymaSystemNamespace, nil, installationCR.Spec.Components[3])
 		})
 	}
 
@@ -395,7 +394,7 @@ func fixComponentsConfig() []model.KymaComponentConfig {
 			ID:           "id",
 			KymaConfigID: "id",
 			Component:    "application-connector",
-			Namespace:    kymaIntegrationNamespace,
+			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
 					model.NewConfigEntry("test.config.key", "value", false),
