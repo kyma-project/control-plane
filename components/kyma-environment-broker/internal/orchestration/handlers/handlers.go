@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
@@ -40,21 +43,27 @@ func validateTarget(spec orchestration.TargetSpec) error {
 	return nil
 }
 
-func defaultOrchestrationStrategy(spec *orchestration.StrategySpec) {
-	if spec.Parallel.Workers == 0 {
-		spec.Parallel.Workers = 1
+// ValidateDeprecatedParameters cheks if `maintenanceWindow` parameter is used as schedule.
+func ValidateDeprecatedParameters(params orchestration.Parameters) error {
+	if params.Strategy.Schedule == string(orchestration.MaintenanceWindow) {
+		return fmt.Errorf("{\"strategy\":{\"schedule\": \"maintenanceWindow\"} is deprecated use {\"strategy\":{\"MaintenanceWindow\": true} instead")
 	}
+	return nil
+}
 
-	switch spec.Type {
-	case orchestration.ParallelStrategy:
+// ValidateScheduleParameter cheks if the schedule parameter is valid.
+func ValidateScheduleParameter(params *orchestration.Parameters) error {
+	switch params.Strategy.Schedule {
+	case "immediate":
+	case "now":
+		params.Strategy.ScheduleTime = time.Now()
 	default:
-		spec.Type = orchestration.ParallelStrategy
+		parsedTime, err := time.Parse(time.RFC3339, params.Strategy.Schedule)
+		if err == nil {
+			params.Strategy.ScheduleTime = parsedTime
+		} else {
+			return fmt.Errorf("the schedule filed does not contain 'imediate'/'now' nor is a date: %w", err)
+		}
 	}
-
-	switch spec.Schedule {
-	case orchestration.MaintenanceWindow:
-	case orchestration.Immediate:
-	default:
-		spec.Schedule = orchestration.Immediate
-	}
+	return nil
 }
