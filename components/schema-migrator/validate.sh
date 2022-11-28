@@ -60,6 +60,7 @@ function migrationUP() {
             -e DB_SSL=${DB_SSL_PARAM} \
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="up" \
+            -v $(pwd)/../../resources/kcp/charts/${migration_path}/migrations:/migrate/new-migrations/${migration_path} \
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
@@ -81,6 +82,7 @@ function migrationDOWN() {
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="down" \
             -e NON_INTERACTIVE="true" \
+            -v $(pwd)/../../resources/kcp/charts/${migration_path}/migrations:/migrate/new-migrations/${migration_path} \
         ${IMG_NAME}
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"

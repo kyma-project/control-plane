@@ -209,7 +209,7 @@ spec:
             volumes:
               - name: provisioner
                 configMap:
-                name: provisioner-migrations
+                  name: provisioner-migrations
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 secret:
