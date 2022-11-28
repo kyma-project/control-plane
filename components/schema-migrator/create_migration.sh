@@ -15,6 +15,9 @@ done
 DATE="$(date +%Y%m%d%H%M)"
 MIGRATIONS_DIR="../../resources/kcp/charts/${COMPONENT}/migrations"
 TRANSACTION_STR=$'BEGIN;\nCOMMIT;'
+if [ $COMPONENT == "kyma-environment-broker" ] || [ $COMPONENT == "provisioner" ] ; then
+    mkdir -p ${MIGRATIONS_DIR}
+fi
 
 echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${DATE}_${NAME}.up.sql"
 echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${DATE}_${NAME}.down.sql"
