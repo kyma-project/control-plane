@@ -97,8 +97,8 @@ github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoD
 github.com/form3tech-oss/jwt-go v3.2.3+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/gardener/gardener v1.60.0 h1:uv4EHWX/bAdAkt6ZYIIfBBJi0GwnK4y1GLnYu1A07oA=
-github.com/gardener/gardener v1.60.0/go.mod h1:xkR1xRgI4PzSXWtwVUh/y6tBt5K0QSCR5FjneSKx89w=
+github.com/gardener/gardener v1.60.1 h1:JL3ljTeXILOlBzgOzZ3+aDVm6yVesIqjlnoXwXma2p0=
+github.com/gardener/gardener v1.60.1/go.mod h1:xkR1xRgI4PzSXWtwVUh/y6tBt5K0QSCR5FjneSKx89w=
 github.com/gardener/gardener-extension-provider-aws v1.40.0 h1:byeyUdxJQbn+xpBqBmd5AGzm0F4yNm8p4W0ZuJqq+20=
 github.com/gardener/gardener-extension-provider-aws v1.40.0/go.mod h1:C9IfeQ2BsnZ1aVPLMYfYvRQxxWnZkGOovUYKfckr2bY=
 github.com/gardener/gardener-extension-provider-azure v1.32.0 h1:5sjmoSl4RGpkTf+lLi2ZdUDy7hl3i2OS/5QzFfCh2c4=
