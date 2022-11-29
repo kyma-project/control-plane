@@ -10,7 +10,7 @@ import (
 )
 
 func TestAWSZones(t *testing.T) {
-	regions := broker.AWSRegions()
+	regions := broker.AWSRegions(false)
 	for _, region := range regions {
 		_, exists := awsZones[region]
 		assert.True(t, exists)
