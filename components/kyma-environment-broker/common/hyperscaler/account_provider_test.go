@@ -2,6 +2,7 @@ package hyperscaler
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -17,7 +18,7 @@ func TestGardenerSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, nil)
 
 		//when
-		_, err := accountProvider.GardenerSecretName(GCP, "tenantname")
+		_, err := accountProvider.GardenerSecretName(GCP, "tenantname", false)
 		require.Error(t, err)
 
 		//then
@@ -26,13 +27,13 @@ func TestGardenerSecretName(t *testing.T) {
 
 	t.Run("should return correct secret name", func(t *testing.T) {
 		//given
-		gardenerFake := gardener.NewDynamicFakeClient(newSecretBinding("secretBinding1", "secret1", "azure", false))
+		gardenerFake := gardener.NewDynamicFakeClient(newSecretBinding("secretBinding1", "secret1", "azure", false, false))
 		accountPool := NewAccountPool(gardenerFake, testNamespace)
 
 		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
-		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname")
+		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname", false)
 
 		//then
 		require.NoError(t, err)
@@ -63,7 +64,7 @@ func TestGardenerSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
-		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname")
+		secretName, err := accountProvider.GardenerSecretName(Azure, "tenantname", false)
 
 		//then
 		require.NoError(t, err)
@@ -78,7 +79,7 @@ func TestGardenerSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(accountPool, nil)
 
 		//when
-		_, err := accountProvider.GardenerSecretName(Azure, "tenantname")
+		_, err := accountProvider.GardenerSecretName(Azure, "tenantname", false)
 
 		//then
 		require.Error(t, err)
@@ -91,7 +92,7 @@ func TestGardenerSharedSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, nil)
 
 		//when
-		_, err := accountProvider.GardenerSharedSecretName(GCP)
+		_, err := accountProvider.GardenerSharedSecretName(GCP, false)
 		require.Error(t, err)
 
 		//then
@@ -100,13 +101,13 @@ func TestGardenerSharedSecretName(t *testing.T) {
 
 	t.Run("should return correct shared secret name", func(t *testing.T) {
 		//given
-		gardenerFake := gardener.NewDynamicFakeClient(newSecretBinding("secretBinding1", "secret1", "azure", true))
+		gardenerFake := gardener.NewDynamicFakeClient(newSecretBinding("secretBinding1", "secret1", "azure", true, false))
 		sharedAccountPool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
 
 		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
-		secretName, err := accountProvider.GardenerSharedSecretName(Azure)
+		secretName, err := accountProvider.GardenerSharedSecretName(Azure, false)
 
 		//then
 		require.NoError(t, err)
@@ -138,7 +139,7 @@ func TestGardenerSharedSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
-		secretName, err := accountProvider.GardenerSharedSecretName(Azure)
+		secretName, err := accountProvider.GardenerSharedSecretName(Azure, false)
 
 		//then
 		require.NoError(t, err)
@@ -153,7 +154,7 @@ func TestGardenerSharedSecretName(t *testing.T) {
 		accountProvider := NewAccountProvider(nil, sharedAccountPool)
 
 		//when
-		_, err := accountProvider.GardenerSharedSecretName(Azure)
+		_, err := accountProvider.GardenerSharedSecretName(Azure, false)
 
 		//then
 		require.Error(t, err)
@@ -161,95 +162,100 @@ func TestGardenerSharedSecretName(t *testing.T) {
 }
 
 func TestMarkUnusedGardenerSecretBindingAsDirty(t *testing.T) {
-	t.Run("should mark secret binding as dirty if unused", func(t *testing.T) {
-		//given
-		pool, secretBindingMock := newTestAccountPoolWithoutShoots()
 
-		accountProvider := NewAccountProvider(pool, nil)
+	for _, euAccess := range []bool{false, true} {
+		t.Run(fmt.Sprintf("EuAccess=%v", euAccess), func(t *testing.T) {
+			t.Run("should mark secret binding as dirty if unused", func(t *testing.T) {
+				//given
+				pool, secretBindingMock := newTestAccountPoolWithoutShoots(euAccess)
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
+				accountProvider := NewAccountProvider(pool, nil)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1", euAccess)
 
-	t.Run("should not mark secret binding as dirty if internal", func(t *testing.T) {
-		//given
-		pool, secretBindingMock := newTestAccountPoolWithSecretBindingInternal()
+				//then
+				require.NoError(t, err)
+				secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
+			})
 
-		accountProvider := NewAccountProvider(pool, nil)
+			t.Run("should not mark secret binding as dirty if internal", func(t *testing.T) {
+				//given
+				pool, secretBindingMock := newTestAccountPoolWithSecretBindingInternal(euAccess)
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
+				accountProvider := NewAccountProvider(pool, nil)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1", euAccess)
 
-	t.Run("should not mark secret binding as dirty if used by a cluster", func(t *testing.T) {
-		//given
-		pool, secretBindingMock := newTestAccountPoolWithSingleShoot()
+				//then
+				require.NoError(t, err)
+				secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
+			})
 
-		accountProvider := NewAccountProvider(pool, nil)
+			t.Run("should not mark secret binding as dirty if used by a cluster", func(t *testing.T) {
+				//given
+				pool, secretBindingMock := newTestAccountPoolWithSingleShoot(euAccess)
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
+				accountProvider := NewAccountProvider(pool, nil)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1", euAccess)
 
-	t.Run("should not modify a secret binding if marked as dirty", func(t *testing.T) {
-		//given
-		pool, secretBindingMock := newTestAccountPoolWithSecretBindingDirty()
+				//then
+				require.NoError(t, err)
+				secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
+			})
 
-		accountProvider := NewAccountProvider(pool, nil)
+			t.Run("should not modify a secret binding if marked as dirty", func(t *testing.T) {
+				//given
+				pool, secretBindingMock := newTestAccountPoolWithSecretBindingDirty(euAccess)
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
+				accountProvider := NewAccountProvider(pool, nil)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1", euAccess)
 
-	t.Run("should not mark secret binding as dirty if used by multiple cluster", func(t *testing.T) {
-		//given
-		pool, secretBindingMock := newTestAccountPoolWithShootsUsingSecretBinding()
+				//then
+				require.NoError(t, err)
+				secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
+			})
 
-		accountProvider := NewAccountProvider(pool, nil)
+			t.Run("should not mark secret binding as dirty if used by multiple cluster", func(t *testing.T) {
+				//given
+				pool, secretBindingMock := newTestAccountPoolWithShootsUsingSecretBinding(euAccess)
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1")
+				accountProvider := NewAccountProvider(pool, nil)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("azure"), "tenant1", euAccess)
 
-	t.Run("should return error if failed to read secrets for particular hyperscaler type", func(t *testing.T) {
-		//given
-		accountProvider := NewAccountProvider(nil, nil)
+				//then
+				require.NoError(t, err)
+				secretBinding, err := secretBindingMock.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "")
+			})
 
-		//when
-		err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("gcp"), "tenant1")
+			t.Run("should return error if failed to read secrets for particular hyperscaler type", func(t *testing.T) {
+				//given
+				accountProvider := NewAccountProvider(nil, nil)
 
-		//when
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to release subscription for tenant tenant1. Gardener Account pool is not configured")
-	})
+				//when
+				err := accountProvider.MarkUnusedGardenerSecretBindingAsDirty(Type("gcp"), "tenant1", euAccess)
+
+				//when
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to release subscription for tenant tenant1. Gardener Account pool is not configured")
+			})
+		})
+	}
 }

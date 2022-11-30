@@ -8,9 +8,9 @@ import (
 
 //go:generate mockery --name=AccountProvider --output=automock --outpkg=automock --case=underscore
 type AccountProvider interface {
-	GardenerSecretName(hyperscalerType Type, tenantName string) (string, error)
-	GardenerSharedSecretName(hyperscalerType Type) (string, error)
-	MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
+	GardenerSecretName(hyperscalerType Type, tenantName string, euAccess bool) (string, error)
+	GardenerSharedSecretName(hyperscalerType Type, euAccess bool) (string, error)
+	MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string, euAccess bool) error
 }
 
 type Credentials struct {
@@ -46,12 +46,12 @@ func FromCloudProvider(cp internal.CloudProvider) (Type, error) {
 	}
 }
 
-func (p *accountProvider) GardenerSecretName(hyperscalerType Type, tenantName string) (string, error) {
+func (p *accountProvider) GardenerSecretName(hyperscalerType Type, tenantName string, euAccess bool) (string, error) {
 	if p.gardenerPool == nil {
 		return "", fmt.Errorf("failed to get Gardener Credentials. Gardener Account pool is not configured for tenant %s", tenantName)
 	}
 
-	secretBinding, err := p.gardenerPool.CredentialsSecretBinding(hyperscalerType, tenantName)
+	secretBinding, err := p.gardenerPool.CredentialsSecretBinding(hyperscalerType, tenantName, euAccess)
 	if err != nil {
 		return "", fmt.Errorf("failed to get Gardener Credentials for tenant %s: %w", tenantName, err)
 	}
@@ -59,12 +59,12 @@ func (p *accountProvider) GardenerSecretName(hyperscalerType Type, tenantName st
 	return secretBinding.GetSecretRefName(), nil
 }
 
-func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string, error) {
+func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type, euAccess bool) (string, error) {
 	if p.sharedGardenerPool == nil {
 		return "", fmt.Errorf("failed to get shared Secret Binding name. Gardener Shared Account pool is not configured for hyperscaler type %s", hyperscalerType)
 	}
 
-	secretBinding, err := p.sharedGardenerPool.SharedCredentialsSecretBinding(hyperscalerType)
+	secretBinding, err := p.sharedGardenerPool.SharedCredentialsSecretBinding(hyperscalerType, euAccess)
 	if err != nil {
 		return "", fmt.Errorf("getting shared secret binding: %w", err)
 	}
@@ -72,12 +72,12 @@ func (p *accountProvider) GardenerSharedSecretName(hyperscalerType Type) (string
 	return secretBinding.GetSecretRefName(), nil
 }
 
-func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string) error {
+func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType Type, tenantName string, euAccess bool) error {
 	if p.gardenerPool == nil {
 		return fmt.Errorf("failed to release subscription for tenant %s. Gardener Account pool is not configured", tenantName)
 	}
 
-	isInternal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName)
+	isInternal, err := p.gardenerPool.IsSecretBindingInternal(hyperscalerType, tenantName, euAccess)
 	if err != nil {
 		return fmt.Errorf("checking if secret binding is internal: %w", err)
 	}
@@ -85,7 +85,7 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 		return nil
 	}
 
-	isDirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName)
+	isDirty, err := p.gardenerPool.IsSecretBindingDirty(hyperscalerType, tenantName, euAccess)
 	if err != nil {
 		return fmt.Errorf("checking if secret binding is dirty: %w", err)
 	}
@@ -93,12 +93,12 @@ func (p *accountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType
 		return nil
 	}
 
-	isUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName)
+	isUsed, err := p.gardenerPool.IsSecretBindingUsed(hyperscalerType, tenantName, euAccess)
 	if err != nil {
 		return fmt.Errorf("cannot determine whether %s secret binding is used for tenant: %s: %w", hyperscalerType, tenantName, err)
 	}
 	if !isUsed {
-		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName)
+		return p.gardenerPool.MarkSecretBindingAsDirty(hyperscalerType, tenantName, euAccess)
 	}
 
 	return nil

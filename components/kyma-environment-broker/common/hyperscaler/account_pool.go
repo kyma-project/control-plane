@@ -21,11 +21,11 @@ const (
 )
 
 type AccountPool interface {
-	CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*gardener.SecretBinding, error)
-	MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string) error
-	IsSecretBindingUsed(hyperscalerType Type, tenantName string) (bool, error)
-	IsSecretBindingDirty(hyperscalerType Type, tenantName string) (bool, error)
-	IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error)
+	CredentialsSecretBinding(hyperscalerType Type, tenantName string, euAccess bool) (*gardener.SecretBinding, error)
+	MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string, euAccess bool) error
+	IsSecretBindingUsed(hyperscalerType Type, tenantName string, euAccess bool) (bool, error)
+	IsSecretBindingDirty(hyperscalerType Type, tenantName string, euAccess bool) (bool, error)
+	IsSecretBindingInternal(hyperscalerType Type, tenantName string, euAccess bool) (bool, error)
 }
 
 func NewAccountPool(gardenerClient dynamic.Interface, gardenerNamespace string) AccountPool {
@@ -41,8 +41,9 @@ type secretBindingsAccountPool struct {
 	mux            sync.Mutex
 }
 
-func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type, tenantName string) (bool, error) {
+func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type, tenantName string, euAccess bool) (bool, error) {
 	labelSelector := fmt.Sprintf("internal=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
 		return false, fmt.Errorf("looking for a secret binding used by the tenant %s and hyperscaler %s: %w", tenantName, hyperscalerType, err)
@@ -54,8 +55,9 @@ func (p *secretBindingsAccountPool) IsSecretBindingInternal(hyperscalerType Type
 	return false, nil
 }
 
-func (p *secretBindingsAccountPool) IsSecretBindingDirty(hyperscalerType Type, tenantName string) (bool, error) {
+func (p *secretBindingsAccountPool) IsSecretBindingDirty(hyperscalerType Type, tenantName string, euAccess bool) (bool, error) {
 	labelSelector := fmt.Sprintf("shared!=true, dirty=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
 		return false, fmt.Errorf("looking for a secret binding used by the tenant %s and hyperscaler %s: %w", tenantName, hyperscalerType, err)
@@ -67,14 +69,19 @@ func (p *secretBindingsAccountPool) IsSecretBindingDirty(hyperscalerType Type, t
 	return false, nil
 }
 
-func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string) error {
+func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Type, tenantName string, euAccess bool) error {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
 	labelSelector := fmt.Sprintf("shared!=true, tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
-	if err != nil || secretBinding == nil {
+	if err != nil {
 		return fmt.Errorf("marking secret binding as dirty: failed to find secret binding used by the tenant %s and"+" hyperscaler %s: %w", tenantName, hyperscalerType, err)
+	}
+	// if there is no matching secret - do nothing
+	if secretBinding == nil {
+		return nil
 	}
 
 	labels := secretBinding.GetLabels()
@@ -89,11 +96,16 @@ func (p *secretBindingsAccountPool) MarkSecretBindingAsDirty(hyperscalerType Typ
 	return nil
 }
 
-func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, tenantName string) (bool, error) {
+func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, tenantName string, euAccess bool) (bool, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil || secretBinding == nil {
 		return false, fmt.Errorf("counting subscription usage: could not find secret binding used by the tenant %s and hyperscaler %s: %w", tenantName, hyperscalerType, err)
+	}
+	// if there is no matching secret, that's ok (maybe it was not used, for example the step was not run)
+	if secretBinding == nil {
+		return false, nil
 	}
 
 	shootlist, err := p.gardenerClient.Resource(gardener.ShootResource).Namespace(p.gardenerNS).List(context.Background(), metav1.ListOptions{})
@@ -111,8 +123,9 @@ func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, te
 	return false, nil
 }
 
-func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Type, tenantName string) (*gardener.SecretBinding, error) {
+func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Type, tenantName string, euAccess bool) (*gardener.SecretBinding, error) {
 	labelSelector := fmt.Sprintf("tenantName=%s, hyperscalerType=%s, !dirty", tenantName, hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("getting secret binding: %w", err)
@@ -127,6 +140,7 @@ func (p *secretBindingsAccountPool) CredentialsSecretBinding(hyperscalerType Typ
 	defer p.mux.Unlock()
 
 	labelSelector = fmt.Sprintf("shared!=true, !tenantName, !dirty, hyperscalerType=%s", hyperscalerType)
+	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err = p.getSecretBinding(labelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("getting secret binding: %w", err)
@@ -158,4 +172,12 @@ func (p *secretBindingsAccountPool) getSecretBinding(labelSelector string) (*gar
 		return &gardener.SecretBinding{secretBindings.Items[0]}, nil
 	}
 	return nil, nil
+}
+
+func addEuAccessSelector(selector string, euAccess bool) string {
+	if euAccess {
+		return selector + ", euAccess=true"
+	} else {
+		return selector + ", !euAccess"
+	}
 }
