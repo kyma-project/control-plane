@@ -39,8 +39,8 @@ for pr in "${prs[@]}"; do
             esac
         done
         pwd
-        echo "$DIR/tools/cli"
-        cd "$DIR/tools/cli"
+        echo "$DIR/../tools/cli"
+        cd "$DIR/../tools/cli"
         go mod tidy
         if [[ -n "$(git diff)" ]]; then
             git commit -am "KCP CLI go mod tidy"
