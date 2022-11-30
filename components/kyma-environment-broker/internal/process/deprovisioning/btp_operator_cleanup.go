@@ -65,6 +65,10 @@ func (s *BTPOperatorCleanupStep) Run(operation internal.Operation, log logrus.Fi
 	if err != nil {
 		return s.retryOnError(operation, err, log, "failed to get kube client")
 	}
+	if kclient == nil {
+		log.Infof("Skipping service instance and binding deletion")
+		return operation, 0, nil
+	}
 	if err := s.deleteServiceBindingsAndInstances(kclient, log); err != nil {
 		err = kebError.AsTemporaryError(err, "failed BTP operator resource cleanup")
 		return s.retryOnError(operation, err, log, "could not delete bindings and service instances")
@@ -159,6 +163,10 @@ func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Operation
 		log.Errorf("failed to get kube clients to remove finalizers", err)
 		return
 	}
+	if k8sClient == nil {
+		log.Info("Skipping removing finalizers")
+		return
+	}
 
 	namespaces := corev1.NamespaceList{}
 	if err := k8sClient.List(context.Background(), &namespaces); err != nil {
@@ -173,7 +181,7 @@ func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log
 	status, err := s.provisionerClient.RuntimeStatus(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.RuntimeID)
 	if err != nil {
 		if s.isNotFoundErr(err) {
-			log.Info("instance not found in provisioner")
+			log.Info("Cannot get kubeconfig: instance not found in provisioner")
 			return nil, nil
 		}
 		return nil, err
