@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
 
 	"github.com/google/uuid"
