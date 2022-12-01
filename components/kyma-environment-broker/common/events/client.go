@@ -59,7 +59,9 @@ func (c *client) ListEvents(instanceIDs []string) ([]EventDTO, error) {
 	if err != nil {
 		return events, fmt.Errorf("while creating request: %v", err)
 	}
-	req.URL.Query().Add("instanceIds", strings.Join(instanceIDs, ","))
+	q := req.URL.Query()
+	q.Add("instance_ids", strings.Join(instanceIDs, ","))
+	req.URL.RawQuery = q.Encode()
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return events, fmt.Errorf("while calling %s: %v", req.URL.String(), err)
