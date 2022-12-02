@@ -11,7 +11,6 @@ import (
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -72,7 +71,7 @@ func (c *Client) metadataTenantURL(name, env string) string {
 func (c *Client) CreateDataTenant(data DataTenantPayload) error {
 	rawData, err := json.Marshal(data)
 	if err != nil {
-		return errors.Wrap(err, "while marshaling dataTenant payload")
+		return fmt.Errorf("while marshaling dataTenant payload: %w", err)
 	}
 
 	return c.post(c.dataTenantURL(), rawData, data.Name)
@@ -82,7 +81,7 @@ func (c *Client) DeleteDataTenant(name, env string) (err error) {
 	URL := fmt.Sprintf("%s/%s/%s", c.dataTenantURL(), name, env)
 	request, err := http.NewRequest(http.MethodDelete, URL, nil)
 	if err != nil {
-		return errors.Wrap(err, "while creating delete dataTenant request")
+		return fmt.Errorf("while creating delete dataTenant request: %w", err)
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -101,7 +100,7 @@ func (c *Client) DeleteDataTenant(name, env string) (err error) {
 func (c *Client) CreateMetadataTenant(name, env string, data MetadataTenantPayload) error {
 	rawData, err := json.Marshal(data)
 	if err != nil {
-		return errors.Wrap(err, "while marshaling tenant metadata payload")
+		return fmt.Errorf("while marshaling tenant metadata payload: %w", err)
 	}
 
 	return c.post(c.metadataTenantURL(name, env), rawData, name)
@@ -111,7 +110,7 @@ func (c *Client) DeleteMetadataTenant(name, env, key string) (err error) {
 	URL := fmt.Sprintf("%s/%s", c.metadataTenantURL(name, env), key)
 	request, err := http.NewRequest(http.MethodDelete, URL, nil)
 	if err != nil {
-		return errors.Wrap(err, "while creating delete metadata request")
+		return fmt.Errorf("while creating delete metadata request: %w", err)
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -131,7 +130,7 @@ func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err erro
 	var metadata []MetadataItem
 	request, err := http.NewRequest(http.MethodGet, c.metadataTenantURL(name, env), nil)
 	if err != nil {
-		return metadata, errors.Wrap(err, "while creating GET metadata tenant request")
+		return metadata, fmt.Errorf("while creating GET metadata tenant request: %w", err)
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -146,7 +145,7 @@ func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err erro
 
 	err = json.NewDecoder(response.Body).Decode(&metadata)
 	if err != nil {
-		return metadata, errors.Wrap(err, "while decoding dataTenant metadata response")
+		return metadata, fmt.Errorf("while decoding dataTenant metadata response: %w", err)
 	}
 
 	return metadata, nil
@@ -155,7 +154,7 @@ func (c *Client) GetMetadataTenant(name, env string) (_ []MetadataItem, err erro
 func (c *Client) post(URL string, data []byte, id string) (err error) {
 	request, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(data))
 	if err != nil {
-		return errors.Wrapf(err, "while creating POST request for %s", URL)
+		return fmt.Errorf("while creating POST request for %s: %w", URL, err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
@@ -175,7 +174,7 @@ func (c *Client) post(URL string, data []byte, id string) (err error) {
 func (c *Client) processResponse(response *http.Response, allowNotFound bool, id string) error {
 	byteBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return errors.Wrapf(err, "while reading response body (status code %d)", response.StatusCode)
+		return fmt.Errorf("while reading response body (status code %d): %w", response.StatusCode, err)
 	}
 	body := string(byteBody)
 

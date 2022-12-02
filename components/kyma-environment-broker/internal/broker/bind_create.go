@@ -2,7 +2,7 @@ package broker
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -25,5 +25,5 @@ func (b *BindEndpoint) Bind(ctx context.Context, instanceID, bindingID string, d
 	b.log.Infof("Bind context: %s", string(details.RawContext))
 	b.log.Infof("Bind asyncAllowed:", asyncAllowed)
 
-	return domain.Binding{}, errors.New("not supported")
+	return domain.Binding{}, fmt.Errorf("not supported")
 }

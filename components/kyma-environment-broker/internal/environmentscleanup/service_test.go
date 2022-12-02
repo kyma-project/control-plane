@@ -2,13 +2,13 @@ package environmentscleanup
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -67,7 +67,8 @@ func TestService_PerformCleanup(t *testing.T) {
 	t.Run("should fail when unable to fetch shoots from gardener", func(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
-		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.UnstructuredList{}, errors.New("failed to reach gardener"))
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.
+			UnstructuredList{}, fmt.Errorf("failed to reach gardener"))
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -115,7 +116,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
-		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", errors.New("failed to deprovision instance"))
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("",
+			fmt.Errorf("failed to deprovision instance"))
 		pMock := &mocks.ProvisionerClient{}
 
 		memoryStorage := storage.NewMemoryStorage()
@@ -154,8 +156,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", nil)
-		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", errors.New("some error"))
-		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID3).Return("", errors.New("some other error"))
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", fmt.Errorf("some error"))
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID3).Return("", fmt.Errorf("some other error"))
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{

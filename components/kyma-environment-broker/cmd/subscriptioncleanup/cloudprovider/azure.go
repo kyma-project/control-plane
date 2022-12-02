@@ -2,12 +2,12 @@ package cloudprovider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -68,22 +68,22 @@ func (ac azureResourceCleaner) Do() error {
 func toConfig(secretData map[string][]byte) (config, error) {
 	clientID, exists := secretData["clientID"]
 	if !exists {
-		return config{}, errors.New("clientID not provided in the secret")
+		return config{}, fmt.Errorf("clientID not provided in the secret")
 	}
 
 	clientSecret, exists := secretData["clientSecret"]
 	if !exists {
-		return config{}, errors.New("clientSecret not provided in the secret")
+		return config{}, fmt.Errorf("clientSecret not provided in the secret")
 	}
 
 	subscriptionID, exists := secretData["subscriptionID"]
 	if !exists {
-		return config{}, errors.New("subscriptionID not provided in the secret")
+		return config{}, fmt.Errorf("subscriptionID not provided in the secret")
 	}
 
 	tenantID, exists := secretData["tenantID"]
 	if !exists {
-		return config{}, errors.New("tenantID not provided in the secret")
+		return config{}, fmt.Errorf("tenantID not provided in the secret")
 	}
 
 	return config{
@@ -115,7 +115,7 @@ func getGroupsClient(config *config, authorizer autorest.Authorizer) (resources.
 	client.Authorizer = authorizer
 
 	if err := client.AddToUserAgent(config.userAgent); err != nil {
-		return resources.GroupsClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
+		return resources.GroupsClient{}, fmt.Errorf("while adding user agent [%s]: %w", config.userAgent, err)
 	}
 
 	return client, nil
@@ -124,7 +124,7 @@ func getGroupsClient(config *config, authorizer autorest.Authorizer) (resources.
 func getResourceManagementAuthorizer(config *config, environment *azure.Environment) (autorest.Authorizer, error) {
 	armAuthorizer, err := getAuthorizerForResource(config, environment)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating resource authorizer")
+		return nil, fmt.Errorf("while creating resource authorizer: %w", err)
 	}
 
 	return armAuthorizer, err

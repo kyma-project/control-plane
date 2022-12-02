@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -118,13 +117,13 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 func (s *CreateRuntimeWithoutKymaStep) updateInstance(id, runtimeID, region string) error {
 	instance, err := s.instanceStorage.GetByID(id)
 	if err != nil {
-		return errors.Wrap(err, "while getting instance")
+		return fmt.Errorf("while getting instance: %w", err)
 	}
 	instance.RuntimeID = runtimeID
 	instance.ProviderRegion = region
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		return errors.Wrap(err, "while updating instance")
+		return fmt.Errorf("while updating instance: %w", err)
 	}
 
 	return nil
@@ -140,7 +139,7 @@ func (s *CreateRuntimeWithoutKymaStep) createProvisionInput(operation internal.O
 	operation.InputCreator.SetLabel(grafanaURLLabel, fmt.Sprintf("https://grafana.%s", operation.ShootDomain))
 	request, err := operation.InputCreator.CreateProvisionClusterInput()
 	if err != nil {
-		return request, errors.Wrap(err, "while building input for provisioner")
+		return request, fmt.Errorf("while building input for provisioner: %w", err)
 	}
 	request.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 

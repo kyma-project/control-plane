@@ -85,7 +85,7 @@ func TestComponentsProviderErrors(t *testing.T) {
 }
 
 func throwError(message string) error {
-	return errors.New(message)
+	return fmt.Errorf(message)
 }
 
 func fixConfigForPlan() *internal.ConfigForPlan {

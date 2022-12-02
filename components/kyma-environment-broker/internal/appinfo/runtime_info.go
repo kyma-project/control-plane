@@ -1,6 +1,7 @@
 package appinfo
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery --name=InstanceFinder --output=automock --outpkg=automock --case=underscore
@@ -79,7 +79,7 @@ func (h *RuntimeInfoHandler) mapToDTO(instances []internal.InstanceWithOperation
 			// Determine runtime modifiedAt timestamp based on the last operation of the runtime
 			lastOp, err := h.lastOperationFinder.GetLastOperation(inst.InstanceID)
 			if err != nil && !dberr.IsNotFound(err) {
-				return nil, errors.Wrapf(err, "while getting last operation for instance %s", inst.InstanceID)
+				return nil, fmt.Errorf("while getting last operation for instance %s: %w", inst.InstanceID, err)
 			}
 			updatedAt := inst.UpdatedAt
 			if lastOp != nil {

@@ -18,8 +18,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
-
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -176,7 +174,7 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 
 	version, err = s.runtimeVerConfigurator.ForUpgrade(*operation)
 	if err != nil {
-		return errors.Wrap(err, "while getting runtime version for upgrade")
+		return fmt.Errorf("while getting runtime version for upgrade: %w", err)
 	}
 
 	// update operation version
@@ -184,7 +182,7 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKym
 	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.UpgradeKymaOperation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
-		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")
+		return fmt.Errorf("unable to update operation with RuntimeVersion property: %w", err)
 	}
 
 	return nil

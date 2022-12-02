@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"fmt"
+
 	commonOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -109,8 +110,8 @@ func (r *clusterRetryer) latestOperationValidate(orchestrationID string, ops []i
 		clusterOps, err := r.operations.ListUpgradeClusterOperationsByInstanceID(instanceID)
 		if err != nil {
 			// fail for listing operations of one instance, then http return and report fail
-			r.log.Errorf("while getting operations by instanceID %s: %v", instanceID, err)
-			err = errors.Wrapf(err, "while getting operations by instanceID %s", instanceID)
+			err = fmt.Errorf("while getting operations by instanceID %s: %w", instanceID, err)
+			r.log.Error(err)
 			return nil, nil, err
 		}
 
@@ -137,8 +138,8 @@ func (r *clusterRetryer) latestOperationValidate(orchestrationID string, ops []i
 		}
 
 		if num == 0 || errFound {
-			r.log.Errorf("while getting operations by instanceID %s: %v", instanceID, err)
-			err = errors.Wrapf(err, "while getting operations by instanceID %s", instanceID)
+			err = fmt.Errorf("while getting operations by instanceID %s: %w", instanceID, err)
+			r.log.Error(err)
 			return nil, nil, err
 		}
 
