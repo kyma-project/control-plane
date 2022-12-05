@@ -164,6 +164,7 @@ type GardenerConfig struct {
 	ExposureClassName                   *string                `json:"exposureClassName"`
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
+	EuAccess                            *bool                  `json:"euAccess"`
 }
 
 type GardenerConfigInput struct {
@@ -194,6 +195,7 @@ type GardenerConfigInput struct {
 	ExposureClassName                   *string                `json:"exposureClassName"`
 	ShootNetworkingFilterDisabled       *bool                  `json:"shootNetworkingFilterDisabled"`
 	ControlPlaneFailureTolerance        *string                `json:"controlPlaneFailureTolerance"`
+	EuAccess                            *bool                  `json:"euAccess"`
 }
 
 type GardenerUpgradeInput struct {
