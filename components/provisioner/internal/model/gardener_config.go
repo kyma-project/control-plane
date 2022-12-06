@@ -22,6 +22,7 @@ const (
 	AccountLabel    = "account"
 
 	LicenceTypeAnnotation                = "kcp.provisioner.kyma-project.io/licence-type"
+	EuAccessAnnotation                   = "support.gardener.cloud/eu-access-for-cluster-nodes"
 	ShootNetworkingFilterExtensionType   = "shoot-networking-filter"
 	ShootNetworkingFilterDisabledDefault = true
 )
@@ -78,6 +79,7 @@ type GardenerConfig struct {
 	ExposureClassName                   *string
 	ShootNetworkingFilterDisabled       *bool
 	ControlPlaneFailureTolerance        *string
+	EuAccess                            bool
 }
 
 type ExtensionProviderConfig struct {
@@ -139,6 +141,9 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 	annotations := make(map[string]string)
 	if c.LicenceType != nil {
 		annotations[LicenceTypeAnnotation] = *c.LicenceType
+	}
+	if c.EuAccess {
+		annotations[EuAccessAnnotation] = fmt.Sprintf("%t", c.EuAccess)
 	}
 
 	dnsConfig := NewDNSConfig()
