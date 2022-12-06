@@ -1,6 +1,7 @@
 package provisioning
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -9,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -84,14 +84,14 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Operation,
 	}
 	version, err := s.runtimeVerConfigurator.ForProvisioning(*operation)
 	if err != nil {
-		return errors.Wrap(err, "while getting the runtime version")
+		return fmt.Errorf("while getting the runtime version: %w", err)
 	}
 
 	var repeat time.Duration
 	if *operation, repeat, err = s.operationManager.UpdateOperation(*operation, func(operation *internal.Operation) {
 		operation.RuntimeVersion = *version
 	}, log); repeat != 0 {
-		return errors.Wrap(err, "unable to update operation with RuntimeVersion property")
+		return fmt.Errorf("while updating operation with RuntimeVersion property: %w", err)
 	}
 	return nil
 }
@@ -99,12 +99,12 @@ func (s *InitialisationStep) configureKymaVersion(operation *internal.Operation,
 func (s *InitialisationStep) updateInstance(id string, provider internal.CloudProvider) error {
 	instance, err := s.instanceStorage.GetByID(id)
 	if err != nil {
-		return errors.Wrap(err, "while getting instance")
+		return fmt.Errorf("while getting instance: %w", err)
 	}
 	instance.Provider = provider
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		return errors.Wrap(err, "while updating instance")
+		return fmt.Errorf("while updating instance: %w", err)
 	}
 
 	return nil

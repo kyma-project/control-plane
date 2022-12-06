@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -88,7 +87,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, fmt.Sprintf("could not execute update for instanceID %s", instanceID))
 	} else if err != nil {
 		logger.Errorf("unable to get instance: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to get instance")
+		return domain.UpdateServiceSpec{}, fmt.Errorf("unable to get instance")
 	}
 	logger.Infof("Plan ID/Name: %s/%s", instance.ServicePlanID, PlanNamesMapping[instance.ServicePlanID])
 
@@ -96,7 +95,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	err = json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		logger.Errorf("unable to decode context: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal context")
+		return domain.UpdateServiceSpec{}, fmt.Errorf("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
@@ -111,22 +110,22 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	lastProvisioningOperation, err := b.operationStorage.GetProvisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil {
 		logger.Errorf("cannot fetch provisioning lastProvisioningOperation for instance with ID: %s : %s", instance.InstanceID, err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+		return domain.UpdateServiceSpec{}, fmt.Errorf("unable to process the update")
 	}
 	if lastProvisioningOperation.State == domain.Failed {
-		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "")
+		return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("Unable to process an update of a failed instance"), http.StatusUnprocessableEntity, "")
 	}
 
 	lastDeprovisioningOperation, err := b.operationStorage.GetDeprovisioningOperationByInstanceID(instance.InstanceID)
 	if err != nil && !dberr.IsNotFound(err) {
 		logger.Errorf("cannot fetch deprovisioning for instance with ID: %s : %s", instance.InstanceID, err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to process the update")
+		return domain.UpdateServiceSpec{}, fmt.Errorf("unable to process the update")
 	}
 	if err == nil {
 		if !lastDeprovisioningOperation.Temporary {
 			// it is not a suspension, but real deprovisioning
 			logger.Warnf("Cannot process update, the instance has started deprovisioning process (operationID=%s)", lastDeprovisioningOperation.Operation.ID)
-			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(errors.New("Unable to process an update of a deprovisioned instance"), http.StatusUnprocessableEntity, "")
+			return domain.UpdateServiceSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("Unable to process an update of a deprovisioned instance"), http.StatusUnprocessableEntity, "")
 		}
 	}
 
@@ -187,7 +186,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 		err := json.Unmarshal(details.RawParameters, &params)
 		if err != nil {
 			logger.Errorf("unable to unmarshal parameters: %s", err.Error())
-			return domain.UpdateServiceSpec{}, errors.New("unable to unmarshal parameters")
+			return domain.UpdateServiceSpec{}, fmt.Errorf("unable to unmarshal parameters")
 		}
 		logger.Debugf("Updating with params: %+v", params)
 	}
@@ -211,7 +210,7 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	defaults, err := b.planDefaults(planID, instance.Provider, &instance.Provider)
 	if err != nil {
 		logger.Errorf("unable to obtain plan defaults: %s", err.Error())
-		return domain.UpdateServiceSpec{}, errors.New("unable to obtain plan defaults")
+		return domain.UpdateServiceSpec{}, fmt.Errorf("unable to obtain plan defaults")
 	}
 	var autoscalerMin, autoscalerMax int
 	if defaults.GardenerConfig != nil {
@@ -275,14 +274,14 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
 		logger.Errorf("unable to decode context: %s", err.Error())
-		return nil, false, errors.New("unable to unmarshal context")
+		return nil, false, fmt.Errorf("unable to unmarshal context")
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 
 	lastOp, err := b.operationStorage.GetLastOperation(instance.InstanceID)
 	if err != nil {
 		logger.Errorf("unable to get last operation: %s", err.Error())
-		return nil, false, errors.New("failed to process ERS context")
+		return nil, false, fmt.Errorf("failed to process ERS context")
 	}
 
 	// todo: remove the code below when we are sure the ERSContext contains required values.
@@ -293,7 +292,7 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	instance.Parameters.ErsContext.SMOperatorCredentials = existingSMOperatorCredentials
 	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
-		return nil, false, errors.New("unable to process the update")
+		return nil, false, fmt.Errorf("unable to process the update")
 	}
 	instance.Parameters.ErsContext = internal.InheritMissingERSContext(instance.Parameters.ErsContext, lastOp.ProvisioningParameters.ErsContext)
 	instance.Parameters.ErsContext = internal.UpdateInstanceERSContext(instance.Parameters.ErsContext, ersContext)
@@ -301,7 +300,7 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	changed, err := b.contextUpdateHandler.Handle(instance, ersContext)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, changed, errors.New("unable to process the update")
+		return nil, changed, fmt.Errorf("unable to process the update")
 	}
 
 	//  copy the Active flag if set
@@ -321,7 +320,7 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	newInstance, err := b.instanceStorage.Update(*instance)
 	if err != nil {
 		logger.Errorf("processing context updated failed: %s", err.Error())
-		return nil, changed, errors.New("unable to process the update")
+		return nil, changed, fmt.Errorf("unable to process the update")
 	}
 
 	return newInstance, changed, nil

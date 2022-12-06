@@ -1,6 +1,7 @@
 package process
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -8,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,10 +42,10 @@ func (om *UpgradeClusterOperationManager) OperationFailed(operation internal.Upg
 	var retErr error
 	if err == nil {
 		// no exact err passed in
-		retErr = errors.New(description)
+		retErr = fmt.Errorf(description)
 	} else {
 		// keep the original err object for error categorizer
-		retErr = errors.Wrap(err, description)
+		retErr = fmt.Errorf("%s: %w", description, err)
 	}
 
 	return updatedOperation, 0, retErr

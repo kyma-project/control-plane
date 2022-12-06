@@ -1,10 +1,10 @@
 package deprovision
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -48,13 +48,13 @@ func (c DeprovisionClient) DeprovisionRuntime(instanceID string) error {
 	logrus.Infof("url: %s", url)
 	request, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		return errors.Wrapf(err, "while creating the HTTP Delete request for deprovisioning")
+		return fmt.Errorf("while creating the HTTP Delete request for deprovisioning: %w", err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 
 	response, err := c.client.Do(request)
 	if err != nil {
-		return errors.Wrapf(err, "while calling %s", request.URL.String())
+		return fmt.Errorf("while calling %s: %w", request.URL.String(), err)
 	}
 
 	cerr := response.Body.Close()
@@ -63,7 +63,7 @@ func (c DeprovisionClient) DeprovisionRuntime(instanceID string) error {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return errors.Wrapf(err, "calling %s returned %d (%s) status", request.URL.String(), response.StatusCode, response.Status)
+		return fmt.Errorf("calling %s returned %d (%s) status", request.URL.String(), response.StatusCode, response.Status)
 	}
 	logrus.Infof("Deprovisioning request returned code: " + response.Status)
 	c.log.Infof("Deprovisioning request returned code: " + response.Status)

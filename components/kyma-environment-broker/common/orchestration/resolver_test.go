@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
@@ -208,7 +207,7 @@ func TestResolver_Resolve_GardenerFailure(t *testing.T) {
 	client := gardener.NewDynamicFakeClient()
 	client.Fake = fake
 	fake.AddReactor("list", "shoots", func(action k8stesting.Action) (bool, k8s.Object, error) {
-		return true, nil, errors.New("Fake gardener client failure")
+		return true, nil, fmt.Errorf("fake gardener client failure")
 	})
 	lister := newRuntimeListerMock()
 	defer lister.AssertExpectations(t)
@@ -236,7 +235,7 @@ func TestResolver_Resolve_StorageFailure(t *testing.T) {
 	lister := &RuntimeListerMock{}
 	lister.On("ListAllRuntimes").Return(
 		nil,
-		errors.New("Mock storage failure"),
+		fmt.Errorf("mock storage failure"),
 	)
 	defer lister.AssertExpectations(t)
 	logger := newLogDummy()

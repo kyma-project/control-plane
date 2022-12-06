@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -59,7 +58,7 @@ func (c *ClientVer1) FetchSubAccountsToDelete() ([]string, error) {
 
 	err := c.fetchSubAccountsFromDeleteEvents(&subaccounts, 1)
 	if err != nil {
-		return []string{}, errors.Wrap(err, "while fetching subaccounts from delete events")
+		return []string{}, fmt.Errorf("while fetching subaccounts from delete events: %w", err)
 	}
 
 	c.log.Infof("CIS returned total amount of delete events: %d, client fetched %d subaccounts to delete.",
@@ -72,12 +71,12 @@ func (c *ClientVer1) FetchSubAccountsToDelete() ([]string, error) {
 func (c *ClientVer1) fetchSubAccountsFromDeleteEvents(collection *subAccountsVer1, page int) error {
 	request, err := c.buildRequest(page)
 	if err != nil {
-		return errors.Wrap(err, "while building request for event service")
+		return fmt.Errorf("while building request for event service: %w", err)
 	}
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return errors.Wrap(err, "while executing request to event service")
+		return fmt.Errorf("while executing request to event service: %w", err)
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -87,7 +86,7 @@ func (c *ClientVer1) fetchSubAccountsFromDeleteEvents(collection *subAccountsVer
 	var cisResponse CisResponseVer1
 	err = json.NewDecoder(response.Body).Decode(&cisResponse)
 	if err != nil {
-		return errors.Wrap(err, "while decoding CIS response")
+		return fmt.Errorf("while decoding CIS response: %w", err)
 	}
 
 	collection.total = cisResponse.Total
@@ -110,7 +109,7 @@ func (c *ClientVer1) fetchSubAccountsFromDeleteEvents(collection *subAccountsVer
 func (c *ClientVer1) buildRequest(page int) (*http.Request, error) {
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf(eventServicePathVer1, c.config.EventServiceURL), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating request")
+		return nil, fmt.Errorf("while creating request: %w", err)
 	}
 
 	q := request.URL.Query()

@@ -40,6 +40,24 @@ spec:
   scope: Namespaced
 `)
 
+func TestProvisionerDoesNotProvideKubeconfig(t *testing.T) {
+	// given
+	log := logrus.New()
+	ms := storage.NewMemoryStorage()
+	fakeProvisionerClient := newEmptyProvisionerClient()
+	step := NewBTPOperatorCleanupStep(ms.Operations(), fakeProvisionerClient, func(k string) (client.Client, error) { return nil, nil })
+	op := fixture.FixSuspensionOperationAsOperation(fixOperationID, fixInstanceID)
+	op.State = "in progress"
+
+	// when
+	_, backoff, err := step.Run(op, log)
+
+	// then
+	assert.NoError(t, err)
+	assert.Zero(t, backoff)
+
+}
+
 func TestRemoveServiceInstanceStep(t *testing.T) {
 	t.Run("should remove all service instances and bindings from btp operator as part of trial suspension", func(t *testing.T) {
 		// given
@@ -246,7 +264,13 @@ func (f *fakeK8sClientWrapper) RESTMapper() meta.RESTMapper {
 	return f.fake.RESTMapper()
 }
 
-type fakeProvisionerClient struct{}
+type fakeProvisionerClient struct {
+	empty bool
+}
+
+func newEmptyProvisionerClient() fakeProvisionerClient {
+	return fakeProvisionerClient{true}
+}
 
 func (f fakeProvisionerClient) ProvisionRuntime(accountID, subAccountID string, config gqlschema.ProvisionRuntimeInput) (gqlschema.OperationStatus, error) {
 	panic("not implemented")
@@ -273,6 +297,9 @@ func (f fakeProvisionerClient) RuntimeOperationStatus(accountID, operationID str
 }
 
 func (f fakeProvisionerClient) RuntimeStatus(accountID, runtimeID string) (gqlschema.RuntimeStatus, error) {
+	if f.empty {
+		return gqlschema.RuntimeStatus{}, fmt.Errorf("not found")
+	}
 	kubeconfig := "sample fake kubeconfig"
 	return gqlschema.RuntimeStatus{
 		RuntimeConfiguration: &gqlschema.RuntimeConfig{

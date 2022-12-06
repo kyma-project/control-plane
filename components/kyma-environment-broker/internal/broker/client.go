@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -94,14 +93,15 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
 		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
-			log.Warn(errors.Wrap(err, "while executing request").Error())
+			log.Warn(fmt.Sprintf("while executing request: %s", err.Error()))
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "while waiting for successful deprovision call")
+		return "", fmt.Errorf("while waiting for successful deprovision call: %w", err)
 	}
+
 	return response.Operation, nil
 }
 
@@ -114,7 +114,8 @@ func (c *Client) SendExpirationRequest(instance internal.Instance) (suspensionUn
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return false, errors.Wrapf(err, "while executing request URL: %s for instanceID: %s", request.URL, instance.InstanceID)
+		return false, fmt.Errorf("while executing request URL: %s for instanceID: %s: %w", request.URL,
+			instance.InstanceID, err)
 	}
 	defer c.warnOnError(resp.Body.Close)
 
@@ -138,7 +139,7 @@ func processResponse(instanceID string, statusCode int, resp *http.Response) (su
 			log.Warnf("For instanceID: %s we received entity unprocessable - status: %+v", instanceID, statusCode)
 			description, errorString, err := decodeErrorResponse(resp)
 			if err != nil {
-				return false, errors.Wrapf(err, "for instanceID: %s", instanceID)
+				return false, fmt.Errorf("for instanceID: %s: %w", instanceID, err)
 			}
 			log.Warnf("error: %+v description: %+v instanceID: %s", errorString, description, instanceID)
 			return false, nil
@@ -150,7 +151,7 @@ func processResponse(instanceID string, statusCode int, resp *http.Response) (su
 			}
 			description, errorString, err := decodeErrorResponse(resp)
 			if err != nil {
-				return false, errors.Wrapf(err, "for instanceID: %s", instanceID)
+				return false, fmt.Errorf("for instanceID: %s: %w", instanceID, err)
 			}
 			return false, fmt.Errorf("error: %+v description: %+v instanceID: %s", errorString, description, instanceID)
 		}
@@ -161,7 +162,7 @@ func decodeOperation(resp *http.Response) (string, error) {
 	response := serviceInstancesResponseDTO{}
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return "", errors.Wrapf(err, "while decoding response body")
+		return "", fmt.Errorf("while decoding response body: %w", err)
 	}
 	return response.Operation, nil
 }
@@ -170,7 +171,7 @@ func decodeErrorResponse(resp *http.Response) (string, string, error) {
 	response := errorResponse{}
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "while decoding error response body")
+		return "", "", fmt.Errorf("while decoding error response body: %w", err)
 	}
 	return response.Description, response.Error, nil
 }
@@ -180,14 +181,14 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 
 	jsonPayload, err := preparePayload(instance)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while marshaling payload for instanceID: %s", instance.InstanceID)
+		return nil, fmt.Errorf("while marshaling payload for instanceID: %s: %w", instance.InstanceID, err)
 	}
 
 	log.Infof("Requesting expiration of the environment with instance id: %q", instance.InstanceID)
 
 	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating request for instanceID: %s", instance.InstanceID)
+		return nil, fmt.Errorf("while creating request for instanceID: %s: %w", instance.InstanceID, err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 	return request, nil
@@ -210,7 +211,7 @@ func preparePayload(instance internal.Instance) ([]byte, error) {
 
 func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error) {
 	if len(instance.ServicePlanID) == 0 {
-		return "", errors.Errorf("empty ServicePlanID")
+		return "", fmt.Errorf("empty ServicePlanID")
 	}
 
 	return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID), nil
@@ -219,22 +220,23 @@ func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error
 func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return errors.Wrap(err, "while creating request for provisioning")
+		return fmt.Errorf("while creating request for provisioning: %w", err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return errors.Wrapf(err, "while executing request URL: %s", url)
+		return fmt.Errorf("while executing request URL: %s: %w", url, err)
 	}
 	defer c.warnOnError(resp.Body.Close)
 	if resp.StatusCode != expectedStatus {
-		return errors.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d", expectedStatus, resp.StatusCode)
+		return fmt.Errorf("got unexpected status code while calling Kyma Environment Broker: want: %d, got: %d",
+			expectedStatus, resp.StatusCode)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(responseBody)
 	if err != nil {
-		return errors.Wrapf(err, "while decoding body")
+		return fmt.Errorf("while decoding body: %w", err)
 	}
 
 	return nil

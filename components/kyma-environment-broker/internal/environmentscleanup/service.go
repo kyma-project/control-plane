@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -69,7 +68,7 @@ func (s *Service) PerformCleanup() error {
 
 	staleShoots, err := s.getStaleShoots(s.LabelSelector)
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while getting shoots to delete"))
+		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
 		return err
 	}
 
@@ -90,7 +89,7 @@ func (s *Service) getStaleShoots(labelSelector string) ([]unstructured.Unstructu
 	}
 	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
-		return []unstructured.Unstructured{}, errors.Wrap(err, "while listing Gardener shoots")
+		return []unstructured.Unstructured{}, fmt.Errorf("while listing Gardener shoots: %w", err)
 	}
 
 	var shoots []unstructured.Unstructured
@@ -113,15 +112,13 @@ func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
 		shoot := gardener.Shoot{st}
 		runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
 		if !ok {
-			err := errors.New(fmt.Sprintf("shoot %q has no runtime-id annotation", shoot.GetName()))
-			s.logger.Error(err)
+			s.logger.Error(fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName()))
 			continue
 		}
 
 		accountID, ok := shoot.GetLabels()[shootLabelAccountId]
 		if !ok {
-			err := errors.New(fmt.Sprintf("shoot %q has no account label", shoot.GetName()))
-			s.logger.Error(err)
+			s.logger.Error(fmt.Errorf("shoot %q has no account label", shoot.GetName()))
 			continue
 		}
 
@@ -137,8 +134,8 @@ func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
 func (s *Service) cleanUp(runtimesToDelete []runtime) error {
 	kebInstancesToDelete, err := s.getInstancesForRuntimes(runtimesToDelete)
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while getting instance IDs for Runtimes"))
-
+		err = fmt.Errorf("while getting instance IDs for Runtimes: %w", err)
+		s.logger.Error(err)
 		return err
 	}
 
@@ -221,7 +218,8 @@ func (s *Service) triggerRuntimeDeprovisioning(runtime runtime) error {
 		return nil
 	}
 	if err != nil {
-		s.logger.Error(errors.Wrap(err, "while deprovisioning runtime with Provisioner"))
+		err = fmt.Errorf("while deprovisioning runtime with Provisioner: %w", err)
+		s.logger.Error(err)
 		return err
 	}
 
@@ -232,7 +230,8 @@ func (s *Service) triggerRuntimeDeprovisioning(runtime runtime) error {
 func (s *Service) triggerEnvironmentDeprovisioning(instance internal.Instance) error {
 	opID, err := s.brokerService.Deprovision(instance)
 	if err != nil {
-		s.logger.Error(errors.Wrapf(err, "while triggering deprovisioning for instance ID %q", instance.InstanceID))
+		err = fmt.Errorf("while triggering deprovisioning for instance ID %q: %w", instance.InstanceID, err)
+		s.logger.Error(err)
 		return err
 	}
 

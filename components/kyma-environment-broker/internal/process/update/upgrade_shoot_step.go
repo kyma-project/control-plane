@@ -1,6 +1,7 @@
 package update
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -8,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -98,7 +98,7 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.Operation)
 	}
 	fullInput, err := operation.InputCreator.CreateUpgradeShootInput()
 	if err != nil {
-		return fullInput, errors.Wrap(err, "while building upgradeShootInput for provisioner")
+		return fullInput, fmt.Errorf("while building upgradeShootInput for provisioner: %w", err)
 	}
 
 	// modify configuration

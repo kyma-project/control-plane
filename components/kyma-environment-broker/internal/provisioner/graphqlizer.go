@@ -14,7 +14,6 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 // Graphqlizer is responsible for converting Go objects to input arguments in graphql format
@@ -376,13 +375,13 @@ func (g *Graphqlizer) genericToGraphQL(obj interface{}, tmpl string) (string, er
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)
 	if err != nil {
-		return "", errors.Wrapf(err, "while parsing template")
+		return "", fmt.Errorf("while parsing template: %w", err)
 	}
 
 	var b bytes.Buffer
 
 	if err := t.Execute(&b, obj); err != nil {
-		return "", errors.Wrap(err, "while executing template")
+		return "", fmt.Errorf("while executing template: %w", err)
 	}
 	return b.String(), nil
 }

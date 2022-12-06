@@ -1,10 +1,9 @@
 package process
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -43,7 +42,7 @@ func TestUpgradeClusterOperationManager_OperationFailed(t *testing.T) {
 	require.NoError(t, err)
 
 	errMsg := "task failed miserably"
-	errOut := errors.New("error occurred")
+	errOut := fmt.Errorf("error occurred")
 
 	// when
 	op, when, err := opManager.OperationFailed(op, errMsg, errOut, logrus.New())
@@ -71,7 +70,7 @@ func TestUpgradeClusterOperationManager_RetryOperation(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := "task failed"
-	errOut := errors.New("error occurred")
+	errOut := fmt.Errorf("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)

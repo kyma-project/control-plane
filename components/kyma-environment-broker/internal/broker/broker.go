@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -8,7 +9,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -48,14 +48,14 @@ type ServicesConfig map[string]Service
 func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
 	yamlFile, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with managed components list")
+		return nil, fmt.Errorf("while reading YAML file with managed components list: %w", err)
 	}
 	var servicesConfig struct {
 		Services ServicesConfig `yaml:"services"`
 	}
 	err = yaml.Unmarshal(yamlFile, &servicesConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling YAML file with managed components list")
+		return nil, fmt.Errorf("while unmarshaling YAML file with managed components list: %w", err)
 	}
 	return servicesConfig.Services, nil
 }
@@ -63,7 +63,7 @@ func NewServicesConfigFromFile(path string) (ServicesConfig, error) {
 func (s ServicesConfig) DefaultPlansConfig() (PlansConfig, error) {
 	cfg, ok := s[KymaServiceName]
 	if !ok {
-		return nil, errors.Errorf("while getting data about %s plans", KymaServiceName)
+		return nil, fmt.Errorf("while getting data about %s plans", KymaServiceName)
 	}
 	return cfg.Plans, nil
 }
@@ -102,7 +102,7 @@ func (m *EnablePlans) Unmarshal(in string) error {
 	plans := strings.Split(in, ",")
 	for _, name := range plans {
 		if _, exists := PlanIDsMapping[name]; !exists {
-			return errors.Errorf("unrecognized %v plan name ", name)
+			return fmt.Errorf("unrecognized %v plan name", name)
 		}
 	}
 

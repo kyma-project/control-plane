@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -43,7 +41,7 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersi
 	{
 		componentsOverrides, globalOverrides, err := ro.collectFromSecrets()
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot collect overrides from secrets: %w", err)
 		}
 
 		appendOverrides(input, componentsOverrides, globalOverrides)
@@ -52,7 +50,7 @@ func (ro *runtimeOverrides) Append(input InputAppender, planName, overridesVersi
 	{
 		componentsOverrides, globalOverrides, err := ro.collectFromConfigMaps(planName, overridesVersion)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot collect overrides from config maps: %w", err)
 		}
 
 		if len(globalOverrides) == 0 {
@@ -73,8 +71,7 @@ func (ro *runtimeOverrides) collectFromSecrets() (map[string][]*gqlschema.Config
 	listOpts := secretListOptions()
 
 	if err := ro.k8sClient.List(ro.ctx, secrets, listOpts...); err != nil {
-		errMsg := fmt.Sprintf("cannot fetch list of secrets: %s", err)
-		return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
+		return componentsOverrides, globalOverrides, fmt.Errorf("cannot fetch list of secrets: %w", err)
 	}
 
 	for _, secret := range secrets.Items {
@@ -107,8 +104,7 @@ func (ro *runtimeOverrides) collectFromConfigMaps(planName, overridesVersion str
 	listOpts := configMapListOptions(planName, overridesVersion)
 
 	if err := ro.k8sClient.List(ro.ctx, configMaps, listOpts...); err != nil {
-		errMsg := fmt.Sprintf("cannot fetch list of config maps: %s", err)
-		return componentsOverrides, globalOverrides, errors.Wrap(err, errMsg)
+		return componentsOverrides, globalOverrides, fmt.Errorf("cannot fetch list of config maps: %w", err)
 	}
 
 	for _, cm := range configMaps.Items {

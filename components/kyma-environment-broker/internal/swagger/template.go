@@ -1,10 +1,9 @@
 package swagger
 
 import (
+	"fmt"
 	"os"
 	"text/template"
-
-	"github.com/pkg/errors"
 )
 
 type SchemaProvider interface {
@@ -30,17 +29,18 @@ func (t *Template) Execute() error {
 
 	schema, err := template.ParseFiles(templateSchemaPath)
 	if err != nil {
-		return errors.Wrap(err, "while parsing files")
+		return fmt.Errorf("while parsing files: %w", err)
 	}
 	output, err := os.OpenFile(outputSchemaPath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
-		return errors.Wrap(err, "while opening a file")
+		return fmt.Errorf("while opening file: %w", err)
 	}
+
 	defer output.Close()
 
 	err = schema.Execute(output, t.Templates)
 	if err != nil {
-		return errors.Wrap(err, "while executing template")
+		return fmt.Errorf("while executing template: %w", err)
 	}
 	return nil
 }

@@ -1,7 +1,6 @@
 package update
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -115,7 +114,7 @@ func (s *InitialisationStep) Run(operation internal.Operation, log logrus.FieldL
 func (s *InitialisationStep) getRuntimeIdFromProvisioningOp(operation *internal.Operation) error {
 	provOp, err := s.operationStorage.GetProvisioningOperationByInstanceID(operation.InstanceID)
 	if err != nil {
-		return errors.New("cannot get last provisioning operation for runtime id")
+		return fmt.Errorf("cannot get last provisioning operation for runtime id")
 	}
 	operation.RuntimeID = provOp.RuntimeID
 	return nil

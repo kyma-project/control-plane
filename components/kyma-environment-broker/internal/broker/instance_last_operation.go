@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -62,7 +61,7 @@ func (b *LastOperationEndpoint) LastOperation(ctx context.Context, instanceID st
 	}
 
 	if operation.InstanceID != instanceID {
-		err := errors.Errorf("operation exists, but instanceID is invalid")
+		err := fmt.Errorf("operation exists, but instanceID is invalid")
 		logger.Errorf("%s", err.Error())
 		return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, err.Error())
 	}

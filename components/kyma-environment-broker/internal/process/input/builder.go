@@ -9,7 +9,6 @@ import (
 	cloudProvider "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provider"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 //go:generate mockery --name=ComponentListProvider --output=automock --outpkg=automock --case=underscore
@@ -152,36 +151,36 @@ func (f *InputBuilderFactory) getHyperscalerProviderForPlanID(planID string, pla
 			ControlPlaneFailureTolerance: f.config.ControlPlaneFailureTolerance,
 		}
 	default:
-		return nil, errors.Errorf("case with plan %s is not supported", planID)
+		return nil, fmt.Errorf("case with plan %s is not supported", planID)
 	}
 	return provider, nil
 }
 
 func (f *InputBuilderFactory) CreateProvisionInput(provisioningParameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(provisioningParameters.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", provisioningParameters.PlanID)
+		return nil, fmt.Errorf("plan %s in not supported", provisioningParameters.PlanID)
 	}
 
 	planName := broker.PlanNamesMapping[provisioningParameters.PlanID]
 
 	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
+		return nil, fmt.Errorf("while getting configuration for given version and plan: %w", err)
 	}
 
 	provider, err := f.getHyperscalerProviderForPlanID(provisioningParameters.PlanID, provisioningParameters.PlatformProvider, provisioningParameters.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during creating provision input")
+		return nil, fmt.Errorf("during creating provision input: %w", err)
 	}
 
 	initInput, err := f.initProvisionRuntimeInput(provider, version, cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initializing ProvisionRuntimeInput")
+		return nil, fmt.Errorf("while initializing ProvisionRuntimeInput: %w", err)
 	}
 
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(provisioningParameters.PlanID)
 	if err != nil {
-		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
+		return nil, fmt.Errorf("while getting disabled components for plan %s: %w", provisioningParameters.PlanID, err)
 	}
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
@@ -229,7 +228,7 @@ func (f *InputBuilderFactory) forTrialPlan(provider *internal.CloudProvider) Hyp
 func (f *InputBuilderFactory) provideComponentList(version internal.RuntimeVersionData, config *internal.ConfigForPlan) (internal.ComponentConfigurationInputList, error) {
 	allComponents, err := f.componentsProvider.AllComponents(version, config)
 	if err != nil {
-		return internal.ComponentConfigurationInputList{}, errors.Wrapf(err, "while fetching components for %s Kyma version", version.Version)
+		return internal.ComponentConfigurationInputList{}, fmt.Errorf("while fetching components for %s Kyma version: %w", version.Version, err)
 	}
 
 	return mapToGQLComponentConfigurationInput(allComponents), nil
@@ -275,34 +274,34 @@ func (f *InputBuilderFactory) initProvisionRuntimeInput(provider HyperscalerInpu
 
 func (f *InputBuilderFactory) CreateUpgradeInput(provisioningParameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(provisioningParameters.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", provisioningParameters.PlanID)
+		return nil, fmt.Errorf("plan %s in not supported", provisioningParameters.PlanID)
 	}
 
 	planName := broker.PlanNamesMapping[provisioningParameters.PlanID]
 
 	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
+		return nil, fmt.Errorf("while getting configuration for given version and plan: %w", err)
 	}
 
 	provider, err := f.getHyperscalerProviderForPlanID(provisioningParameters.PlanID, provisioningParameters.PlatformProvider, provisioningParameters.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during createing provision input")
+		return nil, fmt.Errorf("during createing provision input: %w", err)
 	}
 
 	upgradeKymaInput, err := f.initUpgradeRuntimeInput(version, provider, cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initializing UpgradeRuntimeInput")
+		return nil, fmt.Errorf("while initializing UpgradeRuntimeInput: %w", err)
 	}
 
 	kymaInput, err := f.initProvisionRuntimeInput(provider, version, cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initializing RuntimeInput")
+		return nil, fmt.Errorf("while initializing RuntimeInput: %w", err)
 	}
 
 	disabledForPlan, err := f.disabledComponentsProvider.DisabledComponentsPerPlan(provisioningParameters.PlanID)
 	if err != nil {
-		return nil, errors.Wrap(err, "every supported plan should be specified in the disabled components map")
+		return nil, fmt.Errorf("every supported plan should be specified in the disabled components map: %w", err)
 	}
 	disabledComponents := mergeMaps(disabledForPlan, f.disabledComponentsProvider.DisabledForAll())
 
@@ -323,7 +322,7 @@ func (f *InputBuilderFactory) CreateUpgradeInput(provisioningParameters internal
 
 func (f *InputBuilderFactory) initUpgradeRuntimeInput(version internal.RuntimeVersionData, provider HyperscalerInputProvider, config *internal.ConfigForPlan) (gqlschema.UpgradeRuntimeInput, error) {
 	if version.Version == "" {
-		return gqlschema.UpgradeRuntimeInput{}, errors.New("desired runtime version cannot be empty")
+		return gqlschema.UpgradeRuntimeInput{}, fmt.Errorf("desired runtime version cannot be empty")
 	}
 
 	kymaProfile := provider.Profile()
@@ -370,19 +369,19 @@ func mergeMaps(maps ...map[string]struct{}) map[string]struct{} {
 
 func (f *InputBuilderFactory) CreateUpgradeShootInput(provisioningParameters internal.ProvisioningParameters, version internal.RuntimeVersionData) (internal.ProvisionerInputCreator, error) {
 	if !f.IsPlanSupport(provisioningParameters.PlanID) {
-		return nil, errors.Errorf("plan %s in not supported", provisioningParameters.PlanID)
+		return nil, fmt.Errorf("plan %s in not supported", provisioningParameters.PlanID)
 	}
 
 	planName := broker.PlanNamesMapping[provisioningParameters.PlanID]
 
 	cfg, err := f.configProvider.ProvideForGivenVersionAndPlan(version.Version, planName)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting configuration for given version and plan")
+		return nil, fmt.Errorf("while getting configuration for given version and plan: %w", err)
 	}
 
 	provider, err := f.getHyperscalerProviderForPlanID(provisioningParameters.PlanID, provisioningParameters.PlatformProvider, provisioningParameters.Parameters.Provider)
 	if err != nil {
-		return nil, errors.Wrap(err, "during createing provision input")
+		return nil, fmt.Errorf("during createing provision input: %w", err)
 	}
 
 	input := f.initUpgradeShootInput(provider)

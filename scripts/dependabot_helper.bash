@@ -33,14 +33,19 @@ for pr in "${prs[@]}"; do
                     break
                     ;;
                 *)
+                    state=$(gh pr view ${pr} --json state | jq --raw-output '.state')
+                    if [[ "$state" == CLOSED ]]; then
+                        echo "pr $pr has been closed, no longer required"
+                        break
+                    fi
                     echo "pr ${pr} has status ${mergeable}, waiting"
                     sleep 10
                     ;;
             esac
         done
         pwd
-        echo "$DIR/tools/cli"
-        cd "$DIR/tools/cli"
+        echo "$DIR/../tools/cli"
+        cd "$DIR/../tools/cli"
         go mod tidy
         if [[ -n "$(git diff)" ]]; then
             git commit -am "KCP CLI go mod tidy"

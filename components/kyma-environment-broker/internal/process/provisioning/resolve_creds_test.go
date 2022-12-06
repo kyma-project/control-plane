@@ -1,7 +1,7 @@
 package provisioning
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -112,7 +112,7 @@ func TestResolveCredentialsStepRetry_Run(t *testing.T) {
 	assert.NoError(t, err)
 
 	accountProviderMock := &hyperscalerMocks.AccountProvider{}
-	accountProviderMock.On("GardenerSecretName", hyperscaler.GCP, statusGlobalAccountID).Return("", errors.New("Failed!"))
+	accountProviderMock.On("GardenerSecretName", hyperscaler.GCP, statusGlobalAccountID).Return("", fmt.Errorf("Failed!"))
 
 	step := NewResolveCredentialsStep(memoryStorage.Operations(), accountProviderMock)
 

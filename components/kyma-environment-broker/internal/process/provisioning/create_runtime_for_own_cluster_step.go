@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -71,14 +70,14 @@ func (s *CreateRuntimeForOwnCluster) Run(operation internal.Operation, log logru
 func (s *CreateRuntimeForOwnCluster) updateInstance(id, runtimeID string) error {
 	instance, err := s.instanceStorage.GetByID(id)
 	if err != nil {
-		return errors.Wrap(err, "while getting instance")
+		return fmt.Errorf("while getting instance: %w", err)
 	}
 	instance.RuntimeID = runtimeID
 	instance.Provider = "custom"
 	instance.ProviderRegion = "custom"
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
-		return errors.Wrap(err, "while updating instance")
+		return fmt.Errorf("while updating instance: %w", err)
 	}
 
 	return nil

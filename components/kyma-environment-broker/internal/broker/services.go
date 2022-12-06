@@ -2,10 +2,9 @@ package broker
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
-
-	"github.com/pkg/errors"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -47,7 +46,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 	// we scope to the kymaruntime service only
 	class, ok := b.servicesConfig[KymaServiceName]
 	if !ok {
-		return nil, errors.Errorf("while getting %s class data", KymaServiceName)
+		return nil, fmt.Errorf("while getting %s class data", KymaServiceName)
 	}
 
 	provider, ok := middleware.ProviderFromContext(ctx)

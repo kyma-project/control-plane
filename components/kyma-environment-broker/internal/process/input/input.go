@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -251,7 +250,7 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 		},
 	} {
 		if err := step.execute(); err != nil {
-			return gqlschema.ProvisionRuntimeInput{}, errors.Wrapf(err, "while %s", step.name)
+			return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("while %s: %w", step.name, err)
 		}
 	}
 
@@ -289,7 +288,7 @@ func (r *RuntimeInput) CreateUpgradeRuntimeInput() (gqlschema.UpgradeRuntimeInpu
 		},
 	} {
 		if err := step.execute(); err != nil {
-			return gqlschema.UpgradeRuntimeInput{}, errors.Wrapf(err, "while %s", step.name)
+			return gqlschema.UpgradeRuntimeInput{}, fmt.Errorf("while %s: %w", step.name, err)
 		}
 	}
 
@@ -316,7 +315,7 @@ func (r *RuntimeInput) CreateUpgradeShootInput() (gqlschema.UpgradeShootInput, e
 		},
 	} {
 		if err := step.execute(); err != nil {
-			return gqlschema.UpgradeShootInput{}, errors.Wrapf(err, "while %s", step.name)
+			return gqlschema.UpgradeShootInput{}, fmt.Errorf("while %s: %w", step.name, err)
 		}
 	}
 	return r.upgradeShootInput, nil
@@ -333,16 +332,16 @@ func (r *RuntimeInput) CreateClusterConfiguration() (reconcilerApi.Cluster, erro
 	}
 
 	if r.runtimeID == "" {
-		return reconcilerApi.Cluster{}, errors.New("missing runtime ID")
+		return reconcilerApi.Cluster{}, fmt.Errorf("missing runtime ID")
 	}
 	if r.instanceID == "" {
-		return reconcilerApi.Cluster{}, errors.New("missing instance ID")
+		return reconcilerApi.Cluster{}, fmt.Errorf("missing instance ID")
 	}
 	if r.shootName == nil {
-		return reconcilerApi.Cluster{}, errors.New("missing shoot name")
+		return reconcilerApi.Cluster{}, fmt.Errorf("missing shoot name")
 	}
 	if r.kubeconfig == "" {
-		return reconcilerApi.Cluster{}, errors.New("missing kubeconfig")
+		return reconcilerApi.Cluster{}, fmt.Errorf("missing kubeconfig")
 	}
 
 	var componentConfigs []reconcilerApi.Component
@@ -510,7 +509,7 @@ func (r *RuntimeInput) resolveOptionalComponentsForProvisionRuntime() error {
 
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.provisionRuntimeInput.KymaConfig.Components, toDisable...)
 	if err != nil {
-		return errors.Wrapf(err, "while disabling components %v", toDisable)
+		return fmt.Errorf("while disabling components %v: %w", toDisable, err)
 	}
 
 	r.provisionRuntimeInput.KymaConfig.Components = filterOut
@@ -531,7 +530,7 @@ func (r *RuntimeInput) resolveOptionalComponentsForUpgradeRuntime() error {
 
 	filterOut, err := r.optionalComponentsService.ExecuteDisablers(r.upgradeRuntimeInput.KymaConfig.Components, toDisable...)
 	if err != nil {
-		return errors.Wrapf(err, "while disabling components %v", toDisable)
+		return fmt.Errorf("while disabling components %v: %w", toDisable, err)
 	}
 
 	r.upgradeRuntimeInput.KymaConfig.Components = filterOut
@@ -614,7 +613,7 @@ func (r *RuntimeInput) adjustRuntimeName() error {
 
 	reg, err := regexp.Compile("[^a-zA-Z0-9\\-\\.]+")
 	if err != nil {
-		return errors.Wrap(err, "while compiling regexp")
+		return fmt.Errorf("while compiling regexp: %w", err)
 	}
 
 	name := strings.ToLower(reg.ReplaceAllString(r.provisionRuntimeInput.RuntimeInput.Name, ""))

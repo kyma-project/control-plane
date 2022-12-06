@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/pkg/errors"
-
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 )
@@ -38,10 +36,10 @@ func (om *OperationManager) OperationFailed(operation internal.Operation, descri
 	var retErr error
 	if err == nil {
 		// no exact err passed in
-		retErr = errors.New(description)
+		retErr = fmt.Errorf(description)
 	} else {
 		// keep the original err object for error categorizer
-		retErr = errors.Wrap(err, description)
+		retErr = fmt.Errorf("%s: %w", description, err)
 	}
 
 	return op, 0, retErr
