@@ -302,6 +302,8 @@ type InstanceDetails struct {
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 
 	KymaResourceNamespace string `json:"kyma_resource_namespace"`
+
+	EuAccess bool `json:"eu_access"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -479,6 +481,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 				Kubeconfig:   parameters.Parameters.Kubeconfig,
+				EuAccess:     IsEURestrictedAccess(parameters.PlatformRegion),
 			},
 			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},

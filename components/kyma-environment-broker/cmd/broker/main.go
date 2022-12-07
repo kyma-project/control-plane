@@ -667,7 +667,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-			// Preview plan does not calls Reconciler so it does not need overrides
+			// Preview plan does not call Reconciler so it does not need overrides
 			condition: skipForPreviewPlan,
 		},
 		{
