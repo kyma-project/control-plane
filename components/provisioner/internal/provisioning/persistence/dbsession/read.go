@@ -356,7 +356,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
 			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
 			"allow_privileged_containers", "exposure_class_name", "provider_specific_config",
-			"shoot_networking_filter_disabled", "control_plane_failure_tolerance").
+			"shoot_networking_filter_disabled", "control_plane_failure_tolerance", "eu_access").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").
 		Where(dbr.Eq("cluster.id", runtimeID)).
