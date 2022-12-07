@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.25.1
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-00010101000000-000000000000
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221207114217-a9148b15ff4d
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
@@ -99,7 +99,6 @@ require (
 replace (
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
 	github.com/kyma-project/control-plane/components/kubeconfig-service => ../../components/kubeconfig-service
-	github.com/kyma-project/control-plane/components/kyma-environment-broker => ../../components/kyma-environment-broker
 	github.com/kyma-project/control-plane/components/provisioner => ../../components/provisioner
 	github.com/kyma-project/control-plane/components/reconciler => ../../components/reconciler
 	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b // CVE-2022-27664
