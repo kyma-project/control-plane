@@ -234,11 +234,17 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			lastOp := *eventList[0].OperationID
 			buffer := strings.Builder{}
 			eventTabWriter := newTabWriter(&buffer)
-			printOperation(eventTabWriter, lastOp)
+			rt := obj.(runtime.RuntimeDTO)
+			opStatus := rt.Status.State
+			opType := rt.LastOperation().Type
+			printOperation(eventTabWriter, lastOp, opType, opStatus)
 			for _, e := range eventList[:len(eventList)-1] {
 				if lastOp != *e.OperationID {
 					lastOp = *e.OperationID
-					printOperation(eventTabWriter, lastOp)
+					rt := obj.(runtime.RuntimeDTO)
+					opStatus := rt.Status.State
+					opType := rt.LastOperation().Type
+					printOperation(eventTabWriter, lastOp, opType, opStatus)
 				}
 				if err := t.printEvent("˫", eventTabWriter, e); err != nil {
 					return err
@@ -246,7 +252,10 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			}
 			if lastOp != *eventList[len(eventList)-1].OperationID {
 				lastOp = *eventList[len(eventList)-1].OperationID
-				printOperation(eventTabWriter, lastOp)
+				rt := obj.(runtime.RuntimeDTO)
+				opStatus := rt.Status.State
+				opType := rt.LastOperation().Type
+				printOperation(eventTabWriter, lastOp, opType, opStatus)
 			}
 			if err := t.printEvent("˪", eventTabWriter, eventList[len(eventList)-1]); err != nil {
 				return err
@@ -276,6 +285,6 @@ func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e event)
 	return nil
 }
 
-func printOperation(w io.Writer, op string) {
-	fmt.Fprintf(w, " ˫operation %v\n", op)
+func printOperation(w io.Writer, op string, opType runtime.OperationType, opStatus runtime.State) {
+	fmt.Fprintf(w, " ˫%v operation %v: %v\n", opType, op, opStatus)
 }
