@@ -66,6 +66,29 @@ import (
 
 const fixedGardenerNamespace = "garden-test"
 
+const (
+	btpOperatorGroup           = "services.cloud.sap.com"
+	btpOperatorApiVer          = "v1"
+	btpOperatorServiceInstance = "ServiceInstance"
+	btpOperatorServiceBinding  = "ServiceBinding"
+	instanceName               = "my-service-instance"
+	bindingName                = "my-binding"
+	kymaNamespace              = "kyma-system"
+)
+
+var (
+	serviceBindingGvk = schema.GroupVersionKind{
+		Group:   btpOperatorGroup,
+		Version: btpOperatorApiVer,
+		Kind:    btpOperatorServiceBinding,
+	}
+	serviceInstanceGvk = schema.GroupVersionKind{
+		Group:   btpOperatorGroup,
+		Version: btpOperatorApiVer,
+		Kind:    btpOperatorServiceInstance,
+	}
+)
+
 // BrokerSuiteTest is a helper which allows to write simple tests of any KEB processes (provisioning, deprovisioning, update).
 // The starting point of a test could be an HTTP call to Broker API.
 type BrokerSuiteTest struct {
@@ -84,6 +107,7 @@ type BrokerSuiteTest struct {
 	componentProvider componentProviderDecorated
 
 	k8sKcp client.Client
+	k8sSKR client.Client
 }
 
 type componentProviderDecorated struct {
@@ -211,6 +235,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		inputBuilderFactory: inputFactory,
 		componentProvider:   decoratedComponentListProvider,
 		k8sKcp:              cli,
+		k8sSKR:              fakeK8sSKRClient,
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -779,7 +804,7 @@ func (s *BrokerSuiteTest) DecodeOrchestrationID(resp *http.Response) string {
 	return upgradeResponse.OrchestrationID
 }
 
-func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationFromOrchestration(resp *http.Response) (*orchestration.OperationResponse, error) {
 	m, err := ioutil.ReadAll(resp.Body)
 	s.Log(string(m))
 	require.NoError(s.t, err)
@@ -788,10 +813,19 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 	require.NoError(s.t, err)
 
 	if operationsList.TotalCount == 0 || len(operationsList.Data) == 0 {
-		return "", errors.New("no operations found for given orchestration")
+		return nil, errors.New("no operations found for given orchestration")
 	}
 
-	return operationsList.Data[len(operationsList.Data)-1].OperationID, nil
+	return &operationsList.Data[len(operationsList.Data)-1], nil
+}
+
+func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp *http.Response) (string, error) {
+	operation, err := s.DecodeLastUpgradeKymaOperationFromOrchestration(resp)
+	if err == nil {
+		return operation.OperationID, err
+	} else {
+		return "", err
+	}
 }
 
 func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
@@ -1058,6 +1092,15 @@ func (s *BrokerSuiteTest) processProvisioningByOperationID(opID string) {
 	s.FinishProvisioningOperationByProvisioner(opID, gqlschema.OperationStateSucceeded)
 	_, err := s.gardenerClient.Resource(gardener.ShootResource).Namespace(fixedGardenerNamespace).Create(context.Background(), s.fixGardenerShootForOperationID(opID), v1.CreateOptions{})
 	require.NoError(s.t, err)
+
+	// provisioner finishes the operation
+	s.WaitForOperationState(opID, domain.Succeeded)
+}
+
+func (s *BrokerSuiteTest) processUpdatingByOperationID(opID string) {
+	s.WaitForProvisioningState(opID, domain.InProgress)
+
+	s.FinishUpdatingOperationByProvisioner(opID)
 
 	// provisioner finishes the operation
 	s.WaitForOperationState(opID, domain.Succeeded)
@@ -1338,6 +1381,33 @@ func (s *BrokerSuiteTest) AssertSecretWithKubeconfigExists(opId string) {
 
 	assert.NoError(s.t, err)
 
+}
+
+func (s *BrokerSuiteTest) fixServiceBindingAndInstances(t *testing.T) {
+	createResource(t, serviceInstanceGvk, s.k8sSKR, kymaNamespace, instanceName)
+	createResource(t, serviceBindingGvk, s.k8sSKR, kymaNamespace, bindingName)
+}
+
+func (s *BrokerSuiteTest) assertServiceBindingAndInstancesAreRemoved(t *testing.T) {
+	assertResourcesAreRemoved(t, serviceInstanceGvk, s.k8sSKR)
+	assertResourcesAreRemoved(t, serviceBindingGvk, s.k8sSKR)
+}
+
+func assertResourcesAreRemoved(t *testing.T, gvk schema.GroupVersionKind, k8sClient client.Client) {
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(gvk)
+	err := k8sClient.List(context.TODO(), list)
+	assert.NoError(t, err)
+	assert.Zero(t, len(list.Items))
+}
+
+func createResource(t *testing.T, gvk schema.GroupVersionKind, k8sClient client.Client, namespace string, name string) {
+	object := &unstructured.Unstructured{}
+	object.SetGroupVersionKind(gvk)
+	object.SetNamespace(namespace)
+	object.SetName(name)
+	err := k8sClient.Create(context.TODO(), object)
+	assert.NoError(t, err)
 }
 
 func mockBTPOperatorClusterID() {

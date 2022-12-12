@@ -10,8 +10,6 @@ import (
 	"strings"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -89,12 +87,12 @@ func (c *Client) GetCompany() (_ *Company, err error) {
 		}
 	}()
 	if err != nil {
-		return company, errors.Wrap(err, "while making request to ias platform about company")
+		return company, fmt.Errorf("while making request to ias platform about company: %w", err)
 	}
 
 	err = json.NewDecoder(response.Body).Decode(company)
 	if err != nil {
-		return company, errors.Wrap(err, "while decoding response body with company data")
+		return company, fmt.Errorf("while decoding response body with company data: %w", err)
 	}
 
 	return company, nil
@@ -116,7 +114,7 @@ func (c *Client) CreateServiceProvider(serviceName, companyID string) (err error
 		}
 	}()
 	if err != nil {
-		return errors.Wrap(err, "while making request with ServiceProvider creation")
+		return fmt.Errorf("while making request with ServiceProvider creation: %w", err)
 	}
 
 	return nil
@@ -135,7 +133,7 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrap(err, "while making request to delete ServiceProvider")
+		return fmt.Errorf("while making request to delete ServiceProvider: %w", err)
 	}
 
 	return nil
@@ -144,7 +142,7 @@ func (c *Client) DeleteServiceProvider(spID string) (err error) {
 func (c *Client) DeleteSecret(payload SecretsRef) (err error) {
 	request, err := c.jsonRequest(PathDeleteSecret, http.MethodDelete, payload)
 	if err != nil {
-		return errors.Wrapf(err, "while creating json request for path %s", PathDeleteSecret)
+		return fmt.Errorf("while creating json request for path %s: %w", PathDeleteSecret, err)
 	}
 	request.Delete = true
 
@@ -155,7 +153,7 @@ func (c *Client) DeleteSecret(payload SecretsRef) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrap(err, "while making request to delete ServiceProvider secrets")
+		return fmt.Errorf("while making request to delete ServiceProvider secrets: %w", err)
 	}
 
 	return nil
@@ -165,7 +163,7 @@ func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_
 	secretResponse := &ServiceProviderSecret{}
 	request, err := c.jsonRequest(PathServiceProviders, http.MethodPut, secretCfg)
 	if err != nil {
-		return secretResponse, errors.Wrap(err, "while creating request for secret provider")
+		return secretResponse, fmt.Errorf("while creating request for secret provider: %w", err)
 	}
 
 	response, err := c.do(request)
@@ -175,12 +173,12 @@ func (c *Client) GenerateServiceProviderSecret(secretCfg SecretConfiguration) (_
 		}
 	}()
 	if err != nil {
-		return secretResponse, errors.Wrap(err, "while creating ServiceProvider secret")
+		return secretResponse, fmt.Errorf("while making request to generate ServiceProvider secret: %w", err)
 	}
 
 	err = json.NewDecoder(response.Body).Decode(secretResponse)
 	if err != nil {
-		return secretResponse, errors.Wrap(err, "while decoding response with secret provider")
+		return secretResponse, fmt.Errorf("while decoding response with secret provider: %w", err)
 	}
 
 	return secretResponse, nil
@@ -197,7 +195,7 @@ func (c *Client) serviceProviderPath(spID string) string {
 func (c *Client) call(path string, payload interface{}) (err error) {
 	request, err := c.jsonRequest(path, http.MethodPut, payload)
 	if err != nil {
-		return errors.Wrapf(err, "while creating json request for path %s", path)
+		return fmt.Errorf("while creating json request for path %s: %w", path, err)
 	}
 
 	response, err := c.do(request)
@@ -207,7 +205,7 @@ func (c *Client) call(path string, payload interface{}) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrapf(err, "while making request for path %s", path)
+		return fmt.Errorf("while making request for path %s: %w", path, err)
 	}
 
 	return nil
@@ -261,7 +259,7 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 	if response.StatusCode >= http.StatusInternalServerError {
 		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))
 	}
-	return response, errors.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
+	return response, fmt.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

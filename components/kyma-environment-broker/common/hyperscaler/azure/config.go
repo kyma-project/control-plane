@@ -1,8 +1,9 @@
 package azure
 
 import (
+	"fmt"
+
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
 )
 
 type Config struct {
@@ -37,7 +38,7 @@ func (c *Config) Environment() (*azure.Environment, error) {
 
 	env, err := azure.EnvironmentFromName(c.cloudName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating azure environment - invalid cloud name [%s]", c.cloudName)
+		return nil, fmt.Errorf("while creating azure environment - invalid cloud name [%s]: %w", c.cloudName, err)
 	}
 	c.environment = &env
 

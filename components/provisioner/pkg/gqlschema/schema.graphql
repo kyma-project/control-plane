@@ -34,6 +34,7 @@ type GardenerConfig {
     exposureClassName: String
     shootNetworkingFilterDisabled: Boolean
     controlPlaneFailureTolerance: String
+    euAccess: Boolean
 }
 
 union ProviderSpecificConfig = GCPProviderConfig | AzureProviderConfig | AWSProviderConfig | OpenStackProviderConfig
@@ -236,6 +237,7 @@ input GardenerConfigInput {
     exposureClassName: String                       # Name of the ExposureClass
     shootNetworkingFilterDisabled: Boolean          # Indicator for the Shoot Networking Filter extension being disabled. If 'nil' provided, 'true' will be used as a default value
     controlPlaneFailureTolerance: String            # Shoot control plane HA failure tolerance level to configure. Valid values: 'nil' (left empty, no HA), "node", "zone"
+    euAccess: Boolean                               # EU Access indicated whether to annotate the Shoot with the 'support.gardener.cloud/eu-access-for-cluster-nodes' annotation
 }
 
 input OIDCConfigInput {

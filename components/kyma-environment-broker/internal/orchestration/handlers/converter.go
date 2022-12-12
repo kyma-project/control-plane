@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 type Converter struct{}
@@ -29,7 +30,7 @@ func (c *Converter) OrchestrationListToDTO(orchestrations []internal.Orchestrati
 	for _, o := range orchestrations {
 		status, err := c.OrchestrationToDTO(&o, nil)
 		if err != nil {
-			return orchestration.StatusResponseList{}, errors.Wrap(err, "while converting orchestration to DTO")
+			return orchestration.StatusResponseList{}, fmt.Errorf("while converting orchestration to DTO: %w", err)
 		}
 		responses = append(responses, *status)
 	}
@@ -65,7 +66,7 @@ func (c *Converter) UpgradeKymaOperationListToDTO(ops []internal.UpgradeKymaOper
 	for _, op := range ops {
 		o, err := c.UpgradeKymaOperationToDTO(op)
 		if err != nil {
-			return orchestration.OperationResponseList{}, errors.Wrap(err, "while converting operation to DTO")
+			return orchestration.OperationResponseList{}, fmt.Errorf("while converting operation to DTO: %w", err)
 		}
 		data = append(data, o)
 	}
@@ -80,7 +81,7 @@ func (c *Converter) UpgradeKymaOperationListToDTO(ops []internal.UpgradeKymaOper
 func (c *Converter) UpgradeKymaOperationToDetailDTO(op internal.UpgradeKymaOperation, kymaConfig *gqlschema.KymaConfigInput) (orchestration.OperationDetailResponse, error) {
 	resp, err := c.UpgradeKymaOperationToDTO(op)
 	if err != nil {
-		return orchestration.OperationDetailResponse{}, errors.Wrap(err, "while converting operation to DTO")
+		return orchestration.OperationDetailResponse{}, fmt.Errorf("while converting operation to DTO: %w", err)
 	}
 	return orchestration.OperationDetailResponse{
 		OperationResponse: resp,
@@ -112,7 +113,7 @@ func (c *Converter) UpgradeClusterOperationListToDTO(ops []internal.UpgradeClust
 	for _, op := range ops {
 		o, err := c.UpgradeClusterOperationToDTO(op)
 		if err != nil {
-			return orchestration.OperationResponseList{}, errors.Wrap(err, "while converting operation to DTO")
+			return orchestration.OperationResponseList{}, fmt.Errorf("while converting operation to DTO: %w", err)
 		}
 		data = append(data, o)
 	}
@@ -127,7 +128,7 @@ func (c *Converter) UpgradeClusterOperationListToDTO(ops []internal.UpgradeClust
 func (c *Converter) UpgradeClusterOperationToDetailDTO(op internal.UpgradeClusterOperation, clusterConfig *gqlschema.GardenerConfigInput) (orchestration.OperationDetailResponse, error) {
 	resp, err := c.UpgradeClusterOperationToDTO(op)
 	if err != nil {
-		return orchestration.OperationDetailResponse{}, errors.Wrap(err, "while converting operation to DTO")
+		return orchestration.OperationDetailResponse{}, fmt.Errorf("while converting operation to DTO: %w", err)
 	}
 	return orchestration.OperationDetailResponse{
 		OperationResponse: resp,

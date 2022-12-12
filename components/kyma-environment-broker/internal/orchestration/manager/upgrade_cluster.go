@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"time"
 
 	internalOrchestration "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/orchestration"
@@ -16,7 +17,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -106,14 +106,14 @@ func (u *upgradeClusterFactory) ResumeOperations(orchestrationID string) ([]orch
 func (u *upgradeClusterFactory) CancelOperations(orchestrationID string) error {
 	ops, _, _, err := u.operationStorage.ListUpgradeClusterOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Pending}})
 	if err != nil {
-		return errors.Wrap(err, "while listing upgrade cluster operations")
+		return fmt.Errorf("while listing upgrade cluster operations: %w", err)
 	}
 	for _, op := range ops {
 		op.State = orchestration.Canceled
 		op.Description = "Operation was canceled"
 		_, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
 		if err != nil {
-			return errors.Wrap(err, "while updating upgrade cluster operation")
+			return fmt.Errorf("while updating upgrade cluster operation: %w", err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func (u *upgradeClusterFactory) RetryOperations(retryOps []string) ([]orchestrat
 	for _, opId := range retryOps {
 		runtimeop, err := u.operationStorage.GetUpgradeClusterOperationByID(opId)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while geting (retrying) upgrade cluster operation %s in storage", opId)
+			return nil, fmt.Errorf("while geting (retrying) upgrade cluster operation %s in storage: %w", opId, err)
 
 		}
 		result = append(result, runtimeop.RuntimeOperation)
@@ -145,7 +145,7 @@ func (u *upgradeClusterFactory) updateRetryingOperation(op internal.UpgradeClust
 
 	opUpdated, err := u.operationStorage.UpdateUpgradeClusterOperation(op)
 	if err != nil {
-		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade cluster operation %s in storage", op.Operation.ID)
+		return orchestration.RuntimeOperation{}, fmt.Errorf("while updating (retrying) upgrade cluster operation %s in storage: %w", op.Operation.ID, err)
 	}
 
 	return opUpdated.RuntimeOperation, nil

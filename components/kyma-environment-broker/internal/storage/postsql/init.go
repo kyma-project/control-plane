@@ -7,8 +7,6 @@ import (
 
 	"github.com/gocraft/dbr"
 
-	"github.com/pkg/errors"
-
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
@@ -32,7 +30,7 @@ func InitializeDatabase(connectionURL string, retries int, log logrus.FieldLogge
 	initialized, err := CheckIfDatabaseInitialized(connection)
 	if err != nil {
 		closeDBConnection(connection, log)
-		return nil, errors.Wrap(err, "Failed to check if database is initialized")
+		return nil, fmt.Errorf("failed to check if database is initialized: %w", err)
 	}
 	if initialized {
 		log.Info("Database already initialized")
@@ -66,7 +64,7 @@ func CheckIfDatabaseInitialized(db *dbr.Connection) (bool, error) {
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, "Failed to check if schema initialized")
+		return false, fmt.Errorf("failed to check if database is initialized: %w", err)
 	}
 
 	return tableName == InstancesTableName, nil
@@ -82,7 +80,7 @@ func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Dur
 	for ; retryCount > 0; retryCount-- {
 		connection, err = dbr.Open("postgres", connString, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "Invalid connection string")
+			return nil, fmt.Errorf("invalid connection string: %w", err)
 		}
 
 		err = connection.Ping()
@@ -100,5 +98,5 @@ func WaitForDatabaseAccess(connString string, retryCount int, sleepTime time.Dur
 		time.Sleep(sleepTime)
 	}
 
-	return nil, errors.New("timeout waiting for database access")
+	return nil, fmt.Errorf("timeout waiting for database access")
 }

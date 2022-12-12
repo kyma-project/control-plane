@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,7 +44,7 @@ func (h *clusterHandler) createOrchestration(w http.ResponseWriter, r *http.Requ
 		err := json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
 			h.log.Errorf("while decoding request body: %v", err)
-			httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while decoding request body"))
+			httputil.WriteErrorResponse(w, http.StatusBadRequest, fmt.Errorf("while decoding request body: %w", err))
 			return
 		}
 	}
@@ -52,12 +53,25 @@ func (h *clusterHandler) createOrchestration(w http.ResponseWriter, r *http.Requ
 	err := validateTarget(params.Targets)
 	if err != nil {
 		h.log.Errorf("while validating target: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "while validating target"))
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, fmt.Errorf("while validating target: %w", err))
 		return
 	}
 
-	// defaults strategy if not specified to Parallel with Immediate schedule
-	defaultOrchestrationStrategy(&params.Strategy)
+	// validate deprecated parameteter `maintenanceWindow`
+	err = ValidateDeprecatedParameters(params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
+
+	// validate `schedule` field
+	err = ValidateScheduleParameter(&params)
+	if err != nil {
+		h.log.Errorf("found deprecated value: %v", err)
+		httputil.WriteErrorResponse(w, http.StatusBadRequest, errors.Wrapf(err, "found deprecated value"))
+		return
+	}
 
 	now := time.Now()
 	o := internal.Orchestration{
@@ -73,7 +87,7 @@ func (h *clusterHandler) createOrchestration(w http.ResponseWriter, r *http.Requ
 	err = h.orchestrations.Insert(o)
 	if err != nil {
 		h.log.Errorf("while inserting orchestration to storage: %v", err)
-		httputil.WriteErrorResponse(w, http.StatusInternalServerError, errors.Wrapf(err, "while inserting orchestration to storage"))
+		httputil.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("while inserting orchestration to storage: %w", err))
 		return
 	}
 

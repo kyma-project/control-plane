@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -61,7 +60,7 @@ func (p *ParallelOrchestrationStrategy) Execute(operations []orchestration.Runti
 
 	err := p.Insert(execID, operations, strategySpec)
 	if err != nil {
-		return execID, errors.Wrap(err, "while inserting operations to queue")
+		return execID, fmt.Errorf("while inserting operations to queue: %w", err)
 	}
 
 	// Create workers
@@ -208,8 +207,7 @@ func (p *ParallelOrchestrationStrategy) updateMaintenanceWindow(execID string, o
 	var duration time.Duration
 	id := op.ID
 
-	switch strategy.Schedule {
-	case orchestration.MaintenanceWindow:
+	if strategy.MaintenanceWindow {
 		// if time window for this operation has finished, we requeue and reprocess on next time window
 		if !op.MaintenanceWindowEnd.IsZero() && op.MaintenanceWindowEnd.Before(time.Now()) {
 			if p.rescheduleDelay > 0 {
@@ -225,14 +223,14 @@ func (p *ParallelOrchestrationStrategy) updateMaintenanceWindow(execID string, o
 			err := p.executor.Reschedule(id, op.MaintenanceWindowBegin, op.MaintenanceWindowEnd)
 			//error when read from storage or update to storage
 			if err != nil {
-				errors.Wrap(err, "while rescheduling operation by executor (still continuing with new schedule)")
-				return duration, err
+				return duration, fmt.Errorf("while rescheduling operation by executor (still continuing with new schedule): %w", err)
 			}
 		}
 
 		duration = time.Until(op.MaintenanceWindowBegin)
-
-	case orchestration.Immediate:
+	} else {
+		p.executor.Reschedule(id, strategy.ScheduleTime, strategy.ScheduleTime)
+		duration = time.Until(strategy.ScheduleTime)
 	}
 
 	return duration, nil

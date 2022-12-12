@@ -1,6 +1,6 @@
 package ias
 
-import "github.com/pkg/errors"
+import "fmt"
 
 type SPInputID int
 
@@ -35,5 +35,5 @@ func (id SPInputID) isValid() error {
 	case SPGrafanaID, SPDexID:
 		return nil
 	}
-	return errors.Errorf("Invalid Service Provider input ID: %d", id)
+	return fmt.Errorf("invalid Service Provider input ID: %d", id)
 }

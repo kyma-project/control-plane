@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -140,7 +139,7 @@ func TestManager_Execute(t *testing.T) {
 		memoryStorage := mocks.Operations{}
 		operation := fixDeprovisionOperation(operationIDSuccess)
 		memoryStorage.On("GetDeprovisioningOperationByID", operationIDSuccess).Return(&operation, nil)
-		memoryStorage.On("GetProvisioningOperationByInstanceID", mock.Anything).Return(nil, errors.New("Error connecting to database"))
+		memoryStorage.On("GetProvisioningOperationByInstanceID", mock.Anything).Return(nil, fmt.Errorf("Error connecting to database"))
 
 		eventBroker := event.NewPubSub(logrus.New())
 		eventCollector := &collectingEventHandler{}

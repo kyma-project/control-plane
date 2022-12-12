@@ -7,13 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/99designs/gqlgen/handler"
+	"github.com/gorilla/mux"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
-
-	"github.com/99designs/gqlgen/handler"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -432,8 +430,7 @@ func TestClient_OperationStatusLastError(t *testing.T) {
 		assert.Equal(t, kebError.ErrReason("not found"), lastErr.Reason())
 		assert.Equal(t, "error msg", lastErr.Error())
 
-		// When
-		err := errors.Wrap(lastErr, "something")
+		err := fmt.Errorf("something: %w", lastErr)
 		lastErr = kebError.ReasonForError(err)
 
 		// Then
@@ -573,7 +570,7 @@ func (tmr testMutationResolver) DeprovisionRuntime(_ context.Context, id string)
 }
 
 func (tmr testMutationResolver) HibernateRuntime(ctx context.Context, id string) (*schema.OperationStatus, error) {
-	return nil, errors.New("not implemented")
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (tmr testMutationResolver) RollBackUpgradeOperation(_ context.Context, id string) (*schema.RuntimeStatus, error) {
@@ -659,7 +656,7 @@ func fixProvisionRuntimeInput() schema.ProvisionRuntimeInput {
 				DNSConfig: &schema.DNSConfigInput{
 					Domain: "test.devtest.kyma.ondemand.com",
 					Providers: []*schema.DNSProviderInput{
-						&schema.DNSProviderInput{
+						{
 							DomainsInclude: []string{"devtest.kyma.ondemand.com"},
 							Primary:        true,
 							SecretName:     "efg",

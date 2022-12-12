@@ -1,7 +1,6 @@
 package process
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -22,7 +21,7 @@ func Test_Deprovision_RetryOperationOnce(t *testing.T) {
 	op := internal.DeprovisioningOperation{}
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
-	errMsg := errors.New("ups ... ")
+	errMsg := fmt.Errorf("ups ... ")
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)
 	err := operations.InsertDeprovisioningOperation(op)
@@ -87,7 +86,7 @@ func Test_Deprovision_RetryOperation(t *testing.T) {
 	op.UpdatedAt = time.Now()
 	retryInterval := time.Hour
 	errorMessage := fmt.Sprintf("ups ... ")
-	errOut := errors.New("error occurred")
+	errOut := fmt.Errorf("error occurred")
 	maxtime := time.Hour * 3 // allow 2 retries
 
 	// this is required to avoid storage retries (without this statement there will be an error => retry)

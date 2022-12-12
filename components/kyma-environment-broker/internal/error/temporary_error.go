@@ -2,8 +2,6 @@ package error
 
 import (
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 type TemporaryError struct {
@@ -27,10 +25,12 @@ func (TemporaryError) Reason() ErrReason       { return ErrKEBInternal }
 func (TemporaryError) Component() ErrComponent { return ErrKEB }
 
 func IsTemporaryError(err error) bool {
-	cause := errors.Cause(err)
+	cause := UnwrapAll(err)
+
 	nfe, ok := cause.(interface {
 		Temporary() bool
 	})
+
 	return ok && nfe.Temporary()
 }
 
@@ -41,7 +41,7 @@ type WrapTemporaryError struct {
 }
 
 func WrapAsTemporaryError(err error, msg string, args ...interface{}) *WrapTemporaryError {
-	return &WrapTemporaryError{err: errors.Wrapf(err, msg, args...)}
+	return &WrapTemporaryError{err: fmt.Errorf(fmt.Sprintf(msg, args...)+" :%w", err)}
 }
 
 func WrapNewTemporaryError(err error) *WrapTemporaryError {

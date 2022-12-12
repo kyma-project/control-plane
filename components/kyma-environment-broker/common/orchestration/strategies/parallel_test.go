@@ -48,7 +48,7 @@ func TestNewParallelOrchestrationStrategy_Immediate(t *testing.T) {
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.Immediate, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
+	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: time.Now().Format(time.RFC3339), Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestNewParallelOrchestrationStrategy_MaintenanceWindow(t *testing.T) {
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
+	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: "imideate", MaintenanceWindow: true, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)
@@ -100,7 +100,7 @@ func TestNewParallelOrchestrationStrategy_Reschedule(t *testing.T) {
 	}
 
 	// when
-	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
+	id, err := s.Execute(ops, orchestration.StrategySpec{Schedule: "now", MaintenanceWindow: true, Parallel: orchestration.ParallelStrategySpec{Workers: 2}})
 
 	// then
 	assert.NoError(t, err)

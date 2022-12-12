@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 )
 
 type ProvisionOperationManager struct {
@@ -45,10 +44,10 @@ func (om *ProvisionOperationManager) OperationFailed(operation internal.Provisio
 	var retErr error
 	if err == nil {
 		// no exact err passed in
-		retErr = errors.New(description)
+		retErr = fmt.Errorf(description)
 	} else {
 		// keep the original err object for error categorizer
-		retErr = errors.Wrap(err, description)
+		retErr = fmt.Errorf("%s: %w", description, err)
 	}
 
 	return updatedOperation, 0, retErr

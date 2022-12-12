@@ -30,6 +30,9 @@ func TestClusterHandler_AttachRoutes(t *testing.T) {
 					},
 				},
 			},
+			Strategy: orchestration.StrategySpec{
+				Schedule: "now",
+			},
 		}
 		p, err := json.Marshal(&params)
 		require.NoError(t, err)

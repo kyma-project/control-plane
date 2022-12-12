@@ -2,7 +2,6 @@ package appinfo_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -127,7 +126,7 @@ func TestRuntimeInfoHandlerFailures(t *testing.T) {
 
 	storageMock := &automock.InstanceFinder{}
 	defer storageMock.AssertExpectations(t)
-	storageMock.On("FindAllJoinedWithOperations", mock.Anything).Return(nil, errors.New("ups.. internal info"))
+	storageMock.On("FindAllJoinedWithOperations", mock.Anything).Return(nil, fmt.Errorf("ups.. internal info"))
 	handler := appinfo.NewRuntimeInfoHandler(storageMock, nil, broker.PlansConfig{}, "", writer)
 
 	// when

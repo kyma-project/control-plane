@@ -114,6 +114,7 @@ const (
 	KymaConfigParam      = "kyma_config"
 	ClusterConfigParam   = "cluster_config"
 	ExpiredParam         = "expired"
+	OnlyDeletedParam     = "only_deleted"
 )
 
 type OperationDetail string
@@ -154,6 +155,8 @@ type ListParameters struct {
 	Expired bool
 	// Events parameter fetches tracing events per instance
 	Events bool
+	// OnlyDeleted parameter instructs KEB to try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations
+	OnlyDeleted bool
 }
 
 func (rt RuntimeDTO) LastOperation() Operation {
