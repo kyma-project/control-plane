@@ -6,15 +6,14 @@ The Schema Migrator is responsible for database schema migrations.
 
 ## Development
 
-If you want to modify database schema used by compass, add migration files (follow [this](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md) instructions) to `/resources/kcp/charts/<component>/migrations` directory. The new
-migration files will be mount as configmaps. Make sure to bump the version of the component for which the migration was added.
-To test if migration files are correct, execute:
+If you want to modify database schema used by Compass, add migration files to `/resources/kcp/charts/<component>/migrations` directory. To do it, follow the instructions in the [Migrations](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md) document. The new migration files are mounted as ConfigMaps. Make sure to bump the version of the component for which the migration was added.
+To test if the migration files are correct, run:
 ```
 make verify
 ```
 
-> **DEPRECATED** : Old method of adding migrations files:\
-*If you want to modify database schema used by compass, add migration files (follow [this](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md) instructions) to `migrations` directory. 
+> **CAUTION** : The following method of adding migrations files is deprecated:\
+*If you want to modify database schema used by Compass, add [migration files](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md) to `migrations` directory. 
 New image of migrator will be produced that contains all migration files so make sure to bump component version value in compass chart.*
 
 ## Naming convention
