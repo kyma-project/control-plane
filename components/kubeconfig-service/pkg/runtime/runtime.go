@@ -475,7 +475,11 @@ func (rtc *RuntimeClient) RetryDeleteServiceAccount(wg *sync.WaitGroup, errorCh 
 		}
 
 		return errors.Wrapf(err, "Service account \"%s\" still exists in \"%s\" Namespace", rtc.User.ServiceAccountName, rtc.User.Namespace)
-	})
+	},
+		retry.Attempts(20),
+		retry.Delay(15*time.Second),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		errorCh <- err
 		return
@@ -499,7 +503,11 @@ func (rtc *RuntimeClient) RetryDeleteClusterRoles(wg *sync.WaitGroup, errorCh ch
 			}
 		}
 		return errors.Wrapf(err, "ClusterRoles \"%v\" still exist", clusterroles)
-	})
+	},
+		retry.Attempts(20),
+		retry.Delay(15*time.Second),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		errorCh <- err
 		return
@@ -520,7 +528,11 @@ func (rtc *RuntimeClient) RetryDeleteClusterRoleBinding(wg *sync.WaitGroup, erro
 		}
 
 		return errors.Wrapf(err, "Cluster Role Binding\"%s\" still exists", rtc.User.ClusterRoleName)
-	})
+	},
+		retry.Attempts(20),
+		retry.Delay(15*time.Second),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		errorCh <- err
 		return

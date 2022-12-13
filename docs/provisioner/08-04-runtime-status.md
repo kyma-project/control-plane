@@ -37,6 +37,7 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
         provider 
         maxUnavailable 
         kubernetesVersion
+        euAccess
       }
       kymaConfig {
         version  

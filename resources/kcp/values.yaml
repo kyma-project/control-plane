@@ -5,13 +5,13 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-2249"
+      version: "PR-2322"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-1840"
     kyma_metrics_collector:
       dir:
-      version: "PR-2317"
+      version: "PR-2333"
     tests:
       provisioner:
         dir:
@@ -37,7 +37,6 @@ global:
     - connectivity-proxy
     - istio
     - ory
-    - eventing
     - serverless
     - cluster-essentials
     - rma
