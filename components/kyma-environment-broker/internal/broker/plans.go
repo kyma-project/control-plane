@@ -75,7 +75,12 @@ type JSONSchemaValidator interface {
 	ValidateString(json string) (jsonschema.ValidationResult, error)
 }
 
-func AzureRegions() []string {
+func AzureRegions(euRestrictedAccess bool) []string {
+	if euRestrictedAccess {
+		return []string{
+			"switzerlandnorth",
+		}
+	}
 	return []string{
 		"eastus",
 		"centralus",
@@ -95,8 +100,11 @@ func GCPRegions() []string {
 		"us-central1"}
 }
 
-func AWSRegions() []string {
+func AWSRegions(euRestrictedAccess bool) []string {
 	// be aware of zones defined in internal/provider/aws_provider.go
+	if euRestrictedAccess {
+		return []string{"eu-central-1"}
+	}
 	return []string{"eu-central-1", "eu-west-2", "ca-central-1", "sa-east-1", "us-east-1", "us-west-1",
 		"ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2"}
 }
@@ -119,16 +127,16 @@ func GCPSchema(machineTypesDisplay map[string]string, machineTypes []string, add
 	return createSchema(machineTypesDisplay, machineTypes, GCPRegions(), additionalParams, update)
 }
 
-func AWSSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	return createSchema(machineTypesDisplay, machineTypes, AWSRegions(), additionalParams, update)
+func AWSSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
+	return createSchema(machineTypesDisplay, machineTypes, AWSRegions(euAccessRestricted), additionalParams, update)
 }
 
-func AzureSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	return createSchema(machineTypesDisplay, machineTypes, AzureRegions(), additionalParams, update)
+func AzureSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
+	return createSchema(machineTypesDisplay, machineTypes, AzureRegions(euAccessRestricted), additionalParams, update)
 }
 
-func AzureLiteSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool) *map[string]interface{} {
-	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, AzureRegions(), update)
+func AzureLiteSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
+	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, AzureRegions(euAccessRestricted), update)
 	properties.AutoScalerMax.Maximum = 40
 
 	if !update {
@@ -139,7 +147,7 @@ func AzureLiteSchema(machineTypesDisplay map[string]string, machineTypes []strin
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
-func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bool) *map[string]interface{} {
+func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
 	if update && !additionalParams {
 		return empty()
 	}
@@ -147,11 +155,11 @@ func FreemiumSchema(provider internal.CloudProvider, additionalParams, update bo
 	var regions []string
 	switch provider {
 	case internal.AWS:
-		regions = AWSRegions()
+		regions = AWSRegions(euAccessRestricted)
 	case internal.Azure:
-		regions = AzureRegions()
+		regions = AzureRegions(euAccessRestricted)
 	default:
-		regions = AWSRegions()
+		regions = AWSRegions(euAccessRestricted)
 	}
 	properties := ProvisioningProperties{
 		Name: NameProperty(),
@@ -243,7 +251,7 @@ func unmarshalSchema(schema *RootSchema) *map[string]interface{} {
 
 // Plans is designed to hold plan defaulting logic
 // keep internal/hyperscaler/azure/config.go in sync with any changes to available zones
-func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool) map[string]domain.ServicePlan {
+func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditionalParamsInSchema bool, euAccessRestricted bool) map[string]domain.ServicePlan {
 	awsMachines := []string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"}
 	awsMachinesDisplay := map[string]string{
 		// source: https://aws.amazon.com/ec2/instance-types/m5/
@@ -290,14 +298,14 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		"Standard_D48_v3": "Standard_D48_v3 (48vCPU, 192GB RAM)",
 		"Standard_D64_v3": "Standard_D64_v3 (64vCPU, 256GB RAM)",
 	}
-	azureSchema := AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, false)
+	azureSchema := AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, false, euAccessRestricted)
 
 	azureLiteMachines := []string{"Standard_D4_v3"}
 	azureLiteMachinesDisplay := map[string]string{
 		"Standard_D4_v3": azureMachinesDisplay["Standard_D4_v3"],
 	}
-	azureLiteSchema := AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, false)
-	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false)
+	azureLiteSchema := AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, false, euAccessRestricted)
+	freemiumSchema := FreemiumSchema(provider, includeAdditionalParamsInSchema, false, euAccessRestricted)
 	trialSchema := TrialSchema(includeAdditionalParamsInSchema, false)
 	ownClusterSchema := OwnClusterSchema(false)
 
@@ -312,18 +320,18 @@ func Plans(plans PlansConfig, provider internal.CloudProvider, includeAdditional
 		"m5.8xlarge":  awsMachinesDisplay["m5.8xlarge"],
 		"m5.12xlarge": awsMachinesDisplay["m5.12xlarge"],
 	}
-	awsCatalogSchema := AWSSchema(awsCatalogMachinesDisplay, awsCatalogMachines, includeAdditionalParamsInSchema, false)
+	awsCatalogSchema := AWSSchema(awsCatalogMachinesDisplay, awsCatalogMachines, includeAdditionalParamsInSchema, false, euAccessRestricted)
 
 	outputPlans := map[string]domain.ServicePlan{
-		AWSPlanID:        defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true)),
+		AWSPlanID:        defaultServicePlan(AWSPlanID, AWSPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 		GCPPlanID:        defaultServicePlan(GCPPlanID, GCPPlanName, plans, gcpSchema, GCPSchema(gcpMachinesDisplay, gcpMachines, includeAdditionalParamsInSchema, true)),
 		OpenStackPlanID:  defaultServicePlan(OpenStackPlanID, OpenStackPlanName, plans, openstackSchema, OpenStackSchema(openStackMachinesDisplay, openStackMachines, includeAdditionalParamsInSchema, true)),
-		AzurePlanID:      defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, true)),
-		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, true)),
-		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true)),
+		AzurePlanID:      defaultServicePlan(AzurePlanID, AzurePlanName, plans, azureSchema, AzureSchema(azureMachinesDisplay, azureMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
+		AzureLitePlanID:  defaultServicePlan(AzureLitePlanID, AzureLitePlanName, plans, azureLiteSchema, AzureLiteSchema(azureLiteMachinesDisplay, azureLiteMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
+		FreemiumPlanID:   defaultServicePlan(FreemiumPlanID, FreemiumPlanName, plans, freemiumSchema, FreemiumSchema(provider, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 		TrialPlanID:      defaultServicePlan(TrialPlanID, TrialPlanName, plans, trialSchema, TrialSchema(includeAdditionalParamsInSchema, true)),
 		OwnClusterPlanID: defaultServicePlan(OwnClusterPlanID, OwnClusterPlanName, plans, ownClusterSchema, OwnClusterSchema(true)),
-		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true)),
+		PreviewPlanID:    defaultServicePlan(PreviewPlanID, PreviewPlanName, plans, awsCatalogSchema, AWSSchema(awsMachinesDisplay, awsMachines, includeAdditionalParamsInSchema, true, euAccessRestricted)),
 	}
 
 	return outputPlans

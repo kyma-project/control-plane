@@ -5,13 +5,13 @@ global:
       version: "PR-2306"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2175"
+      version: "PR-2337"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2225"
+      version: "PR-2337"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2225"
+      version: "PR-2337"
 
 deployment:
   replicaCount: 1

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "_controlsOrder": [
+    "name",
+    "region"
+  ],
+  "_show_form_view": true,
+  "properties": {
+    "name": {
+      "_BTPdefaultTemplate": {
+        "elements": [
+          "saSubdomain"
+        ]
+      },
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9-]*$",
+      "title": "Cluster Name",
+      "type": "string"
+    },
+    "region": {
+      "enum": [
+        "switzerlandnorth"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "type": "object"
+}
