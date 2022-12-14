@@ -63,7 +63,7 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		requestInput.ClusterConfig.GardenerConfig.Region,
 		requestInput.ClusterConfig.GardenerConfig.Provider,
 		requestInput.ClusterConfig.GardenerConfig.Name,
-		requestInput.ClusterConfig.GardenerConfig.EuAccess)
+		*requestInput.ClusterConfig.GardenerConfig.EuAccess)
 
 	provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 	switch {
