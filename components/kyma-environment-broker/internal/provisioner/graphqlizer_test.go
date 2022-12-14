@@ -154,7 +154,6 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		enableKubernetesVersionAutoUpdate: true,
 		enableMachineImageVersionAutoUpdate: true,
 		controlPlaneFailureTolerance: "zone",
-		euAccess: true,
 	}`
 
 	// when
@@ -176,7 +175,6 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		EnableKubernetesVersionAutoUpdate:   ptr.Bool(true),
 		EnableMachineImageVersionAutoUpdate: ptr.Bool(true),
 		ControlPlaneFailureTolerance:        ptr.String("zone"),
-		EuAccess:                            ptr.Bool(true),
 	})
 
 	// then
