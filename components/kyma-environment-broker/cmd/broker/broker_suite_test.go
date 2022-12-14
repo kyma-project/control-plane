@@ -1192,6 +1192,11 @@ func (s *BrokerSuiteTest) AssertAWSRegionAndZone(region string) {
 	assert.Contains(s.t, input.ClusterConfig.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, region)
 }
 
+func (s *BrokerSuiteTest) AssertAzureRegion(region string) {
+	input := s.provisionerClient.GetLatestProvisionRuntimeInput()
+	assert.Equal(s.t, region, input.ClusterConfig.GardenerConfig.Region)
+}
+
 // fixExpectedComponentListWithoutSMProxy provides a fixed components list for Service Management without BTP operator credentials provided
 func (s *BrokerSuiteTest) fixExpectedComponentListWithoutSMProxy(opID string) []reconcilerApi.Component {
 	return []reconcilerApi.Component{
