@@ -174,7 +174,7 @@ func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
 			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
 		}
 	}
-	t.eventsColumns = []Column{ //info, date, proces step: xxxx
+	t.eventsColumns = []Column{
 		{
 			Header:    "LEVEL",
 			FieldSpec: "{.Level}",
@@ -228,173 +228,18 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 	fmt.Fprintln(t.writer)
 	if r, ok := obj.(runtime.RuntimeDTO); ok {
 		if eventList, ok := t.events[r.InstanceID]; ok {
-
-			operationID := make(map[string]bool)
-			for _, x := range eventList {
-				if !operationID[*x.OperationID] {
-					operationID[*x.OperationID] = true
-				}
-			}
-
 			if len(eventList) == 0 {
 				return nil
 			}
-
 			lastOp := *eventList[0].OperationID
 			buffer := strings.Builder{}
 			eventTabWriter := newTabWriter(&buffer)
 			rt := obj.(runtime.RuntimeDTO)
-			var provOpID string
-			var deprovOpID string
-			rtUpdate := false
-			rtUpgradeKyma := false
-			rtUpgradeCluster := false
-			rtSuspension := false
-			rtUnsuspension := false
-
-			if rt.Status.Provisioning != nil {
-				provOpID = rt.Status.Provisioning.OperationID
-			}
-			if rt.Status.Deprovisioning != nil {
-				deprovOpID = rt.Status.Deprovisioning.OperationID
-			}
-			if rt.Status.Update != nil {
-				rtUpdate = true
-			}
-			if rt.Status.UpgradingKyma != nil {
-				rtUpgradeKyma = true
-			}
-			if rt.Status.UpgradingCluster != nil {
-				rtUpgradeCluster = true
-			}
-			if rt.Status.Suspension != nil {
-				rtSuspension = true
-			}
-			if rt.Status.Unsuspension != nil {
-				rtUnsuspension = true
-			}
-
-			for ind := range operationID {
-				if ind == lastOp {
-					if provOpID == lastOp {
-						opStatus := rt.Status.Provisioning.State
-						printOperation(eventTabWriter, lastOp, "provision", opStatus)
-						break
-					} else if deprovOpID == lastOp {
-						opStatus := rt.Status.Deprovisioning.State
-						printOperation(eventTabWriter, lastOp, "deprovision", opStatus)
-						break
-					}
-					if rtUpdate {
-						for _, rtOpID := range rt.Status.Update.Data {
-							if rtOpID.OperationID == lastOp {
-								opStatus := rtOpID.State
-								printOperation(eventTabWriter, lastOp, "update", opStatus)
-								break
-							}
-						}
-					}
-					if rtUpgradeKyma {
-						for _, rtOpID := range rt.Status.UpgradingKyma.Data {
-							if rtOpID.OperationID == lastOp {
-								opStatus := rtOpID.State
-								printOperation(eventTabWriter, lastOp, "kyma upgrade", opStatus)
-								break
-							}
-						}
-					}
-					if rtUpgradeCluster {
-						for _, rtOpID := range rt.Status.UpgradingCluster.Data {
-							if rtOpID.OperationID == lastOp {
-								opStatus := rtOpID.State
-								printOperation(eventTabWriter, lastOp, "cluster upgrade", opStatus)
-								break
-							}
-						}
-					}
-					if rtSuspension {
-						for _, rtOpID := range rt.Status.Suspension.Data {
-							if rtOpID.OperationID == lastOp {
-								opStatus := rtOpID.State
-								printOperation(eventTabWriter, lastOp, "suspension", opStatus)
-								break
-							}
-						}
-					}
-					if rtUnsuspension {
-						for _, rtOpID := range rt.Status.Unsuspension.Data {
-							if rtOpID.OperationID == lastOp {
-								opStatus := rtOpID.State
-								printOperation(eventTabWriter, lastOp, "unsuspension", opStatus)
-								break
-							}
-						}
-					}
-				}
-			}
-
+			printOperation(eventTabWriter, lastOp, rt)
 			for _, e := range eventList[:len(eventList)-1] {
 				if lastOp != *e.OperationID {
 					lastOp = *e.OperationID
-					rt := obj.(runtime.RuntimeDTO)
-					for ind := range operationID {
-						if ind == lastOp {
-							if provOpID == lastOp {
-								opStatus := rt.Status.Provisioning.State
-								printOperation(eventTabWriter, lastOp, "provision", opStatus)
-								break
-							} else if deprovOpID == lastOp {
-								opStatus := rt.Status.Deprovisioning.State
-								printOperation(eventTabWriter, lastOp, "deprovision", opStatus)
-								break
-							}
-							if rtUpdate {
-								for _, rtOpID := range rt.Status.Update.Data {
-									if rtOpID.OperationID == lastOp {
-										opStatus := rtOpID.State
-										printOperation(eventTabWriter, lastOp, "update", opStatus)
-										break
-									}
-								}
-							}
-							if rtUpgradeKyma {
-								for _, rtOpID := range rt.Status.UpgradingKyma.Data {
-									if rtOpID.OperationID == lastOp {
-										opStatus := rtOpID.State
-										printOperation(eventTabWriter, lastOp, "kyma upgrade", opStatus)
-										break
-									}
-								}
-							}
-							if rtUpgradeCluster {
-								for _, rtOpID := range rt.Status.UpgradingCluster.Data {
-									if rtOpID.OperationID == lastOp {
-										opStatus := rtOpID.State
-										printOperation(eventTabWriter, lastOp, "cluster upgrade", opStatus)
-										break
-									}
-								}
-							}
-							if rtSuspension {
-								for _, rtOpID := range rt.Status.Suspension.Data {
-									if rtOpID.OperationID == lastOp {
-										opStatus := rtOpID.State
-										printOperation(eventTabWriter, lastOp, "suspension", opStatus)
-										break
-									}
-								}
-							}
-							if rtUnsuspension {
-								for _, rtOpID := range rt.Status.Unsuspension.Data {
-									if rtOpID.OperationID == lastOp {
-										opStatus := rtOpID.State
-										printOperation(eventTabWriter, lastOp, "unsuspension", opStatus)
-										break
-									}
-								}
-							}
-						}
-					}
+					printOperation(eventTabWriter, lastOp, rt)
 				}
 				if err := t.printEvent("˫", eventTabWriter, e); err != nil {
 					return err
@@ -402,65 +247,7 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			}
 			if lastOp != *eventList[len(eventList)-1].OperationID {
 				lastOp = *eventList[len(eventList)-1].OperationID
-				rt := obj.(runtime.RuntimeDTO)
-				for ind := range operationID {
-					if ind == lastOp {
-						if provOpID == lastOp {
-							opStatus := rt.Status.Provisioning.State
-							printOperation(eventTabWriter, lastOp, "provision", opStatus)
-							break
-						} else if deprovOpID == lastOp {
-							opStatus := rt.Status.Deprovisioning.State
-							printOperation(eventTabWriter, lastOp, "deprovision", opStatus)
-							break
-						}
-						if rtUpdate {
-							for _, rtOpID := range rt.Status.Update.Data {
-								if rtOpID.OperationID == lastOp {
-									opStatus := rtOpID.State
-									printOperation(eventTabWriter, lastOp, "update", opStatus)
-									break
-								}
-							}
-						}
-						if rtUpgradeKyma {
-							for _, rtOpID := range rt.Status.UpgradingKyma.Data {
-								if rtOpID.OperationID == lastOp {
-									opStatus := rtOpID.State
-									printOperation(eventTabWriter, lastOp, "kyma upgrade", opStatus)
-									break
-								}
-							}
-						}
-						if rtUpgradeCluster {
-							for _, rtOpID := range rt.Status.UpgradingCluster.Data {
-								if rtOpID.OperationID == lastOp {
-									opStatus := rtOpID.State
-									printOperation(eventTabWriter, lastOp, "cluster upgrade", opStatus)
-									break
-								}
-							}
-						}
-						if rtSuspension {
-							for _, rtOpID := range rt.Status.Suspension.Data {
-								if rtOpID.OperationID == lastOp {
-									opStatus := rtOpID.State
-									printOperation(eventTabWriter, lastOp, "suspension", opStatus)
-									break
-								}
-							}
-						}
-						if rtUnsuspension {
-							for _, rtOpID := range rt.Status.Unsuspension.Data {
-								if rtOpID.OperationID == lastOp {
-									opStatus := rtOpID.State
-									printOperation(eventTabWriter, lastOp, "unsuspension", opStatus)
-									break
-								}
-							}
-						}
-					}
-				}
+				printOperation(eventTabWriter, lastOp, rt)
 			}
 			if err := t.printEvent("˪", eventTabWriter, eventList[len(eventList)-1]); err != nil {
 				return err
@@ -490,6 +277,65 @@ func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e event)
 	return nil
 }
 
-func printOperation(w io.Writer, op string, opType runtime.OperationType, opStatus string) {
-	fmt.Fprintf(w, " ˫%v operation %v: %v\n", opType, op, opStatus)
+func printOperation(w io.Writer, op string, rt runtime.RuntimeDTO) {
+	if rt.Status.Provisioning != nil {
+		if op == rt.Status.Provisioning.OperationID {
+			opStatus := rt.Status.Provisioning.State
+			fmt.Fprintf(w, " ˫%v operation %v: %v\n", "provision", op, opStatus)
+			return
+		}
+	}
+	if rt.Status.Deprovisioning != nil {
+		if op == rt.Status.Deprovisioning.OperationID {
+			opStatus := rt.Status.Deprovisioning.State
+			fmt.Fprintf(w, " ˫%v operation %v: %v\n", "deprovision", op, opStatus)
+			return
+		}
+	}
+	if rt.Status.Update != nil {
+		for _, update := range rt.Status.Update.Data {
+			if op == update.OperationID {
+				opStatus := update.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "update", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.UpgradingKyma != nil {
+		for _, upgradeKyma := range rt.Status.UpgradingKyma.Data {
+			if op == upgradeKyma.OperationID {
+				opStatus := upgradeKyma.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "kyma upgrade", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.UpgradingCluster != nil {
+		for _, upgradeCluster := range rt.Status.UpgradingCluster.Data {
+			if op == upgradeCluster.OperationID {
+				opStatus := upgradeCluster.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "cluster upgrade", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.Suspension != nil {
+		for _, suspension := range rt.Status.Suspension.Data {
+			if op == suspension.OperationID {
+				opStatus := suspension.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "suspension", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.Unsuspension != nil {
+		for _, unsuspension := range rt.Status.Unsuspension.Data {
+			if op == unsuspension.OperationID {
+				opStatus := unsuspension.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "unsuspension", op, opStatus)
+				return
+			}
+		}
+	}
+	fmt.Fprintf(w, " ˫%v operation %v: %v\n", "unknown", op, "use --ops to get details")
 }
