@@ -14,7 +14,7 @@ make verify
 
 > **CAUTION** : The following method of adding migrations files is deprecated:\
 *If you want to modify database schema used by Compass, add [migration files](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md) to `migrations` directory. 
-New image of migrator will be produced that contains all migration files so make sure to bump component version value in compass chart.*
+New image of migrator will be produced that contains all migration files so make sure to bump component version value in Compass chart.*
 
 ## Naming convention
 
