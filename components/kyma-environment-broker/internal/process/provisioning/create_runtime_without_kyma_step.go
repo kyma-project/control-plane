@@ -58,12 +58,11 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", err, log)
 	}
 
-	log.Infof("call ProvisionRuntime: kubernetesVersion=%s, region=%s, provider=%s, name=%s, euAccess=%t",
+	log.Infof("call ProvisionRuntime: kubernetesVersion=%s, region=%s, provider=%s, name=%s",
 		requestInput.ClusterConfig.GardenerConfig.KubernetesVersion,
 		requestInput.ClusterConfig.GardenerConfig.Region,
 		requestInput.ClusterConfig.GardenerConfig.Provider,
-		requestInput.ClusterConfig.GardenerConfig.Name,
-		*requestInput.ClusterConfig.GardenerConfig.EuAccess)
+		requestInput.ClusterConfig.GardenerConfig.Name)
 
 	provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 	switch {
