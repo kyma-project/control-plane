@@ -134,6 +134,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .ControlPlaneFailureTolerance }}
 		controlPlaneFailureTolerance: "{{ .ControlPlaneFailureTolerance }}",
 		{{- end }}
+		{{- if .EuAccess }}
+		euAccess: {{ .EuAccess }},
+		{{- end }}
 	}`)
 }
 
