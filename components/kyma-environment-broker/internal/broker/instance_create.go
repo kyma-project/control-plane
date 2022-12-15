@@ -113,7 +113,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 
 	// validation of incoming input
-	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, logger)
+	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, ctx, logger)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
@@ -178,7 +178,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].Name,
+		ServicePlanName: PlanNamesMapping[provisioningParameters.PlanID],
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
@@ -213,7 +213,7 @@ func valueOfPtr(ptr *string) string {
 	return *ptr
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -252,7 +252,8 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 	}
 
-	planValidator, err := b.validator(&details, provider)
+	planValidator, err := b.validator(&details, provider,
+		ctx)
 	if err != nil {
 		return ersContext, parameters, fmt.Errorf("while creating plan validator: %w", err)
 	}
@@ -387,8 +388,9 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	return nil
 }
 
-func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
-	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
+func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context) (JSONSchemaValidator, error) {
+	platformRegion, _ := middleware.RegionFromContext(ctx)
+	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema, internal.IsEURestrictedAccess(platformRegion))
 	plan := plans[details.PlanID]
 	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
 

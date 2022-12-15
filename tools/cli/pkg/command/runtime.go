@@ -100,7 +100,7 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes.")
-	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events.")
+	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events. Enables by default --ops")
 	cobraCmd.Flags().BoolVar(&cmd.params.OnlyDeleted, "only-deleted", false, "Try best effort to reconstruct at least partial information regarding deprovisioned instances.")
 
 	return cobraCmd
@@ -162,6 +162,9 @@ func (cmd *RuntimeCommand) Validate() error {
 		}
 	}
 
+	if cmd.params.Events {
+		cmd.opDetail = true
+	}
 	cmd.params.OperationDetail = runtime.LastOperation
 	if cmd.opDetail {
 		cmd.params.OperationDetail = runtime.AllOperation
