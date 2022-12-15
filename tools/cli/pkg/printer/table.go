@@ -234,12 +234,11 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			lastOp := *eventList[0].OperationID
 			buffer := strings.Builder{}
 			eventTabWriter := newTabWriter(&buffer)
-			rt := obj.(runtime.RuntimeDTO)
-			printOperation(eventTabWriter, lastOp, rt)
+			printOperation(eventTabWriter, lastOp, r)
 			for _, e := range eventList[:len(eventList)-1] {
 				if lastOp != *e.OperationID {
 					lastOp = *e.OperationID
-					printOperation(eventTabWriter, lastOp, rt)
+					printOperation(eventTabWriter, lastOp, r)
 				}
 				if err := t.printEvent("˫", eventTabWriter, e); err != nil {
 					return err
@@ -247,7 +246,7 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			}
 			if lastOp != *eventList[len(eventList)-1].OperationID {
 				lastOp = *eventList[len(eventList)-1].OperationID
-				printOperation(eventTabWriter, lastOp, rt)
+				printOperation(eventTabWriter, lastOp, r)
 			}
 			if err := t.printEvent("˪", eventTabWriter, eventList[len(eventList)-1]); err != nil {
 				return err
@@ -337,5 +336,5 @@ func printOperation(w io.Writer, op string, rt runtime.RuntimeDTO) {
 			}
 		}
 	}
-	fmt.Fprintf(w, " ˫%v operation %v: %v\n", "unknown", op, "use --ops to get details")
+	fmt.Fprintf(w, " ˫%v operation %v\n", "unknown", op)
 }
