@@ -234,11 +234,11 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			lastOp := *eventList[0].OperationID
 			buffer := strings.Builder{}
 			eventTabWriter := newTabWriter(&buffer)
-			printOperation(eventTabWriter, lastOp)
+			printOperation(eventTabWriter, lastOp, r)
 			for _, e := range eventList[:len(eventList)-1] {
 				if lastOp != *e.OperationID {
 					lastOp = *e.OperationID
-					printOperation(eventTabWriter, lastOp)
+					printOperation(eventTabWriter, lastOp, r)
 				}
 				if err := t.printEvent("˫", eventTabWriter, e); err != nil {
 					return err
@@ -246,7 +246,7 @@ func (t *tablePrinter) printOneObj(obj interface{}) error {
 			}
 			if lastOp != *eventList[len(eventList)-1].OperationID {
 				lastOp = *eventList[len(eventList)-1].OperationID
-				printOperation(eventTabWriter, lastOp)
+				printOperation(eventTabWriter, lastOp, r)
 			}
 			if err := t.printEvent("˪", eventTabWriter, eventList[len(eventList)-1]); err != nil {
 				return err
@@ -276,6 +276,65 @@ func (t *tablePrinter) printEvent(sep string, eventTabWriter io.Writer, e event)
 	return nil
 }
 
-func printOperation(w io.Writer, op string) {
-	fmt.Fprintf(w, " ˫operation %v\n", op)
+func printOperation(w io.Writer, op string, rt runtime.RuntimeDTO) {
+	if rt.Status.Provisioning != nil {
+		if op == rt.Status.Provisioning.OperationID {
+			opStatus := rt.Status.Provisioning.State
+			fmt.Fprintf(w, " ˫%v operation %v: %v\n", "provision", op, opStatus)
+			return
+		}
+	}
+	if rt.Status.Deprovisioning != nil {
+		if op == rt.Status.Deprovisioning.OperationID {
+			opStatus := rt.Status.Deprovisioning.State
+			fmt.Fprintf(w, " ˫%v operation %v: %v\n", "deprovision", op, opStatus)
+			return
+		}
+	}
+	if rt.Status.Update != nil {
+		for _, update := range rt.Status.Update.Data {
+			if op == update.OperationID {
+				opStatus := update.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "update", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.UpgradingKyma != nil {
+		for _, upgradeKyma := range rt.Status.UpgradingKyma.Data {
+			if op == upgradeKyma.OperationID {
+				opStatus := upgradeKyma.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "kyma upgrade", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.UpgradingCluster != nil {
+		for _, upgradeCluster := range rt.Status.UpgradingCluster.Data {
+			if op == upgradeCluster.OperationID {
+				opStatus := upgradeCluster.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "cluster upgrade", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.Suspension != nil {
+		for _, suspension := range rt.Status.Suspension.Data {
+			if op == suspension.OperationID {
+				opStatus := suspension.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "suspension", op, opStatus)
+				return
+			}
+		}
+	}
+	if rt.Status.Unsuspension != nil {
+		for _, unsuspension := range rt.Status.Unsuspension.Data {
+			if op == unsuspension.OperationID {
+				opStatus := unsuspension.State
+				fmt.Fprintf(w, " ˫%v operation %v: %v\n", "unsuspension", op, opStatus)
+				return
+			}
+		}
+	}
+	fmt.Fprintf(w, " ˫%v operation %v\n", "unknown", op)
 }
