@@ -19,22 +19,22 @@ const (
 	mimeTypeText = "text/plain"
 )
 
-//mutex to avoid critical section in config map deployment
+// mutex to avoid critical section in config map deployment
 var mu sync.Mutex
 
-//EndpointClient Wrpper for Endpoints
+// EndpointClient Wrpper for Endpoints
 type EndpointClient struct {
 	gqlURL string
 }
 
-//NewEndpointClient return new instance of EndpointClient
+// NewEndpointClient return new instance of EndpointClient
 func NewEndpointClient(gqlURL string) *EndpointClient {
 	return &EndpointClient{
 		gqlURL: gqlURL,
 	}
 }
 
-//GetKubeConfig REST Path for Kubeconfig operations
+// GetKubeConfig REST Path for Kubeconfig operations
 func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	tenant := vars["tenantID"]
@@ -67,7 +67,7 @@ func (ec EndpointClient) GetKubeConfig(w http.ResponseWriter, req *http.Request)
 	}
 }
 
-//GetHealthStatus REST Path for health checks
+// GetHealthStatus REST Path for health checks
 func (ec EndpointClient) GetHealthStatus(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
