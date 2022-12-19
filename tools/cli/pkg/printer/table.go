@@ -51,7 +51,7 @@ type Column struct {
 // TablePrinter prints objects in table format, according to the given column definitions.
 type TablePrinter interface {
 	PrintObj(obj interface{}) error
-	SetRuntimeEvents(eventList []events.EventDTO)
+	SetRuntimeEvents(eventList []events.EventDTO, lvl string)
 }
 
 type tablePrinter struct {
@@ -166,12 +166,20 @@ func (t *tablePrinter) deduplicateEvents(eventList []events.EventDTO) []event {
 	return events
 }
 
-func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
+func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO, lvl string) {
 	deduplicated := t.deduplicateEvents(eventList)
 	t.events = make(map[string][]event)
-	for _, e := range deduplicated {
-		if e.InstanceID != nil {
+	if lvl == "all" {
+		for _, e := range deduplicated {
 			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+		}
+	} else {
+		for _, e := range deduplicated {
+			if e.InstanceID != nil {
+				if lvl == string(e.Level) {
+					t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+				}
+			}
 		}
 	}
 	t.eventsColumns = []Column{

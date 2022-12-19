@@ -100,7 +100,8 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes.")
-	cobraCmd.Flags().BoolVar(&cmd.params.Events, "events", false, "Enhance output with tracing events. Enables by default --ops")
+	cobraCmd.Flags().StringVar(&cmd.params.Events, "events", "none", "Enhance output with tracing events. Enables by default --ops. You can provide one value (all, info, error, none) for filtering events or leave it blank to get all events.")
+	cobraCmd.Flags().Lookup("events").NoOptDefVal = "all"
 	cobraCmd.Flags().BoolVar(&cmd.params.OnlyDeleted, "only-deleted", false, "Try best effort to reconstruct at least partial information regarding deprovisioned instances.")
 
 	return cobraCmd
@@ -118,7 +119,7 @@ func (cmd *RuntimeCommand) Run() error {
 	}
 	var eventList []events.EventDTO
 	var eventsSkipped bool
-	if cmd.params.Events && rp.Count > 0 {
+	if cmd.params.Events != "none" && rp.Count > 0 {
 		if rp.Count > 100 {
 			eventsSkipped = true
 		} else {
@@ -162,7 +163,10 @@ func (cmd *RuntimeCommand) Validate() error {
 		}
 	}
 
-	if cmd.params.Events {
+	if cmd.params.Events != "none" {
+		if cmd.params.Events != "all" && cmd.params.Events != "error" && cmd.params.Events != "info" {
+			return fmt.Errorf("illegal argument '%v' for --events", cmd.params.Events)
+		}
 		cmd.opDetail = true
 	}
 	cmd.params.OperationDetail = runtime.LastOperation
@@ -197,7 +201,7 @@ func (cmd *RuntimeCommand) printRuntimes(runtimes runtime.RuntimesPage, eventLis
 		if err != nil {
 			return err
 		}
-		tp.SetRuntimeEvents(eventList)
+		tp.SetRuntimeEvents(eventList, cmd.params.Events)
 		return tp.PrintObj(runtimes.Data)
 	case cmd.output == jsonOutput:
 		jp := printer.NewJSONPrinter("  ")
