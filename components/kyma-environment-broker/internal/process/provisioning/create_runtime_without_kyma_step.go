@@ -142,6 +142,7 @@ func (s *CreateRuntimeWithoutKymaStep) createProvisionInput(operation internal.O
 		return request, fmt.Errorf("while building input for provisioner: %w", err)
 	}
 	request.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
+	request.ClusterConfig.GardenerConfig.EuAccess = &operation.InstanceDetails.EuAccess
 
 	return request, nil
 }

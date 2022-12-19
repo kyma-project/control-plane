@@ -56,7 +56,7 @@ func TestEnableForTrialPlanStepShouldNotSkip(t *testing.T) {
 
 func fixOperationWithPlanID(planID string) internal.Operation {
 	Operation := fixture.FixProvisioningOperation(operationID, instanceID)
-	Operation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region")
+	Operation.ProvisioningParameters = fixProvisioningParametersWithPlanID(planID, "region", "")
 
 	return Operation
 }

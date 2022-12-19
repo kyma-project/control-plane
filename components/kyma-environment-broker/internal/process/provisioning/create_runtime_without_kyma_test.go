@@ -29,9 +29,88 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 	err = memoryStorage.Instances().Insert(fixInstance())
 	assert.NoError(t, err)
 
-	administrator := ""
 	disabled := false
-	provisionerInput := gqlschema.ProvisionRuntimeInput{
+	provisionerInput := fixProvisionerInput(disabled, false)
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.MatchedBy(
+		func(input gqlschema.ProvisionRuntimeInput) bool {
+			return reflect.DeepEqual(input.RuntimeInput.Labels, provisionerInput.RuntimeInput.Labels) &&
+				input.KymaConfig == nil && reflect.DeepEqual(input.ClusterConfig, provisionerInput.ClusterConfig)
+		},
+	)).Return(gqlschema.OperationStatus{
+		ID:        ptr.String(provisionerOperationID),
+		Operation: "",
+		State:     "",
+		Message:   nil,
+		RuntimeID: ptr.String(runtimeID),
+	}, nil)
+
+	step := NewCreateRuntimeWithoutKymaStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	entry := log.WithFields(logrus.Fields{"step": "TEST"})
+	operation, repeat, err := step.Run(operation, entry)
+
+	// then
+	assert.NoError(t, err)
+	assert.Zero(t, repeat)
+	assert.Equal(t, provisionerOperationID, operation.ProvisionerOperationID)
+
+	instance, err := memoryStorage.Instances().GetByID(operation.InstanceID)
+	assert.NoError(t, err)
+	assert.Equal(t, instance.RuntimeID, runtimeID)
+}
+
+func TestCreateRuntimeWithoutKyma_RunWithEuAccess(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixOperationCreateRuntimeWithPlatformRegion(t, broker.GCPPlanID, "europe-west3", "cf-ch20")
+	operation.ShootDomain = "kyma.org"
+	err := memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	err = memoryStorage.Instances().Insert(fixInstance())
+	assert.NoError(t, err)
+
+	disabled := false
+	provisionerInput := fixProvisionerInput(disabled, true)
+
+	provisionerClient := &provisionerAutomock.Client{}
+	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.MatchedBy(
+		func(input gqlschema.ProvisionRuntimeInput) bool {
+			return reflect.DeepEqual(input.RuntimeInput.Labels, provisionerInput.RuntimeInput.Labels) &&
+				input.KymaConfig == nil && reflect.DeepEqual(input.ClusterConfig, provisionerInput.ClusterConfig)
+		},
+	)).Return(gqlschema.OperationStatus{
+		ID:        ptr.String(provisionerOperationID),
+		Operation: "",
+		State:     "",
+		Message:   nil,
+		RuntimeID: ptr.String(runtimeID),
+	}, nil)
+
+	step := NewCreateRuntimeWithoutKymaStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
+
+	// when
+	entry := log.WithFields(logrus.Fields{"step": "TEST"})
+	operation, repeat, err := step.Run(operation, entry)
+
+	// then
+	assert.NoError(t, err)
+	assert.Zero(t, repeat)
+	assert.Equal(t, provisionerOperationID, operation.ProvisionerOperationID)
+
+	instance, err := memoryStorage.Instances().GetByID(operation.InstanceID)
+	assert.NoError(t, err)
+	assert.Equal(t, instance.RuntimeID, runtimeID)
+}
+
+func fixProvisionerInput(disabled bool, euAccess bool) gqlschema.ProvisionRuntimeInput {
+	administrator := ""
+	return gqlschema.ProvisionRuntimeInput{
 		RuntimeInput: &gqlschema.RuntimeInput{
 			Name:        "dummy",
 			Description: nil,
@@ -86,40 +165,12 @@ func TestCreateRuntimeWithoutKyma_Run(t *testing.T) {
 					},
 				},
 				ShootNetworkingFilterDisabled: &disabled,
+				EuAccess:                      &euAccess,
 			},
 			Administrators: []string{administrator},
 		},
 		KymaConfig: nil,
 	}
-
-	provisionerClient := &provisionerAutomock.Client{}
-	provisionerClient.On("ProvisionRuntime", globalAccountID, subAccountID, mock.MatchedBy(
-		func(input gqlschema.ProvisionRuntimeInput) bool {
-			return reflect.DeepEqual(input.RuntimeInput.Labels, provisionerInput.RuntimeInput.Labels) &&
-				input.KymaConfig == nil && reflect.DeepEqual(input.ClusterConfig, provisionerInput.ClusterConfig)
-		},
-	)).Return(gqlschema.OperationStatus{
-		ID:        ptr.String(provisionerOperationID),
-		Operation: "",
-		State:     "",
-		Message:   nil,
-		RuntimeID: ptr.String(runtimeID),
-	}, nil)
-
-	step := NewCreateRuntimeWithoutKymaStep(memoryStorage.Operations(), memoryStorage.RuntimeStates(), memoryStorage.Instances(), provisionerClient)
-
-	// when
-	entry := log.WithFields(logrus.Fields{"step": "TEST"})
-	operation, repeat, err := step.Run(operation, entry)
-
-	// then
-	assert.NoError(t, err)
-	assert.Zero(t, repeat)
-	assert.Equal(t, provisionerOperationID, operation.ProvisionerOperationID)
-
-	instance, err := memoryStorage.Instances().GetByID(operation.InstanceID)
-	assert.NoError(t, err)
-	assert.Equal(t, instance.RuntimeID, runtimeID)
 }
 
 func TestCreateRuntimeWithoutKymaStep_RunWithBadRequestError(t *testing.T) {
