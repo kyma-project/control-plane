@@ -18,7 +18,7 @@ type OIDCConfig struct {
 	SupportedSigningAlgs []string
 }
 
-//Extends authenticator.Request interface with Cancel() function used to stop underlying authenticator instance once it's not needed anymore
+// Extends authenticator.Request interface with Cancel() function used to stop underlying authenticator instance once it's not needed anymore
 type CancelableAuthRequest interface {
 	authenticator.Request
 	Cancel() //Cancels (stops) the underlying instance
