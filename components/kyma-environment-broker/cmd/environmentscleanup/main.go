@@ -40,12 +40,18 @@ func main() {
 
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	fatalOnError(fmt.Errorf("while loading cleanup config: %w", err))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while loading cleanup config: %w", err))
+	}
 
 	clusterCfg, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
-	fatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
+	}
 	cli, err := dynamic.NewForConfig(clusterCfg)
-	fatalOnError(fmt.Errorf("while creating Gardener client: %w", err))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while creating Gardener client: %w", err))
+	}
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	shootClient := cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 
@@ -56,7 +62,9 @@ func main() {
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	db, conn, err := storage.NewFromConfig(cfg.Database, events.Config{}, cipher, log.WithField("service", "storage"))
-	fatalOnError(err)
+	if err != nil {
+		fatalOnError(err)
+	}
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)
 
