@@ -15,14 +15,14 @@ const (
 	TenantHeader = "Tenant"
 )
 
-//Caller wrapper structure for the graphQL Client
+// Caller wrapper structure for the graphQL Client
 type Caller struct {
 	tenant        string
 	client        *graphql.Client
 	queryProvider queryProvider
 }
 
-//NewCaller return a new Caller instance
+// NewCaller return a new Caller instance
 func NewCaller(endpoint, tenant string) *Caller {
 	gqlClient := graphql.NewClient(endpoint)
 
@@ -40,7 +40,7 @@ func (c Caller) newRequest(query string) *graphql.Request {
 	return req
 }
 
-//RuntimeStatus return schema.RuntimeStatus
+// RuntimeStatus return schema.RuntimeStatus
 func (c Caller) RuntimeStatus(runtimeID string) (schema.RuntimeStatus, error) {
 	query := c.queryProvider.runtimeStatus(runtimeID)
 	req := c.newRequest(query)
