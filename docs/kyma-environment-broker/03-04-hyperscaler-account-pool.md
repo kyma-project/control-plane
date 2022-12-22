@@ -48,7 +48,7 @@ metadata:
 
 ## EU Access
 
-The EU access regions need a separate credentials pool. The secret contains the additional label **euAccess** set to `true`. This is the example of a secret that stores EU access hyperscaler credentials:
+The EU access regions need a separate credentials pool. The Secret contains the additional label **euAccess** set to `true`. This is an example of a Secret that stores EU access hyperscaler credentials:
 
 ```yaml
 apiVersion: v1
