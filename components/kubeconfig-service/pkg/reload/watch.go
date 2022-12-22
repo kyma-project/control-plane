@@ -40,7 +40,7 @@ func NewWatcher(name string, filePaths []string, evBatchDelaySeconds uint8, noti
 	}
 }
 
-//Run implements Watcher interface
+// Run implements Watcher interface
 func (w *watcher) Run(ctx context.Context) {
 	log.Infof("Watcher [%s] starts watching for files: %v", w.name, w.filePaths)
 
@@ -126,7 +126,7 @@ func (w *watcher) watchForDirs(dirs []string, watchFunc func(fEventChan <-chan f
 	watchFunc(fw.Events)
 }
 
-//Extracts directory paths from provided filePaths list and returns a list of paths with duplicates removed.
+// Extracts directory paths from provided filePaths list and returns a list of paths with duplicates removed.
 func uniqeDirNames(filePaths []string) []string {
 	if len(filePaths) == 0 {
 		return []string{}
