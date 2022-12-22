@@ -12,20 +12,20 @@ type AccountProvider struct {
 	mock.Mock
 }
 
-// GardenerSecretName provides a mock function with given fields: hyperscalerType, tenantName
-func (_m *AccountProvider) GardenerSecretName(hyperscalerType hyperscaler.Type, tenantName string) (string, error) {
-	ret := _m.Called(hyperscalerType, tenantName)
+// GardenerSecretName provides a mock function with given fields: hyperscalerType, tenantName, euAccess
+func (_m *AccountProvider) GardenerSecretName(hyperscalerType hyperscaler.Type, tenantName string, euAccess bool) (string, error) {
+	ret := _m.Called(hyperscalerType, tenantName, euAccess)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(hyperscaler.Type, string) string); ok {
-		r0 = rf(hyperscalerType, tenantName)
+	if rf, ok := ret.Get(0).(func(hyperscaler.Type, string, bool) string); ok {
+		r0 = rf(hyperscalerType, tenantName, euAccess)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(hyperscaler.Type, string) error); ok {
-		r1 = rf(hyperscalerType, tenantName)
+	if rf, ok := ret.Get(1).(func(hyperscaler.Type, string, bool) error); ok {
+		r1 = rf(hyperscalerType, tenantName, euAccess)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -33,20 +33,20 @@ func (_m *AccountProvider) GardenerSecretName(hyperscalerType hyperscaler.Type, 
 	return r0, r1
 }
 
-// GardenerSharedSecretName provides a mock function with given fields: hyperscalerType
-func (_m *AccountProvider) GardenerSharedSecretName(hyperscalerType hyperscaler.Type) (string, error) {
-	ret := _m.Called(hyperscalerType)
+// GardenerSharedSecretName provides a mock function with given fields: hyperscalerType, euAccess
+func (_m *AccountProvider) GardenerSharedSecretName(hyperscalerType hyperscaler.Type, euAccess bool) (string, error) {
+	ret := _m.Called(hyperscalerType, euAccess)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(hyperscaler.Type) string); ok {
-		r0 = rf(hyperscalerType)
+	if rf, ok := ret.Get(0).(func(hyperscaler.Type, bool) string); ok {
+		r0 = rf(hyperscalerType, euAccess)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(hyperscaler.Type) error); ok {
-		r1 = rf(hyperscalerType)
+	if rf, ok := ret.Get(1).(func(hyperscaler.Type, bool) error); ok {
+		r1 = rf(hyperscalerType, euAccess)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -54,13 +54,13 @@ func (_m *AccountProvider) GardenerSharedSecretName(hyperscalerType hyperscaler.
 	return r0, r1
 }
 
-// MarkUnusedGardenerSecretBindingAsDirty provides a mock function with given fields: hyperscalerType, tenantName
-func (_m *AccountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType hyperscaler.Type, tenantName string) error {
-	ret := _m.Called(hyperscalerType, tenantName)
+// MarkUnusedGardenerSecretBindingAsDirty provides a mock function with given fields: hyperscalerType, tenantName, euAccess
+func (_m *AccountProvider) MarkUnusedGardenerSecretBindingAsDirty(hyperscalerType hyperscaler.Type, tenantName string, euAccess bool) error {
+	ret := _m.Called(hyperscalerType, tenantName, euAccess)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(hyperscaler.Type, string) error); ok {
-		r0 = rf(hyperscalerType, tenantName)
+	if rf, ok := ret.Get(0).(func(hyperscaler.Type, string, bool) error); ok {
+		r0 = rf(hyperscalerType, tenantName, euAccess)
 	} else {
 		r0 = ret.Error(0)
 	}
