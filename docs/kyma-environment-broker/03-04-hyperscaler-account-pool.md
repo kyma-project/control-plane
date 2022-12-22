@@ -44,3 +44,20 @@ metadata:
     hyperscaler-type: {HYPERSCALER_TYPE}
     shared: "true"
 ```
+
+
+## EU Access
+
+The EU access regions need a separate credentials pool. The Secret contains the additional label **euAccess** set to `true`. This is an example of a Secret that stores EU access hyperscaler credentials:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {SECRET_NAME}
+  labels:
+    # tenant-name is omitted for new, not yet claimed account credentials
+    tenant-name: {TENANT_NAME}
+    hyperscaler-type: {HYPERSCALER_TYPE}
+    euAccess: "true"
+```

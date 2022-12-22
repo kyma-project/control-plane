@@ -177,3 +177,13 @@ func CheckBTPCredsMatching(a, b keb.Component) bool {
 	}
 	return true
 }
+
+func IsEuAccess(platformRegion string) bool {
+	switch platformRegion {
+	case "cf-eu11":
+		return true
+	case "cf-ch20":
+		return true
+	}
+	return false
+}

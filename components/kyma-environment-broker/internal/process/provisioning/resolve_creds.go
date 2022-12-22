@@ -43,14 +43,15 @@ func (s *ResolveCredentialsStep) Run(operation internal.Operation, log logrus.Fi
 		return s.operationManager.OperationFailed(operation, msg, err, log)
 	}
 
-	log.Infof("HAP lookup for credentials secret binding to provision cluster for global account ID %s on Hyperscaler %s", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
+	euAccess := internal.IsEuAccess(operation.ProvisioningParameters.PlatformRegion)
+	log.Infof("HAP lookup for credentials secret binding to provision cluster for global account ID %s on Hyperscaler %s, euAccess %v", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType, euAccess)
 
 	var secretName string
 	if !broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) {
-		secretName, err = s.accountProvider.GardenerSecretName(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+		secretName, err = s.accountProvider.GardenerSecretName(hypType, operation.ProvisioningParameters.ErsContext.GlobalAccountID, euAccess)
 	} else {
 		log.Infof("HAP lookup for shared secret binding")
-		secretName, err = s.accountProvider.GardenerSharedSecretName(hypType)
+		secretName, err = s.accountProvider.GardenerSharedSecretName(hypType, euAccess)
 	}
 	if err != nil {
 		msg := fmt.Sprintf("HAP lookup for secret binding to provision cluster for global account ID %s on Hyperscaler %s has failed", operation.ProvisioningParameters.ErsContext.GlobalAccountID, hypType)
