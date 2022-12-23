@@ -316,7 +316,7 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 			},
 			{
 				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntryInput{
 					fixGQLConfigEntryInput("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntryInput("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -373,7 +373,7 @@ func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
 			},
 			{
 				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
