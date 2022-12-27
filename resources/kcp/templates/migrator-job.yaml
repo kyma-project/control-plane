@@ -85,13 +85,18 @@ spec:
                         value: "kyma-environment-broker"
                       - name: DIRECTION
                         value: "up"
-                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                   volumeMounts:
+                      - name: kyma-environment-broker
+                        mountPath: /migrate/new-migrations/kyma-environment-broker
+                      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                       - name: cloudsql-sslrootcert
                         mountPath: /secrets/cloudsql-sslrootcert
                         readOnly: true
-                {{- end}}
+                      {{- end}}
             volumes:
+              - name: kyma-environment-broker
+                configMap:
+                  name: kyma-environment-broker-migrations
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 secret:
@@ -193,13 +198,18 @@ spec:
                         value: "provisioner"
                       - name: DIRECTION
                         value: "up"
-                {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                   volumeMounts:
+                      - name: provisioner
+                        mountPath: /migrate/new-migrations/provisioner
+                      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                       - name: cloudsql-sslrootcert
                         mountPath: /secrets/cloudsql-sslrootcert
                         readOnly: true
-                {{- end}}
+                      {{- end}}
             volumes:
+              - name: provisioner
+                configMap:
+                  name: provisioner-migrations
             {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 secret:
