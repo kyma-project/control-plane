@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -80,13 +80,34 @@ func (c *OperationDurationCollector) OnDeprovisioningStepProcessed(ctx context.C
 	return nil
 }
 
+func (c *OperationDurationCollector) OnOperationStepProcessed(ctx context.Context, ev interface{}) error {
+	stepProcessed, ok := ev.(process.OperationStepProcessed)
+	if !ok {
+		return fmt.Errorf("expected process.OperationStepProcessed in OnOperationStepProcessed but got %+v", ev)
+	}
+
+	if stepProcessed.Operation.Type == internal.OperationTypeDeprovision {
+		dsp := process.DeprovisioningStepProcessed{
+			StepProcessed: stepProcessed.StepProcessed,
+			OldOperation:  internal.DeprovisioningOperation{Operation: stepProcessed.OldOperation},
+			Operation:     internal.DeprovisioningOperation{Operation: stepProcessed.Operation},
+		}
+		err := c.OnDeprovisioningStepProcessed(ctx, dsp)
+		if err != nil {
+			return fmt.Errorf("failed to handle OnDeprovisioningStepProcessed in OnOperationStepProcessed: %w", err)
+		}
+	}
+	return nil
+}
+
 func (c *OperationDurationCollector) OnOperationSucceeded(ctx context.Context, ev interface{}) error {
 	operationSucceeded, ok := ev.(process.OperationSucceeded)
 	if !ok {
 		return fmt.Errorf("expected OperationSucceeded but got %+v", ev)
 	}
 
-	if operationSucceeded.Operation.Type == internal.OperationTypeProvision {
+	switch operationSucceeded.Operation.Type {
+	case internal.OperationTypeProvision:
 		provisioningOperation := process.ProvisioningSucceeded{
 			Operation: internal.ProvisioningOperation{Operation: operationSucceeded.Operation},
 		}
@@ -94,8 +115,13 @@ func (c *OperationDurationCollector) OnOperationSucceeded(ctx context.Context, e
 		if err != nil {
 			return err
 		}
-	} else {
-		return fmt.Errorf("expected OperationStep of type %s but got %+v", internal.OperationTypeProvision, operationSucceeded.Operation.Type)
+	case internal.OperationTypeDeprovision:
+		op := operationSucceeded.Operation
+		pp := operationSucceeded.Operation.ProvisioningParameters
+		minutes := op.UpdatedAt.Sub(op.CreatedAt).Minutes()
+		c.deprovisioningHistogram.WithLabelValues(op.ID, op.InstanceID, pp.ErsContext.GlobalAccountID, pp.PlanID).Observe(minutes)
+	default:
+		return fmt.Errorf("unsupported OperationStep %+v for OnOperationSucceeded handler", operationSucceeded.Operation.Type)
 	}
 
 	return nil

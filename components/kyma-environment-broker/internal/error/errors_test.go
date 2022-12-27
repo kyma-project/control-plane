@@ -10,7 +10,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	apierr2 "k8s.io/apimachinery/pkg/api/meta"
@@ -25,16 +24,16 @@ func TestLastError(t *testing.T) {
 		edpConfErr := edp.NewEDPConflictError("id", fmt.Sprintf("Resource %s already exists", "id"))
 		expectEdpConfMsg := "Resource id already exists"
 
-		avsErr := errors.Wrap(avs.NewAvsError("avs server returned %d status code", http.StatusUnauthorized), "something")
+		avsErr := fmt.Errorf("something: %w", avs.NewAvsError("avs server returned %d status code", http.StatusUnauthorized))
 		expectAvsMsg := fmt.Sprintf("something: avs server returned %d status code", http.StatusUnauthorized)
 
-		reccErr := errors.Wrap(reconciler.NewReconcilerError(nil, "reconciler error"), "something")
+		reccErr := fmt.Errorf("something: %w", reconciler.NewReconcilerError(nil, "reconciler error"))
 		expectReccMsg := "something: reconciler error"
 
-		dbErr := errors.Wrap(dberr.NotFound("Some NotFound apperror, %s", "Some pkg err"), "something")
+		dbErr := fmt.Errorf("something: %w", dberr.NotFound("Some NotFound apperror, %s", "Some pkg err"))
 		expectDbErr := fmt.Sprintf("something: Some NotFound apperror, Some pkg err")
 
-		timeoutErr := errors.Wrap(errors.New("operation has reached the time limit: 2h"), "something")
+		timeoutErr := fmt.Errorf("something: %w", fmt.Errorf("operation has reached the time limit: 2h"))
 		expectTimeoutMsg := "something: operation has reached the time limit: 2h"
 
 		// when
@@ -81,7 +80,7 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 			SetMessage(fmt.Sprintf("Got status %d", 502)).
 			SetReason(kebError.ErrHttpStatusCode).
 			SetComponent(kebError.ErrReconciler)
-		tempErr := errors.Wrap(kebError.WrapNewTemporaryError(errors.Wrap(err, "something")), "something else")
+		tempErr := fmt.Errorf("something else: %w", kebError.WrapNewTemporaryError(fmt.Errorf("something: %w", err)))
 		expectMsg := fmt.Sprintf("something else: something: Got status %d", 502)
 
 		avsTempErr := kebError.WrapNewTemporaryError(avs.NewAvsError("avs server returned %d status code", 503))
@@ -114,7 +113,7 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 
 	t.Run("new temporary error", func(t *testing.T) {
 		// given
-		tempErr := errors.Wrap(kebError.NewTemporaryError("temporary error..."), "something")
+		tempErr := fmt.Errorf("something: %w", kebError.NewTemporaryError("temporary error..."))
 		expectMsg := "something: temporary error..."
 
 		// when
@@ -130,7 +129,7 @@ func TestTemporaryErrorToLastError(t *testing.T) {
 
 func TestNotFoundError(t *testing.T) {
 	// given
-	err := errors.Wrap(kebError.NotFoundError{}, "something")
+	err := fmt.Errorf("something: %w", kebError.NotFoundError{})
 
 	// when
 	lastErr := kebError.ReasonForError(err)
@@ -144,10 +143,10 @@ func TestNotFoundError(t *testing.T) {
 
 func TestK8SLastError(t *testing.T) {
 	// given
-	errBadReq := errors.Wrap(apierr.NewBadRequest("bad request here"), "something")
-	errUnexpObj := errors.Wrap(&apierr.UnexpectedObjectError{}, "something")
-	errAmbi := errors.Wrap(&apierr2.AmbiguousResourceError{}, "something")
-	errNoMatch := errors.Wrap(&apierr2.NoKindMatchError{}, "something")
+	errBadReq := fmt.Errorf("something: %w", apierr.NewBadRequest("bad request here"))
+	errUnexpObj := fmt.Errorf("something: %w", &apierr.UnexpectedObjectError{})
+	errAmbi := fmt.Errorf("something: %w", &apierr2.AmbiguousResourceError{})
+	errNoMatch := fmt.Errorf("something: %w", &apierr2.NoKindMatchError{})
 
 	// when
 	lastErrBadReq := kebError.ReasonForError(errBadReq)

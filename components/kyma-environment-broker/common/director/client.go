@@ -2,12 +2,12 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	machineGraph "github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -71,11 +71,11 @@ func (dc *Client) SetLabel(accountID, runtimeID, key, value string) error {
 	dc.log.Info("Setup label in director")
 	response, err := dc.setLabelsInDirector(req)
 	if err != nil {
-		return errors.Wrapf(err, "while setting %s Runtime label to value %s", key, value)
+		return fmt.Errorf("while setting %s Runtime label to value %s: %w", key, value, err)
 	}
 
 	if response.Result == nil {
-		return errors.Errorf("failed to set %s Runtime label to value %s. Received nil response.", key, value)
+		return fmt.Errorf("failed to set %s Runtime label to value %s. Received nil response", key, value)
 	}
 
 	dc.log.Infof("Label %s:%s set correctly", response.Result.Key, response.Result.Value)
@@ -136,10 +136,10 @@ func (dc *Client) getRuntimeIdFromDirector(req *machineGraph.Request) (*getRunti
 
 func (dc *Client) getIDFromRuntime(response *graphql.RuntimePageExt) (string, error) {
 	if response.Data == nil || len(response.Data) == 0 || response.Data[0] == nil {
-		return "", errors.New("got empty data from director response")
+		return "", fmt.Errorf("got empty data from director response")
 	}
 	if len(response.Data) > 1 {
-		return "", errors.Errorf("expected single runtime, got: %v", response.Data)
+		return "", fmt.Errorf("expected single runtime, got: %v", response.Data)
 	}
 	return response.Data[0].ID, nil
 }

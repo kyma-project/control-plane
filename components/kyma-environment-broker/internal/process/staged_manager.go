@@ -101,7 +101,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	}
 
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
-	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+	logOperation.Infof("Start process operation steps for GlobalAccount=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
 		timeoutErr := kebError.TimeoutError("operation has reached the time limit")
 		operation.LastError = timeoutErr
@@ -213,7 +213,8 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 				When:     when,
 				Error:    err,
 			},
-			Operation: processedOperation,
+			Operation:    processedOperation,
+			OldOperation: operation,
 		})
 
 		// break the loop if:
@@ -223,7 +224,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 		if when == 0 || err != nil || time.Since(begin) > 10*time.Minute {
 			return processedOperation, when, err
 		}
-		operation.EventInfof("processing step %v sleeping for %v", step.Name(), when)
+		operation.EventInfof("step %v sleeping for %v", step.Name(), when)
 		time.Sleep(when / time.Duration(m.speedFactor))
 	}
 }
@@ -237,6 +238,7 @@ func (m *StagedManager) callPubSubOutsideSteps(operation *internal.Operation, er
 			Duration: time.Since(operation.CreatedAt),
 			Error:    err,
 		},
-		Operation: *operation,
+		OldOperation: *operation,
+		Operation:    *operation,
 	})
 }

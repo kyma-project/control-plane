@@ -914,7 +914,7 @@ func TestStatusRetryHandler_AttachRoutes(t *testing.T) {
 
 		orchestrationID := "orchestration-" + fixID
 		operationIDs := []string{"id-2"}
-		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID, State: orchestration.Failed, Type: orchestration.UpgradeKymaOrchestration, Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{Schedule: orchestration.MaintenanceWindow}}})
+		err := db.Orchestrations().Insert(internal.Orchestration{OrchestrationID: orchestrationID, State: orchestration.Failed, Type: orchestration.UpgradeKymaOrchestration, Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{Schedule: time.Now().Format(time.RFC3339), MaintenanceWindow: true}}})
 		require.NoError(t, err)
 
 		err = fixFailedOrchestrationOperations(db, orchestrationID, orchestration.UpgradeKymaOrchestration)

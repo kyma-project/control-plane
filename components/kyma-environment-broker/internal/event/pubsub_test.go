@@ -2,7 +2,7 @@ package event_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -68,7 +68,7 @@ func TestPubSub_WhenHandlerReturnsError(t *testing.T) {
 	handlerA1 := func(ctx context.Context, ev interface{}) error {
 		mu.Lock()
 		defer mu.Unlock()
-		return errors.New("some error")
+		return fmt.Errorf("some error")
 	}
 	svc := event.NewPubSub(logger)
 	svc.Subscribe(eventA{}, handlerA1)

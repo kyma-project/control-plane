@@ -10,7 +10,6 @@ import (
 
 	gcli "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/third_party/machinebox/graphql"
 	schema "github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 )
 
 // accountIDKey is a header key name for request send by graphQL client
@@ -55,7 +54,7 @@ func NewProvisionerClient(endpoint string, queryDumping bool) Client {
 func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.ProvisionRuntimeInput) (schema.OperationStatus, error) {
 	provisionRuntimeIptGQL, err := c.graphqlizer.ProvisionRuntimeInputToGraphQL(config)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Provision Runtime Input to query")
+		return schema.OperationStatus{}, fmt.Errorf("failed to convert Provision Runtime Input to query: %w", err)
 	}
 
 	query := c.queryProvider.provisionRuntime(provisionRuntimeIptGQL)
@@ -66,7 +65,7 @@ func (c *client) ProvisionRuntime(accountID, subAccountID string, config schema.
 	var response schema.OperationStatus
 	err = c.executeRequest(req, &response)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "failed to provision a Runtime")
+		return schema.OperationStatus{}, fmt.Errorf("failed to provision a Runtime: %w", err)
 	}
 
 	return response, nil
@@ -80,7 +79,7 @@ func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error)
 	var operationId string
 	err := c.executeRequest(req, &operationId)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to deprovision Runtime")
+		return "", fmt.Errorf("failed to deprovision Runtime: %w", err)
 	}
 	return operationId, nil
 }
@@ -88,7 +87,7 @@ func (c *client) DeprovisionRuntime(accountID, runtimeID string) (string, error)
 func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.UpgradeRuntimeInput) (schema.OperationStatus, error) {
 	upgradeRuntimeIptGQL, err := c.graphqlizer.UpgradeRuntimeInputToGraphQL(config)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Runtime Input to query")
+		return schema.OperationStatus{}, fmt.Errorf("failed to convert Upgrade Runtime Input to query: %w", err)
 	}
 
 	query := c.queryProvider.upgradeRuntime(runtimeID, upgradeRuntimeIptGQL)
@@ -98,7 +97,7 @@ func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.Upgra
 	var res schema.OperationStatus
 	err = c.executeRequest(req, &res)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Runtime")
+		return schema.OperationStatus{}, fmt.Errorf("failed to upgrade Runtime: %w", err)
 	}
 	return res, nil
 }
@@ -106,7 +105,7 @@ func (c *client) UpgradeRuntime(accountID, runtimeID string, config schema.Upgra
 func (c *client) UpgradeShoot(accountID, runtimeID string, config schema.UpgradeShootInput) (schema.OperationStatus, error) {
 	upgradeShootIptGQL, err := c.graphqlizer.UpgradeShootInputToGraphQL(config)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to convert Upgrade Shoot Input to query")
+		return schema.OperationStatus{}, fmt.Errorf("failed to convert Upgrade Shoot Input to query: %w", err)
 	}
 
 	query := c.queryProvider.upgradeShoot(runtimeID, upgradeShootIptGQL)
@@ -116,7 +115,7 @@ func (c *client) UpgradeShoot(accountID, runtimeID string, config schema.Upgrade
 	var res schema.OperationStatus
 	err = c.executeRequest(req, &res)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to upgrade Shoot")
+		return schema.OperationStatus{}, fmt.Errorf("failed to upgrade Shoot: %w", err)
 	}
 	return res, nil
 }
@@ -129,7 +128,7 @@ func (c *client) ReconnectRuntimeAgent(accountID, runtimeID string) (string, err
 	var operationId string
 	err := c.executeRequest(req, &operationId)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to reconnect Runtime agent")
+		return "", fmt.Errorf("failed to reconnect Runtime agent: %w", err)
 	}
 	return operationId, nil
 }
@@ -142,7 +141,7 @@ func (c *client) RuntimeOperationStatus(accountID, operationID string) (schema.O
 	var response schema.OperationStatus
 	err := c.executeRequest(req, &response)
 	if err != nil {
-		return schema.OperationStatus{}, errors.Wrap(err, "Failed to get Runtime operation status")
+		return schema.OperationStatus{}, fmt.Errorf("failed to get Runtime operation status: %w", err)
 	}
 	return response, nil
 }
@@ -155,14 +154,14 @@ func (c *client) RuntimeStatus(accountID, runtimeID string) (schema.RuntimeStatu
 	var response schema.RuntimeStatus
 	err := c.executeRequest(req, &response)
 	if err != nil {
-		return schema.RuntimeStatus{}, errors.Wrap(err, "Failed to get Runtime status")
+		return schema.RuntimeStatus{}, fmt.Errorf("failed to get Runtime status: %w", err)
 	}
 	return response, nil
 }
 
 func (c *client) executeRequest(req *gcli.Request, respDestination interface{}) error {
 	if reflect.ValueOf(respDestination).Kind() != reflect.Ptr {
-		return errors.New("destination is not of pointer type")
+		return fmt.Errorf("destination is not of pointer type")
 	}
 
 	type graphQLResponseWrapper struct {

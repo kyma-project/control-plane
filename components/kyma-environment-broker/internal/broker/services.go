@@ -3,9 +3,11 @@ package broker
 import (
 	"context"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
-	"github.com/pkg/errors"
+	"fmt"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/middleware"
 
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
@@ -47,11 +49,12 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 	// we scope to the kymaruntime service only
 	class, ok := b.servicesConfig[KymaServiceName]
 	if !ok {
-		return nil, errors.Errorf("while getting %s class data", KymaServiceName)
+		return nil, fmt.Errorf("while getting %s class data", KymaServiceName)
 	}
 
 	provider, ok := middleware.ProviderFromContext(ctx)
-	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema) {
+	platformRegion, ok := middleware.RegionFromContext(ctx)
+	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema, internal.IsEURestrictedAccess(platformRegion)) {
 		// filter out not enabled plans
 		if _, exists := b.enabledPlanIDs[plan.ID]; !exists {
 			continue

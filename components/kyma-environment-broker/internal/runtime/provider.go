@@ -13,7 +13,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/iosafety"
 	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -58,12 +57,12 @@ func (r *ComponentsListProvider) AllComponents(kymaVersion internal.RuntimeVersi
 
 	kymaComponents, err := r.getKymaComponents(kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting Kyma components")
+		return nil, fmt.Errorf("while getting Kyma components: %w", err)
 	}
 
 	additionalComponents, err := r.getAdditionalComponents(kymaVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting additional components")
+		return nil, fmt.Errorf("while getting additional components: %w", err)
 	}
 
 	allComponents := append(kymaComponents, additionalComponents...)
@@ -127,7 +126,7 @@ func (r *ComponentsListProvider) checkStatusCode(resp *http.Response) error {
 	case resp.StatusCode >= http.StatusInternalServerError:
 		return kebError.NewTemporaryError(msg)
 	default:
-		return errors.New(msg)
+		return fmt.Errorf(msg)
 	}
 }
 
@@ -164,7 +163,7 @@ func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion str
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating http request")
+		return nil, fmt.Errorf("while creating http request: %w", err)
 	}
 
 	resp, err := r.httpClient.Do(req)
@@ -173,11 +172,11 @@ func (r *ComponentsListProvider) getComponentsFromComponentsYaml(kymaVersion str
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = multierror.Append(err, fmt.Errorf("while draining response body: %w", drainErr))
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = multierror.Append(err, fmt.Errorf("while closing response body: %w", closeErr))
 		}
 	}()
 
@@ -210,7 +209,7 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 
 	req, err := http.NewRequest(http.MethodGet, yamlURL, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating http request")
+		return nil, fmt.Errorf("while creating http request: %w", err)
 	}
 
 	resp, err := r.httpClient.Do(req)
@@ -219,11 +218,11 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 	}
 	defer func() {
 		if drainErr := iosafety.DrainReader(resp.Body); drainErr != nil {
-			err = multierror.Append(err, errors.Wrap(drainErr, "while trying to drain body reader"))
+			err = multierror.Append(err, fmt.Errorf("while draining response body: %w", drainErr))
 		}
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "while trying to close body reader"))
+			err = multierror.Append(err, fmt.Errorf("while closing response body: %w", closeErr))
 		}
 	}()
 
@@ -243,13 +242,13 @@ func (r *ComponentsListProvider) getComponentsFromInstallerYaml(kymaVersion stri
 			return components, nil
 		}
 	}
-	return nil, errors.New("installer cr not found")
+	return nil, fmt.Errorf("installer cr not found")
 }
 
 func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]internal.KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.newAdditionalRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with additional components for new Kyma")
+		return nil, fmt.Errorf("while reading additional components yaml: %w", err)
 	}
 	return r.getComponentsFromYAML(yamlContents)
 }
@@ -257,7 +256,7 @@ func (r *ComponentsListProvider) getAdditionalComponentsForNewKyma() ([]internal
 func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]internal.KymaComponent, error) {
 	yamlContents, err := r.readYAML(r.managedRuntimeComponentsYAMLPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while reading YAML file with additional components")
+		return nil, fmt.Errorf("while reading additional components yaml: %w", err)
 	}
 	return r.getComponentsFromYAML(yamlContents)
 }
@@ -265,7 +264,7 @@ func (r *ComponentsListProvider) getAdditionalComponentsForKyma() ([]internal.Ky
 func (r *ComponentsListProvider) readYAML(yamlFilePath string) ([]byte, error) {
 	yamlContents, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "while trying to read YAML file")
+		return nil, fmt.Errorf("while reading yaml file: %w", err)
 	}
 	return yamlContents, nil
 }
@@ -276,7 +275,7 @@ func (r *ComponentsListProvider) getComponentsFromYAML(yamlFileContents []byte) 
 	}
 	err := yaml.Unmarshal(yamlFileContents, &components)
 	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling YAML file with additional components")
+		return nil, fmt.Errorf("while unmarshalling YAML file with additional components: %w", err)
 	}
 	return components.Components, nil
 }

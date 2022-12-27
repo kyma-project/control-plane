@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/job"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/client-go/dynamic"
@@ -52,8 +51,7 @@ func main() {
 
 func exitOnError(err error, context string) {
 	if err != nil {
-		wrappedError := errors.Wrap(err, context)
-		log.Fatal(wrappedError)
+		log.Fatal(fmt.Errorf("%s: %s", context, err))
 	}
 }
 

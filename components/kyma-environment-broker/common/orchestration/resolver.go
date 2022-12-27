@@ -2,13 +2,13 @@ package orchestration
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"sync"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	brokerapi "github.com/pivotal-cf/brokerapi/v8/domain"
@@ -64,11 +64,11 @@ func (resolver *GardenerRuntimeResolver) Resolve(targets TargetSpec) ([]Runtime,
 	runtimes := []Runtime{}
 	shoots, err := resolver.getAllShoots()
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing gardener shoots in namespace %s", resolver.gardenerNamespace)
+		return nil, fmt.Errorf("while listing gardener shoots in namespace %s: %w", resolver.gardenerNamespace, err)
 	}
 	err = resolver.syncRuntimeOperations()
 	if err != nil {
-		return nil, errors.Wrap(err, "while syncing runtimes")
+		return nil, fmt.Errorf("while syncing runtimes: %w", err)
 	}
 
 	// Assemble IDs of runtimes to exclude

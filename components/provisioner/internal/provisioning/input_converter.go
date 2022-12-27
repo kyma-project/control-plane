@@ -33,6 +33,7 @@ func NewInputConverter(
 		defaultEnableKubernetesVersionAutoUpdate:         defaultEnableKubernetesVersionAutoUpdate,
 		defaultEnableMachineImageVersionAutoUpdate:       defaultEnableMachineImageVersionAutoUpdate,
 		defaultProvisioningShootNetworkingFilterDisabled: true,
+		defaultEuAccess:                                  false,
 		forceAllowPrivilegedContainers:                   forceAllowPrivilegedContainers,
 	}
 }
@@ -44,6 +45,7 @@ type converter struct {
 	defaultEnableKubernetesVersionAutoUpdate         bool
 	defaultEnableMachineImageVersionAutoUpdate       bool
 	defaultProvisioningShootNetworkingFilterDisabled bool
+	defaultEuAccess                                  bool
 	forceAllowPrivilegedContainers                   bool
 }
 
@@ -128,6 +130,7 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		ExposureClassName:                   input.ExposureClassName,
 		ShootNetworkingFilterDisabled:       input.ShootNetworkingFilterDisabled,
 		ControlPlaneFailureTolerance:        input.ControlPlaneFailureTolerance,
+		EuAccess:                            util.UnwrapBoolOrDefault(input.EuAccess, c.defaultEuAccess),
 	}, nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +14,9 @@ func TestTemporaryError(t *testing.T) {
 	err3 := NewTemporaryError("some error: %s", fmt.Errorf("argErr"))
 
 	// when
-	e1 := errors.Wrapf(err1, "wrap err %s", "arg1")
+	e1 := fmt.Errorf("wrap err %s: %w", "arg1", err1)
 	e2 := AsTemporaryError(err2, "wrap err %s", "arg1")
-	e3 := errors.Wrapf(err3, "wrap err %s", "arg1")
+	e3 := fmt.Errorf("wrap err %s: %w", "arg1", err3)
 
 	// then
 	assert.False(t, IsTemporaryError(e1))

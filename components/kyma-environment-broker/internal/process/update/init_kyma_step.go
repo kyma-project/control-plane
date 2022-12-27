@@ -3,6 +3,8 @@ package update
 import (
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtimeversion"
@@ -40,7 +42,13 @@ func (s *InitKymaVersionStep) Run(operation internal.Operation, log logrus.Field
 		version = &operation.RuntimeVersion
 	}
 	var lrs internal.RuntimeState
+	// try to find latest reconciler request
 	lrs, err = s.runtimeStatesDb.GetLatestWithReconcilerInputByRuntimeID(operation.RuntimeID)
+	if dberr.IsNotFound(err) {
+		// if there is no such runtime state (reconciler was not called - for example preview plan) then do not filter by type
+		// todo: this will be simplified when the integration with Reconciler is removed
+		lrs, err = s.runtimeStatesDb.GetLatestByRuntimeID(operation.RuntimeID)
+	}
 	if err != nil {
 		return s.operationManager.RetryOperation(operation, "error while getting latest runtime state", err, 5*time.Second, 1*time.Minute, log)
 	}

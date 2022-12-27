@@ -1,8 +1,9 @@
 package version
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
 )
 
 func IsKymaVersionAtLeast_1_20(runTimeVersion string) (bool, error) {
@@ -16,7 +17,7 @@ func IsKymaVersionAtLeast_1_21(runTimeVersion string) (bool, error) {
 func isKymaVersionAtLeast(constraint, runTimeVersion string) (bool, error) {
 	c, err := semver.NewConstraint(constraint)
 	if err != nil {
-		return false, errors.Errorf("unable to parse constraint  %s for kyma version %s", constraint, runTimeVersion)
+		return false, fmt.Errorf("unable to parse constraint  %s for kyma version %s", constraint, runTimeVersion)
 	}
 
 	version, err := semver.NewVersion(runTimeVersion)

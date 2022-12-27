@@ -1,12 +1,13 @@
 package azure
 
 import (
+	"fmt"
+
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,19 +33,19 @@ func (ac *azureProvider) GetClient(config *Config, logger logrus.FieldLogger) (I
 
 	authorizer, err := ac.getResourceManagementAuthorizer(config, environment)
 	if err != nil {
-		return nil, errors.Wrap(err, "while initializing authorizer")
+		return nil, fmt.Errorf("while initializing authorizer: %w", err)
 	}
 
 	// create namespace client
 	nsClient, err := ac.getNamespaceClient(config, authorizer)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating namespace client")
+		return nil, fmt.Errorf("while creating namespace client: %w", err)
 	}
 
 	// create resource group client
 	resourceGroupClient, err := ac.getGroupsClient(config, authorizer)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating resource group client")
+		return nil, fmt.Errorf("while creating resource group client: %w", err)
 	}
 
 	// create azure client
@@ -57,7 +58,7 @@ func (ac *azureProvider) getNamespaceClient(config *Config, authorizer autorest.
 	nsClient.Authorizer = authorizer
 
 	if err := nsClient.AddToUserAgent(config.userAgent); err != nil {
-		return eventhub.NamespacesClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
+		return eventhub.NamespacesClient{}, fmt.Errorf("while adding user agent [%s]: %w", config.userAgent, err)
 	}
 	return nsClient, nil
 }
@@ -68,7 +69,7 @@ func (ac *azureProvider) getGroupsClient(config *Config, authorizer autorest.Aut
 	client.Authorizer = authorizer
 
 	if err := client.AddToUserAgent(config.userAgent); err != nil {
-		return resources.GroupsClient{}, errors.Wrapf(err, "while adding user agent [%s]", config.userAgent)
+		return resources.GroupsClient{}, fmt.Errorf("while adding user agent [%s]: %w", config.userAgent, err)
 	}
 
 	return client, nil
@@ -77,7 +78,7 @@ func (ac *azureProvider) getGroupsClient(config *Config, authorizer autorest.Aut
 func (ac *azureProvider) getResourceManagementAuthorizer(config *Config, environment *azure.Environment) (autorest.Authorizer, error) {
 	armAuthorizer, err := ac.getAuthorizerForResource(config, environment)
 	if err != nil {
-		return nil, errors.Wrap(err, "while creating resource authorizer")
+		return nil, fmt.Errorf("while creating resource authorizer: %w", err)
 	}
 
 	return armAuthorizer, err
@@ -87,12 +88,12 @@ func (ac *azureProvider) getAuthorizerForResource(config *Config, environment *a
 
 	oauthConfig, err := adal.NewOAuthConfig(environment.ActiveDirectoryEndpoint, config.tenantID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while creating OAuth config: %w", err)
 	}
 
 	token, err := adal.NewServicePrincipalToken(*oauthConfig, config.clientID, config.clientSecret, environment.ResourceManagerEndpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while creating service principal token: %w", err)
 	}
-	return autorest.NewBearerAuthorizer(token), err
+	return autorest.NewBearerAuthorizer(token), nil
 }

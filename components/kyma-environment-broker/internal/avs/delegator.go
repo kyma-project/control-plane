@@ -8,7 +8,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -145,7 +144,7 @@ func (del *Delegator) SetStatus(log logrus.FieldLogger, lifecycleData *internal.
 	if !ValidStatus(status) {
 		errMsg := fmt.Sprintf("avs SetStatus tried invalid status: %s", status)
 		log.Error(errMsg)
-		return errors.New(errMsg)
+		return fmt.Errorf(errMsg)
 	}
 
 	evalID := evalAssistant.GetEvaluationId(*lifecycleData)

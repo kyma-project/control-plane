@@ -1,11 +1,12 @@
 package postsql
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -28,7 +29,7 @@ func (s *orchestrations) Insert(orchestration internal.Orchestration) error {
 
 	dto, err := dbmodel.NewOrchestrationDTO(orchestration)
 	if err != nil {
-		return errors.Wrapf(err, "while converting Orchestration to DTO")
+		return fmt.Errorf("while converting Orchestration to DTO: %w", err)
 	}
 
 	sess := s.NewWriteSession()
@@ -101,7 +102,7 @@ func (s *orchestrations) List(filter dbmodel.OrchestrationFilter) ([]internal.Or
 func (s *orchestrations) Update(orchestration internal.Orchestration) error {
 	dto, err := dbmodel.NewOrchestrationDTO(orchestration)
 	if err != nil {
-		return errors.Wrapf(err, "while converting Orchestration to DTO")
+		return fmt.Errorf("while converting Orchestration to DTO: %w", err)
 	}
 
 	sess := s.NewWriteSession()

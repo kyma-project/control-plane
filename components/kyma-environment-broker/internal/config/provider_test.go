@@ -27,7 +27,7 @@ func TestConfigProvider(t *testing.T) {
 	fakeK8sClient := fake.NewClientBuilder().WithRuntimeObjects(cfgMap).Build()
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
-	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger)
+	cfgReader := config.NewConfigMapReader(ctx, fakeK8sClient, logger, kymaVersion)
 	cfgValidator := config.NewConfigMapKeysValidator()
 	cfgConverter := config.NewConfigMapConverter()
 	cfgProvider := config.NewConfigProvider(cfgReader, cfgValidator, cfgConverter)
@@ -49,6 +49,32 @@ func TestConfigProvider(t *testing.T) {
 		expectedCfg := fixDefault()
 		// when
 		cfg, err := cfgProvider.ProvideForGivenVersionAndPlan(kymaVersion, broker.AWSPlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Len(t, cfg.AdditionalComponents, len(expectedCfg.AdditionalComponents))
+		assert.ObjectsAreEqual(expectedCfg, cfg)
+	})
+
+	t.Run("should provide config for default Kyma version and azure plan when PR-* Kyma version is passed", func(t *testing.T) {
+		// given
+		expectedCfg := fixAzureConfig()
+		customKymaVer := "PR-1234"
+		// when
+		cfg, err := cfgProvider.ProvideForGivenVersionAndPlan(customKymaVer, broker.AzurePlanName)
+
+		// then
+		require.NoError(t, err)
+		assert.Len(t, cfg.AdditionalComponents, len(expectedCfg.AdditionalComponents))
+		assert.ObjectsAreEqual(expectedCfg, cfg)
+	})
+
+	t.Run("should provide config for default Kyma version and azure plan when main-* Kyma version is passed", func(t *testing.T) {
+		// given
+		expectedCfg := fixAzureConfig()
+		customKymaVer := "main-fffff"
+		// when
+		cfg, err := cfgProvider.ProvideForGivenVersionAndPlan(customKymaVer, broker.AzurePlanName)
 
 		// then
 		require.NoError(t, err)

@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSchemaGenerator(t *testing.T) {
@@ -25,8 +25,10 @@ func TestSchemaGenerator(t *testing.T) {
 		updateFileOIDC      string
 	}{
 		{
-			name:           "AWS schema is correct",
-			generator:      AWSSchema,
+			name: "AWS schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AWSSchema(machinesDisplay, machines, additionalParams, update, false)
+			},
 			machineTypes:   []string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
 			file:           "aws-schema.json",
 			updateFile:     "update-aws-schema.json",
@@ -34,8 +36,21 @@ func TestSchemaGenerator(t *testing.T) {
 			updateFileOIDC: "update-aws-schema-additional-params.json",
 		},
 		{
-			name:           "Azure schema is correct",
-			generator:      AzureSchema,
+			name: "AWS schema with EU access restriction is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AWSSchema(machinesDisplay, machines, additionalParams, update, true)
+			},
+			machineTypes:   []string{"m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.8xlarge", "m5.12xlarge", "m6i.xlarge", "m6i.2xlarge", "m6i.4xlarge", "m6i.8xlarge", "m6i.12xlarge"},
+			file:           "aws-schema-eu.json",
+			updateFile:     "update-aws-schema.json",
+			fileOIDC:       "aws-schema-additional-params-eu.json",
+			updateFileOIDC: "update-aws-schema-additional-params.json",
+		},
+		{
+			name: "Azure schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AzureSchema(machinesDisplay, machines, additionalParams, update, false)
+			},
 			machineTypes:   []string{"Standard_D4_v3", "Standard_D8_v3", "Standard_D16_v3", "Standard_D32_v3", "Standard_D48_v3", "Standard_D64_v3"},
 			file:           "azure-schema.json",
 			updateFile:     "update-azure-schema.json",
@@ -43,14 +58,83 @@ func TestSchemaGenerator(t *testing.T) {
 			updateFileOIDC: "update-azure-schema-additional-params.json",
 		},
 		{
-			name:                "AzureLite schema is correct",
-			generator:           AzureLiteSchema,
+			name: "Azure schema with EU access restriction is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AzureSchema(machinesDisplay, machines, additionalParams, update, true)
+			},
+			machineTypes:   []string{"Standard_D4_v3", "Standard_D8_v3", "Standard_D16_v3", "Standard_D32_v3", "Standard_D48_v3", "Standard_D64_v3"},
+			file:           "azure-schema-eu.json",
+			updateFile:     "update-azure-schema.json",
+			fileOIDC:       "azure-schema-additional-params-eu.json",
+			updateFileOIDC: "update-azure-schema-additional-params.json",
+		},
+		{
+			name: "AzureLite schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AzureLiteSchema(machinesDisplay, machines, additionalParams, update, false)
+			},
 			machineTypes:        []string{"Standard_D4_v3"},
 			machineTypesDisplay: map[string]string{"Standard_D4_v3": "Standard_D4_v3 (4vCPU, 16GB RAM)"},
 			file:                "azure-lite-schema.json",
 			updateFile:          "update-azure-lite-schema.json",
 			fileOIDC:            "azure-lite-schema-additional-params.json",
 			updateFileOIDC:      "update-azure-lite-schema-additional-params.json",
+		},
+		{
+			name: "AzureLite schema with EU access restriction is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return AzureLiteSchema(machinesDisplay, machines, additionalParams, update, true)
+			},
+			machineTypes:        []string{"Standard_D4_v3"},
+			machineTypesDisplay: map[string]string{"Standard_D4_v3": "Standard_D4_v3 (4vCPU, 16GB RAM)"},
+			file:                "azure-lite-schema-eu.json",
+			updateFile:          "update-azure-lite-schema.json",
+			fileOIDC:            "azure-lite-schema-additional-params-eu.json",
+			updateFileOIDC:      "update-azure-lite-schema-additional-params.json",
+		},
+		{
+			name: "Freemium schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.Azure, additionalParams, update, false)
+			},
+			machineTypes:   []string{},
+			file:           "free-azure-schema.json",
+			updateFile:     "update-free-azure-schema.json",
+			fileOIDC:       "free-azure-schema-additional-params.json",
+			updateFileOIDC: "update-free-azure-schema-additional-params.json",
+		},
+		{
+			name: " Freemium schema is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.AWS, additionalParams, update, false)
+			},
+			machineTypes:   []string{},
+			file:           "free-aws-schema.json",
+			updateFile:     "update-free-aws-schema.json",
+			fileOIDC:       "free-aws-schema-additional-params.json",
+			updateFileOIDC: "update-free-aws-schema-additional-params.json",
+		},
+		{
+			name: "Freemium schema with EU access restriction is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.Azure, additionalParams, update, true)
+			},
+			machineTypes:   []string{},
+			file:           "free-azure-schema-eu.json",
+			updateFile:     "update-free-azure-schema.json",
+			fileOIDC:       "free-azure-schema-additional-params-eu.json",
+			updateFileOIDC: "update-free-azure-schema-additional-params.json",
+		},
+		{
+			name: " Freemium schema with EU access restriction is correct",
+			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
+				return FreemiumSchema(internal.AWS, additionalParams, update, true)
+			},
+			machineTypes:   []string{},
+			file:           "free-aws-schema-eu.json",
+			updateFile:     "update-free-aws-schema.json",
+			fileOIDC:       "free-aws-schema-additional-params-eu.json",
+			updateFileOIDC: "update-free-aws-schema-additional-params.json",
 		},
 		{
 			name:           "GCP schema is correct",
@@ -91,29 +175,6 @@ func TestSchemaGenerator(t *testing.T) {
 			updateFile:     "update-own-cluster-schema.json",
 			fileOIDC:       "own-cluster-schema-additional-params.json",
 			updateFileOIDC: "update-own-cluster-schema-additional-params.json",
-		},
-		{
-			name: "Freemium schema is correct",
-			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
-				return FreemiumSchema(internal.Azure, additionalParams, update)
-			},
-			machineTypes:   []string{},
-			file:           "free-azure-schema.json",
-			updateFile:     "update-free-azure-schema.json",
-			fileOIDC:       "free-azure-schema-additional-params.json",
-			updateFileOIDC: "update-free-azure-schema-additional-params.json",
-		},
-
-		{
-			name: " schema is correct",
-			generator: func(machinesDisplay map[string]string, machines []string, additionalParams, update bool) *map[string]interface{} {
-				return FreemiumSchema(internal.AWS, additionalParams, update)
-			},
-			machineTypes:   []string{},
-			file:           "free-aws-schema.json",
-			updateFile:     "update-free-aws-schema.json",
-			fileOIDC:       "free-aws-schema-additional-params.json",
-			updateFileOIDC: "update-free-aws-schema-additional-params.json",
 		},
 	}
 	for _, tt := range tests {

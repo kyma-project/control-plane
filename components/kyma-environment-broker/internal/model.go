@@ -92,6 +92,10 @@ func (rv RuntimeVersionData) IsEmpty() bool {
 	return rv.Version == ""
 }
 
+func NewEmptyRuntimeVersion() *RuntimeVersionData {
+	return &RuntimeVersionData{Version: "not-defined", Origin: Defaults, MajorVersion: 2}
+}
+
 func NewRuntimeVersionFromParameters(version string, majorVersion int) *RuntimeVersionData {
 	return &RuntimeVersionData{Version: version, Origin: Parameters, MajorVersion: majorVersion}
 }
@@ -298,6 +302,8 @@ type InstanceDetails struct {
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 
 	KymaResourceNamespace string `json:"kyma_resource_namespace"`
+
+	EuAccess bool `json:"eu_access"`
 }
 
 // ProvisioningOperation holds all information about provisioning operation
@@ -467,9 +473,15 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			UpdatedAt:              time.Now(),
 			Type:                   OperationTypeProvision,
 			ProvisioningParameters: parameters,
+			RuntimeOperation: orchestration.RuntimeOperation{
+				Runtime: orchestration.Runtime{
+					GlobalAccountID: parameters.ErsContext.GlobalAccountID,
+				},
+			},
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 				Kubeconfig:   parameters.Parameters.Kubeconfig,
+				EuAccess:     IsEURestrictedAccess(parameters.PlatformRegion),
 			},
 			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},
@@ -537,17 +549,18 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 func NewSuspensionOperationWithID(operationID string, instance *Instance) DeprovisioningOperation {
 	return DeprovisioningOperation{
 		Operation: Operation{
-			ID:              operationID,
-			Version:         0,
-			Description:     "Operation created",
-			InstanceID:      instance.InstanceID,
-			State:           orchestration.Pending,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-			Type:            OperationTypeDeprovision,
-			InstanceDetails: instance.InstanceDetails,
-			FinishedStages:  make([]string, 0),
-			Temporary:       true,
+			ID:                     operationID,
+			Version:                0,
+			Description:            "Operation created",
+			InstanceID:             instance.InstanceID,
+			State:                  orchestration.Pending,
+			CreatedAt:              time.Now(),
+			UpdatedAt:              time.Now(),
+			Type:                   OperationTypeDeprovision,
+			InstanceDetails:        instance.InstanceDetails,
+			ProvisioningParameters: instance.Parameters,
+			FinishedStages:         make([]string, 0),
+			Temporary:              true,
 		},
 	}
 }

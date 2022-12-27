@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -89,7 +88,7 @@ func (s *runtimeState) GetByOperationID(operationID string) (internal.RuntimeSta
 	}
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime states")
+		return internal.RuntimeState{}, fmt.Errorf("while converting runtime states: %w", err)
 	}
 
 	return result, nil
@@ -115,7 +114,7 @@ func (s *runtimeState) GetLatestByRuntimeID(runtimeID string) (internal.RuntimeS
 	}
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+		return internal.RuntimeState{}, fmt.Errorf("while converting runtime state: %w", err)
 	}
 
 	return result, nil
@@ -141,7 +140,7 @@ func (s *runtimeState) GetLatestWithReconcilerInputByRuntimeID(runtimeID string)
 	}
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+		return internal.RuntimeState{}, fmt.Errorf("while converting runtime state: %w", err)
 	}
 
 	return result, nil
@@ -168,7 +167,7 @@ func (s *runtimeState) GetLatestWithKymaVersionByRuntimeID(runtimeID string) (in
 
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+		return internal.RuntimeState{}, fmt.Errorf("while converting runtime state: %w", err)
 	}
 	if result.ClusterSetup != nil && result.ClusterSetup.KymaConfig.Version != "" {
 		return result, nil
@@ -204,7 +203,7 @@ func (s *runtimeState) GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (int
 
 	result, err := s.toRuntimeState(&state)
 	if err != nil {
-		return internal.RuntimeState{}, errors.Wrap(err, "while converting runtime state")
+		return internal.RuntimeState{}, fmt.Errorf("while converting runtime state: %w", err)
 	}
 	if result.ClusterConfig.OidcConfig != nil {
 		return result, nil
@@ -216,11 +215,11 @@ func (s *runtimeState) GetLatestWithOIDCConfigByRuntimeID(runtimeID string) (int
 func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.RuntimeStateDTO, error) {
 	kymaCfg, err := json.Marshal(state.KymaConfig)
 	if err != nil {
-		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding kyma config")
+		return dbmodel.RuntimeStateDTO{}, fmt.Errorf("while encoding kyma config: %w", err)
 	}
 	clusterCfg, err := json.Marshal(state.ClusterConfig)
 	if err != nil {
-		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encoding cluster config")
+		return dbmodel.RuntimeStateDTO{}, fmt.Errorf("while encoding cluster config: %w", err)
 	}
 	clusterSetup, err := s.provideClusterSetup(state.ClusterSetup)
 	if err != nil {
@@ -229,7 +228,7 @@ func (s *runtimeState) runtimeStateToDB(state internal.RuntimeState) (dbmodel.Ru
 
 	encKymaCfg, err := s.cipher.Encrypt(kymaCfg)
 	if err != nil {
-		return dbmodel.RuntimeStateDTO{}, errors.Wrap(err, "while encrypting kyma config")
+		return dbmodel.RuntimeStateDTO{}, fmt.Errorf("while encrypting kyma config: %w", err)
 	}
 
 	return dbmodel.RuntimeStateDTO{
@@ -254,25 +253,25 @@ func (s *runtimeState) toRuntimeState(dto *dbmodel.RuntimeStateDTO) (internal.Ru
 	if dto.KymaConfig != "" {
 		cfg, err := s.cipher.Decrypt([]byte(dto.KymaConfig))
 		if err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting kyma config")
+			return internal.RuntimeState{}, fmt.Errorf("while decrypting kyma config: %w", err)
 		}
 		if err := json.Unmarshal(cfg, &kymaCfg); err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall kyma config")
+			return internal.RuntimeState{}, fmt.Errorf("while unmarshall kyma config: %w", err)
 		}
 	}
 	if dto.ClusterConfig != "" {
 		if err := json.Unmarshal([]byte(dto.ClusterConfig), &clusterCfg); err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster config")
+			return internal.RuntimeState{}, fmt.Errorf("while unmarshall cluster config: %w", err)
 		}
 	}
 	if dto.ClusterSetup != "" {
 		setup, err := s.cipher.Decrypt([]byte(dto.ClusterSetup))
 		if err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while decrypting cluster setup")
+			return internal.RuntimeState{}, fmt.Errorf("while decrypting cluster setup: %w", err)
 		}
 		clusterSetup = &reconcilerApi.Cluster{}
 		if err := json.Unmarshal(setup, clusterSetup); err != nil {
-			return internal.RuntimeState{}, errors.Wrap(err, "while unmarshall cluster setup")
+			return internal.RuntimeState{}, fmt.Errorf("while unmarshall cluster setup: %w", err)
 		}
 	}
 	return internal.RuntimeState{
@@ -293,7 +292,7 @@ func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]inte
 	for _, state := range states {
 		r, err := s.toRuntimeState(&state)
 		if err != nil {
-			return nil, errors.Wrap(err, "while converting runtime states")
+			return nil, fmt.Errorf("while converting runtime states: %w", err)
 		}
 		result = append(result, r)
 	}
@@ -304,11 +303,11 @@ func (s *runtimeState) toRuntimeStates(states []dbmodel.RuntimeStateDTO) ([]inte
 func (s *runtimeState) provideClusterSetup(clusterSetup *reconcilerApi.Cluster) ([]byte, error) {
 	marshalledClusterSetup, err := s.marshalClusterSetup(clusterSetup)
 	if err != nil {
-		return nil, errors.Wrap(err, "while encoding reconciler input")
+		return nil, fmt.Errorf("while encoding reconciler input: %w", err)
 	}
 	encryptedClusterSetup, err := s.encryptClusterSetup(marshalledClusterSetup)
 	if err != nil {
-		return nil, errors.Wrap(err, "while encrypting reconciler input")
+		return nil, fmt.Errorf("while encrypting reconciler input: %w", err)
 	}
 	return encryptedClusterSetup, nil
 }

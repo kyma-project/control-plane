@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type (
@@ -75,7 +73,7 @@ func (b *ServiceProviderBundle) ServiceProviderType() string {
 func (b *ServiceProviderBundle) FetchServiceProviderData() error {
 	company, err := b.client.GetCompany()
 	if err != nil {
-		return errors.Wrap(err, "while getting company")
+		return fmt.Errorf("while getting company: %w", err)
 	}
 
 	for _, identifiers := range company.IdentityProviders {
@@ -85,7 +83,7 @@ func (b *ServiceProviderBundle) FetchServiceProviderData() error {
 		}
 	}
 	if b.providerID == "" {
-		return errors.Errorf("provider ID for %s name does not exist", b.config.IdentityProvider)
+		return fmt.Errorf("provider ID for %s name does not exist", b.config.IdentityProvider)
 	}
 
 	for _, provider := range company.ServiceProviders {
@@ -109,11 +107,11 @@ func (b *ServiceProviderBundle) ServiceProviderExist() bool {
 func (b *ServiceProviderBundle) CreateServiceProvider() error {
 	err := b.client.CreateServiceProvider(b.serviceProviderName, b.organization)
 	if err != nil {
-		return errors.Wrap(err, "while creating ServiceProvider")
+		return fmt.Errorf("while creating ServiceProvider: %w", err)
 	}
 	err = b.FetchServiceProviderData()
 	if err != nil {
-		return errors.Wrap(err, "while fetching ServiceProvider")
+		return fmt.Errorf("while fetching ServiceProvider: %w", err)
 	}
 
 	return nil
@@ -123,7 +121,7 @@ func (b *ServiceProviderBundle) CreateServiceProvider() error {
 func (b *ServiceProviderBundle) DeleteServiceProvider() error {
 	err := b.FetchServiceProviderData()
 	if err != nil {
-		return errors.Wrap(err, "while fetching ServiceProvider before deleting")
+		return fmt.Errorf("while fetching ServiceProvider before deleting: %w", err)
 	}
 	if !b.serviceProviderExist {
 		return nil
@@ -131,7 +129,7 @@ func (b *ServiceProviderBundle) DeleteServiceProvider() error {
 
 	err = b.client.DeleteServiceProvider(b.serviceProvider.ID)
 	if err != nil {
-		return errors.Wrap(err, "while deleting ServiceProvider")
+		return fmt.Errorf("while deleting ServiceProvider: %w", err)
 	}
 
 	return nil
@@ -168,7 +166,7 @@ func (b *ServiceProviderBundle) configureServiceProviderSAMLType(serviceProvider
 func (b *ServiceProviderBundle) ConfigureServiceProviderType(dashboardURL string) error {
 	u, err := url.ParseRequestURI(dashboardURL)
 	if err != nil {
-		return errors.Wrap(err, "while parsing path for IAS Type")
+		return fmt.Errorf("while parsing path for IAS Type: %w", err)
 	}
 	serviceProviderDNS := strings.Replace(u.Host, "console.", fmt.Sprintf("%s.", b.serviceProviderParams.domain), 1)
 	redirectURI := fmt.Sprintf("%s://%s%s", u.Scheme, serviceProviderDNS, b.serviceProviderParams.redirectPath)
@@ -179,11 +177,11 @@ func (b *ServiceProviderBundle) ConfigureServiceProviderType(dashboardURL string
 	case OIDC:
 		err = b.configureServiceProviderOIDCType(serviceProviderDNS, redirectURI)
 	default:
-		err = errors.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
+		err = fmt.Errorf("Unrecognized ssoType: %s", b.serviceProviderParams.ssoType)
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "while configuring IAS Type")
+		return fmt.Errorf("while configuring IAS Type: %w", err)
 	}
 
 	return nil
@@ -199,7 +197,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 	}
 	err := b.client.SetAssertionAttribute(b.serviceProvider.ID, sciAttributes)
 	if err != nil {
-		return errors.Wrap(err, "while configuring AssertionAttributes")
+		return fmt.Errorf("while configuring AssertionAttributes: %w", err)
 	}
 
 	// set "SubjectNameIdentifier"
@@ -208,7 +206,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 	}
 	err = b.client.SetSubjectNameIdentifier(b.serviceProvider.ID, subjectNameIdentifier)
 	if err != nil {
-		return errors.Wrap(err, "while configuring SubjectNameIdentifier")
+		return fmt.Errorf("while configuring SubjectNameIdentifier: %w", err)
 	}
 
 	// set "DefaultAuthenticatingIDP"
@@ -219,7 +217,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 	}
 	err = b.client.SetDefaultAuthenticatingIDP(defaultAuthIDP)
 	if err != nil {
-		return errors.Wrap(err, "while configuring DefaultAuthenticatingIDP")
+		return fmt.Errorf("while configuring DefaultAuthenticatingIDP: %w", err)
 	}
 
 	// set "AuthenticationAndAccess"
@@ -241,7 +239,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 		}
 		err = b.client.SetAuthenticationAndAccess(b.serviceProvider.ID, authenticationAndAccess)
 		if err != nil {
-			return errors.Wrap(err, "while configuring AuthenticationAndAccess")
+			return fmt.Errorf("while configuring AuthenticationAndAccess: %w", err)
 		}
 	}
 
@@ -252,7 +250,7 @@ func (b *ServiceProviderBundle) ConfigureServiceProvider() error {
 func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error) {
 	err := b.removeSecrets()
 	if err != nil {
-		return &ServiceProviderSecret{}, errors.Wrap(err, "while removing existing secrets")
+		return &ServiceProviderSecret{}, fmt.Errorf("while removing existing secrets: %w", err)
 	}
 
 	secretCfg := SecretConfiguration{
@@ -266,7 +264,7 @@ func (b *ServiceProviderBundle) GenerateSecret() (*ServiceProviderSecret, error)
 
 	sps, err := b.client.GenerateServiceProviderSecret(secretCfg)
 	if err != nil {
-		return &ServiceProviderSecret{}, errors.Wrap(err, "while creating ServiceProviderSecret")
+		return &ServiceProviderSecret{}, fmt.Errorf("while creating ServiceProviderSecret: %w", err)
 	}
 
 	return sps, nil

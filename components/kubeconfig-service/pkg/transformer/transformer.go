@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//Client Wrapper for transformer operations
+// Client Wrapper for transformer operations
 type Client struct {
 	ContextName   string
 	CAData        string
@@ -20,7 +20,7 @@ type Client struct {
 	UserID        string
 }
 
-//NewClient Create new instance of TransformerClient
+// NewClient Create new instance of TransformerClient
 func NewClient(rawKubeCfg string, userID string) (*Client, error) {
 	var kubeCfg kubeconfig
 	err := yaml.Unmarshal([]byte(rawKubeCfg), &kubeCfg)
@@ -38,7 +38,7 @@ func NewClient(rawKubeCfg string, userID string) (*Client, error) {
 	}, nil
 }
 
-//TransformKubeconfig injects OIDC data into raw kubeconfig structure
+// TransformKubeconfig injects OIDC data into raw kubeconfig structure
 func (c *Client) TransformKubeconfig(template string) ([]byte, error) {
 	out, err := c.parseTemplate(template)
 	if err != nil {

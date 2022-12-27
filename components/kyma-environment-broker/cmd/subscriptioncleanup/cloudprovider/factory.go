@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/cmd/subscriptioncleanup/model"
-	"github.com/pkg/errors"
 )
 
 type ResourceCleaner interface {
@@ -37,6 +36,6 @@ func (pf *providerFactory) New(hyperscalerType model.HyperscalerType, secretData
 			return NewAwsResourcesCleaner(secretData)
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("unknown hyperscaler type"))
+		return nil, fmt.Errorf("unknown hyperscaler type")
 	}
 }

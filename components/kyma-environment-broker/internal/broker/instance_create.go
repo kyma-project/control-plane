@@ -21,7 +21,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -104,17 +103,17 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 
 	region, found := middleware.RegionFromContext(ctx)
 	if !found {
-		err := errors.New("No region specified in request.")
+		err := fmt.Errorf("No region specified in request.")
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 	}
 	platformProvider, found := middleware.ProviderFromContext(ctx)
 	if !found {
-		err := errors.New("No region specified in request.")
+		err := fmt.Errorf("No region specified in request.")
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 	}
 
 	// validation of incoming input
-	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, logger)
+	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, ctx, logger)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
@@ -138,7 +137,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	switch {
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot get existing operation from storage")
+		return domain.ProvisionedServiceSpec{}, fmt.Errorf("cannot get existing operation from storage")
 	case existingOperation != nil && !dberr.IsNotFound(errStorage):
 		return b.handleExistingOperation(existingOperation, provisioningParameters)
 	}
@@ -152,7 +151,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	operation, err := internal.NewProvisioningOperationWithID(operationID, instanceID, provisioningParameters)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot create new operation")
+		return domain.ProvisionedServiceSpec{}, fmt.Errorf("cannot create new operation")
 	}
 
 	operation.ShootName = shootName
@@ -169,7 +168,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	err = b.operationsStorage.InsertOperation(operation.Operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot save operation")
+		return domain.ProvisionedServiceSpec{}, fmt.Errorf("cannot save operation")
 	}
 
 	instance := internal.Instance{
@@ -179,14 +178,14 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].Name,
+		ServicePlanName: PlanNamesMapping[provisioningParameters.PlanID],
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
 	err = b.instanceStorage.Insert(instance)
 	if err != nil {
 		logger.Errorf("cannot save instance in storage: %s", err)
-		return domain.ProvisionedServiceSpec{}, errors.New("cannot save instance")
+		return domain.ProvisionedServiceSpec{}, fmt.Errorf("cannot save instance")
 	}
 
 	logger.Info("Adding operation to provisioning queue")
@@ -214,30 +213,30 @@ func valueOfPtr(ptr *string) string {
 	return *ptr
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
 	if details.ServiceID != KymaServiceID {
-		return ersContext, parameters, errors.New("service_id not recognized")
+		return ersContext, parameters, fmt.Errorf("service_id not recognized")
 	}
 	if _, exists := b.enabledPlanIDs[details.PlanID]; !exists {
-		return ersContext, parameters, errors.Errorf("plan ID %q is not recognized", details.PlanID)
+		return ersContext, parameters, fmt.Errorf("plan ID %q is not recognized", details.PlanID)
 	}
 
 	ersContext, err := b.extractERSContext(details)
 	logger := l.WithField("globalAccountID", ersContext.GlobalAccountID)
 	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while extracting ers context")
+		return ersContext, parameters, fmt.Errorf("while extracting ers context: %w", err)
 	}
 
 	parameters, err = b.extractInputParameters(details)
 	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while extracting input parameters")
+		return ersContext, parameters, fmt.Errorf("while extracting input parameters: %w", err)
 	}
 	defaults, err := b.planDefaults(details.PlanID, provider, parameters.Provider)
 	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while obtaining plan defaults")
+		return ersContext, parameters, fmt.Errorf("while obtaining plan defaults: %w", err)
 	}
 	var autoscalerMin, autoscalerMax int
 	if defaults.GardenerConfig != nil {
@@ -253,16 +252,17 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 	}
 
-	planValidator, err := b.validator(&details, provider)
+	planValidator, err := b.validator(&details, provider,
+		ctx)
 	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while creating plan validator")
+		return ersContext, parameters, fmt.Errorf("while creating plan validator: %w", err)
 	}
 	result, err := planValidator.ValidateString(string(details.RawParameters))
 	if err != nil {
-		return ersContext, parameters, errors.Wrap(err, "while executing JSON schema validator")
+		return ersContext, parameters, fmt.Errorf("while executing JSON schema validator: %w", err)
 	}
 	if !result.Valid {
-		return ersContext, parameters, errors.Wrapf(result.Error, "while validating input parameters")
+		return ersContext, parameters, fmt.Errorf("while validating input parameters: %w", result.Error)
 	}
 
 	if !b.kymaVerOnDemand {
@@ -274,37 +274,37 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 
 	found := b.builderFactory.IsPlanSupport(details.PlanID)
 	if !found {
-		return ersContext, parameters, errors.Errorf("the plan ID not known, planID: %s", details.PlanID)
+		return ersContext, parameters, fmt.Errorf("the plan ID not known, planID: %s", details.PlanID)
 	}
 
 	if IsOwnClusterPlan(details.PlanID) {
 		decodedKubeconfig, err := base64.StdEncoding.DecodeString(parameters.Kubeconfig)
 		if err != nil {
-			return ersContext, parameters, errors.Wrap(err, "while decoding kubeconfig")
+			return ersContext, parameters, fmt.Errorf("while decoding kubeconfig: %w", err)
 		}
 		parameters.Kubeconfig = string(decodedKubeconfig)
 		err = validateKubeconfig(parameters.Kubeconfig)
 		if err != nil {
-			return ersContext, parameters, errors.Wrap(err, "while validating kubeconfig")
+			return ersContext, parameters, fmt.Errorf("while validating kubeconfig: %w", err)
 		}
 	}
 
 	if IsTrialPlan(details.PlanID) && parameters.Region != nil && *parameters.Region != "" {
 		_, valid := validRegionsForTrial[TrialCloudRegion(*parameters.Region)]
 		if !valid {
-			return ersContext, parameters, errors.Errorf("Invalid region specified in request for trial.")
+			return ersContext, parameters, fmt.Errorf("invalid region specified in request for trial")
 		}
 	}
 
 	if IsTrialPlan(details.PlanID) && b.config.OnlySingleTrialPerGA {
 		count, err := b.instanceStorage.GetNumberOfInstancesForGlobalAccountID(ersContext.GlobalAccountID)
 		if err != nil {
-			return ersContext, parameters, errors.Wrap(err, "while checking if a trial Kyma instance exists for given global account")
+			return ersContext, parameters, fmt.Errorf("while checking if a trial Kyma instance exists for given global account: %w", err)
 		}
 
 		if count > 0 {
 			logger.Info("Provisioning Trial SKR rejected, such instance was already created for this Global Account")
-			return ersContext, parameters, errors.Errorf("The Trial Kyma was created for the global account, but there is only one allowed")
+			return ersContext, parameters, fmt.Errorf("trial Kyma was created for the global account, but there is only one allowed")
 		}
 	}
 
@@ -328,17 +328,17 @@ func (b *ProvisionEndpoint) extractERSContext(details domain.ProvisionDetails) (
 	var ersContext internal.ERSContext
 	err := json.Unmarshal(details.RawContext, &ersContext)
 	if err != nil {
-		return ersContext, errors.Wrap(err, "while decoding context")
+		return ersContext, fmt.Errorf("while decoding context: %w", err)
 	}
 
 	if ersContext.GlobalAccountID == "" {
-		return ersContext, errors.New("global accountID parameter cannot be empty")
+		return ersContext, fmt.Errorf("global accountID parameter cannot be empty")
 	}
 	if ersContext.SubAccountID == "" {
-		return ersContext, errors.New("subAccountID parameter cannot be empty")
+		return ersContext, fmt.Errorf("subAccountID parameter cannot be empty")
 	}
 	if ersContext.UserID == "" {
-		return ersContext, errors.New("UserID parameter cannot be empty")
+		return ersContext, fmt.Errorf("UserID parameter cannot be empty")
 	}
 	ersContext.UserID = strings.ToLower(ersContext.UserID)
 
@@ -349,7 +349,7 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 	var parameters internal.ProvisioningParametersDTO
 	err := json.Unmarshal(details.RawParameters, &parameters)
 	if err != nil {
-		return parameters, errors.Wrap(err, "while unmarshaling raw parameters")
+		return parameters, fmt.Errorf("while unmarshaling raw parameters: %w", err)
 	}
 
 	return parameters, nil
@@ -358,14 +358,14 @@ func (b *ProvisionEndpoint) extractInputParameters(details domain.ProvisionDetai
 func (b *ProvisionEndpoint) handleExistingOperation(operation *internal.ProvisioningOperation, input internal.ProvisioningParameters) (domain.ProvisionedServiceSpec, error) {
 
 	if !operation.ProvisioningParameters.IsEqual(input) {
-		err := errors.New("provisioning operation already exist")
+		err := fmt.Errorf("provisioning operation already exist")
 		msg := fmt.Sprintf("provisioning operation with InstanceID %s already exist", operation.InstanceID)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 	}
 
 	instance, err := b.instanceStorage.GetByID(operation.InstanceID)
 	if err != nil {
-		err := errors.New("cannot fetch instance for operation")
+		err := fmt.Errorf("cannot fetch instance for operation")
 		msg := fmt.Sprintf("cannot fetch instance with ID: %s for operation woth ID: %s", operation.InstanceID, operation.ID)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusConflict, msg)
 	}
@@ -388,8 +388,9 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	return nil
 }
 
-func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
-	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
+func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context) (JSONSchemaValidator, error) {
+	platformRegion, _ := middleware.RegionFromContext(ctx)
+	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema, internal.IsEURestrictedAccess(platformRegion))
 	plan := plans[details.PlanID]
 	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
 

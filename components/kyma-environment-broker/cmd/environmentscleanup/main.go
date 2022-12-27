@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -41,12 +40,18 @@ func main() {
 
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	fatalOnError(errors.Wrap(err, "while loading cleanup config"))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while loading cleanup config: %w", err))
+	}
 
 	clusterCfg, err := gardener.NewGardenerClusterConfig(cfg.Gardener.KubeconfigPath)
-	fatalOnError(errors.Wrap(err, "while creating Gardener cluster config"))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
+	}
 	cli, err := dynamic.NewForConfig(clusterCfg)
-	fatalOnError(errors.Wrap(err, "while creating Gardener client"))
+	if err != nil {
+		fatalOnError(fmt.Errorf("while creating Gardener client: %w", err))
+	}
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 	shootClient := cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 
@@ -57,7 +62,9 @@ func main() {
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
 	db, conn, err := storage.NewFromConfig(cfg.Database, events.Config{}, cipher, log.WithField("service", "storage"))
-	fatalOnError(err)
+	if err != nil {
+		fatalOnError(err)
+	}
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", conn)
 	prometheus.MustRegister(dbStatsCollector)
 

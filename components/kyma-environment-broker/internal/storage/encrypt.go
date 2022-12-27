@@ -5,10 +5,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"io"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
 )
 
 func NewEncrypter(secretKey string) *Encrypter {
@@ -39,14 +39,14 @@ func (e *Encrypter) Encrypt(obj []byte) ([]byte, error) {
 func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	obj, err := base64.StdEncoding.DecodeString(string(obj))
 	if err != nil {
-		return nil, errors.Wrap(err, "while decoding object")
+		return nil, fmt.Errorf("while decoding object: %w", err)
 	}
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
 		return nil, err
 	}
 	if len(obj) < aes.BlockSize {
-		return nil, errors.New("cipher text is too short")
+		return nil, fmt.Errorf("cipher text is too short")
 	}
 	iv := obj[:aes.BlockSize]
 	obj = obj[aes.BlockSize:]
@@ -54,7 +54,7 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	cfb.XORKeyStream(obj, obj)
 	data, err := base64.StdEncoding.DecodeString(string(obj))
 	if err != nil {
-		return nil, errors.Wrap(err, "while decoding decrypted object")
+		return nil, fmt.Errorf("while decoding object: %w", err)
 	}
 	return data, nil
 }
@@ -71,13 +71,13 @@ func (e *Encrypter) EncryptSMCreds(provisioningParameters *internal.Provisioning
 	if creds.ClientID != "" {
 		clientID, err = e.Encrypt([]byte(creds.ClientID))
 		if err != nil {
-			return errors.Wrap(err, "while encrypting ClientID")
+			return fmt.Errorf("while encrypting ClientID: %w", err)
 		}
 	}
 	if creds.ClientSecret != "" {
 		clientSecret, err = e.Encrypt([]byte(creds.ClientSecret))
 		if err != nil {
-			return errors.Wrap(err, "while encrypting ClientSecret")
+			return fmt.Errorf("while encrypting ClientSecret: %w", err)
 		}
 	}
 	encrypted.SMOperatorCredentials = &internal.ServiceManagerOperatorCredentials{
@@ -98,7 +98,7 @@ func (e *Encrypter) EncryptKubeconfig(provisioningParameters *internal.Provision
 	}
 	encryptedKubeconfig, err := e.Encrypt([]byte(provisioningParameters.Parameters.Kubeconfig))
 	if err != nil {
-		return errors.Wrap(err, "while encrypting kubeconfig")
+		return fmt.Errorf("while encrypting kubeconfig: %w", err)
 	}
 	provisioningParameters.Parameters.Kubeconfig = string(encryptedKubeconfig)
 	return nil
@@ -115,13 +115,13 @@ func (e *Encrypter) DecryptSMCreds(provisioningParameters *internal.Provisioning
 	if creds.ClientID != "" {
 		clientID, err = e.Decrypt([]byte(creds.ClientID))
 		if err != nil {
-			return errors.Wrap(err, "while decrypting ClientID")
+			return fmt.Errorf("while decrypting ClientID: %w", err)
 		}
 	}
 	if creds.ClientSecret != "" {
 		clientSecret, err = e.Decrypt([]byte(creds.ClientSecret))
 		if err != nil {
-			return errors.Wrap(err, "while decrypting ClientSecret")
+			return fmt.Errorf("while decrypting ClientSecret: %w", err)
 		}
 	}
 
@@ -141,7 +141,7 @@ func (e *Encrypter) DecryptKubeconfig(provisioningParameters *internal.Provision
 
 	decryptedKubeconfig, err := e.Decrypt([]byte(provisioningParameters.Parameters.Kubeconfig))
 	if err != nil {
-		return errors.Wrap(err, "while decrypting kubeconfig")
+		return fmt.Errorf("while decrypting kubeconfig: %w", err)
 	}
 	provisioningParameters.Parameters.Kubeconfig = string(decryptedKubeconfig)
 	return nil

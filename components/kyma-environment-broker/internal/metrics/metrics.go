@@ -27,4 +27,5 @@ func RegisterAll(sub event.Subscriber, operationStatsGetter OperationsStatsGette
 	sub.Subscribe(process.OperationStepProcessed{}, opResultCollector.OnOperationStepProcessed)
 	sub.Subscribe(process.OperationSucceeded{}, opResultCollector.OnOperationSucceeded)
 	sub.Subscribe(process.OperationSucceeded{}, opDurationCollector.OnOperationSucceeded)
+	sub.Subscribe(process.OperationStepProcessed{}, opDurationCollector.OnOperationStepProcessed)
 }

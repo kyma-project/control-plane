@@ -2,6 +2,7 @@ package hyperscaler
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -71,7 +72,7 @@ func TestCredentialsSecretBinding(t *testing.T) {
 	for _, testcase := range testcases {
 
 		t.Run(testcase.testDescription, func(t *testing.T) {
-			secretBinding, err := pool.CredentialsSecretBinding(testcase.hyperscalerType, testcase.tenantName)
+			secretBinding, err := pool.CredentialsSecretBinding(testcase.hyperscalerType, testcase.tenantName, false)
 			actualError := ""
 			if err != nil {
 				actualError = err.Error()
@@ -86,109 +87,125 @@ func TestCredentialsSecretBinding(t *testing.T) {
 }
 
 func TestSecretsAccountPool_IsSecretBindingInternal(t *testing.T) {
-	t.Run("should return true if internal secret binding found", func(t *testing.T) {
-		//given
-		accPool, _ := newTestAccountPoolWithSecretBindingInternal()
+	for _, euAccess := range []bool{false, true} {
+		t.Run(fmt.Sprintf("EuAccess=%v", euAccess), func(t *testing.T) {
+			t.Run("should return true if internal secret binding found", func(t *testing.T) {
+				//given
+				accPool, _ := newTestAccountPoolWithSecretBindingInternal(euAccess)
 
-		//when
-		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
+				//when
+				internal, err := accPool.IsSecretBindingInternal("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.True(t, internal)
-	})
+				//then
+				require.NoError(t, err)
+				assert.True(t, internal)
+			})
 
-	t.Run("should return false if internal secret binding not found", func(t *testing.T) {
-		//given
-		accPool := newTestAccountPool()
+			t.Run("should return false if internal secret binding not found", func(t *testing.T) {
+				//given
+				accPool := newTestAccountPool()
 
-		//when
-		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
+				//when
+				internal, err := accPool.IsSecretBindingInternal("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.False(t, internal)
-	})
+				//then
+				require.NoError(t, err)
+				assert.False(t, internal)
+			})
 
-	t.Run("should return false when there is no secret binding in the pool", func(t *testing.T) {
-		//given
-		accPool := newEmptyTestAccountPool()
+			t.Run("should return false when there is no secret binding in the pool", func(t *testing.T) {
+				//given
+				accPool := newEmptyTestAccountPool()
 
-		//when
-		internal, err := accPool.IsSecretBindingInternal("azure", "tenant1")
+				//when
+				internal, err := accPool.IsSecretBindingInternal("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.False(t, internal)
-	})
+				//then
+				require.NoError(t, err)
+				assert.False(t, internal)
+			})
+		})
+	}
 }
 
 func TestSecretsAccountPool_IsSecretBindingDirty(t *testing.T) {
-	t.Run("should return true if dirty secret binding found", func(t *testing.T) {
-		//given
-		accPool, _ := newTestAccountPoolWithSecretBindingDirty()
+	for _, euAccess := range []bool{false, true} {
+		t.Run(fmt.Sprintf("EuAccess=%v", euAccess), func(t *testing.T) {
+			t.Run("should return true if dirty secret binding found", func(t *testing.T) {
+				//given
+				accPool, _ := newTestAccountPoolWithSecretBindingDirty(euAccess)
 
-		//when
-		isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1")
+				//when
+				isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.True(t, isdirty)
-	})
+				//then
+				require.NoError(t, err)
+				assert.True(t, isdirty)
+			})
 
-	t.Run("should return false if dirty secret binding not found", func(t *testing.T) {
-		//given
-		accPool := newTestAccountPool()
+			t.Run("should return false if dirty secret binding not found", func(t *testing.T) {
+				//given
+				accPool := newTestAccountPool()
 
-		//when
-		isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1")
+				//when
+				isdirty, err := accPool.IsSecretBindingDirty("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.False(t, isdirty)
-	})
+				//then
+				require.NoError(t, err)
+				assert.False(t, isdirty)
+			})
+		})
+	}
 }
 
 func TestSecretsAccountPool_IsSecretBindingUsed(t *testing.T) {
-	t.Run("should return true when secret binding is in use", func(t *testing.T) {
-		//given
-		accPool, _ := newTestAccountPoolWithSingleShoot()
+	for _, euAccess := range []bool{false, true} {
+		t.Run(fmt.Sprintf("EuAccess=%v", euAccess), func(t *testing.T) {
+			t.Run("should return true when secret binding is in use", func(t *testing.T) {
+				//given
+				accPool, _ := newTestAccountPoolWithSingleShoot(euAccess)
 
-		//when
-		used, err := accPool.IsSecretBindingUsed("azure", "tenant1")
+				//when
+				used, err := accPool.IsSecretBindingUsed("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.True(t, used)
-	})
+				//then
+				require.NoError(t, err)
+				assert.True(t, used)
+			})
 
-	t.Run("should return false when secret binding is not in use", func(t *testing.T) {
-		//given
-		accPool, _ := newTestAccountPoolWithoutShoots()
+			t.Run("should return false when secret binding is not in use", func(t *testing.T) {
+				//given
+				accPool, _ := newTestAccountPoolWithoutShoots(euAccess)
 
-		//when
-		used, err := accPool.IsSecretBindingUsed("azure", "tenant1")
+				//when
+				used, err := accPool.IsSecretBindingUsed("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		assert.False(t, used)
-	})
+				//then
+				require.NoError(t, err)
+				assert.False(t, used)
+			})
+		})
+	}
 }
 
 func TestSecretsAccountPool_MarkSecretBindingAsDirty(t *testing.T) {
-	t.Run("should mark secret binding as dirty", func(t *testing.T) {
-		//given
-		accPool, gardenerClient := newTestAccountPoolWithoutShoots()
+	for _, euAccess := range []bool{false, true} {
+		t.Run(fmt.Sprintf("EuAccess=%v", euAccess), func(t *testing.T) {
+			t.Run("should mark secret binding as dirty", func(t *testing.T) {
+				//given
+				accPool, gardenerClient := newTestAccountPoolWithoutShoots(euAccess)
 
-		//when
-		err := accPool.MarkSecretBindingAsDirty("azure", "tenant1")
+				//when
+				err := accPool.MarkSecretBindingAsDirty("azure", "tenant1", euAccess)
 
-		//then
-		require.NoError(t, err)
-		secretBinding, err := gardenerClient.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
-	})
+				//then
+				require.NoError(t, err)
+				secretBinding, err := gardenerClient.Get(context.Background(), "secretBinding1", machineryv1.GetOptions{})
+				require.NoError(t, err)
+				assert.Equal(t, secretBinding.GetLabels()["dirty"], "true")
+			})
+		})
+	}
 }
 
 func newTestAccountPool() AccountPool {
@@ -347,7 +364,7 @@ func newTestAccountPool() AccountPool {
 	return NewAccountPool(gardenerFake, testNamespace)
 }
 
-func newTestAccountPoolWithSingleShoot() (AccountPool, dynamic.ResourceInterface) {
+func newTestAccountPoolWithSingleShoot(euAccess bool) (AccountPool, dynamic.ResourceInterface) {
 	secretBinding1 := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -364,6 +381,7 @@ func newTestAccountPoolWithSingleShoot() (AccountPool, dynamic.ResourceInterface
 			},
 		},
 	}
+	applyEuAccess(secretBinding1, euAccess)
 	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
 	shoot1 := &unstructured.Unstructured{
@@ -396,7 +414,15 @@ func newEmptyTestAccountPool() AccountPool {
 	return NewAccountPool(gardenerFake, testNamespace)
 }
 
-func newTestAccountPoolWithSecretBindingInternal() (AccountPool, dynamic.ResourceInterface) {
+func applyEuAccess(obj *unstructured.Unstructured, euAccess bool) {
+	if euAccess {
+		labels := obj.GetLabels()
+		labels["euAccess"] = "true"
+		obj.SetLabels(labels)
+	}
+}
+
+func newTestAccountPoolWithSecretBindingInternal(euAccess bool) (AccountPool, dynamic.ResourceInterface) {
 	secretBinding1 := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -414,13 +440,14 @@ func newTestAccountPoolWithSecretBindingInternal() (AccountPool, dynamic.Resourc
 			},
 		},
 	}
+	applyEuAccess(secretBinding1, euAccess)
 	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
 	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1)
 	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithSecretBindingDirty() (AccountPool, dynamic.ResourceInterface) {
+func newTestAccountPoolWithSecretBindingDirty(euAccess bool) (AccountPool, dynamic.ResourceInterface) {
 	secretBinding1 := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -438,6 +465,7 @@ func newTestAccountPoolWithSecretBindingDirty() (AccountPool, dynamic.ResourceIn
 			},
 		},
 	}
+	applyEuAccess(secretBinding1, euAccess)
 	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
 	shoot1 := &unstructured.Unstructured{
@@ -463,7 +491,7 @@ func newTestAccountPoolWithSecretBindingDirty() (AccountPool, dynamic.ResourceIn
 	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, dynamic.ResourceInterface) {
+func newTestAccountPoolWithShootsUsingSecretBinding(euAccess bool) (AccountPool, dynamic.ResourceInterface) {
 	secretBinding1 := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -480,6 +508,7 @@ func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, dynamic.Reso
 			},
 		},
 	}
+	applyEuAccess(secretBinding1, euAccess)
 	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
 	shoot1 := &unstructured.Unstructured{
@@ -524,7 +553,7 @@ func newTestAccountPoolWithShootsUsingSecretBinding() (AccountPool, dynamic.Reso
 	return NewAccountPool(gardenerFake, testNamespace), gardenerFake.Resource(gardener.SecretBindingResource).Namespace(testNamespace)
 }
 
-func newTestAccountPoolWithoutShoots() (AccountPool, dynamic.ResourceInterface) {
+func newTestAccountPoolWithoutShoots(euAccess bool) (AccountPool, dynamic.ResourceInterface) {
 	secretBinding1 := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -541,6 +570,7 @@ func newTestAccountPoolWithoutShoots() (AccountPool, dynamic.ResourceInterface) 
 			},
 		},
 	}
+	applyEuAccess(secretBinding1, euAccess)
 	secretBinding1.SetGroupVersionKind(secretBindingGVK)
 
 	gardenerFake := gardener.NewDynamicFakeClient(secretBinding1)

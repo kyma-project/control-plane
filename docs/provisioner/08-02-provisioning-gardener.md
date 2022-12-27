@@ -134,6 +134,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 maxUnavailable: 1
                 exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                 providerSpecificConfig: { gcpConfig: { zones: ["europe-west4-a"] } }
+                euAccess: true
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
@@ -230,6 +231,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 maxUnavailable: 1
                 exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                 providerSpecificConfig: { azureConfig: { vnetCidr: "10.250.0.0/19", zones: ["1", "2"] } }
+                euAccess: false
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
@@ -340,6 +342,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                     ]
                   } 
                 }
+                euAccess: true
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
@@ -434,12 +437,13 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   exposureClassName: "" # Default value set by Gardener. Provide only if you know the exact name of the Exposure Class you want to use.
                   providerSpecificConfig: { 
                     openStackConfig: {
-                       zones: ["eu-de-1a"],
-                       floatingPoolName: "FloatingIP-external-cp"
-                       cloudProfileName: "converged-cloud-cp"
-                       loadBalancerProvider: "f5"
-                      }
-                   }
+                      zones: ["eu-de-1a"],
+                      floatingPoolName: "FloatingIP-external-cp"
+                      cloudProfileName: "converged-cloud-cp"
+                      loadBalancerProvider: "f5"
+                    }
+                  }
+                  euAccess: false
                 }
               }
               kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned

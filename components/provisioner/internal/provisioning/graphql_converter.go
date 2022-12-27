@@ -106,6 +106,7 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		ExposureClassName:                   config.ExposureClassName,
 		ShootNetworkingFilterDisabled:       config.ShootNetworkingFilterDisabled,
 		ControlPlaneFailureTolerance:        config.ControlPlaneFailureTolerance,
+		EuAccess:                            &config.EuAccess,
 	}
 }
 
