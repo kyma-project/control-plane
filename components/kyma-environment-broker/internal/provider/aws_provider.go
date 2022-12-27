@@ -15,6 +15,7 @@ import (
 const (
 	DefaultAWSRegion         = "eu-central-1"
 	DefaultAWSTrialRegion    = "eu-west-1"
+	DefaultEuAccessAWSRegion = "eu-central-1"
 	DefaultAWSMultiZoneCount = 3
 )
 
@@ -165,6 +166,8 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 			zonesCount = DefaultAWSMultiZoneCount
 		}
 		input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones = generateMultipleAWSZones(MultipleZonesForAWSRegion(*pp.Parameters.Region, zonesCount))
+	case internal.IsEuAccess(pp.PlatformRegion):
+		updateRegionWithZones(input, DefaultEuAccessAWSRegion)
 	}
 }
 
@@ -214,22 +217,27 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 func (p *AWSTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	params := pp.Parameters
 
+	if internal.IsEuAccess(pp.PlatformRegion) {
+		updateRegionWithZones(input, DefaultEuAccessAWSRegion)
+		return
+	}
+
 	// read platform region if exists
 	if pp.PlatformRegion != "" {
 		abstractRegion, found := p.PlatformRegionMapping[pp.PlatformRegion]
 		if found {
 			r := toAWSSpecific[abstractRegion]
-			p.updateRegionWithZones(input, r)
+			updateRegionWithZones(input, r)
 		}
 	}
 
 	if params.Region != nil && *params.Region != "" {
 		r := toAWSSpecific[*params.Region]
-		p.updateRegionWithZones(input, r)
+		updateRegionWithZones(input, r)
 	}
 }
 
-func (p *AWSTrialInput) updateRegionWithZones(input *gqlschema.ClusterConfigInput, region string) {
+func updateRegionWithZones(input *gqlschema.ClusterConfigInput, region string) {
 	input.GardenerConfig.Region = region
 	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name = ZoneForAWSRegion(region)
 }
