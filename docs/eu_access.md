@@ -2,7 +2,7 @@
 
 ## Overview
 
-Eu Access requires (among others) that Data Residency is in European Economic Area or Switzerland 
+EU Access requires, among others, that Data Residency is in the European Economic Area or Switzerland. 
 (see [EU Access overview](https://wiki.one.int.sap/wiki/display/IntBusComp/EU+Access+Overview) for further details). 
 
 BTP Kyma runtime service supports the BTP `cf-eu11` AWS subaccount region and BTP `cf-ch20` Azure subaccount region 
