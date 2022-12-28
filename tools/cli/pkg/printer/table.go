@@ -22,6 +22,7 @@ const (
 	tabwriterPadding  = 3
 	tabwriterPadChar  = ' '
 	tabwriterFlags    = tabwriter.RememberWidths
+	allEvents         = "all"
 )
 
 type event struct {
@@ -169,15 +170,17 @@ func (t *tablePrinter) deduplicateEvents(eventList []events.EventDTO) []event {
 func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO, lvl string) {
 	deduplicated := t.deduplicateEvents(eventList)
 	t.events = make(map[string][]event)
-	if lvl == "all" {
-		for _, e := range deduplicated {
-			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+	if lvl == allEvents {
+		for _, event := range deduplicated {
+			if event.InstanceID != nil {
+				t.events[*event.InstanceID] = append(t.events[*event.InstanceID], event)
+			}
 		}
 	} else {
-		for _, e := range deduplicated {
-			if e.InstanceID != nil {
-				if lvl == string(e.Level) {
-					t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+		for _, event := range deduplicated {
+			if event.InstanceID != nil {
+				if lvl == string(event.Level) {
+					t.events[*event.InstanceID] = append(t.events[*event.InstanceID], event)
 				}
 			}
 		}
