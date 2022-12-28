@@ -19,6 +19,16 @@ func TestAWSZones(t *testing.T) {
 	assert.True(t, exists)
 }
 
+func TestAWSZonesForEuAccess(t *testing.T) {
+	regions := broker.AWSRegions(true)
+	for _, region := range regions {
+		_, exists := awsZones[region]
+		assert.True(t, exists)
+	}
+	_, exists := awsZones[DefaultEuAccessAWSRegion]
+	assert.True(t, exists)
+}
+
 func TestMultipleZonesForAWSRegion(t *testing.T) {
 	t.Run("for valid zonesCount", func(t *testing.T) {
 		// given
@@ -47,6 +57,7 @@ func TestMultipleZonesForAWSRegion(t *testing.T) {
 			return true
 		})
 	})
+
 	t.Run("for zonesCount exceeding maximum zones for region", func(t *testing.T) {
 		// given
 		region := "us-east-1"
@@ -85,6 +96,25 @@ func TestAWSInput_SingleZone_ApplyParameters(t *testing.T) {
 		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
 			regionFromZone := zone.Name[:len(zone.Name)-1]
 			assert.Equal(t, DefaultAWSRegion, regionFromZone)
+		}
+	})
+
+	t.Run("use default region and default zones count for EU Access", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			PlatformRegion: "cf-ch20",
+		})
+
+		//then
+		assert.Equal(t, DefaultEuAccessAWSRegion, input.GardenerConfig.Region)
+		assert.Len(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones, 1)
+
+		for _, zone := range input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones {
+			regionFromZone := zone.Name[:len(zone.Name)-1]
+			assert.Equal(t, DefaultEuAccessAWSRegion, regionFromZone)
 		}
 	})
 
@@ -203,18 +233,35 @@ func TestAWSInput_MultiZone_ApplyParameters(t *testing.T) {
 }
 
 func TestAWSTrialInput_ApplyParameters(t *testing.T) {
-	// given
-	svc := AWSTrialInput{PlatformRegionMapping: map[string]string{
-		"cf-eu10": "europe",
-		"cf-us10": "us",
-	}}
-	input := svc.Defaults()
+	t.Run("AWS trial", func(t *testing.T) {
+		svc := AWSTrialInput{PlatformRegionMapping: map[string]string{
+			"cf-eu10": "europe",
+			"cf-us10": "us",
+		}}
+		input := svc.Defaults()
 
-	// when
-	svc.ApplyParameters(input, internal.ProvisioningParameters{
-		PlatformRegion: "cf-us10",
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			PlatformRegion: "cf-us10",
+		})
+
+		// then
+		assert.Contains(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, input.GardenerConfig.Region)
 	})
 
-	// then
-	assert.Contains(t, input.GardenerConfig.ProviderSpecificConfig.AwsConfig.AwsZones[0].Name, input.GardenerConfig.Region)
+	t.Run("AWS trial with EU Access restrictions", func(t *testing.T) {
+		svc := AWSTrialInput{PlatformRegionMapping: map[string]string{
+			"cf-eu10": "europe",
+			"cf-us10": "us",
+		}}
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			PlatformRegion: "cf-eu11",
+		})
+
+		// then
+		assert.Contains(t, DefaultEuAccessAWSRegion, input.GardenerConfig.Region)
+	})
 }

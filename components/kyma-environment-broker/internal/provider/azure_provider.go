@@ -13,6 +13,7 @@ import (
 
 const (
 	DefaultAzureRegion         = "eastus"
+	DefaultEuAccessAzureRegion = "switzerlandnorth"
 	DefaultAzureMultiZoneCount = 3
 )
 
@@ -74,6 +75,11 @@ func (p *AzureInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if internal.IsEuAccess(pp.PlatformRegion) {
+		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
+		return
+	}
+
 	// explicit zones list is provided
 	if len(pp.Parameters.Zones) > 0 {
 		zones := []int{}
@@ -126,6 +132,9 @@ func (p *AzureLiteInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
+	if internal.IsEuAccess(pp.PlatformRegion) {
+		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
+	}
 }
 
 func (p *AzureLiteInput) Profile() gqlschema.KymaProfile {
@@ -172,6 +181,11 @@ func azureTrialDefaults() *gqlschema.ClusterConfigInput {
 
 func (p *AzureTrialInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	params := pp.Parameters
+
+	if internal.IsEuAccess(pp.PlatformRegion) {
+		updateString(&input.GardenerConfig.Region, ptr.String(DefaultEuAccessAzureRegion))
+		return
+	}
 
 	// read platform region if exists
 	if pp.PlatformRegion != "" {

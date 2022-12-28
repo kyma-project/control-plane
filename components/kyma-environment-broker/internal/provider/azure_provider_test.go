@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
+func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) { //TODO apply EU Access for trials
 	// given
 	svc := AzureTrialInput{
 		PlatformRegionMapping: map[string]string{
@@ -63,7 +63,25 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 		})
 
 		//then
-		assert.Equal(t, "eastus", input.GardenerConfig.Region)
+		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
+	})
+
+	// when
+	t.Run("forget customer empty region for EU Access", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+		r := ""
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			PlatformRegion: "cf-ch20",
+			Parameters: internal.ProvisioningParametersDTO{
+				Region: &r,
+			},
+		})
+
+		//then
+		assert.Equal(t, DefaultEuAccessAzureRegion, input.GardenerConfig.Region)
 	})
 
 	// when
@@ -76,6 +94,20 @@ func TestAzureTrialInput_ApplyParametersWithRegion(t *testing.T) {
 
 		//then
 		assert.Equal(t, DefaultAzureRegion, input.GardenerConfig.Region)
+	})
+
+	// when
+	t.Run("use default region for EU Access", func(t *testing.T) {
+		// given
+		input := svc.Defaults()
+
+		// when
+		svc.ApplyParameters(input, internal.ProvisioningParameters{
+			PlatformRegion: "cf-ch20"},
+		)
+
+		//then
+		assert.Equal(t, DefaultEuAccessAzureRegion, input.GardenerConfig.Region)
 	})
 
 	// when
