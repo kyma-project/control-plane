@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.25.1
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221222072136-51215ec51e44
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20221207114217-a9148b15ff4d
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
@@ -20,14 +20,14 @@ require (
 	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/api v0.25.3
+	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
-	github.com/99designs/gqlgen v0.17.22 // indirect
+	github.com/99designs/gqlgen v0.17.21 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible // indirect
@@ -55,7 +55,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221021121045-dec2d997352a // indirect
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20221207124017-8b2cd58faf4b // indirect
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220929072045-bfb8d6dac310 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -90,7 +90,7 @@ require (
 	k8s.io/apiserver v0.25.2 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
+	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
