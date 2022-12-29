@@ -154,7 +154,7 @@ type ListParameters struct {
 	// Expired parameter filters runtimes to show only expired ones.
 	Expired bool
 	// Events parameter fetches tracing events per instance
-	Events bool
+	Events string
 	// OnlyDeleted parameter instructs KEB to try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations
 	OnlyDeleted bool
 }
