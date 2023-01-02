@@ -267,3 +267,7 @@ func (c failingK8sClient) Scheme() *runtime.Scheme {
 func (c failingK8sClient) RESTMapper() meta.RESTMapper {
 	panic("not implemented")
 }
+
+func (c failingK8sClient) SubResource(s string) client.SubResourceClient {
+	panic("not implemented")
+}

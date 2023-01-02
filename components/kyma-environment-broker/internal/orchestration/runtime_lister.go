@@ -1,12 +1,13 @@
 package orchestration
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	runtimeInt "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +30,7 @@ func NewRuntimeLister(instancesDb storage.Instances, operationsDb storage.Operat
 func (rl RuntimeLister) ListAllRuntimes() ([]runtime.RuntimeDTO, error) {
 	instances, _, _, err := rl.instancesDb.List(dbmodel.InstanceFilter{})
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing instances from DB")
+		return nil, fmt.Errorf("while listing instances from DB: %w", err)
 	}
 
 	runtimes := make([]runtime.RuntimeDTO, 0, len(instances))

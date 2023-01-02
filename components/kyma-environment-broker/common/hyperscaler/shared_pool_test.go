@@ -14,103 +14,105 @@ import (
 
 func TestSharedPool_SharedCredentialsSecretBinding(t *testing.T) {
 
-	for _, testCase := range []struct {
-		description    string
-		secretBindings []runtime.Object
-		shoots         []runtime.Object
-		hyperscaler    Type
-		expectedSecret string
-	}{
-		{
-			description: "should get only Secret Bindings with proper hyperscaler",
-			secretBindings: []runtime.Object{
-				newSecretBinding("sb1", "s1", "gcp", true),
-				newSecretBinding("sb2", "s2", "azure", true),
-				newSecretBinding("sb3", "s3", "aws", true),
+	for _, euAccess := range []bool{false, true} {
+		for _, testCase := range []struct {
+			description    string
+			secretBindings []runtime.Object
+			shoots         []runtime.Object
+			hyperscaler    Type
+			expectedSecret string
+		}{
+			{
+				description: "should get only Secret Bindings with proper hyperscaler",
+				secretBindings: []runtime.Object{
+					newSecretBinding("sb1", "s1", "gcp", true, euAccess),
+					newSecretBinding("sb2", "s2", "azure", true, euAccess),
+					newSecretBinding("sb3", "s3", "aws", true, euAccess),
+				},
+				shoots: []runtime.Object{
+					newShoot("sh1", "sb1"),
+					newShoot("sh2", "sb1"),
+					newShoot("sh3", "sb1"),
+					newShoot("sh4", "sb2"),
+				},
+				hyperscaler:    "gcp",
+				expectedSecret: "s1",
 			},
-			shoots: []runtime.Object{
-				newShoot("sh1", "sb1"),
-				newShoot("sh2", "sb1"),
-				newShoot("sh3", "sb1"),
-				newShoot("sh4", "sb2"),
+			{
+				description: "should ignore not shared Secret Bindings",
+				secretBindings: []runtime.Object{
+					newSecretBinding("sb1", "s1", "gcp", true, euAccess),
+					newSecretBinding("sb2", "s2", "gcp", false, euAccess),
+					newSecretBinding("sb3", "s3", "gcp", false, euAccess),
+				},
+				shoots: []runtime.Object{
+					newShoot("sh1", "sb1"),
+					newShoot("sh2", "sb1"),
+					newShoot("sh3", "sb1"),
+					newShoot("sh4", "sb2"),
+				},
+				hyperscaler:    "gcp",
+				expectedSecret: "s1",
 			},
-			hyperscaler:    "gcp",
-			expectedSecret: "s1",
-		},
-		{
-			description: "should ignore not shared Secret Bindings",
-			secretBindings: []runtime.Object{
-				newSecretBinding("sb1", "s1", "gcp", true),
-				newSecretBinding("sb2", "s2", "gcp", false),
-				newSecretBinding("sb3", "s3", "gcp", false),
+			{
+				description: "should get least used Secret Binding for GCP",
+				secretBindings: []runtime.Object{
+					newSecretBinding("sb1", "s1", "gcp", true, euAccess),
+					newSecretBinding("sb2", "s2", "gcp", true, euAccess),
+					newSecretBinding("sb3", "s3", "gcp", true, euAccess),
+				},
+				shoots: []runtime.Object{
+					newShoot("sh1", "sb1"),
+					newShoot("sh2", "sb1"),
+					newShoot("sh3", "sb1"),
+					newShoot("sh4", "sb2"),
+					newShoot("sh5", "sb2"),
+					newShoot("sh6", "sb3"),
+				},
+				hyperscaler:    "gcp",
+				expectedSecret: "s3",
 			},
-			shoots: []runtime.Object{
-				newShoot("sh1", "sb1"),
-				newShoot("sh2", "sb1"),
-				newShoot("sh3", "sb1"),
-				newShoot("sh4", "sb2"),
+			{
+				description: "should get least used Secret Binding for Azure",
+				secretBindings: []runtime.Object{
+					newSecretBinding("sb1", "s1", "azure", true, euAccess),
+					newSecretBinding("sb2", "s2", "azure", true, euAccess),
+					newSecretBinding("sb3", "s3", "aws", true, euAccess),
+				},
+				shoots: []runtime.Object{
+					newShoot("sh1", "sb1"),
+					newShoot("sh2", "sb1"),
+					newShoot("sh3", "sb2"),
+				},
+				hyperscaler:    "azure",
+				expectedSecret: "s2",
 			},
-			hyperscaler:    "gcp",
-			expectedSecret: "s1",
-		},
-		{
-			description: "should get least used Secret Binding for GCP",
-			secretBindings: []runtime.Object{
-				newSecretBinding("sb1", "s1", "gcp", true),
-				newSecretBinding("sb2", "s2", "gcp", true),
-				newSecretBinding("sb3", "s3", "gcp", true),
+			{
+				description: "should get least used Secret Binding for AWS",
+				secretBindings: []runtime.Object{
+					newSecretBinding("sb1", "s1", "aws", true, euAccess),
+					newSecretBinding("sb2", "s2", "aws", true, euAccess),
+				},
+				shoots: []runtime.Object{
+					newShoot("sh1", "sb2"),
+				},
+				hyperscaler:    "aws",
+				expectedSecret: "s1",
 			},
-			shoots: []runtime.Object{
-				newShoot("sh1", "sb1"),
-				newShoot("sh2", "sb1"),
-				newShoot("sh3", "sb1"),
-				newShoot("sh4", "sb2"),
-				newShoot("sh5", "sb2"),
-				newShoot("sh6", "sb3"),
-			},
-			hyperscaler:    "gcp",
-			expectedSecret: "s3",
-		},
-		{
-			description: "should get least used Secret Binding for Azure",
-			secretBindings: []runtime.Object{
-				newSecretBinding("sb1", "s1", "azure", true),
-				newSecretBinding("sb2", "s2", "azure", true),
-				newSecretBinding("sb3", "s3", "aws", true),
-			},
-			shoots: []runtime.Object{
-				newShoot("sh1", "sb1"),
-				newShoot("sh2", "sb1"),
-				newShoot("sh3", "sb2"),
-			},
-			hyperscaler:    "azure",
-			expectedSecret: "s2",
-		},
-		{
-			description: "should get least used Secret Binding for AWS",
-			secretBindings: []runtime.Object{
-				newSecretBinding("sb1", "s1", "aws", true),
-				newSecretBinding("sb2", "s2", "aws", true),
-			},
-			shoots: []runtime.Object{
-				newShoot("sh1", "sb2"),
-			},
-			hyperscaler:    "aws",
-			expectedSecret: "s1",
-		},
-	} {
-		t.Run(testCase.description, func(t *testing.T) {
-			// given
-			gardenerFake := gardener.NewDynamicFakeClient(append(testCase.shoots, testCase.secretBindings...)...)
-			pool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
+		} {
+			t.Run(testCase.description, func(t *testing.T) {
+				// given
+				gardenerFake := gardener.NewDynamicFakeClient(append(testCase.shoots, testCase.secretBindings...)...)
+				pool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
 
-			// when
-			secretBinding, err := pool.SharedCredentialsSecretBinding(testCase.hyperscaler)
-			require.NoError(t, err)
+				// when
+				secretBinding, err := pool.SharedCredentialsSecretBinding(testCase.hyperscaler, euAccess)
+				require.NoError(t, err)
 
-			// then
-			assert.Equal(t, testCase.expectedSecret, secretBinding.GetSecretRefName())
-		})
+				// then
+				assert.Equal(t, testCase.expectedSecret, secretBinding.GetSecretRefName())
+			})
+		}
 	}
 }
 
@@ -118,13 +120,13 @@ func TestSharedPool_SharedCredentialsSecretBinding_Errors(t *testing.T) {
 	t.Run("should return error when no Secret Bindings for hyperscaler found", func(t *testing.T) {
 		// given
 		gardenerFake := gardener.NewDynamicFakeClient(
-			newSecretBinding("sb1", "s1", "azure", true),
-			newSecretBinding("sb2", "s2", "gcp", false),
+			newSecretBinding("sb1", "s1", "azure", true, false),
+			newSecretBinding("sb2", "s2", "gcp", false, false),
 		)
 		pool := NewSharedGardenerAccountPool(gardenerFake, testNamespace)
 
 		// when
-		_, err := pool.SharedCredentialsSecretBinding("gcp")
+		_, err := pool.SharedCredentialsSecretBinding("gcp", false)
 
 		// then
 		require.Error(t, err)
@@ -143,7 +145,7 @@ func newSecret(name string) *corev1.Secret {
 	}
 }
 
-func newSecretBinding(name, secretName, hyperscaler string, shared bool) *unstructured.Unstructured {
+func newSecretBinding(name, secretName, hyperscaler string, shared bool, euAccess bool) *unstructured.Unstructured {
 	secretBinding := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -166,6 +168,7 @@ func newSecretBinding(name, secretName, hyperscaler string, shared bool) *unstru
 		labels["shared"] = "true"
 		secretBinding.SetLabels(labels)
 	}
+	applyEuAccess(secretBinding, euAccess)
 
 	return secretBinding
 }

@@ -3,7 +3,6 @@ package broker_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -46,7 +45,7 @@ const (
 	shootDomain          = "kyma-dev.shoot.canary.k8s-hana.ondemand.com"
 )
 
-var dashboardConfig dashboard.Config = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
+var dashboardConfig = dashboard.Config{LandscapeURL: "https://dashboard.example.com"}
 
 func TestProvision_Provision(t *testing.T) {
 	t.Run("new operation will be created", func(t *testing.T) {
@@ -476,7 +475,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		assert.EqualError(t, err, "The Trial Kyma was created for the global account, but there is only one allowed")
+		assert.EqualError(t, err, "trial Kyma was created for the global account, but there is only one allowed")
 	})
 
 	t.Run("more than one trial is allowed", func(t *testing.T) {
@@ -646,7 +645,7 @@ func TestProvision_Provision(t *testing.T) {
 		}, true)
 
 		// then
-		require.ErrorContains(t, err, "Invalid region specified in request for trial.")
+		require.ErrorContains(t, err, "invalid region specified in request for trial")
 	})
 
 	t.Run("conflict should be handled", func(t *testing.T) {
@@ -938,7 +937,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		oidcParams := `"clientID":"client-id"`
-		err := errors.New("issuerURL must not be empty")
+		err := fmt.Errorf("issuerURL must not be empty")
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 
@@ -993,7 +992,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		oidcParams := `"issuerURL":"https://test.local"`
-		err := errors.New("clientID must not be empty")
+		err := fmt.Errorf("clientID must not be empty")
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 
@@ -1048,7 +1047,7 @@ func TestProvision_Provision(t *testing.T) {
 		)
 
 		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
-		err := errors.New("signingAlgs must contain valid signing algorithm(s)")
+		err := fmt.Errorf("signingAlgs must contain valid signing algorithm(s)")
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 

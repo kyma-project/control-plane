@@ -2,8 +2,8 @@ package runtimeversion
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
@@ -48,7 +48,7 @@ func (m *AccountVersionMapping) Get(globalAccountID, subaccountID string) (strin
 		m.log.Infof("Kyma Version per Account configuration %s/%s not found", m.namespace, m.name)
 		return "", false, nil
 	case err != nil:
-		return "", false, errors.Wrap(err, "while getting kyma version config map")
+		return "", false, fmt.Errorf("while getting kyma version config map: %w", err)
 	}
 
 	// SubAccount version mapping has higher priority than GlobalAccount version

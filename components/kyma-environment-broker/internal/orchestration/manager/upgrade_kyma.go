@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,7 +82,7 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 
 		majorVer, err = determineMajorVersion(o.Parameters.Kyma.Version, u.defaultKymaVersion)
 		if err != nil {
-			return orchestration.RuntimeOperation{}, errors.Wrap(err, "while determining Kyma's major version")
+			return orchestration.RuntimeOperation{}, fmt.Errorf("while determining Kyma's major version: %w", err)
 		}
 
 		op.RuntimeVersion = *internal.NewRuntimeVersionFromParameters(o.Parameters.Kyma.Version, majorVer)
@@ -107,7 +107,7 @@ func extractMajorVersionNumberFromVersionString(version string) (int, error) {
 	splitVer := strings.Split(version, ".")
 	majorVerNum, err := strconv.Atoi(splitVer[0])
 	if err != nil {
-		return 0, errors.New("cannot convert major version to int")
+		return 0, fmt.Errorf("cannot convert major version to int")
 	}
 	return majorVerNum, nil
 }
@@ -143,14 +143,14 @@ func (u *upgradeKymaFactory) ResumeOperations(orchestrationID string) ([]orchest
 func (u *upgradeKymaFactory) CancelOperations(orchestrationID string) error {
 	ops, _, _, err := u.operationStorage.ListUpgradeKymaOperationsByOrchestrationID(orchestrationID, dbmodel.OperationFilter{States: []string{orchestration.Pending}})
 	if err != nil {
-		return errors.Wrap(err, "while listing upgrade kyma operations")
+		return fmt.Errorf("while listing upgrade kyma operations: %w", err)
 	}
 	for _, op := range ops {
 		op.State = orchestration.Canceled
 		op.Description = "Operation was canceled"
 		_, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
 		if err != nil {
-			return errors.Wrap(err, "while updating upgrade kyma operation")
+			return fmt.Errorf("while updating upgrade kyma operation: %w", err)
 		}
 	}
 
@@ -164,7 +164,7 @@ func (u *upgradeKymaFactory) RetryOperations(retryOps []string) ([]orchestration
 	for _, opId := range retryOps {
 		runtimeop, err := u.operationStorage.GetUpgradeKymaOperationByID(opId)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while geting (retrying) upgrade kyma operation %s in storage", opId)
+			fmt.Errorf("while geting (retrying) upgrade kyma operation %s in storage: %w", opId, err)
 		}
 
 		result = append(result, runtimeop.RuntimeOperation)
@@ -182,7 +182,7 @@ func (u *upgradeKymaFactory) updateRetryingOperation(op internal.UpgradeKymaOper
 
 	opUpdated, err := u.operationStorage.UpdateUpgradeKymaOperation(op)
 	if err != nil {
-		return orchestration.RuntimeOperation{}, errors.Wrapf(err, "while updating (retrying) upgrade kyma operation %s in storage", op.Operation.ID)
+		return orchestration.RuntimeOperation{}, fmt.Errorf("while updating (retrying) upgrade kyma operation %s in storage: %w", op.Operation.ID, err)
 	}
 
 	return opUpdated.RuntimeOperation, nil

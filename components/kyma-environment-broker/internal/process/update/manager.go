@@ -2,7 +2,6 @@ package update
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -103,7 +102,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 	}
 
 	logOperation := m.log.WithFields(logrus.Fields{"operation": operationID, "instanceID": operation.InstanceID, "planID": operation.ProvisioningParameters.PlanID})
-	logOperation.Infof("Start process operation steps for GlobalAcocunt=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
+	logOperation.Infof("Start process operation steps for GlobalAccount=%s, ", operation.ProvisioningParameters.ErsContext.GlobalAccountID)
 	if time.Since(operation.CreatedAt) > m.operationTimeout {
 		logOperation.Infof("operation has reached the time limit: operation was created at: %s", operation.CreatedAt)
 		operation.State = domain.Failed
@@ -112,7 +111,7 @@ func (m *Manager) Execute(operationID string) (time.Duration, error) {
 			logOperation.Infof("Unable to save operation with finished the provisioning process")
 			return time.Second, err
 		}
-		return 0, errors.New("operation has reached the time limit")
+		return 0, fmt.Errorf("operation has reached the time limit")
 	}
 
 	var when time.Duration

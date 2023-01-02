@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/pagination"
-	"github.com/pkg/errors"
 )
 
 const defaultPageSize = 100
@@ -51,13 +50,13 @@ func (c *client) ListRuntimes(params ListParameters) (RuntimesPage, error) {
 	for !fetchedAll {
 		req, err := http.NewRequest("GET", fmt.Sprintf("%s/runtimes", c.url), nil)
 		if err != nil {
-			return runtimes, errors.Wrap(err, "while creating request")
+			return runtimes, fmt.Errorf("while creating request: %w", err)
 		}
 		setQuery(req.URL, params)
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			return runtimes, errors.Wrapf(err, "while calling %s", req.URL.String())
+			return runtimes, fmt.Errorf("while calling %s: %w", req.URL.String(), err)
 		}
 
 		// Drain response body and close, return error to context if there isn't any.
@@ -80,7 +79,7 @@ func (c *client) ListRuntimes(params ListParameters) (RuntimesPage, error) {
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&rp)
 		if err != nil {
-			return runtimes, errors.Wrap(err, "while decoding response body")
+			return runtimes, fmt.Errorf("while decoding response body: %w", err)
 		}
 
 		runtimes.TotalCount = rp.TotalCount

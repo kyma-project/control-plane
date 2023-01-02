@@ -47,7 +47,8 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 			return operation, 0, nil
 		}
 
-		err = s.accountProvider.MarkUnusedGardenerSecretBindingAsDirty(hypType, instance.GetSubscriptionGlobalAccoundID())
+		euAccess := internal.IsEuAccess(operation.ProvisioningParameters.PlatformRegion)
+		err = s.accountProvider.MarkUnusedGardenerSecretBindingAsDirty(hypType, instance.GetSubscriptionGlobalAccoundID(), euAccess)
 		if err != nil {
 			log.Errorf("after successful deprovisioning failed to release hyperscaler subscription: %s", err)
 			return operation, 10 * time.Second, nil

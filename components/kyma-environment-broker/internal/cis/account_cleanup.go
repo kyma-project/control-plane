@@ -1,10 +1,11 @@
 package cis
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,7 +40,7 @@ func NewSubAccountCleanupService(client CisClient, brokerClient BrokerClient, st
 func (ac *SubAccountCleanupService) Run() error {
 	subaccounts, err := ac.client.FetchSubAccountsToDelete()
 	if err != nil {
-		return errors.Wrap(err, "while fetching subaccounts by client")
+		return fmt.Errorf("while fetching subaccounts by client: %w", err)
 	}
 
 	subaccountsBatch := chunk(ac.chunksAmount, subaccounts)
@@ -71,14 +72,14 @@ func (ac *SubAccountCleanupService) Run() error {
 func (ac *SubAccountCleanupService) executeDeprovisioning(subaccounts []string, done chan<- struct{}, errCh chan<- error) {
 	instances, err := ac.storage.FindAllInstancesForSubAccounts(subaccounts)
 	if err != nil {
-		errCh <- errors.Wrap(err, "while finding all instances by subaccounts")
+		errCh <- fmt.Errorf("while finding all instances by subaccounts: %w", err)
 		return
 	}
 
 	for _, instance := range instances {
 		operation, err := ac.brokerClient.Deprovision(instance)
 		if err != nil {
-			errCh <- errors.Wrapf(err, "error occurred during deprovisioning instance with ID %s", instance.InstanceID)
+			errCh <- fmt.Errorf("error occurred during deprovisioning instance with ID %s: %w", instance.InstanceID, err)
 			continue
 		}
 		ac.log.Infof("deprovisioning for instance %s (SubAccountID: %s) was triggered, operation: %s", instance.InstanceID, instance.SubAccountID, operation)

@@ -1,7 +1,6 @@
 package edp
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 )
@@ -39,7 +38,7 @@ func (f *FakeClient) CreateDataTenant(data DataTenantPayload) error {
 
 	_, found := f.dataTenantData[key]
 	if found {
-		return errors.New("datatenant already exist")
+		return fmt.Errorf("datatenant already exist")
 	}
 
 	f.dataTenantData[key] = DataTenantItem{
@@ -63,7 +62,7 @@ func (f *FakeClient) CreateMetadataTenant(name, env string, data MetadataTenantP
 
 	_, found := f.metadataTenantData[metadataMapKey]
 	if found {
-		return errors.New("metadatatenant already exist")
+		return fmt.Errorf("metadatatenant already exist")
 	}
 
 	f.metadataTenantData[metadataMapKey] = MetadataItem{
@@ -82,7 +81,7 @@ func (f *FakeClient) DeleteDataTenant(name, env string) error {
 
 	_, found := f.dataTenantData[key]
 	if !found {
-		return errors.New("datatenant does not exist")
+		return fmt.Errorf("datatenant does not exist")
 	}
 	delete(f.dataTenantData, key)
 	return nil
@@ -96,7 +95,7 @@ func (f *FakeClient) DeleteMetadataTenant(name, env, key string) error {
 
 	_, found := f.metadataTenantData[mapKey]
 	if !found {
-		return errors.New("metadatatenant does not exist")
+		return fmt.Errorf("metadatatenant does not exist")
 	}
 	delete(f.metadataTenantData, mapKey)
 	return nil
@@ -104,14 +103,14 @@ func (f *FakeClient) DeleteMetadataTenant(name, env, key string) error {
 
 func checkDataTenantPayload(data DataTenantPayload) error {
 	if data.Name == "" || data.Environment == "" || data.Secret == "" {
-		return errors.New("one of the fields in DataTenantPayload is missing")
+		return fmt.Errorf("one of the fields in DataTenantPayload is missing")
 	}
 	return nil
 }
 
 func checkMetadataTenantPayload(data MetadataTenantPayload) error {
 	if data.Key == "" || data.Value == "" {
-		return errors.New("one of the fields in MetadataTenantPayload is missing")
+		return fmt.Errorf("one of the fields in MetadataTenantPayload is missing")
 	}
 	return nil
 }

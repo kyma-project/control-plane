@@ -9,8 +9,6 @@ import (
 	"net/http"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -87,7 +85,7 @@ func (c *Client) CancelEvent(payload CancelEventRequest) error {
 func (c *Client) callPatch(path string, payload interface{}) (err error) {
 	request, err := c.jsonRequest(path, http.MethodPatch, payload)
 	if err != nil {
-		return errors.Wrapf(err, "while creating json request for path %s", path)
+		return fmt.Errorf("while creating json request for path %s: %w", path, err)
 	}
 
 	response, err := c.do(request)
@@ -97,7 +95,7 @@ func (c *Client) callPatch(path string, payload interface{}) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrapf(err, "while making request for path %s", path)
+		return fmt.Errorf("while making request for path %s: %w", path, err)
 	}
 
 	return nil
@@ -106,7 +104,7 @@ func (c *Client) callPatch(path string, payload interface{}) (err error) {
 func (c *Client) callPost(path string, payload interface{}) (err error) {
 	request, err := c.jsonRequest(path, http.MethodPost, payload)
 	if err != nil {
-		return errors.Wrapf(err, "while creating json request for path %s", path)
+		return fmt.Errorf("while creating json request for path %s: %w", path, err)
 	}
 
 	response, err := c.do(request)
@@ -116,9 +114,8 @@ func (c *Client) callPost(path string, payload interface{}) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrapf(err, "while making request for path %s", path)
+		return fmt.Errorf("while making request for path %s: %w", path, err)
 	}
-
 	return nil
 }
 
@@ -169,7 +166,7 @@ func (c *Client) do(sciReq *Request) (*http.Response, error) {
 	if response.StatusCode >= http.StatusInternalServerError {
 		return response, kebError.NewTemporaryError(c.responseErrorMessage(response))
 	}
-	return response, errors.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
+	return response, fmt.Errorf("while sending request to IAS: %s", c.responseErrorMessage(response))
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {

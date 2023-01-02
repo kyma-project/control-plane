@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -64,7 +62,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	switch {
 	case errStorage != nil && !dberr.IsNotFound(errStorage):
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
-		return domain.DeprovisionServiceSpec{}, errors.New("cannot get existing operation from storage")
+		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot get existing operation from storage")
 
 		// there is an ongoing operation and it is not a temporary deprovision (suspension)
 	case existingOperation != nil && !existingOperation.Temporary && existingOperation.State != domain.Failed:
@@ -79,12 +77,12 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instance)
 	if err != nil {
 		logger.Errorf("cannot create new operation: %s", err)
-		return domain.DeprovisionServiceSpec{}, errors.New("cannot create new operation")
+		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot create new operation")
 	}
 	err = b.operationsStorage.InsertDeprovisioningOperation(operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)
-		return domain.DeprovisionServiceSpec{}, errors.New("cannot save operation")
+		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot save operation")
 	}
 
 	logger.Info("Adding operation to deprovisioning queue")

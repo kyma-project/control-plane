@@ -2,7 +2,6 @@ package testing
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/services/eventhub/mgmt/2017-04-01/eventhub"
@@ -105,13 +104,13 @@ func NewFakeNamespaceClientResourceGroupDoesNotExist() *FakeNamespaceClient {
 
 func NewFakeNamespaceClientResourceGroupConnectionError() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
-		GetResourceGroupError: errors.New("ups .. can't connect to azure"),
+		GetResourceGroupError: fmt.Errorf("ups .. can't connect to azure"),
 	}
 }
 
 func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
-		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
+		DeleteResourceGroupError: fmt.Errorf("error while trying to delete resource group"),
 		GetResourceGroupReturnValue: resources.Group{
 			Response:   autorest.Response{},
 			Name:       ptr.String("fake-resource-group"),
@@ -122,7 +121,7 @@ func NewFakeNamespaceClientResourceGroupDeleteError() *FakeNamespaceClient {
 
 func NewFakeNamespaceClientResourceGroupPropertiesError() *FakeNamespaceClient {
 	return &FakeNamespaceClient{
-		DeleteResourceGroupError: errors.New("error while trying to delete resource group"),
+		DeleteResourceGroupError: fmt.Errorf("error while trying to delete resource group"),
 	}
 }
 

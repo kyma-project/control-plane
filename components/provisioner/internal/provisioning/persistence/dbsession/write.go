@@ -126,6 +126,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
 		Pair("control_plane_failure_tolerance", config.ControlPlaneFailureTolerance).
+		Pair("eu_access", config.EuAccess).
 		Exec()
 
 	if err != nil {
