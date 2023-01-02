@@ -5,7 +5,7 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-2322"
+      version: "PR-2375"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "PR-2353"
