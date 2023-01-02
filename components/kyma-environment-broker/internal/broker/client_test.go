@@ -28,10 +28,8 @@ func TestClient_Deprovision(t *testing.T) {
 		testServer := fixHTTPServer(nil)
 		defer testServer.Close()
 
-		config := ClientConfig{
-			URL: testServer.URL,
-		}
-		client := NewClient(context.Background(), config)
+		config := NewClientConfig(testServer.URL)
+		client := NewClientWithPoller(context.Background(), *config, NewPassthroughPoller())
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{
@@ -53,10 +51,10 @@ func TestClient_Deprovision(t *testing.T) {
 		testServer := fixHTTPServer(requestFailureServerError)
 		defer testServer.Close()
 
-		config := ClientConfig{
-			URL: testServer.URL,
-		}
-		client := NewClient(context.Background(), config)
+		config := NewClientConfig(testServer.URL)
+
+		client := NewClientWithPoller(context.Background(), *config, NewPassthroughPoller())
+
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{
@@ -84,7 +82,7 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		config := ClientConfig{
 			URL: testServer.URL,
 		}
-		client := NewClient(context.Background(), config)
+		client := NewClientWithPoller(context.Background(), config, NewPassthroughPoller())
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{
@@ -109,7 +107,7 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		config := ClientConfig{
 			URL: testServer.URL,
 		}
-		client := NewClient(context.Background(), config)
+		client := NewClientWithPoller(context.Background(), config, NewPassthroughPoller())
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{
@@ -134,7 +132,8 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		config := ClientConfig{
 			URL: testServer.URL,
 		}
-		client := NewClient(context.Background(), config)
+		client := NewClientWithPoller(context.Background(), config, NewPassthroughPoller())
+
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{
@@ -159,7 +158,7 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		config := ClientConfig{
 			URL: testServer.URL,
 		}
-		client := NewClient(context.Background(), config)
+		client := NewClientWithPoller(context.Background(), config, NewPassthroughPoller())
 		client.setHttpClient(testServer.Client())
 
 		instance := internal.Instance{

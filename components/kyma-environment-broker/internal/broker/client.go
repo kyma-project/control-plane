@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -64,9 +63,20 @@ type ClientConfig struct {
 type Client struct {
 	brokerConfig ClientConfig
 	httpClient   *http.Client
+	poller       Poller
+}
+
+func NewClientConfig(URL string) *ClientConfig {
+	return &ClientConfig{
+		URL: URL,
+	}
 }
 
 func NewClient(ctx context.Context, config ClientConfig) *Client {
+	return NewClientWithPoller(ctx, config, NewDefaultPoller())
+}
+
+func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
@@ -79,6 +89,7 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 	return &Client{
 		brokerConfig: config,
 		httpClient:   httpClientOAuth,
+		poller:       poller,
 	}
 }
 
@@ -91,14 +102,8 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
-	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
-		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
-		if err != nil {
-			log.Warn(errors.Wrap(err, "while executing request").Error())
-			return false, nil
-		}
-		return true, nil
-	})
+	err = c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
+
 	if err != nil {
 		return "", errors.Wrap(err, "while waiting for successful deprovision call")
 	}
@@ -217,6 +222,18 @@ func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error
 }
 
 func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
+	return c.poller.Invoke(func() error {
+		err := c.execute(method, url, expectedStatus, nil, &responseBody)
+		if err != nil {
+			log.Warn(errors.Wrap(err, "while executing request").Error())
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (c *Client) execute(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return errors.Wrap(err, "while creating request for provisioning")
