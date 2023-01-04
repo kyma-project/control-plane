@@ -77,31 +77,37 @@ type WriteSessionWithinTransaction interface {
 
 type factory struct {
 	connection *dbr.Connection
+	encrypt    encryptFunc
+	decrypt    decryptFunc
 }
 
-func NewFactory(connection *dbr.Connection) Factory {
+func NewFactory(connection *dbr.Connection, secretKey string) Factory {
 	return &factory{
 		connection: connection,
+		encrypt:    newEncryptFunc([]byte(secretKey)),
+		decrypt:    newDecryptFunc([]byte(secretKey)),
 	}
 }
 
 func (sf *factory) NewReadSession() ReadSession {
 	return readSession{
 		session: sf.connection.NewSession(nil),
+		decrypt: sf.decrypt,
 	}
 }
 
 func (sf *factory) NewWriteSession() WriteSession {
 	return writeSession{
 		session: sf.connection.NewSession(nil),
+		encrypt: sf.encrypt,
 	}
 }
 
 func (sf *factory) NewReadWriteSession() ReadWriteSession {
 	session := sf.connection.NewSession(nil)
 	return readWriteSession{
-		readSession:  readSession{session: session},
-		writeSession: writeSession{session: session},
+		readSession:  readSession{session: session, decrypt: sf.decrypt},
+		writeSession: writeSession{session: session, encrypt: sf.encrypt},
 	}
 }
 
@@ -121,5 +127,6 @@ func (sf *factory) NewSessionWithinTransaction() (WriteSessionWithinTransaction,
 	return writeSession{
 		session:     dbSession,
 		transaction: dbTransaction,
+		encrypt:     sf.encrypt,
 	}, nil
 }

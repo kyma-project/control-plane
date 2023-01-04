@@ -17,6 +17,7 @@ import (
 type writeSession struct {
 	session     *dbr.Session
 	transaction *dbr.Tx
+	encrypt     encryptFunc
 }
 
 // TODO: Remove after schema migration
@@ -83,10 +84,15 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []s
 	}
 
 	for _, admin := range administrators {
+		encryptedUserID, dberr := ws.encryptString(admin)
+		if dberr != nil {
+			return dberrors.Internal("Failed to encrypt Administrator User ID: %s", dberr)
+		}
+
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", clusterId).
-			Pair("user_id", admin).Exec()
+			Pair("user_id", encryptedUserID).Exec()
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
@@ -444,9 +450,14 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 }
 
 func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	encryptedKubeconfig, dberr := ws.encryptString(kubeconfig)
+	if dberr != nil {
+		return dberrors.Internal("Failed to encrypt kubeconfig for %s cluster: %s", runtimeID, dberr) //TODO: Check if it's not confidential
+	}
+
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
-		Set("kubeconfig", kubeconfig).
+		Set("kubeconfig", encryptedKubeconfig).
 		Exec()
 
 	if err != nil {
@@ -593,4 +604,12 @@ func (ws writeSession) update(table string) *dbr.UpdateStmt {
 	}
 
 	return ws.session.Update(table)
+}
+
+func (ws writeSession) encryptString(s string) (string, dberrors.Error) {
+	encrypted, err := ws.encrypt([]byte(s))
+	if err != nil {
+		return "", dberrors.Internal("Failed to encrypt a string: %s", err)
+	}
+	return string(encrypted), nil
 }
