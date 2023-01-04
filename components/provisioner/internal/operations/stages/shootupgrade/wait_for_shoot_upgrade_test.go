@@ -18,9 +18,6 @@ import (
 	"time"
 )
 
-// dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("some error"))
-// kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
-
 func TestWaitForClusterUpgrade(t *testing.T) {
 
 	clusterName := "shootName"
