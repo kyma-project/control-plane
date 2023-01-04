@@ -92,7 +92,9 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []s
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", clusterId).
-			Pair("user_id", encryptedUserID).Exec()
+			Pair("user_id", encryptedUserID).
+			Pair("is_user_id_encrypted", true).
+			Exec()
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
@@ -458,6 +460,7 @@ func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dbe
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", encryptedKubeconfig).
+		Set("is_kubeconfig_encrypted", true).
 		Exec()
 
 	if err != nil {

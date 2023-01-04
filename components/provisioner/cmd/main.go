@@ -234,7 +234,7 @@ func main() {
 
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 
