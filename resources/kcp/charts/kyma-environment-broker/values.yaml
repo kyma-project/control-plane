@@ -64,6 +64,7 @@ reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
   # Defines how long KEB checks the status of the provisioning reconciliation.
   provisioningTimeout: "2h"
+  disabled: "false"
 
 lifecycleManager:
   disabled: "true"
