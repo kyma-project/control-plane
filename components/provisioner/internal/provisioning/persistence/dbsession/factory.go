@@ -82,6 +82,13 @@ type factory struct {
 }
 
 func NewFactory(connection *dbr.Connection, secretKey string) Factory {
+	if len(secretKey) == 0 {
+		return &factory{
+			connection: connection,
+			encrypt:    newEmptyFunc([]byte{}),
+			decrypt:    newEmptyFunc([]byte{}),
+		}
+	}
 	return &factory{
 		connection: connection,
 		encrypt:    newEncryptFunc([]byte(secretKey)),

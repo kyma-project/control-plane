@@ -9,8 +9,6 @@ import (
 	"io"
 )
 
-// TODO: add unit tests
-
 type encryptFunc func([]byte) ([]byte, error)
 type decryptFunc func([]byte) ([]byte, error)
 
@@ -20,6 +18,10 @@ func newEncryptFunc(key []byte) encryptFunc {
 
 func newDecryptFunc(key []byte) decryptFunc {
 	return func(obj []byte) ([]byte, error) { return decrypt(key, obj) }
+}
+
+func newEmptyFunc(_ []byte) func([]byte) ([]byte, error) {
+	return func(bytes []byte) ([]byte, error) { return bytes, nil }
 }
 
 func encrypt(key, obj []byte) ([]byte, error) {
