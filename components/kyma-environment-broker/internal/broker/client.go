@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 
 	log "github.com/sirupsen/logrus"
@@ -102,7 +101,14 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
-	err = c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
+	err = c.poller.Invoke(func() (bool, error) {
+		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
+		if err != nil {
+			log.Warn(fmt.Sprintf("while executing request: %s", err.Error()))
+			return false, nil
+		}
+		return true, nil
+	})
 
 	if err != nil {
 		return "", fmt.Errorf("while waiting for successful deprovision call: %w", err)
@@ -224,18 +230,6 @@ func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error
 }
 
 func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
-	return c.poller.Invoke(func() error {
-		err := c.execute(method, url, expectedStatus, nil, &responseBody)
-		if err != nil {
-			log.Warn(errors.Wrap(err, "while executing request").Error())
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (c *Client) execute(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return fmt.Errorf("while creating request for provisioning: %w", err)

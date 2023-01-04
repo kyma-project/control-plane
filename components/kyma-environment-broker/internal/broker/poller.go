@@ -1,15 +1,14 @@
 package broker
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Poller interface {
-	Invoke(logic func() error) error
+	Invoke(logic func() (bool, error)) error
 }
 
 type DefaultPoller struct {
@@ -24,14 +23,9 @@ func NewDefaultPoller() Poller {
 	}
 }
 
-func (p *DefaultPoller) Invoke(logic func() error) error {
+func (p *DefaultPoller) Invoke(logic func() (bool, error)) error {
 	return wait.PollImmediate(p.PollInterval, p.PollTimeout, func() (bool, error) {
-		err := logic()
-		if err != nil {
-			log.Warn(errors.Wrap(err, "while polling").Error())
-			return false, nil
-		}
-		return true, nil
+		return logic()
 	})
 }
 
@@ -42,6 +36,10 @@ func NewPassthroughPoller() Poller {
 	return &PassthroughPoller{}
 }
 
-func (p *PassthroughPoller) Invoke(logic func() error) error {
-	return logic()
+func (p *PassthroughPoller) Invoke(logic func() (bool, error)) error {
+	success, err := logic()
+	if !success && err == nil {
+		return fmt.Errorf("unsuccessful poll logic invocation")
+	}
+	return err
 }
