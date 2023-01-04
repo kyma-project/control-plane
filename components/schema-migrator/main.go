@@ -71,7 +71,6 @@ func (osFS) ReadDir(name string) ([]fs.DirEntry, error) {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	time.Sleep(20 * time.Second)
 	migrateErr := invokeMigration()
 	if migrateErr != nil {
 		log.Printf("while invoking migration: %s", migrateErr)
@@ -79,8 +78,6 @@ func main() {
 
 	// continue with cleanup
 	err := cleaner.Halt()
-
-	time.Sleep(5 * time.Second)
 
 	if err != nil || migrateErr != nil {
 		log.Printf("error during migration: %s\n", migrateErr)
@@ -139,10 +136,10 @@ func invokeMigration() error {
 	log.Println("# WAITING FOR CONNECTION WITH DATABASE #")
 	db, err := sql.Open("postgres", connectionString)
 
-	for i := 0; i < 30 && err != nil; i++ {
+	for i := 0; i < connRetries && err != nil; i++ {
 		fmt.Printf("Error while connecting to the database, %s\n", err)
 		db, err = sql.Open("postgres", connectionString)
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	if err != nil {
@@ -189,7 +186,7 @@ func invokeMigration() error {
 	for i := 0; i < connRetries && err != nil; i++ {
 		fmt.Printf("Error during driver initialization, %s\n", err)
 		driver, err = postgres.WithInstance(db, &postgres.Config{})
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	if err != nil {

@@ -58,7 +58,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -108,6 +107,8 @@ type BrokerSuiteTest struct {
 
 	k8sKcp client.Client
 	k8sSKR client.Client
+
+	poller broker.Poller
 }
 
 type componentProviderDecorated struct {
@@ -236,6 +237,7 @@ func NewBrokerSuiteTest(t *testing.T, version ...string) *BrokerSuiteTest {
 		componentProvider:   decoratedComponentListProvider,
 		k8sKcp:              cli,
 		k8sSKR:              fakeK8sSKRClient,
+		poller:              &broker.DefaultPoller{3 * time.Millisecond, 2 * time.Second},
 	}
 
 	ts.CreateAPI(inputFactory, cfg, db, provisioningQueue, deprovisioningQueue, updateQueue, logs)
@@ -378,7 +380,7 @@ func (s *BrokerSuiteTest) CreateProvisionedRuntime(options RuntimeOptions) strin
 
 func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state domain.LastOperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, err = s.db.Operations().GetProvisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -390,7 +392,7 @@ func (s *BrokerSuiteTest) WaitForProvisioningState(operationID string, state dom
 
 func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain.LastOperationState) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, err = s.db.Operations().GetOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -402,7 +404,7 @@ func (s *BrokerSuiteTest) WaitForOperationState(operationID string, state domain
 
 func (s *BrokerSuiteTest) WaitForLastOperation(iid string, state domain.LastOperationState) string {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, _ = s.db.Operations().GetLastOperation(iid)
 		return op.State == state, nil
 	})
@@ -418,7 +420,7 @@ func (s *BrokerSuiteTest) LastOperation(iid string) *internal.Operation {
 
 func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID string, operationState gqlschema.OperationState) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -432,7 +434,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByProvisioner(operationID s
 
 func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID string) {
 	var op *internal.ProvisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, _ = s.db.Operations().GetProvisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -446,7 +448,7 @@ func (s *BrokerSuiteTest) FailProvisioningOperationByProvisioner(operationID str
 
 func (s *BrokerSuiteTest) FailDeprovisioningOperationByProvisioner(operationID string) {
 	var op *internal.DeprovisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, _ = s.db.Operations().GetDeprovisioningOperationByID(operationID)
 		if op.RuntimeID != "" {
 			return true, nil
@@ -460,7 +462,7 @@ func (s *BrokerSuiteTest) FailDeprovisioningOperationByProvisioner(operationID s
 
 func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID string) {
 	var op *internal.DeprovisioningOperation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, err = s.db.Operations().GetDeprovisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -482,7 +484,7 @@ func (s *BrokerSuiteTest) FinishDeprovisioningOperationByProvisioner(operationID
 
 func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID string) {
 	var op *internal.Operation
-	err := wait.PollImmediate(pollingInterval, 2*time.Second, func() (done bool, err error) {
+	err := s.poller.Invoke(func() (done bool, err error) {
 		op, _ = s.db.Operations().GetOperationByID(operationID)
 		if op.RuntimeID == "" {
 			return false, nil
@@ -497,7 +499,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByProvisioner(operationID strin
 }
 
 func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, runtimeID string) {
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID, state)
@@ -509,7 +511,7 @@ func (s *BrokerSuiteTest) finishOperationByProvisioner(operationType gqlschema.O
 }
 
 func (s *BrokerSuiteTest) finishOperatioByOpIDnByProvisioner(operationType gqlschema.OperationType, state gqlschema.OperationState, operationID string) {
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		if err != nil {
 			s.Log(fmt.Sprintf("failed to GetOperationsByID: %v", err))
@@ -542,7 +544,7 @@ func (s *BrokerSuiteTest) RemoveFromReconcilerByInstanceID(iid string) {
 func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -556,7 +558,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, provisioningOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
@@ -572,7 +574,7 @@ func (s *BrokerSuiteTest) FinishProvisioningOperationByReconciler(operationID st
 
 func (s *BrokerSuiteTest) FinishReconciliation(opID string) {
 	var state *reconcilerApi.HTTPClusterResponse
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		provisioningOp, err := s.db.Operations().GetProvisioningOperationByID(opID)
 		if err != nil {
 			return false, nil
@@ -592,7 +594,7 @@ func (s *BrokerSuiteTest) FinishReconciliation(opID string) {
 
 func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
 
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetDeprovisioningOperationByID(opID)
 		if err != nil {
 			return false, nil
@@ -609,7 +611,7 @@ func (s *BrokerSuiteTest) FinishDeprovisioningByReconciler(opID string) {
 
 func (s *BrokerSuiteTest) FailDeprovisioningByReconciler(opID string) {
 
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetDeprovisioningOperationByID(opID)
 		if err != nil {
 			return false, nil
@@ -628,7 +630,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 	op, err := s.db.Operations().GetOperationByID(operationID)
 	assert.NoError(s.t, err)
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(op.RuntimeID, op.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
@@ -645,7 +647,7 @@ func (s *BrokerSuiteTest) FinishUpdatingOperationByReconciler(operationID string
 func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID string) {
 	// wait until ProvisioningOperation reaches CreateRuntime step
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -659,7 +661,7 @@ func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID strin
 	assert.NoError(s.t, err)
 
 	var status gqlschema.OperationStatus
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		status = s.provisionerClient.FindOperationByRuntimeIDAndType(provisioningOp.RuntimeID, gqlschema.OperationTypeProvision)
 		if status.ID != nil {
 			return true, nil
@@ -672,7 +674,7 @@ func (s *BrokerSuiteTest) AssertProvisionerStartedProvisioning(operationID strin
 
 func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID string) {
 	var upgradeOp *internal.UpgradeKymaOperation
-	err := wait.Poll(pollingInterval, 3*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetUpgradeKymaOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -686,7 +688,7 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 1*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(upgradeOp.InstanceDetails.RuntimeID, upgradeOp.ClusterConfigurationVersion)
 		if err != nil {
 			return false, err
@@ -702,7 +704,7 @@ func (s *BrokerSuiteTest) FinishUpgradeKymaOperationByReconciler(operationID str
 
 func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID string) {
 	var upgradeOp *internal.UpgradeClusterOperation
-	err := wait.Poll(pollingInterval, 3*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetUpgradeClusterOperationByID(operationID)
 		if err != nil {
 			return false, nil
@@ -717,7 +719,7 @@ func (s *BrokerSuiteTest) FinishUpgradeClusterOperationByProvisioner(operationID
 
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(provisioningOpID string) {
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(provisioningOpID)
 		if err != nil {
 			return false, nil
@@ -731,7 +733,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		state, err = s.reconcilerClient.GetCluster(provisioningOp.RuntimeID, 1)
 		if state.Cluster != "" {
 			return true, nil
@@ -745,7 +747,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenProvisioning(pro
 func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(opID string) {
 	// wait until UpgradeOperation reaches Apply_Cluster_Configuration step
 	var upgradeKymaOp *internal.UpgradeKymaOperation
-	err := wait.Poll(pollingInterval, time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetUpgradeKymaOperationByID(opID)
 		upgradeKymaOp = op
 		return err == nil && op != nil, nil
@@ -753,7 +755,7 @@ func (s *BrokerSuiteTest) AssertReconcilerStartedReconcilingWhenUpgrading(opID s
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		fmt.Println(upgradeKymaOp)
 		state, err := s.reconcilerClient.GetCluster(upgradeKymaOp.InstanceDetails.RuntimeID, upgradeKymaOp.InstanceDetails.ClusterConfigurationVersion)
 		if err != nil {
@@ -830,7 +832,7 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeKymaOperationIDFromOrchestration(resp
 
 func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(orchestrationID string) (string, error) {
 	var operationsList orchestration.OperationResponseList
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		resp := s.CallAPI("GET", fmt.Sprintf("orchestrations/%s/operations", orchestrationID), "")
 		m, err := ioutil.ReadAll(resp.Body)
 		s.Log(string(m))
@@ -858,7 +860,7 @@ func (s *BrokerSuiteTest) DecodeLastUpgradeClusterOperationIDFromOrchestration(o
 func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschema.UpgradeShootInput) {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
 	var provisioningOp *internal.Operation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" || broker.IsOwnClusterPlan(op.ProvisioningParameters.PlanID) {
@@ -871,7 +873,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 
 	var shootUpgrade gqlschema.UpgradeShootInput
 	var found bool
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		shootUpgrade, found = s.provisionerClient.LastShootUpgrade(provisioningOp.RuntimeID)
 		if found {
 			return true, nil
@@ -885,7 +887,7 @@ func (s *BrokerSuiteTest) AssertShootUpgrade(operationID string, config gqlschem
 
 func (s *BrokerSuiteTest) AssertInstanceRuntimeAdmins(instanceId string, expectedAdmins []string) {
 	var instance *internal.Instance
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		instance = s.GetInstance(instanceId)
 		if instance != nil {
 			return true, nil
@@ -913,7 +915,7 @@ func (s *BrokerSuiteTest) AssertProvisionRuntimeInputWithoutKymaConfig() {
 
 func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState reconcilerApi.HTTPClusterResponse) {
 	var provisioningOp *internal.ProvisioningOperation
-	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
@@ -925,7 +927,7 @@ func (s *BrokerSuiteTest) AssertClusterState(operationID string, expectedState r
 	assert.NoError(s.t, err)
 
 	var state *reconcilerApi.HTTPClusterResponse
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		state, err = s.reconcilerClient.GetLatestCluster(provisioningOp.RuntimeID)
 		if err == nil {
 			return true, nil
@@ -981,7 +983,7 @@ func (s *BrokerSuiteTest) AssertClusterMetadata(id string, metadata reconcilerAp
 
 func (s *BrokerSuiteTest) AssertDisabledNetworkFilterForProvisioning(val *bool) {
 	var got, exp string
-	err := wait.Poll(pollingInterval, 20*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		input := s.provisionerClient.GetLatestProvisionRuntimeInput()
 		gc := input.ClusterConfig.GardenerConfig
 		if reflect.DeepEqual(val, gc.ShootNetworkingFilterDisabled) {
@@ -1005,7 +1007,7 @@ func (s *BrokerSuiteTest) AssertDisabledNetworkFilterForProvisioning(val *bool) 
 
 func (s *BrokerSuiteTest) AssertDisabledNetworkFilterRuntimeState(runtimeid, op string, val *bool) {
 	var got, exp string
-	err := wait.Poll(pollingInterval, 10*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		states, _ := s.db.RuntimeStates().ListByRuntimeID(runtimeid)
 		exp = "<nil>"
 		if val != nil {
@@ -1042,7 +1044,7 @@ func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconcilerApi.Clu
 	assert.NoError(s.t, err)
 
 	var clusterConfig *reconcilerApi.Cluster
-	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
+	err = s.poller.Invoke(func() (bool, error) {
 		clusterConfig, err = s.reconcilerClient.LastClusterConfig(provisioningOp.RuntimeID)
 		if err != nil {
 			return false, err
@@ -1059,7 +1061,7 @@ func (s *BrokerSuiteTest) getClusterConfig(operationID string) reconcilerApi.Clu
 
 func (s *BrokerSuiteTest) LastProvisionInput(iid string) gqlschema.ProvisionRuntimeInput {
 	// wait until the operation reaches the call to a Provisioner (provisioner operation ID is stored)
-	err := wait.Poll(pollingInterval, 4*time.Second, func() (bool, error) {
+	err := s.poller.Invoke(func() (bool, error) {
 		op, err := s.db.Operations().GetProvisioningOperationByInstanceID(iid)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
