@@ -41,7 +41,8 @@ func TestProviderConfigMigrator(t *testing.T) {
 	err = database.SetupSchema(connection, testutils.SchemaFilePath)
 	require.NoError(t, err)
 
-	factory := dbsession.NewFactory(connection)
+	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
+	factory := dbsession.NewFactory(connection, secretKey)
 
 	release := prepareTestRelease(t, factory)
 
