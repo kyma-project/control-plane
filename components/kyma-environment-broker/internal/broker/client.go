@@ -11,7 +11,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"golang.org/x/oauth2/clientcredentials"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -63,9 +62,20 @@ type ClientConfig struct {
 type Client struct {
 	brokerConfig ClientConfig
 	httpClient   *http.Client
+	poller       Poller
+}
+
+func NewClientConfig(URL string) *ClientConfig {
+	return &ClientConfig{
+		URL: URL,
+	}
 }
 
 func NewClient(ctx context.Context, config ClientConfig) *Client {
+	return NewClientWithPoller(ctx, config, NewDefaultPoller())
+}
+
+func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
@@ -78,6 +88,7 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 	return &Client{
 		brokerConfig: config,
 		httpClient:   httpClientOAuth,
+		poller:       poller,
 	}
 }
 
@@ -90,7 +101,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
-	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
+	err = c.poller.Invoke(func() (bool, error) {
 		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
 			log.Warn(fmt.Sprintf("while executing request: %s", err.Error()))
@@ -98,6 +109,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 		}
 		return true, nil
 	})
+
 	if err != nil {
 		return "", fmt.Errorf("while waiting for successful deprovision call: %w", err)
 	}
