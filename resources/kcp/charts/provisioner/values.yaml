@@ -2,7 +2,7 @@ global:
   images:
     provisioner:
       dir:
-      version: "PR-2353"
+      version: "PR-2380"
 
 deployment:
   replicaCount: 1
