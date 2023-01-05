@@ -97,9 +97,8 @@ spec:
             - name: APP_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.global.database.managedGCP.encryptionSecretName }}"
+                  name: {{ .Values.deployment.runAwsConfigMigration | quote }}
                   key: secretKey
-                  optional: true #TODO: Should it be optional? It is in KEB though
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
