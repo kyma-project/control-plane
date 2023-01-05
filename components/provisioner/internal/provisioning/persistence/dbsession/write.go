@@ -60,6 +60,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
 		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
+		Pair("is_kubeconfig_encrypted", false).
 		Exec()
 
 	if err != nil {
