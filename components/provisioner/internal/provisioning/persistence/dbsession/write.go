@@ -455,7 +455,7 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
 	encryptedKubeconfig, dberr := ws.encryptString(kubeconfig)
 	if dberr != nil {
-		return dberrors.Internal("Failed to encrypt kubeconfig for %s cluster: %s", runtimeID, dberr) //TODO: Check if it's not confidential
+		return dberrors.Internal("Failed to encrypt kubeconfig for %s cluster: %s", runtimeID, dberr)
 	}
 
 	res, err := ws.update("cluster").

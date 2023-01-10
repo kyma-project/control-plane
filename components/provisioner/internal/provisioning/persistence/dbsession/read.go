@@ -587,7 +587,7 @@ func (r readSession) decryptKubeconfig(encryptedKubeconfig *string) (*string, db
 	}
 	decryptedKubeconfigSlice, err := r.decrypt([]byte(*encryptedKubeconfig))
 	if err != nil {
-		return nil, dberrors.Internal("failed to decrypt kubeconfig: %v", err) //TODO: Check if there is no confidential data in the error
+		return nil, dberrors.Internal("failed to decrypt kubeconfig: %v", err)
 	}
 	decryptedKubeconfig := string(decryptedKubeconfigSlice)
 	return &decryptedKubeconfig, nil
@@ -602,7 +602,7 @@ func (r readSession) decryptClusterAdministrators(
 		if ea.IsUserIdEncrypted {
 			decryptedUserID, err := r.decrypt([]byte(ea.UserId))
 			if err != nil {
-				return nil, dberrors.Internal("failed to decrypt user ID: %v", err) //TODO: Check if there is no confidential data in the error
+				return nil, dberrors.Internal("failed to decrypt user ID: %v", err)
 			}
 			decryptedClusterAdministrator := model.ClusterAdministrator{
 				ID:        ea.ID,
