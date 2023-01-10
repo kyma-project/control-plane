@@ -54,56 +54,6 @@
         ]
       },
       {
-        "component": "logging",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "telemetry",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "tracing",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "kiali",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
-        "component": "monitoring",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "eventing",
         "namespace": "kyma-system",
         "configuration": [
