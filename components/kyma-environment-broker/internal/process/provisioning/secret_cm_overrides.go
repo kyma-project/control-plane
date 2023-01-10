@@ -56,7 +56,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.Operation, lo
 		if err != nil {
 			errMsg := fmt.Sprintf("error while getting the runtime version for operation %s", operation.ID)
 			log.Error(errMsg)
-			return s.operationManager.RetryOperation(operation, errMsg, err, 10*time.Second, 30*time.Minute, log)
+			return s.operationManager.OperationFailed(operation, errMsg, err, log)
 		}
 
 		overridesVersion = runtimeVersion.Version
