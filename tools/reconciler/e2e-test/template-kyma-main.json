@@ -155,7 +155,7 @@
       },
       {
         "component": "application-connector",
-        "namespace": "kyma-system",
+        "namespace": "kyma-integration",
         "configuration": [
           {
             "key": "global.domainName",
