@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"golang.org/x/oauth2"
 
@@ -111,6 +112,11 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 		params.GlobalAccountIDs = []string{cmd.globalAccountID}
 		params.SubAccountIDs = []string{cmd.subAccountID}
 	}
+	if isRegionEurope(params.Regions) {
+		if !promptUser("Region is in europe. Do you want to continue?") {
+			return fmt.Errorf(Aborted downloading the kubeconfig)
+		}
+	}
 
 	rp, err := rtClient.ListRuntimes(params)
 	if err != nil {
@@ -165,4 +171,14 @@ func clusterNameFromKubeconfig(rawKubeConfig string) (string, error) {
 	}
 
 	return clusterName, nil
+}
+
+func isRegionEurope(regions []string) bool {
+	r, _ := regexp.Compile("^eu-.*")
+	for _, region := range regions {
+		if r.MatchString(region) {
+			return true
+		}
+	}
+	return false
 }
