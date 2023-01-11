@@ -117,29 +117,34 @@ func (rtc *RuntimeClient) Run() (string, error) {
 		}
 	}()
 
+	log.Infof("start createServiceAccount")
 	err := rtc.createServiceAccount()
 	if err != nil {
 		return "", errors.Wrapf(err, "while createServiceAccount %s in %s", rtc.User.ServiceAccountName, rtc.User.Namespace)
 	}
 
+	log.Infof("start createClusterRoleRules")
 	err = rtc.createClusterRoleRules()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA)
 		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
 	}
 
+	log.Infof("start createClusterRole")
 	err = rtc.createClusterRole()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
 		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
 	}
 
+	log.Infof("start getSecretToken")
 	saToken, err := rtc.getSecretToken()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
 		return "", errors.Wrapf(err, "while getSecretToken from %s", rtc.User.ServiceAccountName)
 	}
 
+	log.Infof("start createClusterRoleBinding")
 	err = rtc.createClusterRoleBinding()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
