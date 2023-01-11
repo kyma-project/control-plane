@@ -112,11 +112,6 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 		params.GlobalAccountIDs = []string{cmd.globalAccountID}
 		params.SubAccountIDs = []string{cmd.subAccountID}
 	}
-	if isRegionEurope(params.Regions) {
-		if !promptUser("Region is in europe. Do you want to continue?") {
-			return fmt.Errorf(Aborted downloading the kubeconfig)
-		}
-	}
 
 	rp, err := rtClient.ListRuntimes(params)
 	if err != nil {
@@ -131,6 +126,12 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 
 	cmd.runtimeID = rp.Data[0].RuntimeID
 	cmd.globalAccountID = rp.Data[0].GlobalAccountID
+
+	if isRegionEurope(rp.Data[0].ProviderRegion) {
+		if !promptUser(fmt.Sprintf("Cluster is in europe (%s). Do you want to continue? ", rp.Data[0].ProviderRegion)) {
+			return fmt.Errorf("aborted downloading the kubeconfig for shoot: %s", params.Shoots[0])
+		}
+	}
 	return nil
 }
 
@@ -173,12 +174,7 @@ func clusterNameFromKubeconfig(rawKubeConfig string) (string, error) {
 	return clusterName, nil
 }
 
-func isRegionEurope(regions []string) bool {
-	r, _ := regexp.Compile("^eu-.*")
-	for _, region := range regions {
-		if r.MatchString(region) {
-			return true
-		}
-	}
-	return false
+func isRegionEurope(region string) bool {
+	r, _ := regexp.Compile("^eu-.*|.*europe$|^europe-.*")
+	return r.MatchString(region)
 }
