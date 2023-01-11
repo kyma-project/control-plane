@@ -82,10 +82,12 @@ func (ec EndpointClient) callGQL(tenantID, runtimeID string) (string, error) {
 }
 
 func (ec EndpointClient) generateKubeConfig(tenant, runtime string, userInfo authn.UserInfo) ([]byte, error) {
+	log.Infof("calling provisioner to obtain data for runtime %s", runtime)
 	rawConfig, err := ec.callGQL(tenant, runtime)
 	if err != nil || rawConfig == "" {
 		return nil, err
 	}
+	log.Info("finished calling provisioner")
 
 	tc, err := transformer.NewClient(rawConfig, userInfo.ID)
 	if err != nil {
