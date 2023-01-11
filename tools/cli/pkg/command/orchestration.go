@@ -100,19 +100,20 @@ var operationColumns = []printer.Column{
 }
 
 var orchestrationDetailsTpl = `Orchestration ID: {{.OrchestrationID}}
-Type:             {{.Type}}
-Created At:       {{.CreatedAt}}
-Updated At:       {{.UpdatedAt}}
-Dry Run:          {{.Parameters.DryRun}}
-State:            {{.State}}
-Description:      {{.Description}}
-Strategy:         {{.Parameters.Strategy.Type}}
-Schedule:         {{.Parameters.Strategy.Schedule}}
-Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+Type:               {{.Type}}
+Created At:         {{.CreatedAt}}
+Updated At:         {{.UpdatedAt}}
+Dry Run:            {{.Parameters.DryRun}}
+State:              {{.State}}
+Description:        {{.Description}}
+Strategy:           {{.Parameters.Strategy.Type}}
+Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
+Schedule After:     {{.Parameters.Strategy.ScheduleTime}}
+Workers:            {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Type "upgradeKyma" }}
-Kyma Version:     {{with .Parameters.Kyma}}{{.Version}}{{end}}
+Kyma Version:       {{with .Parameters.Kyma}}{{.Version}}{{end}}
 {{- else if eq .Type "upgradeCluster" }}
-K8s Version:      {{with .Parameters.Kubernetes}}{{.KubernetesVersion}}{{end}}
+K8s Version:        {{with .Parameters.Kubernetes}}{{.KubernetesVersion}}{{end}}
 {{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
@@ -135,13 +136,14 @@ Operations:
 `
 
 var kymaUpgradePreviewTpl = `Kyma Upgrade Preview
-Strategy:         {{.Parameters.Strategy.Type}}
-Schedule:         {{.Parameters.Strategy.Schedule}}
-Workers:          {{.Parameters.Strategy.Parallel.Workers}}
+Strategy:           {{.Parameters.Strategy.Type}}
+Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
+Schedule After:     {{.Parameters.Strategy.Schedule}}
+Workers:            {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Parameters.Kyma.Version "" }}
-Kyma Version:     <determined after start>
+Kyma Version:       <determined after start>
 {{- else }}
-Kyma Version:     {{with .Parameters.Kyma}}{{.Version}}{{end}}
+Kyma Version:       {{with .Parameters.Kyma}}{{.Version}}{{end}}
 {{- end }}
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
@@ -156,10 +158,11 @@ Exclude Targets:
 `
 
 var kubernetesUpgradePreviewTpl = `Kubernetes Upgrade Preview
-Strategy:         {{.Parameters.Strategy.Type}}
-Schedule:         {{.Parameters.Strategy.Schedule}}
-Workers:          {{.Parameters.Strategy.Parallel.Workers}}
-K8s Version:      <determined after start>
+Strategy:           {{.Parameters.Strategy.Type}}
+Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
+Schedule After:     {{.Parameters.Strategy.Schedule}}
+Workers:            {{.Parameters.Strategy.Parallel.Workers}}
+K8s Version:        <determined after start>
 Targets:
 {{- range $i, $t := .Parameters.Targets.Include }}
   {{ orchestrationTarget $t }}
@@ -591,7 +594,7 @@ func orchestrationDetails(obj interface{}) string {
 func PromptUser(msg string) bool {
 	fmt.Printf("%s%s", "? ", msg)
 	for {
-		fmt.Print("Type (Y/N): ")
+		fmt.Print(" Type (Y/N): ")
 		var res string
 		if _, err := fmt.Scanf("%s", &res); err != nil {
 			return false
