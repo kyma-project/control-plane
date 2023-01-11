@@ -325,17 +325,21 @@ func (rtc *RuntimeClient) getSecretToken() ([]byte, error) {
 	// Wait for the TokenController to provision a ServiceAccount token
 	err := retry.Do(func() error {
 		var secretName string
+		log.Infof("start ServiceAccounts.Get")
 		sa, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).Get(context.TODO(), rtc.User.ServiceAccountName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		if len(sa.Secrets) == 0 {
+			log.Infof("SA secret is not provisioned")
 			return errors.New("SA secret is not provisioned")
 		}
 
 		secretName = sa.Secrets[0].Name
+		log.Infof("start Secrets.Get")
 		secret, err := rtc.K8s.CoreV1().Secrets(rtc.User.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 		if err != nil {
+			log.Info(err)
 			return err
 		}
 
