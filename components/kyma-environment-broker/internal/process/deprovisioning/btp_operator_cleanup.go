@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
@@ -190,8 +189,7 @@ func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log
 		return nil, kebError.NewTemporaryError("empty kubeconfig")
 	}
 	k := *status.RuntimeConfiguration.Kubeconfig
-	hash := sha256.Sum256([]byte(k))
-	log.Infof("kubeconfig details length: %v, sha256: %v", len(k), string(hash[:]))
+	log.Infof("kubeconfig length: %v", len(k))
 	if len(k) < 10 {
 		return nil, kebError.NewTemporaryError("kubeconfig suspiciously small, requeuing")
 	}

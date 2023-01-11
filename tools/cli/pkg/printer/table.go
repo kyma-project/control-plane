@@ -22,6 +22,7 @@ const (
 	tabwriterPadding  = 3
 	tabwriterPadChar  = ' '
 	tabwriterFlags    = tabwriter.RememberWidths
+	allEvents         = "all"
 )
 
 type event struct {
@@ -51,7 +52,7 @@ type Column struct {
 // TablePrinter prints objects in table format, according to the given column definitions.
 type TablePrinter interface {
 	PrintObj(obj interface{}) error
-	SetRuntimeEvents(eventList []events.EventDTO)
+	SetRuntimeEvents(eventList []events.EventDTO, lvl string)
 }
 
 type tablePrinter struct {
@@ -166,12 +167,22 @@ func (t *tablePrinter) deduplicateEvents(eventList []events.EventDTO) []event {
 	return events
 }
 
-func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO) {
+func (t *tablePrinter) SetRuntimeEvents(eventList []events.EventDTO, lvl string) {
 	deduplicated := t.deduplicateEvents(eventList)
 	t.events = make(map[string][]event)
-	for _, e := range deduplicated {
-		if e.InstanceID != nil {
-			t.events[*e.InstanceID] = append(t.events[*e.InstanceID], e)
+	if lvl == allEvents {
+		for _, event := range deduplicated {
+			if event.InstanceID != nil {
+				t.events[*event.InstanceID] = append(t.events[*event.InstanceID], event)
+			}
+		}
+	} else {
+		for _, event := range deduplicated {
+			if event.InstanceID != nil {
+				if lvl == string(event.Level) {
+					t.events[*event.InstanceID] = append(t.events[*event.InstanceID], event)
+				}
+			}
 		}
 	}
 	t.eventsColumns = []Column{
