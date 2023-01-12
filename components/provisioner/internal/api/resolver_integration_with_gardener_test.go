@@ -67,7 +67,7 @@ const (
 
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
-	compassSystemNamespace        = "compass-system"
+	compassSystemNamespace        = "kyma-system"
 	clusterEssentialsComponent    = "cluster-essentials"
 	rafterComponent               = "rafter"
 	coreComponent                 = "core"

@@ -24,7 +24,7 @@ import (
 
 const (
 	AgentConfigurationSecretName   = "compass-agent-configuration"
-	runtimeAgentComponentNameSpace = "compass-system"
+	runtimeAgentComponentNameSpace = "kyma-system"
 )
 
 //go:generate mockery -name=Configurator
