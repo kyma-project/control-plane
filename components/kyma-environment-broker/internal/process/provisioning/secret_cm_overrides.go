@@ -67,7 +67,7 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.Operation, lo
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, overridesVersion); err != nil {
 		errMsg := fmt.Sprintf("error when appending overrides for operation %s", operation.ID)
 		log.Error(fmt.Sprintf("%s: %s", errMsg, err.Error()))
-		return s.operationManager.RetryOperation(operation, errMsg, err, 10*time.Second, 30*time.Minute, log)
+		return s.operationManager.OperationFailed(operation, errMsg, err, log)
 	}
 
 	return operation, 0, nil
