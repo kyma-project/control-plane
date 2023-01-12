@@ -129,7 +129,7 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 
 	if isRegionEurope(rp.Data[0].ProviderRegion) {
 		if !promptUser(fmt.Sprintf("Cluster is in europe (%s). Do you want to continue? ", rp.Data[0].ProviderRegion)) {
-			return fmt.Errorf("aborted downloading the kubeconfig for shoot: %s", params.Shoots[0])
+			return fmt.Errorf("aborted downloading the kubeconfig for shoot: %s", rp.Data[0].ShootName)
 		}
 	}
 	return nil
