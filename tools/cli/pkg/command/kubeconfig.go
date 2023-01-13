@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 
 	"golang.org/x/oauth2"
 
@@ -127,9 +126,9 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 	cmd.runtimeID = rp.Data[0].RuntimeID
 	cmd.globalAccountID = rp.Data[0].GlobalAccountID
 
-	if isRegionEurope(rp.Data[0].ProviderRegion) {
-		if !promptUser(fmt.Sprintf("Cluster is in europe (%s). Do you want to continue? ", rp.Data[0].ProviderRegion)) {
-			return fmt.Errorf("aborted downloading the kubeconfig for shoot: %s", rp.Data[0].ShootName)
+	if isEuAccess(rp.Data[0].SubAccountRegion) {
+		if !promptUser("This Kyma runtime is operated and supported in European Union (EU) Access mode.\nPlease confirm that you are either physically located in EU or that you have positively verified that EU access restrictions do not apply in your situation.\nYour confirmation will be logged. ") {
+			return fmt.Errorf("aborted downloading kubeconfig for shoot: %s", rp.Data[0].ShootName)
 		}
 	}
 	return nil
@@ -174,7 +173,6 @@ func clusterNameFromKubeconfig(rawKubeConfig string) (string, error) {
 	return clusterName, nil
 }
 
-func isRegionEurope(region string) bool {
-	r, _ := regexp.Compile("^eu-.*|.*europe$|^europe-.*")
-	return r.MatchString(region)
+func isEuAccess(subAccountRegion string) bool {
+	return subAccountRegion == "cf-eu11" || subAccountRegion == "cf-ch20"
 }
