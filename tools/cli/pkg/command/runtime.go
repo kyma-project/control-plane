@@ -59,6 +59,10 @@ var tableColumns = []printer.Column{
 		Header:         "STATE",
 		FieldFormatter: runtimeStatus,
 	},
+	{
+		Header:         "EU ACCESS",
+		FieldFormatter: euAccess,
+	},
 }
 
 // NewRuntimeCmd constructs a new instance of RuntimeCommand and configures it in terms of a cobra.Command
@@ -240,4 +244,13 @@ func runtimeStatus(obj interface{}) string {
 func runtimeCreatedAt(obj interface{}) string {
 	rt := obj.(runtime.RuntimeDTO)
 	return rt.Status.CreatedAt.Format("2006/01/02 15:04:05")
+}
+
+func euAccess(obj interface{}) string {
+	rt := obj.(runtime.RuntimeDTO)
+	subAccountRegion := rt.SubAccountRegion
+	if subAccountRegion == "cf-eu11" || subAccountRegion == "cf-ch20" {
+		return "Yes"
+	}
+	return "No"
 }
