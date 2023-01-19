@@ -216,6 +216,7 @@ type Operation struct {
 	ClusterConfigurationDeleted bool      `json:"clusterConfigurationDeleted"`
 	Retries                     int       `json:"-"`
 	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
+	FailedToFinishSteps         []string  `json:"failedToFinishSteps"`
 
 	// UPDATING
 	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
