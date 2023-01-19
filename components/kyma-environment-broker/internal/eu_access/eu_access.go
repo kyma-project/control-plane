@@ -1,4 +1,4 @@
-package internal
+package eu_access
 
 const (
 	BTPRegionSwitzerlandAzure = "cf-ch20"

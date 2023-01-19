@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2431"
+      version: "PR-2413"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2363"
@@ -121,6 +121,11 @@ skrOIDCDefaultValues: |-
 
 skrDNSProvidersValues: |-
   providers: []
+
+euAccessWhitelistedGlobalAccountIds: |-
+  whitelist:
+    - 2358e708-68f0-4af0-94b6-cf4e8407aff8
+euAccessRejectionMessage: "request rejected, the globalAccountId used is not whitelisted"
 
 kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
