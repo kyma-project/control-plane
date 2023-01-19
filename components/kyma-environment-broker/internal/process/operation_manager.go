@@ -78,7 +78,7 @@ func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operati
 	op, repeat, err := om.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.State = domain.InProgress
 		operation.Description = description
-		operation.FailedToFinishSteps = append(operation.FailedToFinishSteps, stepName)
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, stepName)
 	}, log)
 	if repeat != 0 {
 		return op, repeat, err
