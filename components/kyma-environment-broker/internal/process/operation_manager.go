@@ -68,14 +68,18 @@ func (om *OperationManager) RetryOperation(operation internal.Operation, errorMe
 }
 
 // RetryOperationWithoutFail checks if operation should be retried or updates the status to InProgress, but omits setting the operation to failed if maxTime is reached
-func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operation, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operation, stepName string, description string, retryInterval, maxTime time.Duration, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	log.Infof("Retry Operation was triggered with message: %s", description)
 	log.Infof("Retrying for %s in %s steps", maxTime.String(), retryInterval.String())
 	if time.Since(operation.UpdatedAt) < maxTime {
 		return operation, retryInterval, nil
 	}
 	// update description to track failed steps
-	op, repeat, err := om.update(operation, domain.InProgress, description, log)
+	op, repeat, err := om.UpdateOperation(operation, func(operation *internal.Operation) {
+		operation.State = domain.InProgress
+		operation.Description = description
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, stepName)
+	}, log)
 	if repeat != 0 {
 		return op, repeat, err
 	}
