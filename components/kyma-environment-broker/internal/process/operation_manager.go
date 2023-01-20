@@ -84,6 +84,7 @@ func (om *OperationManager) RetryOperationWithoutFail(operation internal.Operati
 		return op, repeat, err
 	}
 
+	op.EventErrorf(fmt.Errorf(description), "step %s failed retries: operation continues", stepName)
 	log.Errorf("Omitting after %s of failing retries", maxTime.String())
 	return op, 0, nil
 }
