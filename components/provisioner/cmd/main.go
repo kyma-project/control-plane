@@ -64,7 +64,7 @@ type config struct {
 		Name        string `envconfig:"default=provisioner"`
 		SSLMode     string `envconfig:"default=disable"`
 		SSLRootCert string `envconfig:"optional"`
-		SecretKey   string
+		SecretKey   string `envconfig:"optional"`
 	}
 
 	ProvisioningTimeout            queue.ProvisioningTimeouts
