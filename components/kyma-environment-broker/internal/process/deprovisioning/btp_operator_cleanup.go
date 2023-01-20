@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/sirupsen/logrus"
 	k8serrors2 "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,14 +30,14 @@ const (
 )
 
 type BTPOperatorCleanupStep struct {
-	operationManager  *process.DeprovisionOperationManager
+	operationManager  *process.OperationManager
 	provisionerClient provisioner.Client
 	k8sClientProvider func(kcfg string) (client.Client, error)
 }
 
 func NewBTPOperatorCleanupStep(os storage.Operations, provisionerClient provisioner.Client, k8sClientProvider func(kcfg string) (client.Client, error)) *BTPOperatorCleanupStep {
 	return &BTPOperatorCleanupStep{
-		operationManager:  process.NewDeprovisionOperationManager(os),
+		operationManager:  process.NewOperationManager(os),
 		provisionerClient: provisionerClient,
 		k8sClientProvider: k8sClientProvider,
 	}
@@ -88,22 +89,33 @@ func (s *BTPOperatorCleanupStep) deleteServiceBindingsAndInstances(k8sClient cli
 	return nil
 }
 
-func (s *BTPOperatorCleanupStep) removeFinalizers(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) {
+func (s *BTPOperatorCleanupStep) removeFinalizers(op internal.Operation, k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	listGvk := gvk
 	listGvk.Kind = gvk.Kind + "List"
 	for _, ns := range namespaces.Items {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(listGvk)
 		if err := k8sClient.List(context.Background(), list, client.InNamespace(ns.Name)); err != nil {
-			log.Errorf("failed listing resource %v in namespace %v", gvk, ns.Name)
+			dsc := fmt.Sprintf("failed listing resource %v in namespace %v", gvk, ns.Name)
+			log.Errorf(dsc)
+			op, repeat, err := s.addExcutedButNotCompleted(op, domain.InProgress, dsc, log)
+			if repeat != 0 {
+				return op, repeat, err
+			}
 		}
 		for _, r := range list.Items {
 			r.SetFinalizers([]string{})
 			if err := k8sClient.Update(context.Background(), &r); err != nil {
-				log.Errorf("failed remove finalizer for resource %v: %v/%v", gvk, r.GetNamespace(), r.GetName())
+				dsc := fmt.Sprintf("failed remove finalizer for resource %v: %v/%v", gvk, r.GetNamespace(), r.GetName())
+				log.Errorf(dsc)
+				op, repeat, err := s.addExcutedButNotCompleted(op, domain.InProgress, dsc, log)
+				if repeat != 0 {
+					return op, repeat, err
+				}
 			}
 		}
 	}
+	return op, 0, nil
 }
 
 func (s *BTPOperatorCleanupStep) deleteResource(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) (requeue bool) {
@@ -150,30 +162,50 @@ func (s *BTPOperatorCleanupStep) retryOnError(op internal.Operation, err error, 
 		}
 		// when retry is 0, that means error has been retried defined number of times and as a fallback routine
 		// it was decided that KEB should try to remove finalizers once
-		s.attemptToRemoveFinalizers(op, log)
+		op, repeat, err3 := s.attemptToRemoveFinalizers(op, log)
+		if repeat != 0 {
+			return op, repeat, err3
+		}
 		return op, retry, err2
 	}
 	return op, 0, nil
 }
 
-func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Operation, log logrus.FieldLogger) {
+func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	k8sClient, err := s.getKubeClient(op, log)
 	if err != nil {
-		log.Errorf("failed to get kube clients to remove finalizers", err)
-		return
+		dsc := fmt.Sprintf("failed to get kube clients to remove finalizers: %v", err)
+		log.Errorf(dsc)
+		op, repeat, err := s.addExcutedButNotCompleted(op, domain.InProgress, dsc, log)
+		if repeat != 0 {
+			return op, repeat, err
+		}
+		return op, 0, nil
 	}
 	if k8sClient == nil {
 		log.Info("Skipping removing finalizers")
-		return
+		return op, 0, nil
 	}
 
 	namespaces := corev1.NamespaceList{}
 	if err := k8sClient.List(context.Background(), &namespaces); err != nil {
-		log.Errorf("failed to list namespaces to remove finalizers", err)
-		return
+		dsc := fmt.Sprintf("failed to list namespaces to remove finalizers: %v", err)
+		log.Errorf(dsc)
+		op, repeat, err := s.addExcutedButNotCompleted(op, domain.InProgress, dsc, log)
+		if repeat != 0 {
+			return op, repeat, err
+		}
+		return op, 0, nil
 	}
-	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}, log)
-	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}, log)
+	op, repeat, err := s.removeFinalizers(op, k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}, log)
+	if repeat != 0 {
+		return op, repeat, err
+	}
+	op, repeat, err = s.removeFinalizers(op, k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}, log)
+	if repeat != 0 {
+		return op, repeat, err
+	}
+	return op, 0, nil
 }
 
 func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log logrus.FieldLogger) (client.Client, error) {
@@ -198,4 +230,12 @@ func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log
 		return nil, kebError.AsTemporaryError(err, "failed to create k8s client from the kubeconfig")
 	}
 	return cli, nil
+}
+
+func (s *BTPOperatorCleanupStep) addExcutedButNotCompleted(operation internal.Operation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	return s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+		operation.State = state
+		operation.Description = description
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
+	}, log)
 }
