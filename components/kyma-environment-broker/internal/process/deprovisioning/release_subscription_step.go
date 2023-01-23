@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"github.com/sirupsen/logrus"
 
@@ -44,7 +43,6 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 			dsc := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - get the instance data for instanceID: %s", operation.InstanceID)
 			log.Errorf(dsc, err.Error())
 			operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-				operation.State = domain.InProgress
 				operation.Description = dsc
 				operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 			}, log)
@@ -59,7 +57,6 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 			dsc := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - determine the type of hyperscaler to use for planID [%s]: %s", planID, err.Error())
 			log.Errorf(dsc)
 			operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-				operation.State = domain.InProgress
 				operation.Description = dsc
 				operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 			}, log)
