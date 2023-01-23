@@ -41,7 +41,8 @@ func TestProviderConfigMigrator(t *testing.T) {
 	err = database.SetupSchema(connection, testutils.SchemaFilePath)
 	require.NoError(t, err)
 
-	factory := dbsession.NewFactory(connection)
+	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
+	factory := dbsession.NewFactory(connection, secretKey)
 
 	release := prepareTestRelease(t, factory)
 
@@ -113,11 +114,12 @@ func prepareTestRecord(t *testing.T, factory dbsession.Factory, release model.Re
 
 func createFixedClusterConfig(clusterID, kymaConfigID string) model.Cluster {
 	return model.Cluster{
-		ID:                clusterID,
-		CreationTimestamp: time.Time{},
-		Tenant:            "tenant",
-		SubAccountId:      util.StringPtr("subaccount"),
-		KymaConfig:        &model.KymaConfig{ID: kymaConfigID},
+		ID:                    clusterID,
+		CreationTimestamp:     time.Time{},
+		Tenant:                "tenant",
+		SubAccountId:          util.StringPtr("subaccount"),
+		KymaConfig:            &model.KymaConfig{ID: kymaConfigID},
+		IsKubeconfigEncrypted: false,
 	}
 }
 
