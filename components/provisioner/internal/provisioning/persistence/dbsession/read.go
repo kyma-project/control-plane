@@ -111,7 +111,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		Select(
 			"id", "kubeconfig", "tenant",
 			"creation_timestamp", "deleted", "sub_account_id",
-			"active_kyma_config_id", "is_kubeconfig_encrypted").
+			"active_kyma_config_id").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -123,13 +123,11 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
 	}
 
-	if cluster.IsKubeconfigEncrypted {
-		decryptedClusterKubeconfig, dberr := r.decryptKubeconfig(cluster.Kubeconfig)
-		if dberr != nil {
-			return model.Cluster{}, dberr.Append("Cannot decrypt Kubeconfig for runtimeID: %s", runtimeID)
-		}
-		cluster.Kubeconfig = decryptedClusterKubeconfig
+	decryptedClusterKubeconfig, dberr := r.decryptKubeconfig(cluster.Kubeconfig)
+	if dberr != nil {
+		return model.Cluster{}, dberr.Append("Cannot decrypt Kubeconfig for runtimeID: %s", runtimeID)
 	}
+	cluster.Kubeconfig = decryptedClusterKubeconfig
 
 	providerConfig, dberr := r.getGardenerConfig(runtimeID)
 	if dberr != nil {
@@ -599,20 +597,16 @@ func (r readSession) decryptClusterAdministrators(
 
 	var decryptedClusterAdministrators []model.ClusterAdministrator
 	for _, ea := range encryptedClusterAdministrators {
-		if ea.IsUserIdEncrypted {
-			decryptedUserID, err := r.decrypt([]byte(ea.UserId))
-			if err != nil {
-				return nil, dberrors.Internal("failed to decrypt user ID: %v", err)
-			}
-			decryptedClusterAdministrator := model.ClusterAdministrator{
-				ID:        ea.ID,
-				ClusterId: ea.ClusterId,
-				UserId:    string(decryptedUserID),
-			}
-			decryptedClusterAdministrators = append(decryptedClusterAdministrators, decryptedClusterAdministrator)
-		} else {
-			decryptedClusterAdministrators = append(decryptedClusterAdministrators, ea)
+		decryptedUserID, err := r.decrypt([]byte(ea.UserId))
+		if err != nil {
+			return nil, dberrors.Internal("failed to decrypt user ID: %v", err)
 		}
+		decryptedClusterAdministrator := model.ClusterAdministrator{
+			ID:        ea.ID,
+			ClusterId: ea.ClusterId,
+			UserId:    string(decryptedUserID),
+		}
+		decryptedClusterAdministrators = append(decryptedClusterAdministrators, decryptedClusterAdministrator)
 	}
 	return decryptedClusterAdministrators, nil
 }

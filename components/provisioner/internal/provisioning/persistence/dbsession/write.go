@@ -60,7 +60,6 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
 		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
-		Pair("is_kubeconfig_encrypted", false).
 		Exec()
 
 	if err != nil {
@@ -94,7 +93,6 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []s
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", clusterId).
 			Pair("user_id", encryptedUserID).
-			Pair("is_user_id_encrypted", true).
 			Exec()
 
 		if err != nil {
@@ -461,7 +459,6 @@ func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dbe
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
 		Set("kubeconfig", encryptedKubeconfig).
-		Set("is_kubeconfig_encrypted", true).
 		Exec()
 
 	if err != nil {

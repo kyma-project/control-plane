@@ -114,12 +114,11 @@ func prepareTestRecord(t *testing.T, factory dbsession.Factory, release model.Re
 
 func createFixedClusterConfig(clusterID, kymaConfigID string) model.Cluster {
 	return model.Cluster{
-		ID:                    clusterID,
-		CreationTimestamp:     time.Time{},
-		Tenant:                "tenant",
-		SubAccountId:          util.StringPtr("subaccount"),
-		KymaConfig:            &model.KymaConfig{ID: kymaConfigID},
-		IsKubeconfigEncrypted: false,
+		ID:                clusterID,
+		CreationTimestamp: time.Time{},
+		Tenant:            "tenant",
+		SubAccountId:      util.StringPtr("subaccount"),
+		KymaConfig:        &model.KymaConfig{ID: kymaConfigID},
 	}
 }
 

@@ -10,7 +10,6 @@ CREATE TABLE cluster
     creation_timestamp timestamp without time zone NOT NULL,
     deleted boolean default false,
     sub_account_id varchar(256),
-    is_kubeconfig_encrypted boolean NOT NULL
 );
 
 -- Cluster Config
@@ -161,7 +160,6 @@ CREATE TABLE cluster_administrator
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     cluster_id uuid NOT NULL,
     user_id text NOT NULL,
-    is_user_id_encrypted boolean NOT NULL
 );
 
 

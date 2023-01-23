@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
-
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/sirupsen/logrus"
@@ -22,32 +19,20 @@ type GardenerClient interface {
 	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
-//go:generate mockery -name=KubeconfigProvider
-type KubeconfigProvider interface {
-	FetchRaw(shootName string) ([]byte, error)
-}
-
 type WaitForShootUpgradeStep struct {
-	gardenerClient GardenerClient
 	nextStep       model.OperationStage
 	timeLimit      time.Duration
-
-	dbSession          dbsession.ReadWriteSession
-	kubeconfigProvider KubeconfigProvider
+	gardenerClient GardenerClient
 }
 
 func NewWaitForShootUpgradeStep(gardenerClient GardenerClient,
-	dbSession dbsession.ReadWriteSession, kubeconfigProvider KubeconfigProvider,
-	nextStep model.OperationStage, timeLimit time.Duration,
-) *WaitForShootUpgradeStep {
+	nextStep model.OperationStage,
+	timeLimit time.Duration) *WaitForShootUpgradeStep {
 
 	return &WaitForShootUpgradeStep{
-		gardenerClient: gardenerClient,
 		nextStep:       nextStep,
 		timeLimit:      timeLimit,
-
-		dbSession:          dbSession,
-		kubeconfigProvider: kubeconfigProvider,
+		gardenerClient: gardenerClient,
 	}
 }
 
@@ -72,15 +57,6 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, _ model.Operation, 
 
 	if lastOperation != nil {
 		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-
-			kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
-			if err != nil {
-				return operations.StageResult{}, err
-			}
-			if dberr := s.dbSession.UpdateKubeconfig(cluster.ID, string(kubeconfig)); dberr != nil {
-				return operations.StageResult{}, dberr
-			}
-
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
