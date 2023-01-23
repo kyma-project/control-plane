@@ -89,12 +89,12 @@ func TestReleaseSubscriptionStep_InstanceNotFound(t *testing.T) {
 	// when
 	operation, repeat, err := step.Run(operation, log)
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	// then
 	accountProviderMock.AssertNotCalled(t, "MarkUnusedGardenerSecretBindingAsDirty")
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
+	assert.Error(t, err)
+	assert.Equal(t, time.Duration(time.Minute), repeat)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
@@ -118,12 +118,12 @@ func TestReleaseSubscriptionStep_ProviderNotFound(t *testing.T) {
 	// when
 	operation, repeat, err := step.Run(operation, log)
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	// then
 	accountProviderMock.AssertNotCalled(t, "MarkUnusedGardenerSecretBindingAsDirty")
-	assert.NoError(t, err)
-	assert.Equal(t, time.Duration(0), repeat)
+	assert.Error(t, err)
+	assert.Equal(t, time.Duration(time.Minute), repeat)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
