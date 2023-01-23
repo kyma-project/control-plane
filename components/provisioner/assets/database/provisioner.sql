@@ -9,7 +9,7 @@ CREATE TABLE cluster
     tenant varchar(256) NOT NULL,
     creation_timestamp timestamp without time zone NOT NULL,
     deleted boolean default false,
-    sub_account_id varchar(256),
+    sub_account_id varchar(256)
 );
 
 -- Cluster Config
@@ -159,7 +159,7 @@ CREATE TABLE cluster_administrator
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     cluster_id uuid NOT NULL,
-    user_id text NOT NULL,
+    user_id text NOT NULL
 );
 
 
