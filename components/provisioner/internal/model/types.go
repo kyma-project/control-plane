@@ -69,6 +69,8 @@ type Cluster struct {
 
 	ClusterConfig GardenerConfig `db:"-"`
 	KymaConfig    *KymaConfig    `db:"-"`
+
+	IsKubeconfigEncrypted bool
 }
 
 type LastError struct {

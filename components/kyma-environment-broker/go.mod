@@ -5,13 +5,13 @@ go 1.19
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/99designs/gqlgen v0.17.22
-	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.28
 	github.com/Azure/go-autorest/autorest/adal v0.9.22
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.8
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.78.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.79.0
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/docker/docker v20.10.22+incompatible
 	github.com/docker/go-connections v0.4.0
