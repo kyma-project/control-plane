@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -42,9 +43,13 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		return operation, 0, nil
 	}
 	if operation.TimeSinceReconcilerDeregistrationTriggered() > s.timeout {
-		log.Errorf("Cluster deregistration has reached the time limit: %s", s.timeout)
+		dsc := fmt.Sprintf("Cluster deregistration has reached the time limit: %s", s.timeout)
+		log.Errorf(dsc)
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.State = domain.InProgress
+			op.Description = dsc
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	}
@@ -62,9 +67,13 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		return operation, 1 * time.Minute, nil
 	}
 	if err != nil {
-		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
+		dsc := fmt.Sprintf("Reconciler GetCluster method failed: %s", err.Error())
+		log.Errorf(dsc)
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.State = domain.InProgress
+			op.Description = dsc
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	}
@@ -83,6 +92,9 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		log.Warnf(errMsg)
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.State = domain.InProgress
+			op.Description = errMsg
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	default:
