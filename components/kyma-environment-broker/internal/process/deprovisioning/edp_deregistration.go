@@ -9,7 +9,6 @@ import (
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"github.com/sirupsen/logrus"
 )
@@ -75,7 +74,6 @@ func (s *EDPDeregistrationStep) handleError(operation internal.Operation, err er
 	dsc := fmt.Sprintf("Step %s failed. EDP data have not been deleted.", s.Name())
 	log.Errorf(dsc)
 	operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-		operation.State = domain.InProgress
 		operation.Description = dsc
 		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 	}, log)
