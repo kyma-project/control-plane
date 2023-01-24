@@ -60,7 +60,7 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 		}, log)
 	} else if operation.ExcutedButNotCompleted != nil {
 		log.Info("Marking the instance needs to retry some steps")
-		backoff = s.markInstancoNeedsRetrySomeSteps(operation.InstanceID, log)
+		backoff = s.markInstanceNeedsRetrySomeSteps(operation.InstanceID, log)
 		if backoff != 0 {
 			return operation, backoff, nil
 		}
@@ -110,7 +110,7 @@ func (s RemoveInstanceStep) removeInstancePermanently(instanceID string, log log
 	return 0
 }
 
-func (s RemoveInstanceStep) markInstancoNeedsRetrySomeSteps(instanceID string, log logrus.FieldLogger) time.Duration {
+func (s RemoveInstanceStep) markInstanceNeedsRetrySomeSteps(instanceID string, log logrus.FieldLogger) time.Duration {
 	backoff := time.Second
 
 	instance, err := s.instanceStorage.GetByID(instanceID)
