@@ -24,6 +24,10 @@ DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 git checkout main
 git pull origin --rebase
 for pr in "${prs[@]}"; do
+    is_draft=$(gh pr view ""${pr} --json isDraft --jq '.isDraft')
+    if [[ "$is_draft" == true ]]; then
+        continue
+    fi
     gh pr checkout "${pr}"
     (
         while true; do

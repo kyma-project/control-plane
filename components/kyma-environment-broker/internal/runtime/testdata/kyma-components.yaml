@@ -9,7 +9,6 @@ prerequisites:
 components:
   - name: "logging"
   - name: "tracing"
-  - name: "kiali"
   - name: "monitoring"
   - name: "eventing"
   - name: "ory"

@@ -1068,6 +1068,62 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
 	})
 
+	// temporary test case for tes
+	t.Run("Should fail for predefined subaccount ID - EU Access", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			logrus.StandardLogger(),
+			dashboardConfig,
+		)
+
+		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
+		err := fmt.Errorf("request rejected - temporary behaviour for test purposes, see:https://github.tools.sap/kyma/backlog/issues/3420")
+		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
+		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
+
+		// when
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, "7363aece-1cc5-4797-b35b-4ef9d8e86a42", "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.Error(t, err)
+		assert.IsType(t, &apiresponses.FailureResponse{}, err)
+		apierr := err.(*apiresponses.FailureResponse)
+		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
+		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
+	})
+
 }
 
 func TestRegionValidation(t *testing.T) {

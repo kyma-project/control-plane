@@ -64,7 +64,7 @@ func (s deleteKubeconfig) Run(o internal.Operation, log logrus.FieldLogger) (int
 	if err := s.k8sClient.Delete(context.Background(), secret); err != nil && !errors.IsNotFound(err) {
 		msg := fmt.Sprintf("failed to delete kubeconfig secret %v/%v for lifecycle manager: %v", secret.Namespace, secret.Name, err)
 		log.Error(msg)
-		return s.operationManager.RetryOperationWithoutFail(o, msg, time.Minute, time.Minute*5, log)
+		return s.operationManager.RetryOperationWithoutFail(o, s.Name(), msg, time.Minute, time.Minute*5, log)
 	}
 	return o, 0, nil
 }

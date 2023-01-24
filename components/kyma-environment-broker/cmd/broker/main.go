@@ -199,6 +199,7 @@ func periodicProfile(logger lager.Logger, profiler ProfilerConfig) {
 }
 
 func main() {
+	apiextensionsv1.AddToScheme(scheme.Scheme)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -422,11 +423,8 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 		return nil, err
 	}
 
-	sch := scheme.Scheme
-	apiextensionsv1.AddToScheme(sch)
-
 	k8sCli, err := client.New(restCfg, client.Options{
-		Scheme: sch,
+		Scheme: scheme.Scheme,
 	})
 	return k8sCli, err
 }
