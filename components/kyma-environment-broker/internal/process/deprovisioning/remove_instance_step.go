@@ -119,7 +119,7 @@ func (s RemoveInstanceStep) markInstancoNeedsRetrySomeSteps(instanceID string, l
 		return backoff
 	}
 
-	instance.deleted_at = time.Now()
+	instance.DeletedAt = time.Now()
 	_, err = s.instanceStorage.Update(*instance)
 	if err != nil {
 		log.Errorf("unable to update instance %s in the storage: %s", instanceID, err)
