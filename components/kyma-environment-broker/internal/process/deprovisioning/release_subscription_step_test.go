@@ -85,16 +85,17 @@ func TestReleaseSubscriptionStep_InstanceNotFound(t *testing.T) {
 	accountProviderMock.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.GCP, instance.GetSubscriptionGlobalAccoundID(), false).Return(nil)
 
 	step := NewReleaseSubscriptionStep(memoryStorage.Operations(), memoryStorage.Instances(), accountProviderMock)
+	memoryStorage.Operations().InsertOperation(operation)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
 
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	// then
 	accountProviderMock.AssertNotCalled(t, "MarkUnusedGardenerSecretBindingAsDirty")
-	assert.Error(t, err)
-	assert.Equal(t, time.Duration(time.Minute), repeat)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
@@ -114,16 +115,17 @@ func TestReleaseSubscriptionStep_ProviderNotFound(t *testing.T) {
 	accountProviderMock.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.GCP, instance.GetSubscriptionGlobalAccoundID(), false).Return(nil)
 
 	step := NewReleaseSubscriptionStep(memoryStorage.Operations(), memoryStorage.Instances(), accountProviderMock)
+	memoryStorage.Operations().InsertOperation(operation)
 
 	// when
 	operation, repeat, err := step.Run(operation, log)
 
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	// then
 	accountProviderMock.AssertNotCalled(t, "MarkUnusedGardenerSecretBindingAsDirty")
-	assert.Error(t, err)
-	assert.Equal(t, time.Duration(time.Minute), repeat)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
 	assert.Equal(t, domain.Succeeded, operation.State)
 }
 
