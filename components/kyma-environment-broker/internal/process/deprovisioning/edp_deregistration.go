@@ -71,10 +71,8 @@ func (s *EDPDeregistrationStep) handleError(operation internal.Operation, err er
 		}
 	}
 
-	dsc := fmt.Sprintf("Step %s failed. EDP data have not been deleted.", s.Name())
-	log.Errorf(dsc)
+	log.Errorf("Step %s failed. EDP data have not been deleted.", s.Name())
 	operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-		operation.Description = dsc
 		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 	}, log)
 	if repeat != 0 {

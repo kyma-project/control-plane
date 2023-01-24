@@ -1,7 +1,6 @@
 package deprovisioning
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
@@ -40,10 +39,8 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 	if !broker.IsTrialPlan(planID) {
 		instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 		if err != nil {
-			dsc := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - get the instance data for instanceID: %s", operation.InstanceID)
-			log.Errorf(dsc, err.Error())
+			log.Errorf("after successful deprovisioning failing to release hyperscaler subscription - get the instance data for instanceID: %s", operation.InstanceID, err.Error())
 			operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-				operation.Description = dsc
 				operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 			}, log)
 			if repeat != 0 {
@@ -54,10 +51,8 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 
 		hypType, err := hyperscaler.FromCloudProvider(instance.Provider)
 		if err != nil {
-			dsc := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - determine the type of hyperscaler to use for planID [%s]: %s", planID, err.Error())
-			log.Errorf(dsc)
+			log.Errorf("after successful deprovisioning failing to release hyperscaler subscription - determine the type of hyperscaler to use for planID [%s]: %s", planID, err.Error())
 			operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-				operation.Description = dsc
 				operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 			}, log)
 			if repeat != 0 {
