@@ -45,6 +45,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		log.Errorf("Cluster deregistration has reached the time limit: %s", s.timeout)
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	}
@@ -65,6 +66,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		log.Errorf("Reconciler GetCluster method failed: %s", err.Error())
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	}
@@ -83,6 +85,7 @@ func (s *CheckClusterDeregistrationStep) Run(operation internal.Operation, log l
 		log.Warnf(errMsg)
 		modifiedOp, d, _ := s.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
 			op.ClusterConfigurationVersion = 0
+			op.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
 		}, log)
 		return modifiedOp, d, nil
 	default:
