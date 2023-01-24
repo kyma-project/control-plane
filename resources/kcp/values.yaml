@@ -11,7 +11,7 @@ global:
       version: "PR-2353"
     kyma_metrics_collector:
       dir:
-      version: "PR-2398"
+      version: "PR-2425"
     tests:
       provisioner:
         dir:
