@@ -64,6 +64,10 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, err.Error())
 	}
 
+	if !instance.DeletedAt.IsZero() {
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, fmt.Sprintf("failed to get instanceID %s", instanceID))
+	}
+
 	parameters := b.prepareParametersToReturn(instance.Parameters)
 
 	spec := domain.GetInstanceDetailsSpec{
