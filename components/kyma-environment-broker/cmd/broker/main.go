@@ -833,7 +833,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
-			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
+			step:     deprovisioning.NewEDPDeregistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
@@ -863,7 +863,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), db.Instances(), provisionerClient),
 		},
 		{
-			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
+			step: deprovisioning.NewReleaseSubscriptionStep(db.Operations(), db.Instances(), accountProvider),
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,
