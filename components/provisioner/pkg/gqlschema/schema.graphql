@@ -198,10 +198,15 @@ input RuntimeInput {
     labels: Labels
 }
 
+input CompassConfigInput {
+    RuntimeAgentConfigNamespace: [String!]
+}
+
 input ProvisionRuntimeInput {
     runtimeInput: RuntimeInput!         # Configuration of the Runtime to register in Director
     clusterConfig: ClusterConfigInput!  # Configuration of the cluster to provision
     kymaConfig: KymaConfigInput         # Configuration of Kyma to be installed on the provisioned cluster. Not passing it will result in a cluster without Kyma installed.
+    compassConfig: CompassConfigInput  #Dodac komentarz
 }
 
 input ClusterConfigInput {
