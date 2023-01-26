@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"crypto/sha256"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -74,8 +73,7 @@ func (s *GetKubeconfigStep) getKubeconfigFromRuntimeStatus(operation internal.Op
 
 	kubeconfig := *status.RuntimeConfiguration.Kubeconfig
 
-	hash := sha256.Sum256([]byte(kubeconfig))
-	log.Infof("kubeconfig details length: %v, sha256: %v", len(kubeconfig), string(hash[:]))
+	log.Infof("kubeconfig details length: %v", len(kubeconfig))
 	if len(kubeconfig) < 10 {
 		log.Errorf("kubeconfig suspiciously small, requeueing after 30s")
 		return "", 30 * time.Second, nil
