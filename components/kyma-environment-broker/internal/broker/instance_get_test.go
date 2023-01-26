@@ -107,6 +107,7 @@ func TestGetEndpoint_GetInstanceWhereDeletedAtIsNotZero(t *testing.T) {
 	op := fixture.FixProvisioningOperation(operationID, instanceID)
 
 	instance := fixture.FixInstance(instanceID)
+	instance.DeletedAt = time.Now()
 
 	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
@@ -147,7 +148,6 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
-	instance.DeletedAt = time.Time{}
 
 	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
@@ -191,7 +191,6 @@ func TestGetEndpoint_GetExpiredInstanceWithExpirationDetailsAllSubaccountsIDs(t 
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
-	instance.DeletedAt = time.Time{}
 
 	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
@@ -235,7 +234,6 @@ func TestGetEndpoint_GetExpiredInstanceWithoutExpirationInfo(t *testing.T) {
 	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
 	instance.ExpiredAt = &expireTime
-	instance.DeletedAt = time.Time{}
 
 	err := st.Operations().InsertOperation(op)
 	require.NoError(t, err)
