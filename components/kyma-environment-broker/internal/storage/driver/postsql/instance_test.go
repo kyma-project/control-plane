@@ -752,10 +752,8 @@ func fixInstance(testData instanceData) *internal.Instance {
 	if testData.expired {
 		instance.ExpiredAt = ptr.Time(time.Now().Add(-10 * time.Hour))
 	}
-	//fmt.Printf(testData.deletedAt.String())
 	if !testData.deletedAt.IsZero() {
 		instance.DeletedAt = testData.deletedAt
-		//fmt.Println("   aaa   ")
 	}
 	fmt.Printf(instance.DeletedAt.String())
 	return &instance
