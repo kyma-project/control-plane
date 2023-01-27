@@ -156,7 +156,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	shootInterface := shoots.NewFakeShootsInterface(t, cfg)
 	seedInterface := seeds.NewFakeSeedsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
-	dbsFactory := dbsession.NewFactory(connection)
+	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
+	dbsFactory := dbsession.NewFactory(connection, secretKey)
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -193,7 +194,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
 
 	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)

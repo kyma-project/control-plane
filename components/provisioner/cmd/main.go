@@ -64,6 +64,7 @@ type config struct {
 		Name        string `envconfig:"default=provisioner"`
 		SSLMode     string `envconfig:"default=disable"`
 		SSLRootCert string `envconfig:"optional"`
+		SecretKey   string `envconfig:"optional"`
 	}
 
 	ProvisioningTimeout            queue.ProvisioningTimeouts
@@ -163,7 +164,7 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
-	dbsFactory := dbsession.NewFactory(connection)
+	dbsFactory := dbsession.NewFactory(connection, cfg.Database.SecretKey)
 
 	// TODO: Remove after data migration
 	if cfg.RunAwsConfigMigration {
@@ -233,7 +234,7 @@ func main() {
 
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 

@@ -230,6 +230,13 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		return ersContext, parameters, fmt.Errorf("while extracting ers context: %w", err)
 	}
 
+	// temporarily reject all request for this subaccount ID to test one scenario in EU Access story
+	if ersContext.SubAccountID == "7363aece-1cc5-4797-b35b-4ef9d8e86a42" {
+		logger.Infof("request rejected - temporary behaviour for test purposes")
+		err = fmt.Errorf("request rejected - temporary behaviour for test purposes, see:https://github.tools.sap/kyma/backlog/issues/3420")
+		return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "provisioning")
+	}
+
 	parameters, err = b.extractInputParameters(details)
 	if err != nil {
 		return ersContext, parameters, fmt.Errorf("while extracting input parameters: %w", err)
