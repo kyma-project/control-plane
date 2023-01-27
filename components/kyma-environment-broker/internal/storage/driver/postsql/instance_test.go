@@ -152,7 +152,7 @@ func TestInstance(t *testing.T) {
 		}
 
 		// when
-		stats, err := brokerStorage.Instances().GetInstanceStats() //pomyslec wrzucic np do storage inna instancje z deleted at i asercje te same
+		stats, err := brokerStorage.Instances().GetInstanceStats()
 		require.NoError(t, err)
 		numberOfInstancesA, err := brokerStorage.Instances().GetNumberOfInstancesForGlobalAccountID("A")
 		require.NoError(t, err)
