@@ -755,7 +755,6 @@ func fixInstance(testData instanceData) *internal.Instance {
 	if !testData.deletedAt.IsZero() {
 		instance.DeletedAt = testData.deletedAt
 	}
-	fmt.Printf(instance.DeletedAt.String())
 	return &instance
 }
 
