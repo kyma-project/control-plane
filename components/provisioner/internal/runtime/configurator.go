@@ -46,12 +46,22 @@ func NewRuntimeConfigurator(builder k8s.K8sClientProvider, directorClient direct
 }
 
 func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError {
-	err := c.configureAgent(cluster, runtimeAgentComponentNameSpace, kubeconfigRaw)
+
+	token, err := c.getConnectionToken(cluster)
+	if err != nil {
+		return err.Append("error getting one time token from Director")
+	}
+
+	//If the Kyma version is <=2.10 we need to create Compass-Runtime-Agent components in the compass-system Namespace.
+	//But if the version is >2.10 we need to create all the components in the kyma-system Namespace.
+	//Such solution will ensure the continuity of the system regardless of the Kyma version, but will additionally create one redundant secret.
+	//For more information see the ticket #15915
+	err = c.configureAgent(cluster, token, runtimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent")
 	}
 
-	err = c.configureAgent(cluster, legacyRuntimeAgentComponentNameSpace, kubeconfigRaw)
+	err = c.configureAgent(cluster, token, legacyRuntimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent in legacy namespace")
 	}
@@ -59,17 +69,8 @@ func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw str
 	return nil
 }
 
-func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconfigRaw string) apperrors.AppError {
+func (c *configurator) configureAgent(cluster model.Cluster, token graphql.OneTimeTokenForRuntimeExt, namespace, kubeconfigRaw string) apperrors.AppError {
 	var err apperrors.AppError
-	var token graphql.OneTimeTokenForRuntimeExt
-	err = util.RetryOnError(10*time.Second, 3, "Error while getting one time token from Director: %s", func() (err apperrors.AppError) {
-		token, err = c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
-		return
-	})
-
-	if err != nil {
-		return err.Append("error getting one time token from Director")
-	}
 
 	k8sClient, err := c.builder.CreateK8SClient(kubeconfigRaw)
 	if err != nil {
@@ -100,6 +101,22 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 	return c.upsertSecret(k8sClient.CoreV1().Secrets(namespace), secret)
+}
+
+func (c *configurator) getConnectionToken(cluster model.Cluster) (graphql.OneTimeTokenForRuntimeExt, apperrors.AppError) {
+	var err apperrors.AppError
+	var token graphql.OneTimeTokenForRuntimeExt
+
+	err = util.RetryOnError(10*time.Second, 3, "Error while getting one time token from Director: %s", func() (err apperrors.AppError) {
+		token, err = c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
+		return
+	})
+
+	if err != nil {
+		return graphql.OneTimeTokenForRuntimeExt{}, err
+	}
+
+	return token, nil
 }
 
 func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface, namespace string) apperrors.AppError {
