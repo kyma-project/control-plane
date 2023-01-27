@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -134,10 +135,10 @@ func (rtc *RuntimeClient) Run() (string, error) {
 		return "", errors.Wrapf(err, "while createClusterRole %s", rtc.User.ClusterRoleName)
 	}
 
-	saToken, err := rtc.getSecretToken()
+	saToken, err := rtc.getServiceAccountToken()
 	if err != nil {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
-		return "", errors.Wrapf(err, "while getSecretToken from %s", rtc.User.ServiceAccountName)
+		return "", errors.Wrapf(err, "while getServiceAccountToken from %s", rtc.User.ServiceAccountName)
 	}
 
 	err = rtc.createClusterRoleBinding()
@@ -145,7 +146,7 @@ func (rtc *RuntimeClient) Run() (string, error) {
 		rtc.RollbackE.Data = append(rtc.RollbackE.Data, SA, ClusterRole)
 		return "", errors.Wrapf(err, "while createClusterRoleBinding %s", rtc.User.ClusterRoleBindingName)
 	}
-	return string(saToken), resultE
+	return saToken, resultE
 }
 
 func (rtc *RuntimeClient) createServiceAccount() error {
@@ -315,34 +316,16 @@ func (rtc *RuntimeClient) verifyCRBinding(roleRef rbacv1.RoleRef, subjects []rba
 	return false, err
 }
 
-func (rtc *RuntimeClient) getSecretToken() ([]byte, error) {
-	var token []byte
-	// Wait for the TokenController to provision a ServiceAccount token
-	err := retry.Do(func() error {
-		var secretName string
-		sa, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).Get(context.TODO(), rtc.User.ServiceAccountName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if len(sa.Secrets) == 0 {
-			return errors.New("SA secret is not provisioned")
-		}
+func (rtc *RuntimeClient) getServiceAccountToken() (string, error) {
+	var expirationSeconds int64 = int64(ExpireTime.Seconds())
+	tokenRequest := authenticationv1.TokenRequest{
+		Spec: authenticationv1.TokenRequestSpec{
+			ExpirationSeconds: &expirationSeconds,
+		},
+	}
+	req, err := rtc.K8s.CoreV1().ServiceAccounts(rtc.User.Namespace).CreateToken(context.TODO(), rtc.User.ServiceAccountName, &tokenRequest, metav1.CreateOptions{})
 
-		secretName = sa.Secrets[0].Name
-		secret, err := rtc.K8s.CoreV1().Secrets(rtc.User.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		token = secret.Data[Token]
-		return nil
-	},
-		retry.Attempts(30),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-	)
-
-	return token, err
+	return req.Status.Token, err
 }
 
 func initServiceAccount(user SAInfo) *corev1.ServiceAccount {

@@ -78,7 +78,8 @@ const (
 )
 
 type ClusterAdministrator struct {
-	ID        string
-	ClusterId *string
-	UserId    string
+	ID                string
+	ClusterId         *string
+	UserId            string
+	IsUserIdEncrypted bool
 }

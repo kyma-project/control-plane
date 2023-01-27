@@ -7,6 +7,8 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,14 +20,16 @@ type EDPClient interface {
 }
 
 type EDPDeregistrationStep struct {
-	client EDPClient
-	config edp.Config
+	operationManager *process.OperationManager
+	client           EDPClient
+	config           edp.Config
 }
 
-func NewEDPDeregistrationStep(client EDPClient, config edp.Config) *EDPDeregistrationStep {
+func NewEDPDeregistrationStep(os storage.Operations, client EDPClient, config edp.Config) *EDPDeregistrationStep {
 	return &EDPDeregistrationStep{
-		client: client,
-		config: config,
+		operationManager: process.NewOperationManager(os),
+		client:           client,
+		config:           config,
 	}
 }
 
@@ -68,5 +72,11 @@ func (s *EDPDeregistrationStep) handleError(operation internal.Operation, err er
 	}
 
 	log.Errorf("Step %s failed. EDP data have not been deleted.", s.Name())
+	operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
+	}, log)
+	if repeat != 0 {
+		return operation, repeat, err
+	}
 	return operation, 0, nil
 }

@@ -50,12 +50,12 @@ func (s *OverridesFromSecretsAndConfigStep) Run(operation internal.UpgradeKymaOp
 
 	version, err := s.getRuntimeVersion(operation)
 	if err != nil {
-		return s.operationManager.RetryOperation(operation, "error while getting runtime version", err, 5*time.Second, 5*time.Minute, log)
+		return s.operationManager.OperationFailed(operation, "error while getting runtime version", err, log)
 	}
 
 	if err := s.runtimeOverrides.Append(operation.InputCreator, planName, version.Version); err != nil {
 		log.Errorf(err.Error())
-		return s.operationManager.RetryOperation(operation, "error while appending runtime overrides", err, 10*time.Second, 30*time.Minute, log)
+		return s.operationManager.OperationFailed(operation, "error while appending runtime overrides", err, log)
 	}
 
 	return operation, 0, nil

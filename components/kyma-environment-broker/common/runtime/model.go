@@ -84,15 +84,16 @@ type OperationsData struct {
 }
 
 type Operation struct {
-	State           string        `json:"state"`
-	Type            OperationType `json:"type,omitempty"`
-	Description     string        `json:"description"`
-	CreatedAt       time.Time     `json:"createdAt"`
-	UpdatedAt       time.Time     `json:"updatedAt"`
-	OperationID     string        `json:"operationID"`
-	OrchestrationID string        `json:"orchestrationID,omitempty"`
-	FinishedStages  []string      `json:"finishedStages"`
-	RuntimeVersion  string        `json:"runtimeVersion"`
+	State                        string        `json:"state"`
+	Type                         OperationType `json:"type,omitempty"`
+	Description                  string        `json:"description"`
+	CreatedAt                    time.Time     `json:"createdAt"`
+	UpdatedAt                    time.Time     `json:"updatedAt"`
+	OperationID                  string        `json:"operationID"`
+	OrchestrationID              string        `json:"orchestrationID,omitempty"`
+	FinishedStages               []string      `json:"finishedStages"`
+	ExecutedButNotCompletedSteps []string      `json:"executedButNotCompletedSteps,omitempty"`
+	RuntimeVersion               string        `json:"runtimeVersion"`
 }
 
 type RuntimesPage struct {

@@ -94,6 +94,12 @@ spec:
                   key: postgresql-sslMode
             - name: APP_DATABASE_SSLROOTCERT
               value: /secrets/cloudsql-sslrootcert/server-ca.pem
+            - name: APP_DATABASE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.deployment.databaseEncryptionSecret | quote }}
+                  key: secretKey
+                  optional: true
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_OAUTH_CREDENTIALS_SECRET_NAME

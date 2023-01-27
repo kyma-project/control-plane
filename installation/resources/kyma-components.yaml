@@ -9,4 +9,3 @@ components:
     - name: "monitoring"
     - name: "logging"
     - name: "tracing"
-    - name: "kiali"
