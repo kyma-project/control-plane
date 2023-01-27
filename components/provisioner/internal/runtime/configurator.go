@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	AgentConfigurationSecretName   = "compass-agent-configuration"
-	runtimeAgentComponentNameSpace = "kyma-system"
+	AgentConfigurationSecretName         = "compass-agent-configuration"
+	runtimeAgentComponentNameSpace       = "kyma-system"
+	legacyRuntimeAgentComponentNameSpace = "compass-system"
 )
 
 //go:generate mockery -name=Configurator
@@ -48,6 +49,11 @@ func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw str
 	err := c.configureAgent(cluster, runtimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent")
+	}
+
+	err = c.configureAgent(cluster, legacyRuntimeAgentComponentNameSpace, kubeconfigRaw)
+	if err != nil {
+		return err.Append("error configuring Runtime Agent in legacy namespace")
 	}
 
 	return nil
@@ -78,7 +84,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 	}
 
 	err = util.RetryOnError(3*time.Second, 2, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
-		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), runtimeAgentComponentNameSpace)
+		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), namespace)
 		return
 	})
 

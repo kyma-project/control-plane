@@ -116,8 +116,8 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		k8sClientProvider := newMockClientProvider(t)
 		directorClient := &mocks2.DirectorClient{}
 
-		directorClient.On("GetConnectionToken", runtimeID, tenant).Once().Return(graphql.OneTimeTokenForRuntimeExt{}, apperrors.Internal("token error"))
-		directorClient.On("GetConnectionToken", runtimeID, tenant).Once().Return(oneTimeToken, nil)
+		directorClient.On("GetConnectionToken", runtimeID, tenant).Twice().Return(graphql.OneTimeTokenForRuntimeExt{}, apperrors.Internal("token error"))
+		directorClient.On("GetConnectionToken", runtimeID, tenant).Twice().Return(oneTimeToken, nil)
 
 		configProvider := NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
