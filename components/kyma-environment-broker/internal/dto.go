@@ -189,6 +189,7 @@ type UpdatingParametersDTO struct {
 
 	OIDC                  *OIDCConfigDTO `json:"oidc,omitempty"`
 	RuntimeAdministrators []string       `json:"administrators,omitempty"`
+	MachineType           *string        `json:"machineType,omitempty"`
 
 	// Expired - means that the trial SKR is marked as expired
 	Expired bool `json:"expired"`
