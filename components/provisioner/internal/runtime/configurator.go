@@ -52,10 +52,10 @@ func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw str
 		return err.Append("error getting one time token from Director")
 	}
 
-	//If the Kyma version is <=2.10 we need to create Compass-Runtime-Agent components in the compass-system Namespace.
-	//But if the version is >2.10 we need to create all the components in the kyma-system Namespace.
-	//Such solution will ensure the continuity of the system regardless of the Kyma version, but will additionally create one redundant secret.
-	//For more information see the ticket #15915
+	// In order to meet Kyma modularisation requirements compass-system namespace will be removed at some point.
+	// Please see the following issue for details: https://github.com/kyma-project/kyma/issues/15915
+	// Provisioner must be able to configure Compass Runtime Agent no matter if it will be installed in compass-system or kyma-system namespace.
+	// This solution creates redundant secret, however,it will work in both cases, and doesn't require Provisioner's API change.
 	err = c.configureAgent(cluster, token, runtimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent")
