@@ -19,8 +19,8 @@ When the PlatformRegion is an EU access BTP subaccount region:
 ## Access 
 Due to limited availability, the provisioning request for the EU Access only regions can succeed only if GlobalAccountId 
 is added to the list of allowed GlobalAccountIds (the whitelist).
-The list is configured in [management-plane-config repository](https://github.tools.sap/kyma/management-plane-config) 
-in resources/control-plane/<landscape>/values.yaml files.
+The list is configured in the [management-plane-config repository](https://github.tools.sap/kyma/management-plane-config) 
+in the `resources/control-plane/<landscape>/values.yaml` files.
 
 Here you can find example configuration of the list with two GlobalAccountIds listed:
 ```yaml
