@@ -37,6 +37,7 @@ global:
     - connectivity-proxy
     - istio
     - ory
+    - eventing
     - serverless
     - cluster-essentials
     - rma
