@@ -41,6 +41,5 @@ The following message will be presented to the user in the BTP Cockpit.
 ```yaml
 kcp-prod:
   kyma-environment-broker:
-    euAccessRejectionMessage: "due to limited availability you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
-```
+    euAccessRejectionMessage: "Due to limited availability, you must open a support ticket before attempting to provision Kyma clusters in the EU Access only regions"
 
