@@ -124,7 +124,6 @@ skrDNSProvidersValues: |-
 
 euAccessWhitelistedGlobalAccountIds: |-
   whitelist:
-    - 2358e708-68f0-4af0-94b6-cf4e8407aff8
 euAccessRejectionMessage: "due to limited availability you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
 
 kymaVersion: "2.0"
