@@ -6,7 +6,7 @@ require (
 	github.com/gardener/gardener v1.62.2
 	github.com/gardener/gardener-extension-provider-aws v1.41.0
 	github.com/gardener/gardener-extension-provider-azure v1.33.0
-	github.com/gardener/gardener-extension-provider-gcp v1.26.1
+	github.com/gardener/gardener-extension-provider-gcp v1.27.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -46,7 +46,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
