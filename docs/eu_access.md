@@ -37,7 +37,7 @@ GlobalAccountId added to the whitelist.
 
 If the GlobalAccountId for the provisioning request is not whitelisted, the Kyma Environment Broker responds 
 with `http code 400` (Bad Request) and the message preconfigured in `management-plane-config`. 
-This message will be presented to the user in the BTP Cockpit.   
+The following message will be presented to the user in the BTP Cockpit.   
 ```yaml
 kcp-prod:
   kyma-environment-broker:
