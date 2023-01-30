@@ -90,7 +90,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 	assert.Len(t, response.Metadata.Labels, 2)
 }
 
-func TestGetEndpoint_GetInstanceWhereDeletedAtIsNotZero(t *testing.T) {
+func TestGetEndpoint_DoNotReturnInstanceWhereDeletedAtIsNotZero(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	cfg := broker.Config{
@@ -121,9 +121,9 @@ func TestGetEndpoint_GetInstanceWhereDeletedAtIsNotZero(t *testing.T) {
 	_, err = svc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
 
 	// then
-	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Get returned error of unexpected type")
+	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Get request returned error of unexpected type")
 	apierr := err.(*apiresponses.FailureResponse)
-	assert.Equal(t, http.StatusNotFound, apierr.ValidatedStatusCode(nil), "Get status code not matching")
+	assert.Equal(t, http.StatusNotFound, apierr.ValidatedStatusCode(nil), "Get request status code not matching")
 }
 
 func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
