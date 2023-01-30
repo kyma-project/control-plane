@@ -35,8 +35,8 @@ kcp-prod:
 You must open a support ticket before attempting to provision Kyma clusters in the EU Access only regions to have your 
 GlobalAccountId added to the whitelist.
 
-If the GlobalAccountId for provisioning request is not whitelisted the Kyma Environment Broker will respond 
-with http code 400 (Bad Request) and preconfigured in management-plane-config message. 
+If the GlobalAccountId for the provisioning request is not whitelisted, the Kyma Environment Broker responds 
+with `http code 400` (Bad Request) and the message preconfigured in `management-plane-config`. 
 This message will be presented to the user in the BTP Cockpit.   
 ```yaml
 kcp-prod:
