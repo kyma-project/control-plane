@@ -17,8 +17,8 @@ When the PlatformRegion is an EU access BTP subaccount region:
   - `switzerlandnorth` as the only possible value for the `region` parameter for `cf-ch20`
 
 ## Access 
-Due to limited availability the provisioning request for EU Access only regions can succeed only if GlobalAccountId 
-is added to the list of allowed GlobalAccountIds (to the whitelist).
+Due to limited availability, the provisioning request for the EU Access only regions can succeed only if GlobalAccountId 
+is added to the list of allowed GlobalAccountIds (the whitelist).
 The list is configured in [management-plane-config repository](https://github.tools.sap/kyma/management-plane-config) 
 in resources/control-plane/<landscape>/values.yaml files.
 
