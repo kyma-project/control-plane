@@ -22,7 +22,7 @@ is added to the list of allowed GlobalAccountIds (the whitelist).
 The list is configured in the [management-plane-config repository](https://github.tools.sap/kyma/management-plane-config) 
 in the `resources/control-plane/<landscape>/values.yaml` files.
 
-Here you can find example configuration of the list with two GlobalAccountIds listed:
+Here you can find an example configuration of the whitelist with two GlobalAccountIds listed:
 ```yaml
 kcp-prod:
   kyma-environment-broker:
