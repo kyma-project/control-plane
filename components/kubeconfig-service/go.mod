@@ -16,7 +16,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apiserver v0.25.2
-	k8s.io/kubernetes v1.26.0
+	k8s.io/kubernetes v1.26.1
 )
 
 require (

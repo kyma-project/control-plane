@@ -60,7 +60,12 @@ func (s *DeregisterClusterStep) handleError(operation internal.Operation, err er
 			return operation, 15 * time.Second, nil
 		}
 	}
-
 	log.Errorf("Reconciler cluster configuration have not been deleted in step %s.", s.Name())
+	operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
+	}, log)
+	if repeat != 0 {
+		return operation, repeat, err
+	}
 	return operation, 0, nil
 }
