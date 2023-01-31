@@ -14,7 +14,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/eu_access"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
@@ -467,7 +467,7 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 	logger.RegisterSink(errorSink)
 
 	//EU Access whitelisting
-	whitelistedGlobalAccountIds, err := eu_access.ReadWhitelistedGlobalAccountIdsFromFile(cfg.EuAccessWhitelistedGlobalAccountsFilePath)
+	whitelistedGlobalAccountIds, err := euaccess.ReadWhitelistedGlobalAccountIdsFromFile(cfg.EuAccessWhitelistedGlobalAccountsFilePath)
 	fatalOnError(err)
 	logs.Infof("Number of globalAccountIds for EU Access: %d\n", len(whitelistedGlobalAccountIds))
 

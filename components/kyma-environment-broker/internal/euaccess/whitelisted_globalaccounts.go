@@ -1,4 +1,4 @@
-package eu_access
+package euaccess
 
 import (
 	"fmt"
@@ -19,9 +19,9 @@ func IsNotWhitelisted(globalAccountId string, whitelist WhitelistSet) bool {
 }
 
 func ReadWhitelistedGlobalAccountIdsFromFile(filename string) (WhitelistSet, error) {
-	var whitelist, err = os.ReadFile(filename)
 	yamlData := make(map[string][]string)
 	whitelistSet := WhitelistSet{}
+	var whitelist, err = os.ReadFile(filename)
 	if err != nil {
 		return whitelistSet, fmt.Errorf("while reading %s file with whitelisted GlobalAccountIds config: %w", filename, err)
 	}

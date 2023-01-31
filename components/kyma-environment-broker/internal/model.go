@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/eu_access"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -484,7 +484,7 @@ func NewProvisioningOperationWithID(operationID, instanceID string, parameters P
 			InstanceDetails: InstanceDetails{
 				SubAccountID: parameters.ErsContext.SubAccountID,
 				Kubeconfig:   parameters.Parameters.Kubeconfig,
-				EuAccess:     eu_access.IsEURestrictedAccess(parameters.PlatformRegion),
+				EuAccess:     euaccess.IsEURestrictedAccess(parameters.PlatformRegion),
 			},
 			FinishedStages: make([]string, 0),
 			LastError:      kebError.LastError{},

@@ -1,4 +1,4 @@
-package eu_access
+package euaccess
 
 import (
 	"testing"
@@ -13,6 +13,7 @@ func TestReadWhitelistedGlobalAccountIdsFromFile(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(d))
+	assert.Equal(t, 2, len(d))
 	assert.Equal(t, struct{}{}, d["whitelisted-global-account-id"])
+	assert.Equal(t, struct{}{}, d["another-whitelisted-global-account-id"])
 }

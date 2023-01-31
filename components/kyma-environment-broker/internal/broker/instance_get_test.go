@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/eu_access"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -61,7 +61,7 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 		broker.PlansConfig{},
 		false,
 		planDefaults,
-		eu_access.WhitelistSet{},
+		euaccess.WhitelistSet{},
 		"request rejected, your globalAccountId is not whitelisted",
 		logrus.StandardLogger(),
 		dashboardConfig,
