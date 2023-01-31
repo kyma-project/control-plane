@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2431"
+      version: "PR-2413"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2363"
@@ -121,6 +121,10 @@ skrOIDCDefaultValues: |-
 
 skrDNSProvidersValues: |-
   providers: []
+
+euAccessWhitelistedGlobalAccountIds: |-
+  whitelist:
+euAccessRejectionMessage: "Due to limited availability, you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
 
 kymaVersion: "2.0"
 kymaVersionOnDemand: "false"

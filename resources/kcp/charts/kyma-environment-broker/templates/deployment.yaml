@@ -310,6 +310,10 @@ spec:
               value: /config/additionalRuntimeComponents.yaml
             - name: APP_TRIAL_REGION_MAPPING_FILE_PATH
               value: /config/trialRegionMapping.yaml
+            - name: APP_EU_ACCESS_WHITELISTED_GLOBAL_ACCOUNTS_FILE_PATH
+              value: /config/euAccessWhitelistedGlobalAccountIds.yaml
+            - name: APP_EU_ACCESS_REJECTION_MESSAGE
+              value: "{{ .Values.euAccessRejectionMessage }}"
             - name: APP_FREEMIUM_PROVIDERS
               value: "{{ .Values.gardener.freemiumProviders }}"
             - name: APP_CATALOG_FILE_PATH
