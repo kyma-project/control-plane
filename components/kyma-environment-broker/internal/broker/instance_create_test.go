@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -27,11 +29,12 @@ import (
 )
 
 const (
-	serviceID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
-	planID          = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
-	globalAccountID = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
-	subAccountID    = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
-	userID          = "test@test.pl"
+	serviceID                  = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	planID                     = "4deee563-e5ec-4731-b9b1-53b42d855f0c"
+	globalAccountID            = "e8f7ec0a-0cd6-41f0-905d-5d1efa9fb6c4"
+	whitelistedGlobalAccountID = "whitelisted-global-account-id"
+	subAccountID               = "3cb65e5b-e455-4799-bf35-be46e8f5a533"
+	userID                     = "test@test.pl"
 
 	instanceID           = "d3d5dca4-5dc8-44ee-a825-755c2a3fb839"
 	otherInstanceID      = "87bfaeaa-48eb-40d6-84f3-3d5368eed3eb"
@@ -78,6 +81,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -149,6 +154,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -224,6 +231,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -271,6 +280,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -342,6 +353,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -415,6 +428,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -462,6 +477,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -510,6 +527,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -571,6 +590,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -632,6 +653,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -674,6 +697,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -714,6 +739,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			true,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -755,6 +782,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			true,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -794,6 +823,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -840,6 +871,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -883,6 +916,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -932,6 +967,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -987,6 +1024,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -1042,6 +1081,8 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
@@ -1068,8 +1109,7 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
 	})
 
-	// temporary test case for tes
-	t.Run("Should fail for predefined subaccount ID - EU Access", func(t *testing.T) {
+	t.Run("Should pass for whitelisted globalAccountId - EU Access", func(t *testing.T) {
 		// given
 		memoryStorage := storage.NewMemoryStorage()
 
@@ -1098,21 +1138,73 @@ func TestProvision_Provision(t *testing.T) {
 			broker.PlansConfig{},
 			false,
 			planDefaults,
+			euaccess.WhitelistSet{whitelistedGlobalAccountID: struct{}{}},
+			"request rejected, your globalAccountId is not whitelisted",
 			logrus.StandardLogger(),
 			dashboardConfig,
 		)
 
-		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256","notValid"]`
-		err := fmt.Errorf("request rejected - temporary behaviour for test purposes, see:https://github.tools.sap/kyma/backlog/issues/3420")
+		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256"]`
+
+		// when
+		_, err := provisionEndpoint.Provision(fixRequestContext(t, "cf-eu11"), instanceID, domain.ProvisionDetails{
+			ServiceID:     serviceID,
+			PlanID:        planID,
+			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, whitelistedGlobalAccountID, subAccountID, "Test@Test.pl")),
+		}, true)
+		t.Logf("%+v\n", *provisionEndpoint)
+
+		// then
+		require.NoError(t, err)
+	})
+
+	t.Run("Should fail for not whitelisted globalAccountId - EU Access", func(t *testing.T) {
+		// given
+		memoryStorage := storage.NewMemoryStorage()
+
+		queue := &automock.Queue{}
+		queue.On("Add", mock.AnythingOfType("string"))
+
+		factoryBuilder := &automock.PlanValidator{}
+		factoryBuilder.On("IsPlanSupport", planID).Return(true)
+
+		planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+			return &gqlschema.ClusterConfigInput{}, nil
+		}
+		// #create provisioner endpoint
+		provisionEndpoint := broker.NewProvision(
+			broker.Config{
+				EnablePlans:              []string{"gcp", "azure"},
+				URL:                      brokerURL,
+				OnlySingleTrialPerGA:     true,
+				EnableKubeconfigURLLabel: true,
+			},
+			gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+			memoryStorage.Operations(),
+			memoryStorage.Instances(),
+			queue,
+			factoryBuilder,
+			broker.PlansConfig{},
+			false,
+			planDefaults,
+			euaccess.WhitelistSet{},
+			"request rejected, your globalAccountId is not whitelisted",
+			logrus.StandardLogger(),
+			dashboardConfig,
+		)
+
+		oidcParams := `"clientID":"client-id","issuerURL":"https://test.local","signingAlgs":["RS256"]`
+		err := fmt.Errorf("request rejected, your globalAccountId is not whitelisted")
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		expectedErr := apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
 
 		// when
-		_, err = provisionEndpoint.Provision(fixRequestContext(t, "req-region"), instanceID, domain.ProvisionDetails{
+		_, err = provisionEndpoint.Provision(fixRequestContext(t, "cf-eu11"), instanceID, domain.ProvisionDetails{
 			ServiceID:     serviceID,
 			PlanID:        planID,
 			RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "%s","oidc":{ %s }}`, clusterName, oidcParams)),
-			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, "7363aece-1cc5-4797-b35b-4ef9d8e86a42", "Test@Test.pl")),
+			RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, "Test@Test.pl")),
 		}, true)
 		t.Logf("%+v\n", *provisionEndpoint)
 
@@ -1200,6 +1292,8 @@ func TestRegionValidation(t *testing.T) {
 				broker.PlansConfig{},
 				false,
 				planDefaults,
+				euaccess.WhitelistSet{},
+				"request rejected, your globalAccountId is not whitelisted",
 				logrus.StandardLogger(),
 				dashboardConfig,
 			)

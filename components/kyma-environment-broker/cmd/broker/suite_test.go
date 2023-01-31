@@ -1009,8 +1009,10 @@ func fixConfig() *Config {
 			Namespace:   "kcp-system",
 			Name:        "orchestration-config",
 		},
-		MaxPaginationPage: 100,
-		FreemiumProviders: []string{"aws", "azure"},
+		MaxPaginationPage:                         100,
+		FreemiumProviders:                         []string{"aws", "azure"},
+		EuAccessWhitelistedGlobalAccountsFilePath: "testdata/eu_access_whitelist.yaml",
+		EuAccessRejectionMessage:                  "EU Access Rejection Message - see: http://google.pl",
 	}
 }
 
