@@ -122,6 +122,10 @@ skrOIDCDefaultValues: |-
 skrDNSProvidersValues: |-
   providers: []
 
+euAccessWhitelistedGlobalAccountIds: |-
+  whitelist:
+euAccessRejectionMessage: "Due to limited availability, you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
+
 kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
 

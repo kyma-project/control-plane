@@ -11,7 +11,35 @@ Kyma Control Plane manages `cf-eu11` Kyma runtimes in a separate AWS hyperscaler
 `cf-ch20` Kyma runtimes in a separate Azure hyperscaler account pool.
 
 When the PlatformRegion is an EU access BTP subaccount region:
--  Kyma Environment Broker (KEB) provides the `euAccess` parameter to Provisioner
+- Kyma Environment Broker (KEB) provides the `euAccess` parameter to Provisioner
 - KEB services catalog handler exposes:
   - `eu-central-1` as the only possible value for the `region` parameter for `cf-eu11` 
   - `switzerlandnorth` as the only possible value for the `region` parameter for `cf-ch20`
+
+## Access 
+Due to limited availability, the provisioning request for the EU Access only regions can succeed only if GlobalAccountId 
+is added to the list of allowed GlobalAccountIds (the whitelist).
+The list is configured in the [management-plane-config repository](https://github.tools.sap/kyma/management-plane-config) 
+in the `resources/control-plane/<landscape>/values.yaml` files.
+
+Here you can find an example configuration of the whitelist with two GlobalAccountIds listed:
+```yaml
+kcp-prod:
+  kyma-environment-broker:
+    euAccessWhitelistedGlobalAccountIds: |-
+      whitelist:
+        - 2358e708-68f0-4af0-94b6-cf4e8407aff8
+        - 4a8fa8f1-d76b-4682-89ba-84fe7591a07c
+```
+
+You must open a support ticket before attempting to provision Kyma clusters in the EU Access only regions to have your 
+GlobalAccountId added to the whitelist.
+
+If the GlobalAccountId for the provisioning request is not whitelisted, the Kyma Environment Broker responds 
+with `http code 400` (Bad Request) and the message preconfigured in `management-plane-config`. 
+The following message will be presented to the user in the BTP Cockpit.   
+```yaml
+kcp-prod:
+  kyma-environment-broker:
+    euAccessRejectionMessage: "Due to limited availability, you must open a support ticket before attempting to provision Kyma clusters in the EU Access only regions"
+
