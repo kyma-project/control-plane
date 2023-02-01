@@ -635,7 +635,7 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	err := r.session.Select("count(*) as total").
 		From(InstancesTableName).
 		Where(dbr.Eq("global_account_id", globalAccountID)).
-		Where(dbr.Eq("deleted_at", time.Time{})).
+		Where(dbr.Eq("deleted_at", "0001-01-01T00:00:00.000Z")).
 		LoadOne(&res)
 
 	return res.Total, err
