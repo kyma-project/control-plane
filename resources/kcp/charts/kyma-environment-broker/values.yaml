@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2429"
+      version: "PR-2447"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2363"
