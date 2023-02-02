@@ -114,6 +114,10 @@ func (s RemoveInstanceStep) markInstanceNeedsRetrySomeSteps(instanceID string, l
 	backoff := time.Second
 
 	instance, err := s.instanceStorage.GetByID(instanceID)
+	if dberr.IsNotFound(err) {
+		log.Warnf("instance %s not found", instanceID)
+		return 0
+	}
 	if err != nil {
 		log.Errorf("unable to get instance %s from the storage: %s", instanceID, err)
 		return backoff
