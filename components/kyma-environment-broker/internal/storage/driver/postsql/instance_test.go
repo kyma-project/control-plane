@@ -695,9 +695,9 @@ func TestInstance(t *testing.T) {
 		require.NotNil(t, brokerStorage)
 
 		// populate database with samples
-		inst1 := fixInstance(instanceData{val: "inst1", deletedAt: time.Time{}})
+		inst1 := fixInstance(instanceData{val: "inst1", deletedAt: time.Now()})
 		inst2 := fixInstance(instanceData{val: "inst2", trial: true, expired: true, deletedAt: time.Now()})
-		inst3 := fixInstance(instanceData{val: "inst3", trial: true})
+		inst3 := fixInstance(instanceData{val: "inst3", trial: true, deletedAt: time.Time{}})
 		inst4 := fixInstance(instanceData{val: "inst4", deletedAt: time.Now()})
 		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
 
@@ -749,12 +749,18 @@ func TestInstance(t *testing.T) {
 		// when
 		emptyFilter := dbmodel.InstanceFilter{}
 		out, count, totalCount, err := brokerStorage.Instances().List(emptyFilter)
+		var notCompletelyDeleted int
+		for _, instance := range out {
+			if !instance.DeletedAt.IsZero() {
+				notCompletelyDeleted += 1
+			}
+		}
 
 		// then
 		require.NoError(t, err)
 		require.Equal(t, 4, count)
 		require.Equal(t, 4, totalCount)
-		require.Equal(t, inst3.InstanceID, out[0].InstanceID)
+		require.Equal(t, 3, notCompletelyDeleted)
 	})
 }
 

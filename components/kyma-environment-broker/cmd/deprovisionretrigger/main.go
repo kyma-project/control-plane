@@ -94,7 +94,7 @@ func (s *DeprovisionRetriggerService) PerformCleanup() error {
 	}
 
 	instancesToDeprovision, _ := s.filterInstances(allInstances,
-		func(instance internal.Instance) bool { return instance.DeletedAt.IsZero() },
+		func(instance internal.Instance) bool { return !instance.DeletedAt.IsZero() },
 	)
 
 	if s.cfg.DryRun {
