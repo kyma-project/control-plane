@@ -38,7 +38,6 @@ global:
     - istio
     - ory
     - serverless
-    - cluster-essentials
     - rma
   provisioning:
     enabled: false

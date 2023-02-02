@@ -159,11 +159,10 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 			modificationFunc(installationCR)
 
 			// then
-			require.Equal(t, 4, len(installationCR.Spec.Components))
-			assertComponent(t, "cluster-essentials", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
-			assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[1])
-			assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[2])
-			assertComponent(t, "application-connector", kymaSystemNamespace, nil, installationCR.Spec.Components[3])
+			require.Equal(t, 3, len(installationCR.Spec.Components))
+			assertComponent(t, "core", kymaSystemNamespace, nil, installationCR.Spec.Components[0])
+			assertComponent(t, "rafter", kymaSystemNamespace, &v1alpha1.ComponentSource{URL: rafterSourceURL}, installationCR.Spec.Components[1])
+			assertComponent(t, "application-connector", kymaSystemNamespace, nil, installationCR.Spec.Components[2])
 		})
 	}
 
@@ -333,11 +332,6 @@ func fixInstallationConfig() installation.Configuration {
 		},
 		ComponentConfiguration: []installation.ComponentConfiguration{
 			{
-				Component:        "cluster-essentials",
-				Configuration:    make([]installation.ConfigEntry, 0),
-				ConflictStrategy: hydroform.ReplaceOnConflict,
-			},
-			{
 				Component: "core",
 				Configuration: []installation.ConfigEntry{
 					fixInstallationConfigEntry("test.config.key", "value", false),
@@ -361,15 +355,6 @@ func fixInstallationConfig() installation.Configuration {
 
 func fixComponentsConfig() []model.KymaComponentConfig {
 	return []model.KymaComponentConfig{
-		{
-			ID:           "id",
-			KymaConfigID: "id",
-			Component:    "cluster-essentials",
-			Namespace:    kymaSystemNamespace,
-			Configuration: model.Configuration{
-				ConflictStrategy: gqlschema.ConflictStrategyReplace.String(),
-				ConfigEntries:    make([]model.ConfigEntry, 0, 0)},
-		},
 		{
 			ID:           "id",
 			KymaConfigID: "id",

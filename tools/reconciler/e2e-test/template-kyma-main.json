@@ -14,16 +14,6 @@
     "profile": "Evaluation",
     "components": [
       {
-        "component": "cluster-essentials",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "istio",
         "namespace": "istio-system",
         "configuration": [
