@@ -140,8 +140,10 @@ func TestInstance(t *testing.T) {
 		// populate database with samples
 		fixInstances := []internal.Instance{
 			*fixInstance(instanceData{val: "A1", globalAccountID: "A"}),
-			*fixInstance(instanceData{val: "A2", globalAccountID: "A"}),
+			*fixInstance(instanceData{val: "A2", globalAccountID: "A", deletedAt: time.Time{}}),
 			*fixInstance(instanceData{val: "C1", globalAccountID: "C"}),
+			*fixInstance(instanceData{val: "C2", globalAccountID: "C", deletedAt: time.Now()}),
+			*fixInstance(instanceData{val: "B1", globalAccountID: "B", deletedAt: time.Now()}),
 		}
 
 		for _, i := range fixInstances {
@@ -156,6 +158,8 @@ func TestInstance(t *testing.T) {
 		require.NoError(t, err)
 		numberOfInstancesC, err := brokerStorage.Instances().GetNumberOfInstancesForGlobalAccountID("C")
 		require.NoError(t, err)
+		numberOfInstancesB, err := brokerStorage.Instances().GetNumberOfInstancesForGlobalAccountID("B")
+		require.NoError(t, err)
 
 		t.Logf("%+v", stats)
 
@@ -166,6 +170,7 @@ func TestInstance(t *testing.T) {
 		}, stats)
 		assert.Equal(t, 2, numberOfInstancesA)
 		assert.Equal(t, 1, numberOfInstancesC)
+		assert.Equal(t, 0, numberOfInstancesB)
 	})
 
 	t.Run("Should fetch instances along with their operations", func(t *testing.T) {
@@ -706,6 +711,7 @@ type instanceData struct {
 	subAccountID    string
 	expired         bool
 	trial           bool
+	deletedAt       time.Time
 }
 
 func fixInstance(testData instanceData) *internal.Instance {
@@ -746,7 +752,9 @@ func fixInstance(testData instanceData) *internal.Instance {
 	if testData.expired {
 		instance.ExpiredAt = ptr.Time(time.Now().Add(-10 * time.Hour))
 	}
-
+	if !testData.deletedAt.IsZero() {
+		instance.DeletedAt = testData.deletedAt
+	}
 	return &instance
 }
 

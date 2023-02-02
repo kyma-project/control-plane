@@ -94,6 +94,42 @@ func TestGetEndpoint_GetProvisioningInstance(t *testing.T) {
 	assert.Len(t, response.Metadata.Labels, 2)
 }
 
+func TestGetEndpoint_DoNotReturnInstanceWhereDeletedAtIsNotZero(t *testing.T) {
+	// given
+	st := storage.NewMemoryStorage()
+	cfg := broker.Config{
+		URL:                                     "https://test-broker.local",
+		EnableKubeconfigURLLabel:                true,
+		ShowTrialExpirationInfo:                 true,
+		SubaccountsIdsToShowTrialExpirationInfo: "test-saID",
+	}
+
+	const (
+		instanceID  = "cluster-test"
+		operationID = "operationID"
+	)
+	op := fixture.FixProvisioningOperation(operationID, instanceID)
+
+	instance := fixture.FixInstance(instanceID)
+	instance.DeletedAt = time.Now()
+
+	err := st.Operations().InsertOperation(op)
+	require.NoError(t, err)
+
+	err = st.Instances().Insert(instance)
+	require.NoError(t, err)
+
+	svc := broker.NewGetInstance(cfg, st.Instances(), st.Operations(), logrus.New())
+
+	// when
+	_, err = svc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
+
+	// then
+	assert.IsType(t, err, &apiresponses.FailureResponse{}, "Get request returned error of unexpected type")
+	apierr := err.(*apiresponses.FailureResponse)
+	assert.Equal(t, http.StatusNotFound, apierr.ValidatedStatusCode(nil), "Get request status code not matching")
+}
+
 func TestGetEndpoint_GetExpiredInstanceWithExpirationDetails(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
