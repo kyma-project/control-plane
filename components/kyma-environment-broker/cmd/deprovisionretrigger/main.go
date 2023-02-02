@@ -86,8 +86,7 @@ func newDeprovisionRetriggerService(cfg Config, brokerClient BrokerClient, insta
 }
 
 func (s *DeprovisionRetriggerService) PerformCleanup() error {
-	emptyFilter := dbmodel.InstanceFilter{}
-	allInstances, _, err := s.getInstances(emptyFilter)
+	allInstances, _, _, err := s.instanceStorage.List(dbmodel.InstanceFilter{})
 
 	if err != nil {
 		log.Error(fmt.Sprintf("while getting not completely deprovisioned instances: %s", err))
@@ -142,15 +141,6 @@ func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Inst
 	}
 	log.Infof("Deprovision instance for instanceId: %s accepted, operationId: %s", instance.InstanceID, operationId)
 	return nil
-}
-
-func (s *DeprovisionRetriggerService) getInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, error) {
-	instances, _, totalCount, err := s.instanceStorage.List(filter)
-	if err != nil {
-		return []internal.Instance{}, 0, err
-	}
-
-	return instances, totalCount, nil
 }
 
 func (s *DeprovisionRetriggerService) logInstances(instances []internal.Instance) {
