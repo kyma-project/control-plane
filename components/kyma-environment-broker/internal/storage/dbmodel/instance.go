@@ -35,6 +35,7 @@ type InstanceFilter struct {
 	States                       []InstanceState
 	Expired                      *bool
 	OnlyDeleted                  *bool
+	DeletionAttempted            *bool
 }
 
 type InstanceDTO struct {
