@@ -34,8 +34,6 @@ type DeprovisionRetriggerService struct {
 	brokerClient    BrokerClient
 }
 
-type instancePredicate func(internal.Instance) bool
-
 func main() {
 	time.Sleep(20 * time.Second)
 
@@ -87,36 +85,23 @@ func newDeprovisionRetriggerService(cfg Config, brokerClient BrokerClient, insta
 }
 
 func (s *DeprovisionRetriggerService) PerformCleanup() error {
-	allInstances, _, _, err := s.instanceStorage.List(dbmodel.InstanceFilter{})
+	notCompletelyDeletedFilter := dbmodel.InstanceFilter{DeletionAttempted: &[]bool{true}[0]}
+	instancesToDeprovisionAgain, _, _, err := s.instanceStorage.List(notCompletelyDeletedFilter)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("while getting not completely deprovisioned instances: %s", err))
 		return err
 	}
 
-	instancesToDeprovision, _ := s.filterInstances(allInstances,
-		func(instance internal.Instance) bool { return !instance.DeletedAt.IsZero() },
-	)
-
 	if s.cfg.DryRun {
-		s.logInstances(instancesToDeprovision)
-		log.Infof("Instances to retrigger deprovisioning: %d", len(instancesToDeprovision))
+		s.logInstances(instancesToDeprovisionAgain)
+		log.Infof("Instances to retrigger deprovisioning: %d", len(instancesToDeprovisionAgain))
 	} else {
-		deprovisioningAccepted, failuresCount := s.retriggerDeprovisioningForInstances(instancesToDeprovision)
-		log.Infof("Instances to retrigger deprovisioning: %d, accepted requests: %d, failed requests: %d", len(instancesToDeprovision), deprovisioningAccepted, failuresCount)
+		deprovisioningAccepted, failuresCount := s.retriggerDeprovisioningForInstances(instancesToDeprovisionAgain)
+		log.Infof("Instances to retrigger deprovisioning: %d, accepted requests: %d, failed requests: %d", len(instancesToDeprovisionAgain), deprovisioningAccepted, failuresCount)
 	}
 
 	return nil
-}
-
-func (s *DeprovisionRetriggerService) filterInstances(instances []internal.Instance, filter instancePredicate) ([]internal.Instance, int) {
-	var filteredInstances []internal.Instance
-	for _, instance := range instances {
-		if filter(instance) {
-			filteredInstances = append(filteredInstances, instance)
-		}
-	}
-	return filteredInstances, len(filteredInstances)
 }
 
 func (s *DeprovisionRetriggerService) retriggerDeprovisioningForInstances(instances []internal.Instance) (int, int) {
