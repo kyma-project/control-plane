@@ -18,7 +18,7 @@ RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main
 
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.16.2 as alpine
+FROM eu.gcr.io/kyma-project/external/alpine:3.17.1 as alpine
 
 WORKDIR /app
 
