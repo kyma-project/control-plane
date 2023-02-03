@@ -544,6 +544,9 @@ func NewUpdateOperation(operationID string, instance *Instance, updatingParams U
 	}
 
 	updatingParams.UpdateAutoScaler(&op.ProvisioningParameters.Parameters)
+	if updatingParams.MachineType != nil && *updatingParams.MachineType != "" {
+		op.ProvisioningParameters.Parameters.MachineType = updatingParams.MachineType
+	}
 
 	return op
 }
