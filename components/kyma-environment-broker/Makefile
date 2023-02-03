@@ -6,7 +6,7 @@ APP_SUBSCRIPTION_CLEANUP_NAME = kyma-environment-subscription-cleanup-job
 APP_TRIAL_CLEANUP_NAME = kyma-environment-trial-cleanup-job
 
 ENTRYPOINT = cmd/broker/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221017-733bfd36
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221215-c20ffd65
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
@@ -67,6 +67,7 @@ test-integration:
 		$(DOCKER_CREATE_OPTS) make test-integration-local
 
 testing-with-database-network:
+	@docker version
 	@echo testing-with-database-network
 	@docker network inspect $(TESTING_DB_NETWORK) >/dev/null 2>&1 || \
 	docker network create --driver bridge $(TESTING_DB_NETWORK)
