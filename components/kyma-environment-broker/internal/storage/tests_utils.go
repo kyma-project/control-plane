@@ -269,10 +269,6 @@ func SetupTestNetworkForDB(ctx context.Context) (cleanupFunc func(), err error) 
 		return func() {}, nil
 	}
 
-	if os.Getenv(EnvPipelineBuild) != "" {
-		return func() {}, fmt.Errorf("Docker network %s does not exist", DockerUserNetwork)
-	}
-
 	createdNetwork, err := createTestNetworkForDB(ctx)
 
 	if err != nil {
