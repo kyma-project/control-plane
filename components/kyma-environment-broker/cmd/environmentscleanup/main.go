@@ -8,10 +8,12 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
+	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -56,8 +58,20 @@ func main() {
 	shootClient := cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 
 	ctx := context.Background()
+
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
 	provisionerClient := provisioner.NewProvisionerClient(cfg.Provisioner.URL, cfg.Provisioner.QueryDumping)
+
+	clientCfg := clientcredentials.Config{
+		ClientID:     cfg.Broker.ClientID,
+		ClientSecret: cfg.Broker.ClientSecret,
+		TokenURL:     cfg.Broker.TokenURL,
+		Scopes:       []string{cfg.Broker.Scope},
+	}
+	httpClientOAuth := clientCfg.Client(ctx)
+	httpClientOAuth.Timeout = 30 * time.Second
+
+	brokerRuntimesClient := runtime.NewClient(cfg.Broker.URL, httpClientOAuth)
 
 	// create storage
 	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
@@ -70,7 +84,7 @@ func main() {
 
 	logger := log.New()
 
-	svc := environmentscleanup.NewService(shootClient, brokerClient, provisionerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
+	svc := environmentscleanup.NewService(shootClient, brokerClient, brokerRuntimesClient, provisionerClient, db.Instances(), logger, cfg.MaxAgeHours, cfg.LabelSelector)
 	err = svc.PerformCleanup()
 	if err != nil {
 		fatalOnError(err)

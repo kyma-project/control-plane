@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	run "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	mocks "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup/automock"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -38,6 +39,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 		pMock := &mocks.ProvisionerClient{}
 		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID3).Return("", nil)
 
@@ -52,7 +55,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		})
 		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -69,13 +72,15 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.
 			UnstructuredList{}, fmt.Errorf("failed to reach gardener"))
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
 		memoryStorage := storage.NewMemoryStorage()
 		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -90,6 +95,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -100,7 +107,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		})
 		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -118,6 +125,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("",
 			fmt.Errorf("failed to deprovision instance"))
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 		pMock := &mocks.ProvisionerClient{}
 
 		memoryStorage := storage.NewMemoryStorage()
@@ -137,7 +146,7 @@ func TestService_PerformCleanup(t *testing.T) {
 
 		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -154,6 +163,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 		pMock := &mocks.ProvisionerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", nil)
 		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", fmt.Errorf("some error"))
@@ -167,7 +178,7 @@ func TestService_PerformCleanup(t *testing.T) {
 
 		logger := logrus.New()
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()
@@ -218,6 +229,8 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
@@ -233,7 +246,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		logger.SetOutput(&actualLog)
 		shouldContain := "has no runtime-id annotation"
 
-		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
 		// when
 		err := svc.PerformCleanup()

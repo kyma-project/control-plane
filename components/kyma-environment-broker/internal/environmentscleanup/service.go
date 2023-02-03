@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
+	run "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,12 @@ const (
 //go:generate mockery --name=GardenerClient --output=automock
 type GardenerClient interface {
 	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
+	Get(ctx context.Context, name string, options v1.GetOptions, subresources ...string) (*unstructured.Unstructured, error)
+}
+
+//go:generate mockery --name=BrokerRuntimesClient --output=automock
+type BrokerRuntimesClient interface {
+	ListRuntimes(params run.ListParameters) (run.RuntimesPage, error)
 }
 
 //go:generate mockery --name=BrokerClient --output=automock
@@ -40,6 +47,7 @@ type ProvisionerClient interface {
 type Service struct {
 	gardenerService   GardenerClient
 	brokerService     BrokerClient
+	brokerRuntimes    run.Client
 	instanceStorage   storage.Instances
 	logger            *log.Logger
 	MaxShootAge       time.Duration
@@ -52,10 +60,11 @@ type runtime struct {
 	AccountID string
 }
 
-func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provisionerClient ProvisionerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
+func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, brokerRuntimesClient run.Client, provisionerClient ProvisionerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
 	return &Service{
 		gardenerService:   gardenerClient,
 		brokerService:     brokerClient,
+		brokerRuntimes:    brokerRuntimesClient,
 		instanceStorage:   instanceStorage,
 		logger:            logger,
 		MaxShootAge:       maxShootAge,
@@ -65,70 +74,149 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provis
 }
 
 func (s *Service) PerformCleanup() error {
+	// err := s.cleanupByRuntimes()
+	// if err != nil {
+	// 	s.logger.Error(fmt.Errorf("while cleanning up stale shoots: %w", err))
+	// 	return err
+	// }
 
-	staleShoots, err := s.getStaleShoots(s.LabelSelector)
+	return s.cleanupByShoots()
+}
+
+func (s *Service) cleanupByRuntimes() error {
+	runtimes, err := s.getStaleRuntimes(s.LabelSelector)
 	if err != nil {
 		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
 		return err
 	}
 
-	runtimesToDelete := s.getRuntimes(staleShoots)
+	return s.cleanupRuntimes(runtimes)
 
-	s.logger.Infof("Runtimes to process: %+v\n", runtimesToDelete)
+}
 
-	if len(runtimesToDelete) == 0 {
+func (s *Service) cleanupByShoots() error {
+	runtimesToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
+	if err != nil {
+		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
+		return err
+	}
+
+	return s.cleanupRuntimes(runtimesToDelete)
+}
+
+func (s *Service) cleanupRuntimes(runtimes []runtime) error {
+	s.logger.Infof("Runtimes to process: %+v\n", runtimes)
+
+	if len(runtimes) == 0 {
 		return nil
 	}
 
-	return s.cleanUp(runtimesToDelete)
+	return s.cleanUp(runtimes)
 }
 
-func (s *Service) getStaleShoots(labelSelector string) ([]unstructured.Unstructured, error) {
+func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, error) {
 	opts := v1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
-		return []unstructured.Unstructured{}, fmt.Errorf("while listing Gardener shoots: %w", err)
+		return []runtime{}, fmt.Errorf("while listing Gardener shoots: %w", err)
 	}
 
-	var shoots []unstructured.Unstructured
+	var runtimes []runtime
 	for _, shoot := range shootList.Items {
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
 		if shootAge.Hours() >= s.MaxShootAge.Hours() {
 			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
-			shoots = append(shoots, shoot)
+			staleRuntime, err := s.shootToRuntime(shoot)
+			if err != nil {
+				s.logger.Error(err)
+				continue
+			}
+
+			runtimes = append(runtimes, *staleRuntime)
 		}
 	}
 
-	return shoots, nil
+	return runtimes, nil
+}
+
+func (s *Service) getStaleRuntimes(labelSelector string) ([]runtime, error) {
+	page := 0
+	var stale []runtime
+	for {
+		runtimesPage, err := s.brokerRuntimes.ListRuntimes(run.ListParameters{Page: page, PageSize: 3})
+		if err != nil {
+			return []runtime{}, fmt.Errorf("while listing Broker shoots: %w", err)
+		}
+
+		if runtimesPage.Count <= 0 {
+			break
+		}
+
+		for _, loadedRuntime := range runtimesPage.Data {
+			createdAt := loadedRuntime.Status.Provisioning.CreatedAt
+			shootAge := time.Since(createdAt).Hours()
+			maxAge := s.MaxShootAge.Hours()
+
+			if shootAge >= maxAge {
+				log.Infof("Runtime %q [shoot: %q] is older than %f hours with age: %f hours", loadedRuntime.RuntimeID, loadedRuntime.ShootName, maxAge, shootAge)
+
+				shoot, err := s.gardenerService.Get(context.Background(), loadedRuntime.ShootName, v1.GetOptions{}, "shoot")
+				// TODO: check not found error
+				if err != nil {
+					return []runtime{}, fmt.Errorf("while listing Gardener shoots: %w", err)
+				}
+
+				_, keep := shoot.GetLabels()["owner.do-not-delete"]
+				if !keep {
+					stale = append(stale, runtime{
+						loadedRuntime.RuntimeID,
+						loadedRuntime.SubAccountID,
+					})
+				}
+			}
+		}
+
+		page += 1
+	}
+
+	return stale, nil
 }
 
 func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
-	var runtimes []runtime
+	var stale []runtime
 	for _, st := range shoots {
-		shoot := gardener.Shoot{st}
-		runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
-		if !ok {
-			s.logger.Error(fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName()))
+		runtime, err := s.shootToRuntime(st)
+		if err != nil {
+			s.logger.Error(err)
 			continue
 		}
 
-		accountID, ok := shoot.GetLabels()[shootLabelAccountId]
-		if !ok {
-			s.logger.Error(fmt.Errorf("shoot %q has no account label", shoot.GetName()))
-			continue
-		}
-
-		runtimes = append(runtimes, runtime{
-			ID:        runtimeID,
-			AccountID: accountID,
-		})
+		stale = append(stale, *runtime)
 	}
 
-	return runtimes
+	return stale
+}
+
+func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error) {
+	shoot := gardener.Shoot{st}
+	runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName())
+	}
+
+	accountID, ok := shoot.GetLabels()[shootLabelAccountId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no account label", shoot.GetName())
+	}
+
+	return &runtime{
+		ID:        runtimeID,
+		AccountID: accountID,
+	}, nil
 }
 
 func (s *Service) cleanUp(runtimesToDelete []runtime) error {

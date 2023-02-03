@@ -19,6 +19,14 @@ type Client interface {
 	ListRuntimes(params ListParameters) (RuntimesPage, error)
 }
 
+type ClientConfig struct {
+	URL          string
+	TokenURL     string
+	ClientID     string
+	ClientSecret string
+	Scope        string
+}
+
 type client struct {
 	url        string
 	httpClient *http.Client
