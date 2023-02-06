@@ -35,8 +35,6 @@ type DeprovisionRetriggerService struct {
 }
 
 func main() {
-	time.Sleep(20 * time.Second)
-
 	log.SetFormatter(&log.JSONFormatter{})
 	log.Info("Starting deprovision retrigger job!")
 
