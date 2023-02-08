@@ -111,12 +111,12 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.0.0-20220919232410-f2f64ebce3c1 // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
-	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
@@ -146,9 +146,11 @@ replace (
 	github.com/docker/docker => github.com/docker/docker v20.10.18+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
-	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
-	golang.org/x/text => golang.org/x/text v0.3.8
+	golang.org/x/crypto => golang.org/x/crypto v0.5.0
+	golang.org/x/net => golang.org/x/net v0.5.0
+	golang.org/x/sys => golang.org/x/sys v0.5.0
+	golang.org/x/text => golang.org/x/text v0.6.0
+	golang.org/x/tools => golang.org/x/tools v0.5.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.3
 	k8s.io/apiserver => k8s.io/apiserver v0.25.3
 	k8s.io/client-go => k8s.io/client-go v0.25.3
