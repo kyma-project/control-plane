@@ -24,8 +24,26 @@ resources: {}
 
 nodeSelector: {}
 
-securityContext:
-  runAsUser: 1001
+podSecurityContext:
+  fsGroup: 10001
+  runAsUser: 10001
+  runAsGroup: 10001
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - NET_BIND_SERVICE
+  seLinuxOptions:
+    type: container_t
+  procMount: default
 
 podAnnotations:
   sidecar.istio.io/inject: "true"

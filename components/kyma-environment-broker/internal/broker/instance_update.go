@@ -242,6 +242,9 @@ func (b *UpdateEndpoint) processUpdateParameters(instance *internal.Instance, de
 	if params.UpdateAutoScaler(&instance.Parameters.Parameters) {
 		updateStorage = append(updateStorage, "Auto Scaler parameters")
 	}
+	if params.MachineType != nil && *params.MachineType != "" {
+		instance.Parameters.Parameters.MachineType = params.MachineType
+	}
 	if len(updateStorage) > 0 {
 		if err := wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
 			instance, err = b.instanceStorage.Update(*instance)

@@ -58,6 +58,12 @@ func (s *RemoveInstanceStep) Run(operation internal.Operation, log logrus.FieldL
 		operation, backoff, _ = s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
 			operation.RuntimeID = ""
 		}, log)
+	} else if operation.ExcutedButNotCompleted != nil {
+		log.Info("Marking the instance needs to retry some steps")
+		backoff = s.markInstanceNeedsRetrySomeSteps(operation.InstanceID, log)
+		if backoff != 0 {
+			return operation, backoff, nil
+		}
 	} else {
 		log.Info("Removing the instance permanently")
 		backoff = s.removeInstancePermanently(operation.InstanceID, log)
@@ -99,6 +105,29 @@ func (s RemoveInstanceStep) removeInstancePermanently(instanceID string, log log
 	if err != nil {
 		log.Errorf("unable to remove instance %s from the storage: %s", instanceID, err)
 		return 10 * time.Second
+	}
+
+	return 0
+}
+
+func (s RemoveInstanceStep) markInstanceNeedsRetrySomeSteps(instanceID string, log logrus.FieldLogger) time.Duration {
+	backoff := time.Second
+
+	instance, err := s.instanceStorage.GetByID(instanceID)
+	if dberr.IsNotFound(err) {
+		log.Warnf("instance %s not found", instanceID)
+		return 0
+	}
+	if err != nil {
+		log.Errorf("unable to get instance %s from the storage: %s", instanceID, err)
+		return backoff
+	}
+
+	instance.DeletedAt = time.Now()
+	_, err = s.instanceStorage.Update(*instance)
+	if err != nil {
+		log.Errorf("unable to update instance %s in the storage: %s", instanceID, err)
+		return backoff
 	}
 
 	return 0

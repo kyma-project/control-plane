@@ -109,6 +109,7 @@ func (s *UpgradeShootStep) createUpgradeShootInput(operation internal.Operation)
 			AutoScalerMin:  operation.UpdatingParameters.AutoScalerMin,
 			MaxSurge:       operation.UpdatingParameters.MaxSurge,
 			MaxUnavailable: operation.UpdatingParameters.MaxUnavailable,
+			MachineType:    operation.UpdatingParameters.MachineType,
 		},
 		Administrators: fullInput.Administrators,
 	}

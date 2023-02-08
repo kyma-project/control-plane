@@ -3,6 +3,8 @@ package azure
 import (
 	"fmt"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/hyperscaler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
@@ -19,7 +21,7 @@ func mapRegion(credentials hyperscaler.Credentials, parameters internal.Provisio
 	region := *(parameters.Parameters.Region)
 	switch parameters.PlanID {
 	case broker.AzurePlanID, broker.AzureLitePlanID:
-		if !isInList(broker.AzureRegions(internal.IsEURestrictedAccess(parameters.PlatformRegion)), region) {
+		if !isInList(broker.AzureRegions(euaccess.IsEURestrictedAccess(parameters.PlatformRegion)), region) {
 			return "", fmt.Errorf("supplied region \"%v\" is not a valid region for Azure", region)
 		}
 
