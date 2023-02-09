@@ -12,6 +12,9 @@ global:
     kyma_environment_trial_cleanup_job:
       dir:
       version: "PR-2337"
+    kyma_environment_deprovision_retrigger_job:
+      dir:
+      version: "PR-2449"
 
 deployment:
   replicaCount: 1
@@ -267,6 +270,10 @@ trialCleanup:
   schedule: "0,15,30,45 * * * *"
   dryRun: true
   expirationPeriod: 336h
+
+deprovisionRetrigger:
+  schedule: "0 2 * * *"
+  dryRun: true
 
 serviceMonitor:
   scrapeTimeout: 10s

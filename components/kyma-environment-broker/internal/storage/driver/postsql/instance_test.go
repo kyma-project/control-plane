@@ -679,6 +679,164 @@ func TestInstance(t *testing.T) {
 		require.Equal(t, inst2.InstanceID, out[0].InstanceID)
 		require.Equal(t, inst3.InstanceID, out[1].InstanceID)
 	})
+
+	t.Run("Should list regular instances and not completely deprovisioned instances", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// populate database with samples
+		inst1 := fixInstance(instanceData{val: "inst1", deletedAt: time.Now()})
+		inst2 := fixInstance(instanceData{val: "inst2", trial: true, expired: true, deletedAt: time.Now()})
+		inst3 := fixInstance(instanceData{val: "inst3", trial: true, deletedAt: time.Time{}})
+		inst4 := fixInstance(instanceData{val: "inst4", deletedAt: time.Now()})
+		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
+
+		for _, i := range fixInstances {
+			err = brokerStorage.Instances().Insert(i)
+			require.NoError(t, err)
+		}
+
+		// inst1 is in succeeded state
+		provOp1 := fixProvisionOperation("inst1")
+		provOp1.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp1)
+		require.NoError(t, err)
+
+		// inst2 is in error state
+		provOp2 := fixProvisionOperation("inst2")
+		provOp2.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp2)
+		require.NoError(t, err)
+		upgrOp2 := fixUpgradeKymaOperation("inst2")
+		upgrOp2.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp2.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp2)
+		require.NoError(t, err)
+
+		// inst3 is in suspended state
+		provOp3 := fixProvisionOperation("inst3")
+		provOp3.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp3)
+		require.NoError(t, err)
+		upgrOp3 := fixUpgradeKymaOperation("inst3")
+		upgrOp3.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp3.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp3)
+		require.NoError(t, err)
+		deprovOp3 := fixDeprovisionOperation("inst3")
+		deprovOp3.Temporary = true
+		deprovOp3.State = domain.Succeeded
+		deprovOp3.CreatedAt = deprovOp3.CreatedAt.Add(2 * time.Minute)
+		err = brokerStorage.Operations().InsertDeprovisioningOperation(deprovOp3)
+		require.NoError(t, err)
+
+		// inst4 is in failed state
+		provOp4 := fixProvisionOperation("inst4")
+		provOp4.State = domain.Failed
+		err = brokerStorage.Operations().InsertOperation(provOp4)
+		require.NoError(t, err)
+
+		// when
+		emptyFilter := dbmodel.InstanceFilter{}
+		out, count, _, err := brokerStorage.Instances().List(emptyFilter)
+		var notCompletelyDeleted int
+		for _, instance := range out {
+			if !instance.DeletedAt.IsZero() {
+				notCompletelyDeleted += 1
+			}
+		}
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 4, count)
+		require.Equal(t, 3, notCompletelyDeleted)
+	})
+
+	t.Run("Should list not completely deprovisioned instances", func(t *testing.T) {
+		containerCleanupFunc, cfg, err := storage.InitTestDBContainer(t.Logf, ctx, "test_DB_1")
+		require.NoError(t, err)
+		defer containerCleanupFunc()
+
+		tablesCleanupFunc, err := storage.InitTestDBTables(t, cfg.ConnectionURL())
+		require.NoError(t, err)
+		defer tablesCleanupFunc()
+
+		cipher := storage.NewEncrypter(cfg.SecretKey)
+		brokerStorage, _, err := storage.NewFromConfig(cfg, events.Config{}, cipher, logrus.StandardLogger())
+		require.NoError(t, err)
+		require.NotNil(t, brokerStorage)
+
+		// populate database with samples
+		inst1 := fixInstance(instanceData{val: "inst1", deletedAt: time.Now()})
+		inst2 := fixInstance(instanceData{val: "inst2", trial: true, expired: true, deletedAt: time.Now()})
+		inst3 := fixInstance(instanceData{val: "inst3", trial: true, deletedAt: time.Time{}})
+		inst4 := fixInstance(instanceData{val: "inst4", deletedAt: time.Now()})
+		fixInstances := []internal.Instance{*inst1, *inst2, *inst3, *inst4}
+
+		for _, i := range fixInstances {
+			err = brokerStorage.Instances().Insert(i)
+			require.NoError(t, err)
+		}
+
+		// inst1 is in succeeded state
+		provOp1 := fixProvisionOperation("inst1")
+		provOp1.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp1)
+		require.NoError(t, err)
+
+		// inst2 is in error state
+		provOp2 := fixProvisionOperation("inst2")
+		provOp2.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp2)
+		require.NoError(t, err)
+		upgrOp2 := fixUpgradeKymaOperation("inst2")
+		upgrOp2.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp2.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp2)
+		require.NoError(t, err)
+
+		// inst3 is in suspended state
+		provOp3 := fixProvisionOperation("inst3")
+		provOp3.State = domain.Succeeded
+		err = brokerStorage.Operations().InsertOperation(provOp3)
+		require.NoError(t, err)
+		upgrOp3 := fixUpgradeKymaOperation("inst3")
+		upgrOp3.CreatedAt = upgrOp2.CreatedAt.Add(time.Minute)
+		upgrOp3.State = domain.Failed
+		err = brokerStorage.Operations().InsertUpgradeKymaOperation(upgrOp3)
+		require.NoError(t, err)
+		deprovOp3 := fixDeprovisionOperation("inst3")
+		deprovOp3.Temporary = true
+		deprovOp3.State = domain.Succeeded
+		deprovOp3.CreatedAt = deprovOp3.CreatedAt.Add(2 * time.Minute)
+		err = brokerStorage.Operations().InsertDeprovisioningOperation(deprovOp3)
+		require.NoError(t, err)
+
+		// inst4 is in failed state
+		provOp4 := fixProvisionOperation("inst4")
+		provOp4.State = domain.Failed
+		err = brokerStorage.Operations().InsertOperation(provOp4)
+		require.NoError(t, err)
+
+		// when
+		notCompletelyDeletedFilter := dbmodel.InstanceFilter{DeletionAttempted: &[]bool{true}[0]}
+
+		_, notCompletelyDeleted, _, err := brokerStorage.Instances().List(notCompletelyDeletedFilter)
+
+		// then
+		require.NoError(t, err)
+		require.Equal(t, 3, notCompletelyDeleted)
+	})
 }
 
 func assertInstanceByIgnoreTime(t *testing.T, want, got internal.Instance) {

@@ -818,6 +818,14 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		}
 	}
 
+	if filter.DeletionAttempted != nil {
+		if *filter.DeletionAttempted {
+			stmt.Where("instances.deleted_at != '0001-01-01T00:00:00.000Z'")
+		}
+		if !*filter.DeletionAttempted {
+			stmt.Where("instances.deleted_at = '0001-01-01T00:00:00.000Z'")
+		}
+	}
 }
 
 func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {
