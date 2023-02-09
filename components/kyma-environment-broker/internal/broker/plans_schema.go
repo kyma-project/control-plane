@@ -21,7 +21,6 @@ type ProvisioningProperties struct {
 	ShootName   *Type    `json:"shootName,omitempty"`
 	ShootDomain *Type    `json:"shootDomain,omitempty"`
 	Region      *Type    `json:"region,omitempty"`
-	MachineType *Type    `json:"machineType,omitempty"`
 }
 
 type UpdateProperties struct {
@@ -30,6 +29,7 @@ type UpdateProperties struct {
 	AutoScalerMax  *Type     `json:"autoScalerMax,omitempty"`
 	OIDC           *OIDCType `json:"oidc,omitempty"`
 	Administrators *Type     `json:"administrators,omitempty"`
+	MachineType    *Type     `json:"machineType,omitempty"`
 }
 
 func (up *UpdateProperties) IncludeAdditional() {
@@ -142,16 +142,16 @@ func NewProvisioningProperties(machineTypesDisplay map[string]string, machineTyp
 				Default:     20,
 				Description: "Specifies the maximum number of virtual machines to create",
 			},
+			MachineType: &Type{
+				Type:            "string",
+				Enum:            ToInterfaceSlice(machineTypes),
+				EnumDisplayName: machineTypesDisplay,
+			},
 		},
 		Name: NameProperty(),
 		Region: &Type{
 			Type: "string",
 			Enum: ToInterfaceSlice(regions),
-		},
-		MachineType: &Type{
-			Type:            "string",
-			Enum:            ToInterfaceSlice(machineTypes),
-			EnumDisplayName: machineTypesDisplay,
 		},
 	}
 
