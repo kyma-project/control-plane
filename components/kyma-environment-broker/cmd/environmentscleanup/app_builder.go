@@ -33,12 +33,11 @@ type config struct {
 }
 
 type AppBuilder struct {
-	cfg                 config
-	shootClient         dynamic.ResourceInterface
-	brokerRuntimeClient environmentscleanup.BrokerRuntimesClient
-	db                  storage.BrokerStorage
-	conn                *dbr.Connection
-	logger              *logrus.Logger
+	cfg         config
+	shootClient dynamic.ResourceInterface
+	db          storage.BrokerStorage
+	conn        *dbr.Connection
+	logger      *logrus.Logger
 
 	brokerClient      *broker.Client
 	provisionerClient provisioner.Client
@@ -118,7 +117,6 @@ func (b *AppBuilder) Create() Job {
 	return environmentscleanup.NewService(
 		b.shootClient,
 		b.brokerClient,
-		b.brokerRuntimeClient,
 		b.provisionerClient,
 		b.db.Instances(),
 		b.logger,
