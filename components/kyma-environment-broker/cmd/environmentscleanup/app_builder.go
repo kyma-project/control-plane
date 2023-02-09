@@ -8,7 +8,6 @@ import (
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gocraft/dbr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/environmentscleanup"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
@@ -83,7 +82,6 @@ func (b *AppBuilder) withBrokerClient() {
 	}
 	httpClientOAuth := clientCfg.Client(ctx)
 	httpClientOAuth.Timeout = 30 * time.Second
-	b.brokerRuntimeClient = runtime.NewClient(b.cfg.Broker.URL, httpClientOAuth)
 }
 
 func (b *AppBuilder) withStorage() {
