@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "_controlsOrder": [
+    "machineType",
     "autoScalerMin",
     "autoScalerMax"
   ],
@@ -16,6 +17,21 @@
       "description": "Specifies the minimum number of virtual machines to create",
       "minimum": 2,
       "type": "integer"
+    },
+    "machineType": {
+      "enum": [
+        "m5.xlarge",
+        "m5.2xlarge",
+        "m5.4xlarge",
+        "m5.8xlarge",
+        "m5.12xlarge",
+        "m6i.xlarge",
+        "m6i.2xlarge",
+        "m6i.4xlarge",
+        "m6i.8xlarge",
+        "m6i.12xlarge"
+      ],
+      "type": "string"
     }
   },
   "required": [],
