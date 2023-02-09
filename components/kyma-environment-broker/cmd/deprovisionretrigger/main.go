@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"os"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
@@ -70,8 +68,6 @@ func main() {
 	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	fatalOnError(err)
-
-	time.Sleep(5 * time.Second)
 }
 
 func newDeprovisionRetriggerService(cfg Config, brokerClient BrokerClient, instances storage.Instances) *DeprovisionRetriggerService {
@@ -109,8 +105,6 @@ func (s *DeprovisionRetriggerService) retriggerDeprovisioningForInstances(instan
 		if err != nil {
 			// just counting, logging and ignoring errors
 			failuresCount += 1
-			log.Error(fmt.Sprintf("while sending deprovision request for instanceID: %s, error: %s", instance.InstanceID, err))
-			continue
 		}
 	}
 	return len(instances) - failuresCount, failuresCount
