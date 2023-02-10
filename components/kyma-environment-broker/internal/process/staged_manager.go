@@ -164,6 +164,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 	logOperation.Infof("Operation succeeded")
 
 	processedOperation.State = domain.Succeeded
+	processedOperation.Description = "Processing finished"
 	m.publisher.Publish(context.TODO(), OperationSucceeded{
 		Operation: processedOperation,
 	})
