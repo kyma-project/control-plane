@@ -5,12 +5,12 @@ import "github.com/kyma-project/control-plane/components/kyma-environment-broker
 func main() {
 	builder := setup.NewAppBuilder()
 
-	builder.withConfig()
-	builder.withGardenerClient()
-	builder.withBrokerClient()
-	builder.withProvisionerClient()
-	builder.withStorage()
-	builder.withLogger()
+	builder.WithConfig()
+	builder.WithGardenerClient()
+	builder.WithBrokerClient()
+	builder.WithProvisionerClient()
+	builder.WithStorage()
+	builder.WithLogger()
 
 	defer builder.Cleanup()
 

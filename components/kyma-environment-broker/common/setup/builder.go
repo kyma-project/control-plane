@@ -56,7 +56,7 @@ func NewAppBuilder() Builder {
 	return Builder{}
 }
 
-func (b *Builder) withConfig() {
+func (b *Builder) WithConfig() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
@@ -64,7 +64,7 @@ func (b *Builder) withConfig() {
 	}
 }
 
-func (b *Builder) withGardenerClient() {
+func (b *Builder) WithGardenerClient() {
 	clusterCfg, err := gardener.NewGardenerClusterConfig(b.cfg.Gardener.KubeconfigPath)
 	if err != nil {
 		FatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
@@ -77,7 +77,7 @@ func (b *Builder) withGardenerClient() {
 	b.gardenerClient = cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 }
 
-func (b *Builder) withBrokerClient() {
+func (b *Builder) WithBrokerClient() {
 	ctx := context.Background()
 	b.brokerClient = broker.NewClient(ctx, b.cfg.Broker)
 
@@ -91,11 +91,11 @@ func (b *Builder) withBrokerClient() {
 	httpClientOAuth.Timeout = 30 * time.Second
 }
 
-func (b *Builder) withProvisionerClient() {
+func (b *Builder) WithProvisionerClient() {
 	b.provisionerClient = provisioner.NewProvisionerClient(b.cfg.Provisioner.URL, b.cfg.Provisioner.QueryDumping)
 }
 
-func (b *Builder) withStorage() {
+func (b *Builder) WithStorage() {
 	// Init Storage
 	cipher := storage.NewEncrypter(b.cfg.Database.SecretKey)
 	var err error
@@ -108,7 +108,7 @@ func (b *Builder) withStorage() {
 
 }
 
-func (b *Builder) withLogger() {
+func (b *Builder) WithLogger() {
 	b.logger = log.New()
 }
 
