@@ -1,4 +1,4 @@
-package main
+package setup
 
 import (
 	"context"
@@ -31,12 +31,17 @@ type config struct {
 	Provisioner   provisionerConfig
 }
 
-type AppBuilder struct {
-	cfg         config
-	shootClient dynamic.ResourceInterface
-	db          storage.BrokerStorage
-	conn        *dbr.Connection
-	logger      *logrus.Logger
+type provisionerConfig struct {
+	URL          string `envconfig:"default=kcp-provisioner:3000"`
+	QueryDumping bool   `envconfig:"default=false"`
+}
+
+type Builder struct {
+	cfg            config
+	gardenerClient dynamic.ResourceInterface
+	db             storage.BrokerStorage
+	conn           *dbr.Connection
+	logger         *logrus.Logger
 
 	brokerClient      *broker.Client
 	provisionerClient provisioner.Client
@@ -46,17 +51,20 @@ type Job interface {
 	Run() error
 }
 
-func NewAppBuilder() AppBuilder {
+func NewAppBuilder() Builder {
+
+	return Builder{}
+}
+
+func (b *Builder) withConfig() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
 		FatalOnError(fmt.Errorf("while loading cleanup config: %w", err))
 	}
-
-	return AppBuilder{}
 }
 
-func (b *AppBuilder) withGardenerClient() {
+func (b *Builder) withGardenerClient() {
 	clusterCfg, err := gardener.NewGardenerClusterConfig(b.cfg.Gardener.KubeconfigPath)
 	if err != nil {
 		FatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
@@ -66,13 +74,12 @@ func (b *AppBuilder) withGardenerClient() {
 		FatalOnError(fmt.Errorf("while creating Gardener client: %w", err))
 	}
 	gardenerNamespace := fmt.Sprintf("garden-%s", b.cfg.Gardener.Project)
-	b.shootClient = cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
+	b.gardenerClient = cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 }
 
-func (b *AppBuilder) withBrokerClient() {
+func (b *Builder) withBrokerClient() {
 	ctx := context.Background()
 	b.brokerClient = broker.NewClient(ctx, b.cfg.Broker)
-	b.provisionerClient = provisioner.NewProvisionerClient(b.cfg.Provisioner.URL, b.cfg.Provisioner.QueryDumping)
 
 	clientCfg := clientcredentials.Config{
 		ClientID:     b.cfg.Broker.ClientID,
@@ -84,7 +91,11 @@ func (b *AppBuilder) withBrokerClient() {
 	httpClientOAuth.Timeout = 30 * time.Second
 }
 
-func (b *AppBuilder) withStorage() {
+func (b *Builder) withProvisionerClient() {
+	b.provisionerClient = provisioner.NewProvisionerClient(b.cfg.Provisioner.URL, b.cfg.Provisioner.QueryDumping)
+}
+
+func (b *Builder) withStorage() {
 	// Init Storage
 	cipher := storage.NewEncrypter(b.cfg.Database.SecretKey)
 	var err error
@@ -95,10 +106,13 @@ func (b *AppBuilder) withStorage() {
 	dbStatsCollector := sqlstats.NewStatsCollector("broker", b.conn)
 	prometheus.MustRegister(dbStatsCollector)
 
+}
+
+func (b *Builder) withLogger() {
 	b.logger = log.New()
 }
 
-func (b *AppBuilder) Cleanup() {
+func (b *Builder) Cleanup() {
 	err := b.conn.Close()
 	if err != nil {
 		FatalOnError(err)
@@ -111,9 +125,9 @@ func (b *AppBuilder) Cleanup() {
 	}
 }
 
-func (b *AppBuilder) Create() Job {
+func (b *Builder) Create() Job {
 	return environmentscleanup.NewService(
-		b.shootClient,
+		b.gardenerClient,
 		b.brokerClient,
 		b.provisionerClient,
 		b.db.Instances(),
