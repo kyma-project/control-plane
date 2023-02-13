@@ -23,6 +23,8 @@ spec:
           containers:
             - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_trial_cleanup_job.dir }}kyma-environment-trial-cleanup-job:{{ .Values.global.images.kyma_environment_trial_cleanup_job.version }}"
               name: trial-cleanup-job
+              command:
+                - /bin/trialcleanup
               env:
                 {{if eq .Values.global.database.embedded.enabled true}}
                 - name: DATABASE_EMBEDDED
