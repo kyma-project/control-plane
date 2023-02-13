@@ -52,7 +52,6 @@ type App interface {
 }
 
 func NewAppBuilder() AppBuilder {
-
 	return AppBuilder{}
 }
 
