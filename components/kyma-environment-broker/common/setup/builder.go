@@ -47,7 +47,7 @@ type AppBuilder struct {
 	provisionerClient provisioner.Client
 }
 
-type Job interface {
+type App interface {
 	Run() error
 }
 
@@ -125,7 +125,7 @@ func (b *AppBuilder) Cleanup() {
 	}
 }
 
-func (b *AppBuilder) Create() Job {
+func (b *AppBuilder) Create() App {
 	return environmentscleanup.NewService(
 		b.gardenerClient,
 		b.brokerClient,
