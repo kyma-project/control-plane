@@ -64,6 +64,10 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provis
 	}
 }
 
+func (s *Service) Run() error {
+	return s.PerformCleanup()
+}
+
 func (s *Service) PerformCleanup() error {
 
 	staleShoots, err := s.getStaleShoots(s.LabelSelector)
