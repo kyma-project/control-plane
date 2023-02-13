@@ -36,7 +36,7 @@ type provisionerConfig struct {
 	QueryDumping bool   `envconfig:"default=false"`
 }
 
-type Builder struct {
+type AppBuilder struct {
 	cfg            config
 	gardenerClient dynamic.ResourceInterface
 	db             storage.BrokerStorage
@@ -51,12 +51,12 @@ type Job interface {
 	Run() error
 }
 
-func NewAppBuilder() Builder {
+func NewAppBuilder() AppBuilder {
 
-	return Builder{}
+	return AppBuilder{}
 }
 
-func (b *Builder) WithConfig() {
+func (b *AppBuilder) WithConfig() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	if err != nil {
@@ -64,7 +64,7 @@ func (b *Builder) WithConfig() {
 	}
 }
 
-func (b *Builder) WithGardenerClient() {
+func (b *AppBuilder) WithGardenerClient() {
 	clusterCfg, err := gardener.NewGardenerClusterConfig(b.cfg.Gardener.KubeconfigPath)
 	if err != nil {
 		FatalOnError(fmt.Errorf("while creating Gardener cluster config: %w", err))
@@ -77,7 +77,7 @@ func (b *Builder) WithGardenerClient() {
 	b.gardenerClient = cli.Resource(gardener.ShootResource).Namespace(gardenerNamespace)
 }
 
-func (b *Builder) WithBrokerClient() {
+func (b *AppBuilder) WithBrokerClient() {
 	ctx := context.Background()
 	b.brokerClient = broker.NewClient(ctx, b.cfg.Broker)
 
@@ -91,11 +91,11 @@ func (b *Builder) WithBrokerClient() {
 	httpClientOAuth.Timeout = 30 * time.Second
 }
 
-func (b *Builder) WithProvisionerClient() {
+func (b *AppBuilder) WithProvisionerClient() {
 	b.provisionerClient = provisioner.NewProvisionerClient(b.cfg.Provisioner.URL, b.cfg.Provisioner.QueryDumping)
 }
 
-func (b *Builder) WithStorage() {
+func (b *AppBuilder) WithStorage() {
 	// Init Storage
 	cipher := storage.NewEncrypter(b.cfg.Database.SecretKey)
 	var err error
@@ -108,11 +108,11 @@ func (b *Builder) WithStorage() {
 
 }
 
-func (b *Builder) WithLogger() {
+func (b *AppBuilder) WithLogger() {
 	b.logger = log.New()
 }
 
-func (b *Builder) Cleanup() {
+func (b *AppBuilder) Cleanup() {
 	err := b.conn.Close()
 	if err != nil {
 		FatalOnError(err)
@@ -125,7 +125,7 @@ func (b *Builder) Cleanup() {
 	}
 }
 
-func (b *Builder) Create() Job {
+func (b *AppBuilder) Create() Job {
 	return environmentscleanup.NewService(
 		b.gardenerClient,
 		b.brokerClient,
