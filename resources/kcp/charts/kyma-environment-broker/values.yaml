@@ -14,7 +14,7 @@ global:
       version: "PR-2337"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2449"
+      version: "PR-2482"
 
 deployment:
   replicaCount: 1
