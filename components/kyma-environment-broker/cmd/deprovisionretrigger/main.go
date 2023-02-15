@@ -130,8 +130,7 @@ func (s *DeprovisionRetriggerService) logInstances(instances []internal.Instance
 
 func fatalOnError(err error) {
 	if err != nil {
-		// temporarily we exit with 0 to avoid any side effects - we ignore all errors only logging those
-		//log.Fatal(err)
+		// exit with 0 to avoid any side effects - we ignore all errors only logging those
 		log.Error(err)
 		os.Exit(0)
 	}
