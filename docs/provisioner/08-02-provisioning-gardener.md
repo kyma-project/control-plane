@@ -138,10 +138,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "1.24.5"
+              version: "2.12.0"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
-                { component: "compass-runtime-agent", namespace: "compass-system" }
+                { component: "compass-runtime-agent", namespace: "kyma-system" }
                 {
                   component: "{KYMA_COMPONENT_NAME}"
                   namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
@@ -235,10 +235,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "1.24.5"
+              version: "2.12.0"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
-                { component: "compass-runtime-agent", namespace: "compass-system" }
+                { component: "compass-runtime-agent", namespace: "kyma-system" }
                 {
                   component: "{KYMA_COMPONENT_NAME}"
                   namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
@@ -346,10 +346,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
               }
             }
             kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "1.24.5"
+              version: "2.12.0"
               profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
               components: [
-                { component: "compass-runtime-agent", namespace: "compass-system" }
+                { component: "compass-runtime-agent", namespace: "kyma-system" }
                 {
                   component: "{KYMA_COMPONENT_NAME}"
                   namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
@@ -447,10 +447,10 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 }
               }
               kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-                version: "1.24.5"
+                version: "2.12.5"
                 profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
                 components: [
-                  { component: "compass-runtime-agent", namespace: "compass-system" }
+                  { component: "compass-runtime-agent", namespace: "kyma-system" }
                   {
                     component: "{KYMA_COMPONENT_NAME}"
                     namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"

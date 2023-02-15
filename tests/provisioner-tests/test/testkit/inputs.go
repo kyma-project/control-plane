@@ -138,7 +138,7 @@ func fixKymaComponentList() []*gqlschema.ComponentConfigurationInput {
 
 	runtimeAgent := &gqlschema.ComponentConfigurationInput{
 		Component: "compass-runtime-agent",
-		Namespace: "compass-system",
+		Namespace: "kyma-system",
 		Configuration: []*gqlschema.ConfigEntryInput{
 			{
 				Key:    "global.disableLegacyConnectivity",
