@@ -65,7 +65,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot get existing operation from storage")
 
 		// there is an ongoing operation, and it is not a temporary deprovision (suspension)
-	case !(existingOperation == nil || existingOperation.Temporary || existingOperation.State == domain.Failed || existingOperation.State == domain.Succeeded):
+	case isOngoingDeprovisioning(existingOperation):
 		logger.Info("deprovision operation already ongoing - not creating a new one")
 		return domain.DeprovisionServiceSpec{
 			IsAsync:       true,
@@ -93,4 +93,11 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		IsAsync:       true,
 		OperationData: operationID,
 	}, nil
+}
+
+func isOngoingDeprovisioning(existingOperation *internal.DeprovisioningOperation) bool {
+	return !(existingOperation == nil ||
+		existingOperation.Temporary ||
+		existingOperation.State == domain.Failed ||
+		existingOperation.State == domain.Succeeded)
 }
