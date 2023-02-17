@@ -23,13 +23,13 @@
       "default": 20,
       "description": "Specifies the maximum number of virtual machines to create",
       "maximum": 80,
-      "minimum": 2,
+      "minimum": 3,
       "type": "integer"
     },
     "autoScalerMin": {
       "default": 3,
       "description": "Specifies the minimum number of virtual machines to create",
-      "minimum": 2,
+      "minimum": 3,
       "type": "integer"
     },
     "machineType": {
