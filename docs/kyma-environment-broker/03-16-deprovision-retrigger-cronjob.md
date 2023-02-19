@@ -1,0 +1,47 @@
+# Deprovision Retrigger Job
+
+Deprovision Retrigger Job is a Job that attempts to deprovision instance once more.
+
+## Details
+
+During regular deprovisioning some steps could be omitted due to the occurrence of some errors. These errors not necessarily cause deprovisioning process to fail.
+Sometimes we ignore not severe, supposedly temporary errors, proceed with deprovisioning and declare process as successful. But there are some not completed steps
+then can be retried later on. We store the list of not completed steps, and mark the deprovisioning operation setting `deletedAt` to current timestamp.
+The Job iterates over the instances and for each with `deletedAt` appropriately set sends a DELETE to Kyma Environment Broker (KEB).  
+
+### Dry-run mode
+
+If you need to test the Job, you can run it in the `dry-run` mode.
+In that mode, the Job only logs the information about the candidate instances (i.e. instances meeting the configured criteria). The instances are not affected.
+
+## Prerequisites
+
+The Deprovision Retrigger Job requires access to:
+- KEB database, to get the IDs of the instances with the `trial` plan which are not expired yet. 
+- KEB, to initiate the SKR instance suspension.
+
+## Configuration
+
+The Job is a CronJob with a schedule that can be [configured](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) as a parameter in the `management-plane-config` repository.
+By default, the CronJob is set to run every day at 3:15 am:
+```yaml  
+kyma-environment-broker.trialCleanup.schedule: "15 3 * * *"
+```
+
+Use the following environment variables to configure the Job:
+
+| Environment variable | Description                                                                                                               | Default value                            |
+|---|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| **APP_DRY_RUN** | Specifies whether to run the Job in the [`dry-run` mode](#details).                                                       | `true`                                   |
+| **APP_DATABASE_USER** | Specifies the username for the database.                                                                                  | `postgres`                               |
+| **APP_DATABASE_PASSWORD** | Specifies the user password for the database.                                                                             | `password`                               |
+| **APP_DATABASE_HOST** | Specifies the host of the database.                                                                                       | `localhost`                              |
+| **APP_DATABASE_PORT** | Specifies the port for the database.                                                                                      | `5432`                                   |
+| **APP_DATABASE_NAME** | Specifies the name of the database.                                                                                       | `provisioner`                            |
+| **APP_DATABASE_SSLMODE** | Activates the SSL mode for PostgreSQL. See [all the possible values](https://www.postgresql.org/docs/9.1/libpq-ssl.html). | `disable`                                |
+| **APP_DATABASE_SSLROOTCERT** | Specifies the location of CA cert of PostgreSQL. (Optional)                                          | None                                |
+| **APP_BROKER_URL**  | Specifies the KEB URL.                                                                                                    | `https://kyma-env-broker.kyma.local`     |
+| **APP_BROKER_TOKEN_URL** | Specifies the KEB OAuth token endpoint.                                                                                   | `https://oauth.2kyma.local/oauth2/token` |
+| **APP_BROKER_CLIENT_ID** | Specifies the username for the OAuth2 authentication in KEB.                                                              | None                                     |
+| **APP_BROKER_CLIENT_SECRET** | Specifies the password for the OAuth2 authentication in KEB.                                                              | None                                     |
+| **APP_BROKER_SCOPE** | Specifies the scope for the OAuth2 authentication in KEB.                                                                 | None                                     |
