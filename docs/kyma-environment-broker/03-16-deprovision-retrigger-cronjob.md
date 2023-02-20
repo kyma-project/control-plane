@@ -1,6 +1,6 @@
 # Deprovision Retrigger Job
 
-Deprovision Retrigger Job is a Job that attempts to deprovision instance once more.
+Deprovision Retrigger Job is a Job that attempts to deprovision an instance once again.
 
 ## Overview
 
