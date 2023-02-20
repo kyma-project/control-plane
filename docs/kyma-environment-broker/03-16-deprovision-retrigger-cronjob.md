@@ -17,8 +17,8 @@ In that mode, the Job only logs the information about the candidate instances (i
 ## Prerequisites
 
 The Deprovision Retrigger Job requires access to:
-- KEB database, to get the IDs of the instances with the `trial` plan which are not expired yet. 
-- KEB, to initiate the SKR instance suspension.
+- KEB database, to get the IDs of the instances with not completed steps. 
+- KEB, to request SKR deprovisioning.
 
 ## Configuration
 
