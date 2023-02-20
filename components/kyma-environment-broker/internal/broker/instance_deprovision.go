@@ -106,10 +106,3 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		OperationData: operationID,
 	}, nil
 }
-
-func isSucceededNotTemporaryButWithNoSteps(existingOperation *internal.DeprovisioningOperation) bool {
-	return existingOperation != nil &&
-		existingOperation.State == domain.Succeeded &&
-		!existingOperation.Temporary &&
-		len(existingOperation.ExcutedButNotCompleted) == 0
-}
