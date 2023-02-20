@@ -7,7 +7,7 @@ Deprovision Retrigger Job is a Job that attempts to deprovision an instance once
 During regular deprovisioning, you can omit some steps due to the occurrence of some errors. These errors do not cause the deprovisioning process to fail.
 You can ignore some not-severe, temporary errors, proceed with deprovisioning and declare the process successful.  The not-completed steps
 can be retried later. Store the list of not-completed steps, and mark the deprovisioning operation by setting `deletedAt` to the current timestamp.
-The Job iterates over the instances and for each with `deletedAt` appropriately set sends a DELETE to Kyma Environment Broker (KEB).  
+The Job iterates over the instances, and for each one with `deletedAt` appropriately set, sends a DELETE to Kyma Environment Broker (KEB).  
 
 ## Prerequisites
 
