@@ -55,6 +55,7 @@ type RuntimeStatus struct {
 	CreatedAt        time.Time       `json:"createdAt"`
 	ModifiedAt       time.Time       `json:"modifiedAt"`
 	ExpiredAt        *time.Time      `json:"expiredAt,omitempty"`
+	DeletedAt        *time.Time      `json:"deletedAt,omitempty"`
 	State            State           `json:"state"`
 	Provisioning     *Operation      `json:"provisioning,omitempty"`
 	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
