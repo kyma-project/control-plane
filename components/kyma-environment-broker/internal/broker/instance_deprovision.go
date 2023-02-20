@@ -71,7 +71,7 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 			IsAsync:       true,
 			OperationData: existingOperation.ID,
 		}, nil
-	case isNotOngoingNotTemporaryButWithNoSteps(existingOperation):
+	case isSucceededNotTemporaryButWithNoSteps(existingOperation):
 		logger.Info("no steps to retry - not creating a new operation")
 		return domain.DeprovisionServiceSpec{
 			IsAsync:       true,
@@ -107,9 +107,9 @@ func isOngoingNotTemporaryDeprovisioning(existingOperation *internal.Deprovision
 		!existingOperation.Temporary
 }
 
-func isNotOngoingNotTemporaryButWithNoSteps(existingOperation *internal.DeprovisioningOperation) bool {
+func isSucceededNotTemporaryButWithNoSteps(existingOperation *internal.DeprovisioningOperation) bool {
 	return existingOperation != nil &&
-		existingOperation.State != domain.InProgress &&
+		existingOperation.State == domain.Succeeded &&
 		!existingOperation.Temporary &&
 		len(existingOperation.ExcutedButNotCompleted) == 0
 }
