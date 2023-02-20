@@ -59,19 +59,31 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 
 	// check if operation with the same instance ID is already created
 	existingOperation, errStorage := b.operationsStorage.GetDeprovisioningOperationByInstanceID(instanceID)
-	switch {
-	case errStorage != nil && !dberr.IsNotFound(errStorage):
+	if errStorage != nil && !dberr.IsNotFound(errStorage) {
 		logger.Errorf("cannot get existing operation from storage %s", errStorage)
 		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot get existing operation from storage")
-
-		// there is an ongoing operation, and it is not a temporary deprovision (suspension)
-	case isOngoingNotTemporaryDeprovisioning(existingOperation):
-		logger.Info("deprovision operation already ongoing - not creating a new one")
-		return domain.DeprovisionServiceSpec{
-			IsAsync:       true,
-			OperationData: existingOperation.ID,
-		}, nil
 	}
+
+	// temporary deprovisioning means suspension
+	previousOperationIsNotTemporary := existingOperation != nil && !existingOperation.Temporary
+	if previousOperationIsNotTemporary {
+		switch {
+		// there is an ongoing operation
+		case existingOperation.State != domain.Failed && existingOperation.State != domain.Succeeded:
+			logger.Info("deprovision operation already ongoing - not creating a new operation")
+			return domain.DeprovisionServiceSpec{
+				IsAsync:       true,
+				OperationData: existingOperation.ID,
+			}, nil
+		case existingOperation.State == domain.Succeeded && len(existingOperation.ExcutedButNotCompleted) == 0:
+			logger.Info("no steps to retry - not creating a new operation")
+			return domain.DeprovisionServiceSpec{
+				IsAsync:       true,
+				OperationData: existingOperation.ID,
+			}, nil
+		}
+	}
+
 	// create and save new operation
 	operationID := uuid.New().String()
 	logger = logger.WithField("operationID", operationID)
@@ -93,11 +105,4 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		IsAsync:       true,
 		OperationData: operationID,
 	}, nil
-}
-
-func isOngoingNotTemporaryDeprovisioning(existingOperation *internal.DeprovisioningOperation) bool {
-	return !(existingOperation == nil ||
-		existingOperation.Temporary ||
-		existingOperation.State == domain.Failed ||
-		existingOperation.State == domain.Succeeded)
 }
