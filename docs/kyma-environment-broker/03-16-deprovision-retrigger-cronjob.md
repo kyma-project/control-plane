@@ -2,23 +2,23 @@
 
 Deprovision Retrigger Job is a Job that attempts to deprovision instance once more.
 
-## Details
+## Overview
 
 During regular deprovisioning some steps could be omitted due to the occurrence of some errors. These errors not necessarily cause deprovisioning process to fail.
 Sometimes we ignore not severe, supposedly temporary errors, proceed with deprovisioning and declare process as successful. But there are some not completed steps
 then can be retried later on. We store the list of not completed steps, and mark the deprovisioning operation setting `deletedAt` to current timestamp.
 The Job iterates over the instances and for each with `deletedAt` appropriately set sends a DELETE to Kyma Environment Broker (KEB).  
 
+## Prerequisites
+
+The Deprovision Retrigger Job requires access to:
+- KEB database, to get the IDs of the instances with not completed steps.
+- KEB, to request SKR deprovisioning.
+
 ### Dry-run mode
 
 If you need to test the Job, you can run it in the `dry-run` mode.
 In that mode, the Job only logs the information about the candidate instances (i.e. instances meeting the configured criteria). The instances are not affected.
-
-## Prerequisites
-
-The Deprovision Retrigger Job requires access to:
-- KEB database, to get the IDs of the instances with not completed steps. 
-- KEB, to request SKR deprovisioning.
 
 ## Configuration
 
