@@ -20,10 +20,6 @@ func newDecryptFunc(key []byte) decryptFunc {
 	return func(obj []byte) ([]byte, error) { return decrypt(key, obj) }
 }
 
-func newEmptyFunc(_ []byte) func([]byte) ([]byte, error) {
-	return func(bytes []byte) ([]byte, error) { return bytes, nil }
-}
-
 func encrypt(key, obj []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {

@@ -1,6 +1,7 @@
 package dbsession
 
 import (
+	"github.com/pkg/errors"
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
@@ -81,19 +82,15 @@ type factory struct {
 	decrypt    decryptFunc
 }
 
-func NewFactory(connection *dbr.Connection, secretKey string) Factory {
+func NewFactory(connection *dbr.Connection, secretKey string) (Factory, error) {
 	if len(secretKey) == 0 {
-		return &factory{
-			connection: connection,
-			encrypt:    newEmptyFunc([]byte{}),
-			decrypt:    newEmptyFunc([]byte{}),
-		}
+		return nil, errors.New("empty encryption key")
 	}
 	return &factory{
 		connection: connection,
 		encrypt:    newEncryptFunc([]byte(secretKey)),
 		decrypt:    newDecryptFunc([]byte(secretKey)),
-	}
+	}, nil
 }
 
 func (sf *factory) NewReadSession() ReadSession {
