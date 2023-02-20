@@ -11,7 +11,7 @@ The Job iterates over the instances and for each with `deletedAt` appropriately 
 
 ## Prerequisites
 
-The Deprovision Retrigger Job requires access to:
+Deprovision Retrigger Job requires access to:
 - KEB database, to get the IDs of the instances with not completed steps.
 - KEB, to request SKR deprovisioning.
 
