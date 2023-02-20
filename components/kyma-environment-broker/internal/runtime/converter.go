@@ -86,6 +86,9 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 			ExpiredAt:  instance.ExpiredAt,
 		},
 	}
+	if !instance.DeletedAt.IsZero() {
+		toReturn.Status.DeletedAt = &instance.DeletedAt
+	}
 
 	c.setRegionOrDefault(instance, &toReturn)
 
