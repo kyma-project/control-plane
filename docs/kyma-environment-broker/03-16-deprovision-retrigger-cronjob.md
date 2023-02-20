@@ -23,9 +23,9 @@ The Deprovision Retrigger Job requires access to:
 ## Configuration
 
 The Job is a CronJob with a schedule that can be [configured](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax) as a parameter in the `management-plane-config` repository.
-By default, the CronJob is set to run every day at 3:15 am:
+By default, the CronJob is set to run every day at 3:00 am:
 ```yaml  
-kyma-environment-broker.trialCleanup.schedule: "15 3 * * *"
+kyma-environment-broker.trialCleanup.schedule: "0 3 * * *"
 ```
 
 Use the following environment variables to configure the Job:
