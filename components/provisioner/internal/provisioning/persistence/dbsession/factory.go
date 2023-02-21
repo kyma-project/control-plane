@@ -1,8 +1,9 @@
 package dbsession
 
 import (
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
