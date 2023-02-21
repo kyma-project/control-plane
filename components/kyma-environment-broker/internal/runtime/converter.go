@@ -61,6 +61,7 @@ func (c *converter) applyOperation(source *internal.Operation, target *pkg.Opera
 		target.OrchestrationID = source.OrchestrationID
 		target.RuntimeVersion = source.RuntimeVersion.Version
 		target.FinishedStages = source.FinishedStages
+		target.ExecutedButNotCompletedSteps = source.ExcutedButNotCompleted
 	}
 }
 
@@ -84,6 +85,9 @@ func (c *converter) NewDTO(instance internal.Instance) (pkg.RuntimeDTO, error) {
 			ModifiedAt: instance.UpdatedAt,
 			ExpiredAt:  instance.ExpiredAt,
 		},
+	}
+	if !instance.DeletedAt.IsZero() {
+		toReturn.Status.DeletedAt = &instance.DeletedAt
 	}
 
 	c.setRegionOrDefault(instance, &toReturn)

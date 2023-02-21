@@ -16,6 +16,7 @@ import (
 
 type readSession struct {
 	session *dbr.Session
+	decrypt decryptFunc
 }
 
 // TODO: Remove after schema migration
@@ -109,7 +110,8 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 	err := r.session.
 		Select(
 			"id", "kubeconfig", "tenant",
-			"creation_timestamp", "deleted", "sub_account_id", "active_kyma_config_id").
+			"creation_timestamp", "deleted", "sub_account_id",
+			"active_kyma_config_id", "is_kubeconfig_encrypted").
 		From("cluster").
 		Where(dbr.Eq("cluster.id", runtimeID)).
 		LoadOne(&cluster)
@@ -119,6 +121,14 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 			return model.Cluster{}, dberrors.NotFound("Cannot find Cluster for runtimeID: %s", runtimeID)
 		}
 		return model.Cluster{}, dberrors.Internal("Failed to get Cluster: %s", err)
+	}
+
+	if cluster.IsKubeconfigEncrypted {
+		decryptedClusterKubeconfig, dberr := r.decryptKubeconfig(cluster.Kubeconfig)
+		if dberr != nil {
+			return model.Cluster{}, dberr.Append("Cannot decrypt Kubeconfig for runtimeID: %s", runtimeID)
+		}
+		cluster.Kubeconfig = decryptedClusterKubeconfig
 	}
 
 	providerConfig, dberr := r.getGardenerConfig(runtimeID)
@@ -147,7 +157,7 @@ func (r readSession) GetCluster(runtimeID string) (model.Cluster, dberrors.Error
 		cluster.KymaConfig = &kymaConfig
 	}
 
-	clusterAdministrators, dberr := r.getClusterAdministrator(runtimeID)
+	clusterAdministrators, dberr := r.getClusterAdministrators(runtimeID)
 	if dberr != nil {
 		return model.Cluster{}, dberr.Append("Cannot get Cluster administrators for runtimeID: %s", runtimeID)
 	}
@@ -315,20 +325,25 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 	return kymaConfig.parseToKymaConfig(runtimeID)
 }
 
-func (r readSession) getClusterAdministrator(runtimeID string) ([]model.ClusterAdministrator, dberrors.Error) {
-	var clusterAdministrator []model.ClusterAdministrator
+func (r readSession) getClusterAdministrators(runtimeID string) ([]model.ClusterAdministrator, dberrors.Error) {
+	var clusterAdministrators []model.ClusterAdministrator
 
 	_, err := r.session.
 		Select("*").
 		From("cluster_Administrator").
 		Where(dbr.Eq("cluster_id", runtimeID)).
-		Load(&clusterAdministrator)
+		Load(&clusterAdministrators)
 
 	if err != nil {
 		return []model.ClusterAdministrator{}, dberrors.Internal("Failed to get Cluster Administrators: %s", err)
 	}
 
-	return clusterAdministrator, nil
+	decryptedClusterAdministrators, err := r.decryptClusterAdministrators(clusterAdministrators)
+	if err != nil {
+		return []model.ClusterAdministrator{}, dberrors.Internal("Failed to decrypt Cluster Administrators: %s", err)
+	}
+
+	return decryptedClusterAdministrators, nil
 }
 
 type gardenerConfigRead struct {
@@ -564,4 +579,40 @@ func (r readSession) getDNSConfig(gardenerConfigID string) (*model.DNSConfig, db
 	}
 
 	return &dnsConfig, nil
+}
+
+func (r readSession) decryptKubeconfig(encryptedKubeconfig *string) (*string, dberrors.Error) {
+	if encryptedKubeconfig == nil {
+		return nil, nil
+	}
+	decryptedKubeconfigSlice, err := r.decrypt([]byte(*encryptedKubeconfig))
+	if err != nil {
+		return nil, dberrors.Internal("failed to decrypt kubeconfig: %v", err)
+	}
+	decryptedKubeconfig := string(decryptedKubeconfigSlice)
+	return &decryptedKubeconfig, nil
+}
+
+func (r readSession) decryptClusterAdministrators(
+	encryptedClusterAdministrators []model.ClusterAdministrator) (
+	[]model.ClusterAdministrator, dberrors.Error) {
+
+	var decryptedClusterAdministrators []model.ClusterAdministrator
+	for _, ea := range encryptedClusterAdministrators {
+		if ea.IsUserIdEncrypted {
+			decryptedUserID, err := r.decrypt([]byte(ea.UserId))
+			if err != nil {
+				return nil, dberrors.Internal("failed to decrypt user ID: %v", err)
+			}
+			decryptedClusterAdministrator := model.ClusterAdministrator{
+				ID:        ea.ID,
+				ClusterId: ea.ClusterId,
+				UserId:    string(decryptedUserID),
+			}
+			decryptedClusterAdministrators = append(decryptedClusterAdministrators, decryptedClusterAdministrator)
+		} else {
+			decryptedClusterAdministrators = append(decryptedClusterAdministrators, ea)
+		}
+	}
+	return decryptedClusterAdministrators, nil
 }

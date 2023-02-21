@@ -141,7 +141,7 @@ func (s *instances) FindAllInstancesForSubAccounts(subAccountslist []string) ([]
 func (s *instances) GetNumberOfInstancesForGlobalAccountID(globalAccountID string) (int, error) {
 	numberOfInstances := 0
 	for _, inst := range s.instances {
-		if inst.GlobalAccountID == globalAccountID {
+		if inst.GlobalAccountID == globalAccountID && inst.DeletedAt.IsZero() {
 			numberOfInstances++
 		}
 	}

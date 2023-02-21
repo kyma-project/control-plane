@@ -82,19 +82,44 @@ func recreateInstances(operations []internal.Operation) []internal.Instance {
 	return instances
 }
 
+func unionInstances(sets ...[]internal.Instance) (union []internal.Instance) {
+	m := make(map[string]internal.Instance)
+	for _, s := range sets {
+		for _, i := range s {
+			if _, exists := m[i.InstanceID]; !exists {
+				m[i.InstanceID] = i
+			}
+		}
+	}
+	for _, i := range m {
+		union = append(union, i)
+	}
+	return
+}
+
 func (h *Handler) listInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
 	if filter.OnlyDeleted != nil && *filter.OnlyDeleted {
+		// try to list instances where deletion didn't finish successfully
+		// entry in the Instances table still exists but has deletion timestamp and contains list of incomplete steps
+		filter.DeletionAttempted = filter.OnlyDeleted
+		filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
+		instances, instancesCount, instancesTotalCount, _ := h.instancesDb.List(filter)
+
+		// try to recreate instances from the operations table where entry in the instances table is gone
 		opFilter := dbmodel.OperationFilter{}
 		opFilter.InstanceFilter = &filter
 		opFilter.Page = filter.Page
 		opFilter.PageSize = filter.PageSize
 		operations, _, _, err := h.operationsDb.ListOperations(opFilter)
 		if err != nil {
-			return []internal.Instance{}, 0, 0, err
+			return instances, instancesCount, instancesTotalCount, err
 		}
 		instancesFromOperations := recreateInstances(operations)
+
+		// return union of both sets of instances
+		instancesUnion := unionInstances(instances, instancesFromOperations)
 		count := len(instancesFromOperations)
-		return instancesFromOperations, count, count, nil
+		return instancesUnion, count + instancesCount, count + instancesTotalCount, nil
 	}
 	return h.instancesDb.List(filter)
 }

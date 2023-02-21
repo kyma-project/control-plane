@@ -100,7 +100,7 @@ func (p *secretBindingsAccountPool) IsSecretBindingUsed(hyperscalerType Type, te
 	labelSelector := fmt.Sprintf("tenantName=%s,hyperscalerType=%s", tenantName, hyperscalerType)
 	labelSelector = addEuAccessSelector(labelSelector, euAccess)
 	secretBinding, err := p.getSecretBinding(labelSelector)
-	if err != nil || secretBinding == nil {
+	if err != nil {
 		return false, fmt.Errorf("counting subscription usage: could not find secret binding used by the tenant %s and hyperscaler %s: %w", tenantName, hyperscalerType, err)
 	}
 	// if there is no matching secret, that's ok (maybe it was not used, for example the step was not run)

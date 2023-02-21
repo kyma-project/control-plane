@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/edp"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,7 +43,8 @@ func TestEDPDeregistration_Run(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	step := NewEDPDeregistrationStep(client, edp.Config{
+	memoryStorage := storage.NewMemoryStorage()
+	step := NewEDPDeregistrationStep(memoryStorage.Operations(), client, edp.Config{
 		Environment: edpEnvironment,
 	})
 

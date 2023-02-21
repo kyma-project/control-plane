@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2390"
+      version: "PR-2499"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2363"
@@ -12,6 +12,9 @@ global:
     kyma_environment_trial_cleanup_job:
       dir:
       version: "PR-2337"
+    kyma_environment_deprovision_retrigger_job:
+      dir:
+      version: "PR-2482"
 
 deployment:
   replicaCount: 1
@@ -121,6 +124,10 @@ skrOIDCDefaultValues: |-
 
 skrDNSProvidersValues: |-
   providers: []
+
+euAccessWhitelistedGlobalAccountIds: |-
+  whitelist:
+euAccessRejectionMessage: "Due to limited availability, you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
 
 kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
@@ -263,6 +270,10 @@ trialCleanup:
   schedule: "0,15,30,45 * * * *"
   dryRun: true
   expirationPeriod: 336h
+
+deprovisionRetrigger:
+  schedule: "0 2 * * *"
+  dryRun: true
 
 serviceMonitor:
   scrapeTimeout: 10s
