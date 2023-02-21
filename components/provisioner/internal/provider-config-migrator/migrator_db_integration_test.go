@@ -42,7 +42,7 @@ func TestProviderConfigMigrator(t *testing.T) {
 	require.NoError(t, err)
 
 	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
-	factory := dbsession.NewFactory(connection, secretKey)
+	factory, _ := dbsession.NewFactory(connection, secretKey)
 
 	release := prepareTestRelease(t, factory)
 
