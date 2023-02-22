@@ -1985,9 +1985,12 @@ func TestUpdateMachineType(t *testing.T) {
 	opID := suite.DecodeOperationID(resp)
 	suite.processProvisioningAndReconcilingByOperationID(opID)
 	suite.WaitForOperationState(opID, domain.Succeeded)
-	rs, err := suite.db.RuntimeStates().GetByOperationID(opID)
-	assert.NoError(t, err, "after provisioning")
-	assert.Equal(t, "m5.xlarge", rs.ClusterConfig.MachineType, "after provisioning")
+	i, err := suite.db.Instances().GetByID(id)
+	assert.NoError(t, err, "instance after provisioning")
+	rs, err := suite.db.RuntimeStates().ListByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "runtime states after provisioning")
+	assert.Equal(t, 2, len(rs), "runtime states after provisioning")
+	assert.Equal(t, "m5.xlarge", rs[1].ClusterConfig.MachineType, "after provisioning")
 
 	// when patch to change machine type
 	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
@@ -2009,9 +2012,10 @@ func TestUpdateMachineType(t *testing.T) {
 	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
 
 	// check call to provisioner that machine type has been updated
-	rs, err = suite.db.RuntimeStates().GetByOperationID(updateOperationID)
-	assert.NoError(t, err, "after update")
-	assert.Equal(t, "m5.2xlarge", rs.ClusterConfig.MachineType, "after update")
+	rs, err = suite.db.RuntimeStates().ListByRuntimeID(i.RuntimeID)
+	assert.NoError(t, err, "runtime states after update")
+	assert.Equal(t, 3, len(rs), "runtime states after update")
+	assert.Equal(t, "m5.2xlarge", rs[0].ClusterConfig.MachineType, "after update")
 }
 
 func TestUpdateBTPOperatorCredsSuccess(t *testing.T) {
