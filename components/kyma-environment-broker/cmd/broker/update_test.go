@@ -1961,6 +1961,59 @@ func TestUpdateWhenBothErsContextAndUpdateParametersProvided(t *testing.T) {
 	assert.Len(t, updateOps, 0, "should not create any update operations")
 }
 
+func TestUpdateMachineType(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	mockBTPOperatorClusterID()
+	defer suite.TearDown()
+	id := "InstanceID-machineType"
+
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true&plan_id=7d55d31d-35ae-4438-bf13-6ffdfa107d9f&service_id=47c9dcbf-ff30-448e-ab36-d3bad66ba281", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"subaccount_id": "sub-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"name": "testing-cluster"
+	}
+}`)
+
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+	suite.WaitForOperationState(opID, domain.Succeeded)
+	rs, err := suite.db.RuntimeStates().GetByOperationID(opID)
+	assert.NoError(t, err, "after provisioning")
+	assert.Equal(t, "m5.xlarge", rs.ClusterConfig.MachineType, "after provisioning")
+
+	// when patch to change machine type
+	resp = suite.CallAPI("PATCH", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", id), `
+{
+	"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+	"context": {
+		"globalaccount_id": "g-account-id",
+		"user_id": "john.smith@email.com"
+	},
+	"parameters": {
+		"machineType":"m5.2xlarge"
+	}
+}`)
+
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	updateOperationID := suite.DecodeOperationID(resp)
+	suite.FinishUpdatingOperationByProvisioner(updateOperationID)
+	suite.FinishUpdatingOperationByReconciler(updateOperationID)
+	suite.WaitForOperationState(updateOperationID, domain.Succeeded)
+
+	// check call to provisioner that machine type has been updated
+	rs, err = suite.db.RuntimeStates().GetByOperationID(updateOperationID)
+	assert.NoError(t, err, "after update")
+	assert.Equal(t, "m5.2xlarge", rs.ClusterConfig.MachineType, "after update")
+}
+
 func TestUpdateBTPOperatorCredsSuccess(t *testing.T) {
 	// given
 	suite := NewBrokerSuiteTest(t)
