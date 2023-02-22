@@ -130,6 +130,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("max_unavailable", config.MaxUnavailable).
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
+		Pair("allow_privileged_containers", false).
 		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
