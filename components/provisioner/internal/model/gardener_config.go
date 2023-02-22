@@ -792,6 +792,14 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	// Needed for upgrade to Kubernetes 2.25
 	shoot.Spec.Kubernetes.AllowPrivilegedContainers = nil
 
+	disablePlugin := true
+	podSecurityPolicyPlugin := gardener_types.AdmissionPlugin{
+		Name:     "PodSecurityPolicy",
+		Disabled: &disablePlugin,
+	}
+
+	shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins = append(shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, podSecurityPolicyPlugin)
+
 	return nil
 }
 
