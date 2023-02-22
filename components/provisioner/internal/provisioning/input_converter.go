@@ -23,8 +23,7 @@ func NewInputConverter(
 	releaseProvider release.Provider,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
-	defaultEnableMachineImageVersionAutoUpdate,
-	forceAllowPrivilegedContainers bool) InputConverter {
+	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                                    uuidGenerator,
@@ -34,7 +33,6 @@ func NewInputConverter(
 		defaultEnableMachineImageVersionAutoUpdate:       defaultEnableMachineImageVersionAutoUpdate,
 		defaultProvisioningShootNetworkingFilterDisabled: true,
 		defaultEuAccess:                                  false,
-		forceAllowPrivilegedContainers:                   forceAllowPrivilegedContainers,
 	}
 }
 
@@ -46,29 +44,24 @@ type converter struct {
 	defaultEnableMachineImageVersionAutoUpdate       bool
 	defaultProvisioningShootNetworkingFilterDisabled bool
 	defaultEuAccess                                  bool
-	forceAllowPrivilegedContainers                   bool
 }
 
 func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.ProvisionRuntimeInput, tenant, subAccountId string) (model.Cluster, apperrors.AppError) {
 	var err apperrors.AppError
 
 	var kymaConfig *model.KymaConfig
-	var tillerYaml string
+
 	if input.KymaConfig != nil {
 		config, err := c.KymaConfigFromInput(runtimeID, *input.KymaConfig)
 		kymaConfig = &config
 		if err != nil {
 			return model.Cluster{}, err
 		}
-		tillerYaml = kymaConfig.Release.TillerYAML
 	}
 
 	if input.ClusterConfig == nil || input.ClusterConfig.GardenerConfig == nil {
 		return model.Cluster{}, apperrors.BadRequest("error: ClusterConfig not provided or GardenerConfig not provided")
 	}
-
-	gardenerConfigAllowPrivilegedContainers := c.shouldAllowPrivilegedContainers(
-		input.ClusterConfig.GardenerConfig.AllowPrivilegedContainers, tillerYaml)
 
 	if input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled == nil {
 		input.ClusterConfig.GardenerConfig.ShootNetworkingFilterDisabled = util.BoolPtr(c.defaultProvisioningShootNetworkingFilterDisabled)
@@ -76,8 +69,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 
 	gardenerConfig, err := c.gardenerConfigFromInput(
 		runtimeID,
-		input.ClusterConfig.GardenerConfig,
-		gardenerConfigAllowPrivilegedContainers)
+		input.ClusterConfig.GardenerConfig)
 	if err != nil {
 		return model.Cluster{}, err
 	}
@@ -92,7 +84,7 @@ func (c converter) ProvisioningInputToCluster(runtimeID string, input gqlschema.
 	}, nil
 }
 
-func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput, allowPrivilegedContainers bool) (model.GardenerConfig, apperrors.AppError) {
+func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.GardenerConfigInput) (model.GardenerConfig, apperrors.AppError) {
 	providerSpecificConfig, err := c.providerSpecificConfigFromInput(input.ProviderSpecificConfig)
 	if err != nil {
 		return model.GardenerConfig{}, err
@@ -166,14 +158,6 @@ func dnsConfigFromInput(input *gqlschema.DNSConfigInput) *model.DNSConfig {
 	}
 
 	return nil
-}
-
-func (c converter) shouldAllowPrivilegedContainers(inputAllowPrivilegedContainers *bool, tillerYaml string) bool {
-	if c.forceAllowPrivilegedContainers {
-		return true
-	}
-	isTillerPresent := tillerYaml != ""
-	return util.UnwrapBoolOrDefault(inputAllowPrivilegedContainers, isTillerPresent)
 }
 
 func (c converter) UpgradeShootInputToGardenerConfig(input gqlschema.GardenerUpgradeInput, config model.GardenerConfig) (model.GardenerConfig, apperrors.AppError) {

@@ -69,7 +69,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	releaseProvider := &releaseMocks.Provider{}
 	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
 
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -326,7 +326,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 }
 
 func TestService_DeprovisionRuntime(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 	lastOperation := model.Operation{State: model.Succeeded}
 	mockedKubeconfig := kubeconfig
@@ -659,7 +659,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 
 func TestService_RuntimeOperationStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -715,7 +715,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 
 func TestService_RuntimeStatus(t *testing.T) {
 	uuidGenerator := &uuidMocks.UUIDGenerator{}
-	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuidGenerator, nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 
 	operation := model.Operation{
@@ -825,7 +825,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 func TestService_UpgradeRuntime(t *testing.T) {
 	releaseProvider := &releaseMocks.Provider{}
 	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(kymaRelease, nil)
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -1045,7 +1045,7 @@ func TestService_UpgradeRuntime(t *testing.T) {
 }
 
 func TestService_UpgradeGardenerShoot(t *testing.T) {
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), nil, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -1279,7 +1279,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 func TestService_RollBackLastUpgrade(t *testing.T) {
 	releaseProvider := &releaseMocks.Provider{}
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := NewGraphQLConverter()
 	uuidGenerator := uuid.NewUUIDGenerator()
 
@@ -1387,7 +1387,7 @@ func TestService_RollBackLastUpgrade(t *testing.T) {
 
 func TestService_HibernateShoot(t *testing.T) {
 	releaseProvider := &releaseMocks.Provider{}
-	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+	inputConverter := NewInputConverter(uuid.NewUUIDGenerator(), releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	uuidGenerator := uuid.NewUUIDGenerator()
 	graphQLConverter := NewGraphQLConverter()
 
