@@ -85,7 +85,7 @@ type factory struct {
 
 func NewFactory(connection *dbr.Connection, secretKey string) (Factory, error) {
 	if len(secretKey) == 0 {
-		return nil, errors.New("empty encryption key")
+		return nil, errors.New("empty encryption key provided")
 	}
 	return &factory{
 		connection: connection,
