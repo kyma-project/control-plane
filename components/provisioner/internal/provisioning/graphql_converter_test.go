@@ -88,7 +88,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "zone"
@@ -188,7 +187,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -257,7 +255,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "node"
@@ -355,7 +352,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -411,7 +407,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "node"
 		euAccess := true
@@ -509,7 +504,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 					EuAccess:                            &euAccess,
