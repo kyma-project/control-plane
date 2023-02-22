@@ -110,7 +110,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:                           "runtimeID",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
-			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedGCPProviderCfg,
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
@@ -199,7 +198,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				ClusterID:                           "runtimeID",
 				EnableKubernetesVersionAutoUpdate:   true,
 				EnableMachineImageVersionAutoUpdate: false,
-				AllowPrivilegedContainers:           true,
 				GardenerProviderConfig:              expectedAzureProviderCfg,
 				OIDCConfig:                          oidcConfig(),
 				DNSConfig:                           dnsConfig(),
@@ -219,14 +217,12 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	gardenerAzureGQLInputWithoutTiller := createGQLRuntimeInputAzure(nil)
 	gardenerAzureGQLInputWithoutTiller.KymaConfig.Version = kymaVersionWithoutTiller
 	expectedGardenerAzureRuntimeConfigWithoutTiller := expectedGardenerAzureRuntimeConfig(nil)
-	expectedGardenerAzureRuntimeConfigWithoutTiller.ClusterConfig.AllowPrivilegedContainers = false
 	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
 	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers := createGQLRuntimeInputAzure(nil)
 	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(true)
 	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Version = kymaVersionWithoutTiller
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers := expectedGardenerAzureRuntimeConfig(nil)
-	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.AllowPrivilegedContainers = true
 	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
@@ -310,7 +306,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:                           "runtimeID",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
-			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedAWSProviderCfg,
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
@@ -397,7 +392,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			ClusterID:                           "runtimeID",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
-			AllowPrivilegedContainers:           true,
 			GardenerProviderConfig:              expectedOpenStackProviderCfg,
 			OIDCConfig:                          oidcConfig(),
 			DNSConfig:                           dnsConfig(),
@@ -489,7 +483,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 		expectedGardenerAzureRuntimeConfig := expectedGardenerAzureRuntimeConfig(nil)
 		expectedGardenerAzureRuntimeConfig.KymaConfig.Release = fixKymaReleaseWithoutTiller()
-		expectedGardenerAzureRuntimeConfig.ClusterConfig.AllowPrivilegedContainers = true
 
 		uuidGeneratorMock := &mocks.UUIDGenerator{}
 		uuidGeneratorMock.On("New").Return("id").Times(6)

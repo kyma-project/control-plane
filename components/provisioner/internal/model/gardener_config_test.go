@@ -748,7 +748,6 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   true,
 		EnableMachineImageVersionAutoUpdate: false,
-		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig:              providerCfg,
 		OIDCConfig:                          oidcConfig(),
 		ExposureClassName:                   util.StringPtr("internet"),

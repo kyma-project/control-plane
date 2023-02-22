@@ -72,7 +72,6 @@ type GardenerConfig struct {
 	MaxUnavailable                      int
 	EnableKubernetesVersionAutoUpdate   bool
 	EnableMachineImageVersionAutoUpdate bool
-	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
 	DNSConfig                           *DNSConfig
@@ -789,6 +788,9 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		})
 		shoot.Spec.Extensions = upgradedExtensions
 	}
+
+	// Needed for upgrade to Kubernetes 2.25
+	shoot.Spec.Kubernetes.AllowPrivilegedContainers = nil
 
 	return nil
 }
