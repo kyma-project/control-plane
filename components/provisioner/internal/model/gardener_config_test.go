@@ -235,8 +235,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Purpose:           &purpose,
 					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(false),
-						Version:                   "1.15",
+						Version: "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
@@ -316,8 +315,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Purpose:           &purpose,
 					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(false),
-						Version:                   "1.15",
+						Version: "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
@@ -397,8 +395,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Purpose:           &purpose,
 					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(false),
-						Version:                   "1.15",
+						Version: "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
@@ -478,8 +475,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Purpose:           &purpose,
 					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(false),
-						Version:                   "1.15",
+						Version: "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),
@@ -559,8 +555,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Purpose:           &purpose,
 					ExposureClassName: util.StringPtr("internet"),
 					Kubernetes: gardener_types.Kubernetes{
-						AllowPrivilegedContainers: util.BoolPtr(false),
-						Version:                   "1.15",
+						Version: "1.15",
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							EnableBasicAuthentication: util.BoolPtr(false),
 							OIDCConfig:                gardenerOidcConfig(oidcConfig()),

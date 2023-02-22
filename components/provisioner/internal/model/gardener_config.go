@@ -184,8 +184,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
-				AllowPrivilegedContainers: &c.AllowPrivilegedContainers,
-				Version:                   c.KubernetesVersion,
+				Version: c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
 					OIDCConfig:                gardenerOidcConfig(oidcConfig),
