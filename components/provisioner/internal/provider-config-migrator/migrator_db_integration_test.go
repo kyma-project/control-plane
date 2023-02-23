@@ -152,7 +152,6 @@ func createFixedGardenerConfig(t *testing.T, providerSpecConfig model.SingleZone
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   false,
 		EnableMachineImageVersionAutoUpdate: false,
-		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig: SingleZoneAWSGardenerConfig{
 			input:                  &providerSpecConfig,
 			ProviderSpecificConfig: model.ProviderSpecificConfig(config),

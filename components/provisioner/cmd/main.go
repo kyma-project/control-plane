@@ -84,7 +84,6 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
-		ForceAllowPrivilegedContainers             bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -114,7 +113,6 @@ func (c *config) String() string {
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t"+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s"+
@@ -132,7 +130,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel, c.RunAwsConfigMigration)
@@ -272,8 +269,7 @@ func main() {
 		shootUpgradeQueue,
 		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
-		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
-		cfg.Gardener.ForceAllowPrivilegedContainers)
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()

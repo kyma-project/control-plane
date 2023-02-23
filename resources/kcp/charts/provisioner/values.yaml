@@ -41,7 +41,6 @@ gardener:
   clusterUpgradeTimeout: 90m
   defaultEnableKubernetesVersionAutoUpdate: false
   defaultEnableMachineImageVersionAutoUpdate: false
-  forceAllowPrivilegedContainers: false
 
 support:
   l2OperatorRoleBindingSubject: "runtimeOperator"
