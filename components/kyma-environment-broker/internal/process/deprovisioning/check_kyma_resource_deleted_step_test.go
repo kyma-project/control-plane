@@ -41,6 +41,32 @@ func TestCheckKymaResourceDeleted_HappyFlow(t *testing.T) {
 	assertNoKymaResourceWithGivenRuntimeID(t, kcpClient, operation.KymaResourceNamespace, steps.KymaName(operation))
 }
 
+func TestCheckKymaResourceDeleted_EmptyKymaResourceName(t *testing.T) {
+	// Given
+	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
+	operation.KymaResourceNamespace = "kyma-system"
+	operation.RuntimeID = ""
+	operation.KymaResourceName = ""
+
+	kcpClient := fake.NewClientBuilder().Build()
+
+	err := fixKymaResourceWithGivenRuntimeID(kcpClient, "kyma-system", "some-other-Runtime-ID")
+	require.NoError(t, err)
+
+	memoryStorage := storage.NewMemoryStorage()
+	err = memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	step := NewCheckKymaResourceDeletedStep(memoryStorage.Operations(), kcpClient)
+
+	// When
+	_, backoff, err := step.Run(operation, logger.NewLogSpy().Logger)
+
+	// Then
+	assert.Zero(t, backoff)
+	assertNoKymaResourceWithGivenRuntimeID(t, kcpClient, operation.KymaResourceNamespace, steps.KymaName(operation))
+}
+
 func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)

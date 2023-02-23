@@ -3,6 +3,7 @@ package provisioning
 import (
 	"bytes"
 	"context"
+	"google.golang.org/appengine/log"
 	"reflect"
 	"time"
 
@@ -41,6 +42,13 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
 	}
 	a.addLabelsAndName(operation, template)
+	operation, backoff, err := a.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
+		op.KymaResourceNamespace = template.GetName()
+	}, logger)
+	if backoff != 0 {
+		log.Errorf("cannot save the operation: %s", err.Error())
+		return operation, 5 * time.Second, nil
+	}
 
 	var existingKyma unstructured.Unstructured
 	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())

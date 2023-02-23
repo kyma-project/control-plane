@@ -305,6 +305,7 @@ type InstanceDetails struct {
 	ServiceManagerClusterID string `json:"sm_cluster_id"`
 
 	KymaResourceNamespace string `json:"kyma_resource_namespace"`
+	KymaResourceName      string `json:"kyma_resource_name"`
 
 	EuAccess bool `json:"eu_access"`
 }

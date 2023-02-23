@@ -44,5 +44,8 @@ func KymaResourceGroupVersionKind() schema.GroupVersionKind {
 }
 
 func KymaName(operation internal.Operation) string {
+	if operation.KymaResourceName != "" {
+		return operation.KymaResourceName
+	}
 	return strings.ToLower(operation.RuntimeID)
 }
