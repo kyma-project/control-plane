@@ -219,6 +219,7 @@ type Operation struct {
 	Retries                     int       `json:"-"`
 	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
 	ExcutedButNotCompleted      []string  `json:"excutedButNotCompleted"`
+	ForceDelete                 bool      `json:"forceDelete,omitempty"`
 
 	// UPDATING
 	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`

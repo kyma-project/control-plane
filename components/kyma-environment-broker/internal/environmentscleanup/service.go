@@ -29,7 +29,7 @@ type GardenerClient interface {
 
 //go:generate mockery --name=BrokerClient --output=automock
 type BrokerClient interface {
-	Deprovision(instance internal.Instance) (string, error)
+	Deprovision(instance internal.Instance, force bool) (string, error)
 }
 
 //go:generate mockery --name=ProvisionerClient --output=automock
@@ -232,7 +232,7 @@ func (s *Service) triggerRuntimeDeprovisioning(runtime runtime) error {
 }
 
 func (s *Service) triggerEnvironmentDeprovisioning(instance internal.Instance) error {
-	opID, err := s.brokerService.Deprovision(instance)
+	opID, err := s.brokerService.Deprovision(instance, false)
 	if err != nil {
 		err = fmt.Errorf("while triggering deprovisioning for instance ID %q: %w", instance.InstanceID, err)
 		s.logger.Error(err)

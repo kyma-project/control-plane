@@ -13,7 +13,7 @@ type BrokerClient struct {
 }
 
 // Deprovision provides a mock function with given fields: instance
-func (_m *BrokerClient) Deprovision(instance internal.Instance) (string, error) {
+func (_m *BrokerClient) Deprovision(instance internal.Instance, force bool) (string, error) {
 	ret := _m.Called(instance)
 
 	var r0 string

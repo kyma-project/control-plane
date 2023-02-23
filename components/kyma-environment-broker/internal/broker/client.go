@@ -93,8 +93,8 @@ func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller
 }
 
 // Deprovision requests Runtime deprovisioning in KEB with given details
-func (c *Client) Deprovision(instance internal.Instance) (string, error) {
-	deprovisionURL, err := c.formatDeprovisionUrl(instance)
+func (c *Client) Deprovision(instance internal.Instance, force bool) (string, error) {
+	deprovisionURL, err := c.formatDeprovisionUrl(instance, force)
 	if err != nil {
 		return "", err
 	}
@@ -221,12 +221,16 @@ func preparePayload(instance internal.Instance) ([]byte, error) {
 	return jsonPayload, err
 }
 
-func (c *Client) formatDeprovisionUrl(instance internal.Instance) (string, error) {
+func (c *Client) formatDeprovisionUrl(instance internal.Instance, force bool) (string, error) {
 	if len(instance.ServicePlanID) == 0 {
 		return "", fmt.Errorf("empty ServicePlanID")
 	}
 
-	return fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID), nil
+	url := fmt.Sprintf(deprovisionTmpl, c.brokerConfig.URL, instancesURL, instance.InstanceID, kymaClassID, instance.ServicePlanID)
+	if force {
+		url = url + "&force=true"
+	}
+	return url, nil
 }
 
 func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, body io.Reader, responseBody interface{}) error {

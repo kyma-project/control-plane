@@ -17,7 +17,7 @@ import (
 )
 
 type BrokerClient interface {
-	Deprovision(instance internal.Instance) (string, error)
+	Deprovision(instance internal.Instance, force bool) (string, error)
 }
 
 type Config struct {
@@ -113,7 +113,7 @@ func (s *DeprovisionRetriggerService) retriggerDeprovisioningForInstances(instan
 
 func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Instance) (err error) {
 	log.Infof("About to deprovision instance for instanceId: %+v", instance.InstanceID)
-	operationId, err := s.brokerClient.Deprovision(instance)
+	operationId, err := s.brokerClient.Deprovision(instance, false)
 	if err != nil {
 		log.Error(fmt.Sprintf("while sending deprovision request for instance ID %s: %s", instance.InstanceID, err))
 		return err

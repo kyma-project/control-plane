@@ -39,7 +39,7 @@ func TestClient_Deprovision(t *testing.T) {
 		}
 
 		// when
-		opID, err := client.Deprovision(instance)
+		opID, err := client.Deprovision(instance, false)
 
 		// then
 		assert.NoError(t, err)
@@ -64,7 +64,7 @@ func TestClient_Deprovision(t *testing.T) {
 		}
 
 		// when
-		opID, err := client.Deprovision(instance)
+		opID, err := client.Deprovision(instance, false)
 
 		// then
 		assert.Error(t, err)

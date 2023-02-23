@@ -16,7 +16,7 @@ type CisClient interface {
 
 //go:generate mockery --name=BrokerClient --output=automock
 type BrokerClient interface {
-	Deprovision(instance internal.Instance) (string, error)
+	Deprovision(instance internal.Instance, force bool) (string, error)
 }
 
 type SubAccountCleanupService struct {
@@ -77,7 +77,7 @@ func (ac *SubAccountCleanupService) executeDeprovisioning(subaccounts []string, 
 	}
 
 	for _, instance := range instances {
-		operation, err := ac.brokerClient.Deprovision(instance)
+		operation, err := ac.brokerClient.Deprovision(instance, true)
 		if err != nil {
 			errCh <- fmt.Errorf("error occurred during deprovisioning instance with ID %s: %w", instance.InstanceID, err)
 			continue
