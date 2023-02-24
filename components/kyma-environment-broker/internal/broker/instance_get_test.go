@@ -258,3 +258,43 @@ func TestGetEndpoint_GetExpiredInstanceWithoutExpirationInfo(t *testing.T) {
 	assert.NotContains(t, response.Metadata.Labels, "Trial expiration details")
 	assert.NotContains(t, response.Metadata.Labels, "Trial documentation")
 }
+
+func TestGetEndpoint_DoNotGetInstanceThatIsLogicallyDeleted(t *testing.T) {
+	// given
+	st := storage.NewMemoryStorage()
+	cfg := broker.Config{
+		URL:                                     "https://test-broker.local",
+		EnableKubeconfigURLLabel:                true,
+		ShowTrialExpirationInfo:                 true,
+		SubaccountsIdsToShowTrialExpirationInfo: "subaccount-id1,subaccount-id2",
+	}
+
+	const (
+		instanceID  = "cluster-test"
+		operationID = "operationID"
+	)
+	op := fixture.FixProvisioningOperation(operationID, instanceID)
+
+	instance := fixture.FixInstance(instanceID)
+	instance.SubAccountID = "subaccount-id3"
+	instance.ServicePlanID = broker.TrialPlanID
+	instance.CreatedAt = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+	expireTime := instance.CreatedAt.Add(time.Hour * 24 * 14)
+	instance.ExpiredAt = &expireTime
+	instance.DeletedAt = time.Now()
+
+	err := st.Operations().InsertOperation(op)
+	require.NoError(t, err)
+
+	err = st.Instances().Insert(instance)
+	require.NoError(t, err)
+
+	svc := broker.NewGetInstance(cfg, st.Instances(), st.Operations(), logrus.New())
+
+	// when
+	_, err = svc.GetInstance(context.Background(), instanceID, domain.FetchInstanceDetails{})
+
+	// then
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "instance with instanceID cluster-test does not exist")
+}
