@@ -43,7 +43,7 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 			return operation, 0, nil
 		}
 		if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
-			logger.Infof("internal evaluation have been deleted, skipping external evaluation deletion for trial/freemium plan")
+			logger.Infof("Internal evaluation have been deleted, skipping external evaluation deletion for trial/freemium plan")
 			return operation, 0, nil
 		}
 	}
