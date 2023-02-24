@@ -37,9 +37,15 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 
 func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	logger.Infof("Avs lifecycle %+v", operation.Avs)
-	if operation.Avs.AVSExternalEvaluationDeleted && operation.Avs.AVSInternalEvaluationDeleted {
-		logger.Infof("Both internal and external evaluations have been deleted")
-		return operation, 0, nil
+	if operation.Avs.AVSInternalEvaluationDeleted {
+		if operation.Avs.AVSExternalEvaluationDeleted {
+			logger.Infof("Both internal and external evaluations have been deleted")
+			return operation, 0, nil
+		}
+		if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
+			logger.Infof("internal evaluation have been deleted, skipping external evaluation deletion for trial/freemium plan")
+			return operation, 0, nil
+		}
 	}
 
 	operation, err := ars.delegator.DeleteAvsEvaluation(operation, logger, ars.internalEvalAssistant)
