@@ -161,7 +161,9 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
-	dbsFactory := dbsession.NewFactory(connection, cfg.Database.SecretKey)
+	dbsFactory, err := dbsession.NewFactory(connection, cfg.Database.SecretKey)
+
+	exitOnError(err, "Cannot create database session")
 
 	// TODO: Remove after data migration
 	if cfg.RunAwsConfigMigration {

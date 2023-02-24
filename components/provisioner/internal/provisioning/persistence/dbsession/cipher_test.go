@@ -56,22 +56,4 @@ func TestCipher(t *testing.T) {
 		// then
 		assert.Error(t, err)
 	})
-
-	t.Run("should not fail to execute empty functions when the secretKey is empty", func(t *testing.T) {
-		// given
-		text := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore..."
-		secretKey := ""
-		e := newEmptyFunc([]byte(secretKey))
-		d := newEmptyFunc([]byte(secretKey))
-
-		// when
-		encryptedText, err := e([]byte(text))
-		require.NoError(t, err)
-
-		// then
-		decryptedText, err := d(encryptedText)
-		require.NoError(t, err)
-
-		assert.Equal(t, text, string(decryptedText))
-	})
 }

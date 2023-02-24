@@ -156,7 +156,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	seedInterface := seeds.NewFakeSeedsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
 	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
-	dbsFactory := dbsession.NewFactory(connection, secretKey)
+	dbsFactory, _ := dbsession.NewFactory(connection, secretKey)
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
