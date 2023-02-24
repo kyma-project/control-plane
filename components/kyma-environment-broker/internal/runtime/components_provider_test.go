@@ -92,7 +92,7 @@ func fixConfigForPlan() *internal.ConfigForPlan {
 	return &internal.ConfigForPlan{AdditionalComponents: []internal.KymaComponent{
 		{
 			Name:      "compass-runtime-agent",
-			Namespace: "compass-system",
+			Namespace: "kyma-system",
 		},
 		{
 			Name:      "new-component1",
@@ -106,7 +106,7 @@ func fixConfigForPlan() *internal.ConfigForPlan {
 		},
 		{
 			Name:      "new-component3",
-			Namespace: "compass-system",
+			Namespace: "kyma-system",
 		},
 	}}
 }

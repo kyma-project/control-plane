@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	namespace  = "compass-system"
+	namespace  = "kyma-system"
 	secretName = "compass-broker-registration"
 )
 

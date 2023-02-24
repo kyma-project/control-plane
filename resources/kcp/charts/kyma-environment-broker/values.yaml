@@ -99,7 +99,7 @@ additionalRuntimeComponents: |-
   - name: "uaa-activator"
     namespace: "kyma-system"
   - name: "compass-runtime-agent"
-    namespace: "compass-system"
+    namespace: "kyma-system"
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
@@ -107,7 +107,7 @@ newAdditionalRuntimeComponents: |-
   - name: "service-manager-proxy"
     namespace: "kyma-system"
   - name: "compass-runtime-agent"
-    namespace: "compass-system"
+    namespace: "kyma-system"
 
 trialRegionsMapping: |-
   cf-eu10: europe
