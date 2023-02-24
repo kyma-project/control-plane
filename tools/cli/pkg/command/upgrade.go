@@ -47,7 +47,7 @@ func (cmd *UpgradeCommand) SetUpgradeOpts(cobraCmd *cobra.Command) {
 	SetRuntimeTargetOpts(cobraCmd, &cmd.targetInputs, &cmd.targetExcludeInputs)
 	cobraCmd.Flags().StringVar(&cmd.strategy, "strategy", string(orchestration.ParallelStrategy), "Orchestration strategy to use.")
 	cobraCmd.Flags().IntVar(&cmd.orchestrationParams.Strategy.Parallel.Workers, "parallel-workers", 1, "Number of parallel workers to use in parallel orchestration strategy. By default the amount of workers will be auto-selected on control plane server side.")
-	cobraCmd.Flags().BoolVarP(&cmd.maintenancewindow, "maintenancewindow", "", true, "Schedule the upgrade in the next possible maintenancewindow after 'schedule'. (default: true)")
+	cobraCmd.Flags().BoolVarP(&cmd.maintenancewindow, "maintenancewindow", "", false, "Schedule the upgrade in the next possible maintenancewindow after 'schedule'. (default: false)")
 	cobraCmd.Flags().StringVar(&cmd.schedule, "schedule", "now", "Orchestration schedule to use. Possible values: \"immediate\", \"now\" or a date (2006-01-01) . By default the schedule will be auto-selected on control plane server side.")
 	cobraCmd.Flags().BoolVar(&cmd.orchestrationParams.DryRun, "dry-run", false, "Perform the orchestration without executing the actual upgrade operations for the Runtimes. The details can be obtained using the \"kcp orchestrations\" command.")
 }
