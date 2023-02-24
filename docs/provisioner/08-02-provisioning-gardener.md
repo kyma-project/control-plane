@@ -104,9 +104,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   3. In the **Members** tab, create a service account for Gardener. 
     
   4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on GCP. 
-    
-     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
-                                                                          
+     
      ```graphql
       mutation {
         provisionRuntime(
@@ -136,33 +134,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 providerSpecificConfig: { gcpConfig: { zones: ["europe-west4-a"] } }
                 euAccess: true
               }
-            }
-            kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "2.12.0"
-              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
-              components: [
-                { component: "compass-runtime-agent", namespace: "kyma-system" }
-                {
-                  component: "{KYMA_COMPONENT_NAME}"
-                  namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
-                  configuration: [
-                    { key: "{CONFIG_PROPERTY_KEY}"
-                      value: "{CONFIG_PROPERTY_VALUE}"
-                      secret: true|false # Specifies if the property is confidential
-                    }
-                  ]
-                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
-                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
-                }
-              ]
-              configuration: [
-                { 
-                  key: "{CONFIG_PROPERTY_KEY}"
-                  value: "{CONFIG_PROPERTY_VALUE}"
-                  secret: true|false # Specifies if the property is confidential
-                }
-              ]
-              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
             }
           }
         ) {
@@ -201,9 +172,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   3. In the **Members** tab, create a service account for Gardener. 
 
   4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on Azure.
-  
-     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
-                                                                          
+   
       ```graphql
       mutation {
         provisionRuntime(
@@ -233,33 +202,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 providerSpecificConfig: { azureConfig: { vnetCidr: "10.250.0.0/19", zones: ["1", "2"] } }
                 euAccess: false
               }
-            }
-            kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "2.12.0"
-              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
-              components: [
-                { component: "compass-runtime-agent", namespace: "kyma-system" }
-                {
-                  component: "{KYMA_COMPONENT_NAME}"
-                  namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
-                  configuration: [
-                    { key: "{CONFIG_PROPERTY_KEY}"
-                      value: "{CONFIG_PROPERTY_VALUE}"
-                      secret: true|false # Specifies if the property is confidential
-                    }
-                  ]
-                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
-                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
-                }
-              ]
-              configuration: [
-                { 
-                  key: "{CONFIG_PROPERTY_KEY}"
-                  value: "{CONFIG_PROPERTY_VALUE}"
-                  secret: true|false # Specifies if the property is confidential
-                }
-              ]
-              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
             }
           }
         ) {
@@ -298,9 +240,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
   3. In the **Members** tab, create a service account for Gardener. 
 
   4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on AWS. 
-  
-     > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
-                                                                          
+   
       ```graphql
       mutation {
         provisionRuntime(
@@ -345,33 +285,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                 euAccess: true
               }
             }
-            kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-              version: "2.12.0"
-              profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
-              components: [
-                { component: "compass-runtime-agent", namespace: "kyma-system" }
-                {
-                  component: "{KYMA_COMPONENT_NAME}"
-                  namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
-                  configuration: [
-                    { key: "{CONFIG_PROPERTY_KEY}"
-                      value: "{CONFIG_PROPERTY_VALUE}"
-                      secret: true|false # Specifies if the property is confidential
-                    }
-                  ]
-                  sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
-                  conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
-                }
-              ]
-              configuration: [
-                { 
-                  key: "{CONFIG_PROPERTY_KEY}"
-                  value: "{CONFIG_PROPERTY_VALUE}"
-                  secret: true|false # Specifies if the property is confidential
-                }
-              ]
-              conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
-            }
           }
         ) {
           runtimeID
@@ -408,9 +321,7 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
    3. In the **Members** tab, create a service account for Gardener. 
       
    4. Make a call to Runtime Provisioner with a **tenant** header to create a cluster on OpenStack. 
-      
-       > **NOTE:** The Runtime Agent component (`compass-runtime-agent`) in the Kyma configuration is mandatory and the order of the components matters.
-                                                                            
+       
        ```graphql
         mutation {
           provisionRuntime(
@@ -445,33 +356,6 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
                   }
                   euAccess: false
                 }
-              }
-              kymaConfig: { # Optional; if you don't provide it, a cluster without Kyma is provisioned
-                version: "2.12.5"
-                profile: "Evaluation" # Optional resources profile; possible values: "Evaluation", "Production"
-                components: [
-                  { component: "compass-runtime-agent", namespace: "kyma-system" }
-                  {
-                    component: "{KYMA_COMPONENT_NAME}"
-                    namespace: "{NAMESPACE_TO_INSTALL_COMPONENT_TO}"
-                    configuration: [
-                      { key: "{CONFIG_PROPERTY_KEY}"
-                        value: "{CONFIG_PROPERTY_VALUE}"
-                        secret: true|false # Specifies if the property is confidential
-                      }
-                    ]
-                    sourceURL: "{CUSTOM_COMPONENT_SOURCE_URL}"
-                    conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for component overrides; possible values: "Merge", "Replace"; default value: "Merge"
-                  }
-                ]
-                configuration: [
-                  { 
-                    key: "{CONFIG_PROPERTY_KEY}"
-                    value: "{CONFIG_PROPERTY_VALUE}"
-                    secret: true|false # Specifies if the property is confidential
-                  }
-                ]
-                conflictStrategy: "Merge" # Defines merging strategy if conflicts occur for global overrides; possible values: "Merge", "Replace"; default value: "Merge"
               }
             }
           ) {
