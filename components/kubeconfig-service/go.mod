@@ -13,7 +13,7 @@ require (
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/stretchr/testify v1.8.1
 	github.com/vrischmann/envconfig v1.3.0
-	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
+	golang.org/x/oauth2 v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apiserver v0.25.2
 	k8s.io/kubernetes v1.26.1
@@ -59,7 +59,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
+	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
