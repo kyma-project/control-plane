@@ -218,12 +218,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	expectedGardenerAzureRuntimeConfigWithoutTiller := expectedGardenerAzureRuntimeConfig(nil)
 	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
-	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers := createGQLRuntimeInputAzure(nil)
-	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(true)
-	gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Version = kymaVersionWithoutTiller
-	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers := expectedGardenerAzureRuntimeConfig(nil)
-	expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers.KymaConfig.Release = fixKymaReleaseWithoutTiller()
-
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
 		AwsZones: []*gqlschema.AWSZoneInput{
 			{
@@ -433,11 +427,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			description: "Should not allow privileged containers if Tiller is not present",
 		},
 		{
-			input:       gardenerAzureGQLInputWithNoTillerButAllowedPrivilegedContainers,
-			expected:    expectedGardenerAzureRuntimeConfigWithNoTillerButAllowedPrivilegedContainers,
-			description: "Should allow privileged containers if requested even when Tiller is not present",
-		},
-		{
 			input:       gardenerAWSGQLInput,
 			expected:    expectedGardenerAWSRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for AWS provider",
@@ -472,35 +461,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			uuidGeneratorMock.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Should use force allow privileged containers if equals true even if everything else says false", func(t *testing.T) {
-		// given
-		gardenerAzureGQLInput := createGQLRuntimeInputAzure(nil)
-		gardenerAzureGQLInput.KymaConfig.Version = kymaVersionWithoutTiller
-		gardenerAzureGQLInput.ClusterConfig.GardenerConfig.AllowPrivilegedContainers = util.BoolPtr(false)
-
-		expectedGardenerAzureRuntimeConfig := expectedGardenerAzureRuntimeConfig(nil)
-		expectedGardenerAzureRuntimeConfig.KymaConfig.Release = fixKymaReleaseWithoutTiller()
-
-		uuidGeneratorMock := &mocks.UUIDGenerator{}
-		uuidGeneratorMock.On("New").Return("id").Times(6)
-		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
-
-		inputConverter := NewInputConverter(
-			uuidGeneratorMock,
-			releaseProvider,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
-
-		// when
-		runtimeConfig, err := inputConverter.ProvisioningInputToCluster("runtimeID", gardenerAzureGQLInput, tenant, subAccountId)
-
-		// then
-		require.NoError(t, err)
-		assert.Equal(t, expectedGardenerAzureRuntimeConfig, runtimeConfig)
-		uuidGeneratorMock.AssertExpectations(t)
-	})
 }
 
 func oidcInput() *gqlschema.OIDCConfigInput {
