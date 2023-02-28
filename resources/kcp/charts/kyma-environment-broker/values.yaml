@@ -260,7 +260,6 @@ runtimeAllowedPrincipals: |-
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
-  labelSelector: "owner.do-not-delete!=true"
 
 subaccountCleanup:
   enabled: "false"
@@ -283,12 +282,11 @@ dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
 
 setupJobs:
-  - name: kcp-kyma-environments-cleanup
+  - name: "kcp-kyma-environments-cleanup"
+    account: "kcp-kyma-environment-broker"
     schedule: "0 0 * * *"
-    namespace: kcp-system
-    imageName: kyma-environments-cleanup
-    cronJobName: environments-cleanup
+    imageName: "kyma-environments-cleanup"
+    cronJobName: "environments-cleanup"
     maxAge: "24h"
-    labelSelector: "owner.do-not-delete!=true"
     version: "PR-2468"
     dir:

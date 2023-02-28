@@ -3,8 +3,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "{{$job.name}}"
-  namespace: "{{$job.namespace}}"
+  name: {{$job.name}}
 spec:
   schedule: {{$job.schedule}}
   failedJobsHistoryLimit: 5
@@ -25,7 +24,7 @@ spec:
             sidecar.istio.io/inject: "false"
           {{ end }}
         spec:
-          serviceAccountName: {{$job.name}}
+          serviceAccountName: {{$job.account}}
           securityContext:
             runAsUser: 2000
           restartPolicy: Never
@@ -41,8 +40,6 @@ spec:
               {{end}}
               - name: APP_MAX_AGE_HOURS
                 value: "{{ $job.maxAge }}"
-              - name: APP_LABEL_SELECTOR
-                value: "{{ $job.labelSelector }}"
               - name: APP_GARDENER_PROJECT
                 value: "{{ .Values.gardener.project }}"
               - name: APP_GARDENER_KUBECONFIG_PATH
