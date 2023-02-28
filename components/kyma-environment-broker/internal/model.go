@@ -219,6 +219,7 @@ type Operation struct {
 	Retries                     int       `json:"-"`
 	ReconcilerDeregistrationAt  time.Time `json:"reconcilerDeregistrationAt"`
 	ExcutedButNotCompleted      []string  `json:"excutedButNotCompleted"`
+	UserAgent                   string    `json:"userAgent,omitempty"`
 
 	// UPDATING
 	UpdatingParameters    UpdatingParametersDTO `json:"updating_parameters"`
