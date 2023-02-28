@@ -37,9 +37,9 @@ A successful call returns the operation ID:
 
 ## Subaccount Cleanup Job
 
-Standard workflow for [BTP Operator](https://github.com/SAP/sap-btp-service-operator) resources is to **keep** them untouched by KEB because users may intend to
+The standard workflow for [BTP Operator](https://github.com/SAP/sap-btp-service-operator) resources is to keep them untouched by KEB because users may intend to
 keep the external services provisioned through the BTP Operator still operational. In this case, when calling deprovisioning in the BTP Cockpit, users are informed
-there are still instances provisioned by BTP Operator and it's expected by the user to handle the cleanup.
+there are still instances provisioned by BTP Operator, and the user is expected to handle the cleanup.
 
 There is one exception, and that is the `subaccount-cleanup` job. [KEB parses the `User-Agent` HTTP header](https://github.com/kyma-project/control-plane/pull/2520) for
 `DELETE` call on `/service_instances/${instance_id}` endpoint and forwards it through the operation to the processing step `btp_operator_cleanup` handling
