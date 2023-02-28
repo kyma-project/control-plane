@@ -37,7 +37,7 @@ func (ars *AvsEvaluationRemovalStep) Name() string {
 
 func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	logger.Infof("Avs lifecycle %+v", operation.Avs)
-	if operation.Avs.AVSExternalEvaluationDeleted && operation.Avs.AVSInternalEvaluationDeleted {
+	if operation.Avs.AVSInternalEvaluationDeleted {
 		logger.Infof("Both internal and external evaluations have been deleted")
 		return operation, 0, nil
 	}
@@ -46,16 +46,6 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 	if err != nil {
 		logger.Warnf("unable to delete internal evaluation: %s", err.Error())
 		return ars.deProvisioningManager.RetryOperationWithoutFail(operation, "error while deleting avs internal evaluation", 10*time.Second, 1*time.Minute, logger)
-	}
-
-	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
-		logger.Info("skipping AVS external evaluation deletion for trial/freemium plan")
-		return operation, 0, nil
-	}
-	operation, err = ars.delegator.DeleteAvsEvaluation(operation, logger, ars.externalEvalAssistant)
-	if err != nil {
-		logger.Warnf("unable to delete external evaluation: %s", err.Error())
-		return ars.deProvisioningManager.RetryOperationWithoutFail(operation, "error while deleting avs external evaluation", 10*time.Second, 1*time.Minute, logger)
 	}
 
 	newOperation, err := ars.operationsStorage.UpdateOperation(operation)

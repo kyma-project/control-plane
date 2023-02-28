@@ -17,6 +17,27 @@ type GardenerClient struct {
 	mock.Mock
 }
 
+// Delete provides a mock function with given fields: ctx, name, options, subresources
+func (_m *GardenerClient) Delete(ctx context.Context, name string, options v1.DeleteOptions, subresources ...string) error {
+	_va := make([]interface{}, len(subresources))
+	for _i := range subresources {
+		_va[_i] = subresources[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, name, options)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, v1.DeleteOptions, ...string) error); ok {
+		r0 = rf(ctx, name, options, subresources...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: ctx, name, options, subresources
 func (_m *GardenerClient) Get(ctx context.Context, name string, options v1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
 	_va := make([]interface{}, len(subresources))

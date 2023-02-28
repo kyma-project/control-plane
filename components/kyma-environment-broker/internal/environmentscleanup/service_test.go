@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -257,6 +258,121 @@ func TestService_PerformCleanup(t *testing.T) {
 		assert.Contains(t, actualLog.String(), shouldContain)
 		assert.NoError(t, err)
 	})
+
+	t.Run("should remove shoots and runtimes by broker not when runtime found in broker", func(t *testing.T) {
+		// given
+		gcMock := &mocks.GardenerClient{}
+		creationTime, parseErr := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
+		require.NoError(t, parseErr)
+
+		var shootOne = unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name":              "az-1234",
+					"creationTimestamp": creationTime,
+					"annotations": map[string]interface{}{
+						shootAnnotationRuntimeId: fixRuntimeID1,
+					},
+					"clusterName": "cluster-one",
+				},
+				"spec": map[string]interface{}{
+					"cloudProfileName": "az",
+				},
+			},
+		}
+
+		var shootTwo = unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name":              "az-4567",
+					"creationTimestamp": creationTime,
+					"annotations": map[string]interface{}{
+						shootAnnotationRuntimeId: fixRuntimeID2,
+					},
+					"clusterName": "cluster-one",
+				},
+				"spec": map[string]interface{}{
+					"cloudProfileName": "az",
+				},
+			},
+		}
+
+		unl := unstructured.UnstructuredList{
+			Items: []unstructured.Unstructured{
+				shootOne,
+				shootTwo,
+			},
+		}
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
+		gcMock.On("Get", mock.Anything, "az-4567", v1.GetOptions{}, "shoot").Return(&shootTwo, nil)
+		gcMock.On("Get", mock.Anything, "az-1234", v1.GetOptions{}, "shoot").Return(&shootOne, nil)
+
+		bcMock := &mocks.BrokerClient{}
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
+
+		pMock := &mocks.ProvisionerClient{}
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID1).Return("", nil)
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", nil)
+
+		brcMock := &mocks.BrokerRuntimesClient{}
+		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{
+			Data: []run.RuntimeDTO{
+				{
+					ShootName: "az-1234",
+					Status: run.RuntimeStatus{
+						Provisioning: &run.Operation{
+							CreatedAt: creationTime,
+						},
+					},
+					RuntimeID:    fixRuntimeID1,
+					SubAccountID: fixAccountID,
+				},
+				{
+					ShootName: "az-4567",
+					Status: run.RuntimeStatus{
+						Provisioning: &run.Operation{
+							CreatedAt: creationTime,
+						},
+					},
+					RuntimeID:    fixRuntimeID2,
+					SubAccountID: fixAccountID,
+				},
+			},
+			Count:      2,
+			TotalCount: 2,
+		}, nil)
+
+		memoryStorage := storage.NewMemoryStorage()
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID1,
+			RuntimeID:  fixRuntimeID1,
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID2,
+			RuntimeID:  fixRuntimeID2,
+		})
+
+		var actualLog bytes.Buffer
+		logger := logrus.New()
+		logger.SetFormatter(&logrus.TextFormatter{
+			DisableTimestamp: true,
+		})
+		logger.SetOutput(&actualLog)
+
+		svc := NewService(gcMock, bcMock, brcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+
+		// when
+		err := svc.PerformCleanup()
+
+		// then
+		assert.NoError(t, err)
+
+		// assert expectations on mocks
+
+	})
+
+	// TODO: Test pagination
+
 }
 
 func fixShootList() *unstructured.UnstructuredList {

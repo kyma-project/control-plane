@@ -128,7 +128,13 @@ func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, err
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
-		if shootAge.Hours() >= s.MaxShootAge.Hours() {
+		if shootAge.Hours() < s.MaxShootAge.Hours() {
+			continue
+		}
+
+		_, toRemove := shoot.GetLabels()[notRemoveLabel]
+		if toRemove {
+
 			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
 			staleRuntime, err := s.shootToRuntime(shoot)
 			if err != nil {
@@ -219,7 +225,25 @@ func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error)
 	}, nil
 }
 
-func (s *Service) cleanUp(runtimesToDelete []runtime) error {
+func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error) {
+	shoot := gardener.Shoot{st}
+	runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName())
+	}
+
+	accountID, ok := shoot.GetLabels()[shootLabelAccountId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no account label", shoot.GetName())
+	}
+
+	return &runtime{
+		ID:        runtimeID,
+		AccountID: accountID,
+	}, nil
+}
+
+func (s *Service) cleanUp(runtimesToDelete map[string]runtime) error {
 	kebInstancesToDelete, err := s.getInstancesForRuntimes(runtimesToDelete)
 	if err != nil {
 		err = fmt.Errorf("while getting instance IDs for Runtimes: %w", err)
@@ -244,7 +268,15 @@ func (s *Service) cleanUp(runtimesToDelete []runtime) error {
 	return result.ErrorOrNil()
 }
 
-func (s *Service) getInstancesForRuntimes(runtimesToDelete []runtime) ([]internal.Instance, error) {
+func (s *Service) cleanUpShoots(shoots []unstructured.Unstructured) {
+	for _, shoot := range shoots {
+		err := s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{}, "shoot")
+		s.logger.Warn(fmt.Errorf("cannot remove a shoot %w", err))
+		continue
+	}
+}
+
+func (s *Service) getInstancesForRuntimes(runtimesToDelete map[string]runtime) ([]internal.Instance, error) {
 
 	var runtimeIDsToDelete []string
 	for _, runtime := range runtimesToDelete {
@@ -273,7 +305,7 @@ func (s *Service) cleanUpKEBInstances(instancesToDelete []internal.Instance) *mu
 	return result
 }
 
-func (s *Service) cleanUpProvisionerInstances(runtimesToDelete []runtime, kebInstancesToDelete []internal.Instance) *multierror.Error {
+func (s *Service) cleanUpProvisionerInstances(runtimesToDelete map[string]runtime, kebInstancesToDelete []internal.Instance) *multierror.Error {
 	kebInstanceExists := func(runtimeID string) bool {
 		for _, instance := range kebInstancesToDelete {
 			if instance.RuntimeID == runtimeID {
