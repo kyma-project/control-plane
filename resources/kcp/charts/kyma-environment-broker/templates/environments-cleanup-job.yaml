@@ -31,7 +31,7 @@ spec:
           shareProcessNamespace: true
           containers:
           - name: main
-            image: "{{ .Values.global.images.containerRegistry.path }}/{{ $job.dir }}{{$job.imageName}}:{{ $job.version }}"
+            image: "{{ .Values.global.images.containerRegistry.path }}/{{ $job.dir }}{{ $job.imageName }}:{{ $job.version }}"
             imagePullPolicy: IfNotPresent
             env:
               {{if eq .Values.global.database.embedded.enabled false}}
