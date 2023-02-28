@@ -5,20 +5,16 @@ global:
       version: "PR-2477"
     kyma_environments_cleanup_job:
       dir:
-<<<<<<< Updated upstream
-      version: "PR-2477"
-=======
-      version: "PR-2468"
->>>>>>> Stashed changes
+      version: "PR-2476"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2477"
+      version: "PR-2476"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2530"
+      version: "PR-22476"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2477"
+      version: "PR-2476"
 
 deployment:
   replicaCount: 1
