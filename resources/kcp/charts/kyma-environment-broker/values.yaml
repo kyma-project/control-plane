@@ -5,7 +5,11 @@ global:
       version: "PR-2477"
     kyma_environments_cleanup_job:
       dir:
+<<<<<<< Updated upstream
       version: "PR-2477"
+=======
+      version: "PR-2468"
+>>>>>>> Stashed changes
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-2477"
@@ -281,3 +285,14 @@ serviceMonitor:
 
 dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
+
+setupJobs:
+  - name: kcp-kyma-environments-cleanup
+    schedule: "0 0 * * *"
+    namespace: kcp-system
+    imageName: kyma-environments-cleanup
+    cronJobName: environments-cleanup
+    maxAge: "24h"
+    labelSelector: "owner.do-not-delete!=true"
+    version: "PR-2468"
+    dir:

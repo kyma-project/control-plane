@@ -1,37 +1,38 @@
 {{if eq .Values.global.kyma_environment_broker.environmentsCleanup.enabled true}}
+{{- range $index, $job := .Values.setupJobs }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "kcp-kyma-environments-cleanup"
-  namespace: kcp-system
+  name: "{{$job.name}}"
+  namespace: "{{$job.namespace}}"
 spec:
-  schedule: {{.Values.environmentsCleanup.schedule}}
+  schedule: {{$job.schedule}}
   failedJobsHistoryLimit: 5
   successfulJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
   jobTemplate:
     metadata:
       labels:
-        cronjob: environments-cleanup
+        cronjob: {{$job.cronJobName}}
     spec:
       template:
         metadata:
-          name: kyma-environments-cleanup
+          name: {{$job.imageName}}
           labels:
-            cronjob: environments-cleanup
+            cronjob: {{$job.cronJobName}}
           {{- if eq .Values.global.database.embedded.enabled false }}
           annotations:
             sidecar.istio.io/inject: "false"
           {{ end }}
         spec:
-          serviceAccountName: kcp-kyma-environment-broker
+          serviceAccountName: {{$job.name}}
           securityContext:
             runAsUser: 2000
           restartPolicy: Never
           shareProcessNamespace: true
           containers:
-          - name: environments-cleanup
-            image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environments_cleanup_job.dir }}kyma-environments-cleanup-job:{{ .Values.global.images.kyma_environments_cleanup_job.version }}"
+          - name: main
+            image: "{{ .Values.global.images.containerRegistry.path }}/{{ $job.dir }}{{$job.imageName}}:{{ $job.version }}"
             imagePullPolicy: IfNotPresent
             env:
               {{if eq .Values.global.database.embedded.enabled false}}
@@ -39,9 +40,9 @@ spec:
                 value: "false"
               {{end}}
               - name: APP_MAX_AGE_HOURS
-                value: "{{ .Values.environmentsCleanup.maxAge }}"
+                value: "{{ $job.maxAge }}"
               - name: APP_LABEL_SELECTOR
-                value: "{{ .Values.environmentsCleanup.labelSelector }}"
+                value: "{{ $job.labelSelector }}"
               - name: APP_GARDENER_PROJECT
                 value: "{{ .Values.gardener.project }}"
               - name: APP_GARDENER_KUBECONFIG_PATH
@@ -103,7 +104,7 @@ spec:
               - name: APP_BROKER_SCOPE
                 value: {{.Values.kebClient.scope}}
             command:
-              - "./bin/environmentscleanup"
+              - "./bin/main"
             volumeMounts:
               - mountPath: /gardener/kubeconfig
                 name: gardener-kubeconfig
@@ -149,4 +150,5 @@ spec:
                 optional: true
                 defaultMode: 420
                 secretName: gardener-credentials
+{{- end }} 
 {{end}}
