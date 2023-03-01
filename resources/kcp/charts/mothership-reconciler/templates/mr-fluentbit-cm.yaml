@@ -40,6 +40,8 @@ data:
         Mem_Buf_Limit     5MB
         exit_on_eof       false
         Key               log
+        Buffer_Max_Size   1MB
+        Skip_Long_Lines   off
 
     [FILTER]
         Name         parser
