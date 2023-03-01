@@ -260,6 +260,23 @@ runtimeAllowedPrincipals: |-
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
+  name: "kcp-kyma-environments-cleanup"
+  account: "kcp-kyma-environment-broker"
+  imageName: "kyma-environments-cleanup"
+  cronJobName: "environments-cleanup"
+  maxAge: "24h"
+  version: "PR-2476"
+  dir:
+  envs:
+    - APP_GARDENER_PROJECT: "kyma-dev"
+    - APP_GARDENER_KUBECONFIG_PATH: "/gardener/kubeconfig/kubeconfig"
+    - APP_MAX_AGE_HOURS: "24h"
+  secretVolumes:
+    -  gardener-kubeconfig: 
+        path: /gardener/kubeconfig
+        optional: true
+        secret: gardener-credentials
+        defaultMode: 420
 
 subaccountCleanup:
   enabled: "false"
@@ -273,6 +290,17 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  #   to the generic job
+  # name: "deprovision-retrigger-job"
+  # schedule: "0 2 * * *"
+  # imageName: "kyma-environment-deprovision-retrigger-job"
+  # cronJobName: "deprovision-retrigger-job"
+  # maxAge: "24h"
+  # version: "PR-2476"
+  # dir:
+  # envs:
+  #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
   scrapeTimeout: 10s
@@ -282,11 +310,5 @@ dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
 
 setupJobs:
-  - name: "kcp-kyma-environments-cleanup"
-    account: "kcp-kyma-environment-broker"
-    schedule: "0 0 * * *"
-    imageName: "kyma-environments-cleanup"
-    cronJobName: "environments-cleanup"
-    maxAge: "24h"
-    version: "PR-2468"
-    dir:
+  - "kcp-kyma-environments-cleanup"
+  # - "deprovision-retrigger-job"
