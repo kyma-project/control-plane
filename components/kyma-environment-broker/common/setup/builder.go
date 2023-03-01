@@ -56,8 +56,8 @@ func NewAppBuilder() AppBuilder {
 }
 
 func (b *AppBuilder) WithConfig() {
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, "APP")
+	b.cfg = config{}
+	err := envconfig.InitWithPrefix(&b.cfg, "APP")
 	if err != nil {
 		FatalOnError(fmt.Errorf("while loading cleanup config: %w", err))
 	}
