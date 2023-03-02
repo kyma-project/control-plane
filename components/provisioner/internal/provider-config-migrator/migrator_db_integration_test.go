@@ -42,7 +42,7 @@ func TestProviderConfigMigrator(t *testing.T) {
 	require.NoError(t, err)
 
 	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
-	factory := dbsession.NewFactory(connection, secretKey)
+	factory, _ := dbsession.NewFactory(connection, secretKey)
 
 	release := prepareTestRelease(t, factory)
 
@@ -152,7 +152,6 @@ func createFixedGardenerConfig(t *testing.T, providerSpecConfig model.SingleZone
 		MaxUnavailable:                      1,
 		EnableKubernetesVersionAutoUpdate:   false,
 		EnableMachineImageVersionAutoUpdate: false,
-		AllowPrivilegedContainers:           false,
 		GardenerProviderConfig: SingleZoneAWSGardenerConfig{
 			input:                  &providerSpecConfig,
 			ProviderSpecificConfig: model.ProviderSpecificConfig(config),

@@ -3,6 +3,8 @@ package dbsession
 import (
 	"time"
 
+	"github.com/pkg/errors"
+
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -81,19 +83,15 @@ type factory struct {
 	decrypt    decryptFunc
 }
 
-func NewFactory(connection *dbr.Connection, secretKey string) Factory {
+func NewFactory(connection *dbr.Connection, secretKey string) (Factory, error) {
 	if len(secretKey) == 0 {
-		return &factory{
-			connection: connection,
-			encrypt:    newEmptyFunc([]byte{}),
-			decrypt:    newEmptyFunc([]byte{}),
-		}
+		return nil, errors.New("empty encryption key provided")
 	}
 	return &factory{
 		connection: connection,
 		encrypt:    newEncryptFunc([]byte(secretKey)),
 		decrypt:    newDecryptFunc([]byte(secretKey)),
-	}
+	}, nil
 }
 
 func (sf *factory) NewReadSession() ReadSession {

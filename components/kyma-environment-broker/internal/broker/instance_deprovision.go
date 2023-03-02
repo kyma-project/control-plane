@@ -92,6 +92,9 @@ func (b *DeprovisionEndpoint) Deprovision(ctx context.Context, instanceID string
 		logger.Errorf("cannot create new operation: %s", err)
 		return domain.DeprovisionServiceSpec{}, fmt.Errorf("cannot create new operation")
 	}
+	if v := ctx.Value("User-Agent"); v != nil {
+		operation.UserAgent = v.(string)
+	}
 	err = b.operationsStorage.InsertDeprovisioningOperation(operation)
 	if err != nil {
 		logger.Errorf("cannot save operation: %s", err)

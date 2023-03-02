@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	kymaClassID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	AccountCleanupJob = "accountcleanup-job"
 
 	instancesURL       = "/oauth/v2/service_instances"
 	deprovisionTmpl    = "%s%s/%s?service_id=%s&plan_id=%s"
@@ -63,6 +64,7 @@ type Client struct {
 	brokerConfig ClientConfig
 	httpClient   *http.Client
 	poller       Poller
+	UserAgent    string
 }
 
 func NewClientConfig(URL string) *ClientConfig {
@@ -235,6 +237,9 @@ func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, 
 		return fmt.Errorf("while creating request for provisioning: %w", err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
+	if len(c.UserAgent) != 0 {
+		request.Header.Set("User-Agent", c.UserAgent)
+	}
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
