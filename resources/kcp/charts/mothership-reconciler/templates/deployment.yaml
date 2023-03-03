@@ -127,7 +127,7 @@ spec:
         - name: audit-log
           mountPath: {{ .Values.global.mothership_reconciler.auditlog.logPath }}
         {{- end }}
-        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
+        {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
         - mountPath: /secrets/cloudsql-sslrootcert
           name: cloudsql-sslrootcert
           readOnly: true
@@ -177,7 +177,7 @@ spec:
         secret:
           secretName: cloudsql-instance-credentials
       {{- end }}
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
       - name: cloudsql-sslrootcert
         secret:
           items:
