@@ -309,6 +309,6 @@ serviceMonitor:
 dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
 
-setupJobs:
+cronJobs:
   - "kcp-kyma-environments-cleanup"
   # - "deprovision-retrigger-job"
