@@ -9,11 +9,8 @@ import (
 )
 
 const (
-	onDemandTillerFileFormat    = "https://storage.googleapis.com/kyma-development-artifacts/%s/tiller.yaml"
 	onDemandInstallerFileFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-installer-cluster.yaml"
-
-	releaseInstallerFileFormat = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
-	releaseTillerFileFormat    = "https://storage.googleapis.com/kyma-prow-artifacts/%s/tiller.yaml"
+	releaseInstallerFileFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-installer-cluster.yaml"
 )
 
 type TextFileDownloader interface {
@@ -34,16 +31,14 @@ func NewGCSDownloader(downloader TextFileDownloader) *GCSDownloader {
 }
 
 func (o *GCSDownloader) DownloadRelease(version string) (model.Release, error) {
-	tillerURL := fmt.Sprintf(releaseTillerFileFormat, version)
 	installerURL := fmt.Sprintf(releaseInstallerFileFormat, version)
 
 	if o.isOnDemandVersion(version) {
 		// Download onDemand
-		tillerURL = fmt.Sprintf(onDemandTillerFileFormat, version)
 		installerURL = fmt.Sprintf(onDemandInstallerFileFormat, version)
 	}
 
-	return o.downloadRelease(version, tillerURL, installerURL)
+	return o.downloadRelease(version, installerURL)
 }
 
 // Detection rules:
@@ -60,11 +55,7 @@ func (o *GCSDownloader) isOnDemandVersion(version string) bool {
 	return isOnDemandVersion
 }
 
-func (o *GCSDownloader) downloadRelease(version string, tillerURL, installerURL string) (model.Release, dberrors.Error) {
-	tillerYAML, err := o.downloader.DownloadOrEmpty(tillerURL)
-	if err != nil {
-		return model.Release{}, dberrors.Internal("Failed to download tiller YAML release for version %s: %s", version, err)
-	}
+func (o *GCSDownloader) downloadRelease(version string, installerURL string) (model.Release, dberrors.Error) {
 
 	installerYAML, err := o.downloader.Download(installerURL)
 	if err != nil {
@@ -73,7 +64,6 @@ func (o *GCSDownloader) downloadRelease(version string, tillerURL, installerURL 
 
 	rel := model.Release{
 		Version:       version,
-		TillerYAML:    tillerYAML,
 		InstallerYAML: installerYAML,
 	}
 

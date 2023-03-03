@@ -37,7 +37,7 @@ func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificC
 // TODO: Remove after schema migration
 func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
 	_, err := ws.insertInto("kyma_release").
-		Columns("id", "version", "tiller_yaml", "installer_yaml").
+		Columns("id", "version", "installer_yaml").
 		Record(artifacts).
 		Exec()
 

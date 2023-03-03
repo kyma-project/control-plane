@@ -61,7 +61,6 @@ users:
 var kymaRelease = model.Release{
 	Id:            "releaseId",
 	Version:       kymaVersion,
-	TillerYAML:    "tiller yaml",
 	InstallerYAML: "installer yaml",
 }
 

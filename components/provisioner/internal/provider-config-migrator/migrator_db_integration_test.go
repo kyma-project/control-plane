@@ -172,7 +172,6 @@ func createFixedTestRealease(releaseID string) model.Release {
 	return model.Release{
 		Id:            releaseID,
 		Version:       "2.0",
-		TillerYAML:    "something",
 		InstallerYAML: "something",
 	}
 }

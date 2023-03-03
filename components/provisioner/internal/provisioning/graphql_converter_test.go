@@ -651,7 +651,6 @@ func fixKymaRelease() model.Release {
 	return model.Release{
 		Id:            "d829b1b5-2e82-426d-91b0-f94978c0c140",
 		Version:       kymaVersion,
-		TillerYAML:    "tiller yaml",
 		InstallerYAML: "installer yaml",
 	}
 }

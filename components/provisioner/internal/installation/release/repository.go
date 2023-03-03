@@ -37,7 +37,7 @@ func (r releaseRepository) GetReleaseByVersion(version string) (model.Release, d
 	var release model.Release
 
 	err := session.
-		Select("id", "version", "tiller_yaml", "installer_yaml").
+		Select("id", "version", "installer_yaml").
 		From("kyma_release").
 		Where(dbr.Eq("version", version)).
 		LoadOne(&release)
@@ -69,7 +69,7 @@ func (r releaseRepository) SaveRelease(artifacts model.Release) (model.Release, 
 	session := r.connection.NewSession(nil)
 
 	_, err := session.InsertInto("kyma_release").
-		Columns("id", "version", "tiller_yaml", "installer_yaml").
+		Columns("id", "version", "installer_yaml").
 		Record(artifacts).
 		Exec()
 

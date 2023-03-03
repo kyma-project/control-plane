@@ -27,7 +27,6 @@ func (c KymaConfig) GetComponentConfig(name string) (KymaComponentConfig, bool) 
 type Release struct {
 	Id            string
 	Version       string
-	TillerYAML    string
 	InstallerYAML string
 }
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/aws"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model/infrastructure/azure"
@@ -789,7 +788,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		shoot.Spec.Extensions = upgradedExtensions
 	}
 
-	// Needed for upgrade to Kubernetes 2.25
+	// Needed for upgrade to Kubernetes 1.25
 	shoot.Spec.Kubernetes.AllowPrivilegedContainers = nil
 
 	disablePlugin := true

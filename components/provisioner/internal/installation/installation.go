@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	tillerWaitTime = 10 * time.Minute
-
 	installAction = "installation"
 	upgradeAction = "upgrade"
 )
@@ -85,7 +83,6 @@ func (s *installationService) triggerAction(
 	actionName string) error {
 
 	installationConfig := installation.Installation{
-		TillerYaml:    release.TillerYAML,
 		InstallerYaml: release.InstallerYAML,
 		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
 	}
@@ -108,7 +105,6 @@ func (s *installationService) triggerAction(
 func (s *installationService) createKymaInstaller(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, componentsConfig []model.KymaComponentConfig) (installation.Installer, error) {
 	kymaInstaller, err := s.installationHandler(
 		kubeconfig,
-		installation.WithTillerWaitTime(tillerWaitTime),
 		installation.WithInstallationCRModification(GetInstallationCRModificationFunc(kymaProfile, componentsConfig)),
 	)
 	if err != nil {

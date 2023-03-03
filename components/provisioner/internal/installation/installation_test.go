@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	tillerYAML    = "tillerYAML"
 	installerYAML = "installerYAML"
 
 	kymaSystemNamespace = "kyma-system"
@@ -66,13 +65,12 @@ users:
 func TestInstallationService_TriggerInstallation(t *testing.T) {
 
 	kymaVersion := "1.7.0"
-	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+	kymaRelease := model.Release{Version: kymaVersion, InstallerYAML: installerYAML}
 
 	globalConfig := fixGlobalConfig()
 	componentsConfig := fixComponentsConfig()
 
 	expectedInstallation := installation.Installation{
-		TillerYaml:    tillerYAML,
 		InstallerYaml: installerYAML,
 		Configuration: fixInstallationConfig(),
 	}
@@ -184,13 +182,12 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 
 func TestInstallationService_TriggerUpgrade(t *testing.T) {
 	kymaVersion := "1.7.0"
-	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
+	kymaRelease := model.Release{Version: kymaVersion, InstallerYAML: installerYAML}
 
 	globalConfig := fixGlobalConfig()
 	componentsConfig := fixComponentsConfig()
 
 	expectedInstallation := installation.Installation{
-		TillerYaml:    tillerYAML,
 		InstallerYaml: installerYAML,
 		Configuration: fixInstallationConfig(),
 	}

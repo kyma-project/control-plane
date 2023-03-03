@@ -16,7 +16,6 @@ import (
 
 const (
 	kymaVersion                                = "1.5"
-	kymaVersionWithoutTiller                   = "1.15"
 	clusterEssentialsComponent                 = "cluster-essentials"
 	coreComponent                              = "core"
 	rafterComponent                            = "rafter"
@@ -30,7 +29,6 @@ const (
 func Test_ProvisioningInputToCluster(t *testing.T) {
 	releaseProvider := &realeaseMocks.Provider{}
 	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-	releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
 
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
@@ -212,11 +210,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Administrators: []string{administrator},
 		}
 	}
-
-	gardenerAzureGQLInputWithoutTiller := createGQLRuntimeInputAzure(nil)
-	gardenerAzureGQLInputWithoutTiller.KymaConfig.Version = kymaVersionWithoutTiller
-	expectedGardenerAzureRuntimeConfigWithoutTiller := expectedGardenerAzureRuntimeConfig(nil)
-	expectedGardenerAzureRuntimeConfigWithoutTiller.KymaConfig.Release = fixKymaReleaseWithoutTiller()
 
 	awsGardenerProvider := &gqlschema.AWSProviderConfigInput{
 		AwsZones: []*gqlschema.AWSZoneInput{
@@ -422,11 +415,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			description: "Should create proper runtime config struct with Gardener input for Azure provider with zones passed",
 		},
 		{
-			input:       gardenerAzureGQLInputWithoutTiller,
-			expected:    expectedGardenerAzureRuntimeConfigWithoutTiller,
-			description: "Should not allow privileged containers if Tiller is not present",
-		},
-		{
 			input:       gardenerAWSGQLInput,
 			expected:    expectedGardenerAWSRuntimeConfig,
 			description: "Should create proper runtime config struct with Gardener input for AWS provider",
@@ -544,7 +532,6 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		releaseProvider := &realeaseMocks.Provider{}
 		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-		releaseProvider.On("GetReleaseByVersion", kymaVersionWithoutTiller).Return(fixKymaReleaseWithoutTiller(), nil)
 
 		replace := gqlschema.ConflictStrategyReplace
 		input := gqlschema.KymaConfigInput{
@@ -1084,14 +1071,5 @@ func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntr
 		Key:    key,
 		Value:  val,
 		Secret: secret,
-	}
-}
-
-func fixKymaReleaseWithoutTiller() model.Release {
-	return model.Release{
-		Id:            "e829b1b5-2e82-426d-91b0-f94978c0c140",
-		Version:       kymaVersionWithoutTiller,
-		TillerYAML:    "",
-		InstallerYAML: "installer yaml",
 	}
 }

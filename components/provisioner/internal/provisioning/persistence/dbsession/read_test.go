@@ -14,7 +14,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 	runtimeId := "abc-runtime-def"
 	releaseId := "abc-release-def"
 	version := "18.0.0"
-	tillerYaml := "tiller"
 	installerYaml := "installer"
 	profileProduction := string(model.ProductionProfile)
 	expectedProfileProduction := model.ProductionProfile
@@ -26,7 +25,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 			ReleaseID:           releaseId,
 			Profile:             profile,
 			Version:             version,
-			TillerYAML:          tillerYaml,
 			InstallerYAML:       installerYaml,
 			Component:           name,
 			Namespace:           namespace,
@@ -54,7 +52,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 				Release: model.Release{
 					Id:            releaseId,
 					Version:       version,
-					TillerYAML:    tillerYaml,
 					InstallerYAML: installerYaml,
 				},
 				Profile: &expectedProfileProduction,
@@ -103,7 +100,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 				Release: model.Release{
 					Id:            releaseId,
 					Version:       version,
-					TillerYAML:    tillerYaml,
 					InstallerYAML: installerYaml,
 				},
 				Components: []model.KymaComponentConfig{

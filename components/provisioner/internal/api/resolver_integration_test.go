@@ -285,7 +285,6 @@ func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version st
 	_, err = releaseRepo.SaveRelease(model.Release{
 		Id:            id,
 		Version:       version,
-		TillerYAML:    "tiller YAML",
 		InstallerYAML: "installer YAML",
 	})
 

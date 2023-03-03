@@ -16,7 +16,6 @@ func TestReleaseProvider_GetReleaseByVersion(t *testing.T) {
 	release := model.Release{
 		Id:            "abcd-efgh",
 		Version:       kymaVersion,
-		TillerYAML:    "tiller",
 		InstallerYAML: "installer",
 	}
 
