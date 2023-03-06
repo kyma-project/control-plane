@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE kyma_release ALTER COLUMN tiller_yaml DROP NOT NULL;
+COMMIT;

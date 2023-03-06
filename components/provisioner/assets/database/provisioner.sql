@@ -91,7 +91,7 @@ CREATE TABLE kyma_release
 (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     version varchar(256) NOT NULL,
-    tiller_yaml text NOT NULL,
+    tiller_yaml text,
     installer_yaml text NOT NULL,
     unique(version)
 );
