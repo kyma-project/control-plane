@@ -39,7 +39,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/vrischmann/envconfig v1.3.0
 	golang.org/x/exp v0.0.0-20220921164117-439092de6870
-	golang.org/x/mod v0.8.0
+	golang.org/x/mod v0.9.0
 	golang.org/x/oauth2 v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.1
