@@ -11,10 +11,10 @@ global:
       version: "PR-2477"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2553"
+      version: "PR-2554"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2482"
+      version: "PR-2554"
 
 deployment:
   replicaCount: 1
