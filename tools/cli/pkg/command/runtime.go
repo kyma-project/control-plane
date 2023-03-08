@@ -158,9 +158,9 @@ func (cmd *RuntimeCommand) Validate() error {
 
 	// Validate and transform states
 	for _, s := range cmd.states {
-		val := runtime.State(s)
+		val := runtime.State(strings.ToLower(s))
 		switch val {
-		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateError, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateDeprovisioned, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
+		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateError, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateDeprovisioned, runtime.StateDeprovisionIncomplete, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
 			cmd.params.States = append(cmd.params.States, val)
 		default:
 			return fmt.Errorf("invalid value for state: %s", s)
