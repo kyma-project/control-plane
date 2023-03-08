@@ -112,7 +112,7 @@ spec:
             volumeMounts:
               {{- range $key, $val := $job.secretVolumes }}
               - name: {{ $key }}
-                mounthPath: {{ $val.path }}
+                mountPath: {{ $val.path }}
                 readOnly: true
               {{- end}}
               {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled false)}}
@@ -131,7 +131,7 @@ spec:
                        "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
             volumeMounts:
               - name: cloudsql-instance-credentials
-                mounthPath: /secrets/cloudsql-instance-credentials
+                mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
             {{- with $.Values.deployment.securityContext }}
             securityContext:
