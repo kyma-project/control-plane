@@ -22,6 +22,8 @@ const (
 	// StateDeprovisioned means that the runtime deprovisioning has finished removing the instance.
 	// In case the instance has already been deleted, KEB will try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations.
 	StateDeprovisioned State = "deprovisioned"
+	// StateDeprovisionIncomplete means that the runtime deprovisioning has finished removing the instance but certain steps have not finished and the instance should be requeued for repeated deprovisioning.
+	StateDeprovisionIncomplete State = "deprovisionincomplete"
 	// StateUpgrading means that kyma upgrade or cluster upgrade operation is in progress.
 	StateUpgrading State = "upgrading"
 	// StateUpdating means the runtime configuration is being updated (i.e. OIDC is reconfigured).

@@ -441,6 +441,9 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
 			case pkg.StateDeprovisioned:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
+			case pkg.StateDeprovisionIncomplete:
+				deletionAttempted := true
+				filter.DeletionAttempted = &deletionAttempted
 			case pkg.AllState:
 				allState = true
 			}
