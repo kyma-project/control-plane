@@ -41,6 +41,13 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 		return a.operationManager.OperationFailed(operation, "unable to create a kyma template", err, logger)
 	}
 	a.addLabelsAndName(operation, template)
+	operation, backoff, _ := a.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
+		op.KymaResourceName = template.GetName()
+	}, logger)
+	if backoff != 0 {
+		logger.Errorf("cannot save the operation")
+		return operation, 5 * time.Second, nil
+	}
 
 	var existingKyma unstructured.Unstructured
 	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())

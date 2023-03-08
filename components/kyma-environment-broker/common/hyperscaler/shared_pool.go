@@ -11,7 +11,7 @@ import (
 )
 
 type SharedPool interface {
-	SharedCredentialsSecretBinding(hyperscalerType Type) (*gardener.SecretBinding, error)
+	SharedCredentialsSecretBinding(hyperscalerType Type, euAccess bool) (*gardener.SecretBinding, error)
 }
 
 func NewSharedGardenerAccountPool(gardenerClient dynamic.Interface, gardenerNamespace string) SharedPool {
@@ -26,7 +26,7 @@ type sharedAccountPool struct {
 	namespace      string
 }
 
-func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type) (*gardener.SecretBinding, error) {
+func (sp *sharedAccountPool) SharedCredentialsSecretBinding(hyperscalerType Type, euAccess bool) (*gardener.SecretBinding, error) {
 	labelSelector := fmt.Sprintf("shared=true,hyperscalerType=%s", hyperscalerType)
 	secretBindings, err := sp.getSecretBindings(labelSelector)
 	if err != nil {

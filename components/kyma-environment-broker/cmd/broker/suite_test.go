@@ -1009,24 +1009,26 @@ func fixConfig() *Config {
 			Namespace:   "kcp-system",
 			Name:        "orchestration-config",
 		},
-		MaxPaginationPage: 100,
-		FreemiumProviders: []string{"aws", "azure"},
+		MaxPaginationPage:                         100,
+		FreemiumProviders:                         []string{"aws", "azure"},
+		EuAccessWhitelistedGlobalAccountsFilePath: "testdata/eu_access_whitelist.yaml",
+		EuAccessRejectionMessage:                  "EU Access Rejection Message - see: http://google.pl",
 	}
 }
 
 func fixAccountProvider() *hyperscalerautomock.AccountProvider {
 	accountProvider := hyperscalerautomock.AccountProvider{}
 
-	accountProvider.On("GardenerSecretName", mock.Anything, mock.Anything).Return(
-		func(ht hyperscaler.Type, tn string) string { return regularSubscription(ht) }, nil)
+	accountProvider.On("GardenerSecretName", mock.Anything, mock.Anything, mock.Anything).Return(
+		func(ht hyperscaler.Type, tn string, euaccess bool) string { return regularSubscription(ht) }, nil)
 
-	accountProvider.On("GardenerSharedSecretName", hyperscaler.Azure).Return(
-		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
+	accountProvider.On("GardenerSharedSecretName", hyperscaler.Azure, mock.Anything).Return(
+		func(ht hyperscaler.Type, euaccess bool) string { return sharedSubscription(ht) }, nil)
 
-	accountProvider.On("GardenerSharedSecretName", hyperscaler.AWS).Return(
-		func(ht hyperscaler.Type) string { return sharedSubscription(ht) }, nil)
+	accountProvider.On("GardenerSharedSecretName", hyperscaler.AWS, mock.Anything).Return(
+		func(ht hyperscaler.Type, euaccess bool) string { return sharedSubscription(ht) }, nil)
 
-	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything).Return(nil)
-	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.AWS, mock.Anything).Return(nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.Azure, mock.Anything, mock.Anything).Return(nil)
+	accountProvider.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.AWS, mock.Anything, mock.Anything).Return(nil)
 	return &accountProvider
 }

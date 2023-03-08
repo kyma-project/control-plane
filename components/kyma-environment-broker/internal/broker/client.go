@@ -11,13 +11,13 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"golang.org/x/oauth2/clientcredentials"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	kymaClassID = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	kymaClassID       = "47c9dcbf-ff30-448e-ab36-d3bad66ba281"
+	AccountCleanupJob = "accountcleanup-job"
 
 	instancesURL       = "/oauth/v2/service_instances"
 	deprovisionTmpl    = "%s%s/%s?service_id=%s&plan_id=%s"
@@ -63,9 +63,21 @@ type ClientConfig struct {
 type Client struct {
 	brokerConfig ClientConfig
 	httpClient   *http.Client
+	poller       Poller
+	UserAgent    string
+}
+
+func NewClientConfig(URL string) *ClientConfig {
+	return &ClientConfig{
+		URL: URL,
+	}
 }
 
 func NewClient(ctx context.Context, config ClientConfig) *Client {
+	return NewClientWithPoller(ctx, config, NewDefaultPoller())
+}
+
+func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller) *Client {
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
@@ -78,6 +90,7 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 	return &Client{
 		brokerConfig: config,
 		httpClient:   httpClientOAuth,
+		poller:       poller,
 	}
 }
 
@@ -90,7 +103,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 
 	response := serviceInstancesResponseDTO{}
 	log.Infof("Requesting deprovisioning of the environment with instance id: %q", instance.InstanceID)
-	err = wait.Poll(time.Second, time.Second*5, func() (bool, error) {
+	err = c.poller.Invoke(func() (bool, error) {
 		err := c.executeRequestWithPoll(http.MethodDelete, deprovisionURL, http.StatusAccepted, nil, &response)
 		if err != nil {
 			log.Warn(fmt.Sprintf("while executing request: %s", err.Error()))
@@ -98,6 +111,7 @@ func (c *Client) Deprovision(instance internal.Instance) (string, error) {
 		}
 		return true, nil
 	})
+
 	if err != nil {
 		return "", fmt.Errorf("while waiting for successful deprovision call: %w", err)
 	}
@@ -223,6 +237,9 @@ func (c *Client) executeRequestWithPoll(method, url string, expectedStatus int, 
 		return fmt.Errorf("while creating request for provisioning: %w", err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
+	if len(c.UserAgent) != 0 {
+		request.Header.Set("User-Agent", c.UserAgent)
+	}
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {

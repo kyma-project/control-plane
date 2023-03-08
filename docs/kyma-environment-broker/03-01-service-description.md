@@ -60,16 +60,16 @@ These are the provisioning parameters for Azure that you can configure:
   Azure
   </summary>
 
-| Parameter name | Type | Description | Required | Default value |
-| ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3` |
-| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
-| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| Parameter name | Type | Description | Required | Default value                                 |
+| ---------------|-------|-------------|:----------:|-----------------------------------------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D8_v3`                              |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50`                                          |
+| **region** | string | Defines the cluster region. | No | `eastus` or `switzerlandnorth` for EU Access  |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]`                                       |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2`                                           |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10`                                          |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4`                                           |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1`                                           |
 
   </details>
   <details>
@@ -77,16 +77,16 @@ These are the provisioning parameters for Azure that you can configure:
   Azure Lite
   </summary>
 
-| Parameter name | Type | Description | Required | Default value |
-| ---------------|-------|-------------|:----------:|---------------|
-| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3` |
-| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **region** | string | Defines the cluster region. | No | `westeurope` |
-| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
-| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2` |
-| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
-| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4` |
-| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1` |
+| Parameter name | Type | Description | Required | Default value                                |
+| ---------------|-------|-------------|:----------:|----------------------------------------------|
+| **machineType** | string | Specifies the provider-specific virtual machine type. | No | `Standard_D4_v3`                             |
+| **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50`                                         |
+| **region** | string | Defines the cluster region. | No | `eastus` or `switzerlandnorth` for EU Access |
+| **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]`                                      |
+| **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `2`                                          |
+| **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10`                                         |
+| **maxSurge[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines that are created during an update. | No | `4`                                          |
+| **maxUnavailable[<sup>1</sup>](#update)** | int | Specifies the maximum number of VMs that can be unavailable during an update. | No | `1`                                          |
 
  </details>
  </div>
@@ -102,7 +102,7 @@ These are the provisioning parameters for AWS that you can configure:
 | ---------------|-------|-------------|:----------:|---------------|
 | **machineType** | string | Specifies the provider-specific virtual machine type. | No | `m5.2xlarge` |
 | **volumeSizeGb** | int | Specifies the size of the root volume. | No | `50` |
-| **region** | string | Defines the cluster region. | No | `westeurope` |
+| **region** | string | Defines the cluster region. | No | `eu-central-1` |
 | **zones** | string | Defines the list of zones in which Runtime Provisioner creates a cluster. | No | `["1"]` |
 | **autoScalerMin[<sup>1</sup>](#update)** | int | Specifies the minimum number of virtual machines to create. | No | `3` |
 | **autoScalerMax[<sup>1</sup>](#update)** | int | Specifies the maximum number of virtual machines to create, up to `40` allowed. | No | `10` |
@@ -220,9 +220,9 @@ The preview plan allows to test integration with Lifecycle Manager. The preview 
 
 These are the provisioning parameters for the `preview` plan that you configure:
 
-<div tabs name="own_cluster-plan" group="own_cluster-plan">
+<div tabs name="preview_cluster-plan" group="preview_cluster-plan">
   <details>
-  <summary label="own_cluster-plan">
+  <summary label="preview_cluster-plan">
   Preview cluster plan
   </summary>
 

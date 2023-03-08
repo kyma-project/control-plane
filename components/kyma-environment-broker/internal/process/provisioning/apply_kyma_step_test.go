@@ -99,7 +99,7 @@ func TestUpdatingKymaResourceIfExists(t *testing.T) {
 		"apiVersion": "operator.kyma-project.io/v1alpha1",
 		"kind":       "Kyma",
 		"metadata": map[string]interface{}{
-			"name":      operation.RuntimeID,
+			"name":      operation.KymaResourceName,
 			"namespace": "kyma-system",
 		},
 		"spec": map[string]interface{}{

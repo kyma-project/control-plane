@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	kymaSystemNamespace      = "kyma-system"
-	kymaIntegrationNamespace = "kyma-integration"
+	kymaSystemNamespace = "kyma-system"
 )
 
 func TestOperationStatusToGQLOperationStatus(t *testing.T) {
@@ -89,7 +88,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "zone"
@@ -131,7 +129,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
 					DNSConfig:                           dnsConfig(),
@@ -190,7 +187,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -259,7 +255,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		exposureClassName := "internet"
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "node"
@@ -301,7 +296,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					OIDCConfig:                          oidcConfig(),
 					ExposureClassName:                   &exposureClassName,
@@ -358,7 +352,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ProviderSpecificConfig: gqlschema.GCPProviderConfig{
 						Zones: zones,
 					},
@@ -414,7 +407,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		unavailable := 1
 		enableKubernetesVersionAutoUpdate := true
 		enableMachineImageVersionAutoUpdate := false
-		allowPrivilegedContainers := true
 		shootNetworkingFilterDisabled := true
 		controlPlaneFailureTolerance := "node"
 		euAccess := true
@@ -458,7 +450,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      unavailable,
 					EnableKubernetesVersionAutoUpdate:   enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           allowPrivilegedContainers,
 					GardenerProviderConfig:              gardenerProviderConfig,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
@@ -513,7 +504,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					MaxUnavailable:                      &unavailable,
 					EnableKubernetesVersionAutoUpdate:   &enableKubernetesVersionAutoUpdate,
 					EnableMachineImageVersionAutoUpdate: &enableMachineImageVersionAutoUpdate,
-					AllowPrivilegedContainers:           &allowPrivilegedContainers,
 					ShootNetworkingFilterDisabled:       &shootNetworkingFilterDisabled,
 					ControlPlaneFailureTolerance:        &controlPlaneFailureTolerance,
 					EuAccess:                            &euAccess,
@@ -565,7 +555,7 @@ func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig 
 			},
 			{
 				Component: applicationConnectorComponent,
-				Namespace: kymaIntegrationNamespace,
+				Namespace: kymaSystemNamespace,
 				Configuration: []*gqlschema.ConfigEntry{
 					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
 					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
@@ -645,7 +635,7 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			ID:           "id",
 			KymaConfigID: "id",
 			Component:    applicationConnectorComponent,
-			Namespace:    kymaIntegrationNamespace,
+			Namespace:    kymaSystemNamespace,
 			Configuration: model.Configuration{
 				ConfigEntries: []model.ConfigEntry{
 					model.NewConfigEntry("test.config.key", "value", false),

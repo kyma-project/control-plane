@@ -41,10 +41,8 @@ type TrialCleanupService struct {
 type instancePredicate func(internal.Instance) bool
 
 func main() {
-	time.Sleep(20 * time.Second)
-
 	log.SetFormatter(&log.JSONFormatter{})
-	log.Info("Starting trial cleanup job!")
+	log.Info("Starting trial cleanup job")
 
 	// create and fill config
 	var cfg Config
@@ -80,8 +78,6 @@ func main() {
 	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	fatalOnError(err)
-
-	time.Sleep(5 * time.Second)
 }
 
 func newTrialCleanupService(cfg Config, brokerClient BrokerClient, instances storage.Instances) *TrialCleanupService {

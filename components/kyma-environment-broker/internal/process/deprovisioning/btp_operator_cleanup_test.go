@@ -264,6 +264,10 @@ func (f *fakeK8sClientWrapper) RESTMapper() meta.RESTMapper {
 	return f.fake.RESTMapper()
 }
 
+func (f *fakeK8sClientWrapper) SubResource(subresource string) client.SubResourceClient {
+	return f.fake.SubResource(subresource)
+}
+
 type fakeProvisionerClient struct {
 	empty bool
 }

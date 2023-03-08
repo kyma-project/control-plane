@@ -9,7 +9,6 @@ prerequisites:
 components:
   - name: "logging"
   - name: "tracing"
-  - name: "kiali"
   - name: "monitoring"
   - name: "eventing"
   - name: "ory"
@@ -18,4 +17,3 @@ components:
   - name: "cluster-users"
   - name: "serverless"
   - name: "application-connector"
-    namespace: "kyma-integration"

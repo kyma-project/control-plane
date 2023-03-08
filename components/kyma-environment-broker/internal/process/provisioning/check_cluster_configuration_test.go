@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -126,6 +128,10 @@ func TestCheckClusterConfigurationStep_ClusterFailed(t *testing.T) {
 }
 
 func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Operation {
+	return fixOperationCreateRuntimeWithPlatformRegion(t, planID, region, "")
+}
+
+func fixOperationCreateRuntimeWithPlatformRegion(t *testing.T, planID, region, platformRegion string) internal.Operation {
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, instanceID)
 	provisioningOperation.State = domain.InProgress
 	provisioningOperation.InputCreator = fixInputCreator(t)
@@ -140,7 +146,8 @@ func fixOperationCreateRuntime(t *testing.T, planID, region string) internal.Ope
 			},
 		},
 	}
-	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region)
+	provisioningOperation.InstanceDetails.EuAccess = euaccess.IsEURestrictedAccess(platformRegion)
+	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region, platformRegion)
 	provisioningOperation.RuntimeID = ""
 
 	return provisioningOperation
@@ -153,11 +160,11 @@ func fixInstance() internal.Instance {
 	return instance
 }
 
-func FixProvisioningParameters(planID, region string) internal.ProvisioningParameters {
-	return fixProvisioningParametersWithPlanID(planID, region)
+func FixProvisioningParameters(planID, region, platformRegion string) internal.ProvisioningParameters {
+	return fixProvisioningParametersWithPlanID(planID, region, platformRegion)
 }
 
-func fixProvisioningParametersWithPlanID(planID, region string) internal.ProvisioningParameters {
+func fixProvisioningParametersWithPlanID(planID, region string, platformRegion string) internal.ProvisioningParameters {
 	return internal.ProvisioningParameters{
 		PlanID:    planID,
 		ServiceID: "",
@@ -165,6 +172,7 @@ func fixProvisioningParametersWithPlanID(planID, region string) internal.Provisi
 			GlobalAccountID: globalAccountID,
 			SubAccountID:    subAccountID,
 		},
+		PlatformRegion: platformRegion,
 		Parameters: internal.ProvisioningParametersDTO{
 			Region: ptr.String(region),
 			Name:   "dummy",

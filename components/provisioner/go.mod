@@ -14,7 +14,7 @@ require (
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221021121045-dec2d997352a
 	github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20221014105541-fb0caf22fdd0
-	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20201117100007-62918ff463e5
+	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/lib/pq v1.10.4
 	github.com/matryer/is v1.4.0
 	github.com/mitchellh/mapstructure v1.4.3
@@ -42,7 +42,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/Microsoft/hcsshim v0.9.4 // indirect
+	github.com/Microsoft/hcsshim v0.9.5 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
@@ -83,7 +83,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
@@ -111,12 +111,12 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.0.0-20220919232410-f2f64ebce3c1 // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
-	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
@@ -141,13 +141,16 @@ replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.14
 	github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+	github.com/containerd/containerd => github.com/containerd/containerd v1.6.12
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.25+incompatible
 	github.com/docker/docker => github.com/docker/docker v20.10.18+incompatible
 	github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.0.0-20190125124242-bb1ef8ce758c
 	go.etcd.io/etcd => go.etcd.io/etcd v3.3.25+incompatible
-	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
-	golang.org/x/net => golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
-	golang.org/x/text => golang.org/x/text v0.3.8
+	golang.org/x/crypto => golang.org/x/crypto v0.5.0
+	golang.org/x/net => golang.org/x/net v0.5.0
+	golang.org/x/sys => golang.org/x/sys v0.5.0
+	golang.org/x/text => golang.org/x/text v0.6.0
+	golang.org/x/tools => golang.org/x/tools v0.5.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.3
 	k8s.io/apiserver => k8s.io/apiserver v0.25.3
 	k8s.io/client-go => k8s.io/client-go v0.25.3

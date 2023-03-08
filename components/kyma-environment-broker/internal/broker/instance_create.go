@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/google/uuid"
@@ -54,6 +56,9 @@ type ProvisionEndpoint struct {
 
 	dashboardConfig dashboard.Config
 
+	euAccessWhitelist        euaccess.WhitelistSet
+	euAccessRejectionMessage string
+
 	log logrus.FieldLogger
 }
 
@@ -66,6 +71,8 @@ func NewProvision(cfg Config,
 	plansConfig PlansConfig,
 	kvod bool,
 	planDefaults PlanDefaults,
+	euAccessWhitelist euaccess.WhitelistSet,
+	euRejectMessage string,
 	log logrus.FieldLogger,
 	dashboardConfig dashboard.Config,
 ) *ProvisionEndpoint {
@@ -76,20 +83,22 @@ func NewProvision(cfg Config,
 	}
 
 	return &ProvisionEndpoint{
-		config:            cfg,
-		operationsStorage: operationsStorage,
-		instanceStorage:   instanceStorage,
-		queue:             queue,
-		builderFactory:    builderFactory,
-		log:               log.WithField("service", "ProvisionEndpoint"),
-		enabledPlanIDs:    enabledPlanIDs,
-		plansConfig:       plansConfig,
-		kymaVerOnDemand:   kvod,
-		shootDomain:       gardenerConfig.ShootDomain,
-		shootProject:      gardenerConfig.Project,
-		shootDnsProviders: gardenerConfig.DNSProviders,
-		planDefaults:      planDefaults,
-		dashboardConfig:   dashboardConfig,
+		config:                   cfg,
+		operationsStorage:        operationsStorage,
+		instanceStorage:          instanceStorage,
+		queue:                    queue,
+		builderFactory:           builderFactory,
+		log:                      log.WithField("service", "ProvisionEndpoint"),
+		enabledPlanIDs:           enabledPlanIDs,
+		plansConfig:              plansConfig,
+		kymaVerOnDemand:          kvod,
+		shootDomain:              gardenerConfig.ShootDomain,
+		shootProject:             gardenerConfig.Project,
+		shootDnsProviders:        gardenerConfig.DNSProviders,
+		planDefaults:             planDefaults,
+		euAccessWhitelist:        euAccessWhitelist,
+		euAccessRejectionMessage: euRejectMessage,
+		dashboardConfig:          dashboardConfig,
 	}
 }
 
@@ -113,7 +122,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 
 	// validation of incoming input
-	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, logger)
+	ersContext, parameters, err := b.validateAndExtract(details, platformProvider, ctx, logger)
 	if err != nil {
 		errMsg := fmt.Sprintf("[instanceID: %s] %s", instanceID, err)
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, errMsg)
@@ -178,7 +187,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 		ServiceID:       provisioningParameters.ServiceID,
 		ServiceName:     KymaServiceName,
 		ServicePlanID:   provisioningParameters.PlanID,
-		ServicePlanName: Plans(b.plansConfig, provisioningParameters.PlatformProvider, false)[provisioningParameters.PlanID].Name,
+		ServicePlanName: PlanNamesMapping[provisioningParameters.PlanID],
 		DashboardURL:    dashboardURL,
 		Parameters:      operation.ProvisioningParameters,
 	}
@@ -213,7 +222,7 @@ func valueOfPtr(ptr *string) string {
 	return *ptr
 }
 
-func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
+func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context, l logrus.FieldLogger) (internal.ERSContext, internal.ProvisioningParametersDTO, error) {
 	var ersContext internal.ERSContext
 	var parameters internal.ProvisioningParametersDTO
 
@@ -252,7 +261,8 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 	}
 
-	planValidator, err := b.validator(&details, provider)
+	planValidator, err := b.validator(&details, provider,
+		ctx)
 	if err != nil {
 		return ersContext, parameters, fmt.Errorf("while creating plan validator: %w", err)
 	}
@@ -262,6 +272,16 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 	if !result.Valid {
 		return ersContext, parameters, fmt.Errorf("while validating input parameters: %w", result.Error)
+	}
+
+	// EU Access: reject requests for not whitelisted globalAccountIds
+	if isEuRestrictedAccess(ctx) {
+		logger.Infof("EU Access restricted instance creation")
+		if euaccess.IsNotWhitelisted(ersContext.GlobalAccountID, b.euAccessWhitelist) {
+			logger.Infof(b.euAccessRejectionMessage)
+			err = fmt.Errorf(b.euAccessRejectionMessage)
+			return ersContext, parameters, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "provisioning")
+		}
 	}
 
 	if !b.kymaVerOnDemand {
@@ -308,6 +328,11 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 	}
 
 	return ersContext, parameters, nil
+}
+
+func isEuRestrictedAccess(ctx context.Context) bool {
+	platformRegion, _ := middleware.RegionFromContext(ctx)
+	return euaccess.IsEURestrictedAccess(platformRegion)
 }
 
 // Rudimentary kubeconfig validation
@@ -387,8 +412,9 @@ func (b *ProvisionEndpoint) determineLicenceType(planId string) *string {
 	return nil
 }
 
-func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider) (JSONSchemaValidator, error) {
-	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema)
+func (b *ProvisionEndpoint) validator(details *domain.ProvisionDetails, provider internal.CloudProvider, ctx context.Context) (JSONSchemaValidator, error) {
+	platformRegion, _ := middleware.RegionFromContext(ctx)
+	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema, euaccess.IsEURestrictedAccess(platformRegion))
 	plan := plans[details.PlanID]
 	schema := string(Marshal(plan.Schemas.Instance.Create.Parameters))
 

@@ -13,8 +13,11 @@ for var in COMPONENT NAME; do
 done
 
 DATE="$(date +%Y%m%d%H%M)"
-MIGRATIONS_DIR="${DIR}/migrations"
+MIGRATIONS_DIR="../../resources/kcp/charts/${COMPONENT}/migrations"
 TRANSACTION_STR=$'BEGIN;\nCOMMIT;'
+if [ $COMPONENT == "kyma-environment-broker" ] || [ $COMPONENT == "provisioner" ] ; then
+    mkdir -p ${MIGRATIONS_DIR}
+fi
 
-echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.up.sql"
-echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${COMPONENT}/${DATE}_${NAME}.down.sql"
+echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${DATE}_${NAME}.up.sql"
+echo "$TRANSACTION_STR" > "${MIGRATIONS_DIR}/${DATE}_${NAME}.down.sql"

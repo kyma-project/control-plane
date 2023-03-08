@@ -84,16 +84,6 @@
         ]
       },
       {
-        "component": "kiali",
-        "namespace": "kyma-system",
-        "configuration": [
-          {
-              "key": "global.domainName",
-              "value": "example.com"
-          }
-        ]
-      },
-      {
         "component": "monitoring",
         "namespace": "kyma-system",
         "configuration": [
@@ -155,7 +145,7 @@
       },
       {
         "component": "application-connector",
-        "namespace": "kyma-integration",
+        "namespace": "kyma-system",
         "configuration": [
           {
             "key": "global.domainName",

@@ -14,6 +14,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/gorilla/handlers"
@@ -126,6 +128,7 @@ type Config struct {
 	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
 	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
 	LifecycleManagerIntegrationDisabled        bool   `envconfig:"default=true"`
+	ReconcilerIntegrationDisabled              bool   `envconfig:"default=false"`
 
 	Broker          broker.Config
 	CatalogFilePath string
@@ -146,7 +149,11 @@ type Config struct {
 	OrchestrationConfig orchestration.Config
 
 	TrialRegionMappingFilePath string
-	MaxPaginationPage          int `envconfig:"default=100"`
+
+	EuAccessWhitelistedGlobalAccountsFilePath string
+	EuAccessRejectionMessage                  string `envconfig:"default=Due to limited availability you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"`
+
+	MaxPaginationPage int `envconfig:"default=100"`
 
 	LogLevel string `envconfig:"default=info"`
 
@@ -198,6 +205,7 @@ func periodicProfile(logger lager.Logger, profiler ProfilerConfig) {
 }
 
 func main() {
+	apiextensionsv1.AddToScheme(scheme.Scheme)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -293,6 +301,7 @@ func main() {
 	regions, err := provider.ReadPlatformRegionMappingFromFile(cfg.TrialRegionMappingFilePath)
 	fatalOnError(err)
 	logs.Infof("Platform region mapping for trial: %v", regions)
+
 	oidcDefaultValues, err := runtime.ReadOIDCDefaultValuesFromYAML(cfg.SkrOidcDefaultValuesYAMLFilePath)
 	fatalOnError(err)
 	inputFactory, err := input.NewInputBuilderFactory(optComponentsSvc, disabledComponentsProvider, componentsProvider,
@@ -421,11 +430,8 @@ func k8sClientProvider(kcfg string) (client.Client, error) {
 		return nil, err
 	}
 
-	sch := scheme.Scheme
-	apiextensionsv1.AddToScheme(sch)
-
 	k8sCli, err := client.New(restCfg, client.Options{
-		Scheme: sch,
+		Scheme: scheme.Scheme,
 	})
 	return k8sCli, err
 }
@@ -460,12 +466,21 @@ func createAPI(router *mux.Router, servicesConfig broker.ServicesConfig, planVal
 	fatalOnError(err)
 	logger.RegisterSink(errorSink)
 
+	//EU Access whitelisting
+	whitelistedGlobalAccountIds, err := euaccess.ReadWhitelistedGlobalAccountIdsFromFile(cfg.EuAccessWhitelistedGlobalAccountsFilePath)
+	fatalOnError(err)
+	logs.Infof("Number of globalAccountIds for EU Access: %d\n", len(whitelistedGlobalAccountIds))
+
 	// create KymaEnvironmentBroker endpoints
 	kymaEnvBroker := &broker.KymaEnvironmentBroker{
 		broker.NewServices(cfg.Broker, servicesConfig, logs),
-		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(), provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion, planDefaults, logs, cfg.KymaDashboardConfig),
+		broker.NewProvision(cfg.Broker, cfg.Gardener, db.Operations(), db.Instances(),
+			provisionQueue, planValidator, defaultPlansConfig, cfg.EnableOnDemandVersion,
+			planDefaults, whitelistedGlobalAccountIds, cfg.EuAccessRejectionMessage, logs, cfg.KymaDashboardConfig),
 		broker.NewDeprovision(db.Instances(), db.Operations(), deprovisionQueue, logs),
-		broker.NewUpdate(cfg.Broker, db.Instances(), db.RuntimeStates(), db.Operations(), suspensionCtxHandler, cfg.UpdateProcessingEnabled, cfg.UpdateSubAccountMovementEnabled, updateQueue, planDefaults, logs, cfg.KymaDashboardConfig),
+		broker.NewUpdate(cfg.Broker, db.Instances(), db.RuntimeStates(), db.Operations(),
+			suspensionCtxHandler, cfg.UpdateProcessingEnabled, cfg.UpdateSubAccountMovementEnabled, updateQueue,
+			planDefaults, logs, cfg.KymaDashboardConfig),
 		broker.NewGetInstance(cfg.Broker, db.Instances(), db.Operations(), logs),
 		broker.NewLastOperation(db.Operations(), logs),
 		broker.NewBind(logs),
@@ -667,7 +682,7 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		{
 			stage: createRuntimeStageName,
 			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-			// Preview plan does not calls Reconciler so it does not need overrides
+			// Preview plan does not call Reconciler so it does not need overrides
 			condition: skipForPreviewPlan,
 		},
 		{
@@ -705,20 +720,21 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 			step:     steps.SyncKubeconfig(db.Operations(), cli),
 		},
 		{
+			disabled:  cfg.ReconcilerIntegrationDisabled,
 			stage:     createRuntimeStageName,
 			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
 			condition: skipForPreviewPlan,
 		},
 		{
+			disabled:  cfg.ReconcilerIntegrationDisabled,
 			stage:     checkKymaStageName,
 			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
 			condition: skipForPreviewPlan,
 		},
 		{
-			disabled:  cfg.LifecycleManagerIntegrationDisabled,
-			condition: onlyForPreviewPlan,
-			stage:     createKymaResourceStageName,
-			step:      provisioning.NewApplyKymaStep(db.Operations(), cli),
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			stage:    createKymaResourceStageName,
+			step:     provisioning.NewApplyKymaStep(db.Operations(), cli),
 		},
 		// post actions
 		{
@@ -750,6 +766,10 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *process.StagedManage
 	provisionerClient provisioner.Client, publisher event.Publisher, runtimeVerConfigurator *runtimeversion.RuntimeVersionConfigurator, runtimeStatesDb storage.RuntimeStates,
 	runtimeProvider input.ComponentListProvider, reconcilerClient reconciler.Client, cfg Config, k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, logs logrus.FieldLogger) *process.Queue {
 
+	requiresReconcilerUpdate := update.RequiresReconcilerUpdate
+	if cfg.ReconcilerIntegrationDisabled {
+		requiresReconcilerUpdate = func(op internal.Operation) bool { return false }
+	}
 	manager.DefineStages([]string{"cluster", "btp-operator", "btp-operator-check", "check"})
 	updateSteps := []struct {
 		stage     string
@@ -782,7 +802,7 @@ func NewUpdateProcessingQueue(ctx context.Context, manager *process.StagedManage
 		{
 			stage:     "btp-operator",
 			step:      update.NewApplyReconcilerConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: update.RequiresReconcilerUpdate,
+			condition: requiresReconcilerUpdate,
 		},
 		{
 			stage:     "btp-operator-check",
@@ -829,7 +849,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewAvsEvaluationsRemovalStep(avsDel, db.Operations(), externalEvalAssistant, internalEvalAssistant),
 		},
 		{
-			step:     deprovisioning.NewEDPDeregistrationStep(edpClient, cfg.EDP),
+			step:     deprovisioning.NewEDPDeregistrationStep(db.Operations(), edpClient, cfg.EDP),
 			disabled: cfg.EDP.Disabled,
 		},
 		{
@@ -845,10 +865,12 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step:     deprovisioning.NewCheckKymaResourceDeletedStep(db.Operations(), cli),
 		},
 		{
-			step: deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
+			disabled: cfg.ReconcilerIntegrationDisabled,
+			step:     deprovisioning.NewDeregisterClusterStep(db.Operations(), reconcilerClient),
 		},
 		{
-			step: deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
+			disabled: cfg.ReconcilerIntegrationDisabled,
+			step:     deprovisioning.NewCheckClusterDeregistrationStep(db.Operations(), reconcilerClient, 90*time.Minute),
 		},
 		{
 			step: deprovisioning.NewRemoveRuntimeStep(db.Operations(), db.Instances(), provisionerClient, cfg.Provisioner.DeprovisioningTimeout),
@@ -857,7 +879,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 			step: deprovisioning.NewCheckRuntimeRemovalStep(db.Operations(), db.Instances(), provisionerClient),
 		},
 		{
-			step: deprovisioning.NewReleaseSubscriptionStep(db.Instances(), accountProvider),
+			step: deprovisioning.NewReleaseSubscriptionStep(db.Operations(), db.Instances(), accountProvider),
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,
@@ -903,9 +925,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 		// this should be moved to the end when we introduce stages like in the provisioning process
 		// (also return operation, 0, nil at the end of apply_cluster_configuration)
 		{
-			weight: 1,
-			step:   upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
-			cnd:    upgrade_kyma.SkipForPreviewPlan,
+			weight:   1,
+			disabled: cfg.ReconcilerIntegrationDisabled,
+			step:     upgrade_kyma.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, upgradeEvalManager, cfg.Reconciler.ProvisioningTimeout),
+			cnd:      upgrade_kyma.SkipForPreviewPlan,
 		},
 		{
 			weight: 1,
@@ -916,9 +939,14 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewGetKubeconfigStep(db.Operations(), provisionerClient),
 		},
 		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
 			weight:   2,
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
 			step:     steps.SyncKubeconfigUpgradeKyma(db.Operations(), cli),
+		},
+		{
+			weight:   2,
+			disabled: cfg.LifecycleManagerIntegrationDisabled,
+			step:     upgrade_kyma.NewApplyKymaStep(db.Operations(), cli),
 		},
 		{
 			weight: 3,
@@ -935,9 +963,10 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			disabled: cfg.Notification.Disabled,
 		},
 		{
-			weight: 10,
-			step:   upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			cnd:    upgrade_kyma.SkipForPreviewPlan,
+			weight:   10,
+			disabled: cfg.ReconcilerIntegrationDisabled,
+			step:     upgrade_kyma.NewApplyClusterConfigurationStep(db.Operations(), db.RuntimeStates(), reconcilerClient),
+			cnd:      upgrade_kyma.SkipForPreviewPlan,
 		},
 	}
 	for _, step := range upgradeKymaSteps {
@@ -1007,8 +1036,4 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 
 func skipForPreviewPlan(operation internal.Operation) bool {
 	return !broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID)
-}
-
-func onlyForPreviewPlan(operation internal.Operation) bool {
-	return broker.IsPreviewPlan(operation.ProvisioningParameters.PlanID)
 }

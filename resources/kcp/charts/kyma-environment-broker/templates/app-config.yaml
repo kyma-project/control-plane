@@ -19,6 +19,10 @@ data:
 {{- with .Values.trialRegionsMapping }}
 {{ tpl . $ | indent 4 }}
 {{- end }}
+  euAccessWhitelistedGlobalAccountIds.yaml: |-
+{{- with .Values.euAccessWhitelistedGlobalAccountIds }}
+{{ tpl . $ | indent 4 }}
+{{- end }}
   skrOIDCDefaultValues.yaml: |-
 {{- with .Values.skrOIDCDefaultValues }}
 {{ tpl . $ | indent 4 }}

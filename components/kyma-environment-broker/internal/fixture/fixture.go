@@ -127,6 +127,7 @@ func FixInstanceDetails(id string) internal.InstanceDetails {
 		ShootDNSProviders:     FixDNSProvidersConfig(),
 		Monitoring:            monitoringData,
 		KymaResourceNamespace: "kyma-system",
+		KymaResourceName:      runtimeId,
 	}
 }
 
@@ -153,7 +154,6 @@ func FixInstance(id string) internal.Instance {
 		InstanceDetails:             FixInstanceDetails(id),
 		CreatedAt:                   time.Now(),
 		UpdatedAt:                   time.Now().Add(time.Minute * 5),
-		DeletedAt:                   time.Now().Add(time.Hour * 1),
 		Version:                     0,
 	}
 }
