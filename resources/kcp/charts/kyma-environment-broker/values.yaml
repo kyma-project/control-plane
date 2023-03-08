@@ -2,7 +2,7 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2477"
+      version: "PR-2555"
     kyma_environments_cleanup_job:
       dir:
       version: "PR-2476"
@@ -14,7 +14,7 @@ global:
       version: "PR-22476"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2476"
+      version: "PR-2482"
 
 deployment:
   replicaCount: 1

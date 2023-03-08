@@ -116,6 +116,7 @@ func (s *DeprovisioningSuite) CreateProvisionedRuntime(options RuntimeOptions) s
 	instance.ProviderRegion = *options.ProvideRegion()
 
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, randomInstanceId)
+	provisioningOperation.SubAccountID = options.ProvideSubAccountID()
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertOperation(provisioningOperation))
@@ -229,6 +230,7 @@ func fixEDPClient() *edp.FakeClient {
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,
 		edp.MaasConsumerSubAccountKey,
+		edp.MaasConsumerServicePlan,
 	}
 
 	for _, key := range metadataTenantKeys {
