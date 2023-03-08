@@ -1,4 +1,4 @@
-FROM golang:1.20.1-alpine3.16 as builder
+FROM golang:1.20.2-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kubeconfig-service
 ENV CGO_ENABLED 0
