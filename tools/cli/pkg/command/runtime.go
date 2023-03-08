@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/events"
@@ -99,14 +100,13 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.RuntimeIDs, "runtime-id", "r", nil, "Filter by Runtime ID. You can provide multiple values, either separated by a comma (e.g. ID1,ID2), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Regions, "region", "R", nil, "Filter by provider region. You can provide multiple values, either separated by a comma (e.g. westeurope,northeurope), or by specifying the option multiple times.")
 	cobraCmd.Flags().StringSliceVarP(&cmd.params.Plans, "plan", "p", nil, "Filter by service plan name. You can provide multiple values, either separated by a comma (e.g. azure,trial), or by specifying the option multiple times.")
-	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime state. The possible values are: succeeded, failed, error, provisioning, deprovisioning, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
+	cobraCmd.Flags().StringSliceVarP(&cmd.states, "state", "S", nil, "Filter by Runtime state. The possible values are: succeeded, failed, error, provisioning, deprovisioning, deprovisioned, upgrading, suspended, all. Suspended Runtimes are filtered out unless the \"all\" or \"suspended\" values are provided. You can provide multiple values, either separated by a comma (e.g. succeeded,failed), or by specifying the option multiple times.")
 	cobraCmd.Flags().BoolVar(&cmd.opDetail, "ops", false, "Get all operations for the runtimes instead of just querying the last operation.")
 	cobraCmd.Flags().BoolVar(&cmd.params.KymaConfig, "kyma-config", false, "Get all Kyma configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.ClusterConfig, "cluster-config", false, "Get all cluster configuration details for the selected runtimes.")
 	cobraCmd.Flags().BoolVar(&cmd.params.Expired, "expired", false, "Lists only expired runtimes.")
 	cobraCmd.Flags().StringVar(&cmd.params.Events, "events", "none", "Enhance output with tracing events. Enables by default --ops. You can provide one value (all, info, error, none) for filtering events or leave it blank to get all events.")
 	cobraCmd.Flags().Lookup("events").NoOptDefVal = "all"
-	cobraCmd.Flags().BoolVar(&cmd.params.OnlyDeleted, "only-deleted", false, "Try best effort to reconstruct at least partial information regarding deprovisioned instances.")
 
 	return cobraCmd
 }
@@ -160,7 +160,7 @@ func (cmd *RuntimeCommand) Validate() error {
 	for _, s := range cmd.states {
 		val := runtime.State(s)
 		switch val {
-		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateError, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
+		case runtime.StateSucceeded, runtime.StateFailed, runtime.StateError, runtime.StateProvisioning, runtime.StateDeprovisioning, runtime.StateDeprovisioned, runtime.StateUpgrading, runtime.StateSuspended, runtime.AllState:
 			cmd.params.States = append(cmd.params.States, val)
 		default:
 			return fmt.Errorf("invalid value for state: %s", s)
@@ -177,8 +177,8 @@ func (cmd *RuntimeCommand) Validate() error {
 	if cmd.opDetail {
 		cmd.params.OperationDetail = runtime.AllOperation
 	}
-	if cmd.params.OnlyDeleted == true && len(cmd.params.InstanceIDs) == 0 {
-		return fmt.Errorf("need to provide some Instance IDs when using --only-deleted")
+	if slices.Contains(cmd.params.States, runtime.StateDeprovisioned) && len(cmd.params.InstanceIDs) == 0 {
+		return fmt.Errorf("must provide some Instance IDs when looking up deprovisioned runtimes")
 	}
 
 	return nil
