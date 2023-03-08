@@ -1,5 +1,5 @@
 {{- range $index, $property := .Values.cronJobs }}
-{{- $job := get $.Values $property | fromYaml}}
+{{- $job := get $.Values $property }}
 
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -31,7 +31,7 @@ spec:
           {{- end }}
           {{- with $.Values.deployment.securityContext }}
           securityContext:
-            {{ toYaml . | nindent 12 }}
+            {{ toYaml . }}
           {{- end }}
           restartPolicy: Never
           containers:
@@ -40,13 +40,11 @@ spec:
             imagePullPolicy: IfNotPresent
             env:
               {{- range $key, $val := $job.envs }}
-                - name: {{ $key }}:
-                  value: {{ $val }}
+              - name: {{ $key }}
+                value: {{ $val }}
               {{- end}}
-
               - name: APP_PROVISIONER_URL
                 value: "{{ $.Values.provisioner.URL }}"
-              
               {{if eq $.Values.global.database.embedded.enabled false}}
               - name: DATABASE_EMBEDDED
                 value: "false"
@@ -113,16 +111,16 @@ spec:
               - "./bin/main"
             volumeMounts:
               {{- range $key, $val := $job.secretVolumes }}
-              - name: {{ $key }}:
+              - name: {{ $key }}
                 mounthPath: {{ $val.path }}
                 readOnly: true
               {{- end}}
-          {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled false)}}
+              {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled false)}}
               - name: cloudsql-sslrootcert
                 mountPath: /secrets/cloudsql-sslrootcert
                 readOnly: true
-          {{- end}}
-          {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled true)}}
+              {{- end}}
+              {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled true)}}
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
@@ -135,10 +133,10 @@ spec:
               - name: cloudsql-instance-credentials
                 mountPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
-          {{- with $.Values.deployment.securityContext }}
+            {{- with $.Values.deployment.securityContext }}
             securityContext:
-              {{ toYaml . | nindent 12 }}
-          {{- end }}
+              {{ toYaml . }}
+            {{- end }}
           {{- end}}
           volumes:
             {{- if and (eq $.Values.global.database.embedded.enabled false) (eq $.Values.global.database.cloudsqlproxy.enabled true)}}
@@ -156,11 +154,11 @@ spec:
                 optional: true
             {{- end}}
             {{- range $key, $val := $job.secretVolumes }}
-              - name: {{ $key }}:
-                mounthPath: {{ $val.path }}
-                secret: 
-                  optional: {{ $val.optional }}
-                  secret: {{ $val.secret }}
-                  defaultMode: {{ $val.defaultMode}}
+            - name: {{ $key }}
+              mounthPath: {{ $val.path }}
+              secret: 
+                optional: {{ $val.optional }}
+                secret: {{ $val.secret }}
+                defaultMode: {{ $val.defaultMode}}
             {{- end}}
 {{- end }} 
