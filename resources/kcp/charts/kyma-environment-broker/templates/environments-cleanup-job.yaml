@@ -131,7 +131,7 @@ spec:
                        "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json" ]
             volumeMounts:
               - name: cloudsql-instance-credentials
-                mountPath: /secrets/cloudsql-instance-credentials
+                mounthPath: /secrets/cloudsql-instance-credentials
                 readOnly: true
             {{- with $.Values.deployment.securityContext }}
             securityContext:
