@@ -19,6 +19,9 @@ const (
 	StateProvisioning State = "provisioning"
 	// StateDeprovisioning means that the runtime deprovisioning (or suspension) is in progress (by the last runtime operation).
 	StateDeprovisioning State = "deprovisioning"
+	// StateDeprovisioned means that the runtime deprovisioning has finished removing the instance.
+	// In case the instance has already been deleted, KEB will try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations.
+	StateDeprovisioned State = "deprovisioned"
 	// StateUpgrading means that kyma upgrade or cluster upgrade operation is in progress.
 	StateUpgrading State = "upgrading"
 	// StateUpdating means the runtime configuration is being updated (i.e. OIDC is reconfigured).
@@ -116,7 +119,6 @@ const (
 	KymaConfigParam      = "kyma_config"
 	ClusterConfigParam   = "cluster_config"
 	ExpiredParam         = "expired"
-	OnlyDeletedParam     = "only_deleted"
 )
 
 type OperationDetail string
@@ -157,8 +159,6 @@ type ListParameters struct {
 	Expired bool
 	// Events parameter fetches tracing events per instance
 	Events string
-	// OnlyDeleted parameter instructs KEB to try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations
-	OnlyDeleted bool
 }
 
 func (rt RuntimeDTO) LastOperation() Operation {
