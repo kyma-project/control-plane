@@ -42,7 +42,7 @@ type instancePredicate func(internal.Instance) bool
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
-	log.Info("Starting trial cleanup job!")
+	log.Info("Starting trial cleanup job")
 
 	// create and fill config
 	var cfg Config
