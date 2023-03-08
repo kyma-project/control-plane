@@ -35,7 +35,7 @@ spec:
           {{- end }}
           restartPolicy: Never
           containers:
-          - name: main
+          - name: {{ $job.cronJobName }}
             image: "{{ $.Values.global.images.containerRegistry.path }}/{{ $job.dir }}{{ $job.imageName }}:{{ $job.version }}"
             imagePullPolicy: IfNotPresent
             env:
@@ -155,10 +155,9 @@ spec:
             {{- end}}
             {{- range $key, $val := $job.secretVolumes }}
             - name: {{ $key }}
-              mounthPath: {{ $val.path }}
               secret: 
                 optional: {{ $val.optional }}
-                secret: {{ $val.secret }}
+                secretName: {{ $val.secret }}
                 defaultMode: {{ $val.defaultMode}}
             {{- end}}
 {{- end }} 
