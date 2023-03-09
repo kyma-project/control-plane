@@ -96,7 +96,8 @@ func (cmd *RuntimeStateCommand) Run() error {
 	if cmd.opts.shootName != "" {
 		kebURL := GlobalOpts.KEBAPIURL()
 		kebClient := cmd.provideKebClient(kebURL, httpClient)
-		runtimeID, err := getRuntimeID(kebClient, cmd.opts.shootName)
+		var err error
+		runtimeID, err = getRuntimeID(kebClient, cmd.opts.shootName)
 		if err != nil {
 			return errors.Wrap(err, "while listing runtimes")
 		}

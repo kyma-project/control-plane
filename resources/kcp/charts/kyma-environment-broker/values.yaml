@@ -2,16 +2,19 @@ global:
   images:
     kyma_environment_broker:
       dir:
-      version: "PR-2327"
+      version: "PR-2555"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2337"
+      version: "PR-2540"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2337"
+      version: "PR-2477"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2337"
+      version: "PR-2554"
+    kyma_environment_deprovision_retrigger_job:
+      dir:
+      version: "PR-2554"
 
 deployment:
   replicaCount: 1
@@ -64,6 +67,7 @@ reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"
   # Defines how long KEB checks the status of the provisioning reconciliation.
   provisioningTimeout: "2h"
+  disabled: "false"
 
 lifecycleManager:
   disabled: "true"
@@ -95,7 +99,7 @@ additionalRuntimeComponents: |-
   - name: "uaa-activator"
     namespace: "kyma-system"
   - name: "compass-runtime-agent"
-    namespace: "compass-system"
+    namespace: "kyma-system"
   - name: "knative-eventing-kafka"
     namespace: "knative-eventing"
 
@@ -103,7 +107,7 @@ newAdditionalRuntimeComponents: |-
   - name: "service-manager-proxy"
     namespace: "kyma-system"
   - name: "compass-runtime-agent"
-    namespace: "compass-system"
+    namespace: "kyma-system"
 
 trialRegionsMapping: |-
   cf-eu10: europe
@@ -120,6 +124,10 @@ skrOIDCDefaultValues: |-
 
 skrDNSProvidersValues: |-
   providers: []
+
+euAccessWhitelistedGlobalAccountIds: |-
+  whitelist:
+euAccessRejectionMessage: "Due to limited availability, you need to open support ticket before attempting to provision Kyma clusters in EU Access only regions"
 
 kymaVersion: "2.0"
 kymaVersionOnDemand: "false"
@@ -262,6 +270,10 @@ trialCleanup:
   schedule: "0,15,30,45 * * * *"
   dryRun: true
   expirationPeriod: 336h
+
+deprovisionRetrigger:
+  schedule: "0 2 * * *"
+  dryRun: true
 
 serviceMonitor:
   scrapeTimeout: 10s

@@ -55,6 +55,7 @@ type RuntimeStatus struct {
 	CreatedAt        time.Time       `json:"createdAt"`
 	ModifiedAt       time.Time       `json:"modifiedAt"`
 	ExpiredAt        *time.Time      `json:"expiredAt,omitempty"`
+	DeletedAt        *time.Time      `json:"deletedAt,omitempty"`
 	State            State           `json:"state"`
 	Provisioning     *Operation      `json:"provisioning,omitempty"`
 	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
@@ -84,15 +85,16 @@ type OperationsData struct {
 }
 
 type Operation struct {
-	State           string        `json:"state"`
-	Type            OperationType `json:"type,omitempty"`
-	Description     string        `json:"description"`
-	CreatedAt       time.Time     `json:"createdAt"`
-	UpdatedAt       time.Time     `json:"updatedAt"`
-	OperationID     string        `json:"operationID"`
-	OrchestrationID string        `json:"orchestrationID,omitempty"`
-	FinishedStages  []string      `json:"finishedStages"`
-	RuntimeVersion  string        `json:"runtimeVersion"`
+	State                        string        `json:"state"`
+	Type                         OperationType `json:"type,omitempty"`
+	Description                  string        `json:"description"`
+	CreatedAt                    time.Time     `json:"createdAt"`
+	UpdatedAt                    time.Time     `json:"updatedAt"`
+	OperationID                  string        `json:"operationID"`
+	OrchestrationID              string        `json:"orchestrationID,omitempty"`
+	FinishedStages               []string      `json:"finishedStages"`
+	ExecutedButNotCompletedSteps []string      `json:"executedButNotCompletedSteps,omitempty"`
+	RuntimeVersion               string        `json:"runtimeVersion"`
 }
 
 type RuntimesPage struct {
@@ -154,7 +156,7 @@ type ListParameters struct {
 	// Expired parameter filters runtimes to show only expired ones.
 	Expired bool
 	// Events parameter fetches tracing events per instance
-	Events bool
+	Events string
 	// OnlyDeleted parameter instructs KEB to try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations
 	OnlyDeleted bool
 }

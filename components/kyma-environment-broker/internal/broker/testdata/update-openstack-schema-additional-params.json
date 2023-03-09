@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "_controlsOrder": [
+    "machineType",
     "autoScalerMin",
     "autoScalerMax",
     "oidc",
@@ -26,6 +27,13 @@
       "description": "Specifies the minimum number of virtual machines to create",
       "minimum": 2,
       "type": "integer"
+    },
+    "machineType": {
+      "enum": [
+        "g_c4_m16",
+        "g_c8_m32"
+      ],
+      "type": "string"
     },
     "oidc": {
       "description": "OIDC configuration",

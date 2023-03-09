@@ -188,9 +188,13 @@ func SetupTestDBTables(connectionURL string) (cleanupFunc func(), err error) {
 	return cleanupFunc, nil
 }
 
+func dockerClient() (*client.Client, error) {
+	return client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+}
+
 func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := dockerClient()
 	if err != nil {
 		return false, fmt.Errorf("while creating docker client: %w", err)
 	}
@@ -208,7 +212,7 @@ func isDockerTestNetworkPresent(ctx context.Context) (bool, error) {
 }
 
 func createTestNetworkForDB(ctx context.Context) (*types.NetworkResource, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := dockerClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a Docker client: %w", err)
 	}
@@ -247,7 +251,7 @@ func EnsureTestNetworkForDB(t *testing.T, ctx context.Context) (func(), error) {
 		return func() {}, fmt.Errorf("while creating test network: %w", err)
 	}
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := dockerClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a Docker client: %w", err)
 	}
@@ -269,17 +273,13 @@ func SetupTestNetworkForDB(ctx context.Context) (cleanupFunc func(), err error) 
 		return func() {}, nil
 	}
 
-	if os.Getenv(EnvPipelineBuild) != "" {
-		return func() {}, fmt.Errorf("Docker network %s does not exist", DockerUserNetwork)
-	}
-
 	createdNetwork, err := createTestNetworkForDB(ctx)
 
 	if err != nil {
 		return func() {}, fmt.Errorf("while creating test network: %w", err)
 	}
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := dockerClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a Docker client: %w", err)
 	}
@@ -291,7 +291,11 @@ func SetupTestNetworkForDB(ctx context.Context) (cleanupFunc func(), err error) 
 		time.Sleep(1 * time.Second)
 	}
 
-	return cleanupFunc, fmt.Errorf("while DB setup: %w", err)
+	if err != nil {
+		return cleanupFunc, fmt.Errorf("while DB setup: %w", err)
+	} else {
+		return cleanupFunc, nil
+	}
 }
 
 func isDBContainerAvailable(hostname, port string) (isAvailable bool, dbCfg Config, err error) {
@@ -328,7 +332,7 @@ func clearDBQuery() string {
 
 func createDbContainer(log func(format string, args ...interface{}), hostname string) (func(), Config, error) {
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := dockerClient()
 	if err != nil {
 		return nil, Config{}, fmt.Errorf("while creating docker client: %w", err)
 	}

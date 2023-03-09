@@ -92,7 +92,7 @@ func TestProvisioning_AWSWithEURestrictedAccessBadRequest(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "not-whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -121,7 +121,7 @@ func TestProvisioning_AzureWithEURestrictedAccessBadRequest(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "not-whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -150,13 +150,44 @@ func TestProvisioning_AzureWithEURestrictedAccessHappyFlow(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
 					"parameters": {
 						"name": "testing-cluster",
 						"region":"switzerlandnorth"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+
+	// then
+	suite.AssertAzureRegion("switzerlandnorth")
+}
+
+func TestProvisioning_AzureWithEURestrictedAccessDefaultRegion(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-ch20/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "4deee563-e5ec-4731-b9b1-53b42d855f0c",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "whitelisted-global-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
@@ -182,13 +213,44 @@ func TestProvisioning_AWSWithEURestrictedAccessHappyFlow(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
 					"parameters": {
 						"name": "testing-cluster",
 						"region":"eu-central-1"
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+	suite.processProvisioningAndReconcilingByOperationID(opID)
+
+	// then
+	suite.AssertAWSRegionAndZone("eu-central-1")
+}
+
+func TestProvisioning_AWSWithEURestrictedAccessDefaultRegion(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu11/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "361c511f-f939-4621-b228-d0fb79a1fe15",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "whitelisted-global-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster"
 					}
 		}`)
 	opID := suite.DecodeOperationID(resp)
@@ -356,7 +418,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 	iid := uuid.New().String()
 
 	// when
-	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu10/v2/service_instances/%s?accepts_incomplete=true", iid),
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-eu11/v2/service_instances/%s?accepts_incomplete=true", iid),
 		`{
 					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
 					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
@@ -365,7 +427,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -377,7 +439,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 	suite.processProvisioningAndReconcilingByOperationID(opID)
 
 	// then
-	suite.AssertAWSRegionAndZone("eu-west-1")
+	suite.AssertAWSRegionAndZone("eu-central-1")
 }
 
 func TestProvisioning_HandleExistingOperation(t *testing.T) {
@@ -1007,4 +1069,36 @@ func TestProvisioning_WithNetworkFilter(t *testing.T) {
 	disabled := true
 	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance.Parameters.ErsContext.LicenseType)
+}
+
+func TestProvisioning_PRVersionWithoutOverrides(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-ch20/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "whitelisted-global-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"overridesVersion":"",
+						"kymaVersion":"PR-99999"				
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+
+	// then
+	suite.WaitForProvisioningState(opID, domain.Failed)
 }

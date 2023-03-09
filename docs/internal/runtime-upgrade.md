@@ -108,11 +108,11 @@ mutation {
           }    
           {
             component: "application-connector"
-            namespace: "kyma-integration"
+            namespace: "kyma-system"
           }  
           {
             component: "compass-runtime-agent"
-            namespace: "compass-system"
+            namespace: "kyma-system"
           }  
         ]
   }

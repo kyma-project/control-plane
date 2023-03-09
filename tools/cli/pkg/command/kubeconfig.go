@@ -125,6 +125,12 @@ func (cmd *KubeconfigCommand) resolveRuntimeAttributes(ctx context.Context, cred
 
 	cmd.runtimeID = rp.Data[0].RuntimeID
 	cmd.globalAccountID = rp.Data[0].GlobalAccountID
+
+	if isEuAccess(rp.Data[0].SubAccountRegion) {
+		if !promptUser("This Kyma runtime is operated and supported in European Union (EU) Access mode.\nPlease confirm that you are either physically located in EU or that you have positively verified that EU access restrictions do not apply in your situation.\nYour confirmation will be logged. ") {
+			return fmt.Errorf("aborted downloading kubeconfig for shoot: %s", rp.Data[0].ShootName)
+		}
+	}
 	return nil
 }
 
@@ -165,4 +171,8 @@ func clusterNameFromKubeconfig(rawKubeConfig string) (string, error) {
 	}
 
 	return clusterName, nil
+}
+
+func isEuAccess(subAccountRegion string) bool {
+	return subAccountRegion == "cf-eu11" || subAccountRegion == "cf-ch20"
 }

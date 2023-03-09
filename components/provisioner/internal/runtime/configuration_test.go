@@ -34,7 +34,8 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 	tenant := "tenant"
 	token := "shdfv7123ygfbw832b"
 
-	namespace := "compass-system"
+	namespace := "kyma-system"
+	legacyNamespace := "compass-system"
 
 	cluster := model.Cluster{
 		ID:     runtimeID,
@@ -62,6 +63,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
+		secretLegacyNamespace, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(legacyNamespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
 		require.NoError(t, k8serr)
 
 		assertData := func(data map[string]string) {
@@ -72,6 +74,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		}
 
 		assertData(secret.StringData)
+		assertData(secretLegacyNamespace.StringData)
 	})
 	t.Run("Should reconfigure Runtime Agent", func(t *testing.T) {
 		//given
@@ -85,7 +88,17 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 				"key": "value",
 			},
 		}
+		legacyNamespaceOldSecret := &core.Secret{
+			ObjectMeta: meta.ObjectMeta{
+				Name:      AgentConfigurationSecretName,
+				Namespace: legacyNamespace,
+			},
+			StringData: map[string]string{
+				"key": "value",
+			},
+		}
 		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Create(context.Background(), oldSecret, v1.CreateOptions{})
+		secretLegacyNamespace, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(legacyNamespace).Create(context.Background(), legacyNamespaceOldSecret, v1.CreateOptions{})
 		require.NoError(t, k8serr)
 
 		directorClient := &mocks2.DirectorClient{}
@@ -99,6 +112,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		secret, k8serr = k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
+		secretLegacyNamespace, k8serr = k8sClientProvider.fakeClient.CoreV1().Secrets(legacyNamespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
 		require.NoError(t, k8serr)
 
 		assertData := func(data map[string]string) {
@@ -109,6 +123,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		}
 
 		assertData(secret.StringData)
+		assertData(secretLegacyNamespace.StringData)
 	})
 
 	t.Run("Should retry on GetConnectionToken and configure Runtime Agent", func(t *testing.T) {
@@ -127,6 +142,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		//then
 		require.NoError(t, err)
 		secret, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(namespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
+		secretLegacyNamespace, k8serr := k8sClientProvider.fakeClient.CoreV1().Secrets(legacyNamespace).Get(context.Background(), AgentConfigurationSecretName, v1.GetOptions{})
 		require.NoError(t, k8serr)
 
 		assertData := func(data map[string]string) {
@@ -137,6 +153,7 @@ func TestProvider_CreateConfigMapForRuntime(t *testing.T) {
 		}
 
 		assertData(secret.StringData)
+		assertData(secretLegacyNamespace.StringData)
 	})
 
 	t.Run("Should return error when failed to create client", func(t *testing.T) {

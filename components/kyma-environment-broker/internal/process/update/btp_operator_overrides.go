@@ -32,6 +32,10 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	if operation.LastRuntimeState.ClusterSetup == nil {
+		logger.Infof("no last runtime state found, skipping")
+		return operation, 0, nil
+	}
 	// get btp-operator component input and calculate overrides
 	ci, err := getComponentInput(s.components, BTPOperatorComponentName, operation.RuntimeVersion, operation.InputCreator.Configuration())
 	if err != nil {
