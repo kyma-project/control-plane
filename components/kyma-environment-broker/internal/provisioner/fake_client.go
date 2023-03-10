@@ -82,6 +82,19 @@ func (c *FakeClient) FindOperationByRuntimeIDAndType(runtimeID string, operation
 	return schema.OperationStatus{}
 }
 
+func (c *FakeClient) FindLastOperationByRuntimeIDAndType(runtimeID string, operationType schema.OperationType) schema.OperationStatus {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var opStatus schema.OperationStatus
+	for _, status := range c.operations {
+		if *status.RuntimeID == runtimeID && status.Operation == operationType {
+			opStatus = status
+		}
+	}
+	return opStatus
+}
+
 func (c *FakeClient) SetOperation(id string, operation schema.OperationStatus) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
