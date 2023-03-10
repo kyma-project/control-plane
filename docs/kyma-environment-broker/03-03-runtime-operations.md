@@ -39,7 +39,7 @@ The timeout for processing the whole provisioning operation is set to `24h`. In 
 Each deprovisioning step is responsible for a separate part of cleaning Runtime dependencies. To properly deprovision all Runtime dependencies, you need the data used during the Runtime provisioning. The first step finds the previous operation and copies the data.
 
 None of the deprovisioning steps should block the entire deprovisioning operation. Use the `RetryOperationWithoutFail` function from the `DeprovisionOperationManager` struct to skip a step in case of a retry timeout. Set a 5-minute, at the most, timeout for retries in a step.
-Each step has its own separate `stage`, so once the step is successfully executed, it won't be retried. If any step has been skipped due to a retry timeout or error , a [cron job](03-16-deprovision-retrigger-cronjob.md) will try at a scheduled time to deprovision again all remaining Runtime dependencies.
+Once the step is successfully executed, it won't be retried. If any step has been skipped due to a retry timeout or error, a [cron job](03-16-deprovision-retrigger-cronjob.md) will try at a scheduled time to deprovision again all remaining Runtime dependencies.
 The deprovisioning process contains the following steps:
 
 | Step                         | Domain                          | Description                                                                                                                                                  |
