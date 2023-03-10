@@ -17,11 +17,11 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/mod v0.7.0
-	golang.org/x/net v0.5.0
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/api v0.26.1
+	k8s.io/apimachinery v0.26.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
@@ -77,9 +77,9 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
@@ -101,9 +101,9 @@ replace (
 	github.com/kyma-project/control-plane/components/kubeconfig-service => ../../components/kubeconfig-service
 	github.com/kyma-project/control-plane/components/provisioner => ../../components/provisioner
 	github.com/kyma-project/control-plane/components/reconciler => ../../components/reconciler
-	golang.org/x/net => golang.org/x/net v0.5.0
-	k8s.io/api => k8s.io/api v0.24.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.5
-	k8s.io/apiserver => k8s.io/apiserver v0.23.5
-	k8s.io/client-go => k8s.io/client-go v0.24.2
+	golang.org/x/net => golang.org/x/net v0.7.0
+	k8s.io/api => k8s.io/api v0.26.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.25.2
+	k8s.io/apiserver => k8s.io/apiserver v0.25.2
+	k8s.io/client-go => k8s.io/client-go v0.25.2
 )
