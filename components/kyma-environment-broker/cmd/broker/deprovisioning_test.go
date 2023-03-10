@@ -33,7 +33,7 @@ func TestKymaDeprovision(t *testing.T) {
 	suite.AssertInstanceRemoved(instanceId)
 }
 
-func TestKymaReDeprovisionSuccedeed(t *testing.T) {
+func TestKymaReDeprovisionSucceeded(t *testing.T) {
 	// given
 	runtimeOptions := RuntimeOptions{
 		GlobalAccountID: globalAccountID,
