@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"golang.org/x/exp/slices"
 
 	"github.com/gocraft/dbr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -843,7 +844,7 @@ func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	}
 	if filter.InstanceFilter != nil {
 		fi := filter.InstanceFilter
-		if fi.OnlyDeleted != nil && *fi.OnlyDeleted {
+		if slices.Contains(filter.States, string(dbmodel.InstanceDeprovisioned)) {
 			stmt.LeftJoin(dbr.I(InstancesTableName).As("i"), "i.instance_id = o.instance_id").
 				Where("i.instance_id IS NULL")
 		}
