@@ -104,6 +104,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cfg.Reconciler = reconciler.Config{
 		ProvisioningTimeout: time.Second,
 	}
+	cfg.Notification = notification.Config{
+		Url:      "",
+		Disabled: true,
+	}
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -1003,7 +1007,7 @@ func fixConfig() *Config {
 		},
 		Notification: notification.Config{
 			Url:      "http://host:8080/",
-			Disabled: false,
+			Disabled: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,
