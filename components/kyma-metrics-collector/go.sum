@@ -99,8 +99,8 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/gardener/gardener v1.66.0 h1:krDrGx6asbjLBJGI7MtAHTV5NtRk9K3LJy1/4zQS0uU=
 github.com/gardener/gardener v1.66.0/go.mod h1:nS3b9qWHphOkzK3aZZYHSlwKz2qTxcKSQ35iHnk80UY=
-github.com/gardener/gardener-extension-provider-aws v1.41.1 h1:c7p9g+eAEIw+kx2wdhvZ2Rm26loeuWxAX1qtMz4mNMQ=
-github.com/gardener/gardener-extension-provider-aws v1.41.1/go.mod h1:uuydstwTyyJZWfRH2mHgJAxonSYQMUnd5nSEHhW74ds=
+github.com/gardener/gardener-extension-provider-aws v1.42.0 h1:rYhHz0DYYFk71UefLgahB0mI11ecAAN1sb47qYgmV7A=
+github.com/gardener/gardener-extension-provider-aws v1.42.0/go.mod h1:xt9+BzdwqJqLoWZ5AyfRsAnNGJctojUFOki/UkTuHKQ=
 github.com/gardener/gardener-extension-provider-azure v1.33.0 h1:16AIK7f9aDJI++1Te4ZKVuVSc1OYkAn5b8YwlEcJihE=
 github.com/gardener/gardener-extension-provider-azure v1.33.0/go.mod h1:8E5ZtMAOtoQOnVdo3vUcFTXd+PfqsUI3b1b10rWWIAM=
 github.com/gardener/gardener-extension-provider-gcp v1.27.1 h1:6Rz4c9QemTAF/19IeLzEiiNns6VfljjBnQXMRzDgZdA=
