@@ -3,7 +3,7 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.19
 
 require (
-	github.com/gardener/gardener v1.64.1
+	github.com/gardener/gardener v1.66.0
 	github.com/gardener/gardener-extension-provider-aws v1.41.1
 	github.com/gardener/gardener-extension-provider-azure v1.33.0
 	github.com/gardener/gardener-extension-provider-gcp v1.27.1
@@ -54,7 +54,7 @@ require (
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
