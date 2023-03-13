@@ -1,5 +1,6 @@
 global:
   images:
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
       version: "PR-2577"
