@@ -1,5 +1,5 @@
-NAME = reconciler-ww
-NAMESPACE = ralikio
+NAME = reconciler
+NAMESPACE = reconciler
 
 .PHONY: deploy-reconciler
 deploy-reconciler:
