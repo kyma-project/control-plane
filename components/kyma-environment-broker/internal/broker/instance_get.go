@@ -51,17 +51,22 @@ func (b *GetInstanceEndpoint) GetInstance(_ context.Context, instanceID string, 
 		statusCode := http.StatusNotFound
 		if !dberr.IsNotFound(err) {
 			statusCode = http.StatusInternalServerError
+			return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("failed to get instanceID %s", instanceID), statusCode, fmt.Sprintf("failed to get instanceID %s", instanceID))
 		}
-		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, statusCode, fmt.Sprintf("failed to get instanceID %s", instanceID))
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("instance with instanceID %s does not exist", instanceID), statusCode, fmt.Sprintf("instance with instanceID %s does not exist", instanceID))
 	}
 
 	// check if provisioning still in progress
 	op, err := b.operationsStorage.GetProvisioningOperationByInstanceID(instanceID)
 	if err != nil {
-		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, fmt.Sprintf("failed to get operation for instanceID %s", instanceID))
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("failed to get operation for instanceID %s", instanceID), http.StatusNotFound, fmt.Sprintf("failed to get operation for instanceID %s", instanceID))
 	} else if op.State == domain.InProgress || op.State == domain.Failed {
 		err = fmt.Errorf("provisioning of instanceID %s %s", instanceID, op.State)
 		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusNotFound, err.Error())
+	}
+
+	if !instance.DeletedAt.IsZero() {
+		return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(fmt.Errorf("instance with instanceID %s does not exist", instanceID), http.StatusNotFound, fmt.Sprintf("instance with instanceID %s does not exist", instanceID))
 	}
 
 	parameters := b.prepareParametersToReturn(instance.Parameters)

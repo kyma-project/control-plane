@@ -72,7 +72,6 @@ type GardenerConfig struct {
 	MaxUnavailable                      int
 	EnableKubernetesVersionAutoUpdate   bool
 	EnableMachineImageVersionAutoUpdate bool
-	AllowPrivilegedContainers           bool
 	GardenerProviderConfig              GardenerProviderConfig
 	OIDCConfig                          *OIDCConfig
 	DNSConfig                           *DNSConfig
@@ -184,8 +183,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
-				AllowPrivilegedContainers: &c.AllowPrivilegedContainers,
-				Version:                   c.KubernetesVersion,
+				Version: c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					EnableBasicAuthentication: &enableBasicAuthentication,
 					OIDCConfig:                gardenerOidcConfig(oidcConfig),
@@ -790,6 +788,17 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 		})
 		shoot.Spec.Extensions = upgradedExtensions
 	}
+
+	// Needed for upgrade to Kubernetes 2.25
+	shoot.Spec.Kubernetes.AllowPrivilegedContainers = nil
+
+	disablePlugin := true
+	podSecurityPolicyPlugin := gardener_types.AdmissionPlugin{
+		Name:     "PodSecurityPolicy",
+		Disabled: &disablePlugin,
+	}
+
+	shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins = append(shoot.Spec.Kubernetes.KubeAPIServer.AdmissionPlugins, podSecurityPolicyPlugin)
 
 	return nil
 }

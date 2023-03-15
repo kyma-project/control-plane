@@ -19,6 +19,11 @@ const (
 	StateProvisioning State = "provisioning"
 	// StateDeprovisioning means that the runtime deprovisioning (or suspension) is in progress (by the last runtime operation).
 	StateDeprovisioning State = "deprovisioning"
+	// StateDeprovisioned means that the runtime deprovisioning has finished removing the instance.
+	// In case the instance has already been deleted, KEB will try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations.
+	StateDeprovisioned State = "deprovisioned"
+	// StateDeprovisionIncomplete means that the runtime deprovisioning has finished removing the instance but certain steps have not finished and the instance should be requeued for repeated deprovisioning.
+	StateDeprovisionIncomplete State = "deprovisionincomplete"
 	// StateUpgrading means that kyma upgrade or cluster upgrade operation is in progress.
 	StateUpgrading State = "upgrading"
 	// StateUpdating means the runtime configuration is being updated (i.e. OIDC is reconfigured).
@@ -55,6 +60,7 @@ type RuntimeStatus struct {
 	CreatedAt        time.Time       `json:"createdAt"`
 	ModifiedAt       time.Time       `json:"modifiedAt"`
 	ExpiredAt        *time.Time      `json:"expiredAt,omitempty"`
+	DeletedAt        *time.Time      `json:"deletedAt,omitempty"`
 	State            State           `json:"state"`
 	Provisioning     *Operation      `json:"provisioning,omitempty"`
 	Deprovisioning   *Operation      `json:"deprovisioning,omitempty"`
@@ -84,15 +90,16 @@ type OperationsData struct {
 }
 
 type Operation struct {
-	State           string        `json:"state"`
-	Type            OperationType `json:"type,omitempty"`
-	Description     string        `json:"description"`
-	CreatedAt       time.Time     `json:"createdAt"`
-	UpdatedAt       time.Time     `json:"updatedAt"`
-	OperationID     string        `json:"operationID"`
-	OrchestrationID string        `json:"orchestrationID,omitempty"`
-	FinishedStages  []string      `json:"finishedStages"`
-	RuntimeVersion  string        `json:"runtimeVersion"`
+	State                        string        `json:"state"`
+	Type                         OperationType `json:"type,omitempty"`
+	Description                  string        `json:"description"`
+	CreatedAt                    time.Time     `json:"createdAt"`
+	UpdatedAt                    time.Time     `json:"updatedAt"`
+	OperationID                  string        `json:"operationID"`
+	OrchestrationID              string        `json:"orchestrationID,omitempty"`
+	FinishedStages               []string      `json:"finishedStages"`
+	ExecutedButNotCompletedSteps []string      `json:"executedButNotCompletedSteps,omitempty"`
+	RuntimeVersion               string        `json:"runtimeVersion"`
 }
 
 type RuntimesPage struct {
@@ -114,7 +121,6 @@ const (
 	KymaConfigParam      = "kyma_config"
 	ClusterConfigParam   = "cluster_config"
 	ExpiredParam         = "expired"
-	OnlyDeletedParam     = "only_deleted"
 )
 
 type OperationDetail string
@@ -155,8 +161,6 @@ type ListParameters struct {
 	Expired bool
 	// Events parameter fetches tracing events per instance
 	Events string
-	// OnlyDeleted parameter instructs KEB to try best effort to reconstruct at least partial information regarding deprovisioned instances from residual operations
-	OnlyDeleted bool
 }
 
 func (rt RuntimeDTO) LastOperation() Operation {

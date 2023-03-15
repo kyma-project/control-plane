@@ -221,10 +221,12 @@ func CreateShootUpgradeQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
-	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
+	k8sClientProvider k8s.K8sClientProvider,
+	secretsClient v1core.SecretInterface,
+) OperationQueue {
 
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, model.FinishedStage, timeouts.BindingsCreation)
-	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
+	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
 	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{

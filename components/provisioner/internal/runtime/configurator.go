@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	AgentConfigurationSecretName   = "compass-agent-configuration"
-	runtimeAgentComponentNameSpace = "compass-system"
+	AgentConfigurationSecretName         = "compass-agent-configuration"
+	runtimeAgentComponentNameSpace       = "kyma-system"
+	legacyRuntimeAgentComponentNameSpace = "compass-system"
 )
 
 //go:generate mockery -name=Configurator
@@ -45,25 +46,31 @@ func NewRuntimeConfigurator(builder k8s.K8sClientProvider, directorClient direct
 }
 
 func (c *configurator) ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError {
-	err := c.configureAgent(cluster, runtimeAgentComponentNameSpace, kubeconfigRaw)
+
+	token, err := c.getConnectionToken(cluster)
+	if err != nil {
+		return err.Append("error getting one time token from Director")
+	}
+
+	// In order to meet Kyma modularisation requirements compass-system namespace will be removed at some point.
+	// Please see the following issue for details: https://github.com/kyma-project/kyma/issues/15915
+	// Provisioner must be able to configure Compass Runtime Agent no matter if it will be installed in compass-system or kyma-system namespace.
+	// This solution creates redundant secret, however,it will work in both cases, and doesn't require Provisioner's API change.
+	err = c.configureAgent(cluster, token, runtimeAgentComponentNameSpace, kubeconfigRaw)
 	if err != nil {
 		return err.Append("error configuring Runtime Agent")
+	}
+
+	err = c.configureAgent(cluster, token, legacyRuntimeAgentComponentNameSpace, kubeconfigRaw)
+	if err != nil {
+		return err.Append("error configuring Runtime Agent in legacy namespace")
 	}
 
 	return nil
 }
 
-func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconfigRaw string) apperrors.AppError {
+func (c *configurator) configureAgent(cluster model.Cluster, token graphql.OneTimeTokenForRuntimeExt, namespace, kubeconfigRaw string) apperrors.AppError {
 	var err apperrors.AppError
-	var token graphql.OneTimeTokenForRuntimeExt
-	err = util.RetryOnError(10*time.Second, 3, "Error while getting one time token from Director: %s", func() (err apperrors.AppError) {
-		token, err = c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
-		return
-	})
-
-	if err != nil {
-		return err.Append("error getting one time token from Director")
-	}
 
 	k8sClient, err := c.builder.CreateK8SClient(kubeconfigRaw)
 	if err != nil {
@@ -78,7 +85,7 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 	}
 
 	err = util.RetryOnError(3*time.Second, 2, "Error while creating namespace for Runtime Agent configuration: %s", func() (err apperrors.AppError) {
-		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), runtimeAgentComponentNameSpace)
+		err = c.createNamespace(k8sClient.CoreV1().Namespaces(), namespace)
 		return
 	})
 
@@ -94,6 +101,22 @@ func (c *configurator) configureAgent(cluster model.Cluster, namespace, kubeconf
 		StringData: configurationData,
 	}
 	return c.upsertSecret(k8sClient.CoreV1().Secrets(namespace), secret)
+}
+
+func (c *configurator) getConnectionToken(cluster model.Cluster) (graphql.OneTimeTokenForRuntimeExt, apperrors.AppError) {
+	var err apperrors.AppError
+	var token graphql.OneTimeTokenForRuntimeExt
+
+	err = util.RetryOnError(10*time.Second, 3, "Error while getting one time token from Director: %s", func() (err apperrors.AppError) {
+		token, err = c.directorClient.GetConnectionToken(cluster.ID, cluster.Tenant)
+		return
+	})
+
+	if err != nil {
+		return graphql.OneTimeTokenForRuntimeExt{}, err
+	}
+
+	return token, nil
 }
 
 func (c *configurator) createNamespace(namespaceInterface v1.NamespaceInterface, namespace string) apperrors.AppError {

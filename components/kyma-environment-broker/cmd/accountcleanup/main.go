@@ -55,6 +55,7 @@ func main() {
 
 	// create broker client
 	brokerClient := broker.NewClient(ctx, cfg.Broker)
+	brokerClient.UserAgent = broker.AccountCleanupJob
 
 	// create SubAccountCleanerService and execute process
 	sacs := cis.NewSubAccountCleanupService(client, brokerClient, db.Instances(), logs)

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -144,7 +146,7 @@ func fixOperationCreateRuntimeWithPlatformRegion(t *testing.T, planID, region, p
 			},
 		},
 	}
-	provisioningOperation.InstanceDetails.EuAccess = internal.IsEURestrictedAccess(platformRegion)
+	provisioningOperation.InstanceDetails.EuAccess = euaccess.IsEURestrictedAccess(platformRegion)
 	provisioningOperation.ProvisioningParameters = FixProvisioningParameters(planID, region, platformRegion)
 	provisioningOperation.RuntimeID = ""
 

@@ -17,6 +17,7 @@ import (
 type writeSession struct {
 	session     *dbr.Session
 	transaction *dbr.Tx
+	encrypt     encryptFunc
 }
 
 // TODO: Remove after schema migration
@@ -59,6 +60,7 @@ func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 		Pair("tenant", cluster.Tenant).
 		Pair("sub_account_id", cluster.SubAccountId).
 		Pair("active_kyma_config_id", kymaConfigId). // Possible due to deferred constrain
+		Pair("is_kubeconfig_encrypted", false).
 		Exec()
 
 	if err != nil {
@@ -83,10 +85,17 @@ func (ws writeSession) InsertAdministrators(clusterId string, administrators []s
 	}
 
 	for _, admin := range administrators {
+		encryptedUserID, dberr := ws.encryptString(admin)
+		if dberr != nil {
+			return dberrors.Internal("Failed to encrypt Administrator User ID: %s", dberr)
+		}
+
 		_, err := ws.insertInto("cluster_administrator").
 			Pair("id", uuid.New().String()).
 			Pair("cluster_id", clusterId).
-			Pair("user_id", admin).Exec()
+			Pair("user_id", encryptedUserID).
+			Pair("is_user_id_encrypted", true).
+			Exec()
 
 		if err != nil {
 			return dberrors.Internal("Failed to insert record to cluster_administrator table: %s", err)
@@ -121,7 +130,7 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("max_unavailable", config.MaxUnavailable).
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
-		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
+		Pair("allow_privileged_containers", false).
 		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
@@ -444,9 +453,15 @@ func (ws writeSession) FixShootProvisioningStage(message string, newStage model.
 }
 
 func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
+	encryptedKubeconfig, dberr := ws.encryptString(kubeconfig)
+	if dberr != nil {
+		return dberrors.Internal("Failed to encrypt kubeconfig for %s cluster: %s", runtimeID, dberr)
+	}
+
 	res, err := ws.update("cluster").
 		Where(dbr.Eq("id", runtimeID)).
-		Set("kubeconfig", kubeconfig).
+		Set("kubeconfig", encryptedKubeconfig).
+		Set("is_kubeconfig_encrypted", true).
 		Exec()
 
 	if err != nil {
@@ -593,4 +608,12 @@ func (ws writeSession) update(table string) *dbr.UpdateStmt {
 	}
 
 	return ws.session.Update(table)
+}
+
+func (ws writeSession) encryptString(s string) (string, dberrors.Error) {
+	encrypted, err := ws.encrypt([]byte(s))
+	if err != nil {
+		return "", dberrors.Internal("Failed to encrypt a string: %s", err)
+	}
+	return string(encrypted), nil
 }

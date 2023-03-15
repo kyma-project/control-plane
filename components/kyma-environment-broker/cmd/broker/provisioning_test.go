@@ -92,7 +92,7 @@ func TestProvisioning_AWSWithEURestrictedAccessBadRequest(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "not-whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -121,7 +121,7 @@ func TestProvisioning_AzureWithEURestrictedAccessBadRequest(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "not-whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -150,7 +150,7 @@ func TestProvisioning_AzureWithEURestrictedAccessHappyFlow(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -182,7 +182,7 @@ func TestProvisioning_AzureWithEURestrictedAccessDefaultRegion(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -213,7 +213,7 @@ func TestProvisioning_AWSWithEURestrictedAccessHappyFlow(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -245,7 +245,7 @@ func TestProvisioning_AWSWithEURestrictedAccessDefaultRegion(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -427,7 +427,7 @@ func TestProvisioning_TrialAtEU(t *testing.T) {
 							  "url": "https://sm.url",
 							  "credentials": {}
 					    },
-						"globalaccount_id": "g-account-id",
+						"globalaccount_id": "whitelisted-global-account-id",
 						"subaccount_id": "sub-id",
 						"user_id": "john.smith@email.com"
 					},
@@ -1069,4 +1069,36 @@ func TestProvisioning_WithNetworkFilter(t *testing.T) {
 	disabled := true
 	suite.AssertDisabledNetworkFilterForProvisioning(&disabled)
 	assert.Equal(suite.t, "CUSTOMER", *instance.Parameters.ErsContext.LicenseType)
+}
+
+func TestProvisioning_PRVersionWithoutOverrides(t *testing.T) {
+	// given
+	suite := NewBrokerSuiteTest(t)
+	defer suite.TearDown()
+	iid := uuid.New().String()
+
+	// when
+	resp := suite.CallAPI("PUT", fmt.Sprintf("oauth/cf-ch20/v2/service_instances/%s?accepts_incomplete=true", iid),
+		`{
+					"service_id": "47c9dcbf-ff30-448e-ab36-d3bad66ba281",
+					"plan_id": "7d55d31d-35ae-4438-bf13-6ffdfa107d9f",
+					"context": {
+						"sm_platform_credentials": {
+							  "url": "https://sm.url",
+							  "credentials": {}
+					    },
+						"globalaccount_id": "whitelisted-global-account-id",
+						"subaccount_id": "sub-id",
+						"user_id": "john.smith@email.com"
+					},
+					"parameters": {
+						"name": "testing-cluster",
+						"overridesVersion":"",
+						"kymaVersion":"PR-99999"				
+					}
+		}`)
+	opID := suite.DecodeOperationID(resp)
+
+	// then
+	suite.WaitForProvisioningState(opID, domain.Failed)
 }

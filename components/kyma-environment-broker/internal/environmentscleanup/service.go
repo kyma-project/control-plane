@@ -74,6 +74,10 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, broker
 	}
 }
 
+func (s *Service) Run() error {
+	return s.PerformCleanup()
+}
+
 func (s *Service) PerformCleanup() error {
 	return s.cleanupByShoots()
 }

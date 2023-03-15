@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/predicate"
+	"golang.org/x/exp/slices"
 
 	"github.com/gocraft/dbr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -605,7 +606,7 @@ func (r readSession) GetOperationStatsForOrchestration(orchestrationID string) (
 
 func (r readSession) GetInstanceStats() ([]dbmodel.InstanceByGlobalAccountIDStatEntry, error) {
 	var rows []dbmodel.InstanceByGlobalAccountIDStatEntry
-	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s group by global_account_id",
+	_, err := r.session.SelectBySql(fmt.Sprintf("select global_account_id, count(*) as total from %s where deleted_at = '0001-01-01T00:00:00.000Z' group by global_account_id",
 		InstancesTableName)).Load(&rows)
 	return rows, err
 }
@@ -620,7 +621,7 @@ FROM (
     FROM operations
     INNER JOIN instances
     ON operations.instance_id = instances.instance_id
-    WHERE operations.state != 'pending' OR operations.state != 'canceled'
+    WHERE (operations.state != 'pending' OR operations.state != 'canceled') AND deleted_at = '0001-01-01T00:00:00.000Z'
     ORDER BY instance_id, operations.created_at DESC
 ) t
 GROUP BY license_type;
@@ -635,6 +636,7 @@ func (r readSession) GetNumberOfInstancesForGlobalAccountID(globalAccountID stri
 	err := r.session.Select("count(*) as total").
 		From(InstancesTableName).
 		Where(dbr.Eq("global_account_id", globalAccountID)).
+		Where(dbr.Eq("deleted_at", "0001-01-01T00:00:00.000Z")).
 		LoadOne(&res)
 
 	return res.Total, err
@@ -817,6 +819,14 @@ func addInstanceFilters(stmt *dbr.SelectStmt, filter dbmodel.InstanceFilter) {
 		}
 	}
 
+	if filter.DeletionAttempted != nil {
+		if *filter.DeletionAttempted {
+			stmt.Where("instances.deleted_at != '0001-01-01T00:00:00.000Z'")
+		}
+		if !*filter.DeletionAttempted {
+			stmt.Where("instances.deleted_at = '0001-01-01T00:00:00.000Z'")
+		}
+	}
 }
 
 func addOrchestrationFilters(stmt *dbr.SelectStmt, filter dbmodel.OrchestrationFilter) {
@@ -834,7 +844,7 @@ func addOperationFilters(stmt *dbr.SelectStmt, filter dbmodel.OperationFilter) {
 	}
 	if filter.InstanceFilter != nil {
 		fi := filter.InstanceFilter
-		if fi.OnlyDeleted != nil && *fi.OnlyDeleted {
+		if slices.Contains(filter.States, string(dbmodel.InstanceDeprovisioned)) {
 			stmt.LeftJoin(dbr.I(InstancesTableName).As("i"), "i.instance_id = o.instance_id").
 				Where("i.instance_id IS NULL")
 		}

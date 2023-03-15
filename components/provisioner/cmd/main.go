@@ -64,6 +64,7 @@ type config struct {
 		Name        string `envconfig:"default=provisioner"`
 		SSLMode     string `envconfig:"default=disable"`
 		SSLRootCert string `envconfig:"optional"`
+		SecretKey   string `envconfig:"optional"`
 	}
 
 	ProvisioningTimeout            queue.ProvisioningTimeouts
@@ -83,7 +84,6 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
-		ForceAllowPrivilegedContainers             bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -113,7 +113,6 @@ func (c *config) String() string {
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t"+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s"+
@@ -131,7 +130,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel, c.RunAwsConfigMigration)
@@ -163,7 +161,9 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
-	dbsFactory := dbsession.NewFactory(connection)
+	dbsFactory, err := dbsession.NewFactory(connection, cfg.Database.SecretKey)
+
+	exitOnError(err, "Cannot create database session")
 
 	// TODO: Remove after data migration
 	if cfg.RunAwsConfigMigration {
@@ -233,7 +233,7 @@ func main() {
 
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 
@@ -269,8 +269,7 @@ func main() {
 		shootUpgradeQueue,
 		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
-		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
-		cfg.Gardener.ForceAllowPrivilegedContainers)
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()

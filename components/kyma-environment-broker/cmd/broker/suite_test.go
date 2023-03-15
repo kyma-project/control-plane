@@ -69,6 +69,7 @@ const (
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
+	reDeprovisioningOpID   = "re-deprovisioning-op-id"
 	instanceID             = "instance-id"
 	dbSecretKey            = "1234567890123456"
 
@@ -1009,8 +1010,10 @@ func fixConfig() *Config {
 			Namespace:   "kcp-system",
 			Name:        "orchestration-config",
 		},
-		MaxPaginationPage: 100,
-		FreemiumProviders: []string{"aws", "azure"},
+		MaxPaginationPage:                         100,
+		FreemiumProviders:                         []string{"aws", "azure"},
+		EuAccessWhitelistedGlobalAccountsFilePath: "testdata/eu_access_whitelist.yaml",
+		EuAccessRejectionMessage:                  "EU Access Rejection Message - see: http://google.pl",
 	}
 }
 

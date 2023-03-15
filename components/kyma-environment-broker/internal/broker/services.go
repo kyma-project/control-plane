@@ -3,7 +3,7 @@ package broker
 import (
 	"context"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
 	"fmt"
 
@@ -54,7 +54,7 @@ func (b *ServicesEndpoint) Services(ctx context.Context) ([]domain.Service, erro
 
 	provider, ok := middleware.ProviderFromContext(ctx)
 	platformRegion, ok := middleware.RegionFromContext(ctx)
-	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema, internal.IsEURestrictedAccess(platformRegion)) {
+	for _, plan := range Plans(class.Plans, provider, b.cfg.IncludeAdditionalParamsInSchema, euaccess.IsEURestrictedAccess(platformRegion)) {
 		// filter out not enabled plans
 		if _, exists := b.enabledPlanIDs[plan.ID]; !exists {
 			continue

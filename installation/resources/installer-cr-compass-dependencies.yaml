@@ -13,4 +13,4 @@ spec:
   url: ""
   components:
     - name: "compass"
-      namespace: "compass-system"
+      namespace: "kyma-system"

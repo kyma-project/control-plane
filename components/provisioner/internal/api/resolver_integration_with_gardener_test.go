@@ -67,7 +67,7 @@ const (
 
 	kymaVersion                   = "1.8"
 	kymaSystemNamespace           = "kyma-system"
-	compassSystemNamespace        = "compass-system"
+	compassSystemNamespace        = "kyma-system"
 	clusterEssentialsComponent    = "cluster-essentials"
 	rafterComponent               = "rafter"
 	coreComponent                 = "core"
@@ -82,7 +82,6 @@ const (
 
 	defaultEnableKubernetesVersionAutoUpdate   = false
 	defaultEnableMachineImageVersionAutoUpdate = false
-	forceAllowPrivilegedContainers             = false
 
 	mockedKubeconfig = `apiVersion: v1
 clusters:
@@ -156,7 +155,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	shootInterface := shoots.NewFakeShootsInterface(t, cfg)
 	seedInterface := seeds.NewFakeSeedsInterface(t, cfg)
 	secretsInterface := setupSecretsClient(t, cfg)
-	dbsFactory := dbsession.NewFactory(connection)
+	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
+	dbsFactory, _ := dbsession.NewFactory(connection, secretKey)
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -193,7 +193,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
 
 	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
@@ -248,7 +248,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
 			provider := release.NewReleaseProvider(releaseRepository, nil)
 
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate, forceAllowPrivilegedContainers)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)

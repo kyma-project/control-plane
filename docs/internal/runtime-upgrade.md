@@ -112,7 +112,7 @@ mutation {
           }  
           {
             component: "compass-runtime-agent"
-            namespace: "compass-system"
+            namespace: "kyma-system"
           }  
         ]
   }

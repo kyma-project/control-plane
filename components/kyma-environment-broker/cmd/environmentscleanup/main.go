@@ -1,22 +1,24 @@
 package main
 
-type provisionerConfig struct {
-	URL          string `envconfig:"default=kcp-provisioner:3000"`
-	QueryDumping bool   `envconfig:"default=false"`
-}
+import "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/setup"
 
 func main() {
-	builder := NewAppBuilder()
+	builder := setup.NewAppBuilder()
 
-	builder.withGardenerClient()
-	builder.withBrokerClient()
-	builder.withStorage()
+	builder.WithConfig()
+	builder.WithGardenerClient()
+	builder.WithBrokerClient()
+	builder.WithProvisionerClient()
+	builder.WithStorage()
+	builder.WithLogger()
+
+	defer builder.Cleanup()
 
 	job := builder.Create()
 
 	err := job.Run()
 
 	if err != nil {
-		FatalOnError(err)
+		setup.FatalOnError(err)
 	}
 }
