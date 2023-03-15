@@ -271,6 +271,7 @@ environmentsCleanup:
     APP_GARDENER_PROJECT: "kyma-dev"
     APP_GARDENER_KUBECONFIG_PATH: "/gardener/kubeconfig/kubeconfig"
     APP_MAX_AGE_HOURS: "24h"
+    APP_PROVISIONER_URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
   secretVolumes:
     gardener-kubeconfig: 
       path: /gardener/kubeconfig
