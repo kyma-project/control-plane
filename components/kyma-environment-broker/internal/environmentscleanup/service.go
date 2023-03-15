@@ -67,14 +67,6 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provis
 }
 
 func (s *Service) Run() error {
-	return s.PerformCleanup()
-}
-
-func (s *Service) PerformCleanup() error {
-	return s.cleanupByShoots()
-}
-
-func (s *Service) cleanupByShoots() error {
 	runtimesToDelete, shootsToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
 	// runtimesToDelete, _, err := s.getStaleRuntimesByShoots(s.LabelSelector)
 	if err != nil {
