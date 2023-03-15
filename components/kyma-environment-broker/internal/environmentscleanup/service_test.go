@@ -234,6 +234,8 @@ func TestService_PerformCleanup(t *testing.T) {
 			},
 		}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
+
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
