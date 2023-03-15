@@ -114,7 +114,7 @@ https://github.com/kyma-project/control-plane/blob/main/docs/kyma-environment-br
 // Run executes the runtimes command
 func (cmd *RuntimeCommand) Run() error {
 	cmd.log = logger.New()
-	httpClient := oauth2.NewClient(incmd.cobraCmd.Context(), CLICredentialManager(cmd.log))
+	httpClient := oauth2.NewClient(cmd.cobraCmd.Context(), CLICredentialManager(cmd.log))
 	client := runtime.NewClient(GlobalOpts.KEBAPIURL(), httpClient)
 
 	rp, err := client.ListRuntimes(cmd.params)
