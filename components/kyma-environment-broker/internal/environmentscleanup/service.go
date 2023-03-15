@@ -72,13 +72,11 @@ func (s *Service) Run() error {
 
 func (s *Service) PerformCleanup() error {
 	runtimesToDelete, shootsToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
-	// runtimesToDelete, _, err := s.getStaleRuntimesByShoots(s.LabelSelector)
 	if err != nil {
 		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
 		return err
 	}
 
-	// return s.cleanupRuntimes(runtimesToDelete)
 	err = s.cleanupRuntimes(runtimesToDelete)
 	if err != nil {
 		s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
