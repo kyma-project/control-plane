@@ -4,22 +4,22 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{$job.name}}
+  name: {{ $job.name }}
 spec:
-  schedule: {{$job.schedule}}
+  schedule: {{ $job.schedule }}
   failedJobsHistoryLimit: 5
   successfulJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
   jobTemplate:
     metadata:
       labels:
-        cronjob: {{$job.cronJobName}}
+        cronjob: {{ $job.cronJobName }}
     spec:
       template:
         metadata:
-          name: {{$job.imageName}}
+          name: {{ $job.imageName }}
           labels:
-            cronjob: {{$job.cronJobName}}
+            cronjob: {{ $job.cronJobName }}
           {{- if eq $.Values.global.database.embedded.enabled false }}
           annotations:
             sidecar.istio.io/inject: "false"
@@ -27,7 +27,7 @@ spec:
         spec:
           shareProcessNamespace: true
           {{- if $job.account }}
-          serviceAccountName: {{$job.account}}
+          serviceAccountName: {{ $job.account }}
           {{- end }}
           {{- with $.Values.deployment.securityContext }}
           securityContext:
