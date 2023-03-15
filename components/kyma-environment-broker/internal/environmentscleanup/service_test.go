@@ -38,6 +38,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
 		brcMock := &mocks.BrokerRuntimesClient{}
@@ -96,15 +97,25 @@ func TestService_PerformCleanup(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
-		brcMock := &mocks.BrokerRuntimesClient{}
-		brcMock.On("ListRuntimes", mock.AnythingOfType("runtime.ListParameters")).Return(run.RuntimesPage{}, nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
 		bcMock := &mocks.BrokerClient{}
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
+		brcMock := &mocks.BrokerRuntimesClient{}
 		pMock := &mocks.ProvisionerClient{}
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID3).Return("", nil)
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID: "some-instance-id",
 			RuntimeID:  "not-matching-id",
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID1,
+			RuntimeID:  fixRuntimeID1,
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID2,
+			RuntimeID:  fixRuntimeID2,
 		})
 		logger := logrus.New()
 
@@ -116,7 +127,9 @@ func TestService_PerformCleanup(t *testing.T) {
 		// then
 		bcMock.AssertExpectations(t)
 		gcMock.AssertExpectations(t)
-		assert.Error(t, err)
+		pMock.AssertExpectations(t)
+		brcMock.AssertExpectations(t)
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return error on KEB deprovision call failure", func(t *testing.T) {
@@ -385,6 +398,21 @@ func fixShootListItems() []unstructured.Unstructured {
 	creationTime, _ := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
 	unl := unstructured.UnstructuredList{
 		Items: []unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name":              "simple-shoot",
+						"creationTimestamp": creationTime,
+						"labels": map[string]interface{}{
+							"should-be-deleted": "true",
+						},
+						"annotations": map[string]interface{}{},
+					},
+					"spec": map[string]interface{}{
+						"cloudProfileName": "az",
+					},
+				},
+			},
 			{
 				Object: map[string]interface{}{
 					"metadata": map[string]interface{}{

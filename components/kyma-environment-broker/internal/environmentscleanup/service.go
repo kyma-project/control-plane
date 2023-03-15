@@ -27,6 +27,7 @@ const (
 type GardenerClient interface {
 	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
 	Get(ctx context.Context, name string, options v1.GetOptions, subresources ...string) (*unstructured.Unstructured, error)
+	Delete(ctx context.Context, name string, options v1.DeleteOptions, subresources ...string) error
 }
 
 //go:generate mockery --name=BrokerRuntimesClient --output=automock
@@ -74,34 +75,25 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, broker
 }
 
 func (s *Service) PerformCleanup() error {
-	// err := s.cleanupByRuntimes()
-	// if err != nil {
-	// 	s.logger.Error(fmt.Errorf("while cleanning up stale shoots: %w", err))
-	// 	return err
-	// }
-
 	return s.cleanupByShoots()
 }
 
-func (s *Service) cleanupByRuntimes() error {
-	runtimes, err := s.getStaleRuntimes(s.LabelSelector)
-	if err != nil {
-		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
-		return err
-	}
-
-	return s.cleanupRuntimes(runtimes)
-
-}
-
 func (s *Service) cleanupByShoots() error {
-	runtimesToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
+	runtimesToDelete, shootsToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
+	// runtimesToDelete, _, err := s.getStaleRuntimesByShoots(s.LabelSelector)
 	if err != nil {
 		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
 		return err
 	}
 
-	return s.cleanupRuntimes(runtimesToDelete)
+	// return s.cleanupRuntimes(runtimesToDelete)
+	err = s.cleanupRuntimes(runtimesToDelete)
+	if err != nil {
+		s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
+		return err
+	}
+
+	return s.cleanupShoots(shootsToDelete)
 }
 
 func (s *Service) cleanupRuntimes(runtimes []runtime) error {
@@ -114,16 +106,35 @@ func (s *Service) cleanupRuntimes(runtimes []runtime) error {
 	return s.cleanUp(runtimes)
 }
 
-func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, error) {
+func (s *Service) cleanupShoots(shoots []unstructured.Unstructured) error {
+	// do not log all shoots as previously - too much info
+	s.logger.Infof("Number of shoots to process: %+v\n", len(shoots))
+
+	if len(shoots) == 0 {
+		return nil
+	}
+
+	for _, shoot := range shoots {
+		err := s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{})
+		if err != nil {
+			s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, []unstructured.Unstructured, error) {
 	opts := v1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
-		return []runtime{}, fmt.Errorf("while listing Gardener shoots: %w", err)
+		return []runtime{}, []unstructured.Unstructured{}, fmt.Errorf("while listing Gardener shoots: %w", err)
 	}
 
 	var runtimes []runtime
+	var shoots []unstructured.Unstructured
 	for _, shoot := range shootList.Items {
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
 		shootAge := time.Since(shootCreationTimestamp.Time)
@@ -132,79 +143,18 @@ func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, err
 			continue
 		}
 
-		_, toRemove := shoot.GetLabels()[notRemoveLabel]
-		if toRemove {
-
-			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
-			staleRuntime, err := s.shootToRuntime(shoot)
-			if err != nil {
-				s.logger.Error(err)
-				continue
-			}
-
-			runtimes = append(runtimes, *staleRuntime)
-		}
-	}
-
-	return runtimes, nil
-}
-
-func (s *Service) getStaleRuntimes(labelSelector string) ([]runtime, error) {
-	page := 0
-	var stale []runtime
-	for {
-		runtimesPage, err := s.brokerRuntimes.ListRuntimes(run.ListParameters{Page: page, PageSize: 3})
+		log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
+		staleRuntime, err := s.shootToRuntime(shoot)
 		if err != nil {
-			return []runtime{}, fmt.Errorf("while listing Broker shoots: %w", err)
-		}
-
-		if runtimesPage.Count <= 0 {
-			break
-		}
-
-		for _, loadedRuntime := range runtimesPage.Data {
-			createdAt := loadedRuntime.Status.Provisioning.CreatedAt
-			shootAge := time.Since(createdAt).Hours()
-			maxAge := s.MaxShootAge.Hours()
-
-			if shootAge >= maxAge {
-				log.Infof("Runtime %q [shoot: %q] is older than %f hours with age: %f hours", loadedRuntime.RuntimeID, loadedRuntime.ShootName, maxAge, shootAge)
-
-				shoot, err := s.gardenerService.Get(context.Background(), loadedRuntime.ShootName, v1.GetOptions{}, "shoot")
-				// TODO: check not found error
-				if err != nil {
-					return []runtime{}, fmt.Errorf("while listing Gardener shoots: %w", err)
-				}
-
-				_, keep := shoot.GetLabels()["owner.do-not-delete"]
-				if !keep {
-					stale = append(stale, runtime{
-						loadedRuntime.RuntimeID,
-						loadedRuntime.SubAccountID,
-					})
-				}
-			}
-		}
-
-		page += 1
-	}
-
-	return stale, nil
-}
-
-func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
-	var stale []runtime
-	for _, st := range shoots {
-		runtime, err := s.shootToRuntime(st)
-		if err != nil {
-			s.logger.Error(err)
+			s.logger.Info("found a shoot without accounts references")
+			shoots = append(shoots, shoot)
 			continue
 		}
 
-		stale = append(stale, *runtime)
+		runtimes = append(runtimes, *staleRuntime)
 	}
 
-	return stale
+	return runtimes, shoots, nil
 }
 
 func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error) {
@@ -225,30 +175,16 @@ func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error)
 	}, nil
 }
 
-func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error) {
-	shoot := gardener.Shoot{st}
-	runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
-	if !ok {
-		return nil, fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName())
-	}
+func (s *Service) cleanUp(runtimesToDelete []runtime) error {
+	kebInstancesToDelete := make([]internal.Instance, 0)
 
-	accountID, ok := shoot.GetLabels()[shootLabelAccountId]
-	if !ok {
-		return nil, fmt.Errorf("shoot %q has no account label", shoot.GetName())
-	}
-
-	return &runtime{
-		ID:        runtimeID,
-		AccountID: accountID,
-	}, nil
-}
-
-func (s *Service) cleanUp(runtimesToDelete map[string]runtime) error {
-	kebInstancesToDelete, err := s.getInstancesForRuntimes(runtimesToDelete)
-	if err != nil {
-		err = fmt.Errorf("while getting instance IDs for Runtimes: %w", err)
-		s.logger.Error(err)
-		return err
+	for _, rt := range runtimesToDelete {
+		instance, err := s.getInstancesForRuntimes([]runtime{rt})
+		if err != nil {
+			s.logger.Infof("instance not found or error returned")
+		} else {
+			kebInstancesToDelete = append(kebInstancesToDelete, instance...)
+		}
 	}
 
 	kebResult := s.cleanUpKEBInstances(kebInstancesToDelete)
@@ -268,15 +204,7 @@ func (s *Service) cleanUp(runtimesToDelete map[string]runtime) error {
 	return result.ErrorOrNil()
 }
 
-func (s *Service) cleanUpShoots(shoots []unstructured.Unstructured) {
-	for _, shoot := range shoots {
-		err := s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{}, "shoot")
-		s.logger.Warn(fmt.Errorf("cannot remove a shoot %w", err))
-		continue
-	}
-}
-
-func (s *Service) getInstancesForRuntimes(runtimesToDelete map[string]runtime) ([]internal.Instance, error) {
+func (s *Service) getInstancesForRuntimes(runtimesToDelete []runtime) ([]internal.Instance, error) {
 
 	var runtimeIDsToDelete []string
 	for _, runtime := range runtimesToDelete {
@@ -305,7 +233,7 @@ func (s *Service) cleanUpKEBInstances(instancesToDelete []internal.Instance) *mu
 	return result
 }
 
-func (s *Service) cleanUpProvisionerInstances(runtimesToDelete map[string]runtime, kebInstancesToDelete []internal.Instance) *multierror.Error {
+func (s *Service) cleanUpProvisionerInstances(runtimesToDelete []runtime, kebInstancesToDelete []internal.Instance) *multierror.Error {
 	kebInstanceExists := func(runtimeID string) bool {
 		for _, instance := range kebInstancesToDelete {
 			if instance.RuntimeID == runtimeID {
