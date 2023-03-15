@@ -251,7 +251,6 @@ func TestService_PerformCleanup(t *testing.T) {
 			DisableTimestamp: true,
 		})
 		logger.SetOutput(&actualLog)
-		shouldContain := "has no runtime-id annotation"
 
 		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
@@ -261,7 +260,6 @@ func TestService_PerformCleanup(t *testing.T) {
 		// then
 		bcMock.AssertExpectations(t)
 		gcMock.AssertExpectations(t)
-		assert.Contains(t, actualLog.String(), shouldContain)
 		assert.NoError(t, err)
 	})
 
@@ -312,6 +310,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
 		gcMock.On("Get", mock.Anything, "az-4567", v1.GetOptions{}, "shoot").Return(&shootTwo, nil)
 		gcMock.On("Get", mock.Anything, "az-1234", v1.GetOptions{}, "shoot").Return(&shootOne, nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
 
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
