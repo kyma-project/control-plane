@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
-	run "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	log "github.com/sirupsen/logrus"
@@ -30,11 +29,6 @@ type GardenerClient interface {
 	Delete(ctx context.Context, name string, options v1.DeleteOptions, subresources ...string) error
 }
 
-//go:generate mockery --name=BrokerRuntimesClient --output=automock
-type BrokerRuntimesClient interface {
-	ListRuntimes(params run.ListParameters) (run.RuntimesPage, error)
-}
-
 //go:generate mockery --name=BrokerClient --output=automock
 type BrokerClient interface {
 	Deprovision(instance internal.Instance) (string, error)
@@ -48,7 +42,6 @@ type ProvisionerClient interface {
 type Service struct {
 	gardenerService   GardenerClient
 	brokerService     BrokerClient
-	brokerRuntimes    run.Client
 	instanceStorage   storage.Instances
 	logger            *log.Logger
 	MaxShootAge       time.Duration
@@ -61,11 +54,10 @@ type runtime struct {
 	AccountID string
 }
 
-func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, brokerRuntimesClient run.Client, provisionerClient ProvisionerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
+func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provisionerClient ProvisionerClient, instanceStorage storage.Instances, logger *log.Logger, maxShootAge time.Duration, labelSelector string) *Service {
 	return &Service{
 		gardenerService:   gardenerClient,
 		brokerService:     brokerClient,
-		brokerRuntimes:    brokerRuntimesClient,
 		instanceStorage:   instanceStorage,
 		logger:            logger,
 		MaxShootAge:       maxShootAge,
