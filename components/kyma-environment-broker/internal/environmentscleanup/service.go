@@ -136,7 +136,7 @@ func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, []u
 		log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
 		staleRuntime, err := s.shootToRuntime(shoot)
 		if err != nil {
-			s.logger.Info("found a shoot without accounts references")
+			s.logger.Info("found a shoot without kcp labels")
 			shoots = append(shoots, shoot)
 			continue
 		}
