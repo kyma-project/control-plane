@@ -108,7 +108,7 @@ spec:
               - name: APP_BROKER_SCOPE
                 value: {{$.Values.kebClient.scope}}
             command:
-              - "./bin/main"
+              - "/bin/main"
             volumeMounts:
               {{- range $key, $val := $job.secretVolumes }}
               - name: {{ $key }}
