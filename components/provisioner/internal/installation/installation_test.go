@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	tillerYAML    = "tillerYAML"
 	installerYAML = "installerYAML"
 
 	kymaSystemNamespace = "kyma-system"
@@ -69,7 +68,6 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 	componentsConfig := fixComponentsConfig()
 
 	expectedInstallation := installation.Installation{
-		TillerYaml:    tillerYAML,
 		InstallerYaml: installerYAML,
 		Configuration: fixInstallationConfig(),
 	}
@@ -184,7 +182,6 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 	componentsConfig := fixComponentsConfig()
 
 	expectedInstallation := installation.Installation{
-		TillerYaml:    tillerYAML,
 		InstallerYaml: installerYAML,
 		Configuration: fixInstallationConfig(),
 	}
