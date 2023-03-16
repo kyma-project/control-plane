@@ -35,7 +35,6 @@ import (
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -245,10 +244,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			uuidGenerator := uuid.NewUUIDGenerator()
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
-			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			provider := release.NewReleaseProvider(releaseRepository, nil)
-
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
@@ -258,9 +254,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 
 			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
-
-			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
-			require.NoError(t, err)
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
 

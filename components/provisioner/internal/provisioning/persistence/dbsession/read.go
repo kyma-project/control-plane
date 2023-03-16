@@ -223,8 +223,6 @@ type kymaComponentConfigDTO struct {
 	ReleaseID           string
 	Profile             *string
 	Version             string
-	TillerYAML          string
-	InstallerYAML       string
 	Component           string
 	Namespace           string
 	SourceURL           *string
@@ -283,13 +281,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}
 
 	return model.KymaConfig{
-		ID: c[0].KymaConfigID,
-		Release: model.Release{
-			Id:            c[0].ReleaseID,
-			Version:       c[0].Version,
-			TillerYAML:    c[0].TillerYAML,
-			InstallerYAML: c[0].InstallerYAML,
-		},
+		ID:                  c[0].KymaConfigID,
 		Profile:             kymaProfile,
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,

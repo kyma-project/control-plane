@@ -65,9 +65,6 @@ users:
 
 func TestInstallationService_TriggerInstallation(t *testing.T) {
 
-	kymaVersion := "1.7.0"
-	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
-
 	globalConfig := fixGlobalConfig()
 	componentsConfig := fixComponentsConfig()
 
@@ -85,7 +82,7 @@ func TestInstallationService_TriggerInstallation(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerInstallation(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerInstallation(k8sConfig, nil, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)
@@ -183,9 +180,6 @@ func Test_getInstallationCRModificationFunc(t *testing.T) {
 }
 
 func TestInstallationService_TriggerUpgrade(t *testing.T) {
-	kymaVersion := "1.7.0"
-	kymaRelease := model.Release{Version: kymaVersion, TillerYAML: tillerYAML, InstallerYAML: installerYAML}
-
 	globalConfig := fixGlobalConfig()
 	componentsConfig := fixComponentsConfig()
 
@@ -203,7 +197,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, globalConfig, componentsConfig)
 
 		// then
 		require.NoError(t, err)
@@ -215,7 +209,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)
@@ -227,7 +221,7 @@ func TestInstallationService_TriggerUpgrade(t *testing.T) {
 		installationSvc := NewInstallationService(10*time.Minute, installationHandlerConstructor, resourceCleanupSelector)
 
 		// when
-		err := installationSvc.TriggerUpgrade(k8sConfig, nil, kymaRelease, globalConfig, componentsConfig)
+		err := installationSvc.TriggerUpgrade(k8sConfig, nil, globalConfig, componentsConfig)
 
 		// then
 		require.Error(t, err)

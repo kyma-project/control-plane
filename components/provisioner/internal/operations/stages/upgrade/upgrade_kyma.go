@@ -70,7 +70,6 @@ func (s *UpgradeKymaStep) Run(cluster model.Cluster, _ model.Operation, logger l
 		err = s.installationClient.TriggerUpgrade(
 			k8sConfig,
 			cluster.KymaConfig.Profile,
-			cluster.KymaConfig.Release,
 			cluster.KymaConfig.GlobalConfiguration,
 			cluster.KymaConfig.Components)
 		if err != nil {
