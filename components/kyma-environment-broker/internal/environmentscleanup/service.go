@@ -7,6 +7,7 @@ import (
 	"time"
 
 	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -166,14 +167,12 @@ func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error)
 }
 
 func (s *Service) cleanUp(runtimesToDelete []runtime) error {
-	kebInstancesToDelete := make([]internal.Instance, 0)
-
-	for _, rt := range runtimesToDelete {
-		instance, err := s.getInstancesForRuntimes([]runtime{rt})
-		if err != nil {
-			s.logger.Infof("instance not found or error returned")
-		} else {
-			kebInstancesToDelete = append(kebInstancesToDelete, instance...)
+	kebInstancesToDelete, err := s.getInstancesForRuntimes(runtimesToDelete)
+	if err != nil {
+		err = fmt.Errorf("while getting instance IDs for Runtimes: %w", err)
+		s.logger.Error(err)
+		if !dberr.IsNotFound(err) {
+			return err
 		}
 	}
 
