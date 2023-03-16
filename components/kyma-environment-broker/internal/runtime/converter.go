@@ -221,7 +221,7 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
 			switch dto.Status.Suspension.Data[0].State {
-			case string(domain.InProgress):
+			case string(domain.InProgress), string(orchestration.Pending):
 				dto.Status.State = pkg.StateDeprovisioning
 			case string(domain.Failed):
 				dto.Status.State = pkg.StateFailed
