@@ -6,8 +6,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   init-provisioner-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.provisioner.name }};
+    CREATE DATABASE "{{ .Values.global.database.embedded.provisioner.name }}";
   init-broker-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.broker.name }};
+    CREATE DATABASE "{{ .Values.global.database.embedded.broker.name }}";
   init-reconciler-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.reconciler.name }};
+    CREATE DATABASE "{{ .Values.global.database.embedded.reconciler.name }}";
