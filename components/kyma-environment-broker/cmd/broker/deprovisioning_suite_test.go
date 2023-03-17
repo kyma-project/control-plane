@@ -170,12 +170,12 @@ func (s *DeprovisioningSuite) WaitForDeprovisioningState(operationID string, sta
 }
 
 func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID string) {
-	var deprovisioningOp *internal.Operation
+	var provisionerOperationID string
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
-			deprovisioningOp = op
+			provisionerOperationID = op.ProvisionerOperationID
 			return true, nil
 		}
 		return false, nil
@@ -184,7 +184,7 @@ func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID
 
 	var status gqlschema.OperationStatus
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		status = s.provisionerClient.FindLastOperationByRuntimeIDAndType(deprovisioningOp.RuntimeID, gqlschema.OperationTypeDeprovision)
+		status = s.provisionerClient.FindOperationByProvisionerOperationID(provisionerOperationID)
 		if status.ID != nil {
 			return true, nil
 		}
@@ -205,12 +205,12 @@ func (s *DeprovisioningSuite) FinishDeprovisioningOperationByProvisioner(operati
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+	s.finishOperationByProvisioner(op.ProvisionerOperationID)
 }
 
-func (s *DeprovisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *DeprovisioningSuite) finishOperationByProvisioner(provisionerOperationID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		status := s.provisionerClient.FindLastOperationByRuntimeIDAndType(runtimeID, operationType)
+		status := s.provisionerClient.FindOperationByProvisionerOperationID(provisionerOperationID)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
