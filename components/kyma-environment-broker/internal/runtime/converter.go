@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -200,7 +199,7 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 		case pkg.UpgradeKyma, pkg.UpgradeCluster, pkg.Update:
 			dto.Status.State = pkg.StateError
 		}
-	case string(domain.InProgress), string(orchestration.Pending):
+	case string(domain.InProgress):
 		switch lastOp.Type {
 		case pkg.Provision, pkg.Unsuspension:
 			dto.Status.State = pkg.StateProvisioning
@@ -221,7 +220,7 @@ func (c *converter) adjustRuntimeState(dto *pkg.RuntimeDTO) {
 			(dto.Status.Unsuspension.Count > 0 && dto.Status.Unsuspension.Data[0].CreatedAt.Before(dto.Status.Suspension.Data[0].CreatedAt)) {
 
 			switch dto.Status.Suspension.Data[0].State {
-			case string(domain.InProgress), string(orchestration.Pending):
+			case string(domain.InProgress):
 				dto.Status.State = pkg.StateDeprovisioning
 			case string(domain.Failed):
 				dto.Status.State = pkg.StateFailed

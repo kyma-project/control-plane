@@ -31,7 +31,8 @@ const (
 	// StateSuspended means that the trial runtime is suspended (i.e. deprovisioned).
 	StateSuspended State = "suspended"
 	// AllState is a virtual state only used as query parameter in ListParameters to indicate "include all runtimes, which are excluded by default without state filters".
-	AllState State = "all"
+	StatePending State = "pending"
+	AllState     State = "all"
 )
 
 type RuntimeDTO struct {
@@ -188,18 +189,18 @@ func (rt RuntimeDTO) LastOperation() Operation {
 	}
 
 	// Take the first suspension operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Suspension != nil && rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
+	if rt.Status.Suspension != nil && rt.Status.Suspension.State != string(StatePending) && rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.Suspension.Data[0]
 		op.Type = Suspension
 	}
 
-	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
+	if rt.Status.Deprovisioning != nil && rt.Status.Deprovisioning.State != string(StatePending) && rt.Status.Deprovisioning.CreatedAt.After(op.CreatedAt) {
 		op = *rt.Status.Deprovisioning
 		op.Type = Deprovision
 	}
 
 	// Take the first update operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Update != nil && rt.Status.Update.Count > 0 && rt.Status.Update.Data[0].CreatedAt.After(op.CreatedAt) {
+	if rt.Status.Update != nil && rt.Status.Update.State != string(StatePending) && rt.Status.Update.Count > 0 && rt.Status.Update.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.Update.Data[0]
 		op.Type = Update
 	}
