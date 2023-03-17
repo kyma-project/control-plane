@@ -189,7 +189,7 @@ func (rt RuntimeDTO) LastOperation() Operation {
 	}
 
 	// Take the first suspension operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Suspension != nil && rt.Status.Suspension.State != string(StatePending) && rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
+	if rt.Status.Suspension != nil && rt.Status.Suspension.Count > 0 && rt.Status.Suspension.Data[0].State != string(StatePending) && rt.Status.Suspension.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.Suspension.Data[0]
 		op.Type = Suspension
 	}
@@ -200,7 +200,7 @@ func (rt RuntimeDTO) LastOperation() Operation {
 	}
 
 	// Take the first update operation, assuming that Data is sorted by CreatedAt DESC.
-	if rt.Status.Update != nil && rt.Status.Update.State != string(StatePending) && rt.Status.Update.Count > 0 && rt.Status.Update.Data[0].CreatedAt.After(op.CreatedAt) {
+	if rt.Status.Update != nil && rt.Status.Update.Count > 0 && rt.Status.Update.Data[0].State != string(StatePending) && rt.Status.Update.Data[0].CreatedAt.After(op.CreatedAt) {
 		op = rt.Status.Update.Data[0]
 		op.Type = Update
 	}
