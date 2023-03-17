@@ -3,7 +3,6 @@ filters:
   ".*":
     approvers:
      - PK85
-     - wozniakjan
      - piotrmiskiewicz
      - szwedm
      - ralikio
