@@ -47,7 +47,7 @@ func (s *EDPRegistrationStep) Run(operation internal.Operation, log logrus.Field
 	if operation.EDPCreated {
 		return operation, 0, nil
 	}
-	subAccountID := operation.ProvisioningParameters.ErsContext.SubAccountID
+	subAccountID := strings.ToLower(operation.ProvisioningParameters.ErsContext.SubAccountID)
 
 	log.Infof("Create DataTenant for %s subaccount (env=%s)", subAccountID, s.config.Environment)
 	err := s.client.CreateDataTenant(edp.DataTenantPayload{
