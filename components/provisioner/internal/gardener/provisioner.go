@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/utils/clock"
 	"os"
 	"time"
+
+	"k8s.io/utils/clock"
 
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
