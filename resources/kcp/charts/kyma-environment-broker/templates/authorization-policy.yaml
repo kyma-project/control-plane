@@ -61,6 +61,7 @@ spec:
       - source:
           requestPrincipals:
           - https://oauth2.{{ .Values.global.ingress.domainName }}/*
+          - {{ tpl .Values.oidc.issuer $ }}/*
     when:
     - key: request.auth.claims[scp]
       values:
@@ -91,6 +92,7 @@ spec:
       - source:
           requestPrincipals:
           - https://oauth2.{{ .Values.global.ingress.domainName }}/*
+          - {{ tpl .Values.oidc.issuer $ }}/*
     when:
     - key: request.auth.claims[scp]
       values:

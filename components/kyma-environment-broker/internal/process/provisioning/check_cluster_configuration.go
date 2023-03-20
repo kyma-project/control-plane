@@ -75,6 +75,7 @@ func (s *CheckClusterConfigurationStep) Run(operation internal.Operation, log lo
 func (s *CheckClusterConfigurationStep) handleTimeout(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	log.Warnf("Operation has reached the time limit (%v): updated operation time: %s", s.provisioningTimeout, operation.UpdatedAt)
 	log.Infof("Deleting cluster %s", operation.RuntimeID)
+	operation.EventInfof("Deleting cluster configuration due to check cluster configuration timeout")
 	/*
 		If the reconciliation timeouted, we have to delete cluster.
 		In case of an error, try few times.
