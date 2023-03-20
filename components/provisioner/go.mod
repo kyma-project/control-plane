@@ -35,7 +35,6 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.97.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
@@ -144,6 +143,5 @@ replace (
 	golang.org/x/sys => golang.org/x/sys v0.5.0
 	golang.org/x/text => golang.org/x/text v0.6.0
 	golang.org/x/tools => golang.org/x/tools v0.5.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.25.3
-	k8s.io/client-go => k8s.io/client-go v0.25.3
+	k8s.io/client-go => k8s.io/client-go v0.26.1
 )
