@@ -89,7 +89,7 @@ spec:
                 - name: APP_BROKER_SCOPE
                   value: {{.Values.kebClient.scope}}
               command:
-                - "/bin/deprovisionretrigger"
+                - "/bin/main"
               volumeMounts:
               {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                 - name: cloudsql-sslrootcert
