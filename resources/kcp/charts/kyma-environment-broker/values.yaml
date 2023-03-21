@@ -263,7 +263,7 @@ environmentsCleanup:
   maxAge: "24h"
   name: "kcp-kyma-environments-cleanup"
   account: "kcp-kyma-environment-broker"
-  imageName: "kyma-environments-cleanup"
+  imageName: "kyma-environments-cleanup-job"
   cronJobName: "environments-cleanup"
   maxAge: "24h"
   version: "PR-2476"
