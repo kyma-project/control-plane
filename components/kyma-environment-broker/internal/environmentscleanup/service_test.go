@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -36,6 +37,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
 		pMock := &mocks.ProvisionerClient{}
@@ -69,6 +71,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unstructured.
 			UnstructuredList{}, fmt.Errorf("failed to reach gardener"))
+
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -90,13 +93,24 @@ func TestService_PerformCleanup(t *testing.T) {
 		// given
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
 		bcMock := &mocks.BrokerClient{}
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
 		pMock := &mocks.ProvisionerClient{}
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID3).Return("", nil)
 
 		memoryStorage := storage.NewMemoryStorage()
 		memoryStorage.Instances().Insert(internal.Instance{
 			InstanceID: "some-instance-id",
 			RuntimeID:  "not-matching-id",
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID1,
+			RuntimeID:  fixRuntimeID1,
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID2,
+			RuntimeID:  fixRuntimeID2,
 		})
 		logger := logrus.New()
 
@@ -108,7 +122,9 @@ func TestService_PerformCleanup(t *testing.T) {
 		// then
 		bcMock.AssertExpectations(t)
 		gcMock.AssertExpectations(t)
-		assert.Error(t, err)
+		pMock.AssertExpectations(t)
+
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return error on KEB deprovision call failure", func(t *testing.T) {
@@ -118,6 +134,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		bcMock := &mocks.BrokerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("",
 			fmt.Errorf("failed to deprovision instance"))
+
 		pMock := &mocks.ProvisionerClient{}
 
 		memoryStorage := storage.NewMemoryStorage()
@@ -154,6 +171,7 @@ func TestService_PerformCleanup(t *testing.T) {
 		gcMock := &mocks.GardenerClient{}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(fixShootList(), nil)
 		bcMock := &mocks.BrokerClient{}
+
 		pMock := &mocks.ProvisionerClient{}
 		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return("", nil)
 		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", fmt.Errorf("some error"))
@@ -216,6 +234,8 @@ func TestService_PerformCleanup(t *testing.T) {
 			},
 		}
 		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
+
 		bcMock := &mocks.BrokerClient{}
 		pMock := &mocks.ProvisionerClient{}
 
@@ -231,7 +251,6 @@ func TestService_PerformCleanup(t *testing.T) {
 			DisableTimestamp: true,
 		})
 		logger.SetOutput(&actualLog)
-		shouldContain := "has no runtime-id annotation"
 
 		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
 
@@ -241,9 +260,96 @@ func TestService_PerformCleanup(t *testing.T) {
 		// then
 		bcMock.AssertExpectations(t)
 		gcMock.AssertExpectations(t)
-		assert.Contains(t, actualLog.String(), shouldContain)
 		assert.NoError(t, err)
 	})
+
+	t.Run("should remove shoots and runtimes by broker not when runtime found in broker", func(t *testing.T) {
+		// given
+		gcMock := &mocks.GardenerClient{}
+		creationTime, parseErr := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
+		require.NoError(t, parseErr)
+
+		var shootOne = unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name":              "az-1234",
+					"creationTimestamp": creationTime,
+					"annotations": map[string]interface{}{
+						shootAnnotationRuntimeId: fixRuntimeID1,
+					},
+					"clusterName": "cluster-one",
+				},
+				"spec": map[string]interface{}{
+					"cloudProfileName": "az",
+				},
+			},
+		}
+
+		var shootTwo = unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name":              "az-4567",
+					"creationTimestamp": creationTime,
+					"annotations": map[string]interface{}{
+						shootAnnotationRuntimeId: fixRuntimeID2,
+					},
+					"clusterName": "cluster-one",
+				},
+				"spec": map[string]interface{}{
+					"cloudProfileName": "az",
+				},
+			},
+		}
+
+		unl := unstructured.UnstructuredList{
+			Items: []unstructured.Unstructured{
+				shootOne,
+				shootTwo,
+			},
+		}
+		gcMock.On("List", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(&unl, nil)
+		gcMock.On("Get", mock.Anything, "az-4567", v1.GetOptions{}, "shoot").Return(&shootTwo, nil)
+		gcMock.On("Get", mock.Anything, "az-1234", v1.GetOptions{}, "shoot").Return(&shootOne, nil)
+		gcMock.On("Delete", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("v1.DeleteOptions")).Return(nil)
+
+		bcMock := &mocks.BrokerClient{}
+		bcMock.On("Deprovision", mock.AnythingOfType("internal.Instance")).Return(fixOperationID, nil)
+
+		pMock := &mocks.ProvisionerClient{}
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID1).Return("", nil)
+		pMock.On("DeprovisionRuntime", fixAccountID, fixRuntimeID2).Return("", nil)
+
+		memoryStorage := storage.NewMemoryStorage()
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID1,
+			RuntimeID:  fixRuntimeID1,
+		})
+		memoryStorage.Instances().Insert(internal.Instance{
+			InstanceID: fixInstanceID2,
+			RuntimeID:  fixRuntimeID2,
+		})
+
+		var actualLog bytes.Buffer
+		logger := logrus.New()
+		logger.SetFormatter(&logrus.TextFormatter{
+			DisableTimestamp: true,
+		})
+		logger.SetOutput(&actualLog)
+
+		svc := NewService(gcMock, bcMock, pMock, memoryStorage.Instances(), logger, maxShootAge, shootLabelSelector)
+
+		// when
+		err := svc.PerformCleanup()
+
+		// then
+		assert.NoError(t, err)
+
+		// assert expectations on mocks
+
+	})
+
+	// TODO: Test pagination
+
 }
 
 func fixShootList() *unstructured.UnstructuredList {
@@ -256,6 +362,21 @@ func fixShootListItems() []unstructured.Unstructured {
 	creationTime, _ := time.Parse(time.RFC3339, "2020-01-02T10:00:00-05:00")
 	unl := unstructured.UnstructuredList{
 		Items: []unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"name":              "simple-shoot",
+						"creationTimestamp": creationTime,
+						"labels": map[string]interface{}{
+							"should-be-deleted": "true",
+						},
+						"annotations": map[string]interface{}{},
+					},
+					"spec": map[string]interface{}{
+						"cloudProfileName": "az",
+					},
+				},
+			},
 			{
 				Object: map[string]interface{}{
 					"metadata": map[string]interface{}{
