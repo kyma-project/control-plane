@@ -6,7 +6,7 @@ global:
       version: "PR-2599"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2476"
+      version: "PR-2609"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-2476"
