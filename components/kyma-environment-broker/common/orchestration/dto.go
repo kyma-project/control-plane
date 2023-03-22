@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"time"
@@ -216,17 +217,11 @@ const (
 type stringBoolean bool
 
 func (sb *stringBoolean) UnmarshalJSON(data []byte) error {
-	str := string(data)
-	if str == `"true"` {
-		*sb = stringBoolean(true)
-	} else if str == `"false"` {
-		*sb = stringBoolean(false)
-	} else {
-		v, err := strconv.ParseBool(string(data))
-		if err != nil {
-			return fmt.Errorf("while unmarshaling stringBoolean: %w", err)
-		}
-		*sb = stringBoolean(v)
+	unqotedBool := bytes.Trim(data, `"`)
+	v, err := strconv.ParseBool(string(unqotedBool))
+	if err != nil {
+		return fmt.Errorf("while unmarshaling stringBoolean: %w", err)
 	}
+	*sb = stringBoolean(v)
 	return nil
 }
