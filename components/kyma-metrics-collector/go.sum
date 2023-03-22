@@ -101,8 +101,8 @@ github.com/gardener/gardener v1.66.0 h1:krDrGx6asbjLBJGI7MtAHTV5NtRk9K3LJy1/4zQS
 github.com/gardener/gardener v1.66.0/go.mod h1:nS3b9qWHphOkzK3aZZYHSlwKz2qTxcKSQ35iHnk80UY=
 github.com/gardener/gardener-extension-provider-aws v1.41.1 h1:c7p9g+eAEIw+kx2wdhvZ2Rm26loeuWxAX1qtMz4mNMQ=
 github.com/gardener/gardener-extension-provider-aws v1.41.1/go.mod h1:uuydstwTyyJZWfRH2mHgJAxonSYQMUnd5nSEHhW74ds=
-github.com/gardener/gardener-extension-provider-azure v1.33.0 h1:16AIK7f9aDJI++1Te4ZKVuVSc1OYkAn5b8YwlEcJihE=
-github.com/gardener/gardener-extension-provider-azure v1.33.0/go.mod h1:8E5ZtMAOtoQOnVdo3vUcFTXd+PfqsUI3b1b10rWWIAM=
+github.com/gardener/gardener-extension-provider-azure v1.34.1 h1:W500aLsyhmUJBauvXZmAoPXRJLBTasPnUX/O2jAdmHc=
+github.com/gardener/gardener-extension-provider-azure v1.34.1/go.mod h1:H2oOsbjCKVWf4bRrG5zN6u7eJSeBLrqkYv4c/NerrZc=
 github.com/gardener/gardener-extension-provider-gcp v1.27.1 h1:6Rz4c9QemTAF/19IeLzEiiNns6VfljjBnQXMRzDgZdA=
 github.com/gardener/gardener-extension-provider-gcp v1.27.1/go.mod h1:qxtzvgjKVpCKmOQR1zoCM5J7QPbkZahssXj3fYIFQs4=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
