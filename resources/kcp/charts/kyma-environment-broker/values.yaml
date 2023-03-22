@@ -6,7 +6,7 @@ global:
       version: "PR-2599"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2609"
+      version: "v20230321-8963fe01"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "PR-2476"
@@ -266,7 +266,7 @@ environmentsCleanup:
   imageName: "kyma-environments-cleanup-job"
   cronJobName: "environments-cleanup"
   maxAge: "24h"
-  version: "PR-2476"
+  version: "v20230321-8963fe01"
   dir:
   envs:
     APP_GARDENER_PROJECT: "kyma-dev"
