@@ -215,19 +215,18 @@ const (
 
 type stringBoolean bool
 
-func (p *stringBoolean) UnmarshalJSON(data []byte) error {
+func (sb *stringBoolean) UnmarshalJSON(data []byte) error {
 	str := string(data)
 	if str == `"true"` {
-		*p = stringBoolean(true)
+		*sb = stringBoolean(true)
 	} else if str == `"false"` {
-		*p = stringBoolean(false)
+		*sb = stringBoolean(false)
 	} else {
 		v, err := strconv.ParseBool(string(data))
 		if err != nil {
-			return fmt.Errorf("custom error: %w", err)
+			return fmt.Errorf("while unmarshaling stringBoolean: %w", err)
 		}
-		*p = stringBoolean(v)
-		return nil
+		*sb = stringBoolean(v)
 	}
 	return nil
 }
