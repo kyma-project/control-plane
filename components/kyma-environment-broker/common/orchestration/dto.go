@@ -1,6 +1,8 @@
 package orchestration
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -18,9 +20,10 @@ type Parameters struct {
 	NotificationState notificationStateType    `json:"notificationstate,omitempty"`
 	RetryOperation    RetryOperationParameters `json:"retryoperation,omitempty"`
 }
+
 type RetryOperationParameters struct {
-	RetryOperations []string `json:"retryoperations,omitempty"`
-	Immediate       bool     `json:"immediate,omitempty"`
+	RetryOperations []string      `json:"retryoperations,omitempty"`
+	Immediate       stringBoolean `json:"immediate,omitempty"`
 }
 
 type KubernetesParameters struct {
@@ -209,3 +212,22 @@ const (
 	NotificationCreated   notificationStateType = "created"
 	NotificationCancelled notificationStateType = "cancelled"
 )
+
+type stringBoolean bool
+
+func (p *stringBoolean) UnmarshalJSON(data []byte) error {
+	str := string(data)
+	if str == `"true"` {
+		*p = stringBoolean(true)
+	} else if str == `"false"` {
+		*p = stringBoolean(false)
+	} else {
+		v, err := strconv.ParseBool(string(data))
+		if err != nil {
+			return fmt.Errorf("custom error: %w", err)
+		}
+		*p = stringBoolean(v)
+		return nil
+	}
+	return nil
+}
