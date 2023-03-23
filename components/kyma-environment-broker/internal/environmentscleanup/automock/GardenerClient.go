@@ -91,6 +91,36 @@ func (_m *GardenerClient) List(_a0 context.Context, opts v1.ListOptions) (*unstr
 	return r0, r1
 }
 
+// Update provides a mock function with given fields: ctx, obj, options, subresources
+func (_m *GardenerClient) Update(ctx context.Context, obj *unstructured.Unstructured, options v1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	_va := make([]interface{}, len(subresources))
+	for _i := range subresources {
+		_va[_i] = subresources[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, obj, options)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *unstructured.Unstructured
+	if rf, ok := ret.Get(0).(func(context.Context, *unstructured.Unstructured, v1.UpdateOptions, ...string) *unstructured.Unstructured); ok {
+		r0 = rf(ctx, obj, options, subresources...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*unstructured.Unstructured)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *unstructured.Unstructured, v1.UpdateOptions, ...string) error); ok {
+		r1 = rf(ctx, obj, options, subresources...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewGardenerClient interface {
 	mock.TestingT
 	Cleanup(func())
