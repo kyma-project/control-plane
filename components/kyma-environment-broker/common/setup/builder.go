@@ -24,7 +24,7 @@ import (
 
 type config struct {
 	MaxAgeHours   time.Duration `envconfig:"default=24h"`
-	LabelSelector string        `envconfig:"default=owner.do-not-delete"`
+	LabelSelector string        `envconfig:"default=owner.do-not-delete!=true"`
 	Gardener      gardener.Config
 	Database      storage.Config
 	Broker        broker.ClientConfig

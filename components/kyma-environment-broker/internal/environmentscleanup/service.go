@@ -28,6 +28,7 @@ type GardenerClient interface {
 	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
 	Get(ctx context.Context, name string, options v1.GetOptions, subresources ...string) (*unstructured.Unstructured, error)
 	Delete(ctx context.Context, name string, options v1.DeleteOptions, subresources ...string) error
+	Update(ctx context.Context, obj *unstructured.Unstructured, options v1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error)
 }
 
 //go:generate mockery --name=BrokerClient --output=automock
@@ -106,7 +107,15 @@ func (s *Service) cleanupShoots(shoots []unstructured.Unstructured) error {
 	}
 
 	for _, shoot := range shoots {
-		err := s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{})
+		annotations := shoot.GetAnnotations()
+		annotations["confirmation.gardener.cloud/deletion"] = "true"
+		shoot.SetAnnotations(annotations)
+		_, err := s.gardenerService.Update(context.Background(), &shoot, v1.UpdateOptions{})
+		if err != nil {
+			s.logger.Error(fmt.Errorf("while annotating shoot with removal confirmation: %w", err))
+		}
+
+		err = s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{})
 		if err != nil {
 			s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
 		}
@@ -131,6 +140,7 @@ func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, []u
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
 		if shootAge.Hours() < s.MaxShootAge.Hours() {
+			log.Infof("Shoot %q is not older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
 			continue
 		}
 
