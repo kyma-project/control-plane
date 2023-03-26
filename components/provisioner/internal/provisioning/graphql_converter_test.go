@@ -531,7 +531,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig {
 	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
 		Profile: profile,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
