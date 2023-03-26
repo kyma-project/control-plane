@@ -28,17 +28,14 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
-	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -165,18 +162,6 @@ func main() {
 
 	exitOnError(err, "Cannot create database session")
 
-	// TODO: Remove after data migration
-	if cfg.RunAwsConfigMigration {
-		log.Infof("Starting AWS Config Migration")
-
-		providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
-		err = providerMigration.Do()
-
-		exitOnError(err, "Failed to perform AWS config migration")
-
-		log.Infof("AWS Config Migration finished!")
-	}
-
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
 	gardenerClusterConfig, err := newGardenerClusterConfig(cfg)
@@ -245,19 +230,10 @@ func main() {
 		exitOnError(err, "Failed to start Shoot Controller")
 	}()
 
-	httpClient := newHTTPClient(false)
-	fileDownloader := release.NewFileDownloader(httpClient)
-
-	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-	gcsDownloader := release.NewGCSDownloader(fileDownloader)
-
-	releaseProvider := release.NewReleaseProvider(releaseRepository, gcsDownloader)
-
 	provisioningSVC := newProvisioningService(
 		cfg.Gardener.Project,
 		provisioner,
 		dbsFactory,
-		releaseProvider,
 		directorClient,
 		installationService,
 		gardener.NewShootProvider(shootClient),

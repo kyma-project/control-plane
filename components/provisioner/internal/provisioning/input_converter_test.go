@@ -596,34 +596,6 @@ func TestConverter_ParseInput(t *testing.T) {
 }
 
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
-	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
-		// given
-		uuidGeneratorMock := &mocks.UUIDGenerator{}
-
-		input := gqlschema.ProvisionRuntimeInput{
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []string{administrator},
-			},
-			KymaConfig: &gqlschema.KymaConfigInput{
-				Version: kymaVersion,
-			},
-		}
-
-		inputConverter := NewInputConverter(
-			uuidGeneratorMock,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
-
-		// when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
-
-		// then
-		require.Error(t, err)
-		uuidGeneratorMock.AssertExpectations(t)
-	})
-
 	t.Run("should return error when Cluster Config not provided", func(t *testing.T) {
 		// given
 		input := gqlschema.ProvisionRuntimeInput{}
