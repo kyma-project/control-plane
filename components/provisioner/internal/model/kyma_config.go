@@ -6,7 +6,6 @@ type KymaProfile string
 
 type KymaConfig struct {
 	ID                  string
-	Release             Release
 	Profile             *KymaProfile
 	Components          []KymaComponentConfig
 	GlobalConfiguration Configuration
@@ -22,12 +21,6 @@ func (c KymaConfig) GetComponentConfig(name string) (KymaComponentConfig, bool) 
 	}
 
 	return KymaComponentConfig{}, false
-}
-
-type Release struct {
-	Id            string
-	Version       string
-	InstallerYAML string
 }
 
 type GithubRelease struct {

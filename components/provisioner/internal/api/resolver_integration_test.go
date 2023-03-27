@@ -9,9 +9,6 @@ import (
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	"github.com/pkg/errors"
@@ -271,24 +268,6 @@ func NewUpgradeOpenStackShootInput() gqlschema.UpgradeShootInput {
 			OidcConfig:                          oidcInput(),
 		},
 	}
-}
-
-func insertDummyReleaseIfNotExist(releaseRepo release.Repository, id, version string) error {
-	_, err := releaseRepo.GetReleaseByVersion(version)
-	if err == nil {
-		return nil
-	}
-
-	if err.Code() != dberrors.CodeNotFound {
-		return err
-	}
-	_, err = releaseRepo.SaveRelease(model.Release{
-		Id:            id,
-		Version:       version,
-		InstallerYAML: "installer YAML",
-	})
-
-	return err
 }
 
 func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {

@@ -30,8 +30,8 @@ type InstallationHandler func(*rest.Config, ...installation.InstallationOption) 
 //go:generate mockery -name=Service
 type Service interface {
 	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
-	TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
-	TriggerUpgrade(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
+	TriggerUpgrade(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUninstall(kubeconfig *rest.Config) error
 	PerformCleanup(kubeconfig *rest.Config) error
 }
@@ -58,24 +58,23 @@ func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
 	return cli.PerformCleanup(s.clusterCleanupResourceSelector)
 }
 
-func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	kymaInstaller, err := s.createKymaInstaller(kubeconfig, kymaProfile, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger installation: %s", err.Error())
 	}
-	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareInstallation, installAction)
+	return s.triggerAction(globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareInstallation, installAction)
 }
 
-func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, release model.Release, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
+func (s *installationService) TriggerUpgrade(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {
 	kymaInstaller, err := s.createKymaInstaller(kubeconfig, kymaProfile, componentsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to trigger upgrade: %s", err.Error())
 	}
-	return s.triggerAction(release, globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareUpgrade, upgradeAction)
+	return s.triggerAction(globalConfig, componentsConfig, kymaInstaller, kymaInstaller.PrepareUpgrade, upgradeAction)
 }
 
 func (s *installationService) triggerAction(
-	release model.Release,
 	globalConfig model.Configuration,
 	componentsConfig []model.KymaComponentConfig,
 	installer installation.Installer,
@@ -83,7 +82,6 @@ func (s *installationService) triggerAction(
 	actionName string) error {
 
 	installationConfig := installation.Installation{
-		InstallerYaml: release.InstallerYAML,
 		Configuration: NewInstallationConfiguration(globalConfig, componentsConfig),
 	}
 

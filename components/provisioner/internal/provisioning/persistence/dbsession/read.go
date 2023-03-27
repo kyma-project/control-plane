@@ -223,7 +223,6 @@ type kymaComponentConfigDTO struct {
 	ReleaseID           string
 	Profile             *string
 	Version             string
-	InstallerYAML       string
 	Component           string
 	Namespace           string
 	SourceURL           *string
@@ -282,12 +281,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}
 
 	return model.KymaConfig{
-		ID: c[0].KymaConfigID,
-		Release: model.Release{
-			Id:            c[0].ReleaseID,
-			Version:       c[0].Version,
-			InstallerYAML: c[0].InstallerYAML,
-		},
+		ID:                  c[0].KymaConfigID,
 		Profile:             kymaProfile,
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
@@ -304,7 +298,7 @@ func (r readSession) getKymaConfig(runtimeID, kymaConfigId string) (model.KymaCo
 			"kyma_component_config.source_url", "kyma_component_config.configuration",
 			"kyma_component_config.component_order",
 			"cluster_id",
-			"kyma_release.version", "kyma_release.installer_yaml").
+			"kyma_release.version", "kyma_release.tiller_yaml", "kyma_release.installer_yaml").
 		From("cluster").
 		Join("kyma_config", "cluster.id=kyma_config.cluster_id").
 		Join("kyma_component_config", "kyma_config.id=kyma_component_config.kyma_config_id").

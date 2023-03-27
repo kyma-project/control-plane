@@ -6,9 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	realeaseMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/release/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -27,9 +25,6 @@ const (
 )
 
 func Test_ProvisioningInputToCluster(t *testing.T) {
-	releaseProvider := &realeaseMocks.Provider{}
-	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-
 	gcpGardenerProvider := &gqlschema.GCPProviderConfigInput{Zones: []string{"fix-gcp-zone-1", "fix-gcp-zone-2"}}
 
 	modelProductionProfile := model.ProductionProfile
@@ -435,7 +430,6 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
-				releaseProvider,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate)
@@ -530,9 +524,6 @@ func TestConverter_ParseInput(t *testing.T) {
 		uuidGeneratorMock.On("New").Return("id").Times(6)
 		uuidGeneratorMock.On("New").Return("very-Long-ID-That-Has-More-Than-Fourteen-Characters-And-Even-Some-Hyphens")
 
-		releaseProvider := &realeaseMocks.Provider{}
-		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
-
 		replace := gqlschema.ConflictStrategyReplace
 		input := gqlschema.KymaConfigInput{
 			Version:          kymaVersion,
@@ -541,7 +532,6 @@ func TestConverter_ParseInput(t *testing.T) {
 
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
-			releaseProvider,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
 			defaultEnableMachineImageVersionAutoUpdate)
@@ -559,43 +549,11 @@ func TestConverter_ParseInput(t *testing.T) {
 }
 
 func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
-	t.Run("should return error when failed to get kyma release", func(t *testing.T) {
-		// given
-		uuidGeneratorMock := &mocks.UUIDGenerator{}
-		releaseProvider := &realeaseMocks.Provider{}
-		releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(model.Release{}, dberrors.NotFound("error"))
-
-		input := gqlschema.ProvisionRuntimeInput{
-			ClusterConfig: &gqlschema.ClusterConfigInput{
-				GardenerConfig: &gqlschema.GardenerConfigInput{},
-				Administrators: []string{administrator},
-			},
-			KymaConfig: &gqlschema.KymaConfigInput{
-				Version: kymaVersion,
-			},
-		}
-
-		inputConverter := NewInputConverter(
-			uuidGeneratorMock,
-			releaseProvider,
-			gardenerProject,
-			defaultEnableKubernetesVersionAutoUpdate,
-			defaultEnableMachineImageVersionAutoUpdate)
-
-		// when
-		_, err := inputConverter.ProvisioningInputToCluster("runtimeID", input, tenant, subAccountId)
-
-		// then
-		require.Error(t, err)
-		uuidGeneratorMock.AssertExpectations(t)
-	})
-
 	t.Run("should return error when Cluster Config not provided", func(t *testing.T) {
 		// given
 		input := gqlschema.ProvisionRuntimeInput{}
 
 		inputConverter := NewInputConverter(
-			nil,
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
@@ -619,7 +577,6 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 		}
 
 		inputConverter := NewInputConverter(
-			nil,
 			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
@@ -647,7 +604,6 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 
 		inputConverter := NewInputConverter(
 			uuidGeneratorMock,
-			nil,
 			gardenerProject,
 			defaultEnableKubernetesVersionAutoUpdate,
 			defaultEnableMachineImageVersionAutoUpdate)
@@ -664,9 +620,6 @@ func TestConverter_ProvisioningInputToCluster_Error(t *testing.T) {
 func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 	evaluationPurpose := "evaluation"
 	testingPurpose := "testing"
-
-	releaseProvider := &realeaseMocks.Provider{}
-	releaseProvider.On("GetReleaseByVersion", kymaVersion).Return(fixKymaRelease(), nil)
 
 	initialGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a"}})
 	upgradedGCPProviderConfig, _ := model.NewGCPGardenerConfig(&gqlschema.GCPProviderConfigInput{Zones: []string{"europe-west1-a", "europe-west1-b"}})
@@ -893,7 +846,6 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
-				releaseProvider,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
@@ -915,7 +867,6 @@ func Test_UpgradeShootInputToGardenerConfig(t *testing.T) {
 			uuidGeneratorMock := &mocks.UUIDGenerator{}
 			inputConverter := NewInputConverter(
 				uuidGeneratorMock,
-				releaseProvider,
 				gardenerProject,
 				defaultEnableKubernetesVersionAutoUpdate,
 				defaultEnableMachineImageVersionAutoUpdate,
