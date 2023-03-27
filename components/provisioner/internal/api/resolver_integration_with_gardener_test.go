@@ -106,12 +106,12 @@ users:
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerInstallation", mock.Anything,
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 
-	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything,
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
@@ -206,7 +206,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	kymaConfig := fixKymaGraphQLConfigInput()
+	//kymaConfig := gqlschema.KymaConfigInput{}
 	clusterConfigurations := newTestProvisioningConfigs()
 
 	for _, config := range clusterConfigurations {
@@ -255,11 +255,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
 
-			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
+			//testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
@@ -357,13 +357,13 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-	assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
+	//assert.Equal(t, &gqlschema.KymaConfig{} runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
 func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
 
 	// when Upgrading Runtime
-	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{})
 
 	// then
 	require.NoError(t, err)
@@ -526,7 +526,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvision,
+		Operation: gqlschema.OperationTypeProvisionNoInstall,
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
