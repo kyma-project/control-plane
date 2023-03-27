@@ -552,9 +552,10 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
 	return queue.ProvisioningNoInstallTimeouts{
-		ClusterCreation:  5 * time.Minute,
-		ClusterDomains:   5 * time.Minute,
-		BindingsCreation: 5 * time.Minute,
+		ClusterCreation:    5 * time.Minute,
+		ClusterDomains:     5 * time.Minute,
+		BindingsCreation:   5 * time.Minute,
+		AgentConfiguration: 5 * time.Minute,
 	}
 }
 
