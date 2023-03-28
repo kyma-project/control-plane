@@ -10,7 +10,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 
 ARG BIN
-RUN CGO_ENABLED=0 go build -o /bin/${BIN} ./cmd/${BIN}/main.go
+RUN CGO_ENABLED=0 go build -o /bin/main ./cmd/${BIN}/main.go
 
 # Get latest CA certs
 FROM alpine:latest as certs
@@ -20,6 +20,5 @@ RUN apk --update add ca-certificates
 FROM scratch
 LABEL source = git@github.com:kyma-project/control-plane.git
 
-ARG BIN
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /bin/${BIN} /bin/${BIN}
+COPY --from=build /bin/main /bin/main

@@ -179,7 +179,7 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			if o.State == orchestration.Pending && o.Parameters.Strategy.MaintenanceWindow {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleTime)
 			}
-			if o.State == orchestration.Retrying && o.Parameters.RetryOperation.Immediate && o.Parameters.Strategy.MaintenanceWindow {
+			if o.State == orchestration.Retrying && bool(o.Parameters.RetryOperation.Immediate) && o.Parameters.Strategy.MaintenanceWindow {
 				windowBegin, windowEnd, days = resolveMaintenanceWindowTime(r, policy, o.Parameters.Strategy.ScheduleTime)
 			}
 

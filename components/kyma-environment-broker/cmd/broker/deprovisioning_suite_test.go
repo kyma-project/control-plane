@@ -33,8 +33,8 @@ import (
 )
 
 const (
-	subAccountID    = "fakeSubAccountID"
-	badSubAccountID = "badFakeSubAccountID"
+	subAccountID    = "fake-subaccount-id"
+	badSubAccountID = "bad-fake-subaccount-id"
 	edpEnvironment  = "test"
 )
 
