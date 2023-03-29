@@ -8,7 +8,7 @@
 * @akgalwas @franpog859 @mvshao @VOID404 @koala7659 @kyma-project/gopher
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @akgalwas @franpog859 @mvshao @VOID404 @koala7659 @k15r @marcobebway @nachtmaar @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto 
+/resources/kcp/values.yaml @akgalwas @franpog859 @mvshao @VOID404 @koala7659 @k15r @marcobebway @nachtmaar @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @kyma-project/gopher
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @akgalwas @franpog859 @mvshao @VOID404 @koala7659 @ebensom @kyma-project/gopher
@@ -17,7 +17,7 @@
 /resources/kcp/templates/registration-job.yaml @akgalwas @franpog859 @mvshao @VOID404 @koala7659 @kyma-project/gopher
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-rroker @kyma-project/gopher @ebensom
+/resources/kcp/charts/kyma-environment-broker @kyma-project/gopher @ebensom
 /components/kyma-environment-broker @kyma-project/gopher @ebensom
 /docs/kyma-environment-broker @kyma-project/gopher @ebensom
 /components/schema-migrator/migrations/kyma-environment-broker @kyma-project/gopher @ebensom
@@ -43,11 +43,11 @@
 /components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @ebensom @lumi017 @AdrianPei @lauraanddolay @i332322
-/resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @lauraanddolay @i332322
+/components/kubeconfig-service @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt
+/resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt
 
 # KCP CLI
-/tools/cli @ebensom @lumi017 @kwiatekus @cortey @kyma-project/gopher
+/tools/cli @ebensom @lumi017 @kwiatekus @cortey @kyma-project/gopher @gczuczy @i332322 @zralt
 
 # reconciler
 /components/reconciler @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia

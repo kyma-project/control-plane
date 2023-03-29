@@ -1,20 +1,21 @@
 global:
   images:
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "PR-2477"
+      version: "PR-2616"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2540"
+      version: "PR-2618"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2477"
+      version: "PR-2476"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2530"
+      version: "PR-2476"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2477"
+      version: "PR-2476"
 
 deployment:
   replicaCount: 1
@@ -260,7 +261,24 @@ runtimeAllowedPrincipals: |-
 environmentsCleanup:
   schedule: "0 0 * * *"
   maxAge: "24h"
-  labelSelector: "owner.do-not-delete!=true"
+  name: "kcp-kyma-environments-cleanup"
+  account: "kcp-kyma-environment-broker"
+  imageName: "kyma-environments-cleanup-job"
+  cronJobName: "environments-cleanup"
+  maxAge: "24h"
+  version: "PR-2618"
+  dir:
+  envs:
+    APP_GARDENER_PROJECT: "kyma-dev"
+    APP_GARDENER_KUBECONFIG_PATH: "/gardener/kubeconfig/kubeconfig"
+    APP_MAX_AGE_HOURS: "24h"
+    APP_PROVISIONER_URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
+  secretVolumes:
+    gardener-kubeconfig: 
+      path: /gardener/kubeconfig
+      optional: true
+      secret: gardener-credentials
+      defaultMode: 420
 
 subaccountCleanup:
   enabled: "false"
@@ -274,6 +292,17 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  #   to the generic job
+  # name: "deprovision-retrigger-job"
+  # schedule: "0 2 * * *"
+  # imageName: "kyma-environment-deprovision-retrigger-job"
+  # cronJobName: "deprovision-retrigger-job"
+  # maxAge: "24h"
+  # version: "PR-2476"
+  # dir:
+  # envs:
+  #   - APP_DRY_RUN: "{{ .Values.deprovisionRetrigger.dryRun }}"
 
 serviceMonitor:
   scrapeTimeout: 10s
@@ -281,3 +310,5 @@ serviceMonitor:
 
 dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
+
+cronJobs:

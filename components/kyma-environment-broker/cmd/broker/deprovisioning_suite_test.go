@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,8 +33,9 @@ import (
 )
 
 const (
-	subAccountID   = "fakeSubAccountID"
-	edpEnvironment = "test"
+	subAccountID    = "fake-subaccount-id"
+	badSubAccountID = "bad-fake-subaccount-id"
+	edpEnvironment  = "test"
 )
 
 type DeprovisioningSuite struct {
@@ -116,6 +118,7 @@ func (s *DeprovisioningSuite) CreateProvisionedRuntime(options RuntimeOptions) s
 	instance.ProviderRegion = *options.ProvideRegion()
 
 	provisioningOperation := fixture.FixProvisioningOperation(operationID, randomInstanceId)
+	provisioningOperation.SubAccountID = options.ProvideSubAccountID()
 
 	require.NoError(s.t, s.storage.Instances().Insert(instance))
 	require.NoError(s.t, s.storage.Operations().InsertOperation(provisioningOperation))
@@ -140,11 +143,11 @@ func (s *DeprovisioningSuite) finishProvisioningOperationByProvisioner(operation
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
 }
 
-func (s *DeprovisioningSuite) CreateDeprovisioning(instanceId string) string {
+func (s *DeprovisioningSuite) CreateDeprovisioning(operationID, instanceId string) string {
 	instance, err := s.storage.Instances().GetByID(instanceId)
 	require.NoError(s.t, err)
 
-	operation, err := internal.NewDeprovisioningOperationWithID(deprovisioningOpID, instance)
+	operation, err := internal.NewDeprovisioningOperationWithID(operationID, instance)
 	require.NoError(s.t, err)
 
 	operation.ProvisioningParameters.ErsContext.SubAccountID = subAccountID
@@ -167,12 +170,12 @@ func (s *DeprovisioningSuite) WaitForDeprovisioningState(operationID string, sta
 }
 
 func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID string) {
-	var deprovisioningOp *internal.Operation
+	var provisionerOperationID string
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
 		op, err := s.storage.Operations().GetOperationByID(operationID)
 		assert.NoError(s.t, err)
 		if op.ProvisionerOperationID != "" {
-			deprovisioningOp = op
+			provisionerOperationID = op.ProvisionerOperationID
 			return true, nil
 		}
 		return false, nil
@@ -181,7 +184,7 @@ func (s *DeprovisioningSuite) AssertProvisionerStartedDeprovisioning(operationID
 
 	var status gqlschema.OperationStatus
 	err = wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		status = s.provisionerClient.FindOperationByRuntimeIDAndType(deprovisioningOp.RuntimeID, gqlschema.OperationTypeDeprovision)
+		status = s.provisionerClient.FindOperationByProvisionerOperationID(provisionerOperationID)
 		if status.ID != nil {
 			return true, nil
 		}
@@ -202,12 +205,12 @@ func (s *DeprovisioningSuite) FinishDeprovisioningOperationByProvisioner(operati
 	})
 	assert.NoError(s.t, err, "timeout waiting for the operation with runtimeID. The existing operation %+v", op)
 
-	s.finishOperationByProvisioner(gqlschema.OperationTypeDeprovision, op.RuntimeID)
+	s.finishOperationByProvisioner(op.ProvisionerOperationID)
 }
 
-func (s *DeprovisioningSuite) finishOperationByProvisioner(operationType gqlschema.OperationType, runtimeID string) {
+func (s *DeprovisioningSuite) finishOperationByProvisioner(provisionerOperationID string) {
 	err := wait.Poll(pollingInterval, 2*time.Second, func() (bool, error) {
-		status := s.provisionerClient.FindOperationByRuntimeIDAndType(runtimeID, operationType)
+		status := s.provisionerClient.FindOperationByProvisionerOperationID(provisionerOperationID)
 		if status.ID != nil {
 			s.provisionerClient.FinishProvisionerOperation(*status.ID, gqlschema.OperationStateSucceeded)
 			return true, nil
@@ -215,6 +218,30 @@ func (s *DeprovisioningSuite) finishOperationByProvisioner(operationType gqlsche
 		return false, nil
 	})
 	assert.NoError(s.t, err, "timeout waiting for provisioner operation to exist")
+}
+
+func (s *DeprovisioningSuite) updateSubAccountIDForDeprovisioningOperation(options RuntimeOptions, instanceId string) {
+	op, err := s.storage.Operations().GetDeprovisioningOperationByInstanceID(instanceId)
+	assert.NoError(s.t, err, "failed to GetDeprovisioningOperationByInstanceID: %v", instanceId)
+	op.SubAccountID = options.ProvideSubAccountID()
+	_, err = s.storage.Operations().UpdateDeprovisioningOperation(*op)
+	assert.NoError(s.t, err, "failed to UpdateDeprovisioningOperation: %v", op)
+}
+
+func (s *DeprovisioningSuite) AssertInstanceRemoved(instanceId string) {
+	instance, err := s.storage.Instances().GetByID(instanceId)
+	assert.Error(s.t, err)
+	if dberr.IsNotFound(err) {
+		assert.Nil(s.t, instance)
+	} else {
+		assert.Fail(s.t, "failed to get instance", err)
+	}
+}
+
+func (s *DeprovisioningSuite) AssertInstanceNotRemoved(instanceId string) {
+	instance, err := s.storage.Instances().GetByID(instanceId)
+	assert.NoError(s.t, err)
+	assert.NotNil(s.t, instance)
 }
 
 func fixEDPClient() *edp.FakeClient {
@@ -229,6 +256,7 @@ func fixEDPClient() *edp.FakeClient {
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,
 		edp.MaasConsumerSubAccountKey,
+		edp.MaasConsumerServicePlan,
 	}
 
 	for _, key := range metadataTenantKeys {
