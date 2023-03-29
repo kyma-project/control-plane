@@ -25,7 +25,7 @@ type WaitForClusterCreationStep struct {
 	timeLimit          time.Duration
 }
 
-//go:generate mockery -name=KubeconfigProvider
+//go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
 	FetchRaw(shootName string) ([]byte, error)
 }

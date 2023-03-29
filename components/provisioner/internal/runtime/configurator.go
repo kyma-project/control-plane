@@ -28,7 +28,7 @@ const (
 	legacyRuntimeAgentComponentNameSpace = "compass-system"
 )
 
-//go:generate mockery -name=Configurator
+//go:generate mockery --name=Configurator
 type Configurator interface {
 	ConfigureRuntime(cluster model.Cluster, kubeconfigRaw string) apperrors.AppError
 }

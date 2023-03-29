@@ -27,7 +27,7 @@ const (
 
 type InstallationHandler func(*rest.Config, ...installation.InstallationOption) (installation.Installer, error)
 
-//go:generate mockery -name=Service
+//go:generate mockery --name=Service
 type Service interface {
 	CheckInstallationState(kubeconfig *rest.Config) (installation.InstallationState, error)
 	TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error

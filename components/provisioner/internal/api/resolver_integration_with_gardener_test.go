@@ -206,7 +206,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	//kymaConfig := gqlschema.KymaConfigInput{}
 	clusterConfigurations := newTestProvisioningConfigs()
 
 	for _, config := range clusterConfigurations {
@@ -258,8 +257,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
-
-			//testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
@@ -357,7 +354,6 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-	//assert.Equal(t, &gqlschema.KymaConfig{} runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
 func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {

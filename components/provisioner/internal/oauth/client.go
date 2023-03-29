@@ -18,7 +18,7 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-//go:generate mockery -name=Client
+//go:generate mockery --name=Client
 type Client interface {
 	GetAuthorizationToken() (Token, apperrors.AppError)
 }
