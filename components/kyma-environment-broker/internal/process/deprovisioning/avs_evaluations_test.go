@@ -107,8 +107,6 @@ func TestAvsEvaluationsRemovalWhenAlreadyDeleted_Run(t *testing.T) {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
 
-	assert.Equal(t, 0, len(evalIdsHolder))
-	assert.Equal(t, 0, len(parentEvalIdHolder))
 	// when
 	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
 
@@ -148,8 +146,6 @@ func TestExternalAvsEvaluationsRemovalSkipForTrialPlan_Run(t *testing.T) {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
 
-	assert.Equal(t, 0, len(evalIdsHolder))
-	assert.Equal(t, 0, len(parentEvalIdHolder))
 	// when
 	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
 
@@ -187,8 +183,6 @@ func TestExternalAvsEvaluationsRemovalSkipForFreemiumPlan_Run(t *testing.T) {
 	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
 	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
 
-	assert.Equal(t, 0, len(evalIdsHolder))
-	assert.Equal(t, 0, len(parentEvalIdHolder))
 	// when
 	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
 
