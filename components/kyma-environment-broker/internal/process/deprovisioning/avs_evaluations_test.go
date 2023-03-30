@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/avs"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 
 	"github.com/gorilla/mux"
@@ -76,6 +77,122 @@ func TestAvsEvaluationsRemovalStep_Run(t *testing.T) {
 	assert.True(t, inDB.Avs.AVSInternalEvaluationDeleted)
 	assert.True(t, inDB.Avs.AVSExternalEvaluationDeleted)
 	assert.Equal(t, internalEvalId, inDB.Avs.AvsEvaluationInternalId)
+	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
+}
+
+func TestAvsEvaluationsRemovalWhenAlreadyDeleted_Run(t *testing.T) {
+	// given
+	logger := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	deProvisioningOperation := fixDeprovisioningOperation().Operation
+	deProvisioningOperation.Avs.AvsEvaluationInternalId = internalEvalId
+	deProvisioningOperation.Avs.AVSEvaluationExternalId = externalEvalId
+	deProvisioningOperation.Avs.AVSExternalEvaluationDeleted = true
+	deProvisioningOperation.Avs.AVSInternalEvaluationDeleted = true
+	err := memoryStorage.Operations().InsertOperation(deProvisioningOperation)
+	assert.NoError(t, err)
+	assert.True(t, deProvisioningOperation.Avs.AVSInternalEvaluationDeleted)
+	assert.True(t, deProvisioningOperation.Avs.AVSExternalEvaluationDeleted)
+
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
+
+	// when
+	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+
+	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(deProvisioningOperation.ID)
+	assert.NoError(t, err)
+	assert.True(t, inDB.Avs.AVSInternalEvaluationDeleted)
+	assert.True(t, inDB.Avs.AVSExternalEvaluationDeleted)
+	assert.Equal(t, internalEvalId, inDB.Avs.AvsEvaluationInternalId)
+	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
+}
+
+func TestExternalAvsEvaluationsRemovalSkipForTrialPlan_Run(t *testing.T) {
+	// given
+	logger := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	deProvisioningOperation := fixDeprovisioningOperationWithPlanID(broker.TrialPlanID)
+	deProvisioningOperation.Avs.AVSEvaluationExternalId = externalEvalId
+	err := memoryStorage.Operations().InsertOperation(deProvisioningOperation)
+	assert.NoError(t, err)
+	assert.False(t, deProvisioningOperation.Avs.AVSInternalEvaluationDeleted)
+	assert.False(t, deProvisioningOperation.Avs.AVSExternalEvaluationDeleted)
+
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
+
+	// when
+	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+
+	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(deProvisioningOperation.ID)
+	assert.NoError(t, err)
+	assert.False(t, inDB.Avs.AVSExternalEvaluationDeleted)
+	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
+}
+
+func TestExternalAvsEvaluationsRemovalSkipForFreemiumPlan_Run(t *testing.T) {
+	// given
+	logger := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	deProvisioningOperation := fixDeprovisioningOperationWithPlanID(broker.FreemiumPlanID)
+	deProvisioningOperation.Avs.AVSEvaluationExternalId = externalEvalId
+	err := memoryStorage.Operations().InsertOperation(deProvisioningOperation)
+	assert.NoError(t, err)
+	assert.False(t, deProvisioningOperation.Avs.AVSInternalEvaluationDeleted)
+	assert.False(t, deProvisioningOperation.Avs.AVSExternalEvaluationDeleted)
+
+	mockOauthServer := newMockAvsOauthServer()
+	defer mockOauthServer.Close()
+	mockAvsServer := newMockAvsServer(t)
+	defer mockAvsServer.Close()
+	avsConfig := avsConfig(mockOauthServer, mockAvsServer)
+	avsClient, err := avs.NewClient(context.TODO(), avsConfig, logrus.New())
+	assert.NoError(t, err)
+	avsDel := avs.NewDelegator(avsClient, avsConfig, memoryStorage.Operations())
+	internalEvalAssistant := avs.NewInternalEvalAssistant(avsConfig)
+	externalEvalAssistant := avs.NewExternalEvalAssistant(avsConfig)
+	step := NewAvsEvaluationsRemovalStep(avsDel, memoryStorage.Operations(), externalEvalAssistant, internalEvalAssistant)
+
+	// when
+	deProvisioningOperation, repeat, err := step.Run(deProvisioningOperation, logger)
+
+	// then
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+
+	inDB, err := memoryStorage.Operations().GetDeprovisioningOperationByID(deProvisioningOperation.ID)
+	assert.NoError(t, err)
+	assert.False(t, inDB.Avs.AVSExternalEvaluationDeleted)
 	assert.Equal(t, externalEvalId, inDB.Avs.AVSEvaluationExternalId)
 }
 
