@@ -282,7 +282,6 @@ func (r readSession) GetOperationByTypeAndInstanceID(inID string, opType interna
 func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType internal.OperationType) ([]dbmodel.OperationDTO, dberr.Error) {
 	idCondition := dbr.Eq("instance_id", inID)
 	typeCondition := dbr.Eq("type", string(opType))
-	stateCondition := dbr.Neq("state", orchestration.Pending)
 	var operations []dbmodel.OperationDTO
 
 	_, err := r.session.
@@ -290,7 +289,6 @@ func (r readSession) GetOperationsByTypeAndInstanceID(inID string, opType intern
 		From(OperationTableName).
 		Where(idCondition).
 		Where(typeCondition).
-		Where(stateCondition).
 		OrderDesc(CreatedAtField).
 		Load(&operations)
 
