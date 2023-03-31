@@ -154,7 +154,7 @@ func (s *operations) ListProvisioningOperationsByInstanceID(instanceID string) (
 
 	operations := make([]internal.ProvisioningOperation, 0)
 	for _, op := range s.operations {
-		if op.InstanceID == instanceID && op.Type == internal.OperationTypeProvision {
+		if op.InstanceID == instanceID && op.Type == internal.OperationTypeProvision && op.State != orchestration.Pending {
 			operations = append(operations, internal.ProvisioningOperation{Operation: op})
 		}
 	}
@@ -257,7 +257,7 @@ func (s *operations) ListDeprovisioningOperationsByInstanceID(instanceID string)
 
 	operations := make([]internal.DeprovisioningOperation, 0)
 	for _, op := range s.operations {
-		if op.InstanceID == instanceID && op.Type == internal.OperationTypeDeprovision {
+		if op.InstanceID == instanceID && op.Type == internal.OperationTypeDeprovision && op.State != orchestration.Pending {
 			operations = append(operations, internal.DeprovisioningOperation{Operation: op})
 		}
 	}
@@ -763,7 +763,7 @@ func (s *operations) ListUpdatingOperationsByInstanceID(instanceID string) ([]in
 
 	operations := make([]internal.UpdatingOperation, 0)
 	for _, v := range s.updateOperations {
-		if instanceID != v.InstanceID {
+		if instanceID != v.InstanceID || v.State == orchestration.Pending {
 			continue
 		}
 
@@ -893,7 +893,7 @@ func (s *operations) filterUpgradeKymaByInstanceID(instanceID string, filter dbm
 		if instanceID != "" && instanceID != v.InstanceID {
 			continue
 		}
-		if v.Type != internal.OperationTypeUpgradeKyma {
+		if v.Type != internal.OperationTypeUpgradeKyma || v.State == orchestration.Pending {
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {
@@ -925,7 +925,7 @@ func (s *operations) filterUpgradeCluster(orchestrationID string, filter dbmodel
 func (s *operations) filterUpgradeClusterByInstanceID(instanceID string, filter dbmodel.OperationFilter) []internal.UpgradeClusterOperation {
 	operations := make([]internal.UpgradeClusterOperation, 0)
 	for _, v := range s.upgradeClusterOperations {
-		if instanceID != "" && instanceID != v.InstanceID {
+		if (instanceID != "" && instanceID != v.InstanceID) || v.State == orchestration.Pending {
 			continue
 		}
 		if ok := matchFilter(string(v.State), filter.States, s.equalFilter); !ok {

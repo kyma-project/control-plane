@@ -224,7 +224,7 @@ func TestOperation(t *testing.T) {
 		opList, err := svc.ListProvisioningOperationsByInstanceID("inst-id")
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, 3, len(opList))
+		assert.Equal(t, 2, len(opList))
 	})
 
 	t.Run("Deprovisioning", func(t *testing.T) {
@@ -450,7 +450,7 @@ func TestOperation(t *testing.T) {
 
 		ops, err = svc.ListUpgradeClusterOperationsByInstanceID("inst-id")
 		require.NoError(t, err)
-		assert.Len(t, ops, 3)
+		assert.Len(t, ops, 2)
 
 		// when
 		givenOperation3.Description = "diff"
