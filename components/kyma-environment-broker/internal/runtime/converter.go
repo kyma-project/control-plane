@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	pkg "github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -45,6 +46,9 @@ func (c *converter) ApplyProvisioningOperation(dto *pkg.RuntimeDTO, pOpr *intern
 
 func (c *converter) ApplyDeprovisioningOperation(dto *pkg.RuntimeDTO, dOpr *internal.DeprovisioningOperation) {
 	if dOpr != nil {
+		if dOpr.Operation.State == orchestration.Pending {
+			return
+		}
 		dto.Status.Deprovisioning = &pkg.Operation{}
 		c.applyOperation(&dOpr.Operation, dto.Status.Deprovisioning)
 		c.adjustRuntimeState(dto)
@@ -135,7 +139,7 @@ func (c *converter) ApplySuspensionOperations(dto *pkg.RuntimeDTO, oprs []intern
 	suspension.Data = make([]pkg.Operation, 0)
 
 	for _, o := range oprs {
-		if !o.Temporary {
+		if !o.Temporary || o.Operation.State == orchestration.Pending {
 			continue
 		}
 		op := pkg.Operation{}
