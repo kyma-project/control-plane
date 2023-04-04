@@ -44,6 +44,8 @@ func (step *CheckKymaResourceDeletedStep) Run(operation internal.Operation, logg
 		return operation, 0, nil
 	}
 
+	logger.Infof("Checking existence of Kyma resource: %s in namespace:%s", kymaResourceName, operation.KymaResourceNamespace)
+
 	kymaUnstructured := &unstructured.Unstructured{}
 	kymaUnstructured.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 	err := step.kcpClient.Get(context.Background(), client.ObjectKey{
@@ -52,7 +54,7 @@ func (step *CheckKymaResourceDeletedStep) Run(operation internal.Operation, logg
 	}, kymaUnstructured)
 
 	if err == nil {
-		logger.Infof("Kyma resource still exists: %s", err)
+		logger.Infof("Kyma resource still exists")
 		return step.operationManager.RetryOperationWithoutFail(operation, step.Name(), "Kyma resource still exists", 15*time.Second, 30*time.Minute, logger)
 	}
 

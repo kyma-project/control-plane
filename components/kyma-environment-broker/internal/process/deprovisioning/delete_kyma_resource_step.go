@@ -49,6 +49,8 @@ func (step *DeleteKymaResourceStep) Run(operation internal.Operation, logger log
 		return operation, 0, nil
 	}
 
+	logger.Infof("Deleting Kyma resource: %s in namespace:%s", kymaResourceName, operation.KymaResourceNamespace)
+
 	kymaUnstructured := &unstructured.Unstructured{}
 	kymaUnstructured.SetName(kymaResourceName)
 	kymaUnstructured.SetNamespace(operation.KymaResourceNamespace)
