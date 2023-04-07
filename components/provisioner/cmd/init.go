@@ -83,7 +83,6 @@ func newShootController(gardenerNamespace string, gardenerClusterCfg *restclient
 	if err != nil {
 		return nil, fmt.Errorf("unable to create shoot controller manager: %w", err)
 	}
-
 	return gardener.NewShootController(mgr, dbsFactory, auditLogTenantConfigPath)
 }
 

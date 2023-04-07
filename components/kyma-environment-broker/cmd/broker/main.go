@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	skrlisteners "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/skrlistener/listeners"
 	"io"
 	"log"
 	"math/rand"
@@ -422,6 +423,10 @@ func main() {
 	})
 
 	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
+
+	btpManagerSecretListener := skrlisteners.NewBtpManagerSecretListener(db.Instances(), ctx, logs, "", "", nil)
+	go btpManagerSecretListener.ReactOnSkrEvent()
+
 }
 
 func k8sClientProvider(kcfg string) (client.Client, error) {
