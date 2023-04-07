@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	skrlisteners "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/skrlistener/listeners"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/skrlisteners"
 	"io"
 	"log"
 	"math/rand"
@@ -169,6 +169,9 @@ type Config struct {
 	Profiler ProfilerConfig
 
 	Events events.Config
+
+	BtpManagerSecretListenerAddr          string
+	BtpManagerSecretListenerComponentName string
 }
 
 type ProfilerConfig struct {
@@ -422,11 +425,10 @@ func main() {
 		logs.Infof("Call handled: method=%s url=%s statusCode=%d size=%d", params.Request.Method, params.URL.Path, params.StatusCode, params.Size)
 	})
 
-	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
-
-	btpManagerSecretListener := skrlisteners.NewBtpManagerSecretListener(db.Instances(), ctx, logs, "", "", nil)
+	btpManagerSecretListener := skrlisteners.NewBtpManagerSecretListener(ctx, db.Instances(), cfg.BtpManagerSecretListenerAddr, cfg.BtpManagerSecretListenerComponentName, skrlisteners.NoVerify, logs)
 	go btpManagerSecretListener.ReactOnSkrEvent()
 
+	fatalOnError(http.ListenAndServe(cfg.Host+":"+cfg.Port, svr))
 }
 
 func k8sClientProvider(kcfg string) (client.Client, error) {
