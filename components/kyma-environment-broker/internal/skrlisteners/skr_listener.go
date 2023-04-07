@@ -1,9 +1,11 @@
-package skrlistener
+package skrlisteners
 
 import (
 	"context"
 	"github.com/kyma-project/runtime-watcher/listener/pkg/event"
+	"github.com/kyma-project/runtime-watcher/listener/pkg/types"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type Listener interface {
@@ -26,4 +28,8 @@ func NewListenerConfig(ctx context.Context, logs *logrus.Logger, listenerAddr, c
 		ComponentName: componentName,
 		VerifyFunc:    verifyFunc,
 	}
+}
+
+func NoVerify(r *http.Request, watcherEvtObject *types.WatchEvent) error {
+	return nil
 }

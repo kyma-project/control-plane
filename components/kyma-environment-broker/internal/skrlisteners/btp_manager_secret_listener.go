@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	btpoperatorcredentials "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/btpmanager"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/skrlistener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/runtime-watcher/listener/pkg/event"
 	"github.com/sirupsen/logrus"
@@ -14,20 +13,20 @@ import (
 )
 
 type BtpManagerSecretListener struct {
-	skrlistener.ListenerConfig
+	ListenerConfig
 	instances storage.Instances
 	handler   btpoperatorcredentials.BTPOperatorHandler
 }
 
-func NewBtpManagerSecretListener(instanceDb storage.Instances, ctx context.Context, logs *logrus.Logger, listenerAddr, componentName string, verifyFunc event.Verify) *BtpManagerSecretListener {
+func NewBtpManagerSecretListener(ctx context.Context, instanceDb storage.Instances, listenerAddr, componentName string, verifyFunc event.Verify, logs *logrus.Logger) *BtpManagerSecretListener {
 	return &BtpManagerSecretListener{
-		*skrlistener.NewListenerConfig(ctx, logs, listenerAddr, componentName, verifyFunc),
+		*NewListenerConfig(ctx, logs, listenerAddr, componentName, verifyFunc),
 		instanceDb,
 		btpoperatorcredentials.BTPOperatorHandler{},
 	}
 }
 
-var _ skrlistener.Listener = (*BtpManagerSecretListener)(nil)
+var _ Listener = (*BtpManagerSecretListener)(nil)
 
 func (s *BtpManagerSecretListener) ReactOnSkrEvent() {
 	listener, _ := event.RegisterListenerComponent(s.ListenerAddr, s.ComponentName, s.VerifyFunc)
@@ -35,6 +34,8 @@ func (s *BtpManagerSecretListener) ReactOnSkrEvent() {
 	go func() {
 		for {
 			select {
+			//How to extract data from client.Object?
+			//How to know for each SKR event happen?
 			case response := <-listener.ReceivedEvents:
 				s.Logger.Info("watcher event received....")
 				s.Logger.Info(fmt.Sprintf("%v", response.Object))
