@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 
-go 1.19
+go 1.20
 
 require (
 	github.com/gardener/gardener v1.67.2
