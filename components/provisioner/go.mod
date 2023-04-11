@@ -1,6 +1,6 @@
 module github.com/kyma-project/control-plane/components/provisioner
 
-go 1.19
+go 1.20
 
 require (
 	github.com/99designs/gqlgen v0.11.3
@@ -94,7 +94,7 @@ require (
 	github.com/onrik/logrus v0.9.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
-	github.com/opencontainers/runc v1.1.3 // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
