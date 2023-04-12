@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockery -name=OperationsStatsGetter
+//go:generate mockery --name=OperationsStatsGetter
 type OperationsStatsGetter interface {
 	InProgressOperationsCount() (model.OperationsCount, dberrors.Error)
 }

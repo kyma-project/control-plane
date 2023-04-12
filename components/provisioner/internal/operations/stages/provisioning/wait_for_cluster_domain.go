@@ -25,7 +25,7 @@ type WaitForClusterDomainStep struct {
 	timeLimit      time.Duration
 }
 
-//go:generate mockery -name=GardenerClient
+//go:generate mockery --name=GardenerClient
 type GardenerClient interface {
 	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }

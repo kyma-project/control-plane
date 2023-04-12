@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 )
 
-//go:generate mockery -name=Factory
+//go:generate mockery --name=Factory
 type Factory interface {
 	NewReadSession() ReadSession
 	NewWriteSession() WriteSession
@@ -18,7 +18,7 @@ type Factory interface {
 	NewSessionWithinTransaction() (WriteSessionWithinTransaction, dberrors.Error)
 }
 
-//go:generate mockery -name=ReadSession
+//go:generate mockery --name=ReadSession
 type ReadSession interface {
 	GetCluster(runtimeID string) (model.Cluster, dberrors.Error)
 	GetOperation(operationID string) (model.Operation, dberrors.Error)
@@ -34,7 +34,7 @@ type ReadSession interface {
 	GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error)
 }
 
-//go:generate mockery -name=WriteSession
+//go:generate mockery --name=WriteSession
 type WriteSession interface {
 	InsertCluster(cluster model.Cluster) dberrors.Error
 	InsertGardenerConfig(config model.GardenerConfig) dberrors.Error
@@ -55,12 +55,11 @@ type WriteSession interface {
 	UpdateTenant(runtimeID string, tenant string) dberrors.Error
 	//TODO:Remove after schema migration
 	UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error
-	InsertRelease(artifacts model.Release) dberrors.Error
 	UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error
 	UpdateShootNetworkingFilterDisabled(runtimeID string, shootNetworkingFilterDisabled *bool) dberrors.Error
 }
 
-//go:generate mockery -name=ReadWriteSession
+//go:generate mockery --name=ReadWriteSession
 type ReadWriteSession interface {
 	ReadSession
 	WriteSession
@@ -71,7 +70,7 @@ type Transaction interface {
 	RollbackUnlessCommitted()
 }
 
-//go:generate mockery -name=WriteSessionWithinTransaction
+//go:generate mockery --name=WriteSessionWithinTransaction
 type WriteSessionWithinTransaction interface {
 	WriteSession
 	Transaction

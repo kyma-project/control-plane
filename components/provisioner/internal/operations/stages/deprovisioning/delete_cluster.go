@@ -20,7 +20,7 @@ type DeleteClusterStep struct {
 	timeLimit      time.Duration
 }
 
-//go:generate mockery -name=GardenerClient
+//go:generate mockery --name=GardenerClient
 type GardenerClient interface {
 	Get(ctx context.Context, name string, options metav1.GetOptions) (*gardener_types.Shoot, error)
 	Delete(ctx context.Context, name string, options metav1.DeleteOptions) error

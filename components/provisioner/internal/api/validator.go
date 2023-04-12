@@ -11,7 +11,7 @@ import (
 
 const RuntimeAgent = "compass-runtime-agent"
 
-//go:generate mockery -name=Validator
+//go:generate mockery --name=Validator
 type Validator interface {
 	ValidateProvisioningInput(input gqlschema.ProvisionRuntimeInput) apperrors.AppError
 	ValidateUpgradeInput(input gqlschema.UpgradeRuntimeInput) apperrors.AppError

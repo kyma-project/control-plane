@@ -35,7 +35,6 @@ import (
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -107,12 +106,12 @@ users:
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("TriggerInstallation", mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerInstallation", mock.Anything,
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 
-	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything, mock.AnythingOfType("model.Release"),
+	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything,
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
 
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
@@ -207,7 +206,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	kymaConfig := fixKymaGraphQLConfigInput()
 	clusterConfigurations := newTestProvisioningConfigs()
 
 	for _, config := range clusterConfigurations {
@@ -245,10 +243,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			uuidGenerator := uuid.NewUUIDGenerator()
 			provisioner := gardener.NewProvisioner(namespace, shootInterface, dbsFactory, auditLogPolicyCMName, maintenanceWindowConfigPath)
 
-			releaseRepository := release.NewReleaseRepository(connection, uuidGenerator)
-			provider := release.NewReleaseProvider(releaseRepository, nil)
-
-			inputConverter := provisioning.NewInputConverter(uuidGenerator, provider, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
 			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
@@ -259,14 +254,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			resolver := api.NewResolver(provisioningService, validator, tenantUpdater)
 
-			err = insertDummyReleaseIfNotExist(releaseRepository, uuidGenerator.New(), kymaVersion)
-			require.NoError(t, err)
-
-			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig, KymaConfig: kymaConfig}
+			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
-
-			testUpgradeRuntimeAndRollback(t, ctx, resolver, dbsFactory, config.runtimeID)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
@@ -364,13 +354,12 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-	assert.Equal(t, fixKymaGraphQLConfig(), runtimeStatusProvisioned.RuntimeConfiguration.KymaConfig)
 }
 
 func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
 
 	// when Upgrading Runtime
-	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{KymaConfig: fixKymaGraphQLConfigInput()})
+	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{})
 
 	// then
 	require.NoError(t, err)
@@ -533,7 +522,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvision,
+		Operation: gqlschema.OperationTypeProvisionNoInstall,
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
@@ -559,9 +548,10 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
 	return queue.ProvisioningNoInstallTimeouts{
-		ClusterCreation:  5 * time.Minute,
-		ClusterDomains:   5 * time.Minute,
-		BindingsCreation: 5 * time.Minute,
+		ClusterCreation:    5 * time.Minute,
+		ClusterDomains:     5 * time.Minute,
+		BindingsCreation:   5 * time.Minute,
+		AgentConfiguration: 5 * time.Minute,
 	}
 }
 

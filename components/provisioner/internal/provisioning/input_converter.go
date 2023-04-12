@@ -3,8 +3,6 @@ package provisioning
 import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -20,14 +18,12 @@ type InputConverter interface {
 
 func NewInputConverter(
 	uuidGenerator uuid.UUIDGenerator,
-	releaseProvider release.Provider,
 	gardenerProject string,
 	defaultEnableKubernetesVersionAutoUpdate,
 	defaultEnableMachineImageVersionAutoUpdate bool) InputConverter {
 
 	return &converter{
 		uuidGenerator:                                    uuidGenerator,
-		releaseProvider:                                  releaseProvider,
 		gardenerProject:                                  gardenerProject,
 		defaultEnableKubernetesVersionAutoUpdate:         defaultEnableKubernetesVersionAutoUpdate,
 		defaultEnableMachineImageVersionAutoUpdate:       defaultEnableMachineImageVersionAutoUpdate,
@@ -38,7 +34,6 @@ func NewInputConverter(
 
 type converter struct {
 	uuidGenerator                                    uuid.UUIDGenerator
-	releaseProvider                                  release.Provider
 	gardenerProject                                  string
 	defaultEnableKubernetesVersionAutoUpdate         bool
 	defaultEnableMachineImageVersionAutoUpdate       bool
@@ -227,11 +222,6 @@ func (c converter) providerSpecificConfigFromInput(input *gqlschema.ProviderSpec
 }
 
 func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaConfigInput) (model.KymaConfig, apperrors.AppError) {
-	kymaRelease, err := c.releaseProvider.GetReleaseByVersion(input.Version)
-	if err != nil {
-		return model.KymaConfig{}, operations.ConvertToAppError(err)
-	}
-
 	var components []model.KymaComponentConfig
 	kymaConfigID := c.uuidGenerator.New()
 
@@ -253,7 +243,6 @@ func (c converter) KymaConfigFromInput(runtimeID string, input gqlschema.KymaCon
 
 	return model.KymaConfig{
 		ID:                  kymaConfigID,
-		Release:             kymaRelease,
 		Profile:             c.graphQLProfileToProfile(input.Profile),
 		Components:          components,
 		ClusterID:           runtimeID,

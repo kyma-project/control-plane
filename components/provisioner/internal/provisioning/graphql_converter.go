@@ -138,7 +138,6 @@ func (c graphQLConverter) kymaConfigToGraphQLConfig(config model.KymaConfig) *gq
 	}
 
 	return &gqlschema.KymaConfig{
-		Version:       &config.Release.Version,
 		Profile:       c.profileToGraphQLProfile(config.Profile),
 		Components:    components,
 		Configuration: c.configurationToGraphQLConfig(config.GlobalConfiguration),
