@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/skrlisteners"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -15,6 +15,7 @@ type Config struct {
 	Events                                events.Config
 	BtpManagerSecretListenerAddr          string
 	BtpManagerSecretListenerComponentName string
+	DbInMemory                            bool
 }
 
 func main() {
@@ -24,18 +25,27 @@ func main() {
 	logs := logrus.New()
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
-	// create and fill config
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	fatalOnError(err)
 
-	// create storage
-	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
-	db, _, err := storage.NewFromConfig(cfg.Database, cfg.Events, cipher, logs.WithField("service", "storage"))
-	fatalOnError(err)
+	//For dev
+	cfg.DbInMemory = true
 
-	btpManagerSecretListener := skrlisteners.NewBtpManagerSecretListener(ctx, db.Instances(), cfg.BtpManagerSecretListenerAddr, cfg.BtpManagerSecretListenerComponentName, skrlisteners.NoVerify, logs)
-	go btpManagerSecretListener.ReactOnSkrEvent()
+	var db storage.BrokerStorage
+	cipher := storage.NewEncrypter(cfg.Database.SecretKey)
+	if cfg.DbInMemory {
+		db = storage.NewMemoryStorage()
+	} else {
+		store, _, err := storage.NewFromConfig(cfg.Database, cfg.Events, cipher, logs.WithField("service", "storage"))
+		fatalOnError(err)
+		db = store
+	}
+
+	fmt.Println(db.Instances())
+	ctx.Done()
+	//btpManagerSecretListener := skrlisteners.NewBtpManagerSecretListener(ctx, db.Instances(), cfg.BtpManagerSecretListenerAddr, cfg.BtpManagerSecretListenerComponentName, skrlisteners.NoVerify, logs)
+	//go btpManagerSecretListener.ReactOnSkrEvent()
 }
 
 func fatalOnError(err error) {
