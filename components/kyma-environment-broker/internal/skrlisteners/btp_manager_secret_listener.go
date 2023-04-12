@@ -39,7 +39,7 @@ func (s *BtpManagerSecretListener) ReactOnSkrEvent() {
 			case response := <-listener.ReceivedEvents:
 				s.Logger.Info("watcher event received....")
 				skrId := response.Object.GetName()
-				instance, err := s.instances.GetByID(skrId)
+				instance, err := s.GetInstace(skrId)
 				if err != nil {
 					log.Fatal(err)
 					continue
@@ -60,45 +60,32 @@ func (s *BtpManagerSecretListener) ReactOnSkrEvent() {
 	}
 }
 
-func (s *BtpManagerSecretListener) GetNeededDataFromInstance(instance *internal.Instance) (skrK8sCfg []byte, credentials *internal.ServiceManagerOperatorCredentials) {
-	skrK8sCfg = []byte(instance.Parameters.Parameters.Kubeconfig)
-	credentials = instance.Parameters.ErsContext.SMOperatorCredentials
-	return
+func (s *BtpManagerSecretListener) GetInstace(id string) (*internal.Instance, error) {
+	return nil, nil
 }
 
-func (s *BtpManagerSecretListener) GetSkrK8sCfgClient(skrK8sCfg []byte) (*client.Client, error) {
-	restCfg, err := clientcmd.RESTConfigFromKubeConfig(skrK8sCfg)
-	if err != nil {
-		return nil, err
-	}
-	k8sClient, err := client.New(restCfg, client.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &k8sClient, err
+func (s *BtpManagerSecretListener) GetInstances() (*[]internal.Instance, error) {
+	return nil, nil
 }
 
 func (s *BtpManagerSecretListener) Reconcile() {
-	i, err := s.instances.FindAllInstancesForRuntimes(nil)
+	i, err := s.GetInstances()
 	if err != nil {
 		panic(err)
 	}
 
-	var instanceWithinErrors []*internal.Instance
-	for _, v := range i {
+	for _, v := range *i {
 		_, err := s.ReconcileSecretForInstance(&v)
 		if err != nil {
 			s.Logger.Fatalf("%s", err)
-			instanceWithinErrors = append(instanceWithinErrors, &v)
 		}
 	}
 }
 
 func (s *BtpManagerSecretListener) ReconcileSecretForInstance(v *internal.Instance) (bool, error) {
 	skrUpdated := false
-	skrK8sCfg, credentials := s.GetNeededDataFromInstance(v)
-	k8sClient, err := s.GetSkrK8sCfgClient(skrK8sCfg)
+	skrK8sCfg, credentials := s.getNeededDataFromInstance(v)
+	k8sClient, err := s.getSkrK8sCfgClient(skrK8sCfg)
 	if err != nil {
 		log.Fatal(err)
 		return skrUpdated, err
@@ -133,4 +120,23 @@ func (s *BtpManagerSecretListener) ReconcileSecretForInstance(v *internal.Instan
 	}
 
 	return skrUpdated, nil
+}
+
+func (s *BtpManagerSecretListener) getNeededDataFromInstance(instance *internal.Instance) (skrK8sCfg []byte, credentials *internal.ServiceManagerOperatorCredentials) {
+	skrK8sCfg = []byte(instance.Parameters.Parameters.Kubeconfig)
+	credentials = instance.Parameters.ErsContext.SMOperatorCredentials
+	return
+}
+
+func (s *BtpManagerSecretListener) getSkrK8sCfgClient(skrK8sCfg []byte) (*client.Client, error) {
+	restCfg, err := clientcmd.RESTConfigFromKubeConfig(skrK8sCfg)
+	if err != nil {
+		return nil, err
+	}
+	k8sClient, err := client.New(restCfg, client.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &k8sClient, err
 }
