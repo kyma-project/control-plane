@@ -35,3 +35,9 @@ mothership:
     preComponents:
 {{ toYaml .Values.preComponents | indent 6 }}
 {{- end }}
+{{- if .Values.componentCRDs }}
+    componentCRDs:
+{{ toYaml .Values.componentCRDs | indent 6 }}
+{{- else }}
+    componentCRDs: {}
+{{- end }}
