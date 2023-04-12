@@ -26,7 +26,7 @@ type BrokerStorage interface {
 }
 
 const (
-	connectionRetries = 10
+	connectionRetries = 20
 )
 
 func NewFromConfig(cfg Config, evcfg events.Config, cipher postgres.Cipher, log logrus.FieldLogger) (BrokerStorage, *dbr.Connection, error) {

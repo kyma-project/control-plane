@@ -2,13 +2,16 @@ package postsql_test
 
 import (
 	"context"
-	"testing"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/postsql"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
+)
+
+const (
+	connectionMaxRetries = 20
 )
 
 func TestInitialization(t *testing.T) {
@@ -21,7 +24,7 @@ func TestInitialization(t *testing.T) {
 		defer containerCleanupFunc()
 
 		// when
-		connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), 1, logrus.New())
+		connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), connectionMaxRetries, logrus.New())
 		require.NoError(t, err)
 		require.NotNil(t, connection)
 
@@ -40,7 +43,7 @@ func TestInitialization(t *testing.T) {
 		connString := "bad connection string"
 
 		// when
-		connection, err := postsql.InitializeDatabase(connString, 1, logrus.New())
+		connection, err := postsql.InitializeDatabase(connString, connectionMaxRetries, logrus.New())
 
 		// then
 		assert.Error(t, err)
