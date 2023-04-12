@@ -316,7 +316,6 @@ func (s *Instance) GetByID(instanceID string) (*internal.Instance, error) {
 		}
 		return true, nil
 	})
-
 	if err != nil {
 		return nil, lastErr
 	}
