@@ -2,6 +2,7 @@ package provisioning
 
 import (
 	"context"
+	btpoperatorcredentials "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/btpmanager"
 	"reflect"
 	"testing"
 
@@ -98,6 +99,7 @@ func TestInjectBTPOperatorCredentialsWhenSecretAlreadyExistsStep(t *testing.T) {
 		k8sClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		err = k8sClient.Create(context.TODO(), userSecret)
+		
 		require.NoError(t, err)
 
 		operation := fixProvisioningOperationWithClusterIDAndCredentials(k8sClient)
@@ -136,16 +138,16 @@ func fixProvisioningOperationWithCredentials(k8sClient client.WithWatch) interna
 
 func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expected map[string]string) {
 	secretFromCluster := apicorev1.Secret{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: secretNamespace, Name: secretName}, &secretFromCluster)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: btpoperatorcredentials.BtpManagerSecretNamespace, Name: btpoperatorcredentials.BtpManagerSecretName}, &secretFromCluster)
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(expected, secretFromCluster.StringData))
-	assert.True(t, reflect.DeepEqual(labels, secretFromCluster.Labels))
-	assert.True(t, reflect.DeepEqual(annotations, secretFromCluster.Annotations))
+	assert.True(t, reflect.DeepEqual(btpoperatorcredentials.BtpManagerLabels, secretFromCluster.Labels))
+	assert.True(t, reflect.DeepEqual(btpoperatorcredentials.BtpManagerAnnotations, secretFromCluster.Annotations))
 }
 
 func assertTheNamespaceIsPresent(t *testing.T, k8sClient client.WithWatch) {
 	namespace := apicorev1.Namespace{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: secretNamespace}, &namespace)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: btpoperatorcredentials.BtpManagerSecretName}, &namespace)
 	require.NoError(t, err)
 }
 
