@@ -149,3 +149,9 @@ cleanerScript:
   reconKeepCount: 100
   inventoryMaxAge: 4
   purgeOlderThan: 96h
+
+componentCRDs:
+  btp-operator:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: btpoperators
