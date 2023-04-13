@@ -7,10 +7,10 @@ global:
       path: eu.gcr.io/kyma-project/control-plane
     schema_migrator:
       dir:
-      version: "PR-2380"
+      version: "PR-2670"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "PR-2680"
+      version: "PR-2670"
     kyma_metrics_collector:
       dir:
       version: PR-2656

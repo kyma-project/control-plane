@@ -3,19 +3,19 @@ global:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "PR-2661"
+      version: "PR-2670"
     kyma_environments_cleanup_job:
       dir:
-      version: "PR-2618"
+      version: "PR-2670"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2476"
+      version: "PR-2670"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2476"
+      version: "PR-2670"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2691"
+      version: "PR-2670"
 
 deployment:
   replicaCount: 1
