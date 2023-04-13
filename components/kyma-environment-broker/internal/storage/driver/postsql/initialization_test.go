@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	maxDbAccessRetries = 20
+)
+
 func TestInitialization(t *testing.T) {
 
 	ctx := context.Background()
@@ -21,7 +25,7 @@ func TestInitialization(t *testing.T) {
 		defer containerCleanupFunc()
 
 		// when
-		connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), 1, logrus.New())
+		connection, err := postsql.InitializeDatabase(cfg.ConnectionURL(), maxDbAccessRetries, logrus.New())
 		require.NoError(t, err)
 		require.NotNil(t, connection)
 
@@ -40,7 +44,7 @@ func TestInitialization(t *testing.T) {
 		connString := "bad connection string"
 
 		// when
-		connection, err := postsql.InitializeDatabase(connString, 1, logrus.New())
+		connection, err := postsql.InitializeDatabase(connString, maxDbAccessRetries, logrus.New())
 
 		// then
 		assert.Error(t, err)

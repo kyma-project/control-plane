@@ -22,7 +22,7 @@ type GardenerClient interface {
 	Get(ctx context.Context, name string, options v1.GetOptions) (*gardener_types.Shoot, error)
 }
 
-//go:generate mockery -name=KubeconfigProvider
+//go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
 	FetchRaw(shootName string) ([]byte, error)
 }

@@ -41,7 +41,6 @@ users:
 
 func TestInstallKymaStep_Run(t *testing.T) {
 
-	release := model.Release{Version: "10.0.0"}
 	globalConfig := model.Configuration{}
 	components := []model.KymaComponentConfig{}
 
@@ -51,7 +50,6 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		Kubeconfig: util.StringPtr(kubeconfig),
 		KymaConfig: &model.KymaConfig{
 			Profile:             &productionProfile,
-			Release:             release,
 			Components:          components,
 			GlobalConfiguration: globalConfig,
 		},
@@ -83,7 +81,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 			mockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{State: ""}, nil)
-				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), globalConfig, components).
 					Return(nil)
 			},
 		},
@@ -92,7 +90,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 			mockFunc: func(installationSvc *installationMocks.Service) {
 				installationSvc.On("CheckInstallationState", k8sConfig).
 					Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+				installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), globalConfig, components).
 					Return(nil)
 			},
 		},
@@ -120,7 +118,7 @@ func TestInstallKymaStep_Run(t *testing.T) {
 		installationSvc := &installationMocks.Service{}
 		installationSvc.On("CheckInstallationState", k8sConfig).
 			Return(installation.InstallationState{State: installation.NoInstallationState}, nil)
-		installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), release, globalConfig, components).
+		installationSvc.On("TriggerInstallation", k8sConfig, mock.MatchedBy(getProfileMatcher(cluster.KymaConfig.Profile)), globalConfig, components).
 			Return(fmt.Errorf("error"))
 
 		installStep := NewInstallKymaStep(installationSvc, nextStageName, 10*time.Minute)

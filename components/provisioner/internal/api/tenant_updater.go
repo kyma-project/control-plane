@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
-//go:generate mockery -name=TenantUpdater
+//go:generate mockery --name=TenantUpdater
 type TenantUpdater interface {
 	GetTenant(ctx context.Context) (string, apperrors.AppError)
 	GetAndUpdateTenant(runtimeID string, ctx context.Context) apperrors.AppError

@@ -17,7 +17,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/graphql"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/oauth"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
@@ -41,7 +40,6 @@ func newProvisioningService(
 	gardenerProject string,
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
-	releaseProvider release.Provider,
 	directorService director.DirectorClient,
 	installationClient installation.Service,
 	shootProvider gardener.ShootProvider,
@@ -57,7 +55,7 @@ func newProvisioningService(
 
 	uuidGenerator := uuid.NewUUIDGenerator()
 
-	inputConverter := provisioning.NewInputConverter(uuidGenerator, releaseProvider, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
+	inputConverter := provisioning.NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
 	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, installationClient, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)

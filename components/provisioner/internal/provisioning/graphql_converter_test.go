@@ -531,7 +531,6 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 
 func fixKymaGraphQLConfig(profile *gqlschema.KymaProfile) *gqlschema.KymaConfig {
 	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
 		Profile: profile,
 		Components: []*gqlschema.ComponentConfiguration{
 			{
@@ -581,7 +580,6 @@ func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
 func fixKymaConfig(profile *model.KymaProfile) *model.KymaConfig {
 	return &model.KymaConfig{
 		ID:                  "id",
-		Release:             fixKymaRelease(),
 		Profile:             profile,
 		Components:          fixKymaComponents(),
 		GlobalConfiguration: fixGlobalConfig(),
@@ -644,14 +642,5 @@ func fixKymaComponents() []model.KymaComponentConfig {
 			},
 			ComponentOrder: 4,
 		},
-	}
-}
-
-func fixKymaRelease() model.Release {
-	return model.Release{
-		Id:            "d829b1b5-2e82-426d-91b0-f94978c0c140",
-		Version:       kymaVersion,
-		TillerYAML:    "tiller yaml",
-		InstallerYAML: "installer yaml",
 	}
 }

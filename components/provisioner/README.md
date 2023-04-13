@@ -24,7 +24,7 @@ After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
 
 ### Database schema
 
-For tests to run properly, update the database schema in `./assets/database/provisioner.sql`. Provide the new migration in the Schema Migrator component in `migrations/provisioner`.
+For tests to run properly, update the database schema in `./assets/database/provisioner.sql`. Provide the new migration in the Schema Migrator component in `resources/kcp/charts/provisioner/migrations`.
 
 ### Run Provisioner
 
