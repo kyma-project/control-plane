@@ -6,7 +6,7 @@ APP_SUBSCRIPTION_CLEANUP_NAME = kyma-environment-subscription-cleanup-job
 APP_TRIAL_CLEANUP_NAME = kyma-environment-trial-cleanup-job
 
 ENTRYPOINT = cmd/broker/main.go
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221215-c20ffd65
+BUILDPACK = europe-docker.pkg.dev/kyma-project/prod/test-infra/buildpack-golang:v20221215-c20ffd65
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 DOCKER_SOCKET = /var/run/docker.sock
 TESTING_DB_NETWORK = test_network
