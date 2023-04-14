@@ -208,8 +208,8 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 
 	}
 
-	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
-		o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
+	if o.Parameters.Kyma == nil || o.Parameters.Kyma.DisplayVersion == "" {
+		o.Parameters.Kyma = &orchestration.KymaParameters{DisplayVersion: m.kymaVersion}
 	}
 	if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
 		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}

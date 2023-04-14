@@ -35,7 +35,8 @@ type KubernetesParameters struct {
 
 // KymaParameters hold the attributes of kyma upgrade specific orchestration create requests.
 type KymaParameters struct {
-	Version string `json:"version,omitempty"`
+	Version        string `json:"version,omitempty"`
+	DisplayVersion string `json:"displayVersion,omitempty"`
 }
 
 const (
