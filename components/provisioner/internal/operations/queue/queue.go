@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-//go:generate mockery -name=OperationQueue
+//go:generate mockery --name=OperationQueue
 type OperationQueue interface {
 	Add(processId string)
 	Run(stop <-chan struct{})

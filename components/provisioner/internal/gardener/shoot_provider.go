@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:generate mockery -name=ShootClient
+//go:generate mockery --name=ShootClient
 type ShootClient interface {
 	List(ctx context.Context, opts metav1.ListOptions) (*gardener_Types.ShootList, error)
 }

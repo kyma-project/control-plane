@@ -40,7 +40,6 @@ CREATE TABLE gardener_config
     max_unavailable integer NOT NULL,
     enable_kubernetes_version_auto_update boolean NOT NULL,
     enable_machine_image_version_auto_update boolean NOT NULL,
-    allow_privileged_containers boolean NOT NULL,
     exposure_class_name varchar(256),
     provider_specific_config jsonb,
     shoot_networking_filter_disabled boolean,
