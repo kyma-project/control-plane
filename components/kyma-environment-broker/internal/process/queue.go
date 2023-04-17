@@ -71,8 +71,8 @@ func (q *Queue) worker(queue workqueue.RateLimitingInterface, process func(key s
 		exit := false
 		for !exit {
 			exit = func() bool {
-				key, quit := queue.Get()
-				if quit {
+				key, shutdown := queue.Get()
+				if shutdown {
 					return true
 				}
 				id := key.(string)
