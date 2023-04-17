@@ -441,7 +441,6 @@ func calFailedStatusForOrchestration(entries []dbmodel.OperationStatEntry) ([]st
 		resultPerInstanceID[entry.InstanceID] = append(resultPerInstanceID[entry.InstanceID], entry.State)
 	}
 
-	log.Info("calFailedStatusForOrchestration() show resultPerInstanceID", resultPerInstanceID)
 	var invalidFailed, failedFound bool
 
 	for instanceID, statuses := range resultPerInstanceID {
