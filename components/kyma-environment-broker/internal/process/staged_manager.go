@@ -151,6 +151,7 @@ func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
 
 			// the step needs a retry
 			if when > 0 {
+				logStep.Warnf("retrying step by restarting the operation in %d s", int64(when.Seconds()))
 				return when, nil
 			}
 		}
