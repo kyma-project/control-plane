@@ -38,7 +38,7 @@ func (c *DashboardChecker) AssertRedirectedToBusola(dashboardURL string, busolau
 		return errors.Wrapf(err, "while calling dashboard '%s'", dashboardURL)
 	}
 
-	if err = checkStatusCode(resp, http.StatusFound); err != nil {
+	if err = checkStatusCode(resp, http.StatusOK); err != nil {
 		return err
 	}
 
