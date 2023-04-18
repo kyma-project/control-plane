@@ -3,8 +3,6 @@ package deprovisioning
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -44,10 +42,10 @@ func (ars *AvsEvaluationRemovalStep) Run(operation internal.Operation, logger lo
 		return ars.deProvisioningManager.RetryOperationWithoutFail(operation, ars.Name(), "error while deleting avs internal evaluation", 10*time.Second, 1*time.Minute, logger)
 	}
 
-	if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
-		logger.Info("skipping AVS external evaluation deletion for trial/freemium plan")
-		return operation, 0, nil
-	}
+	//if broker.IsTrialPlan(operation.ProvisioningParameters.PlanID) || broker.IsFreemiumPlan(operation.ProvisioningParameters.PlanID) {
+	//	logger.Info("skipping AVS external evaluation deletion for trial/freemium plan")
+	//	return operation, 0, nil
+	//	}
 	operation, err = ars.delegator.DeleteAvsEvaluation(operation, logger, ars.externalEvalAssistant)
 	if err != nil {
 		logger.Warnf("unable to delete external evaluation: %s", err.Error())
