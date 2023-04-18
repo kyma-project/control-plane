@@ -65,3 +65,24 @@ updates:
     commit-message:
       prefix: "docker"
       include: "scope"
+  - package-ecosystem: "gomod"
+    directory: "/tools/cli"
+    labels:
+      - "go"
+      - "skip-review"
+      - "area/dependency"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "gomod"
+      include: "scope"
+  - package-ecosystem: "docker"
+    directory: "/tools/cli"
+    labels:
+      - "docker"
+      - "area/dependency"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
