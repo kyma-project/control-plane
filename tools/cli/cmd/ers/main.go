@@ -16,7 +16,6 @@ import (
 func main() {
 	setupCloseHandler()
 	cmd := command.New()
-
 	err := cmd.Execute()
 	if err != nil {
 		os.Exit(1)
