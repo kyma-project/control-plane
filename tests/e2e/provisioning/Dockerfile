@@ -1,4 +1,4 @@
-FROM golang:1.14.4-alpine3.12 as builder
+FROM golang:1.20.3-alpine3.17 as builder
 
 ENV SRC_DIR=/go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning
 
@@ -7,7 +7,7 @@ COPY . $SRC_DIR
 
 RUN CGO_ENABLED=0 GOOS=linux go test -ldflags="-s -w" -c ./test
 
-FROM alpine:3.14.2
+FROM alpine:3.17.3
 LABEL source=git@github.com:kyma-project/control-plane.git
 
 WORKDIR /app

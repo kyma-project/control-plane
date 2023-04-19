@@ -1,6 +1,6 @@
 APP_NAME = e2e-provisioning-test
 APP_PATH = tests/e2e/provisioning
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang-toolbox:v20200423-1d9d6590
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20221215-c20ffd65
 SCRIPTS_DIR = $(realpath $(shell pwd)/../../..)/scripts
 
 include $(SCRIPTS_DIR)/generic_make_go.mk
