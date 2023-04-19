@@ -364,7 +364,7 @@ func main() {
 	servicesConfig, err := broker.NewServicesConfigFromFile(cfg.CatalogFilePath)
 	fatalOnError(err)
 
-	// create server
+	// create server xxx
 	router := mux.NewRouter()
 
 	createAPI(router, servicesConfig, inputFactory, &cfg, db, provisionQueue, deprovisionQueue, updateQueue, logger, logs, inputFactory.GetPlanDefaults)
