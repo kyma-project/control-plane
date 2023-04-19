@@ -10,3 +10,15 @@ VERIFY_IGNORE := /vendor\|/automock\|/testdata
 verify:: vet
 
 test-local: ;
+
+resolve-local:
+	GO111MODULE=on go mod vendor -v
+
+ensure-local:
+	@echo "Go modules present in component - omitting."
+
+dep-status:
+	@echo "Go modules present in component - omitting."
+
+dep-status-local:
+	@echo "Go modules present in component - omitting."
