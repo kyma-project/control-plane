@@ -59,7 +59,7 @@ func main() {
 
 	fatalOnError(err)
 
-	log.Info("Deprovision retrigger job finished successfully!")
+	log.Info("Deprovision retrigger job finished successfully")
 
 	err = conn.Close()
 	if err != nil {
