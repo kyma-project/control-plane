@@ -15,6 +15,5 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates curl
 
 COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning/test.test .
-COPY --from=builder /go/src/github.com/kyma-project/control-plane/tests/e2e/provisioning/licenses ./licenses
 
 ENTRYPOINT ["/app/test.test"]
