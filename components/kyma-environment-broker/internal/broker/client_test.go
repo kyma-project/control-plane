@@ -214,6 +214,7 @@ func fixHTTPServer(requestFailureFunc func(http.ResponseWriter, *http.Request)) 
 	r := mux.NewRouter()
 	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", deprovision).Methods(http.MethodDelete)
 	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", serviceUpdateWithExpiration).Methods(http.MethodPatch)
+	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", getInstance).Methods(http.MethodGet)
 	return httptest.NewServer(r)
 }
 
