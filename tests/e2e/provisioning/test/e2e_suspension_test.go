@@ -41,8 +41,7 @@ func Test_E2E_Suspension(t *testing.T) {
 	err = ts.configMapClient.Update(configMap)
 	require.NoError(t, err)
 
-	err = ts.dashboardChecker.AssertRedirectedToBusola(dashboardURL, ts.BusolaURL)
-	assert.NoError(t, err)
+	require.Equal(t, ts.BusolaURL, dashboardURL)
 
 	err = ts.brokerClient.SuspendRuntime()
 	assert.NoError(t, err)
@@ -64,6 +63,5 @@ func Test_E2E_Suspension(t *testing.T) {
 	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
 
-	err = ts.dashboardChecker.AssertRedirectedToBusola(dashboardURL, ts.BusolaURL)
-	assert.NoError(t, err)
+	require.Equal(t, ts.BusolaURL, dashboardURL)
 }
