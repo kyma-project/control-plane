@@ -96,7 +96,7 @@ func (s *DeprovisionRetriggerService) PerformCleanup() error {
 	} else {
 		failuresCount, sanityFailedCount := s.retriggerDeprovisioningForInstances(instancesToDeprovisionAgain)
 		deprovisioningAccepted := len(instancesToDeprovisionAgain) - failuresCount - sanityFailedCount
-		log.Infof("Instances to retrigger deprovisioning: %d, accepted requests: %d, skipped due to sanity failed: %d, failed requests: %d",
+		log.Infof("Out of %d instances to retrigger deprovisioning: accepted requests = %d, skipped due to sanity failed = %d, failed requests = %d",
 			len(instancesToDeprovisionAgain), deprovisioningAccepted, sanityFailedCount, failuresCount)
 	}
 
@@ -137,7 +137,7 @@ func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Inst
 func (s *DeprovisionRetriggerService) getInstanceReturned404(instanceID string) bool {
 	response, err := s.brokerClient.GetInstanceRequest(instanceID)
 	if err != nil {
-		log.Warn(fmt.Sprintf("while trying to GET instance resource for %s: %s", instanceID, err))
+		log.Error(fmt.Sprintf("while trying to GET instance resource for %s: %s", instanceID, err))
 		return false
 	}
 	if response != nil && response.StatusCode != http.StatusNotFound {
