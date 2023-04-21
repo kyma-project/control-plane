@@ -136,11 +136,11 @@ func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Inst
 // Sanity check - instance is supposed to be not visible via API. Call should return 404 - NotFound
 func (s *DeprovisionRetriggerService) getInstanceReturned404(instanceID string) bool {
 	response, err := s.brokerClient.GetInstanceRequest(instanceID)
-	if err != nil {
+	if err != nil || response == nil {
 		log.Error(fmt.Sprintf("while trying to GET instance resource for %s: %s", instanceID, err))
 		return false
 	}
-	if response != nil && response.StatusCode != http.StatusNotFound {
+	if response.StatusCode != http.StatusNotFound {
 		log.Error(fmt.Sprintf("unexpextedly GET instance resource for  %s: returned %s", instanceID, http.StatusText(response.StatusCode)))
 		return false
 	}
