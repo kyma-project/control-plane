@@ -11,22 +11,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/tests/director/pkg/ptr"
 	"github.com/pivotal-cf/brokerapi/v7/domain"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/thanhpk/randstr"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Config struct {
-	ClientName string
-	TokenURL   string
-	URL        string
-	PlanID     string
-	Region     string `envconfig:"optional"`
+	ClientName   string
+	ClientID     string
+	ClientSecret string
+	Scope        string `envconfig:"default=broker:write"`
+	TokenURL     string
+	URL          string
+	PlanID       string
+	Region       string `envconfig:"optional"`
 }
 
 type BrokerOAuthConfig struct {

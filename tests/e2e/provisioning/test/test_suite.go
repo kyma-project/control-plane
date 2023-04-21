@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
@@ -18,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vrischmann/envconfig"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -226,6 +224,13 @@ func (ts *Suite) testConfigMap() v1.ConfigMap {
 
 func createBrokerOAuthConfig(ctx context.Context, k8sclient client.Client, cfg *Config) (broker.BrokerOAuthConfig, error) {
 	var brokerOAuthConfig broker.BrokerOAuthConfig
+
+	if cfg.Broker.ClientSecret != "" && cfg.Broker.ClientID != "" {
+		brokerOAuthConfig.ClientSecret = cfg.Broker.ClientSecret
+		brokerOAuthConfig.ClientID = cfg.Broker.ClientID
+		brokerOAuthConfig.Scope = cfg.Broker.Scope
+		return brokerOAuthConfig, nil
+	}
 
 	err := v1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
