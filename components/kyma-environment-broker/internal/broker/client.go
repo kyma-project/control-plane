@@ -145,7 +145,7 @@ func (c *Client) GetInstanceRequest(instanceID string) (response *http.Response,
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
-		return resp, fmt.Errorf("while executing request URL: %s for instanceID: %s: %w", request.URL,
+		return nil, fmt.Errorf("while executing request URL: %s for instanceID: %s: %w", request.URL,
 			instanceID, err)
 	}
 	defer c.warnOnError(resp.Body.Close)
