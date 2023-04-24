@@ -22,7 +22,7 @@ func Test_E2E_Suspension(t *testing.T) {
 		return
 	}
 	configMap := ts.testConfigMap()
-	dashbaordPattern := fmt.Sprintf("%s/\\?kubeconfigID=[0-9a-f\\-]{39}", ts.BusolaURL)
+	dashbaordPattern := fmt.Sprintf("%s/\\?kubeconfigID=[0-9a-f\\-]{36}", ts.BusolaURL)
 
 	ts.log.Info("Starting e2e suspension test")
 	operationID, err := ts.brokerClient.ProvisionRuntime("")
