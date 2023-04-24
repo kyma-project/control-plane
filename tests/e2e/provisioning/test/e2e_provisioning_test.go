@@ -42,7 +42,7 @@ func Test_E2E_Provisioning(t *testing.T) {
 	require.NoError(t, err)
 
 	ts.log.Info("Fetching runtime's kubeconfig")
-	config, err := ts.runtimeClient.FetchRuntimeConfig()
+	config, err := ts.runtimeClient.FetchRuntimeConfig(ts.brokerClient.InstanceID())
 	require.NoError(t, err)
 
 	ts.log.Infof("Creating a secret %s with test data", ts.ConfigName)

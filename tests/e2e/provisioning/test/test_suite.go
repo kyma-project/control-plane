@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/director"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/broker"
 	"github.com/kyma-project/control-plane/tests/e2e/provisioning/pkg/client/runtime"
@@ -18,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vrischmann/envconfig"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -28,7 +26,6 @@ import (
 
 type Config struct {
 	Broker   broker.Config
-	Director director.Config
 	Gardener gardener.Config
 
 	TenantID             string `default:"d9994f8f-7e46-42a8-b2c1-1bfff8d2fe05"`
@@ -61,8 +58,6 @@ type Suite struct {
 	configMapClient v1_client.ConfigMaps
 
 	PreUpgradeKymaVersion string
-
-	directorClient *director.Client
 
 	ProvisionTimeout   time.Duration
 	DeprovisionTimeout time.Duration
@@ -125,8 +120,6 @@ func newTestSuite(t *testing.T) *Suite {
 	httpClient := newHTTPClient(cfg.SkipCertVerification)
 
 	brokerClient := broker.NewClient(ctx, cfg.Broker, cfg.TenantID, instanceID, subAccountID, userID, oAuth2Config, log.WithField("service", "broker_client"))
-
-	directorClient := director.NewDirectorClient(ctx, cfg.Director, log.WithField("service", "director_client"))
 
 	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
