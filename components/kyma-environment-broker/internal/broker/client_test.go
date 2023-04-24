@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"path"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -174,6 +175,32 @@ func TestClient_ExpirationRequest(t *testing.T) {
 		assert.Error(t, err)
 		assert.False(t, suspensionUnderWay)
 	})
+
+	t.Run("should return true for non-existent instanceId and false for existing", func(t *testing.T) {
+		// given
+		testServer := fixHTTPServer(nil)
+		defer testServer.Close()
+
+		config := ClientConfig{
+			URL: testServer.URL,
+		}
+		client := NewClientWithPoller(context.Background(), config, NewPassthroughPoller())
+		client.setHttpClient(testServer.Client())
+
+		// when
+		response, err := client.GetInstanceRequest("non-existent")
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, response.StatusCode, http.StatusNotFound)
+
+		// when
+		responseOtherThanNotFound, err := client.GetInstanceRequest("real")
+
+		// then
+		assert.NoError(t, err)
+		assert.NotEqual(t, responseOtherThanNotFound.StatusCode, http.StatusNotFound)
+	})
 }
 
 func fixHTTPServer(requestFailureFunc func(http.ResponseWriter, *http.Request)) *httptest.Server {
@@ -187,6 +214,7 @@ func fixHTTPServer(requestFailureFunc func(http.ResponseWriter, *http.Request)) 
 	r := mux.NewRouter()
 	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", deprovision).Methods(http.MethodDelete)
 	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", serviceUpdateWithExpiration).Methods(http.MethodPatch)
+	r.HandleFunc("/oauth/v2/service_instances/{instance_id}", getInstance).Methods(http.MethodGet)
 	return httptest.NewServer(r)
 }
 
@@ -229,4 +257,14 @@ func requestFailureServerError(w http.ResponseWriter, _ *http.Request) {
 
 func requestFailureUnprocessableEntity(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusUnprocessableEntity)
+}
+
+func getInstance(w http.ResponseWriter, r *http.Request) {
+	instance := path.Base(r.URL.Path)
+	if instance == "non-existent" {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.Write([]byte(fmt.Sprintf(`{"instanceID": "%s"}`, instance)))
+		w.WriteHeader(http.StatusOK)
+	}
 }

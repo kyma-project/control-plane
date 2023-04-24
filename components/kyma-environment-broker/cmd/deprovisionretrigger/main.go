@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -18,6 +19,7 @@ import (
 
 type BrokerClient interface {
 	Deprovision(instance internal.Instance) (string, error)
+	GetInstanceRequest(instanceID string) (*http.Response, error)
 }
 
 type Config struct {
@@ -92,8 +94,10 @@ func (s *DeprovisionRetriggerService) PerformCleanup() error {
 		s.logInstances(instancesToDeprovisionAgain)
 		log.Infof("Instances to retrigger deprovisioning: %d", len(instancesToDeprovisionAgain))
 	} else {
-		deprovisioningAccepted, failuresCount := s.retriggerDeprovisioningForInstances(instancesToDeprovisionAgain)
-		log.Infof("Instances to retrigger deprovisioning: %d, accepted requests: %d, failed requests: %d", len(instancesToDeprovisionAgain), deprovisioningAccepted, failuresCount)
+		failuresCount, sanityFailedCount := s.retriggerDeprovisioningForInstances(instancesToDeprovisionAgain)
+		deprovisioningAccepted := len(instancesToDeprovisionAgain) - failuresCount - sanityFailedCount
+		log.Infof("Out of %d instances to retrigger deprovisioning: accepted requests = %d, skipped due to sanity failed = %d, failed requests = %d",
+			len(instancesToDeprovisionAgain), deprovisioningAccepted, sanityFailedCount, failuresCount)
 	}
 
 	return nil
@@ -101,14 +105,21 @@ func (s *DeprovisionRetriggerService) PerformCleanup() error {
 
 func (s *DeprovisionRetriggerService) retriggerDeprovisioningForInstances(instances []internal.Instance) (int, int) {
 	var failuresCount int
+	var sanityFailedCount int
 	for _, instance := range instances {
-		err := s.deprovisionInstance(instance)
-		if err != nil {
-			// just counting, logging and ignoring errors
-			failuresCount += 1
+		// sanity check - if the instance is visible we shall not trigger deprovisioning
+		notFound := s.getInstanceReturned404(instance.InstanceID)
+		if notFound {
+			err := s.deprovisionInstance(instance)
+			if err != nil {
+				// just counting, logging and ignoring errors
+				failuresCount += 1
+			}
+		} else {
+			sanityFailedCount += 1
 		}
 	}
-	return len(instances) - failuresCount, failuresCount
+	return failuresCount, sanityFailedCount
 }
 
 func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Instance) (err error) {
@@ -122,9 +133,28 @@ func (s *DeprovisionRetriggerService) deprovisionInstance(instance internal.Inst
 	return nil
 }
 
+// Sanity check - instance is supposed to be not visible via API. Call should return 404 - NotFound
+func (s *DeprovisionRetriggerService) getInstanceReturned404(instanceID string) bool {
+	response, err := s.brokerClient.GetInstanceRequest(instanceID)
+	if err != nil || response == nil {
+		log.Error(fmt.Sprintf("while trying to GET instance resource for %s: %s", instanceID, err))
+		return false
+	}
+	if response.StatusCode != http.StatusNotFound {
+		log.Error(fmt.Sprintf("unexpextedly GET instance resource for  %s: returned %s", instanceID, http.StatusText(response.StatusCode)))
+		return false
+	}
+	return true
+}
+
 func (s *DeprovisionRetriggerService) logInstances(instances []internal.Instance) {
 	for _, instance := range instances {
-		log.Infof("instanceId: %s, createdAt: %+v, deletedAt %+v", instance.InstanceID, instance.CreatedAt, instance.DeletedAt)
+		notFound := s.getInstanceReturned404(instance.InstanceID)
+		if notFound {
+			log.Infof("instanceId: %s, createdAt: %+v, deletedAt %+v, GET retured: NotFound", instance.InstanceID, instance.CreatedAt, instance.DeletedAt)
+		} else {
+			log.Infof("instanceId: %s, createdAt: %+v, deletedAt %+v, GET retured: unexpected result", instance.InstanceID, instance.CreatedAt, instance.DeletedAt)
+		}
 	}
 }
 

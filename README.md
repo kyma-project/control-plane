@@ -13,24 +13,9 @@ For more information on KCP and its components, read the [KCP documentation](htt
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
 - [Kyma CLI](https://github.com/kyma-project/cli) stable
 
-## Installation
-
-### Dependencies
+## Dependencies
 
 Kyma Control Plane depends on [Kyma](https://github.com/kyma-project/kyma) and [Compass](https://github.com/kyma-incubator/compass).
-For local development and CI integration jobs, fixed Kyma and Compass versions are used. To change Kyma or Compass version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory. 
-
-### Local installation with Kyma
-
-To install Kyma Control Plane with the minimal Kyma installation, Compass and Kyma Control Plane, run this script:
-```bash
-./installation/cmd/run.sh
-```
-
-You can also specify Kyma version, such as 1.6 or newer:
-```bash
-./installation/cmd/run.sh {version}
-```
 
 ## Reconciler
 
