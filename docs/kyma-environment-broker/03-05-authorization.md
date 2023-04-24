@@ -21,16 +21,6 @@ Follow these steps to obtain a new access token:
 
 1. Export these values as environment variables:
 
-```shell
-export CLIENT_ID={CLIENT_ID}
-export CLIENT_SECRET={CLIENT_SECRET}
-export TOKEN_URL={TOKEN_URL}
-```
-
-The token  URL must have the following values:
- - `https://kymatest.accounts400.ondemand.com/oauth2/token` for Dev and Stage environments
- - `https://kyma.accounts.ondemand.com/oauth2/token`
-
   - The name of your client and the Secret which stores the client credentials:
 
     ```bash
