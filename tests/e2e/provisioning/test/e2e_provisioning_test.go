@@ -1,6 +1,8 @@
 package test
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,6 +21,7 @@ func Test_E2E_Provisioning(t *testing.T) {
 		return
 	}
 	configMap := ts.testConfigMap()
+	dashbaordPattern := fmt.Sprintf("%s/\\?kubeconfigID=[0-9a-f\\-]{39}", ts.BusolaURL)
 
 	operationID, err := ts.brokerClient.ProvisionRuntime("")
 	require.NoError(t, err)
@@ -46,5 +49,7 @@ func Test_E2E_Provisioning(t *testing.T) {
 	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
 
-	require.Equal(t, ts.BusolaURL, dashboardURL)
+	match, err := regexp.MatchString(dashbaordPattern, dashboardURL)
+	require.NoError(t, err)
+	require.True(t, match)
 }
