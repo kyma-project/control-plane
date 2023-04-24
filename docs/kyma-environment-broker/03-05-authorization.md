@@ -27,7 +27,7 @@ export CLIENT_SECRET={CLIENT_SECRET}
 export TOKEN_URL={TOKEN_URL}
 ```
 
-Token URL must have the following values:
+The token  URL must have the following values:
  - `https://kymatest.accounts400.ondemand.com/oauth2/token` for Dev and Stage environments
  - `https://kyma.accounts.ondemand.com/oauth2/token`
 
