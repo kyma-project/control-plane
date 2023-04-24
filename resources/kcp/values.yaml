@@ -51,8 +51,6 @@ global:
     secrets:
       integrationSystemCredentials:
         name: kcp-kyma-environment-broker-credentials
-    environmentsCleanup:
-      enabled: false
   provisioner:
     graphql:
       port: 3000
