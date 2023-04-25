@@ -28,10 +28,6 @@ export TOKEN_URL={TOKEN_URL}
 export SCOPE="broker:write cld:read"
 ```
 
-The token  URL must have the following values:
- - `https://kymatest.accounts400.ondemand.com/oauth2/token` for Dev and Stage environments
- - `https://kyma.accounts.ondemand.com/oauth2/token` for Prod environment
-
 2. Encode your client credentials and export them as an environment variable:
 
 ```shell
