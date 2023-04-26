@@ -28,7 +28,7 @@ export TOKEN_URL={TOKEN_URL}
 export SCOPE="broker:write cld:read"
 ```
 
-2. Encode your client credentials and export them as an environment variable:
+2. Encode your client credentials and export them as an environment variables:
 
 ```shell
 export ENCODED_CREDENTIALS=$(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)
