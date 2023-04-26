@@ -28,6 +28,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: kyma-environments-cleanup
+              command: ["/bin/main"]
               image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230421-80711ae8
               imagePullPolicy: IfNotPresent
               env:
@@ -95,8 +96,6 @@ spec:
                       name: kcp-kyma-environment-broker-oauth
                 - name: APP_BROKER_SCOPE
                   value: broker:write cld:read
-              command:
-                - "/bin/main"
               volumeMounts:
                 - name: gardener-kubeconfig
                   mountPath: /gardener/kubeconfig
@@ -106,13 +105,12 @@ spec:
                   readOnly: true
             - name: cloudsql-proxy
               image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2
+              imagePullPolicy: IfNotPresent
               command: $SCRIPT_CLOUDSQL_PROXY_COMMAND # set by script
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
-              securityContext:
-                runAsUser: 2000
           volumes:
             - name: cloudsql-instance-credentials
               secret:
