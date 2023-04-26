@@ -2,6 +2,7 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: "kcp-kyma-environments-cleanup"
+  namespace: kcp-system
 spec:
   schedule: "0 0 * * *"
   failedJobsHistoryLimit: 5
@@ -10,18 +11,18 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        cronjob: "environments-cleanup"
+        cronjob: environments-cleanup
     spec:
       template:
         metadata:
-          name: "kyma-environments-cleanup-job"
+          name: kyma-environments-cleanup-job
           labels:
-            cronjob: "environments-cleanup"
+            cronjob: environments-cleanup
           annotations:
             sidecar.istio.io/inject: "false"
         spec:
           shareProcessNamespace: true
-          serviceAccountName: "kcp-kyma-environment-broker"
+          serviceAccountName: kcp-kyma-environment-broker
           securityContext:
             runAsUser: 2000
           restartPolicy: Never
@@ -30,16 +31,16 @@ spec:
               image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230421-80711ae8
               imagePullPolicy: IfNotPresent
               env:
+                - name: DATABASE_EMBEDDED
+                  value: "false"
+                - name: APP_MAX_AGE_HOURS
+                  value: 24h
                 - name: APP_GARDENER_PROJECT
                   value: kyma-dev
                 - name: APP_GARDENER_KUBECONFIG_PATH
                   value: /gardener/kubeconfig/kubeconfig
-                - name: APP_MAX_AGE_HOURS
-                  value: 24h
                 - name: APP_PROVISIONER_URL
                   value: http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql
-                - name: DATABASE_EMBEDDED
-                  value: "false"
                 - name: APP_DATABASE_SECRET_KEY
                   valueFrom:
                     secretKeyRef:
