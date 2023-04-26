@@ -25,4 +25,4 @@ export SCRIPT_BROKER_URL
 export SCRIPT_DOMAIN
 export SCRIPT_CLOUDSQL_PROXY_COMMAND
 
-envsubst < environments-cleanup-job.yaml | kubectl apply -f -
+envsubst < kyma-environments-cleanup-job.yaml | kubectl apply -f -

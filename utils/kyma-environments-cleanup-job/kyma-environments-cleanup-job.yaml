@@ -11,13 +11,13 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        cronjob: environments-cleanup
+        cronjob: kyma-environments-cleanup
     spec:
       template:
         metadata:
           name: kyma-environments-cleanup-job
           labels:
-            cronjob: environments-cleanup
+            cronjob: kyma-environments-cleanup
           annotations:
             sidecar.istio.io/inject: "false"
         spec:
@@ -27,7 +27,7 @@ spec:
             runAsUser: 2000
           restartPolicy: Never
           containers:
-            - name: environments-cleanup
+            - name: kyma-environments-cleanup
               image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230421-80711ae8
               imagePullPolicy: IfNotPresent
               env:
