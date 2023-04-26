@@ -1,7 +1,7 @@
 global:
   images:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.0-d587c1be"
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:v20230414-01086c78"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:v20230421-e9de98ca"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
