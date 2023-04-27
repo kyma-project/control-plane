@@ -29,7 +29,7 @@ spec:
           containers:
             - name: kyma-environments-cleanup
               command: ["/bin/main"]
-              image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230421-80711ae8
+              image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230427-7b2c6ef5
               imagePullPolicy: IfNotPresent
               env:
                 - name: DATABASE_EMBEDDED
@@ -104,7 +104,7 @@ spec:
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
             - name: cloudsql-proxy
-              image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2
+              image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a
               imagePullPolicy: IfNotPresent
               command: ${SCRIPT_CLOUDSQL_PROXY_COMMAND} # set by script
               volumeMounts:
