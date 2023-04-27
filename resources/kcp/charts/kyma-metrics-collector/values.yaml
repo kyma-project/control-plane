@@ -2,7 +2,7 @@ global:
   images:
     kyma_metrics_collector:
       dir:
-      version: "PR-2238"
+      version: "PR-2656"
 
 nameOverride: ""
 fullnameOverride: ""
