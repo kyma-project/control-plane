@@ -4,9 +4,6 @@ global:
     kyma_environment_broker:
       dir:
       version: "v20230427-7b2c6ef5"
-    kyma_environments_cleanup_job:
-      dir:
-      version: "v20230427-7b2c6ef5"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230427-7b2c6ef5"
