@@ -8,7 +8,7 @@
 * @kyma-project/Framefrog @kyma-project/gopher
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @kyma-project/Framefrog @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @kyma-project/gopher @kyma-project/eventing
+/resources/kcp/values.yaml @kyma-project/Framefrog @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @kyma-project/gopher @kyma-project/eventing
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @kyma-project/Framefrog @ebensom @kyma-project/gopher
@@ -30,9 +30,9 @@
 /tests/provisioner-tests @kyma-project/Framefrog
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
-/resources/kcp/charts/mothership-reconciler @tobiscr @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
-/tools/reconciler @tobiscr @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
+/resources/kcp/charts/component-reconcilers @tobiscr @kwiatekus @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
+/resources/kcp/charts/mothership-reconciler @tobiscr @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
+/tools/reconciler @tobiscr @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
 
 
 # e2e-provisioning
@@ -50,7 +50,7 @@
 /tools/cli @ebensom @lumi017 @kwiatekus @cortey @kyma-project/gopher @gczuczy @i332322 @zralt
 
 # reconciler
-/components/reconciler @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
+/components/reconciler @kwiatekus @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin 
 
 # All .md files
 *.md @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
