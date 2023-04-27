@@ -8,7 +8,7 @@
 * @kyma-project/Framefrog @kyma-project/gopher
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @kyma-project/Framefrog @k15r @marcobebway @nachtmaar @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @kyma-project/gopher
+/resources/kcp/values.yaml @kyma-project/Framefrog @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @kyma-project/gopher @kyma-project/eventing
 
 # All developers working on this repository are able to edit scripts directory.
 /scripts @kyma-project/Framefrog @ebensom @kyma-project/gopher
@@ -39,8 +39,8 @@
 /tests/e2e/provisioning @kyma-project/gopher @ebensom
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/resources/kcp/charts/kyma-metrics-collector @kyma-project/eventing
+/components/kyma-metrics-collector @kyma-project/eventing
 
 # OIDC-Kubeconfig-Service
 /components/kubeconfig-service @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt
