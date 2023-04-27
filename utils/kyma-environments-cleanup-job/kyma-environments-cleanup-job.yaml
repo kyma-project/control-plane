@@ -81,9 +81,9 @@ spec:
                 - name: APP_DATABASE_SSLROOTCERT
                   value: /secrets/cloudsql-sslrootcert/server-ca.pem
                 - name: APP_BROKER_URL
-                  value: https://$SCRIPT_BROKER_URL # set by script
+                  value: https://${SCRIPT_BROKER_URL} # set by script
                 - name: APP_BROKER_TOKEN_URL
-                  value: https://oauth2.$SCRIPT_DOMAIN/oauth2/token # set by script
+                  value: https://oauth2.${SCRIPT_DOMAIN}/oauth2/token # set by script
                 - name: APP_BROKER_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
@@ -106,7 +106,7 @@ spec:
             - name: cloudsql-proxy
               image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2
               imagePullPolicy: IfNotPresent
-              command: $SCRIPT_CLOUDSQL_PROXY_COMMAND # set by script
+              command: ${SCRIPT_CLOUDSQL_PROXY_COMMAND} # set by script
               volumeMounts:
                 - name: cloudsql-instance-credentials
                   mountPath: /secrets/cloudsql-instance-credentials

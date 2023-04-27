@@ -1,8 +1,7 @@
-# Kyma Environments Cleanup Job
-**Important!**  
-**The job should run only in the development environment. Make sure you are connected to the development Kubernetes cluster before applying the job.**
+# Kyma Environments Cleanup CronJob
+>**CAUTION:** The CronJob must run only in the development environment. You must be connected to the development Kubernetes cluster before applying the CronJob.
 
-Kyma Environments Cleanup Job removes Kyma Environments which are older than 24h. The job is scheduled to run every day at midnight (according to the local time defined in the system).
+Kyma Environments Cleanup CronJob removes Kyma Environments which are older than 24h. The CronJob is scheduled to run daily at midnight local time defined in the system.
 
 Directory contents:
 
