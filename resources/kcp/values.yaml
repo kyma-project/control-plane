@@ -17,7 +17,7 @@ global:
     tests:
       provisioner:
         dir:
-        version: "v20230426-ad965fac"
+          version: "PR-2718"
       e2e_provisioning:
         dir:
         version: "v20230424-caf29954"
