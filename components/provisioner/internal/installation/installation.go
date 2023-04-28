@@ -33,7 +33,6 @@ type Service interface {
 	TriggerInstallation(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUpgrade(kubeconfigRaw *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error
 	TriggerUninstall(kubeconfig *rest.Config) error
-	PerformCleanup(kubeconfig *rest.Config) error
 }
 
 func NewInstallationService(installationTimeout time.Duration, installationHandler InstallationHandler, clusterCleanupResourceSelector string) Service {
@@ -48,14 +47,6 @@ type installationService struct {
 	kymaInstallationTimeout        time.Duration
 	installationHandler            InstallationHandler
 	clusterCleanupResourceSelector string
-}
-
-func (s *installationService) PerformCleanup(kubeconfig *rest.Config) error {
-	cli, err := NewServiceCatalogCleanupClient(kubeconfig)
-	if err != nil {
-		return util.K8SErrorToAppError(err)
-	}
-	return cli.PerformCleanup(s.clusterCleanupResourceSelector)
 }
 
 func (s *installationService) TriggerInstallation(kubeconfig *rest.Config, kymaProfile *model.KymaProfile, globalConfig model.Configuration, componentsConfig []model.KymaComponentConfig) error {

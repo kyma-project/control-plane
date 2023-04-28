@@ -2,7 +2,6 @@ package deprovisioning
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
@@ -10,7 +9,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,17 +52,6 @@ func (s *CleanupClusterStep) Run(cluster model.Cluster, _ model.Operation, logge
 	if shoot.Status.IsHibernated {
 		// The cluster is hibernated we must go to the next step
 		return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
-	}
-
-	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-	if err != nil {
-		err := fmt.Errorf("error: failed to create kubernetes config from raw: %s", err.Error())
-		return operations.StageResult{}, operations.NewNonRecoverableError(util.K8SErrorToAppError(err))
-	}
-
-	err = s.installationService.PerformCleanup(k8sConfig)
-	if err != nil {
-		return operations.StageResult{}, err
 	}
 
 	return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
