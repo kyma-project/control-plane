@@ -55,7 +55,7 @@
           "type": "string"
         },
         "signingAlgs": {
-          "description": "List of allowed JOSE asymmetric signing algorithms, e.g. RS256,ES256",
+          "description": "Comma separated list of allowed JOSE asymmetric signing algorithms, e.g. RS256,ES256",
           "items": {
             "type": "string"
           },
