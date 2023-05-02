@@ -16,10 +16,8 @@ type Parameters struct {
 	DryRun     bool                  `json:"dryRun,omitempty"`
 	Kubernetes *KubernetesParameters `json:"kubernetes,omitempty"`
 	// upgrade kyma specific parameters
-	Kyma *KymaParameters `json:"kyma,omitempty"`
-	//customer notification status
-	NotificationState notificationStateType    `json:"notificationstate,omitempty"`
-	RetryOperation    RetryOperationParameters `json:"retryoperation,omitempty"`
+	Kyma           *KymaParameters          `json:"kyma,omitempty"`
+	RetryOperation RetryOperationParameters `json:"retryoperation,omitempty"`
 }
 
 type RetryOperationParameters struct {
@@ -205,14 +203,6 @@ type MaintenancePolicy struct {
 	Rules   []MaintenancePolicyRule `json:"rules"`
 	Default MaintenancePolicyEntry  `json:"default"`
 }
-
-type notificationStateType string
-
-const (
-	NotificationPending   notificationStateType = "pending"
-	NotificationCreated   notificationStateType = "created"
-	NotificationCancelled notificationStateType = "cancelled"
-)
 
 type stringBoolean bool
 
