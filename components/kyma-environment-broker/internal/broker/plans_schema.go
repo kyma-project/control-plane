@@ -177,7 +177,7 @@ func NewOIDCSchema() *OIDCType {
 				Items: &Type{
 					Type: "string",
 				},
-				Description: "Comma separated list of allowed JOSE asymmetric signing algorithms, e.g. RS256,ES256",
+				Description: "Comma separated list of allowed JOSE asymmetric signing algorithms, for example, RS256, ES256",
 			},
 		},
 		Required: []string{"clientID", "issuerURL"},
