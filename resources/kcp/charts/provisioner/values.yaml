@@ -4,7 +4,7 @@ global:
   images:
     provisioner:
       version: "PR-17433"
-      directory: "dev"
+      dir: "dev"
 
 deployment:
   replicaCount: 1
