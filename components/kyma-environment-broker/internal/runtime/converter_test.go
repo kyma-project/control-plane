@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/runtime"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
@@ -91,31 +92,63 @@ func TestConverting_UpdateFailed(t *testing.T) {
 }
 
 func TestConverting_Suspending(t *testing.T) {
-	// given
-	instance := fixInstance()
-	svc := NewConverter("eu")
+	t.Run("last operation should be deprovisioning", func(t *testing.T) {
+		// given
+		instance := fixInstance()
+		svc := NewConverter("eu")
 
-	// when
-	dto, _ := svc.NewDTO(instance)
-	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
-	svc.ApplySuspensionOperations(&dto, fixSuspensionOperation(domain.InProgress, time.Now().Add(time.Second)))
+		// when
+		dto, _ := svc.NewDTO(instance)
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+		svc.ApplySuspensionOperations(&dto, fixSuspensionOperation(domain.InProgress, time.Now().Add(time.Second)))
 
-	// then
-	assert.Equal(t, runtime.StateDeprovisioning, dto.Status.State)
+		// then
+		assert.Equal(t, runtime.StateDeprovisioning, dto.Status.State)
+	})
+
+	t.Run("last operation should not be deprovisioning when it is pending", func(t *testing.T) {
+		// given
+		instance := fixInstance()
+		svc := NewConverter("eu")
+
+		// when
+		dto, _ := svc.NewDTO(instance)
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.InProgress, time.Now()))
+		svc.ApplySuspensionOperations(&dto, fixSuspensionOperation(orchestration.Pending, time.Now().Add(time.Second)))
+
+		// then
+		assert.Equal(t, runtime.StateProvisioning, dto.Status.State)
+	})
 }
 
 func TestConverting_Deprovisioning(t *testing.T) {
-	// given
-	instance := fixInstance()
-	svc := NewConverter("eu")
+	t.Run("last operation should be deprovisioning", func(t *testing.T) {
+		// given
+		instance := fixInstance()
+		svc := NewConverter("eu")
 
-	// when
-	dto, _ := svc.NewDTO(instance)
-	svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
-	svc.ApplyDeprovisioningOperation(&dto, fixDeprovisionOperation(domain.InProgress, time.Now().Add(time.Second)))
+		// when
+		dto, _ := svc.NewDTO(instance)
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.Succeeded, time.Now()))
+		svc.ApplyDeprovisioningOperation(&dto, fixDeprovisionOperation(domain.InProgress, time.Now().Add(time.Second)))
 
-	// then
-	assert.Equal(t, runtime.StateDeprovisioning, dto.Status.State)
+		// then
+		assert.Equal(t, runtime.StateDeprovisioning, dto.Status.State)
+	})
+
+	t.Run("last operation should not be deprovisioning when it is pending", func(t *testing.T) {
+		// given
+		instance := fixInstance()
+		svc := NewConverter("eu")
+
+		// when
+		dto, _ := svc.NewDTO(instance)
+		svc.ApplyProvisioningOperation(&dto, fixProvisioningOperation(domain.InProgress, time.Now()))
+		svc.ApplyDeprovisioningOperation(&dto, fixDeprovisionOperation(orchestration.Pending, time.Now().Add(time.Second)))
+
+		// then
+		assert.Equal(t, runtime.StateProvisioning, dto.Status.State)
+	})
 }
 
 func TestConverting_DeprovisionFailed(t *testing.T) {

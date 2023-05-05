@@ -7,6 +7,7 @@ import (
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"golang.org/x/exp/slices"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/orchestration"
@@ -82,19 +83,44 @@ func recreateInstances(operations []internal.Operation) []internal.Instance {
 	return instances
 }
 
+func unionInstances(sets ...[]internal.Instance) (union []internal.Instance) {
+	m := make(map[string]internal.Instance)
+	for _, s := range sets {
+		for _, i := range s {
+			if _, exists := m[i.InstanceID]; !exists {
+				m[i.InstanceID] = i
+			}
+		}
+	}
+	for _, i := range m {
+		union = append(union, i)
+	}
+	return
+}
+
 func (h *Handler) listInstances(filter dbmodel.InstanceFilter) ([]internal.Instance, int, int, error) {
-	if filter.OnlyDeleted != nil && *filter.OnlyDeleted {
+	if slices.Contains(filter.States, dbmodel.InstanceDeprovisioned) {
+		// try to list instances where deletion didn't finish successfully
+		// entry in the Instances table still exists but has deletion timestamp and contains list of incomplete steps
+		deletionAttempted := true
+		filter.DeletionAttempted = &deletionAttempted
+		instances, instancesCount, instancesTotalCount, _ := h.instancesDb.List(filter)
+
+		// try to recreate instances from the operations table where entry in the instances table is gone
 		opFilter := dbmodel.OperationFilter{}
 		opFilter.InstanceFilter = &filter
 		opFilter.Page = filter.Page
 		opFilter.PageSize = filter.PageSize
 		operations, _, _, err := h.operationsDb.ListOperations(opFilter)
 		if err != nil {
-			return []internal.Instance{}, 0, 0, err
+			return instances, instancesCount, instancesTotalCount, err
 		}
 		instancesFromOperations := recreateInstances(operations)
+
+		// return union of both sets of instances
+		instancesUnion := unionInstances(instances, instancesFromOperations)
 		count := len(instancesFromOperations)
-		return instancesFromOperations, count, count, nil
+		return instancesUnion, count + instancesCount, count + instancesTotalCount, nil
 	}
 	return h.instancesDb.List(filter)
 }
@@ -386,9 +412,6 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 	filter.Regions = query[pkg.RegionParam]
 	filter.Shoots = query[pkg.ShootParam]
 	filter.Plans = query[pkg.PlanParam]
-	if v, exists := query[pkg.OnlyDeletedParam]; exists && v[0] == "true" {
-		filter.OnlyDeleted = ptr.Bool(true)
-	}
 	if v, exists := query[pkg.ExpiredParam]; exists && v[0] == "true" {
 		filter.Expired = ptr.Bool(true)
 	}
@@ -416,6 +439,11 @@ func (h *Handler) getFilters(req *http.Request) dbmodel.InstanceFilter {
 				filter.States = append(filter.States, dbmodel.InstanceUpdating)
 			case pkg.StateSuspended:
 				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
+			case pkg.StateDeprovisioned:
+				filter.States = append(filter.States, dbmodel.InstanceDeprovisioned)
+			case pkg.StateDeprovisionIncomplete:
+				deletionAttempted := true
+				filter.DeletionAttempted = &deletionAttempted
 			case pkg.AllState:
 				allState = true
 			}

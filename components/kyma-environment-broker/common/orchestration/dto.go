@@ -1,6 +1,9 @@
 package orchestration
 
 import (
+	"bytes"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
@@ -13,14 +16,13 @@ type Parameters struct {
 	DryRun     bool                  `json:"dryRun,omitempty"`
 	Kubernetes *KubernetesParameters `json:"kubernetes,omitempty"`
 	// upgrade kyma specific parameters
-	Kyma *KymaParameters `json:"kyma,omitempty"`
-	//customer notification status
-	NotificationState notificationStateType    `json:"notificationstate,omitempty"`
-	RetryOperation    RetryOperationParameters `json:"retryoperation,omitempty"`
+	Kyma           *KymaParameters          `json:"kyma,omitempty"`
+	RetryOperation RetryOperationParameters `json:"retryoperation,omitempty"`
 }
+
 type RetryOperationParameters struct {
-	RetryOperations []string `json:"retryoperations,omitempty"`
-	Immediate       bool     `json:"immediate,omitempty"`
+	RetryOperations []string      `json:"retryoperations,omitempty"`
+	Immediate       stringBoolean `json:"immediate,omitempty"`
 }
 
 type KubernetesParameters struct {
@@ -202,10 +204,14 @@ type MaintenancePolicy struct {
 	Default MaintenancePolicyEntry  `json:"default"`
 }
 
-type notificationStateType string
+type stringBoolean bool
 
-const (
-	NotificationPending   notificationStateType = "pending"
-	NotificationCreated   notificationStateType = "created"
-	NotificationCancelled notificationStateType = "cancelled"
-)
+func (sb *stringBoolean) UnmarshalJSON(data []byte) error {
+	unqotedBool := bytes.Trim(data, `"`)
+	v, err := strconv.ParseBool(string(unqotedBool))
+	if err != nil {
+		return fmt.Errorf("while unmarshaling stringBoolean: %w", err)
+	}
+	*sb = stringBoolean(v)
+	return nil
+}

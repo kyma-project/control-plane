@@ -34,20 +34,6 @@ func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificC
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
 }
 
-// TODO: Remove after schema migration
-func (ws writeSession) InsertRelease(artifacts model.Release) dberrors.Error {
-	_, err := ws.insertInto("kyma_release").
-		Columns("id", "version", "tiller_yaml", "installer_yaml").
-		Record(artifacts).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to insert record to Release table: %s", err)
-	}
-
-	return nil
-}
-
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	var kymaConfigId *string
 	if cluster.KymaConfig != nil {
@@ -130,7 +116,6 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("max_unavailable", config.MaxUnavailable).
 		Pair("enable_kubernetes_version_auto_update", config.EnableKubernetesVersionAutoUpdate).
 		Pair("enable_machine_image_version_auto_update", config.EnableMachineImageVersionAutoUpdate).
-		Pair("allow_privileged_containers", config.AllowPrivilegedContainers).
 		Pair("exposure_class_name", config.ExposureClassName).
 		Pair("provider_specific_config", config.GardenerProviderConfig.RawJSON()).
 		Pair("shoot_networking_filter_disabled", config.ShootNetworkingFilterDisabled).
@@ -309,7 +294,6 @@ func (ws writeSession) InsertKymaConfig(kymaConfig model.KymaConfig) dberrors.Er
 
 	_, err = ws.insertInto("kyma_config").
 		Pair("id", kymaConfig.ID).
-		Pair("release_id", kymaConfig.Release.Id).
 		Pair("profile", kymaConfig.Profile).
 		Pair("cluster_id", kymaConfig.ClusterID).
 		Pair("global_configuration", jsonConfig).

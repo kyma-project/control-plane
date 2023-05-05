@@ -69,6 +69,7 @@ const (
 	dashboardURL           = "http://console.garden-dummy.kyma.io"
 	operationID            = "provisioning-op-id"
 	deprovisioningOpID     = "deprovisioning-op-id"
+	reDeprovisioningOpID   = "re-deprovisioning-op-id"
 	instanceID             = "instance-id"
 	dbSecretKey            = "1234567890123456"
 
@@ -102,6 +103,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	}
 	cfg.Reconciler = reconciler.Config{
 		ProvisioningTimeout: time.Second,
+	}
+	cfg.Notification = notification.Config{
+		Url:      "",
+		Disabled: true,
 	}
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
@@ -1002,7 +1007,7 @@ func fixConfig() *Config {
 		},
 		Notification: notification.Config{
 			Url:      "http://host:8080/",
-			Disabled: false,
+			Disabled: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,

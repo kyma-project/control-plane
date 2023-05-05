@@ -183,7 +183,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
 			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min",
 			"auto_scaler_max", "max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
-			"enable_machine_image_version_auto_update", "allow_privileged_containers", "provider_specific_config",
+			"enable_machine_image_version_auto_update", "provider_specific_config",
 			"shoot_networking_filter_disabled", "control_plane_failure_tolerance").
 		From("gardener_config").
 		Join("cluster", "gardener_config.cluster_id=cluster.id").
@@ -223,8 +223,6 @@ type kymaComponentConfigDTO struct {
 	ReleaseID           string
 	Profile             *string
 	Version             string
-	TillerYAML          string
-	InstallerYAML       string
 	Component           string
 	Namespace           string
 	SourceURL           *string
@@ -283,13 +281,7 @@ func (c kymaConfigDTO) parseToKymaConfig(runtimeID string) (model.KymaConfig, db
 	}
 
 	return model.KymaConfig{
-		ID: c[0].KymaConfigID,
-		Release: model.Release{
-			Id:            c[0].ReleaseID,
-			Version:       c[0].Version,
-			TillerYAML:    c[0].TillerYAML,
-			InstallerYAML: c[0].InstallerYAML,
-		},
+		ID:                  c[0].KymaConfigID,
 		Profile:             kymaProfile,
 		Components:          orderedComponents,
 		GlobalConfiguration: globalConfiguration,
@@ -370,7 +362,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "region",
 			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
 			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
-			"allow_privileged_containers", "exposure_class_name", "provider_specific_config",
+			"exposure_class_name", "provider_specific_config",
 			"shoot_networking_filter_disabled", "control_plane_failure_tolerance", "eu_access").
 		From("cluster").
 		Join("gardener_config", "cluster.id=gardener_config.cluster_id").

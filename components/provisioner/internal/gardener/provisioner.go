@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/utils/clock"
+
 	retry "github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/sirupsen/logrus"
@@ -27,7 +29,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 )
 
-//go:generate mockery -name=Client
+//go:generate mockery --name=Client
 type Client interface {
 	Create(ctx context.Context, shoot *v1beta1.Shoot, opts v1.CreateOptions) (*v1beta1.Shoot, error)
 	Update(ctx context.Context, shoot *v1beta1.Shoot, opts v1.UpdateOptions) (*v1beta1.Shoot, error)
@@ -128,7 +130,7 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 
-	condition := gardencorev1beta1helper.GetOrInitCondition(shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
+	condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
 	if condition.Status == v1beta1.ConditionFalse {
 		return apperrors.BadRequest(fmt.Sprintf("cannot hibernate cluster: %s", condition.Message))
 	}
@@ -207,7 +209,7 @@ func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerCon
 		return model.HibernationStatus{}, appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 	}
 
-	condition := gardencorev1beta1helper.GetOrInitCondition(shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
+	condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
 
 	return model.HibernationStatus{
 		Hibernated:          shoot.Status.IsHibernated,

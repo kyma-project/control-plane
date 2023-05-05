@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -39,20 +40,22 @@ func (s *EDPDeregistrationStep) Name() string {
 
 func (s *EDPDeregistrationStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	log.Info("Delete DataTenant metadata")
+
+	subAccountID := strings.ToLower(operation.SubAccountID)
 	for _, key := range []string{
 		edp.MaasConsumerEnvironmentKey,
 		edp.MaasConsumerRegionKey,
 		edp.MaasConsumerSubAccountKey,
 		edp.MaasConsumerServicePlan,
 	} {
-		err := s.client.DeleteMetadataTenant(operation.SubAccountID, s.config.Environment, key)
+		err := s.client.DeleteMetadataTenant(subAccountID, s.config.Environment, key)
 		if err != nil {
 			return s.handleError(operation, err, log, fmt.Sprintf("cannot remove DataTenant metadata with key: %s", key))
 		}
 	}
 
 	log.Info("Delete DataTenant")
-	err := s.client.DeleteDataTenant(operation.SubAccountID, s.config.Environment)
+	err := s.client.DeleteDataTenant(subAccountID, s.config.Environment)
 	if err != nil {
 		return s.handleError(operation, err, log, "cannot remove DataTenant")
 	}

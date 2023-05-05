@@ -7,6 +7,7 @@ import (
 	"time"
 
 	error2 "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
@@ -25,6 +26,9 @@ const (
 //go:generate mockery --name=GardenerClient --output=automock
 type GardenerClient interface {
 	List(context context.Context, opts v1.ListOptions) (*unstructured.UnstructuredList, error)
+	Get(ctx context.Context, name string, options v1.GetOptions, subresources ...string) (*unstructured.Unstructured, error)
+	Delete(ctx context.Context, name string, options v1.DeleteOptions, subresources ...string) error
+	Update(ctx context.Context, obj *unstructured.Unstructured, options v1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error)
 }
 
 //go:generate mockery --name=BrokerClient --output=automock
@@ -64,71 +68,112 @@ func NewService(gardenerClient GardenerClient, brokerClient BrokerClient, provis
 	}
 }
 
-func (s *Service) PerformCleanup() error {
+func (s *Service) Run() error {
+	return s.PerformCleanup()
+}
 
-	staleShoots, err := s.getStaleShoots(s.LabelSelector)
+func (s *Service) PerformCleanup() error {
+	runtimesToDelete, shootsToDelete, err := s.getStaleRuntimesByShoots(s.LabelSelector)
 	if err != nil {
 		s.logger.Error(fmt.Errorf("while getting stale shoots to delete: %w", err))
 		return err
 	}
 
-	runtimesToDelete := s.getRuntimes(staleShoots)
+	err = s.cleanupRuntimes(runtimesToDelete)
+	if err != nil {
+		s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
+		return err
+	}
 
-	s.logger.Infof("Runtimes to process: %+v\n", runtimesToDelete)
+	return s.cleanupShoots(shootsToDelete)
+}
 
-	if len(runtimesToDelete) == 0 {
+func (s *Service) cleanupRuntimes(runtimes []runtime) error {
+	s.logger.Infof("Runtimes to process: %+v\n", runtimes)
+
+	if len(runtimes) == 0 {
 		return nil
 	}
 
-	return s.cleanUp(runtimesToDelete)
+	return s.cleanUp(runtimes)
 }
 
-func (s *Service) getStaleShoots(labelSelector string) ([]unstructured.Unstructured, error) {
+func (s *Service) cleanupShoots(shoots []unstructured.Unstructured) error {
+	// do not log all shoots as previously - too much info
+	s.logger.Infof("Number of shoots to process: %+v\n", len(shoots))
+
+	if len(shoots) == 0 {
+		return nil
+	}
+
+	for _, shoot := range shoots {
+		annotations := shoot.GetAnnotations()
+		annotations["confirmation.gardener.cloud/deletion"] = "true"
+		shoot.SetAnnotations(annotations)
+		_, err := s.gardenerService.Update(context.Background(), &shoot, v1.UpdateOptions{})
+		if err != nil {
+			s.logger.Error(fmt.Errorf("while annotating shoot with removal confirmation: %w", err))
+		}
+
+		err = s.gardenerService.Delete(context.Background(), shoot.GetName(), v1.DeleteOptions{})
+		if err != nil {
+			s.logger.Error(fmt.Errorf("while cleaning runtimes: %w", err))
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, []unstructured.Unstructured, error) {
 	opts := v1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 	shootList, err := s.gardenerService.List(context.Background(), opts)
 	if err != nil {
-		return []unstructured.Unstructured{}, fmt.Errorf("while listing Gardener shoots: %w", err)
+		return []runtime{}, []unstructured.Unstructured{}, fmt.Errorf("while listing Gardener shoots: %w", err)
 	}
 
+	var runtimes []runtime
 	var shoots []unstructured.Unstructured
 	for _, shoot := range shootList.Items {
 		shootCreationTimestamp := shoot.GetCreationTimestamp()
 		shootAge := time.Since(shootCreationTimestamp.Time)
 
-		if shootAge.Hours() >= s.MaxShootAge.Hours() {
-			log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
-			shoots = append(shoots, shoot)
+		if shootAge.Hours() < s.MaxShootAge.Hours() {
+			log.Infof("Shoot %q is not older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
+			continue
 		}
+
+		log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
+		staleRuntime, err := s.shootToRuntime(shoot)
+		if err != nil {
+			s.logger.Info("found a shoot without kcp labels")
+			shoots = append(shoots, shoot)
+			continue
+		}
+
+		runtimes = append(runtimes, *staleRuntime)
 	}
 
-	return shoots, nil
+	return runtimes, shoots, nil
 }
 
-func (s *Service) getRuntimes(shoots []unstructured.Unstructured) []runtime {
-	var runtimes []runtime
-	for _, st := range shoots {
-		shoot := gardener.Shoot{st}
-		runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
-		if !ok {
-			s.logger.Error(fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName()))
-			continue
-		}
-
-		accountID, ok := shoot.GetLabels()[shootLabelAccountId]
-		if !ok {
-			s.logger.Error(fmt.Errorf("shoot %q has no account label", shoot.GetName()))
-			continue
-		}
-
-		runtimes = append(runtimes, runtime{
-			ID:        runtimeID,
-			AccountID: accountID,
-		})
+func (s *Service) shootToRuntime(st unstructured.Unstructured) (*runtime, error) {
+	shoot := gardener.Shoot{st}
+	runtimeID, ok := shoot.GetAnnotations()[shootAnnotationRuntimeId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no runtime-id annotation", shoot.GetName())
 	}
 
-	return runtimes
+	accountID, ok := shoot.GetLabels()[shootLabelAccountId]
+	if !ok {
+		return nil, fmt.Errorf("shoot %q has no account label", shoot.GetName())
+	}
+
+	return &runtime{
+		ID:        runtimeID,
+		AccountID: accountID,
+	}, nil
 }
 
 func (s *Service) cleanUp(runtimesToDelete []runtime) error {
@@ -136,7 +181,9 @@ func (s *Service) cleanUp(runtimesToDelete []runtime) error {
 	if err != nil {
 		err = fmt.Errorf("while getting instance IDs for Runtimes: %w", err)
 		s.logger.Error(err)
-		return err
+		if !dberr.IsNotFound(err) {
+			return err
+		}
 	}
 
 	kebResult := s.cleanUpKEBInstances(kebInstancesToDelete)

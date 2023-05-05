@@ -1,6 +1,7 @@
 package manager_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -46,23 +46,21 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Pending,
+			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{
 				Kyma:       &orchestration.KymaParameters{Version: ""},
 				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+				Strategy: orchestration.StrategySpec{
+					ScheduleTime: time.Time{},
+				},
 			},
 		})
 		require.NoError(t, err)
 
-		notificationTenants := []notification.NotificationTenant{
-			{
-				InstanceID: mock.Anything,
-				StartDate:  mock.Anything,
-				EndDate:    mock.Anything,
-			},
-		}
+		notificationTenants := []notification.NotificationTenant{}
 		notificationParas := notification.NotificationParams{
 			OrchestrationID: id,
-			EventType:       mock.Anything,
+			EventType:       notification.KubernetesMaintenanceNumber,
 			Tenants:         notificationTenants,
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
@@ -97,8 +95,9 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
-					Type:     orchestration.ParallelStrategy,
-					Schedule: time.Now().Format(time.RFC3339),
+					Type:         orchestration.ParallelStrategy,
+					Schedule:     time.Now().Format(time.RFC3339),
+					ScheduleTime: time.Time{},
 				},
 			},
 		})
@@ -142,15 +141,28 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Pending,
+			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{
 				DryRun:     true,
 				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
 				Kyma:       &orchestration.KymaParameters{Version: ""},
+				Strategy: orchestration.StrategySpec{
+					ScheduleTime: time.Time{},
+				},
 			}})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KubernetesMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
 		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeClusterManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
 			resolver, poolingInterval, logrus.New(), k8sClient, orchestrationConfig, notificationBuilder, 1000)
@@ -206,8 +218,9 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
-					Type:     orchestration.ParallelStrategy,
-					Schedule: time.Now().Format(time.RFC3339),
+					Type:         orchestration.ParallelStrategy,
+					Schedule:     time.Now().Format(time.RFC3339),
+					ScheduleTime: time.Time{},
 				}},
 		}
 		err = store.Orchestrations().Insert(givenO)
@@ -240,6 +253,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 
 	t.Run("Canceled", func(t *testing.T) {
 		// given
+		fmt.Println("case started.")
 		store := storage.NewMemoryStorage()
 
 		resolver := &automock.RuntimeResolver{}
@@ -250,8 +264,9 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			OrchestrationID: id,
 			State:           orchestration.Canceling,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: time.Now().Format(time.RFC3339),
+				Type:         orchestration.ParallelStrategy,
+				Schedule:     time.Now().Format(time.RFC3339),
+				ScheduleTime: time.Time{},
 			}},
 		})
 
@@ -267,6 +282,7 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 
 		notificationParas := notification.NotificationParams{
 			OrchestrationID: id,
+			Tenants:         []notification.NotificationTenant{},
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
@@ -306,9 +322,10 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			State:           orchestration.Retrying,
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: time.Now().Format(time.RFC3339),
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+				Type:         orchestration.ParallelStrategy,
+				Schedule:     time.Now().Format(time.RFC3339),
+				Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+				ScheduleTime: time.Time{},
 			}},
 		})
 		require.NoError(t, err)
@@ -407,9 +424,10 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 				Type:            orchestration.UpgradeClusterOrchestration,
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
-						Type:     orchestration.ParallelStrategy,
-						Schedule: time.Now().Format(time.RFC3339),
-						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+						Type:         orchestration.ParallelStrategy,
+						Schedule:     time.Now().Format(time.RFC3339),
+						Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+						ScheduleTime: time.Time{},
 					},
 					Targets: orchestration.TargetSpec{
 						Include: []orchestration.RuntimeTarget{
@@ -499,9 +517,10 @@ func TestUpgradeClusterManager_Execute(t *testing.T) {
 			State:           orchestration.InProgress,
 			Type:            orchestration.UpgradeClusterOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: time.Now().Format(time.RFC3339),
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+				Type:         orchestration.ParallelStrategy,
+				Schedule:     time.Now().Format(time.RFC3339),
+				Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+				ScheduleTime: time.Time{},
 			}},
 		})
 		require.NoError(t, err)

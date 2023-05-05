@@ -24,7 +24,7 @@ rules:
     resources: ["vmrules"]
     verbs: ["*"]
   - apiGroups: ["operator.victoriametrics.com"]
-    resources: ["vmusers"]
+    resources: ["vmusers", "vmprobes"]
     verbs: ["*"]
 ---
 kind: ClusterRoleBinding

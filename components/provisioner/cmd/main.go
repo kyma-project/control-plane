@@ -28,17 +28,14 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation/release"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	provisioningStages "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
-	migrator "github.com/kyma-project/control-plane/components/provisioner/internal/provider-config-migrator"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 )
 
@@ -84,7 +81,6 @@ type config struct {
 		ClusterCleanupResourceSelector             string `envconfig:"default=https://service-manager."`
 		DefaultEnableKubernetesVersionAutoUpdate   bool   `envconfig:"default=false"`
 		DefaultEnableMachineImageVersionAutoUpdate bool   `envconfig:"default=false"`
-		ForceAllowPrivilegedContainers             bool   `envconfig:"default=false"`
 	}
 
 	LatestDownloadedReleases int  `envconfig:"default=5"`
@@ -114,7 +110,6 @@ func (c *config) String() string {
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t"+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
-		"ForceAllowPrivilegedContainers: %t, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s"+
@@ -132,7 +127,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
-		c.Gardener.ForceAllowPrivilegedContainers,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
 		c.LogLevel, c.RunAwsConfigMigration)
@@ -164,19 +158,9 @@ func main() {
 	connection, err := database.InitializeDatabaseConnection(connString, databaseConnectionRetries)
 	exitOnError(err, "Failed to initialize persistence")
 
-	dbsFactory := dbsession.NewFactory(connection, cfg.Database.SecretKey)
+	dbsFactory, err := dbsession.NewFactory(connection, cfg.Database.SecretKey)
 
-	// TODO: Remove after data migration
-	if cfg.RunAwsConfigMigration {
-		log.Infof("Starting AWS Config Migration")
-
-		providerMigration := migrator.NewProviderConfigMigrator(dbsFactory, migrationErrThreshold)
-		err = providerMigration.Do()
-
-		exitOnError(err, "Failed to perform AWS config migration")
-
-		log.Infof("AWS Config Migration finished!")
-	}
+	exitOnError(err, "Cannot create database session")
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.Gardener.Project)
 
@@ -246,19 +230,10 @@ func main() {
 		exitOnError(err, "Failed to start Shoot Controller")
 	}()
 
-	httpClient := newHTTPClient(false)
-	fileDownloader := release.NewFileDownloader(httpClient)
-
-	releaseRepository := release.NewReleaseRepository(connection, uuid.NewUUIDGenerator())
-	gcsDownloader := release.NewGCSDownloader(fileDownloader)
-
-	releaseProvider := release.NewReleaseProvider(releaseRepository, gcsDownloader)
-
 	provisioningSVC := newProvisioningService(
 		cfg.Gardener.Project,
 		provisioner,
 		dbsFactory,
-		releaseProvider,
 		directorClient,
 		installationService,
 		gardener.NewShootProvider(shootClient),
@@ -270,8 +245,7 @@ func main() {
 		shootUpgradeQueue,
 		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
-		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate,
-		cfg.Gardener.ForceAllowPrivilegedContainers)
+		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 
 	tenantUpdater := api.NewTenantUpdater(dbsFactory.NewReadWriteSession())
 	validator := api.NewValidator()

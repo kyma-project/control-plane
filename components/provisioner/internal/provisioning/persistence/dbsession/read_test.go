@@ -14,8 +14,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 	runtimeId := "abc-runtime-def"
 	releaseId := "abc-release-def"
 	version := "18.0.0"
-	tillerYaml := "tiller"
-	installerYaml := "installer"
 	profileProduction := string(model.ProductionProfile)
 	expectedProfileProduction := model.ProductionProfile
 
@@ -26,8 +24,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 			ReleaseID:           releaseId,
 			Profile:             profile,
 			Version:             version,
-			TillerYAML:          tillerYaml,
-			InstallerYAML:       installerYaml,
 			Component:           name,
 			Namespace:           namespace,
 			ComponentOrder:      &order,
@@ -50,13 +46,7 @@ func Test_parseToKymaConfig(t *testing.T) {
 				newComponentDTO("comp-2", "less-essential", "other", &profileProduction, 2),
 			},
 			expectedConfig: model.KymaConfig{
-				ID: kymaConfigId,
-				Release: model.Release{
-					Id:            releaseId,
-					Version:       version,
-					TillerYAML:    tillerYaml,
-					InstallerYAML: installerYaml,
-				},
+				ID:      kymaConfigId,
 				Profile: &expectedProfileProduction,
 				Components: []model.KymaComponentConfig{
 					{
@@ -100,12 +90,6 @@ func Test_parseToKymaConfig(t *testing.T) {
 			},
 			expectedConfig: model.KymaConfig{
 				ID: kymaConfigId,
-				Release: model.Release{
-					Id:            releaseId,
-					Version:       version,
-					TillerYAML:    tillerYaml,
-					InstallerYAML: installerYaml,
-				},
 				Components: []model.KymaComponentConfig{
 					{
 						ID:             "comp-3",

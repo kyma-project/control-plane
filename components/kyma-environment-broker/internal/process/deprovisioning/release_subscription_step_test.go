@@ -67,7 +67,35 @@ func TestReleaseSubscriptionStep_TrialPlan(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then
-	accountProviderMock.AssertNotCalled(t, "MarkUnusedGardenerSecretBindingAsDirty")
+	accountProviderMock.AssertNumberOfCalls(t, "MarkUnusedGardenerSecretBindingAsDirty", 0)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(0), repeat)
+	assert.Equal(t, domain.Succeeded, operation.State)
+}
+
+func TestReleaseSubscriptionStep_OwnClusterPlan(t *testing.T) {
+	// given
+	log := logrus.New()
+	memoryStorage := storage.NewMemoryStorage()
+
+	operation := fixDeprovisioningOperationWithPlanID(broker.OwnClusterPlanID)
+	instance := fixGCPInstance(operation.InstanceID)
+
+	err := memoryStorage.Instances().Insert(instance)
+	assert.NoError(t, err)
+
+	accountProviderMock := &hyperscalerMocks.AccountProvider{}
+	accountProviderMock.On("MarkUnusedGardenerSecretBindingAsDirty", hyperscaler.GCP, instance.GetSubscriptionGlobalAccoundID(), false).Return(nil)
+
+	step := NewReleaseSubscriptionStep(memoryStorage.Operations(), memoryStorage.Instances(), accountProviderMock)
+
+	// when
+	operation, repeat, err := step.Run(operation, log)
+
+	assert.NoError(t, err)
+
+	// then
+	accountProviderMock.AssertNumberOfCalls(t, "MarkUnusedGardenerSecretBindingAsDirty", 0)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Duration(0), repeat)
 	assert.Equal(t, domain.Succeeded, operation.State)

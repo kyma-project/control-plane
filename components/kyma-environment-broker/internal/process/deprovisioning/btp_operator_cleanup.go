@@ -46,7 +46,51 @@ func (s *BTPOperatorCleanupStep) Name() string {
 	return "BTPOperator_Cleanup"
 }
 
+func (s *BTPOperatorCleanupStep) softDelete(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	k8sClient, err := s.getKubeClient(operation, log)
+	if err != nil || k8sClient == nil {
+		return s.retryOnError(operation, err, log, "failed to get kube client")
+	}
+	namespaces := corev1.NamespaceList{}
+	if err := k8sClient.List(context.Background(), &namespaces); err != nil {
+		return s.retryOnError(operation, err, log, "failed to list namespaces")
+	}
+	gvk := schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}
+	var errors []string
+	for _, ns := range namespaces.Items {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(gvk)
+		if err := k8sClient.DeleteAllOf(context.Background(), obj, client.InNamespace(ns.Name)); err != nil {
+			errors = append(errors, err.Error())
+		}
+	}
+	if err := s.removeFinalizers(k8sClient, namespaces, gvk); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	gvk.Kind = btpOperatorServiceInstance
+	for _, ns := range namespaces.Items {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(gvk)
+		if err := k8sClient.DeleteAllOf(context.Background(), obj, client.InNamespace(ns.Name)); err != nil {
+			errors = append(errors, err.Error())
+		}
+	}
+	if err := s.removeFinalizers(k8sClient, namespaces, gvk); err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) != 0 {
+		return s.retryOnError(operation, fmt.Errorf(strings.Join(errors, ";")), log, "failed to cleanup")
+	}
+	return operation, 0, nil
+}
+
 func (s *BTPOperatorCleanupStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	if operation.UserAgent == broker.AccountCleanupJob {
+		log.Info("executing soft delete cleanup for accountcleanup-job")
+		return s.softDelete(operation, log)
+	}
 	if !operation.Temporary {
 		log.Info("cleanup executed only for suspensions")
 		return operation, 0, nil
@@ -88,22 +132,27 @@ func (s *BTPOperatorCleanupStep) deleteServiceBindingsAndInstances(k8sClient cli
 	return nil
 }
 
-func (s *BTPOperatorCleanupStep) removeFinalizers(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) {
+func (s *BTPOperatorCleanupStep) removeFinalizers(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind) error {
 	listGvk := gvk
 	listGvk.Kind = gvk.Kind + "List"
+	var errors []string
 	for _, ns := range namespaces.Items {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(listGvk)
 		if err := k8sClient.List(context.Background(), list, client.InNamespace(ns.Name)); err != nil {
-			log.Errorf("failed listing resource %v in namespace %v", gvk, ns.Name)
+			errors = append(errors, fmt.Sprintf("failed listing resource %v in namespace %v: %v", gvk, ns.Name, err))
 		}
 		for _, r := range list.Items {
 			r.SetFinalizers([]string{})
 			if err := k8sClient.Update(context.Background(), &r); err != nil {
-				log.Errorf("failed remove finalizer for resource %v: %v/%v", gvk, r.GetNamespace(), r.GetName())
+				errors = append(errors, fmt.Sprintf("failed remove finalizer for resource %v %v/%v: %v", gvk, r.GetNamespace(), r.GetName(), err))
 			}
 		}
 	}
+	if len(errors) != 0 {
+		return fmt.Errorf("failed to remove finalizers: %v", strings.Join(errors, ";"))
+	}
+	return nil
 }
 
 func (s *BTPOperatorCleanupStep) deleteResource(k8sClient client.Client, namespaces corev1.NamespaceList, gvk schema.GroupVersionKind, log logrus.FieldLogger) (requeue bool) {
@@ -172,8 +221,12 @@ func (s *BTPOperatorCleanupStep) attemptToRemoveFinalizers(op internal.Operation
 		log.Errorf("failed to list namespaces to remove finalizers", err)
 		return
 	}
-	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}, log)
-	s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}, log)
+	if err := s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorBinding}); err != nil {
+		log.Errorf("failed to remove finalizers for bindings: %v", err)
+	}
+	if err := s.removeFinalizers(k8sClient, namespaces, schema.GroupVersionKind{Group: btpOperatorGroup, Version: btpOperatorApiVer, Kind: btpOperatorServiceInstance}); err != nil {
+		log.Errorf("failed to remove finalizers for instances: %v", err)
+	}
 }
 
 func (s *BTPOperatorCleanupStep) getKubeClient(operation internal.Operation, log logrus.FieldLogger) (client.Client, error) {

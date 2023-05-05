@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 )
 
-//go:generate mockery -name=K8sClientProvider
+//go:generate mockery --name=K8sClientProvider
 type K8sClientProvider interface {
 	CreateK8SClient(kubeconfigRaw string) (kubernetes.Interface, apperrors.AppError)
 }

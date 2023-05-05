@@ -29,3 +29,25 @@ func TestDeleteKymaResource_HappyFlow(t *testing.T) {
 	// Then
 	assert.Zero(t, backoff)
 }
+
+func TestDeleteKymaResource_EmptyRuntimeIDAndKymaResourceName(t *testing.T) {
+	// Given
+	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
+	operation.KymaResourceNamespace = "kyma-system"
+	operation.RuntimeID = ""
+	operation.KymaResourceName = ""
+
+	kcpClient := fake.NewClientBuilder().Build()
+	memoryStorage := storage.NewMemoryStorage()
+	err := memoryStorage.Operations().InsertOperation(operation)
+	assert.NoError(t, err)
+
+	step := NewDeleteKymaResourceStep(memoryStorage.Operations(), kcpClient)
+	memoryStorage.Operations().InsertOperation(operation)
+
+	// When
+	_, backoff, err := step.Run(operation, logger.NewLogSpy().Logger)
+
+	// Then
+	assert.Zero(t, backoff)
+}

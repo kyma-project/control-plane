@@ -2,7 +2,7 @@ global:
   images:
     kyma_metrics_collector:
       dir:
-      version: "PR-2238"
+      version: "v20230411-94ab3da5"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -39,11 +39,6 @@ containerSecurityContext:
   capabilities:
     drop:
       - ALL
-    add:
-      - NET_BIND_SERVICE
-  seLinuxOptions:
-    type: container_t
-  procMount: default
 
 podAnnotations:
   sidecar.istio.io/inject: "true"

@@ -43,9 +43,16 @@ func (step *DeleteKymaResourceStep) Run(operation internal.Operation, logger log
 		logger.Warnf("namespace for Kyma resource not specified")
 		return operation, 0, nil
 	}
+	kymaResourceName := steps.KymaName(operation)
+	if kymaResourceName == "" {
+		logger.Infof("Kyma resource name is empty, skipping")
+		return operation, 0, nil
+	}
+
+	logger.Infof("Deleting Kyma resource: %s in namespace:%s", kymaResourceName, operation.KymaResourceNamespace)
 
 	kymaUnstructured := &unstructured.Unstructured{}
-	kymaUnstructured.SetName(steps.KymaName(operation))
+	kymaUnstructured.SetName(kymaResourceName)
 	kymaUnstructured.SetNamespace(operation.KymaResourceNamespace)
 	kymaUnstructured.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 

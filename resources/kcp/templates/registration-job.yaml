@@ -48,7 +48,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: {{ template "fullname" . }}-registration
-          image: eu.gcr.io/kyma-project/tpi/k8s-tools:20210504-12243229
+          image: europe-docker.pkg.dev/kyma-project/prod/tpi/k8s-tools:v20230330-fdf134f3
           command:
             - bash
             - -c

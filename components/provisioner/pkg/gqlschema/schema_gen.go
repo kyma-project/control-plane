@@ -101,7 +101,6 @@ type ComplexityRoot struct {
 	}
 
 	GardenerConfig struct {
-		AllowPrivilegedContainers           func(childComplexity int) int
 		AutoScalerMax                       func(childComplexity int) int
 		AutoScalerMin                       func(childComplexity int) int
 		ControlPlaneFailureTolerance        func(childComplexity int) int
@@ -432,13 +431,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GCPProviderConfig.Zones(childComplexity), true
-
-	case "GardenerConfig.allowPrivilegedContainers":
-		if e.complexity.GardenerConfig.AllowPrivilegedContainers == nil {
-			break
-		}
-
-		return e.complexity.GardenerConfig.AllowPrivilegedContainers(childComplexity), true
 
 	case "GardenerConfig.autoScalerMax":
 		if e.complexity.GardenerConfig.AutoScalerMax == nil {
@@ -1068,7 +1060,6 @@ type GardenerConfig {
     licenceType: String
     enableKubernetesVersionAutoUpdate: Boolean
     enableMachineImageVersionAutoUpdate: Boolean
-    allowPrivilegedContainers: Boolean
     providerSpecificConfig: ProviderSpecificConfig
     dnsConfig: DNSConfig
     oidcConfig: OIDCConfig
@@ -1270,7 +1261,6 @@ input GardenerConfigInput {
     licenceType: String                             # LicenceType informs about the licence type of the cluster (TestDevelopmentAndDemo)
     enableKubernetesVersionAutoUpdate: Boolean      # Enable KubernetesVersion AutoUpdate indicates whether the patch Kubernetes version may be automatically updated
     enableMachineImageVersionAutoUpdate: Boolean    # Enable MachineImageVersion AutoUpdate indicates whether the machine image version may be automatically updated
-    allowPrivilegedContainers: Boolean              # Allow Privileged Containers indicates whether privileged containers are allowed in the Shoot
     providerSpecificConfig: ProviderSpecificInput!  # Additional parameters, vary depending on the target provider
     dnsConfig: DNSConfigInput                       # DNS custom specific parameters
     seed: String                                    # Name of the seed cluster that runs the control plane of the Shoot. If not provided will be assigned automatically
@@ -3136,37 +3126,6 @@ func (ec *executionContext) _GardenerConfig_enableMachineImageVersionAutoUpdate(
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.EnableMachineImageVersionAutoUpdate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _GardenerConfig_allowPrivilegedContainers(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "GardenerConfig",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowPrivilegedContainers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6391,12 +6350,6 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "allowPrivilegedContainers":
-			var err error
-			it.AllowPrivilegedContainers, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "providerSpecificConfig":
 			var err error
 			it.ProviderSpecificConfig, err = ec.unmarshalNProviderSpecificInput2ᚖgithubᚗcomᚋkymaᚑprojectᚋcontrolᚑplaneᚋcomponentsᚋprovisionerᚋpkgᚋgqlschemaᚐProviderSpecificInput(ctx, v)
@@ -7240,8 +7193,6 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_enableKubernetesVersionAutoUpdate(ctx, field, obj)
 		case "enableMachineImageVersionAutoUpdate":
 			out.Values[i] = ec._GardenerConfig_enableMachineImageVersionAutoUpdate(ctx, field, obj)
-		case "allowPrivilegedContainers":
-			out.Values[i] = ec._GardenerConfig_allowPrivilegedContainers(ctx, field, obj)
 		case "providerSpecificConfig":
 			out.Values[i] = ec._GardenerConfig_providerSpecificConfig(ctx, field, obj)
 		case "dnsConfig":

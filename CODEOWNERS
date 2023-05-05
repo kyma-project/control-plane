@@ -5,52 +5,52 @@
 # For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
 
 # These are the default owners for the whole content of the `control-plane` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
-* @PK85 @akgalwas @franpog859 @ralikio @mvshao @VOID404 @koala7659 @piotrmiskiewicz @szwedm @wozniakjan @tillknuesting
+* @kyma-project/Framefrog @kyma-project/gopher
 
 # All developers working on this repository are able to edit main values.yaml file.
-/resources/kcp/values.yaml @PK85 @akgalwas @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @k15r @marcobebway @nachtmaar @wozniakjan @tillknuesting @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @mfaizanse @friedrichwilken @vladislavpaskar @raypinto @jaroslaw-pieszka
+/resources/kcp/values.yaml @kyma-project/Framefrog @ebensom @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @kyma-project/gopher @kyma-project/eventing
 
 # All developers working on this repository are able to edit scripts directory.
-/scripts @PK85 @akgalwas @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @tillknuesting @ebensom
+/scripts @kyma-project/Framefrog @ebensom @kyma-project/gopher
 
 # Registration job is used by provisioner and kyma-environment-broker
-/resources/kcp/templates/registration-job.yaml @PK85 @akgalwas @franpog859 @ralikio @mvshao @VOID404 @piotrmiskiewicz @szwedm @koala7659 @wozniakjan @tillknuesting @jaroslaw-pieszka
+/resources/kcp/templates/registration-job.yaml @kyma-project/Framefrog @kyma-project/gopher
 
 # Kyma Environment Broker
-/resources/kcp/charts/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @tillknuesting @jaroslaw-pieszka
-/components/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @tillknuesting @jaroslaw-pieszka
-/docs/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @tillknuesting @jaroslaw-pieszka
-/components/schema-migrator/migrations/kyma-environment-broker @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @tillknuesting @jaroslaw-pieszka
+/resources/kcp/charts/kyma-environment-broker @kyma-project/gopher @ebensom
+/components/kyma-environment-broker @kyma-project/gopher @ebensom
+/docs/kyma-environment-broker @kyma-project/gopher @ebensom
+/components/schema-migrator/migrations/kyma-environment-broker @kyma-project/gopher @ebensom
 
 # Runtime Provisioner
-/resources/kcp/charts/provisioner @akgalwas @franpog859 @mvshao @VOID404 @koala7659
-/components/provisioner @akgalwas @franpog859 @mvshao @VOID404 @koala7659
-/docs/provisioner @akgalwas @franpog859 @mvshao @VOID404 @koala7659
-/components/schema-migrator/migrations/provisioner @akgalwas @franpog859 @mvshao @VOID404 @koala7659
-/tests/provisioner-tests @akgalwas @franpog859 @mvshao @VOID404 @koala7659
+/resources/kcp/charts/provisioner @kyma-project/Framefrog
+/components/provisioner @kyma-project/Framefrog
+/docs/provisioner @kyma-project/Framefrog
+/components/schema-migrator/migrations/provisioner @kyma-project/Framefrog
+/tests/provisioner-tests @kyma-project/Framefrog
 
 # Reconciler
-/resources/kcp/charts/component-reconcilers @tobiscr @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
-/resources/kcp/charts/mothership-reconciler @tobiscr @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
-/tools/reconciler @tobiscr @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia @janmedrek
+/resources/kcp/charts/component-reconcilers @tobiscr @kwiatekus @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
+/resources/kcp/charts/mothership-reconciler @tobiscr @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
+/tools/reconciler @tobiscr @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @janmedrek
 
 
 # e2e-provisioning
-/tests/e2e/provisioning @PK85 @piotrmiskiewicz @szwedm @wozniakjan @ebensom @ralikio @tillknuesting
+/tests/e2e/provisioning @kyma-project/gopher @ebensom
 
 # Kyma metrics collector
-/resources/kcp/charts/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
-/components/kyma-metrics-collector @k15r @lilitgh @marcobebway @nachtmaar @mfaizanse @friedrichwilken @vladislavpaskar @raypinto
+/resources/kcp/charts/kyma-metrics-collector @kyma-project/eventing
+/components/kyma-metrics-collector @kyma-project/eventing
 
 # OIDC-Kubeconfig-Service
-/components/kubeconfig-service @ebensom @lumi017 @AdrianPei @lauraanddolay @i332322
-/resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @lauraanddolay @i332322
+/components/kubeconfig-service @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt
+/resources/oidc-kubeconfig-service  @ebensom @lumi017 @AdrianPei @gczuczy @i332322 @zralt
 
 # KCP CLI
-/tools/cli @ebensom @lumi017 @PK85 @piotrmiskiewicz @szwedm @wozniakjan @kwiatekus @cortey @ralikio @tillknuesting @jaroslaw-pieszka
+/tools/cli @ebensom @lumi017 @kwiatekus @cortey @kyma-project/gopher @gczuczy @i332322 @zralt
 
 # reconciler
-/components/reconciler @kwiatekus @cortey @clebs @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin @jakobmoellersap @adityabhatia
+/components/reconciler @kwiatekus @cortey @jeremyharisch @khlifi411 @Tomasz-Smelcerz-SAP @ruanxin 
 
 # All .md files
 *.md @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
