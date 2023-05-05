@@ -66,7 +66,7 @@ See the following JSON example with the `oidc` object whose properties are empty
   }
 }
 ```
-This is the default OIDC configuration:
+This is the default OIDC configuration in JSON:
 ```json
 {
   ...
