@@ -20,7 +20,7 @@ func TestInitKymaTemplate_Run(t *testing.T) {
 	ic := fixture.FixInputCreator("aws")
 	ic.Config = &internal.ConfigForPlan{
 		KymaTemplate: `
-apiVersion: operator.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1beta2
 kind: Kyma
 metadata:
     name: my-kyma

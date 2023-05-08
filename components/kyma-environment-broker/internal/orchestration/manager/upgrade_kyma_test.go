@@ -55,23 +55,21 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Pending,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Kyma:       &orchestration.KymaParameters{Version: ""},
 				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+				Strategy: orchestration.StrategySpec{
+					ScheduleTime: time.Time{},
+				},
 			},
 		})
 		require.NoError(t, err)
 
-		notificationTenants := []notification.NotificationTenant{
-			{
-				InstanceID: mock.Anything,
-				StartDate:  mock.Anything,
-				EndDate:    mock.Anything,
-			},
-		}
+		notificationTenants := []notification.NotificationTenant{}
 		notificationParas := notification.NotificationParams{
 			OrchestrationID: id,
-			EventType:       mock.Anything,
+			EventType:       notification.KymaMaintenanceNumber,
 			Tenants:         notificationTenants,
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
@@ -106,8 +104,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
-					Type:     orchestration.ParallelStrategy,
-					Schedule: time.Now().Format(time.RFC3339),
+					Type:         orchestration.ParallelStrategy,
+					Schedule:     time.Now().Format(time.RFC3339),
+					ScheduleTime: time.Time{},
 				},
 			},
 		})
@@ -151,15 +150,28 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 		err := store.Orchestrations().Insert(internal.Orchestration{
 			OrchestrationID: id,
 			State:           orchestration.Pending,
+			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				DryRun:     true,
 				Kyma:       &orchestration.KymaParameters{Version: ""},
 				Kubernetes: &orchestration.KubernetesParameters{KubernetesVersion: ""},
+				Strategy: orchestration.StrategySpec{
+					ScheduleTime: time.Time{},
+				},
 			}})
 		require.NoError(t, err)
 
+		notificationTenants := []notification.NotificationTenant{}
+		notificationParas := notification.NotificationParams{
+			OrchestrationID: id,
+			EventType:       notification.KymaMaintenanceNumber,
+			Tenants:         notificationTenants,
+		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
 		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("NewBundle", id, notificationParas).Return(bundle, nil).Once()
+		bundle.On("CreateNotificationEvent").Return(nil).Once()
 
 		svc := manager.NewUpgradeKymaManager(store.Orchestrations(), store.Operations(), store.Instances(), nil,
 			resolver, poolingInterval, logrus.New(), k8sClient, &orchestrationConfig, notificationBuilder, 1000)
@@ -215,8 +227,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
-					Type:     orchestration.ParallelStrategy,
-					Schedule: time.Now().Format(time.RFC3339),
+					Type:         orchestration.ParallelStrategy,
+					Schedule:     time.Now().Format(time.RFC3339),
+					ScheduleTime: time.Time{},
 				}},
 		}
 		err = store.Orchestrations().Insert(givenO)
@@ -259,8 +272,9 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			OrchestrationID: id,
 			State:           orchestration.Canceling,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: time.Now().Format(time.RFC3339),
+				Type:         orchestration.ParallelStrategy,
+				Schedule:     time.Now().Format(time.RFC3339),
+				ScheduleTime: time.Time{},
 			}},
 		})
 
@@ -282,6 +296,7 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 
 		notificationParas := notification.NotificationParams{
 			OrchestrationID: id,
+			Tenants:         []notification.NotificationTenant{},
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
@@ -327,9 +342,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{
 				Strategy: orchestration.StrategySpec{
-					Type:     orchestration.ParallelStrategy,
-					Schedule: time.Now().Format(time.RFC3339),
-					Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+					Type:         orchestration.ParallelStrategy,
+					Schedule:     time.Now().Format(time.RFC3339),
+					Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+					ScheduleTime: time.Time{},
 				},
 				RetryOperation: orchestration.RetryOperationParameters{
 					RetryOperations: []string{"op-id"},
@@ -404,9 +420,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 			State:           orchestration.InProgress,
 			Type:            orchestration.UpgradeKymaOrchestration,
 			Parameters: orchestration.Parameters{Strategy: orchestration.StrategySpec{
-				Type:     orchestration.ParallelStrategy,
-				Schedule: time.Now().Format(time.RFC3339),
-				Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+				Type:         orchestration.ParallelStrategy,
+				Schedule:     time.Now().Format(time.RFC3339),
+				Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+				ScheduleTime: time.Time{},
 			}},
 		})
 		require.NoError(t, err)
@@ -499,9 +516,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Type:            orchestration.UpgradeClusterOrchestration,
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
-						Type:     orchestration.ParallelStrategy,
-						Schedule: time.Now().Format(time.RFC3339),
-						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+						Type:         orchestration.ParallelStrategy,
+						Schedule:     time.Now().Format(time.RFC3339),
+						Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+						ScheduleTime: time.Time{},
 					},
 					Kyma: &orchestration.KymaParameters{Version: ""},
 					Targets: orchestration.TargetSpec{
@@ -611,9 +629,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Type:            orchestration.UpgradeClusterOrchestration,
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
-						Type:     orchestration.ParallelStrategy,
-						Schedule: time.Now().Format(time.RFC3339),
-						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+						Type:         orchestration.ParallelStrategy,
+						Schedule:     time.Now().Format(time.RFC3339),
+						Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+						ScheduleTime: time.Time{},
 					},
 					Kyma: &orchestration.KymaParameters{Version: ""},
 					Targets: orchestration.TargetSpec{
@@ -722,9 +741,10 @@ func TestUpgradeKymaManager_Execute(t *testing.T) {
 				Type:            orchestration.UpgradeClusterOrchestration,
 				Parameters: orchestration.Parameters{
 					Strategy: orchestration.StrategySpec{
-						Type:     orchestration.ParallelStrategy,
-						Schedule: time.Now().Format(time.RFC3339),
-						Parallel: orchestration.ParallelStrategySpec{Workers: 2},
+						Type:         orchestration.ParallelStrategy,
+						Schedule:     time.Now().Format(time.RFC3339),
+						Parallel:     orchestration.ParallelStrategySpec{Workers: 2},
+						ScheduleTime: time.Time{},
 					},
 					Kyma: &orchestration.KymaParameters{Version: ""},
 					Targets: orchestration.TargetSpec{

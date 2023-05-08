@@ -26,6 +26,8 @@ type RuntimeOperation struct {
 	Runtime `json:""`
 	ID      string `json:"-"`
 	DryRun  bool   `json:"dryRun"`
+	//customer notification status
+	NotificationState NotificationStateType `json:"notificationstate,omitempty"`
 }
 
 // RuntimeResolver given an input slice of target specs to include and exclude, resolves and returns a list of unique Runtime objects.
@@ -113,3 +115,11 @@ func NextAvailableDayDiff(currentDay time.Weekday, availableDays map[time.Weekda
 
 	return diff
 }
+
+type NotificationStateType string
+
+const (
+	NotificationPending   NotificationStateType = "pending"
+	NotificationCreated   NotificationStateType = "created"
+	NotificationCancelled NotificationStateType = "cancelled"
+)

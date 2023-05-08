@@ -171,13 +171,13 @@ func NewOIDCSchema() *OIDCType {
 			IssuerURL:      Type{Type: "string", Description: "The URL of the OpenID issuer, only HTTPS scheme will be accepted."},
 			GroupsClaim:    Type{Type: "string", Description: "If provided, the name of a custom OpenID Connect claim for specifying user groups."},
 			UsernameClaim:  Type{Type: "string", Description: "The OpenID claim to use as the user name."},
-			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'."},
+			UsernamePrefix: Type{Type: "string", Description: "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-' (dash character without additional characters)."},
 			SigningAlgs: Type{
 				Type: "array",
 				Items: &Type{
 					Type: "string",
 				},
-				Description: "List of allowed JOSE asymmetric signing algorithms.",
+				Description: "Comma separated list of allowed JOSE asymmetric signing algorithms, for example, RS256, ES256",
 			},
 		},
 		Required: []string{"clientID", "issuerURL"},

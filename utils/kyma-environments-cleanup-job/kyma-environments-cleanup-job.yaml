@@ -1,0 +1,123 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "kcp-kyma-environments-cleanup"
+  namespace: kcp-system
+spec:
+  schedule: "0 0 * * *"
+  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        cronjob: kyma-environments-cleanup
+    spec:
+      template:
+        metadata:
+          name: kyma-environments-cleanup-job
+          labels:
+            cronjob: kyma-environments-cleanup
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          shareProcessNamespace: true
+          serviceAccountName: kcp-kyma-environment-broker
+          securityContext:
+            runAsUser: 2000
+          restartPolicy: Never
+          containers:
+            - name: kyma-environments-cleanup
+              command: ["/bin/main"]
+              image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230427-7b2c6ef5
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DATABASE_EMBEDDED
+                  value: "false"
+                - name: APP_MAX_AGE_HOURS
+                  value: 24h
+                - name: APP_GARDENER_PROJECT
+                  value: kyma-dev
+                - name: APP_GARDENER_KUBECONFIG_PATH
+                  value: /gardener/kubeconfig/kubeconfig
+                - name: APP_PROVISIONER_URL
+                  value: http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql
+                - name: APP_DATABASE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: kcp-storage-client-secret
+                      key: secretKey
+                      optional: true
+                - name: APP_DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-broker-username
+                      name: kcp-postgresql
+                - name: APP_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-broker-password
+                      name: kcp-postgresql
+                - name: APP_DATABASE_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-serviceName
+                      name: kcp-postgresql
+                - name: APP_DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-servicePort
+                      name: kcp-postgresql
+                - name: APP_DATABASE_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-broker-db-name
+                      name: kcp-postgresql
+                - name: APP_DATABASE_SSLMODE
+                  valueFrom:
+                    secretKeyRef:
+                      key: postgresql-sslMode
+                      name: kcp-postgresql
+                - name: APP_DATABASE_SSLROOTCERT
+                  value: /secrets/cloudsql-sslrootcert/server-ca.pem
+                - name: APP_BROKER_URL
+                  value: https://${SCRIPT_BROKER_URL} # set by script
+                - name: APP_BROKER_TOKEN_URL
+                  value: https://oauth2.${SCRIPT_DOMAIN}/oauth2/token # set by script
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: client_id
+                      name: kcp-kyma-environment-broker-oauth
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: client_secret
+                      name: kcp-kyma-environment-broker-oauth
+                - name: APP_BROKER_SCOPE
+                  value: broker:write cld:read
+              volumeMounts:
+                - name: gardener-kubeconfig
+                  mountPath: /gardener/kubeconfig
+                  readOnly: true
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+            - name: cloudsql-proxy
+              image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a
+              imagePullPolicy: IfNotPresent
+              command: ${SCRIPT_CLOUDSQL_PROXY_COMMAND} # set by script
+              volumeMounts:
+                - name: cloudsql-instance-credentials
+                  mountPath: /secrets/cloudsql-instance-credentials
+                  readOnly: true
+          volumes:
+            - name: cloudsql-instance-credentials
+              secret:
+                secretName: cloudsql-instance-credentials
+                defaultMode: 420
+            - name: gardener-kubeconfig
+              secret:
+                secretName: gardener-credentials
+                defaultMode: 420
+                optional: true

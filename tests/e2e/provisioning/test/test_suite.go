@@ -227,6 +227,13 @@ func (ts *Suite) testConfigMap() v1.ConfigMap {
 func createBrokerOAuthConfig(ctx context.Context, k8sclient client.Client, cfg *Config) (broker.BrokerOAuthConfig, error) {
 	var brokerOAuthConfig broker.BrokerOAuthConfig
 
+	if cfg.Broker.ClientSecret != "" && cfg.Broker.ClientID != "" {
+		brokerOAuthConfig.ClientSecret = cfg.Broker.ClientSecret
+		brokerOAuthConfig.ClientID = cfg.Broker.ClientID
+		brokerOAuthConfig.Scope = cfg.Broker.Scope
+		return brokerOAuthConfig, nil
+	}
+
 	err := v1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return brokerOAuthConfig, errors.Wrap(err, "while adding hydra-maester v1alpha1 to schema")

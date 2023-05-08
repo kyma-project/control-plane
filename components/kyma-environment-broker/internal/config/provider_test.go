@@ -133,7 +133,7 @@ func fixAzureConfig() *internal.ConfigForPlan {
 
 func fixDefault() *internal.ConfigForPlan {
 	return &internal.ConfigForPlan{
-		KymaTemplate: `apiVersion: operator.kyma-project.io/v1alpha1
+		KymaTemplate: `apiVersion: operator.kyma-project.io/v1beta2
 kind: Kyma
 metadata:
   name: my-kyma1
