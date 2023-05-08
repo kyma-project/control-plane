@@ -255,28 +255,6 @@ kebClient:
 runtimeAllowedPrincipals: |-
   - cluster.local/ns/kcp-system/sa/kcp-kyma-metrics-collector
 
-environmentsCleanup:
-  schedule: "0 0 * * *"
-  maxAge: "24h"
-  name: "kcp-kyma-environments-cleanup"
-  account: "kcp-kyma-environment-broker"
-  imageName: "kyma-environments-cleanup-job"
-  cronJobName: "environments-cleanup"
-  maxAge: "24h"
-  version: "PR-2618"
-  dir:
-  envs:
-    APP_GARDENER_PROJECT: "kyma-dev"
-    APP_GARDENER_KUBECONFIG_PATH: "/gardener/kubeconfig/kubeconfig"
-    APP_MAX_AGE_HOURS: "24h"
-    APP_PROVISIONER_URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
-  secretVolumes:
-    gardener-kubeconfig: 
-      path: /gardener/kubeconfig
-      optional: true
-      secret: gardener-credentials
-      defaultMode: 420
-
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
