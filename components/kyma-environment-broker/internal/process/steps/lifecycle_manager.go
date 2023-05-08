@@ -40,7 +40,7 @@ func KymaKubeconfigName(operation internal.Operation) string {
 }
 
 func KymaResourceGroupVersionKind() schema.GroupVersionKind {
-	return schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
+	return schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "Kyma"}
 }
 
 func KymaName(operation internal.Operation) string {
