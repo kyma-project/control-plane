@@ -220,6 +220,10 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 			return nil, o, runtimes, fmt.Errorf("while creating new operation for runtime id %q: %w", r.RuntimeID, err)
 		}
 
+		if o.Parameters.Kyma == nil || o.Parameters.Kyma.DisplayVersion == "" {
+			o.Parameters.Kyma = &orchestration.KymaParameters{DisplayVersion: m.kymaVersion}
+		}
+
 		result = append(result, op)
 
 	}
