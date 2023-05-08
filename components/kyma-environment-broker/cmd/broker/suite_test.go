@@ -531,7 +531,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		Data: map[string]string{
 			"default": `
 kyma-template: |-
-  apiVersion: operator.kyma-project.io/v1alpha1
+  apiVersion: operator.kyma-project.io/v1beta2
   kind: Kyma
   metadata:
       name: my-kyma

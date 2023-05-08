@@ -55,7 +55,7 @@ func TestCreatingKymaResource(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, backoff)
 	aList := unstructured.UnstructuredList{}
-	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
@@ -79,7 +79,7 @@ func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testi
 	require.NoError(t, err)
 	require.Zero(t, backoff)
 	aList := unstructured.UnstructuredList{}
-	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
@@ -96,7 +96,7 @@ func TestUpdatingKymaResourceIfExists(t *testing.T) {
 	storage.Operations().InsertOperation(operation)
 	svc := NewApplyKymaStep(storage.Operations(), cli)
 	err := cli.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
-		"apiVersion": "operator.kyma-project.io/v1alpha1",
+		"apiVersion": "operator.kyma-project.io/v1beta2",
 		"kind":       "Kyma",
 		"metadata": map[string]interface{}{
 			"name":      operation.KymaResourceName,
@@ -115,7 +115,7 @@ func TestUpdatingKymaResourceIfExists(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, backoff)
 	aList := unstructured.UnstructuredList{}
-	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "KymaList"})
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
@@ -131,7 +131,7 @@ func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
 func fixOperationForApplyKymaResource(t *testing.T) (internal.Operation, client.Client) {
 	operation := fixture.FixOperation("op-id", "inst-id", internal.OperationTypeProvision)
 	operation.KymaTemplate = `
-apiVersion: operator.kyma-project.io/v1alpha1
+apiVersion: operator.kyma-project.io/v1beta2
 kind: Kyma
 metadata:
     name: my-kyma
