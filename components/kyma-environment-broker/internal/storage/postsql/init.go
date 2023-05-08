@@ -22,7 +22,7 @@ const (
 
 // InitializeDatabase opens database connection and initializes schema if it does not exist
 func InitializeDatabase(connectionURL string, retries int, log logrus.FieldLogger) (*dbr.Connection, error) {
-	connection, err := WaitForDatabaseAccess(connectionURL, retries, 100*time.Millisecond, log)
+	connection, err := WaitForDatabaseAccess(connectionURL, retries, 300*time.Millisecond, log)
 	if err != nil {
 		return nil, err
 	}
