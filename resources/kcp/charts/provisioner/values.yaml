@@ -3,8 +3,8 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "v20230508-19cfa22a"
-      dir: "prod"
+      version: "PR-2718"
+      dir: "dev"
 
 deployment:
   replicaCount: 1
