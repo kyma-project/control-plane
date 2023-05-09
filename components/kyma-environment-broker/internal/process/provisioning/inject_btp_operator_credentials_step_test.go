@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	btpoperatorcredentials "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/btpmanager/credentials"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -98,6 +100,7 @@ func TestInjectBTPOperatorCredentialsWhenSecretAlreadyExistsStep(t *testing.T) {
 		k8sClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		err = k8sClient.Create(context.TODO(), userSecret)
+
 		require.NoError(t, err)
 
 		operation := fixProvisioningOperationWithClusterIDAndCredentials(k8sClient)
@@ -134,26 +137,27 @@ func fixProvisioningOperationWithCredentials(k8sClient client.WithWatch) interna
 	return operation
 }
 
-func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expected map[string]string) {
+func assertTheSecretIsAsExpected(t *testing.T, k8sClient client.WithWatch, expected map[string][]byte) {
 	secretFromCluster := apicorev1.Secret{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: secretNamespace, Name: secretName}, &secretFromCluster)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: btpoperatorcredentials.BtpManagerSecretNamespace, Name: btpoperatorcredentials.BtpManagerSecretName}, &secretFromCluster)
 	require.NoError(t, err)
-	assert.True(t, reflect.DeepEqual(expected, secretFromCluster.StringData))
-	assert.True(t, reflect.DeepEqual(labels, secretFromCluster.Labels))
-	assert.True(t, reflect.DeepEqual(annotations, secretFromCluster.Annotations))
+	assert.True(t, reflect.DeepEqual(expected, secretFromCluster.Data))
+	assert.True(t, reflect.DeepEqual(btpoperatorcredentials.BtpManagerLabels, secretFromCluster.Labels))
+	assert.True(t, reflect.DeepEqual(btpoperatorcredentials.BtpManagerAnnotations, secretFromCluster.Annotations))
 }
 
 func assertTheNamespaceIsPresent(t *testing.T, k8sClient client.WithWatch) {
 	namespace := apicorev1.Namespace{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: secretNamespace}, &namespace)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: btpoperatorcredentials.BtpManagerSecretNamespace}, &namespace)
 	require.NoError(t, err)
 }
 
-func createExpectedSecretData(credentials *internal.ServiceManagerOperatorCredentials, clusterID string) map[string]string {
-	return map[string]string{
-		"clientid":     credentials.ClientID,
-		"clientsecret": credentials.ClientSecret,
-		"sm_url":       credentials.ServiceManagerURL,
-		"tokenurl":     credentials.URL,
-		"cluster_id":   clusterID}
+func createExpectedSecretData(credentials *internal.ServiceManagerOperatorCredentials, clusterID string) map[string][]byte {
+	return map[string][]byte{
+		"clientid":     []byte(credentials.ClientID),
+		"clientsecret": []byte(credentials.ClientSecret),
+		"sm_url":       []byte(credentials.ServiceManagerURL),
+		"tokenurl":     []byte(credentials.URL),
+		"cluster_id":   []byte(clusterID),
+	}
 }

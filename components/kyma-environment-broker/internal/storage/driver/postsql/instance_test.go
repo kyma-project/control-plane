@@ -317,6 +317,7 @@ func TestInstance(t *testing.T) {
 		for i, v := range fixInstances {
 			v.InstanceDetails = fixture.FixInstanceDetails(v.InstanceID)
 			fixInstances[i] = v
+			fixInstances[i].Reconcilable = true
 			err = brokerStorage.Instances().Insert(v)
 			require.NoError(t, err)
 		}
