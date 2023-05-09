@@ -76,8 +76,8 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		m.failOrchestration(o, fmt.Errorf("failed while waiting start for operations: %w", err))
 	}
 
-	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
-		o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
+	if o.Parameters.Kyma == nil || o.Parameters.Kyma.DisplayVersion == "" {
+		o.Parameters.Kyma = &orchestration.KymaParameters{DisplayVersion: m.kymaVersion}
 	}
 	if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
 		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
@@ -218,10 +218,6 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 		op, err = m.factory.NewOperation(*o, r, *inst, orchestration.Pending)
 		if err != nil {
 			return nil, o, runtimes, fmt.Errorf("while creating new operation for runtime id %q: %w", r.RuntimeID, err)
-		}
-
-		if o.Parameters.Kyma == nil || o.Parameters.Kyma.DisplayVersion == "" {
-			o.Parameters.Kyma = &orchestration.KymaParameters{DisplayVersion: m.kymaVersion}
 		}
 
 		result = append(result, op)
