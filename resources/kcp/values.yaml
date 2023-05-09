@@ -146,3 +146,4 @@ pairing-adapter:
   enabled: false
 migratorJobs:
   enabled: true
+foo: "bar"
