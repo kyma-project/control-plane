@@ -11,7 +11,7 @@ For more information on KCP and its components, read the [KCP documentation](htt
 - [Docker](https://www.docker.com/get-started)
 - [Minikube](https://github.com/kubernetes/minikube) 1.6.2
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
-- [Kyma CLI](https://github.com/kyma-project/cli) stable
+- [Kyma CLI](https://github.com/kyma-project/cli) latest
 
 ## Dependencies
 
