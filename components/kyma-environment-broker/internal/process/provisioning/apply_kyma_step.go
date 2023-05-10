@@ -50,11 +50,12 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	}
 
 	var existingKyma unstructured.Unstructured
-	existingKyma.SetGroupVersionKind(template.GroupVersionKind())
+	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
 	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: operation.KymaResourceNamespace,
 		Name:      template.GetName(),
 	}, &existingKyma)
+
 	switch {
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating Kyma resource: %s in namespace %s", existingKyma.GetName(), existingKyma.GetNamespace())
