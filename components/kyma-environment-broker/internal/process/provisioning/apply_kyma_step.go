@@ -50,7 +50,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 	}
 
 	var existingKyma unstructured.Unstructured
-	existingKyma.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
+	existingKyma.SetGroupVersionKind(template.GroupVersionKind())
 	err = a.k8sClient.Get(context.Background(), client.ObjectKey{
 		Namespace: operation.KymaResourceNamespace,
 		Name:      template.GetName(),
