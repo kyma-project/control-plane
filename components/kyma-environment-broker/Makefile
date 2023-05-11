@@ -57,8 +57,7 @@ errcheck-local: ;
 # 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 # 		$(DOCKER_CREATE_OPTS) errcheck -blank -asserts -ignorepkg '$$($(DIRS_TO_CHECK) | tr '\n' ',')' -ignoregenerated ./...
 
-test-integration-local: envtest
-	@. ./set-env-vars.sh; \
+test-integration-local:
 	go test ./... -tags=integration
 
 test-integration:
@@ -67,8 +66,7 @@ test-integration:
 		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
 		$(DOCKER_CREATE_OPTS) make test-integration-local
 
-testing-with-database-network: envtest
-	@. ./set-env-vars.sh
+testing-with-database-network:
 	@docker version
 	@echo testing-with-database-network
 	@docker network inspect $(TESTING_DB_NETWORK) >/dev/null 2>&1 || \
@@ -84,13 +82,3 @@ testing-with-database-network: envtest
 
 clean-up:
 	@docker network rm $(TESTING_DB_NETWORK) || true
-
-LOCALBIN ?= $(shell pwd)/bin
-$(LOCALBIN):
-	mkdir -p $(LOCALBIN)
-
-ENVTEST ?= $(LOCALBIN)/setup-envtest
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download & Build envtest-setup locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest

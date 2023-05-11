@@ -4,6 +4,9 @@ import (
 	"context"
 	"math"
 	"math/rand"
+	"os"
+	"os/exec"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -44,6 +47,10 @@ var (
 	random                = rand.New(rand.NewSource(1))
 )
 
+const (
+	envTestAssets = "KUBEBUILDER_ASSETS"
+)
+
 type Environment struct {
 	ctx          context.Context
 	skrs         []*envtest.Environment
@@ -77,6 +84,13 @@ func InitEnvironment(ctx context.Context, t *testing.T) *Environment {
 }
 
 func TestBtpManagerReconciler(t *testing.T) {
+	if os.Getenv(envTestAssets) == "" {
+		out, err := exec.Command("/bin/sh", "../../../setup-envtest.sh").Output()
+		require.NoError(t, err)
+		path := strings.Replace(string(out), "\n", "", -1)
+		os.Setenv(envTestAssets, path)
+	}
+
 	t.Run("btp_manager_secret_listener_tests", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		environment := InitEnvironment(ctx, t)
