@@ -55,6 +55,7 @@ func (a *ApplyKymaStep) Run(operation internal.Operation, logger logrus.FieldLog
 		Namespace: operation.KymaResourceNamespace,
 		Name:      template.GetName(),
 	}, &existingKyma)
+
 	switch {
 	case err == nil:
 		logger.Infof("Kyma resource already exists, updating Kyma resource: %s in namespace %s", existingKyma.GetName(), existingKyma.GetNamespace())
