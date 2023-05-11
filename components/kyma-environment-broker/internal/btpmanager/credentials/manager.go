@@ -29,7 +29,7 @@ const (
 var (
 	BtpManagerLabels      = map[string]string{"app.kubernetes.io/managed-by": keb, "app.kubernetes.io/watched-by": keb}
 	BtpManagerAnnotations = map[string]string{"Warning": "This secret is generated. Do not edit!"}
-	KymaGvk               = schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1alpha1", Kind: "Kyma"}
+	KymaGvk               = schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "Kyma"}
 )
 
 const (
@@ -171,7 +171,7 @@ func (s *Manager) ReconcileSecretForInstance(instance *internal.Instance) (bool,
 	if err != nil && errors.IsNotFound(err) {
 		s.logger.Infof("not found btp-manager secret on cluster for instance: %s", instance.InstanceID)
 		if s.dryRun {
-			s.logger.Infof("[dry-run] secret for instance %s would be Created", instance.InstanceID)
+			s.logger.Infof("[dry-run] secret for instance %s would be created", instance.InstanceID)
 		} else {
 			if err := CreateOrUpdateSecret(k8sClient, futureSecret, s.logger); err != nil {
 				s.logger.Errorf("while creating secret in cluster for %s", instance.InstanceID)
@@ -190,7 +190,7 @@ func (s *Manager) ReconcileSecretForInstance(instance *internal.Instance) (bool,
 	} else if secretsAreDifferent {
 		s.logger.Infof("btp-manager secret on cluster dont match for instance credentials in db : %s", instance.InstanceID)
 		if s.dryRun {
-			s.logger.Infof("[dry-run] secret for instance %s would be Updated", instance.InstanceID)
+			s.logger.Infof("[dry-run] secret for instance %s would be updated", instance.InstanceID)
 		} else {
 			if err := CreateOrUpdateSecret(k8sClient, futureSecret, s.logger); err != nil {
 				s.logger.Errorf("while updating secret in cluster for %s %s", instance.InstanceID, err)
@@ -223,7 +223,7 @@ func (s *Manager) getSkrK8sClient(instance *internal.Instance) (client.Client, e
 		}
 
 		if status.RuntimeConfiguration.Kubeconfig == nil {
-			return nil, fmt.Errorf("kubeconfig empty in provisioner resposne for %s", instance.InstanceID)
+			return nil, fmt.Errorf("kubeconfig empty in provisioner response for %s", instance.InstanceID)
 		}
 
 		s.logger.Infof("found kubeconfig in provisioner for %s", instance.InstanceID)
@@ -240,7 +240,7 @@ func (s *Manager) getSkrK8sClient(instance *internal.Instance) (client.Client, e
 		kubeConfig = config
 	}
 
-	if kubeConfig == nil || reflect.DeepEqual(kubeConfig, []byte{}) {
+	if kubeConfig == nil || len(kubeConfig) == 0 {
 		return nil, fmt.Errorf("not found kubeConfig as secret nor in provisioner or is empty for %s", instance.InstanceID)
 	}
 	restCfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfig)
@@ -258,11 +258,11 @@ func (s *Manager) compareSecrets(s1, s2 *v1.Secret) (bool, error) {
 	areSecretEqualByKey := func(key string) (bool, error) {
 		currentValue, ok := s1.Data[key]
 		if !ok {
-			return false, fmt.Errorf("while getting value for key %s in first param", key)
+			return false, fmt.Errorf("while getting the value for the  key %s in the first secret", key)
 		}
 		expectedValue, ok := s2.Data[key]
 		if !ok {
-			return false, fmt.Errorf("while getting value for key %s in second param", key)
+			return false, fmt.Errorf("while getting the value for the key %s in the second secret", key)
 		}
 		return reflect.DeepEqual(currentValue, expectedValue), nil
 	}
@@ -346,7 +346,7 @@ func CreateOrUpdateSecret(k8sClient client.Client, futureSecret *apicorev1.Secre
 
 		log.Info("the secret for BTP Manager created")
 		return nil
-	case getErr == nil:
+	default:
 		if !reflect.DeepEqual(currentSecret.Labels, BtpManagerLabels) {
 			log.Warnf("the secret %s was not created by KEB and its data will be overwritten", BtpManagerSecretName)
 		}
@@ -361,7 +361,5 @@ func CreateOrUpdateSecret(k8sClient client.Client, futureSecret *apicorev1.Secre
 
 		log.Info("the secret for BTP Manager updated")
 		return nil
-	default:
-		return fmt.Errorf("unsupported case")
 	}
 }

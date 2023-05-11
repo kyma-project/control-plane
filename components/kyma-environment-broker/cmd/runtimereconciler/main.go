@@ -22,9 +22,9 @@ type Config struct {
 	DryRun                               bool   `envconfig:"default=true"`
 	BtpManagerSecretWatcherAddr          string `envconfig:"default=0"`
 	BtpManagerSecretWatcherComponentName string `envconfig:"default=NA"`
-	AutoReconcileInterval                int    `envconfig:"default=24"`
 	WatcherEnabled                       bool   `envconfig:"default=false"`
 	JobEnabled                           bool   `envconfig:"default=false"`
+	JobInterval                          int    `envconfig:"default=24"`
 }
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
 	logs.Info("runtime-reconciler started")
-	logs.Infof("debug version: %d", 2)
+
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "RUNTIME_RECONCILER")
 	fatalOnError(err)
@@ -64,14 +64,14 @@ func main() {
 	logs.Infof("job enabled? %t", cfg.JobEnabled)
 	if cfg.JobEnabled {
 		btpManagerCredentialsJob := btpmanager.NewJob(btpOperatorManager, logs)
-		logs.Info("runtime-reconciler created job.")
-		btpManagerCredentialsJob.Start(cfg.AutoReconcileInterval)
+		logs.Infof("runtime-reconciler created job every %d m", cfg.JobInterval)
+		btpManagerCredentialsJob.Start(cfg.JobInterval)
 	}
 
 	logs.Infof("watcher enabled? %t", cfg.WatcherEnabled)
 	if cfg.WatcherEnabled {
 		btpManagerCredentialsWatcher := btpmanager.NewWatcher(ctx, cfg.BtpManagerSecretWatcherAddr, cfg.BtpManagerSecretWatcherComponentName, btpOperatorManager, logs)
-		logs.Info("runtime-reconciler created watcher")
+		logs.Infof("runtime-reconciler created watcher %s on %s", cfg.BtpManagerSecretWatcherComponentName, cfg.BtpManagerSecretWatcherAddr)
 		go btpManagerCredentialsWatcher.ReactOnSkrEvent()
 	}
 

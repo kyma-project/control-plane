@@ -28,18 +28,18 @@ spec:
           ports:
           - containerPort: 80
           env:
+            - name: RUNTIME_RECONCILER_DRY_RUN
+              value: { { .Values.runtimeReconciler.dryRun } }
+            - name: RUNTIME_RECONCILER_JOB_ENABLED
+              value: { { .Values.runtimeReconciler.jobEnabled } }
+            - name: RUNTIME_RECONCILER_JOB_INTERVAL
+              value: {{ .Values.runtimeReconciler.jobInterval }}
             - name: RUNTIME_RECONCILER_WATCHER_ENABLED
               value: {{ .Values.runtimeReconciler.watcherEnabled }}
-            - name: RUNTIME_RECONCILER_JOB_ENABLED
-              value: {{ .Values.runtimeReconciler.jobEnabled }}
-            - name: RUNTIME_RECONCILER_DRY_RUN
-              value: {{ .Values.runtimeReconciler.dryRun }}
             - name: RUNTIME_RECONCILER_BTP_MANAGER_SECRET_WATCHER_ADDR
               value: {{ .Values.runtimeReconciler.watcherAddress }}
             - name: RUNTIME_RECONCILER_BTP_MANAGER_SECRET_WATCHER_COMPONENT_NAME
               value: {{ .Values.runtimeReconciler.watcherName }}
-            - name: RUNTIME_RECONCILER_AUTO_RECONCILE_INTERVAL
-              value: {{ .Values.runtimeReconciler.reconcileInterval }}
             - name: RUNTIME_RECONCILER_DATABASE_SECRET_KEY
               valueFrom:
                 secretKeyRef:

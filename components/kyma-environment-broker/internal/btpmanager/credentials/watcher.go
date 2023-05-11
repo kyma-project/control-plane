@@ -34,7 +34,6 @@ func (s *Watcher) ReactOnSkrEvent() {
 		for {
 			select {
 			case response := <-s.listener.ReceivedEvents:
-				s.logs.Info("received event")
 				kymaName := response.Object.GetName()
 				s.logs.Infof("event received for: %s", kymaName)
 				instance, err := s.btpOperatorManager.MatchInstance(kymaName)

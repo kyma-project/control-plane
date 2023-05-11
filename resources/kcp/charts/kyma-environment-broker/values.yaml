@@ -293,9 +293,9 @@ cronJobs:
 
 runtimeReconciler:
   enabled: false
-  watcherEnabled: false
-  jobEnabled: false
   dryRun: true
+  jobEnabled: false
+  jobInterval: 1440
+  watcherEnabled: false
   watcherAddress: 8888
   watcherName: btp-manager-secret-watcher
-  reconcileInterval: 24
