@@ -162,9 +162,6 @@ func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.
 }
 
 func (s *InitialisationStep) configureKymaVersion(operation *internal.UpgradeKymaOperation, log logrus.FieldLogger) error {
-	if !operation.RuntimeVersion.IsEmpty() {
-		return nil
-	}
 
 	// set Kyma version from request or runtime parameters
 	var (
