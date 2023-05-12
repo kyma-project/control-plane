@@ -6,13 +6,13 @@ global:
       version: "v20230512-1e4cab22"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230512-1e4cab22"
+      version: "v20230512-c5539fe5"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230512-1e4cab22"
+      version: "v20230512-c5539fe5"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230512-1e4cab22"
+      version: "v20230512-c5539fe5"
 
 deployment:
   replicaCount: 1
