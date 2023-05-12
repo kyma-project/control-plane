@@ -1,7 +1,6 @@
 package provisioning
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
@@ -68,13 +67,12 @@ func (s *CreateClusterConfigurationStep) Run(operation internal.Operation, log l
 		return operation, 10 * time.Second, nil
 	}
 
-	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s], name=%s, sha256(kubeconfig)=%s",
+	log.Infof("Creating Cluster Configuration: cluster(runtimeID)=%s, kymaVersion=%s, kymaProfile=%s, components=[%s], name=%s",
 		clusterConfiguration.RuntimeID,
 		clusterConfiguration.KymaConfig.Version,
 		clusterConfiguration.KymaConfig.Profile,
 		s.componentList(clusterConfiguration),
-		clusterConfiguration.RuntimeInput.Name,
-		sha256.Sum256([]byte(clusterConfiguration.Kubeconfig)))
+		clusterConfiguration.RuntimeInput.Name)
 
 	state, err := s.reconcilerClient.ApplyClusterConfig(clusterConfiguration)
 	switch {
