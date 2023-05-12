@@ -73,7 +73,21 @@ spec:
                 - name: APP_DATABASE_SSLROOTCERT
                   value: /secrets/cloudsql-sslrootcert/server-ca.pem
                 - name: APP_BROKER_URL
-                  value: http://{{ include "kyma-env-broker.fullname" . }}
+                  value: "https://{{ .Values.host }}.{{ .Values.global.ingress.domainName }}"
+                - name: APP_BROKER_TOKEN_URL
+                  value: "https://oauth2.{{ .Values.global.ingress.domainName }}/oauth2/token"
+                - name: APP_BROKER_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_id
+                - name: APP_BROKER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "kyma-env-broker.fullname" . }}-oauth
+                      key: client_secret
+                - name: APP_BROKER_SCOPE
+                  value: {{.Values.kebClient.scope}}
               command:
                 - "/bin/main"
               volumeMounts:
