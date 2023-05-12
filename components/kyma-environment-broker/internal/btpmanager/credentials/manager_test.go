@@ -91,7 +91,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 		os.Setenv(envTestAssets, path)
 	}
 
-	t.Run("btp_manager_secret_listener_tests", func(t *testing.T) {
+	t.Run("btp manager credentials tests", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		environment := InitEnvironment(ctx, t)
 
