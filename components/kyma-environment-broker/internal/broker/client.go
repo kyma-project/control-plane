@@ -234,7 +234,7 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 
 func prepareGetRequest(instanceID string, brokerConfigURL string) (*http.Request, error) {
 	getInstanceUrl := fmt.Sprintf(getInstanceTmpl, brokerConfigURL, instancesURL, instanceID)
-
+	log.Infof("Getting instance, url: %s", getInstanceUrl)
 	request, err := http.NewRequest(http.MethodGet, getInstanceUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("while creating GET request for instanceID: %s: %w", instanceID, err)
