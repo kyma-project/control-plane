@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 	"net/http"
 	"strings"
 	"time"
@@ -40,6 +42,7 @@ type UpdateEndpoint struct {
 
 	updatingQueue Queue
 
+	plansConfig  PlansConfig
 	planDefaults PlanDefaults
 
 	dashboardConfig dashboard.Config
@@ -53,6 +56,7 @@ func NewUpdate(cfg Config,
 	processingEnabled bool,
 	subAccountMovementEnabled bool,
 	queue Queue,
+	plansConfig PlansConfig,
 	planDefaults PlanDefaults,
 	log logrus.FieldLogger,
 	dashboardConfig dashboard.Config,
@@ -67,6 +71,7 @@ func NewUpdate(cfg Config,
 		processingEnabled:         processingEnabled,
 		subAccountMovementEnabled: subAccountMovementEnabled,
 		updatingQueue:             queue,
+		plansConfig:               plansConfig,
 		planDefaults:              planDefaults,
 		dashboardConfig:           dashboardConfig,
 	}
@@ -99,6 +104,19 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	}
 	logger.Infof("Global account ID: %s active: %s", instance.GlobalAccountID, ptr.BoolAsString(ersContext.Active))
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
+
+	// validation of incoming input
+	planValidator, err := b.getJsonSchemaValidator(&details, instance.Provider, instance.ProviderRegion)
+	if err != nil {
+		return domain.UpdateServiceSpec{}, fmt.Errorf("while creating plan validator: %w", err)
+	}
+	result, err := planValidator.ValidateString(string(details.RawParameters))
+	if err != nil {
+		return domain.UpdateServiceSpec{}, fmt.Errorf("while executing JSON schema validator: %w", err)
+	}
+	if !result.Valid {
+		return domain.UpdateServiceSpec{}, fmt.Errorf("while validating update parameters: %w", result.Error)
+	}
 
 	// If the param contains "expired" - then process expiration (save it in the instance)
 	instance, err = b.processExpirationParam(instance, details, ersContext, logger)
@@ -293,7 +311,7 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	instance.Parameters.ErsContext = lastProvisioningOperation.ProvisioningParameters.ErsContext
 	// but do not change existing SM operator credentials
 	instance.Parameters.ErsContext.SMOperatorCredentials = existingSMOperatorCredentials
-	instance.Parameters.ErsContext.Active, err = b.exctractActiveValue(instance.InstanceID, *lastProvisioningOperation)
+	instance.Parameters.ErsContext.Active, err = b.extractActiveValue(instance.InstanceID, *lastProvisioningOperation)
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to process the update")
 	}
@@ -329,7 +347,7 @@ func (b *UpdateEndpoint) processContext(instance *internal.Instance, details dom
 	return newInstance, changed, nil
 }
 
-func (b *UpdateEndpoint) exctractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {
+func (b *UpdateEndpoint) extractActiveValue(id string, provisioning internal.ProvisioningOperation) (*bool, error) {
 	deprovisioning, dErr := b.operationStorage.GetDeprovisioningOperationByInstanceID(id)
 	if dErr != nil && !dberr.IsNotFound(dErr) {
 		b.log.Errorf("Unable to get deprovisioning operation for the instance %s to check the active flag: %s", id, dErr.Error())
@@ -383,4 +401,12 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 	}
 	return instance, nil
 
+}
+
+func (b *UpdateEndpoint) getJsonSchemaValidator(details *domain.UpdateDetails, provider internal.CloudProvider, platformRegion string) (JSONSchemaValidator, error) {
+	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema, euaccess.IsEURestrictedAccess(platformRegion))
+	plan := plans[details.PlanID]
+	schema := string(Marshal(plan.Schemas.Instance.Update.Parameters))
+
+	return jsonschema.NewValidatorFromStringSchema(schema)
 }
