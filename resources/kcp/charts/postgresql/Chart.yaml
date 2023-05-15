@@ -20,3 +20,4 @@ maintainers:
 - name: desaintmartin
   email: cedric@desaintmartin.fr
 engine: gotpl
+type: application

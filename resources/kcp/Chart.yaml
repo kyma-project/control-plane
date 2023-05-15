@@ -2,6 +2,7 @@ apiVersion: v2
 description: Kyma Control Plane
 name: kcp
 version: 0.1.0
+type: application
 
 dependencies:
 - name: postgresql

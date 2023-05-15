@@ -3,3 +3,4 @@ appVersion: "0.1.0"
 description: Kyma Environment Broker Helm chart for Kubernetes
 name: kyma-environment-broker
 version: 0.1.0
+type: application
