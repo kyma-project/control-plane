@@ -55,10 +55,10 @@ type (
 
 type ClientConfig struct {
 	URL          string
-	TokenURL     string
-	ClientID     string
-	ClientSecret string
-	Scope        string
+	TokenURL     string `envconfig:"optional"`
+	ClientID     string `envconfig:"optional"`
+	ClientSecret string `envconfig:"optional"`
+	Scope        string `envconfig:"optional"`
 }
 
 type Client struct {
@@ -79,6 +79,13 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 }
 
 func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller) *Client {
+	if config.TokenURL == "" {
+		return &Client{
+			brokerConfig: config,
+			httpClient:   http.DefaultClient,
+			poller:       poller,
+		}
+	}
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,

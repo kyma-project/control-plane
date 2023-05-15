@@ -110,7 +110,7 @@ spec:
                       name: {{ include "kyma-env-broker.fullname" . }}-oauth
                       key: client_secret
                 - name: APP_BROKER_SCOPE
-                  value: {{ .Values.kebClient.scope }}
+                  value: {{.Values.kebClient.scope}}
               command:
                 - "/bin/main"
               volumeMounts:
