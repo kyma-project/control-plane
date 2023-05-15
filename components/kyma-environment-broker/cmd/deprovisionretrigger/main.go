@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
 	"github.com/kyma-project/control-plane/components/schema-migrator/cleaner"
 	log "github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
 )
 
 type BrokerClient interface {
@@ -141,7 +141,9 @@ func (s *DeprovisionRetriggerService) getInstanceReturned404(instanceID string) 
 		return false
 	}
 	if response.StatusCode != http.StatusNotFound {
-		log.Error(fmt.Sprintf("unexpextedly GET instance resource for  %s: returned %s", instanceID, http.StatusText(response.StatusCode)))
+		r, _ := io.ReadAll(response.Body)
+		log.Error(fmt.Sprintf("unexpextedly GET instance resource for  %s: returned %s (%d): %s", instanceID, http.StatusText(response.StatusCode),
+			response.StatusCode, string(r)))
 		return false
 	}
 	return true
