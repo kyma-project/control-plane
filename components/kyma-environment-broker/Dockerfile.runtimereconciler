@@ -1,0 +1,20 @@
+# Build image
+FROM golang:1.20.2-alpine3.16 AS build
+
+WORKDIR /go/src/github.com/kyma-project/control-plane/components/kyma-environment-broker
+
+COPY cmd cmd
+COPY common common
+COPY internal internal
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN CGO_ENABLED=0 go build -o /bin/runtime-reconciler cmd/runtimereconciler/main.go
+
+# Final image
+FROM scratch
+LABEL source=git@github.com:kyma-project/control-plane.git
+
+COPY --from=build /bin/runtime-reconciler /bin/runtime-reconciler
+
+CMD ["/bin/runtime-reconciler"]

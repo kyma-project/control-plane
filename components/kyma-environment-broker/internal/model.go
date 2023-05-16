@@ -143,8 +143,9 @@ type Instance struct {
 	DeletedAt time.Time
 	ExpiredAt *time.Time
 
-	Version  int
-	Provider CloudProvider
+	Version      int
+	Provider     CloudProvider
+	Reconcilable bool
 }
 
 func (i *Instance) IsExpired() bool {

@@ -13,6 +13,9 @@ global:
     kyma_environment_deprovision_retrigger_job:
       dir:
       version: "v20230512-c5539fe5"
+    kyma_environment_runtime_reconciler:
+      dir:
+      version: ""
 
 deployment:
   replicaCount: 1
@@ -287,3 +290,12 @@ dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
 
 cronJobs:
+
+runtimeReconciler:
+  enabled: false
+  dryRun: true
+  jobEnabled: false
+  jobInterval: 1440
+  watcherEnabled: false
+  watcherAddress: 8888
+  watcherName: btp-manager-secret-watcher
