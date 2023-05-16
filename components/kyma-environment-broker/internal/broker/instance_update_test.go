@@ -280,19 +280,56 @@ func TestUpdateEndpoint_UpdateAutoscalerParams(t *testing.T) {
 	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
 		planDefaults, logrus.New(), dashboardConfig)
 
-	// when
-	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
-		ServiceID:       "",
-		PlanID:          AWSPlanID,
-		RawParameters:   json.RawMessage(`{"autoScalerMin": 1, "autoScalerMax": 1}`),
-		PreviousValues:  domain.PreviousValues{},
-		RawContext:      json.RawMessage("{\"active\":false}"),
-		MaintenanceInfo: nil,
-	}, true)
+	t.Run("Should fail on invalid (too low) autoScalerMin and autoScalerMax", func(t *testing.T) {
 
-	// then
-	assert.Error(t, err)
-	assert.False(t, response.IsAsync)
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 1, "autoScalerMax": 1}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "while validating update parameters: autoScalerMax: Must be greater than or equal to 3, autoScalerMin: Must be greater than or equal to 3")
+		assert.False(t, response.IsAsync)
+	})
+
+	t.Run("Should fail on invalid autoScalerMin and autoScalerMax", func(t *testing.T) {
+
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 4, "autoScalerMax": 3}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "AutoScalerMax 3 should be larger than AutoScalerMin 4")
+		assert.False(t, response.IsAsync)
+	})
+
+	t.Run("Should fail on invalid autoScalerMin and autoScalerMax and JSON validation should precede", func(t *testing.T) {
+
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 2, "autoScalerMax": 1}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "while validating update parameters: autoScalerMax: Must be greater than or equal to 3, autoScalerMin: Must be greater than or equal to 3")
+		assert.False(t, response.IsAsync)
+	})
 }
 
 func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
