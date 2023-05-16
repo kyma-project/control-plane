@@ -107,16 +107,8 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 	logger.Infof("Received context: %s", marshallRawContext(hideSensitiveDataFromRawContext(details.RawContext)))
 
 	// validation of incoming input
-	planValidator, err := b.getJsonSchemaValidator(&details, instance.Provider, instance.ProviderRegion)
-	if err != nil {
-		return domain.UpdateServiceSpec{}, fmt.Errorf("while creating plan validator: %w", err)
-	}
-	result, err := planValidator.ValidateString(string(details.RawParameters))
-	if err != nil {
-		return domain.UpdateServiceSpec{}, fmt.Errorf("while executing JSON schema validator: %w", err)
-	}
-	if !result.Valid {
-		return domain.UpdateServiceSpec{}, fmt.Errorf("while validating update parameters: %w", result.Error)
+	if err := b.validateWithJsonSchemaValidator(details, instance); err != nil {
+		return domain.UpdateServiceSpec{}, err
 	}
 
 	// If the param contains "expired" - then process expiration (save it in the instance)
@@ -175,6 +167,23 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 			Labels: ResponseLabels(*lastProvisioningOperation, *instance, b.config.URL, b.config.EnableKubeconfigURLLabel),
 		},
 	}, nil
+}
+
+func (b *UpdateEndpoint) validateWithJsonSchemaValidator(details domain.UpdateDetails, instance *internal.Instance) error {
+	if len(details.RawParameters) > 0 {
+		planValidator, err := b.getJsonSchemaValidator(&details, instance.Provider, instance.ProviderRegion)
+		if err != nil {
+			return fmt.Errorf("while creating plan validator: %w", err)
+		}
+		result, err := planValidator.ValidateString(string(details.RawParameters))
+		if err != nil {
+			return fmt.Errorf("while executing JSON schema validator: %w", err)
+		}
+		if !result.Valid {
+			return fmt.Errorf("while validating update parameters: %w", result.Error)
+		}
+	}
+	return nil
 }
 
 func shouldUpdate(instance *internal.Instance, details domain.UpdateDetails, ersContext internal.ERSContext) bool {
