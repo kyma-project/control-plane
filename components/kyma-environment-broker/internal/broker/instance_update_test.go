@@ -62,7 +62,8 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
@@ -74,7 +75,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 		handler,
 		true,
 		false,
-		&q,
+		q,
 		PlansConfig{},
 		planDefaults,
 		logrus.New(),
@@ -84,7 +85,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   nil,
+		RawParameters:   json.RawMessage("{}"),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -316,7 +317,8 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
 
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
@@ -327,7 +329,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   nil,
+		RawParameters:   json.RawMessage("{}"),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":true}"),
 		MaintenanceInfo: nil,
@@ -362,7 +364,8 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	st.Instances().Insert(instance)
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
@@ -402,7 +405,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   nil,
+		RawParameters:   json.RawMessage("{}"),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -462,7 +465,7 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   nil,
+		RawParameters:   json.RawMessage("{}"),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"globalaccount_id\":\"" + newGlobalAccountID + "\", \"active\":true}"),
 		MaintenanceInfo: nil,
@@ -630,7 +633,7 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   nil,
+		RawParameters:   json.RawMessage("{}"),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
