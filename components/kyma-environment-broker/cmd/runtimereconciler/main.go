@@ -35,7 +35,6 @@ func main() {
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
 	logs.Info("runtime-reconciler started")
-	logs.Infof("test registry : %s", "1205_1")
 
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "RUNTIME_RECONCILER")
