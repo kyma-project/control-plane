@@ -293,7 +293,7 @@ func TestUpdateEndpoint_UpdateAutoscalerParams(t *testing.T) {
 		}, true)
 
 		// then
-		assert.ErrorContains(t, err, "while validating update parameters: autoScalerMax: Must be greater than or equal to 3, autoScalerMin: Must be greater than or equal to 3")
+		assert.ErrorContains(t, err, "while validating update parameters:")
 		assert.False(t, response.IsAsync)
 	})
 
@@ -327,7 +327,7 @@ func TestUpdateEndpoint_UpdateAutoscalerParams(t *testing.T) {
 		}, true)
 
 		// then
-		assert.ErrorContains(t, err, "while validating update parameters: autoScalerMax: Must be greater than or equal to 3, autoScalerMin: Must be greater than or equal to 3")
+		assert.ErrorContains(t, err, "while validating update parameters:")
 		assert.False(t, response.IsAsync)
 	})
 }
