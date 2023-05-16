@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/euaccess"
 
 	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
