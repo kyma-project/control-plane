@@ -4,8 +4,8 @@ Runtime Reconciler is an application that performs reconciliation tasks on SAP B
 
 ## Overview
 
-Currently, there is one task for Runtime Reconciler. It reconciles BTP Manager Secrets on SAP BTP, Kyma runtimes (SKRs). It can do it in two ways: 
-- by implementation with the usage of Runtime Watcher, which sends events about changes of the Secret from the SKR to KEB in real time. 
+Currently, there is one task for Runtime Reconciler. It reconciles BTP Manager Secrets on  Kyma runtimes. It can do it in two ways: 
+- by implementation with the usage of Runtime Watcher, which sends events about changes of the Secret from Kyma runtime to KEB in real time. 
 - with a job, which periodically loops over all instances from the KEB database; each instance has an existing assigned runtime ID; the job checks if the Secret on the SKR matches the credentials from the KEB database.
 
 ## Configuration
