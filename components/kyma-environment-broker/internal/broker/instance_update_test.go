@@ -241,7 +241,7 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage(`{"autoScalerMin": 1}`),
+		RawParameters:   json.RawMessage(`{"autoScalerMin": 3}`),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
