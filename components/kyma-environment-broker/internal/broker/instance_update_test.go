@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -394,7 +393,8 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
@@ -454,11 +454,12 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, PlansConfig{},
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, q, PlansConfig{},
 		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
@@ -494,12 +495,13 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("provisioning01"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
 
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, PlansConfig{},
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, q, PlansConfig{},
 		planDefaults, logrus.New(), dashboardConfig)
 
 	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
@@ -622,11 +624,12 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	// st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, PlansConfig{},
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
 		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
