@@ -6,13 +6,13 @@ global:
       version: "v20230516-5571cec9"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230512-c5539fe5"
+      version: "v20230516-5571cec9"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230512-c5539fe5"
+      version: "v20230516-5571cec9"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230512-c5539fe5"
+      version: "v20230516-5571cec9"
     kyma_environment_runtime_reconciler:
       dir:
       version: ""
