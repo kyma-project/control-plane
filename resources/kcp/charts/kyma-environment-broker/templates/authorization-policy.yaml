@@ -74,6 +74,22 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
+  name: istio-oauth2-local
+  namespace: kcp-system
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces: ["kcp-system"]
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kcp
+      app.kubernetes.io/name: kyma-environment-broker
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
   name: istio-oauth2
   namespace: kcp-system
 spec:
