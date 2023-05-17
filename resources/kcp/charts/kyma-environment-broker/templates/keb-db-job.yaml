@@ -20,10 +20,6 @@ spec:
           name: {{ $job.imageName }}
           labels:
             cronjob: {{ $job.cronJobName }}
-          {{- if eq $.Values.global.database.embedded.enabled false }}
-          annotations:
-            sidecar.istio.io/inject: "false"
-          {{ end }}
         spec:
           shareProcessNamespace: true
           {{- if $job.account }}
@@ -91,20 +87,8 @@ spec:
                     name: kcp-postgresql
               - name: APP_DATABASE_SSLROOTCERT
                 value: /secrets/cloudsql-sslrootcert/server-ca.pem
-              - name: APP_BROKER_URL
-                value: "https://{{ $.Values.host }}.{{ $.Values.global.ingress.domainName }}"
-              - name: APP_BROKER_TOKEN_URL
-                value: "https://oauth2.{{ $.Values.global.ingress.domainName }}/oauth2/token"
-              - name: APP_BROKER_CLIENT_ID
-                valueFrom:
-                  secretKeyRef:
-                    key: client_id
-                    name: {{ include "kyma-env-broker.fullname" $ }}-oauth
-              - name: APP_BROKER_CLIENT_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    key: client_secret
-                    name: {{ include "kyma-env-broker.fullname" $ }}-oauth
+                - name: APP_BROKER_URL
+                  value: "http://{{ include "kyma-env-broker.fullname" . }}"
               - name: APP_BROKER_SCOPE
                 value: {{$.Values.kebClient.scope}}
             command:
