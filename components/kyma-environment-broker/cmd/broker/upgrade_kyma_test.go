@@ -55,8 +55,8 @@ func TestClusterUpgradeUsesUpdatedAutoscalerParams(t *testing.T) {
 		"user_id": "jack.anvil@email.com"
 	},
 	"parameters": {
-		"autoScalerMin":150,
-		"autoScalerMax":250,
+		"autoScalerMin":50,
+		"autoScalerMax":80,
 		"maxSurge":13,
 		"maxUnavailable":9
 	}

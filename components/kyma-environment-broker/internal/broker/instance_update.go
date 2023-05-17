@@ -171,7 +171,7 @@ func (b *UpdateEndpoint) Update(_ context.Context, instanceID string, details do
 
 func (b *UpdateEndpoint) validateWithJsonSchemaValidator(details domain.UpdateDetails, instance *internal.Instance) error {
 	if len(details.RawParameters) > 0 {
-		planValidator, err := b.getJsonSchemaValidator(&details, instance.Provider, instance.ProviderRegion)
+		planValidator, err := b.getJsonSchemaValidator(instance.Provider, instance.ServicePlanID, instance.ProviderRegion)
 		if err != nil {
 			return fmt.Errorf("while creating plan validator: %w", err)
 		}
@@ -413,9 +413,9 @@ func (b *UpdateEndpoint) processExpirationParam(instance *internal.Instance, det
 
 }
 
-func (b *UpdateEndpoint) getJsonSchemaValidator(details *domain.UpdateDetails, provider internal.CloudProvider, platformRegion string) (JSONSchemaValidator, error) {
+func (b *UpdateEndpoint) getJsonSchemaValidator(provider internal.CloudProvider, planID string, platformRegion string) (JSONSchemaValidator, error) {
 	plans := Plans(b.plansConfig, provider, b.config.IncludeAdditionalParamsInSchema, euaccess.IsEURestrictedAccess(platformRegion))
-	plan := plans[details.PlanID]
+	plan := plans[planID]
 	schema := string(Marshal(plan.Schemas.Instance.Update.Parameters))
 
 	return jsonschema.NewValidatorFromStringSchema(schema)
