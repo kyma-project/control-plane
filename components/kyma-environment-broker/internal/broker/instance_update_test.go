@@ -84,7 +84,7 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -365,7 +365,7 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":true}"),
 		MaintenanceInfo: nil,
@@ -412,7 +412,7 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -442,7 +442,7 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -503,7 +503,7 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"globalaccount_id\":\"" + newGlobalAccountID + "\", \"active\":true}"),
 		MaintenanceInfo: nil,
@@ -673,7 +673,7 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage("{}"),
+		RawParameters:   nil,
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
