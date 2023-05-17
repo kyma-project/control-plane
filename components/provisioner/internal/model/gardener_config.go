@@ -119,7 +119,6 @@ func NewCertConfig() *ExtensionProviderConfig {
 }
 
 func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subAccountId string, oidcConfig *OIDCConfig, dnsInputConfig *DNSConfig) (*gardener_types.Shoot, apperrors.AppError) {
-	enableBasicAuthentication := false
 
 	var seed *string = nil
 	if c.Seed != "" {
@@ -185,8 +184,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Kubernetes: gardener_types.Kubernetes{
 				Version: c.KubernetesVersion,
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
-					EnableBasicAuthentication: &enableBasicAuthentication,
-					OIDCConfig:                gardenerOidcConfig(oidcConfig),
+					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
 			},
 			Networking: gardener_types.Networking{
