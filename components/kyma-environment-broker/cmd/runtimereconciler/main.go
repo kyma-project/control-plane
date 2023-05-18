@@ -35,6 +35,7 @@ func main() {
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
 	logs.Info("runtime-reconciler started")
+	logs.Info("runtime-reconciler debug version: 1")
 
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "RUNTIME_RECONCILER")
