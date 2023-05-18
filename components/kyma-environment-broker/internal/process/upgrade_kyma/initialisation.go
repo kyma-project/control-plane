@@ -130,14 +130,17 @@ func (s *InitialisationStep) Run(operation internal.UpgradeKymaOperation, log lo
 		operation = op
 	}
 
-	if operation.ProvisionerOperationID == "" {
-		log.Info("provisioner operation ID is empty, initialize upgrade runtime input request")
-		return s.initializeUpgradeRuntimeRequest(operation, log)
+	operation, backoff, err := s.initializeUpgradeRuntimeRequest(operation, log)
+	if backoff > 0 {
+		return operation, backoff, err
 	}
 
-	log.Infof("runtime being upgraded, check operation status")
-	return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeOperation.RuntimeID))
+	if operation.ProvisionerOperationID != "" {
+		log.Infof("runtime being upgraded, check operation status")
+		return s.checkRuntimeStatus(operation, log.WithField("runtimeID", operation.RuntimeOperation.RuntimeID))
+	}
 
+	return operation, 0, nil
 }
 
 func (s *InitialisationStep) initializeUpgradeRuntimeRequest(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
