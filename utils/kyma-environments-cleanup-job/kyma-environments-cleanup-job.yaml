@@ -18,8 +18,6 @@ spec:
           name: kyma-environments-cleanup-job
           labels:
             cronjob: kyma-environments-cleanup
-          annotations:
-            sidecar.istio.io/inject: "false"
         spec:
           shareProcessNamespace: true
           serviceAccountName: kcp-kyma-environment-broker
@@ -28,7 +26,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: kyma-environments-cleanup
-              command: ["/bin/main"]
+              command: ["/bin/main && curl -X POST http://localhost:15000/quitquitquit:w"]
               image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230512-1e4cab22
               imagePullPolicy: IfNotPresent
               env:
