@@ -75,6 +75,7 @@ func main() {
 		fatalOnError(err)
 	}
 
+	cleaner.HaltIstioSidecar()
 	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	fatalOnError(err)

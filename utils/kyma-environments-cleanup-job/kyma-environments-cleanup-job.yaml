@@ -26,7 +26,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: kyma-environments-cleanup
-              command: ["/bin/main && curl -X POST http://localhost:15000/quitquitquit:w"]
+              command: ["/bin/main"]
               image: europe-docker.pkg.dev/kyma-project/prod/control-plane/kyma-environments-cleanup-job:v20230512-1e4cab22
               imagePullPolicy: IfNotPresent
               env:

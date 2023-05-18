@@ -72,7 +72,7 @@ spec:
                 - name: APP_BROKER_URL
                   value: "http://{{ include "kyma-env-broker.fullname" . }}"
               command:
-                - "/bin/main && curl -X POST http://localhost:15000/quitquitquit"
+                - "/bin/main"
               volumeMounts:
               {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled false)}}
                 - name: cloudsql-sslrootcert
