@@ -9,7 +9,7 @@ require (
 	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20220427105742-42ddda791e49
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/stretchr/testify v1.8.1
 	github.com/vrischmann/envconfig v1.3.0
