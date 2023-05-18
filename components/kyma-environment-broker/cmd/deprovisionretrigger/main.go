@@ -62,12 +62,12 @@ func main() {
 	fatalOnError(err)
 
 	log.Info("Deprovision retrigger job finished successfully!")
-
 	err = conn.Close()
 	if err != nil {
 		fatalOnError(err)
 	}
 
+	cleaner.HaltIstioSidecar()
 	// do not use defer, close must be done before halting
 	err = cleaner.Halt()
 	fatalOnError(err)

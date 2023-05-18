@@ -67,6 +67,7 @@ func main() {
 		fatalOnError(err)
 	}
 
+	cleaner.HaltIstioSidecar()
 	err = cleaner.Halt()
 	fatalOnError(err)
 
