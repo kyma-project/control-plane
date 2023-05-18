@@ -47,7 +47,7 @@ type InitialisationStep struct {
 	bundleBuilder          notification.BundleBuilder
 }
 
-func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, b input.CreatorForPlan, em *avs.EvaluationManager,
+func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is storage.Instances, pc provisioner.Client, inputBuilder input.CreatorForPlan, em *avs.EvaluationManager,
 	timeSchedule *TimeSchedule, rvc RuntimeVersionConfiguratorForUpgrade, bundleBuilder notification.BundleBuilder) *InitialisationStep {
 	ts := timeSchedule
 	if ts == nil {
@@ -63,7 +63,7 @@ func NewInitialisationStep(os storage.Operations, ors storage.Orchestrations, is
 		orchestrationStorage:   ors,
 		instanceStorage:        is,
 		provisionerClient:      pc,
-		inputBuilder:           b,
+		inputBuilder:           inputBuilder,
 		evaluationManager:      em,
 		timeSchedule:           *ts,
 		runtimeVerConfigurator: rvc,
