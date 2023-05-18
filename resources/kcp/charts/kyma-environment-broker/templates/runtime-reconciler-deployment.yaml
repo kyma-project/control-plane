@@ -23,7 +23,7 @@ spec:
       {{- end }}
       containers:
         - name: runtime-reconciler
-          image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-runtime-reconciler:{{ .Values.global.images.kyma_environment_runtime_reconciler.version }}"
+          image: europe-docker.pkg.dev/kyma-project/dev/control-plane/kyma-environment-runtime-reconciler@sha256:26738fa5bcfdf8a4ee60b7d6db072ba411b00a67e8dc739258f97a67ab107ee4
           imagePullPolicy: Always
           ports:
           - containerPort: 80
