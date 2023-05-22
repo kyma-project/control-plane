@@ -476,7 +476,7 @@ func TestExecute(t *testing.T) {
 			return fmt.Errorf("compute data mismatch, got: %v, expected: %v", record.Metric.Compute, expectedRecord.Metric.Compute)
 		}
 
-		// check if InstanceId is set.
+		// check if IDs are correct.
 		g.Expect(record.Metric.RuntimeId).To(gomega.Equal(expectedRecord.Metric.RuntimeId))
 		g.Expect(record.Metric.SubAccountId).To(gomega.Equal(expectedRecord.Metric.SubAccountId))
 		g.Expect(record.Metric.ShootName).To(gomega.Equal(expectedRecord.Metric.ShootName))
