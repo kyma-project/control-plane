@@ -1,6 +1,7 @@
 package edp
 
 type ConsumptionMetrics struct {
+	InstanceId string     `json:"instance_id" validate:"required"`
 	Timestamp  string     `json:"timestamp" validate:"required"`
 	Compute    Compute    `json:"compute" validate:"required"`
 	Networking Networking `json:"networking" validate:"required"`
