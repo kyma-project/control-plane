@@ -6,7 +6,7 @@ global:
       version: "v20230518-7a3ed133"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230518-7a3ed133"
+      version: "v20230522-605f31f1"
     kyma_environment_trial_cleanup_job:
       dir:
       version: "v20230518-7a3ed133"
