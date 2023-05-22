@@ -405,6 +405,9 @@ func TestExecute(t *testing.T) {
 	expectedRecord := newRecord
 	expectedRecord.KubeConfig = expectedKubeconfig
 	expectedRecord.Metric = NewMetric()
+	expectedRecord.Metric.RuntimeId = runtimeID
+	expectedRecord.Metric.SubAccountId = subAccID
+	expectedRecord.Metric.ShootName = shootName
 
 	err := cache.Add(subAccID, newRecord, gocache.NoExpiration)
 	g.Expect(err).Should(gomega.BeNil())
@@ -474,7 +477,9 @@ func TestExecute(t *testing.T) {
 		}
 
 		// check if InstanceId is set.
-		g.Expect(record.Metric.InstanceId).To(gomega.Equal(expectedRecord.Metric.InstanceId))
+		g.Expect(record.Metric.RuntimeId).To(gomega.Equal(expectedRecord.Metric.RuntimeId))
+		g.Expect(record.Metric.SubAccountId).To(gomega.Equal(expectedRecord.Metric.SubAccountId))
+		g.Expect(record.Metric.ShootName).To(gomega.Equal(expectedRecord.Metric.ShootName))
 		return nil
 	}, bigTimeout).Should(gomega.BeNil())
 

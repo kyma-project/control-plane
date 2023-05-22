@@ -147,7 +147,9 @@ func (p Process) generateRecordWithNewMetrics(identifier int, subAccountID strin
 		svcList:  svcList,
 	}
 	metric, err := input.Parse(p.Providers)
-	metric.InstanceId = record.RuntimeID
+	metric.RuntimeId = record.RuntimeID
+	metric.SubAccountId = record.SubAccountID
+	metric.ShootName = record.ShootName
 	record.Metric = metric
 	return
 }
