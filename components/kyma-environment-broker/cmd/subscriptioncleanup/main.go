@@ -70,7 +70,7 @@ func HaltIstioSidecar() {
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		log.Info("Quiting istio, response status is: %d", resp.StatusCode)
+		log.Infof("Quiting istio, response status is: %d", resp.StatusCode)
 		return
 	}
 }
