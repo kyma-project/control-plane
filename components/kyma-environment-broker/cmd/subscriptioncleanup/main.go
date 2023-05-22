@@ -60,20 +60,19 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func HaltIstioSidecar() error {
-	fmt.Println("# HALT ISTIO SIDECAR #")
+func HaltIstioSidecar() {
+	log.Info("# HALT ISTIO SIDECAR #")
 	resp, err := http.PostForm("http://127.0.0.1:15020/quitquitquit", url.Values{})
 
 	if err != nil {
-		return fmt.Errorf("while sending post to quit Istio sidecar: %s", err)
+		log.Errorf("unable to send post request to quit Istio sidecar: %s", err)
+		return
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		fmt.Printf("Quiting istio, response status is: %d", resp.StatusCode)
-		return nil
+		log.Info("Quiting istio, response status is: %d", resp.StatusCode)
+		return
 	}
-
-	return nil
 }
 
 func newClusterConfig(cfg config) (*restclient.Config, error) {
