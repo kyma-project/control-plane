@@ -268,7 +268,7 @@ func (s *Manager) compareSecrets(s1, s2 *v1.Secret) ([]string, error) {
 		return reflect.DeepEqual(currentValue, expectedValue), nil
 	}
 
-	var notEqual []string
+	notEqual := make([]string, 0)
 	for _, key := range []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId} {
 		equal, err := areSecretEqualByKey(key)
 		if err != nil {

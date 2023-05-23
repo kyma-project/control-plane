@@ -232,6 +232,7 @@ func TestManager(t *testing.T) {
 
 		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
+		assert.NotNil(t, notMatchingKeys)
 		assert.Greater(t, len(notMatchingKeys), 0)
 		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId})
 	})
@@ -257,6 +258,7 @@ func TestManager(t *testing.T) {
 
 		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
+		assert.NotNil(t, notMatchingKeys)
 		assert.Greater(t, len(notMatchingKeys), 0)
 		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId})
 	})
@@ -282,6 +284,7 @@ func TestManager(t *testing.T) {
 
 		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
+		assert.NotNil(t, notMatchingKeys)
 		assert.Equal(t, len(notMatchingKeys), 0)
 	})
 
@@ -303,10 +306,9 @@ func TestManager(t *testing.T) {
 			URL:               "a",
 			XSAppName:         "a",
 		}, "a")
-		assert.NoError(t, err)
 
 		notMatchingKeys, err := manager.compareSecrets(current, expected)
-		assert.Equal(t, len(notMatchingKeys), 0)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 
@@ -331,7 +333,7 @@ func TestManager(t *testing.T) {
 		assert.NoError(t, err)
 
 		notMatchingKeys, err := manager.compareSecrets(current, expected)
-		assert.Equal(t, len(notMatchingKeys), 0)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 }
