@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -184,11 +185,11 @@ func (s *Manager) ReconcileSecretForInstance(instance *internal.Instance) (bool,
 		return false, fmt.Errorf("while getting secret from cluster for instance %s : %s", instance.InstanceID, err)
 	}
 
-	secretsAreDifferent, err := s.compareSecrets(currentSecret, futureSecret)
+	notMatchingKeys, err := s.compareSecrets(currentSecret, futureSecret)
 	if err != nil {
 		return false, fmt.Errorf("validation of secrets failed with unexpected reason for instance: %s : %s", instance.InstanceID, err)
-	} else if secretsAreDifferent {
-		s.logger.Infof("btp-manager secret on cluster dont match for instance credentials in db : %s", instance.InstanceID)
+	} else if len(notMatchingKeys) > 0 {
+		s.logger.Infof("btp-manager secret on cluster does not match for instance credentials in db : %s, incorrect values for keys: %s ", instance.InstanceID, strings.Join(notMatchingKeys, ","))
 		if s.dryRun {
 			s.logger.Infof("[dry-run] secret for instance %s would be updated", instance.InstanceID)
 		} else {
@@ -254,7 +255,7 @@ func (s *Manager) getSkrK8sClient(instance *internal.Instance) (client.Client, e
 	return k8sClient, nil
 }
 
-func (s *Manager) compareSecrets(s1, s2 *v1.Secret) (bool, error) {
+func (s *Manager) compareSecrets(s1, s2 *v1.Secret) ([]string, error) {
 	areSecretEqualByKey := func(key string) (bool, error) {
 		currentValue, ok := s1.Data[key]
 		if !ok {
@@ -267,20 +268,19 @@ func (s *Manager) compareSecrets(s1, s2 *v1.Secret) (bool, error) {
 		return reflect.DeepEqual(currentValue, expectedValue), nil
 	}
 
-	secretsAreDifferent := false
+	notEqual := make([]string, 0)
 	for _, key := range []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId} {
 		equal, err := areSecretEqualByKey(key)
 		if err != nil {
 			s.logger.Errorf("getting value for key %s", key)
-			return false, err
+			return nil, err
 		}
 		if !equal {
-			s.logger.Infof("two values for key %s in secrets are not equal", key)
-			secretsAreDifferent = true
+			notEqual = append(notEqual, key)
 		}
 	}
 
-	return secretsAreDifferent, nil
+	return notEqual, nil
 }
 
 func getKubeConfigSecretName(runtimeId string) string {

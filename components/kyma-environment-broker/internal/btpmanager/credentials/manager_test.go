@@ -211,7 +211,7 @@ func TestManager(t *testing.T) {
 	manager := Manager{
 		logger: logrus.New(),
 	}
-	t.Run("compare secrets where different data", func(t *testing.T) {
+	t.Run("compare secrets with all different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -230,12 +230,14 @@ func TestManager(t *testing.T) {
 		}, "b")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
-		assert.True(t, secretsDifferent)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Greater(t, len(notMatchingKeys), 0)
+		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId})
 	})
 
-	t.Run("compare secrets where same data", func(t *testing.T) {
+	t.Run("compare secrets with partially different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -246,17 +248,44 @@ func TestManager(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
-			ClientID:          "a",
-			ClientSecret:      "a",
+			ClientID:          "b",
+			ClientSecret:      "b",
 			ServiceManagerURL: "a",
 			URL:               "a",
 			XSAppName:         "a",
 		}, "a")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
-		assert.False(t, secretsDifferent)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Greater(t, len(notMatchingKeys), 0)
+		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId})
+	})
+
+	t.Run("compare secrets with the same data", func(t *testing.T) {
+		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
+			ClientID:          "a1",
+			ClientSecret:      "a2",
+			ServiceManagerURL: "a3",
+			URL:               "a4",
+			XSAppName:         "a5",
+		}, "a6")
+		assert.NoError(t, err)
+
+		expected, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
+			ClientID:          "a1",
+			ClientSecret:      "a2",
+			ServiceManagerURL: "a3",
+			URL:               "a4",
+			XSAppName:         "a5",
+		}, "a6")
+		assert.NoError(t, err)
+
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.NoError(t, err)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Equal(t, len(notMatchingKeys), 0)
 	})
 
 	t.Run("compare secrets where some of data is missing and data is same", func(t *testing.T) {
@@ -277,10 +306,9 @@ func TestManager(t *testing.T) {
 			URL:               "a",
 			XSAppName:         "a",
 		}, "a")
-		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
-		assert.False(t, secretsDifferent)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 
@@ -304,8 +332,8 @@ func TestManager(t *testing.T) {
 		}, "b")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
-		assert.False(t, secretsDifferent)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 }
