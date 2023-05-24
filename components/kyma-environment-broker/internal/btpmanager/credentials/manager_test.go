@@ -211,7 +211,7 @@ func TestManager(t *testing.T) {
 	manager := Manager{
 		logger: logrus.New(),
 	}
-	t.Run("compare secrets where all different data", func(t *testing.T) {
+	t.Run("compare secrets with all different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -237,7 +237,7 @@ func TestManager(t *testing.T) {
 		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId})
 	})
 
-	t.Run("compare secrets some where different data", func(t *testing.T) {
+	t.Run("compare secrets with partially different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -263,7 +263,7 @@ func TestManager(t *testing.T) {
 		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId})
 	})
 
-	t.Run("compare secrets where same data", func(t *testing.T) {
+	t.Run("compare secrets with the same data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a1",
 			ClientSecret:      "a2",

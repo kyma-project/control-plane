@@ -189,7 +189,7 @@ func (s *Manager) ReconcileSecretForInstance(instance *internal.Instance) (bool,
 	if err != nil {
 		return false, fmt.Errorf("validation of secrets failed with unexpected reason for instance: %s : %s", instance.InstanceID, err)
 	} else if len(notMatchingKeys) > 0 {
-		s.logger.Infof("btp-manager secret on cluster dont match for instance credentials in db : %s, incorrect values for keys: %s ", instance.InstanceID, strings.Join(notMatchingKeys, ","))
+		s.logger.Infof("btp-manager secret on cluster does not match for instance credentials in db : %s, incorrect values for keys: %s ", instance.InstanceID, strings.Join(notMatchingKeys, ","))
 		if s.dryRun {
 			s.logger.Infof("[dry-run] secret for instance %s would be updated", instance.InstanceID)
 		} else {
