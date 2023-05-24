@@ -41,14 +41,10 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 		instance, err := s.instanceStorage.GetByID(operation.InstanceID)
 		if err != nil {
 			msg := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - get the instance data for instanceID [%s]: %s", operation.InstanceID, err.Error())
-			log.Errorf(msg)
-			operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-				operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
-			}, log)
+			operation, repeat, err := s.operationManager.MarkStepAsExcutedButNotCompleted(operation, s.Name(), msg, log)
 			if repeat != 0 {
 				return operation, repeat, err
 			}
-			operation.EventErrorf(fmt.Errorf(msg), "step %s failed: operation continues", s.Name())
 			return operation, 0, nil
 		}
 
