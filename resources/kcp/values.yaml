@@ -10,7 +10,7 @@ global:
       version: "v20230120-865831c1"
     kyma_environments_subscription_cleanup_job:
       dir:
-      version: "v20230427-7b2c6ef5"
+      version: "v20230522-605f31f1"
     kyma_metrics_collector:
       dir:
       version: v20230411-94ab3da5
