@@ -26,7 +26,7 @@ type Config struct {
 	WatcherEnabled                       bool   `envconfig:"default=false"`
 	JobEnabled                           bool   `envconfig:"default=false"`
 	JobInterval                          int    `envconfig:"default=24"`
-	JobReconciliationDelay               int    `envconfig:"default=0"`
+	JobReconciliationDelay               string `envconfig:"default=0s"`
 }
 
 func main() {
@@ -68,7 +68,9 @@ func main() {
 	if cfg.JobEnabled {
 		btpManagerCredentialsJob := btpmanager.NewJob(btpOperatorManager, logs)
 		logs.Infof("runtime-reconciler created job every %d m", cfg.JobInterval)
-		btpManagerCredentialsJob.Start(cfg.JobInterval, time.Duration(cfg.JobReconciliationDelay)*time.Second)
+
+		jobReconciliationDelay, _ := time.ParseDuration(cfg.JobReconciliationDelay)
+		btpManagerCredentialsJob.Start(cfg.JobInterval, jobReconciliationDelay)
 	}
 
 	logs.Infof("watcher enabled? %t", cfg.WatcherEnabled)
