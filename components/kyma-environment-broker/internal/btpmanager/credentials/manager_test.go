@@ -39,6 +39,7 @@ const (
 	expectedRejectedInstancesCount = 1
 	expectedAllInstancesCount      = expectedTakenInstancesCount + expectedRejectedInstancesCount
 	credentialsLen                 = 16
+	jobReconciliationDelay         = time.Second * 0
 )
 
 var (
@@ -97,7 +98,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 
 		t.Run("reconcile, when all secrets are not set", func(t *testing.T) {
 			environment.assertAllSecretsNotExists()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
 			assert.Equal(t, expectedTakenInstancesCount, updateDone)
@@ -108,7 +109,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 
 		t.Run("reconcile, when all secrets are correct", func(t *testing.T) {
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
@@ -122,7 +123,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 			skrs := environment.getSkrsForSimulateChange([]int{})
 			environment.simulateSecretChangeOnSkr(skrs)
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
@@ -138,7 +139,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 			skrs := environment.getSkrsForSimulateChange(testDataIndexes)
 			environment.simulateSecretChangeOnSkr(skrs)
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
