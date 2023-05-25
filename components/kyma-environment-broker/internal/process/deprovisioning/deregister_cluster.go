@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -60,10 +61,8 @@ func (s *DeregisterClusterStep) handleError(operation internal.Operation, err er
 			return operation, 15 * time.Second, nil
 		}
 	}
-	log.Errorf("Reconciler cluster configuration have not been deleted in step %s.", s.Name())
-	operation, repeat, err := s.operationManager.UpdateOperation(operation, func(operation *internal.Operation) {
-		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, s.Name())
-	}, log)
+	errMsg := fmt.Sprintf("Reconciler cluster configuration have not been deleted in step %s.", s.Name())
+	operation, repeat, err := s.operationManager.MarkStepAsExcutedButNotCompleted(operation, s.Name(), errMsg, log)
 	if repeat != 0 {
 		return operation, repeat, err
 	}
