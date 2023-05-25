@@ -155,3 +155,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: btpoperators
+  telemetry:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: telemetries
