@@ -296,6 +296,7 @@ runtimeReconciler:
   dryRun: true
   jobEnabled: false
   jobInterval: 1440
+  jobReconciliationDelay: 1s
   watcherEnabled: false
   watcherAddress: 8888
   watcherName: btp-manager-secret-watcher
