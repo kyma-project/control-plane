@@ -18,8 +18,6 @@ spec:
           name: kyma-environments-cleanup-job
           labels:
             cronjob: kyma-environments-cleanup
-          annotations:
-            sidecar.istio.io/inject: "false"
         spec:
           shareProcessNamespace: true
           serviceAccountName: kcp-kyma-environment-broker

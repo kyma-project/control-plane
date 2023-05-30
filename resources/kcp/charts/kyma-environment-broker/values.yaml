@@ -3,19 +3,19 @@ global:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "v20230516-5571cec9"
+      version: "v20230525-1410c281"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230516-5571cec9"
+      version: "v20230525-1410c281"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230516-5571cec9"
+      version: "v20230525-1410c281"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230516-5571cec9"
+      version: "v20230525-1410c281"
     kyma_environment_runtime_reconciler:
       dir:
-      version: ""
+      version: "v20230525-1410c281"
 
 deployment:
   replicaCount: 1
@@ -296,6 +296,7 @@ runtimeReconciler:
   dryRun: true
   jobEnabled: false
   jobInterval: 1440
+  jobReconciliationDelay: 1s
   watcherEnabled: false
   watcherAddress: 8888
   watcherName: btp-manager-secret-watcher

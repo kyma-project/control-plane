@@ -10,7 +10,7 @@ The basic flow for KMC is as follows:
  * KMC adds the runtimes to a queue to work through them and re-queues a runtime should an error occur. 
  * Information on PVCs, SVCs and Nodes is retrieved from SAP Kyma Runtime (SKR). 
  * This information is sent to EDP as an event stream.
- * For every process step, internal metrics are collected with [Prometheus](https://prometheus.io/docs/introduction/overview/) and alerts have been configured to trigger if any part of the functionality malfunctions.
+ * For every process step, internal metrics are collected with [Prometheus](https://prometheus.io/docs/introduction/overview/) and alerts have been configured to trigger if any part of the functionality malfunctions. See the [metrics.md](metrics.md) file.
 
 ## Usage
 

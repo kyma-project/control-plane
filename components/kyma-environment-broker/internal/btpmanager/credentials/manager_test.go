@@ -39,6 +39,7 @@ const (
 	expectedRejectedInstancesCount = 1
 	expectedAllInstancesCount      = expectedTakenInstancesCount + expectedRejectedInstancesCount
 	credentialsLen                 = 16
+	jobReconciliationDelay         = time.Second * 0
 )
 
 var (
@@ -97,7 +98,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 
 		t.Run("reconcile, when all secrets are not set", func(t *testing.T) {
 			environment.assertAllSecretsNotExists()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
 			assert.Equal(t, expectedTakenInstancesCount, updateDone)
@@ -108,7 +109,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 
 		t.Run("reconcile, when all secrets are correct", func(t *testing.T) {
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
@@ -122,7 +123,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 			skrs := environment.getSkrsForSimulateChange([]int{})
 			environment.simulateSecretChangeOnSkr(skrs)
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
@@ -138,7 +139,7 @@ func TestBtpManagerReconciler(t *testing.T) {
 			skrs := environment.getSkrsForSimulateChange(testDataIndexes)
 			environment.simulateSecretChangeOnSkr(skrs)
 			environment.assertAllSecretDataAreSet()
-			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll()
+			takenInstancesCount, updateDone, updateNotDoneDueError, updateNotDoneDueOkState, err := environment.manager.ReconcileAll(jobReconciliationDelay)
 			assert.NoError(t, err)
 			environment.assertThatCorrectNumberOfInstancesExists()
 			assert.Equal(t, expectedTakenInstancesCount, takenInstancesCount)
@@ -211,7 +212,7 @@ func TestManager(t *testing.T) {
 	manager := Manager{
 		logger: logrus.New(),
 	}
-	t.Run("compare secrets where different data", func(t *testing.T) {
+	t.Run("compare secrets with all different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -230,12 +231,14 @@ func TestManager(t *testing.T) {
 		}, "b")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
-		assert.True(t, secretsDifferent)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Greater(t, len(notMatchingKeys), 0)
+		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId, secretSmUrl, secretTokenUrl, secretClusterId})
 	})
 
-	t.Run("compare secrets where same data", func(t *testing.T) {
+	t.Run("compare secrets with partially different data", func(t *testing.T) {
 		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
 			ClientID:          "a",
 			ClientSecret:      "a",
@@ -246,17 +249,44 @@ func TestManager(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
-			ClientID:          "a",
-			ClientSecret:      "a",
+			ClientID:          "b",
+			ClientSecret:      "b",
 			ServiceManagerURL: "a",
 			URL:               "a",
 			XSAppName:         "a",
 		}, "a")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
 		assert.NoError(t, err)
-		assert.False(t, secretsDifferent)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Greater(t, len(notMatchingKeys), 0)
+		assert.Equal(t, notMatchingKeys, []string{secretClientSecret, secretClientId})
+	})
+
+	t.Run("compare secrets with the same data", func(t *testing.T) {
+		current, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
+			ClientID:          "a1",
+			ClientSecret:      "a2",
+			ServiceManagerURL: "a3",
+			URL:               "a4",
+			XSAppName:         "a5",
+		}, "a6")
+		assert.NoError(t, err)
+
+		expected, err := PrepareSecret(&internal.ServiceManagerOperatorCredentials{
+			ClientID:          "a1",
+			ClientSecret:      "a2",
+			ServiceManagerURL: "a3",
+			URL:               "a4",
+			XSAppName:         "a5",
+		}, "a6")
+		assert.NoError(t, err)
+
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.NoError(t, err)
+		assert.NotNil(t, notMatchingKeys)
+		assert.Equal(t, len(notMatchingKeys), 0)
 	})
 
 	t.Run("compare secrets where some of data is missing and data is same", func(t *testing.T) {
@@ -277,10 +307,9 @@ func TestManager(t *testing.T) {
 			URL:               "a",
 			XSAppName:         "a",
 		}, "a")
-		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
-		assert.False(t, secretsDifferent)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 
@@ -304,8 +333,8 @@ func TestManager(t *testing.T) {
 		}, "b")
 		assert.NoError(t, err)
 
-		secretsDifferent, err := manager.compareSecrets(current, expected)
-		assert.False(t, secretsDifferent)
+		notMatchingKeys, err := manager.compareSecrets(current, expected)
+		assert.Nil(t, notMatchingKeys)
 		assert.Error(t, err)
 	})
 }
