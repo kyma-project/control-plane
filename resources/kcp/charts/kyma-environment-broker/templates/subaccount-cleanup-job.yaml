@@ -155,7 +155,7 @@ spec:
                 optional: true
           {{- end}}
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "kcp-subaccount-cleaner-v2.0"
