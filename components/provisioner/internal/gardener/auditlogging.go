@@ -90,7 +90,7 @@ func configureSecret(shoot *gardener_types.Shoot, config AuditLogConfig) (change
 	return
 }
 
-func findExtension(shoot *gardener_types.Shoot) *gardener_types.Extension {
+func FindExtension(shoot *gardener_types.Shoot) *gardener_types.Extension {
 	for i, e := range shoot.Spec.Extensions {
 		if e.Type == auditlogExtensionType {
 			return &shoot.Spec.Extensions[i]
@@ -108,7 +108,7 @@ func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (cha
 		extensionType    = "standard"
 	)
 
-	ext := findExtension(shoot)
+	ext := FindExtension(shoot)
 	if ext != nil {
 		cfg := AuditlogExtensionConfig{}
 		err = json.Unmarshal(ext.ProviderConfig.Raw, &cfg)
@@ -194,7 +194,9 @@ func (a *auditLogConfigurator) getConfigFromFile() (data map[string]map[string]A
 		return nil, err
 	}
 
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	if err := json.NewDecoder(file).Decode(&data); err != nil {
 		return nil, err
