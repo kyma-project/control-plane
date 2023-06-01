@@ -12,12 +12,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const auditLogConditionType = "AuditlogServiceAvailability"
-const auditInstanceCodePattern = `cf\.[a-z0-9]+`
+const (
+	auditLogConditionType    = "AuditlogServiceAvailability"
+	auditInstanceCodePattern = `cf\.[a-z0-9]+`
+	auditlogSecretReference  = "auditlog-credentials"
+	auditlogExtensionType    = "shoot-auditlog-service"
+)
 
 type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
-	SetAuditLogAnnotation(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error)
+	ConfigureAuditLogs(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error)
 }
 
 type auditLogConfigurator struct {
@@ -46,13 +50,13 @@ type AuditlogExtensionConfig struct {
 	TenantID string `json:"tenantID"`
 	// ServiceURL is the URL of the auditlog service.
 	ServiceURL string `json:"serviceURL"`
-	// SecretReferenceName is the name name of the reference for the secret containing the auditlog service credentials.
+	// SecretReferenceName is the name of the reference for the secret containing the auditlog service credentials.
 	SecretReferenceName string `json:"secretReferenceName"`
 }
 
-func findSecret(shoot *gardener_types.Shoot) *gardener_types.NamedResourceReference {
+func FindSecret(shoot *gardener_types.Shoot) *gardener_types.NamedResourceReference {
 	for i, e := range shoot.Spec.Resources {
-		if e.Name == "auditlog-credentials" {
+		if e.Name == auditlogSecretReference {
 			return &shoot.Spec.Resources[i]
 		}
 	}
@@ -63,9 +67,9 @@ func findSecret(shoot *gardener_types.Shoot) *gardener_types.NamedResourceRefere
 func configureSecret(shoot *gardener_types.Shoot, config AuditLogConfig) (changed bool) {
 	changed = false
 
-	sec := findSecret(shoot)
+	sec := FindSecret(shoot)
 	if sec != nil {
-		if sec.Name == "auditlog-credentials" &&
+		if sec.Name == auditlogSecretReference &&
 			sec.ResourceRef.APIVersion == "v1" &&
 			sec.ResourceRef.Kind == "Secret" &&
 			sec.ResourceRef.Name == config.SecretName {
@@ -78,7 +82,7 @@ func configureSecret(shoot *gardener_types.Shoot, config AuditLogConfig) (change
 
 	changed = true
 
-	sec.Name = "auditlog-credentials"
+	sec.Name = auditlogSecretReference
 	sec.ResourceRef.APIVersion = "v1"
 	sec.ResourceRef.Kind = "Secret"
 	sec.ResourceRef.Name = config.SecretName
@@ -88,7 +92,7 @@ func configureSecret(shoot *gardener_types.Shoot, config AuditLogConfig) (change
 
 func findExtension(shoot *gardener_types.Shoot) *gardener_types.Extension {
 	for i, e := range shoot.Spec.Extensions {
-		if e.Type == "shoot-auditlog-service" {
+		if e.Type == auditlogExtensionType {
 			return &shoot.Spec.Extensions[i]
 		}
 	}
@@ -98,6 +102,11 @@ func findExtension(shoot *gardener_types.Shoot) *gardener_types.Extension {
 
 func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (changed bool, err error) {
 	changed = false
+	const (
+		extensionKind    = "AuditlogConfig"
+		extensionVersion = "service.auditlog.extensions.gardener.cloud/v1alpha1"
+		extensionType    = "standard"
+	)
 
 	ext := findExtension(shoot)
 	if ext != nil {
@@ -107,16 +116,16 @@ func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (cha
 			return
 		}
 
-		if cfg.Kind == "AuditlogConfig" &&
-			cfg.Type == "standard" &&
+		if cfg.Kind == extensionKind &&
+			cfg.Type == extensionType &&
 			cfg.TenantID == config.TenantID &&
 			cfg.ServiceURL == config.ServiceURL &&
-			cfg.SecretReferenceName == "auditlog-credentials" {
+			cfg.SecretReferenceName == auditlogSecretReference {
 			return false, nil
 		}
 	} else {
 		shoot.Spec.Extensions = append(shoot.Spec.Extensions, gardener_types.Extension{
-			Type: "shoot-auditlog-service",
+			Type: auditlogExtensionType,
 		})
 		ext = &shoot.Spec.Extensions[len(shoot.Spec.Extensions)-1]
 	}
@@ -125,13 +134,13 @@ func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (cha
 
 	cfg := AuditlogExtensionConfig{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "AuditlogConfig",
-			APIVersion: "service.auditlog.extensions.gardener.cloud/v1alpha1",
+			Kind:       extensionKind,
+			APIVersion: extensionVersion,
 		},
-		Type:                "standard",
+		Type:                extensionType,
 		TenantID:            config.TenantID,
 		ServiceURL:          config.ServiceURL,
-		SecretReferenceName: "auditlog-credentials",
+		SecretReferenceName: auditlogSecretReference,
 	}
 
 	ext.ProviderConfig = &runtime.RawExtension{}
@@ -140,7 +149,10 @@ func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (cha
 	return
 }
 
-func (a *auditLogConfigurator) SetAuditLogAnnotation(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error) {
+// ConfigureAuditLog sets up fields required for audit log extension in a given shoot.
+// If the shoot is in a region without audit logs configured, it returns an error.
+// Returns true if shoot was modified.
+func (a *auditLogConfigurator) ConfigureAuditLogs(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error) {
 	auditLogConfig, err := a.getConfigFromFile()
 	if err != nil {
 		return false, err

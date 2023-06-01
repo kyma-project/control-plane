@@ -110,7 +110,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 		return err
 	}
 
-	annotated, err := r.auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+	annotated, err := r.auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 	if err != nil {
 		logger.Warnf("Cannot enable audit logs: %s", err.Error())
 		return nil

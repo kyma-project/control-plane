@@ -76,7 +76,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 		t.Log(shoot.Spec.Extensions)
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 
 		expected := `
             {
@@ -98,7 +98,6 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 		actual, _ := json.Marshal(shoot.Spec.Extensions[0])
 		assert.JSONEq(t, expected, string(actual))
-		// assert.Equal(t, expected, shoot.Spec.Extensions[0])
 	})
 
 	t.Run("should return error when config for provider is empty", func(t *testing.T) {
@@ -124,7 +123,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -155,7 +154,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -186,7 +185,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -245,7 +244,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		notAnnotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		notAnnotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
 
 		//then
 
