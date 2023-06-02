@@ -651,101 +651,101 @@ func NewProvisioningProcessingQueue(ctx context.Context, provisionManager *proce
 		step      process.Step
 		condition process.StepCondition
 	}{
-		{
-			stage: startStageName,
-			step:  provisioning.NewStartStep(db.Operations(), db.Instances()),
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  steps.NewInitKymaTemplate(db.Operations()),
-		},
-		{
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
-			condition: provisioning.SkipForOwnClusterPlan,
-		},
-		{
-			stage:    createRuntimeStageName,
-			step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
-			disabled: cfg.Avs.Disabled,
-		},
-		{
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
-			disabled:  cfg.EDP.Disabled,
-			condition: provisioning.SkipForOwnClusterPlan,
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
-			// Preview plan does not call Reconciler so it does not need overrides
-			condition: skipForPreviewPlan,
-		},
-		{
-			condition: provisioning.WhenBTPOperatorCredentialsProvided,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
-		},
-		{
-			condition: provisioning.SkipForOwnClusterPlan,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
-		},
-		{
-			condition: provisioning.DoForOwnClusterPlanOnly,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateRuntimeForOwnClusterStep(db.Operations(), db.Instances()),
-		},
-		{
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
-			condition: provisioning.SkipForOwnClusterPlan,
-		},
-		{
-			stage: createRuntimeStageName,
-			step:  provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
-		},
-		{
-			condition: provisioning.WhenBTPOperatorCredentialsProvided,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewInjectBTPOperatorCredentialsStep(db.Operations(), k8sClientProvider),
-		},
-		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			stage:    createRuntimeStageName,
-			step:     steps.SyncKubeconfig(db.Operations(), cli),
-		},
-		{
-			disabled:  cfg.ReconcilerIntegrationDisabled,
-			stage:     createRuntimeStageName,
-			step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
-			condition: skipForPreviewPlan,
-		},
-		{
-			disabled:  cfg.ReconcilerIntegrationDisabled,
-			stage:     checkKymaStageName,
-			step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
-			condition: skipForPreviewPlan,
-		},
-		{
-			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			stage:    createKymaResourceStageName,
-			step:     provisioning.NewApplyKymaStep(db.Operations(), cli),
-		},
-		// post actions
-		{
-			stage: postActionsStageName,
-			step:  provisioning.NewExternalEvalStep(externalEvalCreator),
-		},
-		{
-			stage:     postActionsStageName,
-			step:      provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
-			condition: provisioning.SkipForOwnClusterPlan,
-		},
+		// {
+		// 	stage: startStageName,
+		// 	step:  provisioning.NewStartStep(db.Operations(), db.Instances()),
+		// },
+		// {
+		// 	stage: createRuntimeStageName,
+		// 	step:  provisioning.NewInitialisationStep(db.Operations(), db.Instances(), inputFactory, runtimeVerConfigurator),
+		// },
+		// {
+		// 	stage: createRuntimeStageName,
+		// 	step:  steps.NewInitKymaTemplate(db.Operations()),
+		// },
+		// {
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewResolveCredentialsStep(db.Operations(), accountProvider),
+		// 	condition: provisioning.SkipForOwnClusterPlan,
+		// },
+		// {
+		// 	stage:    createRuntimeStageName,
+		// 	step:     provisioning.NewInternalEvaluationStep(avsDel, internalEvalAssistant),
+		// 	disabled: cfg.Avs.Disabled,
+		// },
+		// {
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewEDPRegistrationStep(db.Operations(), edpClient, cfg.EDP),
+		// 	disabled:  cfg.EDP.Disabled,
+		// 	condition: provisioning.SkipForOwnClusterPlan,
+		// },
+		// {
+		// 	stage: createRuntimeStageName,
+		// 	step:  provisioning.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
+		// 	// Preview plan does not call Reconciler so it does not need overrides
+		// 	condition: skipForPreviewPlan,
+		// },
+		// {
+		// 	condition: provisioning.WhenBTPOperatorCredentialsProvided,
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewBTPOperatorOverridesStep(db.Operations()),
+		// },
+		// {
+		// 	condition: provisioning.SkipForOwnClusterPlan,
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewCreateRuntimeWithoutKymaStep(db.Operations(), db.RuntimeStates(), db.Instances(), provisionerClient),
+		// },
+		// {
+		// 	condition: provisioning.DoForOwnClusterPlanOnly,
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewCreateRuntimeForOwnClusterStep(db.Operations(), db.Instances()),
+		// },
+		// {
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewCheckRuntimeStep(db.Operations(), provisionerClient, cfg.Provisioner.ProvisioningTimeout),
+		// 	condition: provisioning.SkipForOwnClusterPlan,
+		// },
+		// {
+		// 	stage: createRuntimeStageName,
+		// 	step:  provisioning.NewGetKubeconfigStep(db.Operations(), provisionerClient, k8sClientProvider),
+		// },
+		// {
+		// 	condition: provisioning.WhenBTPOperatorCredentialsProvided,
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewInjectBTPOperatorCredentialsStep(db.Operations(), k8sClientProvider),
+		// },
+		// {
+		// 	disabled: cfg.LifecycleManagerIntegrationDisabled,
+		// 	stage:    createRuntimeStageName,
+		// 	step:     steps.SyncKubeconfig(db.Operations(), cli),
+		// },
+		// {
+		// 	disabled:  cfg.ReconcilerIntegrationDisabled,
+		// 	stage:     createRuntimeStageName,
+		// 	step:      provisioning.NewCreateClusterConfiguration(db.Operations(), db.RuntimeStates(), reconcilerClient),
+		// 	condition: skipForPreviewPlan,
+		// },
+		// {
+		// 	disabled:  cfg.ReconcilerIntegrationDisabled,
+		// 	stage:     checkKymaStageName,
+		// 	step:      provisioning.NewCheckClusterConfigurationStep(db.Operations(), reconcilerClient, cfg.Reconciler.ProvisioningTimeout),
+		// 	condition: skipForPreviewPlan,
+		// },
+		// {
+		// 	disabled: cfg.LifecycleManagerIntegrationDisabled,
+		// 	stage:    createKymaResourceStageName,
+		// 	step:     provisioning.NewApplyKymaStep(db.Operations(), cli),
+		// },
+		// // post actions
+		// {
+		// 	stage: postActionsStageName,
+		// 	step:  provisioning.NewExternalEvalStep(externalEvalCreator),
+		// },
+		// {
+		// 	stage:     postActionsStageName,
+		// 	step:      provisioning.NewRuntimeTagsStep(internalEvalUpdater, provisionerClient),
+		// 	condition: provisioning.SkipForOwnClusterPlan,
+		// },
 	}
 	for _, step := range provisioningSteps {
 		if !step.disabled {
