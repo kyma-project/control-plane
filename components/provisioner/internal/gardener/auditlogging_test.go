@@ -2,9 +2,10 @@ package gardener
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus/hooks/test"
 	"path/filepath"
 	"testing"
+
+	"github.com/sirupsen/logrus/hooks/test"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/stretchr/testify/assert"
