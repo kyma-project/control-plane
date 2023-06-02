@@ -53,7 +53,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v20.10.17+incompatible // indirect
+	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
@@ -137,7 +137,6 @@ require (
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.14
 	github.com/containerd/containerd => github.com/containerd/containerd v1.6.18
-	github.com/docker/docker => github.com/docker/docker v20.10.18+incompatible
 	golang.org/x/crypto => golang.org/x/crypto v0.5.0
 	golang.org/x/net => golang.org/x/net v0.8.0
 	golang.org/x/sys => golang.org/x/sys v0.5.0
