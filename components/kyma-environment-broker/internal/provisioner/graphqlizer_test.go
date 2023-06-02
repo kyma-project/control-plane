@@ -178,7 +178,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		EnableMachineImageVersionAutoUpdate: ptr.Bool(true),
 		ControlPlaneFailureTolerance:        ptr.String("zone"),
 		EuAccess:                            ptr.Bool(true),
-		ShootNetworkingFilterDisabled: 		 ptr.Bool(true),
+		ShootNetworkingFilterDisabled:       ptr.Bool(true),
 	})
 
 	// then
