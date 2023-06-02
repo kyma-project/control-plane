@@ -159,3 +159,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: telemetries
+  serverless:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: serverlesses
