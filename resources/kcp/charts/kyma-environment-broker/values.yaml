@@ -3,7 +3,7 @@ global:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "v20230602-638fc208"
+      version: "v20230602-877fe74f"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230602-638fc208"
@@ -270,7 +270,7 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
-  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched
   #   to the generic job
   # name: "deprovision-retrigger-job"
   # schedule: "0 2 * * *"
