@@ -39,7 +39,7 @@ func (e *Encrypter) Encrypt(obj []byte) ([]byte, error) {
 func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	obj, err := base64.StdEncoding.DecodeString(string(obj))
 	if err != nil {
-		return nil, fmt.Errorf("while decoding object: %w", err)
+		return nil, fmt.Errorf("while decoding input object: %w", err)
 	}
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
@@ -54,7 +54,7 @@ func (e *Encrypter) Decrypt(obj []byte) ([]byte, error) {
 	cfb.XORKeyStream(obj, obj)
 	data, err := base64.StdEncoding.DecodeString(string(obj))
 	if err != nil {
-		return nil, fmt.Errorf("while decoding object: %w", err)
+		return nil, fmt.Errorf("while decoding internal object: %w", err)
 	}
 	return data, nil
 }

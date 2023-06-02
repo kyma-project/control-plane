@@ -22,6 +22,7 @@ const (
 	instancesURL       = "/oauth/v2/service_instances"
 	deprovisionTmpl    = "%s%s/%s?service_id=%s&plan_id=%s"
 	updateInstanceTmpl = "%s%s/%s"
+	getInstanceTmpl    = "%s%s/%s"
 )
 
 type (
@@ -54,10 +55,10 @@ type (
 
 type ClientConfig struct {
 	URL          string
-	TokenURL     string
-	ClientID     string
-	ClientSecret string
-	Scope        string
+	TokenURL     string `envconfig:"optional"`
+	ClientID     string `envconfig:"optional"`
+	ClientSecret string `envconfig:"optional"`
+	Scope        string `envconfig:"optional"`
 }
 
 type Client struct {
@@ -78,6 +79,13 @@ func NewClient(ctx context.Context, config ClientConfig) *Client {
 }
 
 func NewClientWithPoller(ctx context.Context, config ClientConfig, poller Poller) *Client {
+	if config.TokenURL == "" {
+		return &Client{
+			brokerConfig: config,
+			httpClient:   http.DefaultClient,
+			poller:       poller,
+		}
+	}
 	cfg := clientcredentials.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
@@ -134,6 +142,22 @@ func (c *Client) SendExpirationRequest(instance internal.Instance) (suspensionUn
 	defer c.warnOnError(resp.Body.Close)
 
 	return processResponse(instance.InstanceID, resp.StatusCode, resp)
+}
+
+func (c *Client) GetInstanceRequest(instanceID string) (response *http.Response, err error) {
+	request, err := prepareGetRequest(instanceID, c.brokerConfig.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("while executing request URL: %s for instanceID: %s: %w", request.URL,
+			instanceID, err)
+	}
+	defer c.warnOnError(resp.Body.Close)
+
+	return resp, nil
 }
 
 func processResponse(instanceID string, statusCode int, resp *http.Response) (suspensionUnderWay bool, err error) {
@@ -203,6 +227,17 @@ func preparePatchRequest(instance internal.Instance, brokerConfigURL string) (*h
 	request, err := http.NewRequest(http.MethodPatch, updateInstanceUrl, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return nil, fmt.Errorf("while creating request for instanceID: %s: %w", instance.InstanceID, err)
+	}
+	request.Header.Set("X-Broker-API-Version", "2.14")
+	return request, nil
+}
+
+func prepareGetRequest(instanceID string, brokerConfigURL string) (*http.Request, error) {
+	getInstanceUrl := fmt.Sprintf(getInstanceTmpl, brokerConfigURL, instancesURL, instanceID)
+
+	request, err := http.NewRequest(http.MethodGet, getInstanceUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("while creating GET request for instanceID: %s: %w", instanceID, err)
 	}
 	request.Header.Set("X-Broker-API-Version", "2.14")
 	return request, nil

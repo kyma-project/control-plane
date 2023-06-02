@@ -89,7 +89,7 @@ func (s *Service) PerformCleanup() error {
 }
 
 func (s *Service) cleanupRuntimes(runtimes []runtime) error {
-	s.logger.Infof("Runtimes to process: %+v\n", runtimes)
+	s.logger.Infof("Runtimes to process: %+v", runtimes)
 
 	if len(runtimes) == 0 {
 		return nil
@@ -100,7 +100,7 @@ func (s *Service) cleanupRuntimes(runtimes []runtime) error {
 
 func (s *Service) cleanupShoots(shoots []unstructured.Unstructured) error {
 	// do not log all shoots as previously - too much info
-	s.logger.Infof("Number of shoots to process: %+v\n", len(shoots))
+	s.logger.Infof("Number of shoots to process: %+v", len(shoots))
 
 	if len(shoots) == 0 {
 		return nil
@@ -147,7 +147,7 @@ func (s *Service) getStaleRuntimesByShoots(labelSelector string) ([]runtime, []u
 		log.Infof("Shoot %q is older than %f hours with age: %f hours", shoot.GetName(), s.MaxShootAge.Hours(), shootAge.Hours())
 		staleRuntime, err := s.shootToRuntime(shoot)
 		if err != nil {
-			s.logger.Info("found a shoot without kcp labels")
+			s.logger.Infof("found a shoot without kcp labels: %v", shoot.GetName())
 			shoots = append(shoots, shoot)
 			continue
 		}

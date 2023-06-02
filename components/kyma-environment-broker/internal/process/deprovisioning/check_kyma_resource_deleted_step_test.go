@@ -103,7 +103,7 @@ func assertNoKymaResourceWithGivenRuntimeID(t *testing.T, kcpClient client.Clien
 
 func fixKymaResourceWithGivenRuntimeID(kcpClient client.Client, kymaResourceNamespace string, resourceName string) error {
 	return kcpClient.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
-		"apiVersion": "operator.kyma-project.io/v1alpha1",
+		"apiVersion": "operator.kyma-project.io/v1beta2",
 		"kind":       "Kyma",
 		"metadata": map[string]interface{}{
 			"name":      resourceName,

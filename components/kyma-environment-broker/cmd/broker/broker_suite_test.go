@@ -1365,7 +1365,7 @@ func (s *BrokerSuiteTest) AssertKymaResourceExists(opId string) {
 	obj.SetNamespace("kyma-system")
 	obj.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "operator.kyma-project.io",
-		Version: "v1alpha1",
+		Version: "v1beta2",
 		Kind:    "Kyma",
 	})
 

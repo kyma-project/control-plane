@@ -104,6 +104,10 @@ func NewOrchestrationSuite(t *testing.T, additionalKymaVersions []string) *Orche
 	cfg.Reconciler = reconciler.Config{
 		ProvisioningTimeout: time.Second,
 	}
+	cfg.Notification = notification.Config{
+		Url:      "",
+		Disabled: true,
+	}
 
 	optionalComponentsDisablers := kebRuntime.ComponentsDisablers{}
 	optComponentsSvc := kebRuntime.NewOptionalComponentsService(optionalComponentsDisablers)
@@ -527,7 +531,7 @@ func fixK8sResources(defaultKymaVersion string, additionalKymaVersions []string)
 		Data: map[string]string{
 			"default": `
 kyma-template: |-
-  apiVersion: operator.kyma-project.io/v1alpha1
+  apiVersion: operator.kyma-project.io/v1beta2
   kind: Kyma
   metadata:
       name: my-kyma
@@ -1003,7 +1007,7 @@ func fixConfig() *Config {
 		},
 		Notification: notification.Config{
 			Url:      "http://host:8080/",
-			Disabled: false,
+			Disabled: true,
 		},
 		OrchestrationConfig: kebOrchestration.Config{
 			KymaVersion: defaultKymaVer,

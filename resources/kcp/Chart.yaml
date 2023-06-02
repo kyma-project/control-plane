@@ -1,4 +1,19 @@
-apiVersion: v1
+apiVersion: v2
 description: Kyma Control Plane
 name: kcp
 version: 0.1.0
+type: application
+
+dependencies:
+- name: postgresql
+  condition: global.database.embedded.enabled
+- name: provisioner
+  condition: global.provisioning.enabled
+- name: kyma-environment-broker
+  condition: global.kyma_environment_broker.enabled
+- name: kyma-metrics-collector
+  condition: global.kyma_metrics_collector.enabled
+- name: mothership-reconciler
+  condition: global.mothership_reconciler.enabled
+- name: component-reconcilers
+  condition: global.component_reconcilers.enabled

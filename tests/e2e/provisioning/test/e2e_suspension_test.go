@@ -1,6 +1,8 @@
 package test
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,8 +21,8 @@ func Test_E2E_Suspension(t *testing.T) {
 		ts.Cleanup()
 		return
 	}
-
 	configMap := ts.testConfigMap()
+	dashbaordPattern := fmt.Sprintf("%s/\\?kubeconfigID=[0-9a-f\\-]{36}", ts.BusolaURL)
 
 	ts.log.Info("Starting e2e suspension test")
 	operationID, err := ts.brokerClient.ProvisionRuntime("")
@@ -41,8 +43,9 @@ func Test_E2E_Suspension(t *testing.T) {
 	err = ts.configMapClient.Update(configMap)
 	require.NoError(t, err)
 
-	err = ts.dashboardChecker.AssertRedirectedToBusola(dashboardURL, ts.BusolaURL)
-	assert.NoError(t, err)
+	match, err := regexp.MatchString(dashbaordPattern, dashboardURL)
+	require.NoError(t, err)
+	require.True(t, match)
 
 	err = ts.brokerClient.SuspendRuntime()
 	assert.NoError(t, err)
@@ -64,6 +67,7 @@ func Test_E2E_Suspension(t *testing.T) {
 	err = ts.secretClient.Create(ts.testSecret(config))
 	require.NoError(t, err)
 
-	err = ts.dashboardChecker.AssertRedirectedToBusola(dashboardURL, ts.BusolaURL)
-	assert.NoError(t, err)
+	match, err = regexp.MatchString(dashbaordPattern, dashboardURL)
+	require.NoError(t, err)
+	require.True(t, match)
 }

@@ -1,8 +1,10 @@
 global:
+  containerRegistry:
+    path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      dir:
-      version: "PR-2525"
+      version: "PR-2759"
+      dir: "dev"
 
 deployment:
   replicaCount: 1

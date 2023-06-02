@@ -26,8 +26,12 @@ import (
 type OperationFactory interface {
 	NewOperation(o internal.Orchestration, r orchestration.Runtime, i internal.Instance, state domain.LastOperationState) (orchestration.RuntimeOperation, error)
 	ResumeOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
+	CancelOperation(orchestrationID string, runtimeID string) error
 	CancelOperations(orchestrationID string) error
 	RetryOperations(operationIDs []string) ([]orchestration.RuntimeOperation, error)
+	QueryOperation(orchestrationID string, r orchestration.Runtime) (bool, orchestration.RuntimeOperation, error)
+	QueryOperations(orchestrationID string) ([]orchestration.RuntimeOperation, error)
+	NotifyOperation(orchestrationID string, runtimeID string, oState string, notifyState orchestration.NotificationStateType) error
 }
 
 type orchestrationManager struct {
@@ -67,14 +71,24 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 		return m.failOrchestration(o, fmt.Errorf("failed to get orchestration: %w", err))
 	}
 
-	maintenancePolicy, err := m.getMaintenancePolicy()
+	operations, runtimeNums, err := m.waitForStart(o)
 	if err != nil {
-		m.log.Warnf("while getting maintenance policy: %s", err)
+		m.failOrchestration(o, fmt.Errorf("failed while waiting start for operations: %w", err))
 	}
 
-	operations, err := m.resolveOperations(o, maintenancePolicy)
-	if err != nil {
-		return m.failOrchestration(o, fmt.Errorf("failed to resolve operations: %w", err))
+	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
+		o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
+	}
+	if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
+		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
+	}
+
+	if o.State == orchestration.Pending || o.State == orchestration.Retrying {
+		if runtimeNums != 0 {
+			o.State = orchestration.InProgress
+		} else {
+			o.State = orchestration.Succeeded
+		}
 	}
 
 	err = m.orchestrationStorage.Update(*o)
@@ -89,15 +103,6 @@ func (m *orchestrationManager) Execute(orchestrationID string) (time.Duration, e
 	}
 
 	strategy := m.resolveStrategy(o.Parameters.Strategy.Type, m.executor, logger)
-
-	// ctreate notification after orchestration resolved
-	if !m.bundleBuilder.DisabledCheck() {
-		err := m.sendNotificationCreate(o, operations)
-		//currently notification error can only be temporary error
-		if err != nil && kebError.IsTemporaryError(err) {
-			return 5 * time.Second, nil
-		}
-	}
 
 	execID, err := strategy.Execute(operations, o.Parameters.Strategy)
 	if err != nil {
@@ -161,16 +166,27 @@ func (m *orchestrationManager) extractRuntimes(o *internal.Orchestration, runtim
 	return fileterRuntimes
 }
 
-func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation, updateWindow bool) ([]orchestration.RuntimeOperation, *internal.Orchestration, int, error) {
+func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orchestration, policy orchestration.MaintenancePolicy, retryRT []orchestration.RuntimeOperation, updateWindow bool) ([]orchestration.RuntimeOperation, *internal.Orchestration, []orchestration.Runtime, error) {
 	result := []orchestration.RuntimeOperation{}
 	runtimes, err := m.resolver.Resolve(o.Parameters.Targets)
 	if err != nil {
-		return result, o, len(runtimes), fmt.Errorf("while resolving targets: %w", err)
+		return result, o, runtimes, fmt.Errorf("while resolving targets: %w", err)
 	}
 
 	fileterRuntimes := m.extractRuntimes(o, runtimes, retryRT)
 
 	for _, r := range fileterRuntimes {
+		var op orchestration.RuntimeOperation
+		if o.State == orchestration.Pending {
+			exist, op, err := m.factory.QueryOperation(o.OrchestrationID, r)
+			if err != nil {
+				return nil, o, runtimes, fmt.Errorf("while quering operation for runtime id %q: %w", r.RuntimeID, err)
+			}
+			if exist {
+				result = append(result, op)
+				continue
+			}
+		}
 		if updateWindow {
 			windowBegin := time.Time{}
 			windowEnd := time.Time{}
@@ -196,63 +212,92 @@ func (m *orchestrationManager) NewOperationForPendingRetrying(o *internal.Orches
 
 		inst, err := m.instanceStorage.GetByID(r.InstanceID)
 		if err != nil {
-			return nil, o, len(runtimes), fmt.Errorf("while getting instance %s: %w", r.InstanceID, err)
+			return nil, o, runtimes, fmt.Errorf("while getting instance %s: %w", r.InstanceID, err)
 		}
 
-		op, err := m.factory.NewOperation(*o, r, *inst, orchestration.Pending)
+		op, err = m.factory.NewOperation(*o, r, *inst, orchestration.Pending)
 		if err != nil {
-			return nil, o, len(runtimes), fmt.Errorf("while creating new operation for runtime id %q: %w", r.RuntimeID, err)
+			return nil, o, runtimes, fmt.Errorf("while creating new operation for runtime id %q: %w", r.RuntimeID, err)
 		}
 
 		result = append(result, op)
 
 	}
 
-	if o.Parameters.Kyma == nil || o.Parameters.Kyma.Version == "" {
-		o.Parameters.Kyma = &orchestration.KymaParameters{Version: m.kymaVersion}
-	}
-	if o.Parameters.Kubernetes == nil || o.Parameters.Kubernetes.KubernetesVersion == "" {
-		o.Parameters.Kubernetes = &orchestration.KubernetesParameters{KubernetesVersion: m.kubernetesVersion}
-	}
-
-	if len(fileterRuntimes) != 0 {
-		o.State = orchestration.InProgress
-	} else {
-		o.State = orchestration.Succeeded
-	}
-	return result, o, len(fileterRuntimes), nil
+	return result, o, fileterRuntimes, nil
 }
 
-func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policy orchestration.MaintenancePolicy) ([]orchestration.RuntimeOperation, error) {
+func (m *orchestrationManager) cancelOperationForNonExistent(o *internal.Orchestration, resolvedOperations []orchestration.RuntimeOperation) error {
+	storageOperations, err := m.factory.QueryOperations(o.OrchestrationID)
+	if err != nil {
+		return fmt.Errorf("while quering operations for orchestration %s: %w", o.OrchestrationID, err)
+	}
+	var storageOpIDs []string
+	for _, storageOperation := range storageOperations {
+		storageOpIDs = append(storageOpIDs, storageOperation.Runtime.RuntimeID)
+	}
+	var resolvedOpIDs []string
+	for _, resolvedOperation := range resolvedOperations {
+		resolvedOpIDs = append(resolvedOpIDs, resolvedOperation.Runtime.RuntimeID)
+	}
+
+	//find diffs that exist in storageOperations but not in resolvedOperations
+	operationIdMap := make(map[string]struct{}, len(resolvedOpIDs))
+	for _, resolvedOpID := range resolvedOpIDs {
+		operationIdMap[resolvedOpID] = struct{}{}
+	}
+	var nonExistentIDs []string
+	for _, storageOpID := range storageOpIDs {
+		if _, found := operationIdMap[storageOpID]; !found {
+			nonExistentIDs = append(nonExistentIDs, storageOpID)
+		}
+	}
+
+	//cancel operations for non existent runtimes
+	for _, nonExistentID := range nonExistentIDs {
+		err := m.factory.CancelOperation(o.OrchestrationID, nonExistentID)
+		if err != nil {
+			return fmt.Errorf("while resolving canceled operations for runtime id %q: %w", nonExistentID, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, policy orchestration.MaintenancePolicy) ([]orchestration.RuntimeOperation, []orchestration.Runtime, error) {
 	result := []orchestration.RuntimeOperation{}
+	filterRuntimes := []orchestration.Runtime{}
 	if o.State == orchestration.Pending {
 		var err error
-		var runtTimesNum int
-		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, result, true)
+		result, o, filterRuntimes, err = m.NewOperationForPendingRetrying(o, policy, result, true)
 		if err != nil {
-			return nil, fmt.Errorf("while creating new operation for pending: %w", err)
+			return nil, filterRuntimes, fmt.Errorf("while creating new operation for pending: %w", err)
+		}
+		//cancel operations that no longer exist, and cancel their notification
+		err = m.cancelOperationForNonExistent(o, result)
+		if err != nil {
+			return nil, filterRuntimes, fmt.Errorf("while canceling non existent operation for pending: %w", err)
 		}
 
-		o.Description = fmt.Sprintf("Scheduled %d operations", runtTimesNum)
+		o.Description = fmt.Sprintf("Scheduled %d operations", len(filterRuntimes))
 	} else if o.State == orchestration.Retrying {
 		//check retry operation list, if empty return error
 		if len(o.Parameters.RetryOperation.RetryOperations) == 0 {
-			return nil, fmt.Errorf("while retrying operations: %w",
+			return nil, filterRuntimes, fmt.Errorf("while retrying operations: %w",
 				fmt.Errorf("o.Parameters.RetryOperation.RetryOperations is empty"))
 		}
 		retryRuntimes, err := m.factory.RetryOperations(o.Parameters.RetryOperation.RetryOperations)
 		if err != nil {
-			return retryRuntimes, fmt.Errorf("while resolving retrying orchestration: %w", err)
+			return retryRuntimes, filterRuntimes, fmt.Errorf("while resolving retrying orchestration: %w", err)
 		}
 
-		var runtTimesNum int
-		result, o, runtTimesNum, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes, true)
+		result, o, filterRuntimes, err = m.NewOperationForPendingRetrying(o, policy, retryRuntimes, true)
 
 		if err != nil {
-			return nil, fmt.Errorf("while NewOperationForPendingRetrying: %w", err)
+			return nil, filterRuntimes, fmt.Errorf("while NewOperationForPendingRetrying: %w", err)
 		}
 
-		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", runtTimesNum))
+		o.Description = updateRetryingDescription(o.Description, fmt.Sprintf("retried %d operations", len(filterRuntimes)))
 		o.Parameters.RetryOperation.RetryOperations = nil
 		o.Parameters.RetryOperation.Immediate = false
 		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
@@ -261,13 +306,13 @@ func (m *orchestrationManager) resolveOperations(o *internal.Orchestration, poli
 		var err error
 		result, err = m.factory.ResumeOperations(o.OrchestrationID)
 		if err != nil {
-			return result, fmt.Errorf("while resuming operation: %w", err)
+			return result, filterRuntimes, fmt.Errorf("while resuming operation: %w", err)
 		}
 
 		m.log.Infof("Resuming %d operations for orchestration %s", len(result), o.OrchestrationID)
 	}
 
-	return result, nil
+	return result, filterRuntimes, nil
 }
 
 func (m *orchestrationManager) resolveStrategy(sType orchestration.StrategyType, executor orchestration.OperationExecutor, log logrus.FieldLogger) orchestration.Strategy {
@@ -385,10 +430,22 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 		}
 		// Send customer notification for cancel
 		if !m.bundleBuilder.DisabledCheck() {
-			err := m.sendNotificationCancel(o)
+			operations, err := m.factory.QueryOperations(o.OrchestrationID)
+			if err != nil {
+				return nil, fmt.Errorf("while quering operations for orchestration %s: %w", o.OrchestrationID, err)
+			}
+			err = m.sendNotificationCancel(o, operations)
 			//currently notification error can only be temporary error
 			if err != nil && kebError.IsTemporaryError(err) {
 				return nil, err
+			}
+			//update notification state for notified operations
+			for _, operation := range operations {
+				runtimeID := operation.Runtime.RuntimeID
+				err = m.factory.NotifyOperation(o.OrchestrationID, runtimeID, orchestration.Canceling, orchestration.NotificationCancelled)
+				if err != nil {
+					return nil, fmt.Errorf("while updaring operation for runtime id %q: %w", runtimeID, err)
+				}
 			}
 		}
 		o.State = orchestration.Canceled
@@ -511,78 +568,86 @@ func (m *orchestrationManager) updateOrchestration(o *internal.Orchestration, st
 }
 
 func (m *orchestrationManager) sendNotificationCreate(o *internal.Orchestration, operations []orchestration.RuntimeOperation) error {
-	if o.State == orchestration.InProgress {
-		if o.Parameters.NotificationState == "" {
-			m.log.Info("Initialize notification status")
-			o.Parameters.NotificationState = orchestration.NotificationPending
-		}
-		//Skip sending create signal if notification already existed
-		if o.Parameters.NotificationState == orchestration.NotificationPending {
-			eventType := ""
-			tenants := []notification.NotificationTenant{}
-			if o.Type == orchestration.UpgradeKymaOrchestration {
-				eventType = notification.KymaMaintenanceNumber
-			} else if o.Type == orchestration.UpgradeClusterOrchestration {
-				eventType = notification.KubernetesMaintenanceNumber
-			}
-			for _, op := range operations {
-				startDate := ""
-				endDate := ""
-				if o.Parameters.Strategy.MaintenanceWindow {
-					startDate = op.Runtime.MaintenanceWindowBegin.String()
-					endDate = op.Runtime.MaintenanceWindowEnd.String()
-				} else {
-					startDate = time.Now().Format("2006-01-02 15:04:05")
-				}
-				tenant := notification.NotificationTenant{
-					InstanceID: op.Runtime.InstanceID,
-					StartDate:  startDate,
-					EndDate:    endDate,
-				}
-				tenants = append(tenants, tenant)
-			}
-			notificationParams := notification.NotificationParams{
-				OrchestrationID: o.OrchestrationID,
-				EventType:       eventType,
-				Tenants:         tenants,
-			}
-			m.log.Info("Start to create notification")
-			notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
-			if err != nil {
-				m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
-				return err
-			}
-			err = notificationBundle.CreateNotificationEvent()
-			if err != nil {
-				m.log.Errorf("%s: %s", "cannot send notification", err)
-				return err
-			}
-			m.log.Info("Creating notification succedded")
-			o.Parameters.NotificationState = orchestration.NotificationCreated
-		}
+	eventType := ""
+	tenants := []notification.NotificationTenant{}
+	if o.Type == orchestration.UpgradeKymaOrchestration {
+		eventType = notification.KymaMaintenanceNumber
+	} else if o.Type == orchestration.UpgradeClusterOrchestration {
+		eventType = notification.KubernetesMaintenanceNumber
 	}
+
+	for _, operation := range operations {
+		startDate := ""
+		endDate := ""
+		if o.Parameters.Strategy.MaintenanceWindow {
+			startDate = operation.Runtime.MaintenanceWindowBegin.String()
+			endDate = operation.Runtime.MaintenanceWindowEnd.String()
+		} else {
+			startDate = time.Now().Format("2006-01-02 15:04:05")
+		}
+		tenant := notification.NotificationTenant{
+			InstanceID: operation.Runtime.InstanceID,
+			StartDate:  startDate,
+			EndDate:    endDate,
+		}
+		tenants = append(tenants, tenant)
+	}
+
+	notificationParams := notification.NotificationParams{
+		OrchestrationID: o.OrchestrationID,
+		EventType:       eventType,
+		Tenants:         tenants,
+	}
+	m.log.Info("Start to create notification")
+	notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
+	if err != nil {
+		m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
+		return err
+	}
+	err = notificationBundle.CreateNotificationEvent()
+	if err != nil {
+		m.log.Errorf("%s: %s", "cannot send notification", err)
+		return err
+	}
+	m.log.Info("Creating notification succedded")
+
 	return nil
 }
 
-func (m *orchestrationManager) sendNotificationCancel(o *internal.Orchestration) error {
-	if o.Parameters.NotificationState == orchestration.NotificationCreated {
-		notificationParams := notification.NotificationParams{
-			OrchestrationID: o.OrchestrationID,
-		}
-		m.log.Info("Start to cancel notification")
-		notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
-		if err != nil {
-			m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
-			return err
-		}
-		err = notificationBundle.CancelNotificationEvent()
-		if err != nil {
-			m.log.Errorf("%s: %s", "cannot cancel notification", err)
-			return err
-		}
-		m.log.Info("Cancelling notification succedded")
-		o.Parameters.NotificationState = orchestration.NotificationCancelled
+func (m *orchestrationManager) sendNotificationCancel(o *internal.Orchestration, ops []orchestration.RuntimeOperation) error {
+	eventType := ""
+	tenants := []notification.NotificationTenant{}
+	if o.Type == orchestration.UpgradeKymaOrchestration {
+		eventType = notification.KymaMaintenanceNumber
+	} else if o.Type == orchestration.UpgradeClusterOrchestration {
+		eventType = notification.KubernetesMaintenanceNumber
 	}
+	for _, op := range ops {
+		if op.NotificationState == orchestration.NotificationCreated {
+			tenant := notification.NotificationTenant{
+				InstanceID: op.Runtime.InstanceID,
+			}
+			tenants = append(tenants, tenant)
+		}
+	}
+	notificationParams := notification.NotificationParams{
+		OrchestrationID: o.OrchestrationID,
+		EventType:       eventType,
+		Tenants:         tenants,
+	}
+	m.log.Info("Start to cancel notification")
+	notificationBundle, err := m.bundleBuilder.NewBundle(o.OrchestrationID, notificationParams)
+	if err != nil {
+		m.log.Errorf("%s: %s", "failed to create Notification Bundle", err)
+		return err
+	}
+	err = notificationBundle.CancelNotificationEvent()
+	if err != nil {
+		m.log.Errorf("%s: %s", "cannot cancel notification", err)
+		return err
+	}
+	m.log.Info("Cancelling notification succedded")
+
 	return nil
 }
 
@@ -592,4 +657,56 @@ func updateRetryingDescription(desc string, newDesc string) string {
 	}
 
 	return desc + ", " + newDesc
+}
+
+func (m *orchestrationManager) waitForStart(o *internal.Orchestration) ([]orchestration.RuntimeOperation, int, error) {
+	maintenancePolicy, err := m.getMaintenancePolicy()
+	if err != nil {
+		m.log.Warnf("while getting maintenance policy: %s", err)
+	}
+
+	//polling every 5 min until ochestration start
+	pollingInterval := 5 * time.Minute
+	var operations, unnotified_operations []orchestration.RuntimeOperation
+	var filterRuntimes []orchestration.Runtime
+	err = wait.PollImmediateInfinite(pollingInterval, func() (bool, error) {
+		//resolve operations, cancel non existent ones
+		operations, filterRuntimes, err = m.resolveOperations(o, maintenancePolicy)
+		if err != nil {
+			return true, err
+		}
+
+		//send notification for each operation which doesn't have one
+		if !m.bundleBuilder.DisabledCheck() && o.State == orchestration.Pending {
+			for _, operation := range operations {
+				if operation.NotificationState == "" {
+					unnotified_operations = append(unnotified_operations, operation)
+				}
+			}
+			err = m.sendNotificationCreate(o, unnotified_operations)
+			//currently notification error can only be temporary error
+			if err != nil && kebError.IsTemporaryError(err) {
+				return true, err
+			}
+
+			//update notification state for notified operations
+			for _, operation := range unnotified_operations {
+				runtimeID := operation.Runtime.RuntimeID
+				err = m.factory.NotifyOperation(o.OrchestrationID, runtimeID, orchestration.Pending, orchestration.NotificationCreated)
+				if err != nil {
+					return true, fmt.Errorf("while updaring operation for runtime id %q: %w", runtimeID, err)
+				}
+			}
+		}
+
+		//leave polling when ochestration starts
+		if time.Now().After(o.Parameters.Strategy.ScheduleTime) {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return []orchestration.RuntimeOperation{}, len(filterRuntimes), fmt.Errorf("while waiting for orchestration start: %w", err)
+	}
+	return operations, len(filterRuntimes), nil
 }

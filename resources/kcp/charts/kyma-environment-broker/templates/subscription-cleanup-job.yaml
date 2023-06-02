@@ -8,9 +8,6 @@ spec:
       name: subscription-cleanup-job
     spec:
       template:
-        metadata:
-          annotations:
-            sidecar.istio.io/inject: “false”
         spec:
           containers:
             - image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environments_subscription_cleanup_job.dir }}kyma-environment-subscription-cleanup-job:{{ .Values.global.images.kyma_environments_subscription_cleanup_job.version }}"
