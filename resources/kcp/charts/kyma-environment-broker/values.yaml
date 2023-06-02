@@ -4,9 +4,6 @@ global:
     kyma_environment_broker:
       dir:
       version: "PR-2818"
-    kyma_environments_cleanup_job:
-      dir:
-      version: "PR-2618"
     kyma_environments_subaccount_cleanup_job:
       dir:
       version: "v20230525-1410c281"
