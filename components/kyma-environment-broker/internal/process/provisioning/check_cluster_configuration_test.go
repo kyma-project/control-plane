@@ -229,6 +229,8 @@ func fixInputCreator(t *testing.T) internal.ProvisionerInputCreator {
 			DefaultGardenerShootPurpose:   shootPurpose,
 			AutoUpdateKubernetesVersion:   autoUpdateKubernetesVersion,
 			AutoUpdateMachineImageVersion: autoUpdateMachineImageVersion,
+			MultiZoneCluster:              true,
+			ControlPlaneFailureTolerance:  "zone",
 		}, kymaVersion, fixTrialRegionMapping(), fixFreemiumProviders(), fixture.FixOIDCConfigDTO())
 	assert.NoError(t, err)
 
