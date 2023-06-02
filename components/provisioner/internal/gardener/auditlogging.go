@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"regexp"
 
@@ -21,7 +22,7 @@ const (
 
 type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
-	ConfigureAuditLogs(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error)
+	ConfigureAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error)
 }
 
 type auditLogConfigurator struct {
@@ -149,10 +150,10 @@ func configureExtension(shoot *gardener_types.Shoot, config AuditLogConfig) (cha
 	return
 }
 
-// ConfigureAuditLog sets up fields required for audit log extension in a given shoot.
+// ConfigureAuditLogs sets up fields required for audit log extension in a given shoot.
 // If the shoot is in a region without audit logs configured, it returns an error.
 // Returns true if shoot was modified.
-func (a *auditLogConfigurator) ConfigureAuditLogs(shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error) {
+func (a *auditLogConfigurator) ConfigureAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seed gardener_types.Seed) (bool, error) {
 	auditLogConfig, err := a.getConfigFromFile()
 	if err != nil {
 		return false, err
@@ -178,6 +179,12 @@ func (a *auditLogConfigurator) ConfigureAuditLogs(shoot *gardener_types.Shoot, s
 	changedExt, err := configureExtension(shoot, tenant)
 	changedSec := configureSecret(shoot, tenant)
 
+	if changedSec {
+		logger.Info("Configured auditlog secret")
+	}
+	if changedExt {
+		logger.Info("Configured auditlog extension")
+	}
 	return changedExt || changedSec, err
 }
 

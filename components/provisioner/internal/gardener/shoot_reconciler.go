@@ -44,7 +44,7 @@ type Reconciler struct {
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithField("Shoot", req.NamespacedName)
-	log.Infof("Reconciling Shoot")
+	log.Debug("Reconciling Shoot")
 
 	var shoot gardener_types.Shoot
 	if err := r.client.Get(ctx, req.NamespacedName, &shoot); err != nil {
@@ -100,7 +100,7 @@ func (r *Reconciler) updateShoot(modifiedShoot *gardener_types.Shoot) error {
 }
 
 func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_types.Shoot, seedName string) error {
-	logger.Info("Enabling audit logs")
+	logger.Debug("Enabling audit logs")
 
 	seedKey := types.NamespacedName{Name: seedName, Namespace: ""}
 
@@ -110,7 +110,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 		return err
 	}
 
-	annotated, err := r.auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+	annotated, err := r.auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 	if err != nil {
 		logger.Warnf("Cannot enable audit logs: %s", err.Error())
 		return nil

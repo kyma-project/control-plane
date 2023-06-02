@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"encoding/json"
+	"github.com/sirupsen/logrus/hooks/test"
 	"path/filepath"
 	"testing"
 
@@ -52,6 +53,8 @@ func TestAuditLogConfigurator_CanEnableAuditLogsForShoot(t *testing.T) {
 }
 
 func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+
 	t.Run("should annotate shoot and return true", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
@@ -76,7 +79,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 		t.Log(shoot.Spec.Extensions)
 		//when
-		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		expected := `
             {
@@ -123,7 +126,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -154,7 +157,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -185,7 +188,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -244,7 +247,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		notAnnotated, err := auditLogConfigurator.ConfigureAuditLogs(shoot, seed)
+		notAnnotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 
