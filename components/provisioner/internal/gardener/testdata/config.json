@@ -1,6 +1,14 @@
 {
   "azure": {
-    "cf.us21": "e7382275-e835-4549-94e1-3b1101e3a1fa",
-    "cf.eu10": "12d68c35-556b-4966-a061-235d4a060929"
+    "cf.eu10": {
+      "tenantID": "79c64792-9c1e-4c1b-9941-ef7560dd3eae",
+      "serviceURL": "https://auditlog.example.com:3001",
+      "secretName": "auditlog-secret2"
+    },
+    "cf.us21": {
+      "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+      "serviceURL": "https://auditlog.example.com:3000",
+      "secretName": "auditlog-secret"
+    }
   }
 }

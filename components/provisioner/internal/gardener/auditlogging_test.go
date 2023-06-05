@@ -1,13 +1,18 @@
 package gardener
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
+
+	"github.com/sirupsen/logrus/hooks/test"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestAuditLogConfigurator_CanEnableAuditLogsForShoot(t *testing.T) {
@@ -49,6 +54,8 @@ func TestAuditLogConfigurator_CanEnableAuditLogsForShoot(t *testing.T) {
 }
 
 func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+
 	t.Run("should annotate shoot and return true", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
@@ -71,13 +78,30 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
+		t.Log(shoot.Spec.Extensions)
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
+
+		expected := `
+            {
+                "providerConfig": {
+                    "apiVersion": "service.auditlog.extensions.gardener.cloud/v1alpha1",
+                    "kind": "AuditlogConfig",
+                    "secretReferenceName": "auditlog-credentials",
+                    "serviceURL": "https://auditlog.example.com:3000",
+                    "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+                    "type": "standard"
+                },
+                "type": "shoot-auditlog-service"
+            }`
 
 		//then
 		require.NoError(t, err)
 		assert.True(t, annotated)
-		assert.Equal(t, "e7382275-e835-4549-94e1-3b1101e3a1fa", shoot.Annotations[auditLogsAnnotation])
+		t.Log(shoot.Spec.Extensions)
+
+		actual, _ := json.Marshal(shoot.Spec.Extensions[0])
+		assert.JSONEq(t, expected, string(actual))
 	})
 
 	t.Run("should return error when config for provider is empty", func(t *testing.T) {
@@ -103,7 +127,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -134,7 +158,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -165,7 +189,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		annotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		annotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
 		require.Error(t, err)
@@ -176,8 +200,34 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 	t.Run("should return false when shoot is already anotated", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
-		shoot.Annotations = map[string]string{}
-		shoot.Annotations[auditLogsAnnotation] = "e7382275-e835-4549-94e1-3b1101e3a1fa"
+		shoot.Spec.Extensions = []gardener_types.Extension{
+			{
+				Type: "shoot-auditlog-service",
+				ProviderConfig: &runtime.RawExtension{
+					Raw: []byte(`
+{
+                    "apiVersion": "service.auditlog.extensions.gardener.cloud/v1alpha1",
+                    "kind": "AuditlogConfig",
+                    "secretReferenceName": "auditlog-credentials",
+                    "serviceURL": "https://auditlog.example.com:3000",
+                    "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+                    "type": "standard"
+}
+`),
+				},
+			},
+		}
+
+		shoot.Spec.Resources = []gardener_types.NamedResourceReference{
+			{
+				Name: "auditlog-credentials",
+				ResourceRef: autoscaling.CrossVersionObjectReference{
+					Kind:       "Secret",
+					Name:       "auditlog-secret",
+					APIVersion: "v1",
+				},
+			},
+		}
 		seed := gardener_types.Seed{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "az-eu",
@@ -198,11 +248,26 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 		auditLogConfigurator := NewAuditLogConfigurator(configPath)
 
 		//when
-		notAnnotated, err := auditLogConfigurator.SetAuditLogAnnotation(shoot, seed)
+		notAnnotated, err := auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 
 		//then
+
+		expected := `
+            {
+                "providerConfig": {
+                    "apiVersion": "service.auditlog.extensions.gardener.cloud/v1alpha1",
+                    "kind": "AuditlogConfig",
+                    "secretReferenceName": "auditlog-credentials",
+                    "serviceURL": "https://auditlog.example.com:3000",
+                    "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+                    "type": "standard"
+                },
+                "type": "shoot-auditlog-service"
+            }`
+
 		require.NoError(t, err)
 		assert.False(t, notAnnotated)
-		assert.Equal(t, "e7382275-e835-4549-94e1-3b1101e3a1fa", shoot.Annotations[auditLogsAnnotation])
+		actual, _ := json.Marshal(shoot.Spec.Extensions[0])
+		assert.JSONEq(t, expected, string(actual))
 	})
 }
