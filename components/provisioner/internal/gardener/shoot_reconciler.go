@@ -120,7 +120,7 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 		return nil
 	}
 
-	logger.Info("Modifying Audit Log Tenant")
+	logger.Debug("Modifying Audit Log config")
 	if err := r.updateShoot(shoot); err != nil {
 		logger.Warnf("Failed to update shoot: %s", err.Error())
 		return err
