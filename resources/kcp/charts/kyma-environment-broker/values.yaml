@@ -15,7 +15,7 @@ global:
       version: "v20230602-638fc208"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20230602-638fc208"
+      version: "v20230525-1410c281"
 
 deployment:
   replicaCount: 1
