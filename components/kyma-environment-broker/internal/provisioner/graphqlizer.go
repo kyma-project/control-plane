@@ -137,6 +137,9 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- if .EuAccess }}
 		euAccess: {{ .EuAccess }},
 		{{- end }}
+		{{- if .ShootNetworkingFilterDisabled }}
+		shootNetworkingFilterDisabled: {{ .ShootNetworkingFilterDisabled }},
+		{{- end }}
 	}`)
 }
 

@@ -1,7 +1,7 @@
 {{- range $index, $property := .Values.cronJobs }}
 {{- $job := get $.Values $property }}
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ $job.name }}

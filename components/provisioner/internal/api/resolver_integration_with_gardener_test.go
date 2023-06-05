@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -256,7 +257,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			fullConfig := gqlschema.ProvisionRuntimeInput{RuntimeInput: &runtimeInput, ClusterConfig: &clusterConfig}
 
-			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogTenant)
+			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogConfig)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
@@ -307,7 +308,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	})
 }
 
-func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogTenant string) {
+func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogConfig *gardener.AuditLogConfig) {
 
 	// when Provisioning Runtime
 	provisionRuntime, err := resolver.ProvisionRuntime(ctx, fullConfig)
@@ -337,7 +338,26 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	assert.Equal(t, runtimeID, shoot.Annotations["compass.provisioner.kyma-project.io/runtime-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["kcp.provisioner.kyma-project.io/operation-id"])
 	assert.Equal(t, *provisionRuntime.ID, shoot.Annotations["compass.provisioner.kyma-project.io/operation-id"])
-	assert.Equal(t, auditLogTenant, shoot.Annotations["custom.shoot.sapcloud.io/subaccountId"])
+
+	ext := gardener.FindExtension(shoot)
+	sec := gardener.FindSecret(shoot)
+
+	if auditLogConfig != nil {
+		require.NotNil(t, ext)
+		extCfg := gardener.AuditlogExtensionConfig{}
+		err = json.Unmarshal(ext.ProviderConfig.Raw, &extCfg)
+		require.NoError(t, err)
+		assert.Equal(t, "auditlog-credentials", extCfg.SecretReferenceName)
+		assert.Equal(t, auditLogConfig.TenantID, extCfg.TenantID)
+		assert.Equal(t, auditLogConfig.ServiceURL, extCfg.ServiceURL)
+
+		require.NotNil(t, sec)
+		assert.Equal(t, auditLogConfig.SecretName, sec.ResourceRef.Name)
+		assert.Equal(t, "Secret", sec.ResourceRef.Kind)
+	} else {
+		assert.Nil(t, ext)
+	}
+
 	assert.Equal(t, subAccountId, shoot.Labels[model.SubAccountLabel])
 
 	// when checking Runtime Status
@@ -354,55 +374,6 @@ func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 	}
 
 	assert.Equal(t, expectedSeed, *runtimeStatusProvisioned.RuntimeConfiguration.ClusterConfig.Seed)
-}
-
-func testUpgradeRuntimeAndRollback(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string) {
-
-	// when Upgrading Runtime
-	upgradeRuntimeOp, err := resolver.UpgradeRuntime(ctx, runtimeID, gqlschema.UpgradeRuntimeInput{})
-
-	// then
-	require.NoError(t, err)
-	assert.NotEmpty(t, upgradeRuntimeOp.ID)
-	assert.Equal(t, gqlschema.OperationTypeUpgrade, upgradeRuntimeOp.Operation)
-	assert.Equal(t, gqlschema.OperationStateInProgress, upgradeRuntimeOp.State)
-	require.NotNil(t, upgradeRuntimeOp.RuntimeID)
-	assert.Equal(t, runtimeID, *upgradeRuntimeOp.RuntimeID)
-
-	// wait for queue to process operation
-	time.Sleep(9 * waitPeriod)
-
-	// assert db content
-	readSession := dbsFactory.NewReadSession()
-	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-	require.NoError(t, err)
-	assert.Equal(t, model.UpgradeSucceeded, runtimeUpgrade.State)
-	assert.NotEmpty(t, runtimeUpgrade.PostUpgradeKymaConfigId)
-	runtimeFromDB, err := readSession.GetCluster(runtimeID)
-	require.NoError(t, err)
-	assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PostUpgradeKymaConfigId)
-
-	operation, err := readSession.GetOperation(*upgradeRuntimeOp.ID)
-	require.NoError(t, err)
-	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
-
-	// when Roll Back last upgrade
-	_, err = resolver.RollBackUpgradeOperation(ctx, runtimeID)
-	require.NoError(t, err)
-
-	// then assert db content
-	runtimeUpgrade, err = readSession.GetRuntimeUpgrade(*upgradeRuntimeOp.ID)
-	require.NoError(t, err)
-	assert.Equal(t, model.UpgradeRolledBack, runtimeUpgrade.State)
-
-	runtimeFromDB, err = readSession.GetCluster(runtimeID)
-	require.NoError(t, err)
-	assert.Equal(t, runtimeFromDB.KymaConfig.ID, runtimeUpgrade.PreUpgradeKymaConfigId)
-
-	operation, err = readSession.GetOperation(*upgradeRuntimeOp.ID)
-	require.NoError(t, err)
-	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
-
 }
 
 func testUpgradeGardenerShoot(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, upgradeShootInput gqlschema.UpgradeShootInput, shootInterface gardener_apis.ShootInterface, inputConverter provisioning.InputConverter) {
@@ -670,7 +641,7 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	return coreClient.Secrets(namespace)
 }
 
-func fakeCompassConnectionClientConstructor(k8sConfig *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
+func fakeCompassConnectionClientConstructor(_ *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
 	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
 		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
 		Status: v1alpha12.CompassConnectionStatus{
