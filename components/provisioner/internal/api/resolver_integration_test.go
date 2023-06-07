@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
