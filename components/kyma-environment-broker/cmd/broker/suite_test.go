@@ -543,7 +543,7 @@ kyma-template: |-
       modules: []
 
 additional-components:
-  - name: "additional-component1"
+  - name: "btp-operator"
     namespace: "kyma-system"`,
 		},
 	}
