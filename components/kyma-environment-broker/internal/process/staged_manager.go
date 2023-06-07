@@ -3,6 +3,8 @@ package process
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	"log"
 	"sync"
 	"time"
 
@@ -94,6 +96,7 @@ func (m *StagedManager) GetAllStages() []string {
 }
 
 func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
+
 	operation, err := m.operationStorage.GetOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch operation from storage: %s", err)
@@ -191,12 +194,36 @@ func (m *StagedManager) saveFinishedStage(operation internal.Operation, s *stage
 }
 
 func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	var start time.Time
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic recovered in RunStep: ", err)
+			panicError := errors.New(fmt.Sprintf("%v", err))
+			om := NewOperationManager(m.operationStorage)
+			processedOperation, _, updateError := om.OperationFailed(operation, "panic in the step", panicError, m.log)
+			if updateError != nil {
+				m.log.Errorf("Unable to save operation with status failed due to panic: %s", step.Name())
+			}
+			m.publisher.Publish(context.TODO(), OperationStepProcessed{
+				StepProcessed: StepProcessed{
+					StepName: step.Name(),
+					Duration: time.Since(start),
+					When:     0,
+					Error:    panicError,
+				},
+				Operation:    processedOperation,
+				OldOperation: operation,
+			})
+		}
+	}()
+
 	begin := time.Now()
 	for {
-		start := time.Now()
+		start = time.Now()
 		logger.Infof("Start step")
 		processedOperation, when, err := step.Run(operation, logger)
-
+		//		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", err, log)
+		//	return op, 0, retErr
 		if err != nil {
 			processedOperation.LastError = kebError.ReasonForError(err)
 			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
