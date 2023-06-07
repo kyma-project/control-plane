@@ -7,9 +7,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/sirupsen/logrus"
-
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -167,7 +166,7 @@ func (a *auditLogConfigurator) ConfigureAuditLogs(logger logrus.FieldLogger, sho
 		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
 	}
 
-	auditID := a.getAuditLogInstanceIdentifier(seed)
+	auditID := seed.Spec.Provider.Region
 	if auditID == "" {
 		return false, errors.New("could not find audit identifier")
 	}
@@ -214,25 +213,4 @@ func (a *auditLogConfigurator) getConfigFromFile() (data map[string]map[string]A
 
 func getProviderType(seed gardener_types.Seed) string {
 	return seed.Spec.Provider.Type
-}
-
-func (a *auditLogConfigurator) getAuditLogInstanceIdentifier(seed gardener_types.Seed) string {
-	message := findAuditLogConditionMessage(seed)
-
-	if message == "" {
-		return ""
-	}
-
-	return a.auditInstanceIdentifierPattern.FindString(message)
-}
-
-func findAuditLogConditionMessage(seed gardener_types.Seed) string {
-	conditions := seed.Status.Conditions
-
-	for _, condition := range conditions {
-		if condition.Type == auditLogConditionType {
-			return condition.Message
-		}
-	}
-	return ""
 }
