@@ -198,10 +198,9 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 	defer func() {
 		if pErr := recover(); pErr != nil {
 			log.Println("panic in RunStep: ", pErr)
-			panicError := errors.New(fmt.Sprintf("%v", pErr))
+			err = errors.New(fmt.Sprintf("%v", pErr))
 			om := NewOperationManager(m.operationStorage)
-			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", panicError, m.log)
-
+			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)
 		}
 	}()
 
