@@ -1,4 +1,4 @@
-FROM golang:1.20.3-alpine3.16 as builder
+FROM golang:1.20.4-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-project/control-plane/components/kubeconfig-service
 ENV CGO_ENABLED 0
@@ -18,7 +18,7 @@ RUN go build -v -o main ./cmd/generator/main.go
 RUN mkdir /app && mv ./main /app/main
 
 
-FROM eu.gcr.io/kyma-project/external/alpine:3.17.2 as alpine
+FROM eu.gcr.io/kyma-project/external/alpine:3.17.3 as alpine
 
 WORKDIR /app
 

@@ -19,11 +19,11 @@ func NewJob(manager *Manager, logs *logrus.Logger) *Job {
 	}
 }
 
-func (s *Job) Start(autoReconcileInterval int) {
+func (s *Job) Start(autoReconcileInterval int, jobReconciliationDelay time.Duration) {
 	scheduler := gocron.NewScheduler(time.UTC)
 	_, schedulerErr := scheduler.Every(autoReconcileInterval).Minutes().Do(func() {
 		s.logs.Infof("runtime-reconciler: scheduled call starter at %s", time.Now())
-		_, _, _, _, reconcileErr := s.btpOperatorManager.ReconcileAll()
+		_, _, _, _, reconcileErr := s.btpOperatorManager.ReconcileAll(jobReconciliationDelay)
 		if reconcileErr != nil {
 			s.logs.Errorf("runtime-reconciler: scheduled call finished with error: %s", reconcileErr)
 		} else {

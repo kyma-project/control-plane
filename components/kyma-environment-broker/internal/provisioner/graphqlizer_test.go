@@ -155,6 +155,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		enableMachineImageVersionAutoUpdate: true,
 		controlPlaneFailureTolerance: "zone",
 		euAccess: true,
+		shootNetworkingFilterDisabled: true,
 	}`
 
 	// when
@@ -177,6 +178,7 @@ func Test_GardenerConfigInputToGraphQL(t *testing.T) {
 		EnableMachineImageVersionAutoUpdate: ptr.Bool(true),
 		ControlPlaneFailureTolerance:        ptr.String("zone"),
 		EuAccess:                            ptr.Bool(true),
+		ShootNetworkingFilterDisabled:       ptr.Bool(true),
 	})
 
 	// then

@@ -23,6 +23,9 @@ func ApplyLabelsAndAnnotationsForLM(object client.Object, operation internal.Ope
 	l["kyma-project.io/broker-plan-id"] = operation.ProvisioningParameters.PlanID
 	l["kyma-project.io/broker-plan-name"] = broker.PlanNamesMapping[operation.ProvisioningParameters.PlanID]
 	l["kyma-project.io/global-account-id"] = operation.GlobalAccountID
+	l["kyma-project.io/subaccount-id"] = operation.SubAccountID
+	l["kyma-project.io/shoot-name"] = operation.ShootName
+	l["kyma-project.io/region"] = operation.Region
 	l["operator.kyma-project.io/kyma-name"] = KymaName(operation)
 	l["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 	object.SetLabels(l)

@@ -141,6 +141,15 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -159,7 +168,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			nil, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -300,7 +309,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -328,6 +336,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -346,7 +361,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -368,7 +383,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -397,6 +411,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -415,7 +436,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -437,7 +458,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -466,6 +486,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -484,7 +511,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -506,7 +533,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -536,6 +562,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -554,7 +587,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -576,7 +609,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		log := logrus.New()
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -606,6 +638,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -624,7 +663,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -677,6 +716,12 @@ func TestInitialisationStep_Run(t *testing.T) {
 			RuntimeID: StringPtr(fixRuntimeID),
 		}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -695,7 +740,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManager, nil, nil, notificationBuilder)
+			inputBuilder, evalManager, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -718,7 +763,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		_, client := createEvalManager(t, memoryStorage, log)
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -748,6 +792,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 				RuntimeID: StringPtr(fixRuntimeID),
 			}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil).Once()
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -766,7 +817,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, notificationBuilder)
+			inputBuilder, evalManagerInvalid, nil, rvc, notificationBuilder)
 
 		// when
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
@@ -785,7 +836,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
-		inputBuilder := &automock.CreatorForPlan{}
 
 		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
 		require.NoError(t, err)
@@ -831,6 +881,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 				}
 			}, nil)
 
+		ver := &internal.RuntimeVersionData{}
+		inputBuilder := &automock.CreatorForPlan{}
+		inputBuilder.On("CreateUpgradeInput", fixProvisioningParameters(), *ver).Return(newInputCreator(), nil)
+		rvc := &automock.RuntimeVersionConfiguratorForUpgrade{}
+		defer rvc.AssertExpectations(t)
+		rvc.On("ForUpgrade", mock.AnythingOfType("internal.UpgradeKymaOperation")).Return(ver, nil)
+
 		notificationTenants := []notification.NotificationTenant{
 			{
 				InstanceID: fixInstanceID,
@@ -849,7 +906,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
 		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), memoryStorage.Instances(), provisionerClient,
-			inputBuilder, evalManagerInvalid, nil, nil, notificationBuilder)
+			inputBuilder, evalManagerInvalid, nil, rvc, notificationBuilder)
 
 		// when invalid client request, this should be delayed
 		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)

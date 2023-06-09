@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	btpmanager "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/btpmanager/credentials"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/events"
@@ -25,6 +26,7 @@ type Config struct {
 	WatcherEnabled                       bool   `envconfig:"default=false"`
 	JobEnabled                           bool   `envconfig:"default=false"`
 	JobInterval                          int    `envconfig:"default=24"`
+	JobReconciliationDelay               string `envconfig:"default=0s"`
 }
 
 func main() {
@@ -35,6 +37,7 @@ func main() {
 	logs.SetFormatter(&logrus.JSONFormatter{})
 
 	logs.Info("runtime-reconciler started")
+	logs.Info("runtime-reconciler debug version: 1")
 
 	var cfg Config
 	err := envconfig.InitWithPrefix(&cfg, "RUNTIME_RECONCILER")
@@ -65,7 +68,9 @@ func main() {
 	if cfg.JobEnabled {
 		btpManagerCredentialsJob := btpmanager.NewJob(btpOperatorManager, logs)
 		logs.Infof("runtime-reconciler created job every %d m", cfg.JobInterval)
-		btpManagerCredentialsJob.Start(cfg.JobInterval)
+
+		jobReconciliationDelay, _ := time.ParseDuration(cfg.JobReconciliationDelay)
+		btpManagerCredentialsJob.Start(cfg.JobInterval, jobReconciliationDelay)
 	}
 
 	logs.Infof("watcher enabled? %t", cfg.WatcherEnabled)
