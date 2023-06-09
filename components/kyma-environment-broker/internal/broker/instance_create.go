@@ -117,7 +117,7 @@ func (b *ProvisionEndpoint) Provision(ctx context.Context, instanceID string, de
 	}
 	platformProvider, found := middleware.ProviderFromContext(ctx)
 	if !found {
-		err := fmt.Errorf("No region specified in request.")
+		err := fmt.Errorf("No provider specified in request.")
 		return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(err, http.StatusInternalServerError, "provisioning")
 	}
 
@@ -261,8 +261,7 @@ func (b *ProvisionEndpoint) validateAndExtract(details domain.ProvisionDetails, 
 		}
 	}
 
-	planValidator, err := b.validator(&details, provider,
-		ctx)
+	planValidator, err := b.validator(&details, provider, ctx)
 	if err != nil {
 		return ersContext, parameters, fmt.Errorf("while creating plan validator: %w", err)
 	}

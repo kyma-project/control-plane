@@ -42,7 +42,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}provisioner:{{ .Values.global.images.provisioner.version }}
+          image: "{{ .Values.global.containerRegistry.path }}/{{ .Values.global.images.provisioner.dir }}/control-plane/provisioner:{{ .Values.global.images.provisioner.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
@@ -241,10 +241,10 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      {{if .Values.gardener.auditLogTenantConfigMapName }}
+      {{if .Values.gardener.auditLogExtensionConfigMapName }}
       - name: gardener-audit-log-tenant-config
         configMap:
-          name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+          name: {{ .Values.gardener.auditLogExtensionConfigMapName }}
       {{end}}
       {{if .Values.gardener.maintenanceWindowConfigMapName }}
       - name: gardener-maintenance-config
@@ -252,3 +252,4 @@ spec:
           name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
           optional: true
       {{end}}
+

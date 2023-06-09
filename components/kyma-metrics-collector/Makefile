@@ -34,3 +34,6 @@ go-mod-check-local:
 
 test-alerts:
 	promtool test rules ${PROMETHEUSRULES_PATH}/alerts_test.yaml
+
+update_metrics_docs:
+	@metrics=$$(mktemp).json; echo $${metrics}; promlinter list -ojson . > $${metrics}; gomplate -d kmc=$${metrics} -f hack/metrics.md.tpl  | prettier --parser markdown > metrics.md

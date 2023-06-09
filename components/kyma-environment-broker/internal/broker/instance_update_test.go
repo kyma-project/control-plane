@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker/automock"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/dashboard"
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -61,11 +61,24 @@ func TestUpdateEndpoint_UpdateSuspension(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(
+		Config{},
+		st.Instances(),
+		st.RuntimeStates(),
+		st.Operations(),
+		handler,
+		true,
+		false,
+		q,
+		PlansConfig{},
+		planDefaults,
+		logrus.New(),
+		dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -114,7 +127,8 @@ func TestUpdateEndpoint_UpdateExpirationOfTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -167,7 +181,8 @@ func TestUpdateEndpoint_UpdateExpirationOfExpiredTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -219,13 +234,14 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
 		ServiceID:       "",
 		PlanID:          TrialPlanID,
-		RawParameters:   json.RawMessage(`{"autoScalerMin": 1}`),
+		RawParameters:   json.RawMessage(`{"autoScalerMin": 3}`),
 		PreviousValues:  domain.PreviousValues{},
 		RawContext:      json.RawMessage("{\"active\":false}"),
 		MaintenanceInfo: nil,
@@ -234,6 +250,86 @@ func TestUpdateEndpoint_UpdateOfExpiredTrial(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.False(t, response.IsAsync)
+}
+
+func TestUpdateEndpoint_UpdateAutoscalerParams(t *testing.T) {
+	// given
+	instance := internal.Instance{
+		InstanceID:    instanceID,
+		ServicePlanID: AWSPlanID,
+		Parameters: internal.ProvisioningParameters{
+			PlanID: AWSPlanID,
+			ErsContext: internal.ERSContext{
+				TenantID:        "",
+				SubAccountID:    "",
+				GlobalAccountID: "",
+				Active:          ptr.Bool(false),
+			},
+		},
+	}
+	st := storage.NewMemoryStorage()
+	st.Instances().Insert(instance)
+	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
+
+	handler := &handler{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
+	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+		return &gqlschema.ClusterConfigInput{}, nil
+	}
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
+
+	t.Run("Should fail on invalid (too low) autoScalerMin and autoScalerMax", func(t *testing.T) {
+
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 1, "autoScalerMax": 1}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "while validating update parameters:")
+		assert.False(t, response.IsAsync)
+	})
+
+	t.Run("Should fail on invalid autoScalerMin and autoScalerMax", func(t *testing.T) {
+
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 4, "autoScalerMax": 3}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "AutoScalerMax 3 should be larger than AutoScalerMin 4")
+		assert.False(t, response.IsAsync)
+	})
+
+	t.Run("Should fail on invalid autoScalerMin and autoScalerMax and JSON validation should precede", func(t *testing.T) {
+
+		// when
+		response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
+			ServiceID:       "",
+			PlanID:          AWSPlanID,
+			RawParameters:   json.RawMessage(`{"autoScalerMin": 2, "autoScalerMax": 1}`),
+			PreviousValues:  domain.PreviousValues{},
+			RawContext:      json.RawMessage("{\"active\":false}"),
+			MaintenanceInfo: nil,
+		}, true)
+
+		// then
+		assert.ErrorContains(t, err, "while validating update parameters:")
+		assert.False(t, response.IsAsync)
+	})
 }
 
 func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
@@ -257,11 +353,13 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	st.Operations().InsertDeprovisioningOperation(fixSuspensionOperation())
 
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -283,16 +381,6 @@ func TestUpdateEndpoint_UpdateUnsuspension(t *testing.T) {
 	assert.False(t, *handler.Instance.Parameters.ErsContext.Active)
 }
 
-func assertServiceManagerCreds(t *testing.T, dto *internal.ServiceManagerEntryDTO) {
-	assert.Equal(t, &internal.ServiceManagerEntryDTO{
-		Credentials: internal.ServiceManagerCredentials{
-			BasicAuth: internal.ServiceManagerBasicAuth{
-				Username: "u",
-				Password: "p",
-			},
-		}}, dto)
-}
-
 func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	// given
 	instance := internal.Instance{
@@ -312,11 +400,13 @@ func TestUpdateEndpoint_UpdateInstanceWithWrongActiveValue(t *testing.T) {
 	st.Instances().Insert(instance)
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("01"))
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -340,11 +430,13 @@ func TestUpdateEndpoint_UpdateNonExistingInstance(t *testing.T) {
 	// given
 	st := storage.NewMemoryStorage()
 	handler := &handler{}
-	q := &process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	_, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -399,11 +491,13 @@ func TestUpdateEndpoint_UpdateGlobalAccountID(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{
@@ -438,12 +532,14 @@ func TestUpdateEndpoint_UpdateParameters(t *testing.T) {
 	st.Operations().InsertProvisioningOperation(fixProvisioningOperation("provisioning01"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
 
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, &q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, true, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	t.Run("Should fail on invalid OIDC params", func(t *testing.T) {
 		// given
@@ -565,11 +661,13 @@ func TestUpdateEndpoint_UpdateWithEnabledDashboard(t *testing.T) {
 	// st.Operations().InsertProvisioningOperation(fixProvisioningOperation("02"))
 
 	handler := &handler{}
-	q := process.Queue{}
+	q := &automock.Queue{}
+	q.On("Add", mock.AnythingOfType("string"))
 	planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
 		return &gqlschema.ClusterConfigInput{}, nil
 	}
-	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, &q, planDefaults, logrus.New(), dashboardConfig)
+	svc := NewUpdate(Config{}, st.Instances(), st.RuntimeStates(), st.Operations(), handler, true, false, q, PlansConfig{},
+		planDefaults, logrus.New(), dashboardConfig)
 
 	// when
 	response, err := svc.Update(context.Background(), instanceID, domain.UpdateDetails{

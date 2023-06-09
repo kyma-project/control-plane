@@ -61,7 +61,6 @@ type Suite struct {
 	configMapClient v1_client.ConfigMaps
 
 	PreUpgradeKymaVersion string
-	dashboardChecker      *runtime.DashboardChecker
 
 	directorClient *director.Client
 
@@ -131,17 +130,14 @@ func newTestSuite(t *testing.T) *Suite {
 
 	runtimeClient := runtime.NewClient(cfg.ProvisionerURL, cfg.TenantID, instanceID, *httpClient, directorClient, log.WithField("service", "runtime_client"))
 
-	dashboardChecker := runtime.NewDashboardChecker(*httpClient, log.WithField("service", "dashboard_checker"))
-
 	suite := &Suite{
 		t:   t,
 		log: log,
 
-		dashboardChecker: dashboardChecker,
-		brokerClient:     brokerClient,
-		runtimeClient:    runtimeClient,
-		secretClient:     secretClient,
-		configMapClient:  configMapClient,
+		brokerClient:    brokerClient,
+		runtimeClient:   runtimeClient,
+		secretClient:    secretClient,
+		configMapClient: configMapClient,
 
 		directorClient: directorClient,
 
@@ -230,6 +226,13 @@ func (ts *Suite) testConfigMap() v1.ConfigMap {
 
 func createBrokerOAuthConfig(ctx context.Context, k8sclient client.Client, cfg *Config) (broker.BrokerOAuthConfig, error) {
 	var brokerOAuthConfig broker.BrokerOAuthConfig
+
+	if cfg.Broker.ClientSecret != "" && cfg.Broker.ClientID != "" {
+		brokerOAuthConfig.ClientSecret = cfg.Broker.ClientSecret
+		brokerOAuthConfig.ClientID = cfg.Broker.ClientID
+		brokerOAuthConfig.Scope = cfg.Broker.Scope
+		return brokerOAuthConfig, nil
+	}
 
 	err := v1alpha1.AddToScheme(scheme.Scheme)
 	if err != nil {

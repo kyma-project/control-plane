@@ -21,62 +21,21 @@ Follow these steps to obtain a new access token:
 
 1. Export these values as environment variables:
 
-  - The name of your client and the Secret which stores the client credentials:
-
-    ```bash
-    export CLIENT_NAME={YOUR_CLIENT_NAME}
-    ```
-
-  - The Namespace in which you want to create the client and the Secret that stores its credentials:
-
-    ```bash
-    export CLIENT_NAMESPACE={YOUR_CLIENT_NAMESPACE}
-    ```
-
-  - The domain of your cluster:
-
-    ```bash
-    export DOMAIN={CLUSTER_DOMAIN}
-    ```
-    > **NOTE:** Get the value from [Kyma Control Plane API / CLI](https://github.tools.sap/kyma/documentation/blob/main/how-to-guides/identity-authentication.md#systems-connected-to-identity-authenticationn) and remove the `https://kyma-env-broker` prefix. The resulting domain for dev environment should be: `cp.dev.kyma.cloud.sap`.
-
-  - The scope of your credentials:
-
-    ```bash
-    export SCOPE="broker:write cld:read"
-    ```
-2. Create an OAuth2 client:
-
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: hydra.ory.sh/v1alpha1
-kind: OAuth2Client
-metadata:
-  name: $CLIENT_NAME
-  namespace: $CLIENT_NAMESPACE
-spec:
-  grantTypes:
-    - "client_credentials"
-  scope: "$SCOPE"
-  secretName: $CLIENT_NAME
-EOF
-```
-
-3. Export the credentials of the created client as environment variables. Run:
-
 ```shell
-export CLIENT_ID="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_id}' | base64 --decode)"
-export CLIENT_SECRET="$(kubectl get secret -n $CLIENT_NAMESPACE $CLIENT_NAME -o jsonpath='{.data.client_secret}' | base64 --decode)"
+export CLIENT_ID={CLIENT_ID}
+export CLIENT_SECRET={CLIENT_SECRET}
+export TOKEN_URL={TOKEN_URL}
+export SCOPE="broker:write cld:read"
 ```
 
-4. Encode your client credentials and export them as an environment variable:
+2. Encode your client credentials and export them as environment variables:
 
 ```shell
 export ENCODED_CREDENTIALS=$(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)
 ```
 
-5. Get the access token:
+3. Get the access token:
 
 ```shell
-curl -ik -X POST "https://oauth2.$DOMAIN/oauth2/token" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=broker:write"
+curl -ik -X POST "$TOKEN_URL" -H "Authorization: Basic $ENCODED_CREDENTIALS" -F "grant_type=client_credentials" -F "scope=broker:write"
 ```

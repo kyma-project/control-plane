@@ -43,7 +43,7 @@
           "type": "string"
         },
         "signingAlgs": {
-          "description": "List of allowed JOSE asymmetric signing algorithms.",
+          "description": "Comma separated list of allowed JOSE asymmetric signing algorithms, for example, RS256, ES256",
           "items": {
             "type": "string"
           },
@@ -54,7 +54,7 @@
           "type": "string"
         },
         "usernamePrefix": {
-          "description": "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'.",
+          "description": "If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-' (dash character without additional characters).",
           "type": "string"
         }
       },

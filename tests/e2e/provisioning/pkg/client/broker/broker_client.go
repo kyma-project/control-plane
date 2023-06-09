@@ -22,11 +22,14 @@ import (
 )
 
 type Config struct {
-	ClientName string
-	TokenURL   string
-	URL        string
-	PlanID     string
-	Region     string `envconfig:"optional"`
+	ClientName   string
+	ClientID     string
+	ClientSecret string
+	Scope        string `envconfig:"default=broker:write"`
+	TokenURL     string
+	URL          string
+	PlanID       string
+	Region       string `envconfig:"optional"`
 }
 
 type BrokerOAuthConfig struct {

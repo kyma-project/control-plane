@@ -337,7 +337,7 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 	var err error
 
 	// Due to Schema Migrator running post upgrade the pod will be in crash loop back off and Helm deployment will not finish
-	// therefor we need to wait for schema to be initialized in case of blank installation
+	// therefor we need to wait for schema to be initialized in case of blank installation.
 	err = retry.Do(func() error {
 		inProgressOps, err = readSession.ListInProgressOperations()
 		if err != nil {

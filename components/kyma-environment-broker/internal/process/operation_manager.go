@@ -121,6 +121,19 @@ func (om *OperationManager) UpdateOperation(operation internal.Operation, update
 	return *op, 0, nil
 }
 
+func (om *OperationManager) MarkStepAsExcutedButNotCompleted(operation internal.Operation, stepName string, msg string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	op, repeat, err := om.UpdateOperation(operation, func(operation *internal.Operation) {
+		operation.ExcutedButNotCompleted = append(operation.ExcutedButNotCompleted, stepName)
+	}, log)
+	if repeat != 0 {
+		return op, repeat, err
+	}
+
+	op.EventErrorf(fmt.Errorf(msg), "step %s failed: operation continues", stepName)
+	log.Errorf(msg)
+	return op, 0, nil
+}
+
 func (om *OperationManager) update(operation internal.Operation, state domain.LastOperationState, description string, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	return om.UpdateOperation(operation, func(operation *internal.Operation) {
 		operation.State = state

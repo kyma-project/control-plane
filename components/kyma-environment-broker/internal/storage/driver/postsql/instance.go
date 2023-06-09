@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pivotal-cf/brokerapi/v8/domain"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dbmodel"
@@ -522,6 +524,7 @@ func (s *Instance) List(filter dbmodel.InstanceFilter) ([]internal.Instance, int
 			return []internal.Instance{}, 0, 0, err
 		}
 		instance.InstanceDetails = lastOp.InstanceDetails
+		instance.Reconcilable = instance.RuntimeID != "" && lastOp.Type != internal.OperationTypeDeprovision && lastOp.State != domain.InProgress
 		instances = append(instances, instance)
 	}
 	return instances, count, totalCount, err

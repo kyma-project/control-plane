@@ -1,7 +1,7 @@
 global:
   images:
-    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.0-d587c1be"
-    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:v20230414-01086c78"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a"
+    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230515-fdab76f5"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
@@ -155,3 +155,11 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: btpoperators
+  telemetry:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: telemetries
+  serverless:
+    group: operator.kyma-project.io
+    version: v1alpha1
+    kind: serverlesses

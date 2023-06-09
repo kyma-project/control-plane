@@ -26,10 +26,14 @@ func (s *BTPOperatorOverridesStep) Name() string {
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
 	clusterID := uuid.NewString()
-	overrides := internal.GetBTPOperatorProvisioningOverrides(operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, clusterID)
 	f := func(op *internal.Operation) {
 		op.InstanceDetails.ServiceManagerClusterID = clusterID
 	}
+	if !operation.InputCreator.Configuration().ContainsAdditionalComponent(internal.BTPOperatorComponentName) {
+		log.Infof("BTP operator is not in the list of additional components, skipping preparing overrides")
+		return operation, 0, nil
+	}
+	overrides := internal.GetBTPOperatorProvisioningOverrides(operation.ProvisioningParameters.ErsContext.SMOperatorCredentials, clusterID)
 	operation.InputCreator.AppendOverrides(internal.BTPOperatorComponentName, overrides)
 	operation.InputCreator.EnableOptionalComponent(internal.BTPOperatorComponentName)
 	return s.operationManager.UpdateOperation(operation, f, log)

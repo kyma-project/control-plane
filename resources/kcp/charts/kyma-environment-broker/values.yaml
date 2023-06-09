@@ -3,19 +3,19 @@ global:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "PR-2661"
-    kyma_environments_cleanup_job:
-      dir:
-      version: "PR-2618"
+      version: "v20230602-877fe74f"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "PR-2476"
+      version: "v20230602-638fc208"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "PR-2476"
+      version: "v20230602-638fc208"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "PR-2476"
+      version: "v20230602-638fc208"
+    kyma_environment_runtime_reconciler:
+      dir:
+      version: "v20230525-1410c281"
 
 deployment:
   replicaCount: 1
@@ -258,28 +258,6 @@ kebClient:
 runtimeAllowedPrincipals: |-
   - cluster.local/ns/kcp-system/sa/kcp-kyma-metrics-collector
 
-environmentsCleanup:
-  schedule: "0 0 * * *"
-  maxAge: "24h"
-  name: "kcp-kyma-environments-cleanup"
-  account: "kcp-kyma-environment-broker"
-  imageName: "kyma-environments-cleanup-job"
-  cronJobName: "environments-cleanup"
-  maxAge: "24h"
-  version: "PR-2618"
-  dir:
-  envs:
-    APP_GARDENER_PROJECT: "kyma-dev"
-    APP_GARDENER_KUBECONFIG_PATH: "/gardener/kubeconfig/kubeconfig"
-    APP_MAX_AGE_HOURS: "24h"
-    APP_PROVISIONER_URL: "http://kcp-provisioner.kcp-system.svc.cluster.local:3000/graphql"
-  secretVolumes:
-    gardener-kubeconfig: 
-      path: /gardener/kubeconfig
-      optional: true
-      secret: gardener-credentials
-      defaultMode: 420
-
 subaccountCleanup:
   enabled: "false"
   schedule: "0 1 * * *"
@@ -292,7 +270,7 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
-  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched
   #   to the generic job
   # name: "deprovision-retrigger-job"
   # schedule: "0 2 * * *"
@@ -312,3 +290,13 @@ dashboardConfig:
   landscapeURL: "https://dashboard.dev.kyma.cloud.sap"
 
 cronJobs:
+
+runtimeReconciler:
+  enabled: false
+  dryRun: true
+  jobEnabled: false
+  jobInterval: 1440
+  jobReconciliationDelay: 1s
+  watcherEnabled: false
+  watcherAddress: 8888
+  watcherName: btp-manager-secret-watcher
