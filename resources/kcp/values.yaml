@@ -11,8 +11,8 @@ global:
       dir:
       version: "v20230522-605f31f1"
     kyma_metrics_collector:
-      dir:
-      version: v20230411-94ab3da5
+      dir: dev
+      version: PR-2839
     tests:
       provisioner:
         dir:
