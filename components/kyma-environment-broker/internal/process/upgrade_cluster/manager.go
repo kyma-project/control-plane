@@ -58,7 +58,7 @@ func (m *Manager) AddStep(weight int, step Step, condition StepCondition) {
 func (m *Manager) runStep(step Step, operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (processedOperation internal.UpgradeClusterOperation, when time.Duration, err error) {
 	defer func() {
 		if pErr := recover(); pErr != nil {
-			logger.Println("panic in RunStep: ", pErr)
+			logger.Println("panic in RunStep during cluster upgrade: ", pErr)
 			err = errors.New(fmt.Sprintf("%v", pErr))
 			om := process.NewUpgradeClusterOperationManager(m.operationStorage)
 			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)

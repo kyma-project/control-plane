@@ -62,7 +62,7 @@ func (m *Manager) runStep(step Step, operation internal.UpgradeKymaOperation, lo
 
 	defer func() {
 		if pErr := recover(); pErr != nil {
-			logger.Println("panic in RunStep: ", pErr)
+			logger.Println("panic in RunStep during Kyma upgrade: ", pErr)
 			err = errors.New(fmt.Sprintf("%v", pErr))
 			om := process.NewUpgradeKymaOperationManager(m.operationStorage)
 			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)
