@@ -193,27 +193,15 @@ func (m *StagedManager) saveFinishedStage(operation internal.Operation, s *stage
 	return *op, nil
 }
 
-func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (processedOperation internal.Operation, backoff time.Duration, err error) {
 	var start time.Time
 	defer func() {
-		if err := recover(); err != nil {
-			log.Println("panic recovered in RunStep: ", err)
-			panicError := errors.New(fmt.Sprintf("%v", err))
+		if pErr := recover(); pErr != nil {
+			log.Println("panic in RunStep: ", pErr)
+			panicError := errors.New(fmt.Sprintf("%v", pErr))
 			om := NewOperationManager(m.operationStorage)
-			processedOperation, _, updateError := om.OperationFailed(operation, "panic in the step", panicError, m.log)
-			if updateError != nil {
-				m.log.Errorf("Unable to save operation with status failed due to panic: %s", step.Name())
-			}
-			m.publisher.Publish(context.TODO(), OperationStepProcessed{
-				StepProcessed: StepProcessed{
-					StepName: step.Name(),
-					Duration: time.Since(start),
-					When:     0,
-					Error:    panicError,
-				},
-				Operation:    processedOperation,
-				OldOperation: operation,
-			})
+			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", panicError, m.log)
+
 		}
 	}()
 
@@ -221,7 +209,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 	for {
 		start = time.Now()
 		logger.Infof("Start step")
-		processedOperation, when, err := step.Run(operation, logger)
+		processedOperation, backoff, err = step.Run(operation, logger)
 		//		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", err, log)
 		//	return op, 0, retErr
 		if err != nil {
@@ -239,7 +227,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 			StepProcessed: StepProcessed{
 				StepName: step.Name(),
 				Duration: time.Since(start),
-				When:     when,
+				When:     backoff,
 				Error:    err,
 			},
 			Operation:    processedOperation,
@@ -250,11 +238,11 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 		// - the step does not need a retry
 		// - step returns an error
 		// - the loop takes too much time (to not block the worker too long)
-		if when == 0 || err != nil || time.Since(begin) > 10*time.Minute {
-			return processedOperation, when, err
+		if backoff == 0 || err != nil || time.Since(begin) > 10*time.Minute {
+			return processedOperation, backoff, err
 		}
-		operation.EventInfof("step %v sleeping for %v", step.Name(), when)
-		time.Sleep(when / time.Duration(m.speedFactor))
+		operation.EventInfof("step %v sleeping for %v", step.Name(), backoff)
+		time.Sleep(backoff / time.Duration(m.speedFactor))
 	}
 }
 

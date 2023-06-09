@@ -111,8 +111,9 @@ func TestWithPanic(t *testing.T) {
 	// then
 	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "third"})
 	op, _ := operationStorage.GetOperationByID(operation.ID)
+	assert.Equal(t, op.State, domain.Failed)
 	assert.True(t, op.IsStageFinished("stage-1"))
-	assert.True(t, op.IsStageFinished("stage-2"))
+	assert.False(t, op.IsStageFinished("stage-2"))
 }
 
 func TestSkipFinishedStage(t *testing.T) {
