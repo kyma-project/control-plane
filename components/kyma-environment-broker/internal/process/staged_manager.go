@@ -3,10 +3,11 @@ package process
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"

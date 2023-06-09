@@ -3,9 +3,10 @@ package upgrade_kyma
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
