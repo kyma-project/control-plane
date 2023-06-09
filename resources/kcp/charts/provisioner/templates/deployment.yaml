@@ -171,7 +171,7 @@ spec:
             - name: APP_RUN_AWS_CONFIG_MIGRATION
               value: {{ .Values.deployment.runAwsConfigMigration | quote }}
           volumeMounts:
-        {{if .Values.gardener.auditLogTenantConfigMapName }}
+        {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
               name: gardener-audit-log-tenant-config
               readOnly: true
