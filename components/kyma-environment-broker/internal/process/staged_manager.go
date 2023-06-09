@@ -210,8 +210,6 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 		start = time.Now()
 		logger.Infof("Start step")
 		processedOperation, backoff, err = step.Run(operation, logger)
-		//		return s.operationManager.OperationFailed(operation, "call to the provisioner service failed", err, log)
-		//	return op, 0, retErr
 		if err != nil {
 			processedOperation.LastError = kebError.ReasonForError(err)
 			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
