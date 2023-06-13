@@ -21,7 +21,7 @@ func TestServiceProviderBundle_CreateNotificationEvent(t *testing.T) {
 	}
 
 	client := NewFakeClient()
-	bundle := NewNotificationBundle("ochstA", paras, client, Config{Disabled: false})
+	bundle := NewNotificationBundle("ochstA", paras, client, Config{Url: ""})
 
 	// when
 	err := bundle.CreateNotificationEvent()
@@ -52,7 +52,7 @@ func TestServiceProviderBundle_UpdateNotificationEvent(t *testing.T) {
 	}
 
 	client := NewFakeClient()
-	bundle := NewNotificationBundle("ochstA", paras, client, Config{Disabled: false})
+	bundle := NewNotificationBundle("ochstA", paras, client, Config{Url: ""})
 
 	// when
 	err := bundle.UpdateNotificationEvent()
@@ -73,7 +73,7 @@ func TestServiceProviderBundle_CancelNotificationEvent(t *testing.T) {
 	}
 
 	client := NewFakeClient()
-	bundle := NewNotificationBundle("ochstA", paras, client, Config{Disabled: false})
+	bundle := NewNotificationBundle("ochstA", paras, client, Config{Url: ""})
 
 	// when
 	err := bundle.CancelNotificationEvent()

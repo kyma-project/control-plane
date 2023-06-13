@@ -429,7 +429,7 @@ func (m *orchestrationManager) resolveOrchestration(o *internal.Orchestration, s
 			strategy.Cancel(execID)
 		}
 		// Send customer notification for cancel
-		if !m.bundleBuilder.DisabledCheck() {
+		if o.Parameters.Notification {
 			operations, err := m.factory.QueryOperations(o.OrchestrationID)
 			if err != nil {
 				return nil, fmt.Errorf("while quering operations for orchestration %s: %w", o.OrchestrationID, err)
@@ -677,7 +677,7 @@ func (m *orchestrationManager) waitForStart(o *internal.Orchestration) ([]orches
 		}
 
 		//send notification for each operation which doesn't have one
-		if !m.bundleBuilder.DisabledCheck() && o.State == orchestration.Pending {
+		if o.Parameters.Notification && o.State == orchestration.Pending {
 			for _, operation := range operations {
 				if operation.NotificationState == "" {
 					unnotified_operations = append(unnotified_operations, operation)
