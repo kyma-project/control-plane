@@ -105,9 +105,10 @@ func (cmd *UpgradeClusterCommand) promtUserWithOrchestration() error {
 
 func (cmd *UpgradeClusterCommand) prepareUpgradeCommandDetails() orchestration.StatusResponse {
 	orchestrationParameters := orchestration.Parameters{
-		Targets:    cmd.orchestrationParams.Targets,
-		Strategy:   cmd.orchestrationParams.Strategy,
-		Kubernetes: cmd.orchestrationParams.Kubernetes,
+		Targets:      cmd.orchestrationParams.Targets,
+		Strategy:     cmd.orchestrationParams.Strategy,
+		Kubernetes:   cmd.orchestrationParams.Kubernetes,
+		Notification: cmd.orchestrationParams.Notification,
 	}
 	orchestration := orchestration.StatusResponse{
 		Type:       "Kubernetes Upgrade Preview",
