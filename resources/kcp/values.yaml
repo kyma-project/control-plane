@@ -6,7 +6,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project/prod/control-plane
     schema_migrator:
       dir:
-      version: "v20230120-865831c1"
+      version: "v20230614-bcb66b55"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "v20230522-605f31f1"
@@ -19,7 +19,7 @@ global:
         version: "v20230426-ad965fac"
       e2e_provisioning:
         dir:
-        version: "v20230509-34c5d99a"
+        version: "v20230614-bcb66b55"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:
