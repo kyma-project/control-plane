@@ -166,24 +166,28 @@ func (a *auditLogConfigurator) ConfigureAuditLogs(logger logrus.FieldLogger, sho
 		return false, errors.New(fmt.Sprintf("cannot find config for provider %s", provider))
 	}
 
-	auditID := seed.Spec.Provider.Region
+	ctxLogger := logger.WithField("provider", provider)
+
+	auditID := shoot.Spec.Region
 	if auditID == "" {
-		return false, errors.New("could not find audit identifier")
+		return false, errors.New("shoot has no region set")
 	}
+
+	ctxLogger = ctxLogger.WithField("auditID", auditID)
 
 	tenant, ok := providerConfig[auditID]
 	if !ok {
-		return false, errors.New(fmt.Sprintf("tenant for audit identifier %s is empty", auditID))
+		return false, fmt.Errorf("auditlog config for region %s, provider %s is empty", auditID, provider)
 	}
 
 	changedExt, err := configureExtension(shoot, tenant)
 	changedSec := configureSecret(shoot, tenant)
 
 	if changedSec {
-		logger.Info("Configured auditlog secret")
+		ctxLogger.Info("Configured auditlog secret")
 	}
 	if changedExt {
-		logger.Info("Configured auditlog extension")
+		ctxLogger.Info("Configured auditlog extension")
 	}
 	return changedExt || changedSec, err
 }

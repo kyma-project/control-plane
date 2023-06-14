@@ -1,6 +1,6 @@
 {
   "azure": {
-    "eu-west-1": {
+    "westeurope": {
       "tenantID": "12d68c35-556b-4966-a061-235d4a060929",
       "serviceURL": "https://auditlog.example.com:3001",
       "secretName": "auditlog-secret2"
