@@ -58,15 +58,17 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 	t.Run("should annotate shoot and return true", func(t *testing.T) {
 		//given
-		shoot := &gardener_types.Shoot{}
+		shoot := &gardener_types.Shoot{
+			Spec: gardener_types.ShootSpec{
+				Region: "westus2",
+			}}
 		seed := gardener_types.Seed{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "az-eu",
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "westus2",
+					Type: "azure",
 				},
 			},
 			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
@@ -170,15 +172,18 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 	t.Run("should return error when cannot open config file", func(t *testing.T) {
 		//given
-		shoot := &gardener_types.Shoot{}
+		shoot := &gardener_types.Shoot{
+			Spec: gardener_types.ShootSpec{
+				Region: "westus2",
+			},
+		}
 		seed := gardener_types.Seed{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "az-eu",
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "westus2",
+					Type: "azure",
 				},
 			},
 			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
@@ -204,6 +209,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 	t.Run("should return false when shoot is already anotated", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
+		shoot.Spec.Region = "eu-central-1"
 		shoot.Spec.Extensions = []gardener_types.Extension{
 			{
 				Type: "shoot-auditlog-service",
@@ -238,8 +244,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type:   "azure",
-					Region: "eu-central-1",
+					Type: "azure",
 				},
 			},
 			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{}},
