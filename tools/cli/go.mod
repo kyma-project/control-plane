@@ -18,8 +18,8 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20221212164502-fae10dda9338
 	golang.org/x/mod v0.10.0
-	golang.org/x/net v0.10.0
-	golang.org/x/oauth2 v0.8.0
+	golang.org/x/net v0.11.0
+	golang.org/x/oauth2 v0.9.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.0-alpha.0
 	k8s.io/apimachinery v0.28.0-alpha.0
