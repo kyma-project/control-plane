@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/int128/kubelogin v1.27.0
 	github.com/kyma-project/control-plane/components/kubeconfig-service v0.0.0-20220704092952-6bdae76be31d
-	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230313084900-4d0b99c57514
+	github.com/kyma-project/control-plane/components/kyma-environment-broker v0.0.0-20230614160542-a4a34cb37016
 	github.com/kyma-project/control-plane/components/reconciler v0.0.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 	github.com/pkg/errors v0.9.1
@@ -16,18 +16,18 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/exp v0.0.0-20220921164117-439092de6870
+	golang.org/x/exp v0.0.0-20221212164502-fae10dda9338
 	golang.org/x/mod v0.10.0
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.26.2
-	k8s.io/apimachinery v0.26.2
+	k8s.io/api v0.28.0-alpha.0
+	k8s.io/apimachinery v0.28.0-alpha.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
 
 require (
-	github.com/99designs/gqlgen v0.17.26 // indirect
+	github.com/99designs/gqlgen v0.17.28 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible // indirect
