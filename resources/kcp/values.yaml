@@ -1,26 +1,25 @@
 global:
-  images:
-    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project/prod/control-plane
     schema_migrator:
       dir:
-      version: "v20230120-865831c1"
+      version: "v20230614-bcb66b55"
     kyma_environments_subscription_cleanup_job:
       dir:
       version: "v20230522-605f31f1"
     kyma_metrics_collector:
       dir:
-      version: v20230411-94ab3da5
+      version: "v20230613-34a5f5cf"
     tests:
       provisioner:
         dir:
         version: "v20230426-ad965fac"
       e2e_provisioning:
         dir:
-        version: "v20230509-34c5d99a"
+        version: "v20230614-bcb66b55"
     busybox: eu.gcr.io/kyma-project/external/busybox:1.34.1
   isLocalEnv: false
   oauth2:

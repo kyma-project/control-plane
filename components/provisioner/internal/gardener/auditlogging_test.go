@@ -58,14 +58,18 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 	t.Run("should annotate shoot and return true", func(t *testing.T) {
 		//given
-		shoot := &gardener_types.Shoot{}
+		shoot := &gardener_types.Shoot{
+			Spec: gardener_types.ShootSpec{
+				Region: "westus2",
+			}}
 		seed := gardener_types.Seed{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "az-eu",
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type: "azure"},
+					Type: "azure",
+				},
 			},
 			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
 				{Type: auditLogConditionType,
@@ -168,14 +172,19 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 
 	t.Run("should return error when cannot open config file", func(t *testing.T) {
 		//given
-		shoot := &gardener_types.Shoot{}
+		shoot := &gardener_types.Shoot{
+			Spec: gardener_types.ShootSpec{
+				Region: "westus2",
+			},
+		}
 		seed := gardener_types.Seed{
 			ObjectMeta: v1.ObjectMeta{
 				Name: "az-eu",
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type: "azure"},
+					Type: "azure",
+				},
 			},
 			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
 				{Type: auditLogConditionType,
@@ -200,6 +209,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 	t.Run("should return false when shoot is already anotated", func(t *testing.T) {
 		//given
 		shoot := &gardener_types.Shoot{}
+		shoot.Spec.Region = "eu-central-1"
 		shoot.Spec.Extensions = []gardener_types.Extension{
 			{
 				Type: "shoot-auditlog-service",
@@ -209,8 +219,8 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
                     "apiVersion": "service.auditlog.extensions.gardener.cloud/v1alpha1",
                     "kind": "AuditlogConfig",
                     "secretReferenceName": "auditlog-credentials",
-                    "serviceURL": "https://auditlog.example.com:3000",
-                    "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+                    "serviceURL": "https://auditlog.example.com:3001",
+                    "tenantID": "79c64792-9c1e-4c1b-9941-ef7560dd3eae",
                     "type": "standard"
 }
 `),
@@ -223,7 +233,7 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 				Name: "auditlog-credentials",
 				ResourceRef: autoscaling.CrossVersionObjectReference{
 					Kind:       "Secret",
-					Name:       "auditlog-secret",
+					Name:       "auditlog-secret2",
 					APIVersion: "v1",
 				},
 			},
@@ -234,13 +244,10 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
 			},
 			Spec: gardener_types.SeedSpec{
 				Provider: gardener_types.SeedProvider{
-					Type: "azure"},
-			},
-			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
-				{Type: auditLogConditionType,
-					Message: "Auditlog landscape https://api.auditlog.cf.us21.hana.ondemand.com:8081/ successfully attached to the seed.",
+					Type: "azure",
 				},
-			}},
+			},
+			Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{}},
 		}
 
 		configPath := filepath.Join("testdata", "config.json")
@@ -258,8 +265,8 @@ func TestAuditLogConfigurator_SetAuditLogAnnotation(t *testing.T) {
                     "apiVersion": "service.auditlog.extensions.gardener.cloud/v1alpha1",
                     "kind": "AuditlogConfig",
                     "secretReferenceName": "auditlog-credentials",
-                    "serviceURL": "https://auditlog.example.com:3000",
-                    "tenantID": "a9be5aad-f855-4fd1-a8c8-e95683ec786b",
+                    "serviceURL": "https://auditlog.example.com:3001",
+                    "tenantID": "79c64792-9c1e-4c1b-9941-ef7560dd3eae",
                     "type": "standard"
                 },
                 "type": "shoot-auditlog-service"

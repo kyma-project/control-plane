@@ -27,6 +27,10 @@ func (s *BTPOperatorOverridesStep) Name() string {
 }
 
 func (s *BTPOperatorOverridesStep) Run(operation internal.UpgradeKymaOperation, log logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+	if !operation.InputCreator.Configuration().ContainsAdditionalComponent(internal.BTPOperatorComponentName) {
+		log.Infof("BTP operator is not in the list of additional components, skipping")
+		return operation, 0, nil
+	}
 	clusterID := operation.InstanceDetails.ServiceManagerClusterID
 	if clusterID == "" {
 		var err error

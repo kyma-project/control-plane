@@ -130,7 +130,10 @@ func TestInitialisationStep_Run(t *testing.T) {
 			OrchestrationID: fixOrchestrationID,
 			State:           orchestration.InProgress,
 			Parameters: orchestration.Parameters{
-				Kyma: &orchestration.KymaParameters{Version: fixKymaVersion},
+				Kyma: &orchestration.KymaParameters{
+					Version: fixKymaVersion,
+				},
+				Notification: true,
 			},
 		}
 		err := memoryStorage.Orchestrations().Insert(orch)
@@ -170,7 +173,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -237,7 +239,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -264,7 +265,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.Canceled})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.Canceled,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeClusterOperation()
@@ -288,7 +295,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -353,7 +359,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -421,7 +426,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -489,7 +493,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -558,7 +561,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -627,7 +629,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -697,7 +698,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -767,7 +767,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -849,7 +848,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -970,7 +968,10 @@ func fixOrchestrationWithKymaVer() internal.Orchestration {
 		OrchestrationID: fixOrchestrationID,
 		State:           orchestration.InProgress,
 		Parameters: orchestration.Parameters{
-			Kyma: &orchestration.KymaParameters{Version: fixKymaVersion},
+			Kyma: &orchestration.KymaParameters{
+				Version: fixKymaVersion,
+			},
+			Notification: true,
 		},
 	}
 	return orch

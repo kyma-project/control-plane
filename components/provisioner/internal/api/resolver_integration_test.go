@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -95,7 +94,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
-			seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
+			seed:              seedConfig("az-eu2", "eu-west-1", "azure"),
 		},
 		{name: "Azure on Gardener seed is empty",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
@@ -124,7 +123,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-			seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
+			seed:              seedConfig("os-eu1", "eu-central-1", "openstack"),
 		},
 	}
 }
@@ -222,20 +221,17 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	}
 }
 
-func seedConfig(seedName, auditIdentifier, provider string) *gardener_types.Seed {
+func seedConfig(seedName, region, provider string) *gardener_types.Seed {
 	return &gardener_types.Seed{
 		ObjectMeta: v1.ObjectMeta{
 			Name: seedName,
 		},
 		Spec: gardener_types.SeedSpec{
 			Provider: gardener_types.SeedProvider{
-				Type: provider,
+				Type:   provider,
+				Region: region,
 			}},
-		Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
-			{Type: "AuditlogServiceAvailability",
-				Message: fmt.Sprintf("Auditlog landscape https://api.auditlog.%s.hana.ondemand.com:8081/ successfully attached to the seed.", auditIdentifier),
-			},
-		}},
+		Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{}},
 	}
 }
 

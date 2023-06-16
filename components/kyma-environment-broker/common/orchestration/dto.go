@@ -18,6 +18,8 @@ type Parameters struct {
 	// upgrade kyma specific parameters
 	Kyma           *KymaParameters          `json:"kyma,omitempty"`
 	RetryOperation RetryOperationParameters `json:"retryoperation,omitempty"`
+	// customer notification
+	Notification bool `json:"notification,omitempty"`
 }
 
 type RetryOperationParameters struct {

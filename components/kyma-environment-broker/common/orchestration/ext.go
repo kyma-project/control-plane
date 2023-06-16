@@ -26,7 +26,8 @@ type RuntimeOperation struct {
 	Runtime `json:""`
 	ID      string `json:"-"`
 	DryRun  bool   `json:"dryRun"`
-	//customer notification status
+	//customer notification
+	Notification      bool                  `json:"notification,omitempty"`
 	NotificationState NotificationStateType `json:"notificationstate,omitempty"`
 }
 

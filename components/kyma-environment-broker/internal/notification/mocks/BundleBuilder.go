@@ -12,20 +12,6 @@ type BundleBuilder struct {
 	mock.Mock
 }
 
-// DisabledCheck provides a mock function with given fields:
-func (_m *BundleBuilder) DisabledCheck() bool {
-	ret := _m.Called()
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
 // NewBundle provides a mock function with given fields: identifier, notificationParams
 func (_m *BundleBuilder) NewBundle(identifier string, notificationParams notification.NotificationParams) (notification.Bundle, error) {
 	ret := _m.Called(identifier, notificationParams)
