@@ -23,7 +23,7 @@ replicaCount: 1
 
 image:
   repository: europe-docker.pkg.dev/kyma-project/dev/control-plane/kubeconfig-service
-  tag: "PR-2829"
+  tag: "PR-2863"
   pullPolicy: Always
 
 config:

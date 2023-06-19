@@ -109,6 +109,7 @@ Description:        {{.Description}}
 Strategy:           {{.Parameters.Strategy.Type}}
 Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
 Schedule After:     {{.Parameters.Strategy.ScheduleTime}}
+Notification:       {{.Parameters.Notification}}
 Workers:            {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Type "upgradeKyma" }}
 Kyma Version:       {{with .Parameters.Kyma}}{{.Version}}{{end}}
@@ -139,6 +140,7 @@ var kymaUpgradePreviewTpl = `Kyma Upgrade Preview
 Strategy:           {{.Parameters.Strategy.Type}}
 Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
 Schedule After:     {{.Parameters.Strategy.Schedule}}
+Notification:       {{.Parameters.Notification}}
 Workers:            {{.Parameters.Strategy.Parallel.Workers}}
 {{- if eq .Parameters.Kyma.Version "" }}
 Kyma Version:       <determined after start>
@@ -161,6 +163,7 @@ var kubernetesUpgradePreviewTpl = `Kubernetes Upgrade Preview
 Strategy:           {{.Parameters.Strategy.Type}}
 Maintenance Window: {{.Parameters.Strategy.MaintenanceWindow}}
 Schedule After:     {{.Parameters.Strategy.Schedule}}
+Notification:       {{.Parameters.Notification}}
 Workers:            {{.Parameters.Strategy.Parallel.Workers}}
 K8s Version:        <determined after start>
 Targets:
