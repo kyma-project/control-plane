@@ -313,6 +313,9 @@ func (g *Graphqlizer) GardenerUpgradeInputToGraphQL(in gqlschema.GardenerUpgrade
 			usernamePrefix: "{{ .OidcConfig.UsernamePrefix }}",
 		},
 		{{- end }}
+        {{- if .ShootNetworkingFilterDisabled }}
+        shootNetworkingFilterDisabled: {{ .ShootNetworkingFilterDisabled }},
+		{{- end }}
 	}`)
 }
 
