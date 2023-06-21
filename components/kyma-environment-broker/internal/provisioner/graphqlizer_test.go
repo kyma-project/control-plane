@@ -580,6 +580,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 			usernameClaim: "sub",
 			usernamePrefix: "-",
 		},
+        shootNetworkingFilterDisabled: true,
 	},
 	administrators: ["newAdmin@kyma.cx"],
 }`
@@ -605,6 +606,7 @@ func Test_UpgradeShootInputToGraphQL(t *testing.T) {
 				UsernameClaim:  "sub",
 				UsernamePrefix: "-",
 			},
+			ShootNetworkingFilterDisabled: boolPtr(true),
 		},
 		Administrators: []string{"newAdmin@kyma.cx"},
 	})
