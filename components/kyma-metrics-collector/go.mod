@@ -3,10 +3,10 @@ module github.com/kyma-project/control-plane/components/kyma-metrics-collector
 go 1.20
 
 require (
-	github.com/gardener/gardener v1.67.2
+	github.com/gardener/gardener v1.70.2
 	github.com/gardener/gardener-extension-provider-aws v1.41.1
 	github.com/gardener/gardener-extension-provider-azure v1.33.0
-	github.com/gardener/gardener-extension-provider-gcp v1.28.2
+	github.com/gardener/gardener-extension-provider-gcp v1.30.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -26,7 +26,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
@@ -52,7 +52,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0 // indirect
+	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
