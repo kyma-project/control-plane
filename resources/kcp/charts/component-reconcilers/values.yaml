@@ -1,7 +1,7 @@
 global:
   images:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a"
-    component_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/component:v20230620-2c9f5265"
+    component_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/component:v20230622-ecb7ff24"
 
 # Default values for component-reconcilers.
 
