@@ -1,7 +1,7 @@
 global:
   images:
     cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a"
-    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230515-fdab76f5"
+    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230622-b23e244c"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
@@ -163,3 +163,7 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
+  istio:
+    group: operator.kyma-project.io
+    version: v1alpha2
+    kind: istios

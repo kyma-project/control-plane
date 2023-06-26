@@ -171,7 +171,7 @@ spec:
             - name: APP_RUN_AWS_CONFIG_MIGRATION
               value: {{ .Values.deployment.runAwsConfigMigration | quote }}
           volumeMounts:
-        {{if .Values.gardener.auditLogTenantConfigMapName }}
+        {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
               name: gardener-audit-log-tenant-config
               readOnly: true
@@ -241,10 +241,10 @@ spec:
       - name: gardener-kubeconfig
         secret:
           secretName: {{ .Values.gardener.secretName }}
-      {{if .Values.gardener.auditLogTenantConfigMapName }}
+      {{if .Values.gardener.auditLogExtensionConfigMapName }}
       - name: gardener-audit-log-tenant-config
         configMap:
-          name: {{ .Values.gardener.auditLogTenantConfigMapName }}
+          name: {{ .Values.gardener.auditLogExtensionConfigMapName }}
       {{end}}
       {{if .Values.gardener.maintenanceWindowConfigMapName }}
       - name: gardener-maintenance-config

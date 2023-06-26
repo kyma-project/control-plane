@@ -2,8 +2,11 @@ package upgrade_cluster
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -52,9 +55,18 @@ func (m *Manager) AddStep(weight int, step Step, condition StepCondition) {
 	m.steps[weight] = append(m.steps[weight], StepWithCondition{Step: step, condition: condition})
 }
 
-func (m *Manager) runStep(step Step, operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (internal.UpgradeClusterOperation, time.Duration, error) {
+func (m *Manager) runStep(step Step, operation internal.UpgradeClusterOperation, logger logrus.FieldLogger) (processedOperation internal.UpgradeClusterOperation, when time.Duration, err error) {
+	defer func() {
+		if pErr := recover(); pErr != nil {
+			logger.Println("panic in RunStep during cluster upgrade: ", pErr)
+			err = errors.New(fmt.Sprintf("%v", pErr))
+			om := process.NewUpgradeClusterOperationManager(m.operationStorage)
+			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)
+		}
+	}()
+
 	start := time.Now()
-	processedOperation, when, err := step.Run(operation, logger)
+	processedOperation, when, err = step.Run(operation, logger)
 	m.publisher.Publish(context.TODO(), process.UpgradeClusterStepProcessed{
 		OldOperation: operation,
 		Operation:    processedOperation,

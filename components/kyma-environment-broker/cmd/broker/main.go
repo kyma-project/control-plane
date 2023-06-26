@@ -958,9 +958,8 @@ func NewKymaOrchestrationProcessingQueue(ctx context.Context, db storage.BrokerS
 			step:   upgrade_kyma.NewOverridesFromSecretsAndConfigStep(db.Operations(), runtimeOverrides, runtimeVerConfigurator),
 		},
 		{
-			weight:   8,
-			step:     upgrade_kyma.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled: cfg.Notification.Disabled,
+			weight: 8,
+			step:   upgrade_kyma.NewSendNotificationStep(db.Operations(), notificationBuilder),
 		},
 		{
 			weight:   10,
@@ -1008,7 +1007,6 @@ func NewClusterOrchestrationProcessingQueue(ctx context.Context, db storage.Brok
 		{
 			weight:    10,
 			step:      upgrade_cluster.NewSendNotificationStep(db.Operations(), notificationBuilder),
-			disabled:  cfg.Notification.Disabled,
 			condition: provisioning.SkipForOwnClusterPlan,
 		},
 		{

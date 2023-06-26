@@ -640,3 +640,13 @@ type ConfigForPlan struct {
 	AdditionalComponents []KymaComponent `json:"additional-components" yaml:"additional-components"`
 	KymaTemplate         string          `json:"kyma-template" yaml:"kyma-template"`
 }
+
+func (c *ConfigForPlan) ContainsAdditionalComponent(componentName string) bool {
+	for _, c := range c.AdditionalComponents {
+		fmt.Println(c.Name)
+		if c.Name == componentName {
+			return true
+		}
+	}
+	return false
+}

@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-2811"
+      version: "PR-2866"
       dir: "dev"
 
 deployment:
@@ -30,6 +30,7 @@ gardener:
   kubeconfigResourceHook: Sync
   auditLogTenantConfigPath: "" # "/gardener/tenant/config"
   auditLogTenantConfigMapName: ""
+  auditLogExtensionConfigMapName: ""
   maintenanceWindowConfigPath: "" # "/gardener/maintenance/config"
   maintenanceWindowConfigMapName: ""
   secretName: "gardener-credentials"

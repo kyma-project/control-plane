@@ -368,6 +368,7 @@ func TestPopulateCacheAndQueue(t *testing.T) {
 func TestExecute(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	subAccID := uuid.New().String()
+	runtimeID := uuid.New().String()
 	tenant := subAccID
 	expectedKubeconfig := "eyJmb28iOiAiYmFyIn0="
 	expectedPath := fmt.Sprintf("/namespaces/%s/dataStreams/%s/%s/dataTenants/%s/%s/events", testNamespace, testDataStream, testDataStreamVersion, tenant, testEnv)
@@ -396,6 +397,7 @@ func TestExecute(t *testing.T) {
 	cache := gocache.New(gocache.NoExpiration, gocache.NoExpiration)
 	newRecord := kmccache.Record{
 		SubAccountID: subAccID,
+		RuntimeID:    runtimeID,
 		ShootName:    shootName,
 		KubeConfig:   "",
 		Metric:       nil,
@@ -403,6 +405,9 @@ func TestExecute(t *testing.T) {
 	expectedRecord := newRecord
 	expectedRecord.KubeConfig = expectedKubeconfig
 	expectedRecord.Metric = NewMetric()
+	expectedRecord.Metric.RuntimeId = runtimeID
+	expectedRecord.Metric.SubAccountId = subAccID
+	expectedRecord.Metric.ShootName = shootName
 
 	err := cache.Add(subAccID, newRecord, gocache.NoExpiration)
 	g.Expect(err).Should(gomega.BeNil())
@@ -470,6 +475,11 @@ func TestExecute(t *testing.T) {
 			g.Expect(record.Metric.Compute).To(gomega.Equal(expectedRecord.Metric.Compute))
 			return fmt.Errorf("compute data mismatch, got: %v, expected: %v", record.Metric.Compute, expectedRecord.Metric.Compute)
 		}
+
+		// check if IDs are correct.
+		g.Expect(record.Metric.RuntimeId).To(gomega.Equal(expectedRecord.Metric.RuntimeId))
+		g.Expect(record.Metric.SubAccountId).To(gomega.Equal(expectedRecord.Metric.SubAccountId))
+		g.Expect(record.Metric.ShootName).To(gomega.Equal(expectedRecord.Metric.ShootName))
 		return nil
 	}, bigTimeout).Should(gomega.BeNil())
 
