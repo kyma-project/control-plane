@@ -2,6 +2,7 @@ package deprovisioning
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
@@ -96,7 +97,11 @@ func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 
 func assertNoKymaResourceWithGivenRuntimeID(t *testing.T, kcpClient client.Client, kymaResourceNamespace string, resourceName string) {
 	kymaUnstructured := &unstructured.Unstructured{}
-	kymaUnstructured.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
+	kymaUnstructured.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1beta2",
+		Kind:    "kyma",
+	})
 	err := kcpClient.Get(context.Background(), client.ObjectKey{
 		Namespace: kymaResourceNamespace,
 		Name:      resourceName,
