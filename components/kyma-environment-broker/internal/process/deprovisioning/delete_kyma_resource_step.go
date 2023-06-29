@@ -45,15 +45,25 @@ func (step *DeleteKymaResourceStep) Name() string {
 }
 
 func (step *DeleteKymaResourceStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
-	cfg, err := step.configProvider.ProvideForGivenVersionAndPlan(step.defaultKymaVersion, broker.PlanNamesMapping[operation.Plan])
-	if err != nil {
-		return step.operationManager.RetryOperationWithoutFail(operation, step.Name(), "unable to get config for given version and plan", 5*time.Second, 30*time.Second, logger)
+	// read the KymaTemplate from the config if needed
+	if operation.KymaTemplate == "" {
+		cfg, err := step.configProvider.ProvideForGivenVersionAndPlan(step.defaultKymaVersion, broker.PlanNamesMapping[operation.Plan])
+		if err != nil {
+			return step.operationManager.RetryOperationWithoutFail(operation, step.Name(), "unable to get config for given version and plan", 5*time.Second, 30*time.Second, logger)
+		}
+		modifiedOperation, backoff, err := step.operationManager.UpdateOperation(operation, func(op *internal.Operation) {
+			op.KymaTemplate = cfg.KymaTemplate
+		}, logger)
+		if backoff > 0 {
+			return operation, backoff, err
+		}
+		operation = modifiedOperation
 	}
-	obj, err := steps.DecodeKymaTemplate(cfg.KymaTemplate)
+	obj, err := steps.DecodeKymaTemplate(operation.KymaTemplate)
 	if err != nil {
 		return step.operationManager.RetryOperationWithoutFail(operation, step.Name(), "unable to decode kyma template", 5*time.Second, 30*time.Second, logger)
-
 	}
+
 	if operation.KymaResourceNamespace == "" {
 		logger.Warnf("namespace for Kyma resource not specified")
 		return operation, 0, nil
