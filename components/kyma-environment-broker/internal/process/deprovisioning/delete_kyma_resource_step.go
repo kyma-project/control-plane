@@ -2,9 +2,10 @@ package deprovisioning
 
 import (
 	"context"
+	"time"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/broker"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/input"
-	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 

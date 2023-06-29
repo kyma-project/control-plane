@@ -1,8 +1,9 @@
 package deprovisioning
 
 import (
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/logger"

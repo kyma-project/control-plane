@@ -2,8 +2,9 @@ package deprovisioning
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 
