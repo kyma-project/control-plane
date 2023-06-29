@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 	"testing"
 	"time"
+
+	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
@@ -98,7 +99,6 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
 		kebConfig.NewConfigMapKeysValidator(),
 		kebConfig.NewConfigMapConverter())
-
 
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
