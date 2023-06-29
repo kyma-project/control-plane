@@ -21,6 +21,9 @@ func TestCheckKymaResourceDeleted_HappyFlow(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
 	operation.KymaResourceNamespace = "kyma-system"
+	operation.KymaTemplate = `
+
+`
 
 	kcpClient := fake.NewClientBuilder().Build()
 
