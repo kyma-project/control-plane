@@ -1,6 +1,7 @@
 package deprovisioning
 
 import (
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"testing"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -33,7 +34,7 @@ func TestDeleteKymaResource_HappyFlow(t *testing.T) {
 	err := memoryStorage.Operations().InsertOperation(operation)
 	assert.NoError(t, err)
 
-	step := NewDeleteKymaResourceStep(memoryStorage.Operations(), kcpClient)
+	step := NewDeleteKymaResourceStep(memoryStorage.Operations(), kcpClient, fakeConfigProvider{}, "2.0")
 	memoryStorage.Operations().InsertOperation(operation)
 
 	// When
@@ -55,7 +56,7 @@ func TestDeleteKymaResource_EmptyRuntimeIDAndKymaResourceName(t *testing.T) {
 	err := memoryStorage.Operations().InsertOperation(operation)
 	assert.NoError(t, err)
 
-	step := NewDeleteKymaResourceStep(memoryStorage.Operations(), kcpClient)
+	step := NewDeleteKymaResourceStep(memoryStorage.Operations(), kcpClient, fakeConfigProvider{}, "2.0")
 	memoryStorage.Operations().InsertOperation(operation)
 
 	// When
@@ -63,4 +64,13 @@ func TestDeleteKymaResource_EmptyRuntimeIDAndKymaResourceName(t *testing.T) {
 
 	// Then
 	assert.Zero(t, backoff)
+}
+
+type fakeConfigProvider struct {
+}
+
+func (fakeConfigProvider) ProvideForGivenVersionAndPlan(_, _ string) (*internal.ConfigForPlan, error) {
+	return &internal.ConfigForPlan{
+		KymaTemplate: kymaTemplate,
+	}, nil
 }

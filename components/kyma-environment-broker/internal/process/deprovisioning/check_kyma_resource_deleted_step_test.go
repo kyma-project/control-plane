@@ -22,9 +22,7 @@ func TestCheckKymaResourceDeleted_HappyFlow(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
 	operation.KymaResourceNamespace = "kyma-system"
-	operation.KymaTemplate = `
-
-`
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
@@ -51,6 +49,7 @@ func TestCheckKymaResourceDeleted_EmptyKymaResourceName(t *testing.T) {
 	operation.KymaResourceNamespace = "kyma-system"
 	operation.RuntimeID = ""
 	operation.KymaResourceName = ""
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
@@ -75,6 +74,7 @@ func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
 	operation.KymaResourceNamespace = "kyma-system"
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
