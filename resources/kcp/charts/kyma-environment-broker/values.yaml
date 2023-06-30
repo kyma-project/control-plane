@@ -300,3 +300,7 @@ runtimeReconciler:
   watcherEnabled: false
   watcherAddress: 8888
   watcherName: btp-manager-secret-watcher
+
+# TODO: remove it (with oauth-client.yaml) after the hydra is completely removed
+hydra:
+  enabled: true
