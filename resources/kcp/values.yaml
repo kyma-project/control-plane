@@ -126,7 +126,7 @@ global:
       secretName: "kcp-auditlog-secret"
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
-      image: europe-docker.pkg.dev/kyma-project/fluent-bit/prod/tpi
+      image: europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit
       tag: 2.1.4-52bb9772
       persistence:
         enabled: true
