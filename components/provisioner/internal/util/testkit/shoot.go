@@ -17,10 +17,15 @@ func NewTestShoot(name string) *TestShoot {
 	groupsClaim := "groups"
 	issuerURL := "https://kymatest.accounts400.ondemand.com"
 	usernameClaim := "sub"
+	kind := "Shoot"
+	apiVersion := "core.gardener.cloud/v1beta1"
 	usernamePrefix := "-"
 	return &TestShoot{
 		shoot: &v1beta1.Shoot{
-			TypeMeta: metav1.TypeMeta{},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       kind,
+				APIVersion: apiVersion,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
 			},
