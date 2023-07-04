@@ -134,9 +134,10 @@ func fixProvisionerInput(disabled bool, euAccess bool) gqlschema.ProvisionRuntim
 				WorkerCidr:                          "10.250.0.0/19",
 				AutoScalerMin:                       3,
 				AutoScalerMax:                       20,
-				MaxSurge:                            1,
+				MaxSurge:                            3,
 				MaxUnavailable:                      0,
 				TargetSecret:                        "",
+				ControlPlaneFailureTolerance:        ptr.String("zone"),
 				EnableKubernetesVersionAutoUpdate:   ptr.Bool(autoUpdateKubernetesVersion),
 				EnableMachineImageVersionAutoUpdate: ptr.Bool(autoUpdateMachineImageVersion),
 				ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{

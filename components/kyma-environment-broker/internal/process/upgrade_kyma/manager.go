@@ -2,8 +2,11 @@ package upgrade_kyma
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/event"
@@ -55,9 +58,19 @@ func (m *Manager) AddStep(weight int, step Step, cnd StepCondition) {
 	})
 }
 
-func (m *Manager) runStep(step Step, operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (internal.UpgradeKymaOperation, time.Duration, error) {
+func (m *Manager) runStep(step Step, operation internal.UpgradeKymaOperation, logger logrus.FieldLogger) (processedOperation internal.UpgradeKymaOperation, when time.Duration, err error) {
+
+	defer func() {
+		if pErr := recover(); pErr != nil {
+			logger.Println("panic in RunStep during Kyma upgrade: ", pErr)
+			err = errors.New(fmt.Sprintf("%v", pErr))
+			om := process.NewUpgradeKymaOperationManager(m.operationStorage)
+			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)
+		}
+	}()
+
 	start := time.Now()
-	processedOperation, when, err := step.Run(operation, logger)
+	processedOperation, when, err = step.Run(operation, logger)
 	m.publisher.Publish(context.TODO(), process.UpgradeKymaStepProcessed{
 		OldOperation: operation,
 		Operation:    processedOperation,
@@ -72,6 +85,7 @@ func (m *Manager) runStep(step Step, operation internal.UpgradeKymaOperation, lo
 }
 
 func (m *Manager) Execute(operationID string) (time.Duration, error) {
+
 	op, err := m.operationStorage.GetUpgradeKymaOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch operation from storage: %s", err)

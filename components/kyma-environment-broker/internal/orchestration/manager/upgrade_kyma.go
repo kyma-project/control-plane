@@ -70,9 +70,10 @@ func (u *upgradeKymaFactory) NewOperation(o internal.Orchestration, r orchestrat
 			ProvisioningParameters: i.Parameters,
 			InstanceDetails:        details,
 			RuntimeOperation: orchestration.RuntimeOperation{
-				ID:      id,
-				Runtime: r,
-				DryRun:  o.Parameters.DryRun,
+				ID:           id,
+				Runtime:      r,
+				DryRun:       o.Parameters.DryRun,
+				Notification: o.Parameters.Notification,
 			},
 		},
 	}

@@ -1,10 +1,11 @@
 package api_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +61,7 @@ type testCase struct {
 	name              string
 	description       string
 	runtimeID         string
-	auditLogTenant    string
+	auditLogConfig    *gardener.AuditLogConfig
 	provisioningInput provisioningInput
 	upgradeShootInput gqlschema.UpgradeShootInput
 	seed              *gardener_types.Seed
@@ -79,9 +80,13 @@ Everything else should be tested in appropriate package
 func newTestProvisioningConfigs() []testCase {
 	return []testCase{
 		{name: "Azure on Gardener",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
-			auditLogTenant: "12d68c35-556b-4966-a061-235d4a060929",
+			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when zones passed",
+			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb4",
+			auditLogConfig: &gardener.AuditLogConfig{
+				TenantID:   "12d68c35-556b-4966-a061-235d4a060929",
+				ServiceURL: "https://auditlog.example.com:3001",
+				SecretName: "auditlog-secret2",
+			},
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInput("1", "2"),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -89,12 +94,12 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeShootInput(),
-			seed:              seedConfig("az-eu2", "cf.eu20", "azure"),
+			seed:              seedConfig("az-eu2", "eu-west-1", "azure"),
 		},
 		{name: "Azure on Gardener seed is empty",
 			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct Azure configuration for Gardener, when seed is empty",
 			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb2",
-			auditLogTenant: "",
+			auditLogConfig: nil,
 			provisioningInput: provisioningInput{
 				config: azureGardenerClusterConfigInputNoSeed(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -104,9 +109,13 @@ func newTestProvisioningConfigs() []testCase {
 			upgradeShootInput: NewUpgradeShootInput(),
 		},
 		{name: "OpenStack on Gardener",
-			description:    "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
-			runtimeID:      "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
-			auditLogTenant: "e7382275-e835-4549-94e1-3b1101e3a1fa",
+			description: "Should provision, deprovision a runtime and upgrade shoot on happy path, using correct OpenStack configuration for Gardener",
+			runtimeID:   "1100bb59-9c40-4ebb-b846-7477c4dc5bb8",
+			auditLogConfig: &gardener.AuditLogConfig{
+				TenantID:   "e7382275-e835-4549-94e1-3b1101e3a1fa",
+				ServiceURL: "https://auditlog.example.com:3000",
+				SecretName: "auditlog-secret",
+			},
 			provisioningInput: provisioningInput{
 				config: openStackGardenerClusterConfigInput(),
 				runtimeInput: gqlschema.RuntimeInput{
@@ -114,7 +123,7 @@ func newTestProvisioningConfigs() []testCase {
 					Description: new(string),
 				}},
 			upgradeShootInput: NewUpgradeOpenStackShootInput(),
-			seed:              seedConfig("os-eu1", "cf.eu10", "openstack"),
+			seed:              seedConfig("os-eu1", "eu-central-1", "openstack"),
 		},
 	}
 }
@@ -212,20 +221,17 @@ func openStackGardenerClusterConfigInput() gqlschema.ClusterConfigInput {
 	}
 }
 
-func seedConfig(seedName, auditIdentifier, provider string) *gardener_types.Seed {
+func seedConfig(seedName, region, provider string) *gardener_types.Seed {
 	return &gardener_types.Seed{
 		ObjectMeta: v1.ObjectMeta{
 			Name: seedName,
 		},
 		Spec: gardener_types.SeedSpec{
 			Provider: gardener_types.SeedProvider{
-				Type: provider,
+				Type:   provider,
+				Region: region,
 			}},
-		Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{
-			{Type: "AuditlogServiceAvailability",
-				Message: fmt.Sprintf("Auditlog landscape https://api.auditlog.%s.hana.ondemand.com:8081/ successfully attached to the seed.", auditIdentifier),
-			},
-		}},
+		Status: gardener_types.SeedStatus{Conditions: []gardener_types.Condition{}},
 	}
 }
 
@@ -319,63 +325,6 @@ func fixKymaGraphQLConfigInput() *gqlschema.KymaConfigInput {
 
 func fixGQLConfigEntryInput(key, val string, secret *bool) *gqlschema.ConfigEntryInput {
 	return &gqlschema.ConfigEntryInput{
-		Key:    key,
-		Value:  val,
-		Secret: secret,
-	}
-}
-
-func fixKymaGraphQLConfig() *gqlschema.KymaConfig {
-
-	return &gqlschema.KymaConfig{
-		Version: util.StringPtr(kymaVersion),
-		Components: []*gqlschema.ComponentConfiguration{
-			{
-				Component:     clusterEssentialsComponent,
-				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
-			},
-			{
-				Component:     rafterComponent,
-				Namespace:     kymaSystemNamespace,
-				Configuration: make([]*gqlschema.ConfigEntry, 0, 0),
-				SourceURL:     util.StringPtr(rafterSourceURL),
-			},
-			{
-				Component: coreComponent,
-				Namespace: kymaSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.config.key2", "value2", util.BoolPtr(false)),
-				},
-			},
-			{
-				Component: applicationConnectorComponent,
-				Namespace: kymaSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-			{
-				Component: runtimeAgentComponent,
-				Namespace: compassSystemNamespace,
-				Configuration: []*gqlschema.ConfigEntry{
-					fixGQLConfigEntry("test.config.key", "value", util.BoolPtr(false)),
-					fixGQLConfigEntry("test.secret.key", "secretValue", util.BoolPtr(true)),
-				},
-			},
-		},
-		Configuration: []*gqlschema.ConfigEntry{
-			fixGQLConfigEntry("global.config.key", "globalValue", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.config.key2", "globalValue2", util.BoolPtr(false)),
-			fixGQLConfigEntry("global.secret.key", "globalSecretValue", util.BoolPtr(true)),
-		},
-	}
-}
-
-func fixGQLConfigEntry(key, val string, secret *bool) *gqlschema.ConfigEntry {
-	return &gqlschema.ConfigEntry{
 		Key:    key,
 		Value:  val,
 		Secret: secret,

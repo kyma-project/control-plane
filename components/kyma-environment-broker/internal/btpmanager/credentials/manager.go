@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/provisioner"
@@ -98,7 +99,7 @@ func (s *Manager) MatchInstance(kymaName string) (*internal.Instance, error) {
 	return instance, err
 }
 
-func (s *Manager) ReconcileAll() (int, int, int, int, error) {
+func (s *Manager) ReconcileAll(jobReconciliationDelay time.Duration) (int, int, int, int, error) {
 	instances, err := s.GetReconcileCandidates()
 	if err != nil {
 		return 0, 0, 0, 0, err
@@ -107,6 +108,7 @@ func (s *Manager) ReconcileAll() (int, int, int, int, error) {
 
 	updateDone, updateNotDoneDueError, updateNotDoneDueOkState := 0, 0, 0
 	for _, instance := range instances {
+		time.Sleep(jobReconciliationDelay)
 		updated, err := s.ReconcileSecretForInstance(&instance)
 		if err != nil {
 			s.logger.Errorf("while doing update, for instance: %s, %s", instance.InstanceID, err)

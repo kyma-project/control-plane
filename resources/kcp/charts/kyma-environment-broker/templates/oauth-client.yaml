@@ -1,3 +1,4 @@
+{{- if .Values.hydra.enabled }}
 apiVersion: hydra.ory.sh/v1alpha1
 kind: OAuth2Client
 metadata:
@@ -7,3 +8,4 @@ spec:
     - "client_credentials"
   scope: {{ .Values.kebClient.scope }}
   secretName: {{ include "kyma-env-broker.fullname" . }}-oauth
+{{- end }}

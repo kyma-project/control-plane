@@ -30,6 +30,7 @@ gardener:
   kubeconfigResourceHook: Sync
   auditLogTenantConfigPath: "" # "/gardener/tenant/config"
   auditLogTenantConfigMapName: ""
+  auditLogExtensionConfigMapName: ""
   maintenanceWindowConfigPath: "" # "/gardener/maintenance/config"
   maintenanceWindowConfigMapName: ""
   secretName: "gardener-credentials"

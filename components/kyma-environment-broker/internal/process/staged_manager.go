@@ -3,8 +3,11 @@ package process
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
@@ -94,6 +97,7 @@ func (m *StagedManager) GetAllStages() []string {
 }
 
 func (m *StagedManager) Execute(operationID string) (time.Duration, error) {
+
 	operation, err := m.operationStorage.GetOperationByID(operationID)
 	if err != nil {
 		m.log.Errorf("Cannot fetch operation from storage: %s", err)
@@ -190,13 +194,22 @@ func (m *StagedManager) saveFinishedStage(operation internal.Operation, s *stage
 	return *op, nil
 }
 
-func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+func (m *StagedManager) runStep(step Step, operation internal.Operation, logger logrus.FieldLogger) (processedOperation internal.Operation, backoff time.Duration, err error) {
+	var start time.Time
+	defer func() {
+		if pErr := recover(); pErr != nil {
+			log.Println("panic in RunStep in staged manager: ", pErr)
+			err = errors.New(fmt.Sprintf("%v", pErr))
+			om := NewOperationManager(m.operationStorage)
+			processedOperation, _, _ = om.OperationFailed(operation, "recovered from panic", err, m.log)
+		}
+	}()
+
 	begin := time.Now()
 	for {
-		start := time.Now()
+		start = time.Now()
 		logger.Infof("Start step")
-		processedOperation, when, err := step.Run(operation, logger)
-
+		processedOperation, backoff, err = step.Run(operation, logger)
 		if err != nil {
 			processedOperation.LastError = kebError.ReasonForError(err)
 			logOperation := m.log.WithFields(logrus.Fields{"operation": processedOperation.ID, "error_component": processedOperation.LastError.Component(), "error_reason": processedOperation.LastError.Reason()})
@@ -212,7 +225,7 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 			StepProcessed: StepProcessed{
 				StepName: step.Name(),
 				Duration: time.Since(start),
-				When:     when,
+				When:     backoff,
 				Error:    err,
 			},
 			Operation:    processedOperation,
@@ -223,11 +236,11 @@ func (m *StagedManager) runStep(step Step, operation internal.Operation, logger 
 		// - the step does not need a retry
 		// - step returns an error
 		// - the loop takes too much time (to not block the worker too long)
-		if when == 0 || err != nil || time.Since(begin) > 10*time.Minute {
-			return processedOperation, when, err
+		if backoff == 0 || err != nil || time.Since(begin) > 10*time.Minute {
+			return processedOperation, backoff, err
 		}
-		operation.EventInfof("step %v sleeping for %v", step.Name(), when)
-		time.Sleep(when / time.Duration(m.speedFactor))
+		operation.EventInfof("step %v sleeping for %v", step.Name(), backoff)
+		time.Sleep(backoff / time.Duration(m.speedFactor))
 	}
 }
 

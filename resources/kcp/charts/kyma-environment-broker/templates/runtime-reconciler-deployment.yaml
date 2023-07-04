@@ -34,6 +34,8 @@ spec:
               value: "{{ .Values.runtimeReconciler.jobEnabled }}"
             - name: RUNTIME_RECONCILER_JOB_INTERVAL
               value: "{{ .Values.runtimeReconciler.jobInterval }}"
+            - name: RUNTIME_RECONCILER_JOB_RECONCILIATION_DELAY
+              value: "{{ .Values.runtimeReconciler.jobReconciliationDelay }}"
             - name: RUNTIME_RECONCILER_WATCHER_ENABLED
               value: "{{ .Values.runtimeReconciler.watcherEnabled }}"
             - name: RUNTIME_RECONCILER_BTP_MANAGER_SECRET_WATCHER_ADDR

@@ -94,6 +94,28 @@ func TestWithRetry(t *testing.T) {
 	assert.True(t, op.IsStageFinished("stage-2"))
 }
 
+func TestWithPanic(t *testing.T) {
+	// given
+	const opID = "op-0001234"
+	operation := FixOperation("op-0001234")
+	mgr, operationStorage, eventCollector := SetupStagedManager(operation)
+	mgr.AddStep("stage-1", &testingStep{name: "first", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "second", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-1", &testingStep{name: "third", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &panicStep{name: "first-2-panic", eventPublisher: eventCollector}, nil)
+	mgr.AddStep("stage-2", &testingStep{name: "second-2-after-panic", eventPublisher: eventCollector}, nil)
+
+	// when
+	mgr.Execute(operation.ID)
+
+	// then
+	eventCollector.AssertProcessedSteps(t, []string{"first", "second", "third"})
+	op, _ := operationStorage.GetOperationByID(operation.ID)
+	assert.Equal(t, op.State, domain.Failed)
+	assert.True(t, op.IsStageFinished("stage-1"))
+	assert.False(t, op.IsStageFinished("stage-2"))
+}
+
 func TestSkipFinishedStage(t *testing.T) {
 	// given
 	operation := FixOperation("op-0001234")
@@ -160,6 +182,23 @@ func (s *onceRetryingStep) Run(operation internal.Operation, logger logrus.Field
 		return operation, time.Millisecond, nil
 	}
 	logger.Infof("Running")
+	return operation, 0, nil
+}
+
+type panicStep struct {
+	name           string
+	processed      bool
+	eventPublisher event.Publisher
+}
+
+func (s *panicStep) Name() string {
+	return s.name
+}
+
+func (s *panicStep) Run(operation internal.Operation, logger logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	s.eventPublisher.Publish(context.Background(), s.name)
+	logger.Infof("Panic!")
+	panic("Panicking just for test")
 	return operation, 0, nil
 }
 

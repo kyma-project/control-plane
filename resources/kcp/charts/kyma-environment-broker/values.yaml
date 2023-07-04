@@ -3,19 +3,19 @@ global:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "v20230524-446d91f8"
+      version: "v20230621-89009079"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230524-446d91f8"
+      version: "v20230614-bcb66b55"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230524-446d91f8"
+      version: "v20230614-bcb66b55"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230524-446d91f8"
+      version: "v20230614-bcb66b55"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20230524-446d91f8"
+      version: "v20230614-bcb66b55"
 
 deployment:
   replicaCount: 1
@@ -270,7 +270,7 @@ trialCleanup:
 deprovisionRetrigger:
   schedule: "0 2 * * *"
   dryRun: true
-  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched 
+  # The following section should be uncommented when deprovision-regtrigger-job is going to be switched
   #   to the generic job
   # name: "deprovision-retrigger-job"
   # schedule: "0 2 * * *"
@@ -296,6 +296,11 @@ runtimeReconciler:
   dryRun: true
   jobEnabled: false
   jobInterval: 1440
+  jobReconciliationDelay: 1s
   watcherEnabled: false
   watcherAddress: 8888
   watcherName: btp-manager-secret-watcher
+
+# TODO: remove it (with oauth-client.yaml) after the hydra is completely removed
+hydra:
+  enabled: true

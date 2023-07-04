@@ -117,7 +117,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -163,7 +169,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -191,7 +196,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 		ver := &internal.RuntimeVersionData{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -233,7 +244,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -260,7 +270,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, _ := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.Canceled})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.Canceled,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		upgradeOperation := fixUpgradeKymaOperation()
@@ -284,7 +300,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -310,7 +325,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -356,7 +377,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -384,7 +404,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -431,7 +457,7 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
+		notificationBuilder.On("").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -506,7 +532,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -534,7 +559,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -582,7 +613,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -610,7 +640,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		memoryStorage := storage.NewMemoryStorage()
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -658,7 +694,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -687,7 +722,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		inputBuilder := &automock.CreatorForPlan{}
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -735,7 +776,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -764,7 +804,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		_, client := createEvalManager(t, memoryStorage, log)
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -812,7 +858,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
@@ -837,7 +882,13 @@ func TestInitialisationStep_Run(t *testing.T) {
 		evalManager, client := createEvalManager(t, memoryStorage, log)
 		evalManagerInvalid, _ := createEvalManagerWithValidity(t, memoryStorage, log, false)
 
-		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{OrchestrationID: fixOrchestrationID, State: orchestration.InProgress})
+		err := memoryStorage.Orchestrations().Insert(internal.Orchestration{
+			OrchestrationID: fixOrchestrationID,
+			State:           orchestration.InProgress,
+			Parameters: orchestration.Parameters{
+				Notification: true,
+			},
+		})
 		require.NoError(t, err)
 
 		provisioningOperation := fixProvisioningOperation()
@@ -901,7 +952,6 @@ func TestInitialisationStep_Run(t *testing.T) {
 		}
 		notificationBuilder := &notificationAutomock.BundleBuilder{}
 		bundle := &notificationAutomock.Bundle{}
-		notificationBuilder.On("DisabledCheck").Return(false).Once()
 		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParas).Return(bundle, nil).Once()
 		bundle.On("UpdateNotificationEvent").Return(nil).Once()
 
