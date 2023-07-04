@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/utils/clock"
 
