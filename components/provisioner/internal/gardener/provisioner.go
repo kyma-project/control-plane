@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"time"
 
@@ -32,8 +33,9 @@ import (
 //go:generate mockery --name=Client
 type Client interface {
 	Create(ctx context.Context, shoot *v1beta1.Shoot, opts v1.CreateOptions) (*v1beta1.Shoot, error)
-	Update(ctx context.Context, shoot *v1beta1.Shoot, opts v1.UpdateOptions) (*v1beta1.Shoot, error)
+	//Update(ctx context.Context, shoot *v1beta1.Shoot, opts v1.UpdateOptions) (*v1beta1.Shoot, error)
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.Shoot, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.Shoot, err error)
 }
 
 func NewProvisioner(
@@ -111,8 +113,14 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 		return appErr.Append("error while updating Gardener shoot configuration")
 	}
 
+	shootData, err := json.Marshal(shoot)
+	if err != nil {
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
+		return apperr.Append("error during marshaling Shoot data")
+	}
+
 	err = retry.Do(func() error {
-		_, err := g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
 		return err
 	}, retry.Attempts(5))
 	if err != nil {
@@ -144,8 +152,14 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 		}
 	}
 
+	shootData, err := json.Marshal(shoot)
+	if err != nil {
+		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
+		return apperr.Append("error during marshaling Shoot data")
+	}
+
 	err = retry.Do(func() error {
-		_, err := g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
 		return err
 	}, retry.Attempts(5))
 
@@ -188,7 +202,13 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 
 	annotateWithConfirmDeletion(shoot)
 
-	_, err = g.shootClient.Update(context.Background(), shoot, v1.UpdateOptions{})
+	shootData, err := json.Marshal(shoot)
+	if err != nil {
+		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
+		return model.Operation{}, appError.Append("error during marshaling Shoot data")
+	}
+	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
+
 	if err != nil {
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return model.Operation{}, appError.Append("error updating Shoot")
