@@ -120,7 +120,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 	}
 
 	err = retry.Do(func() error {
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "application/apply-patch+yaml"})
 		return err
 	}, retry.Attempts(5))
 	if err != nil {
@@ -159,7 +159,7 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 	}
 
 	err = retry.Do(func() error {
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "application/apply-patch+yaml"})
 		return err
 	}, retry.Attempts(5))
 
@@ -207,7 +207,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
 		return model.Operation{}, appError.Append("error during marshaling Shoot data")
 	}
-	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{})
+	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "application/apply-patch+yaml"})
 
 	if err != nil {
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
