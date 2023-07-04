@@ -344,8 +344,6 @@ func TestGardenerProvisioner_HibernateCluster(t *testing.T) {
 			ToShoot()
 
 		shootClient := &gardenerMocks.Client{}
-		//shootData, err := json.Marshal(shoot)
-		//require.NoError(t, err)
 
 		shootClient.On("Get", mock.Anything, clusterName, mock.Anything).Return(shoot, nil)
 		shootClient.On("Patch", mock.Anything, shoot.Name, mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("some error"))
