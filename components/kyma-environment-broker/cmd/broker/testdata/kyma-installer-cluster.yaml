@@ -360,8 +360,6 @@ spec:
       namespace: "kyma-system"
     - name: "backup"
       namespace: "kyma-system"
-    - name: "logging"
-      namespace: "kyma-system"
     - name: "monitoring"
       namespace: "kyma-system"
     #- name: "compass-runtime-agent"
