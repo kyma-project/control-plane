@@ -3,19 +3,19 @@ global:
     cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
     kyma_environment_broker:
       dir:
-      version: "v20230621-89009079"
+      version: "v20230705-30c430b0"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230705-30c430b0"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230705-30c430b0"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230705-30c430b0"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230705-30c430b0"
 
 deployment:
   replicaCount: 1
