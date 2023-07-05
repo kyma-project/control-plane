@@ -354,7 +354,7 @@ func main() {
 	deprovisionManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("deprovisioning", "manager"))
 	deprovisionQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, &cfg, db, eventBroker, provisionerClient,
 		avsDel, internalEvalAssistant, externalEvalAssistant, bundleBuilder, edpClient, accountProvider, reconcilerClient,
-		k8sClientProvider, cli, logs)
+		k8sClientProvider, cli, configProvider, logs)
 
 	updateManager := process.NewStagedManager(db.Operations(), eventBroker, cfg.OperationTimeout, logs.WithField("update", "manager"))
 	updateQueue := NewUpdateProcessingQueue(ctx, updateManager, 20, db, inputFactory, provisionerClient, eventBroker,
@@ -833,7 +833,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 	provisionerClient provisioner.Client, avsDel *avs.Delegator, internalEvalAssistant *avs.InternalEvalAssistant,
 	externalEvalAssistant *avs.ExternalEvalAssistant, bundleBuilder ias.BundleBuilder,
 	edpClient deprovisioning.EDPClient, accountProvider hyperscaler.AccountProvider, reconcilerClient reconciler.Client,
-	k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, logs logrus.FieldLogger) *process.Queue {
+	k8sClientProvider func(kcfg string) (client.Client, error), cli client.Client, configProvider input.ConfigurationProvider, logs logrus.FieldLogger) *process.Queue {
 
 	deprovisioningSteps := []struct {
 		disabled bool
@@ -858,7 +858,7 @@ func NewDeprovisioningProcessingQueue(ctx context.Context, workersAmount int, de
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,
-			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli),
+			step:     deprovisioning.NewDeleteKymaResourceStep(db.Operations(), cli, configProvider, cfg.KymaVersion),
 		},
 		{
 			disabled: cfg.LifecycleManagerIntegrationDisabled,

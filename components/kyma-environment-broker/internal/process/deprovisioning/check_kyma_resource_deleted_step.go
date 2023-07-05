@@ -44,11 +44,16 @@ func (step *CheckKymaResourceDeletedStep) Run(operation internal.Operation, logg
 		return operation, 0, nil
 	}
 
+	obj, err := steps.DecodeKymaTemplate(operation.KymaTemplate)
+	if err != nil {
+		return step.operationManager.RetryOperationWithoutFail(operation, step.Name(), "unable to decode kyma template", 5*time.Second, 30*time.Second, logger)
+	}
+
 	logger.Infof("Checking existence of Kyma resource: %s in namespace:%s", kymaResourceName, operation.KymaResourceNamespace)
 
 	kymaUnstructured := &unstructured.Unstructured{}
-	kymaUnstructured.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
-	err := step.kcpClient.Get(context.Background(), client.ObjectKey{
+	kymaUnstructured.SetGroupVersionKind(obj.GroupVersionKind())
+	err = step.kcpClient.Get(context.Background(), client.ObjectKey{
 		Namespace: operation.KymaResourceNamespace,
 		Name:      kymaResourceName,
 	}, kymaUnstructured)
