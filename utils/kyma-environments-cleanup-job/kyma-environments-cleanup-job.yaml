@@ -102,7 +102,7 @@ spec:
                   mountPath: /secrets/cloudsql-instance-credentials
                   readOnly: true
             - name: cloudsql-proxy
-              image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a
+              image: europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8
               imagePullPolicy: IfNotPresent
               command: ${SCRIPT_CLOUDSQL_PROXY_COMMAND} # set by script
               volumeMounts:
