@@ -197,7 +197,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
-					MachineImageVersion: util.BoolPtr(c.EnableMachineImageVersionAutoUpdate),
+					MachineImageVersion: &c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
 			DNS: gardenerDnsConfig(dnsInputConfig),
@@ -731,7 +731,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = util.BoolPtr(upgradeConfig.EnableMachineImageVersionAutoUpdate)
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = &upgradeConfig.EnableMachineImageVersionAutoUpdate
 
 	if len(shoot.Spec.Provider.Workers) == 0 {
 		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)
