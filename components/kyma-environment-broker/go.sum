@@ -432,7 +432,7 @@ github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
-github.com/gardener/gardener v1.56.0 h1:GAs+Nil9bYnGcUJ6rr71SI16pa5Qa1NjXxa6qkpmikg=
+github.com/gardener/gardener v1.65.2 h1:XpiP0cWzfBLSFiFc1Vh4X1AAjN3yITPacEVDoe5IGd8=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
@@ -764,8 +764,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20230222093537-9361
 github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f h1:xH0q+JC+JyIis3ljLPCZQNeDwpsfei54EEWrKE+KHSM=
 github.com/kyma-incubator/reconciler v0.0.0-20230203092534-fd85106be3cd h1:BycDCodhNQG1248zSobgE6I/T6nGN8qlHVgcBSVb91k=
 github.com/kyma-incubator/reconciler v0.0.0-20230203092534-fd85106be3cd/go.mod h1:VNUfzgLpmNa02/+LGNbW4zhh1X/PaJwQ1IeCM1uA2A0=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230222072933-f72a783494d6 h1:SGU8dX9tWbuhNN3cToV8RYsfhSloB34m5SBRqij5Rdc=
-github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230222072933-f72a783494d6/go.mod h1:RKEJQhYEEC1AVRFoT44m1zEF1EPbuxDVYG1GmIYEO6g=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab h1:JYsOfthXC8hCOuPbz8ZFV6gN2keyufvbcfPDyDEANUo=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:Qi9Ot6rXuI2HWoXg0iAUNSP+NiLbC/7s+AYmw6JqTA0=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230222072933-f72a783494d6 h1:MlLl0cZf06LrdGha9E60YcDBEvFEOM4U7pvCKgOM5Xc=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230222072933-f72a783494d6/go.mod h1:vABrhytVuZpchbdlIVdUDlhB/Q/3GIZld2JmdS2rZ6I=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=
