@@ -111,8 +111,6 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 			return appErr.Append("error while updating Gardener shoot configuration")
 		}
 
-		fmt.Printf("apiVersion:%s, kind:%s, typemeta:%s", shoot.APIVersion, shoot.Kind, shoot.TypeMeta)
-
 		setObjectFields(shoot)
 
 		shootData, err := json.Marshal(shoot)
