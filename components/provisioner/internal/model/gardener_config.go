@@ -166,7 +166,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			},
 		}
 	}
-
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -178,7 +177,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Annotations: annotations,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: c.TargetSecret,
+			SecretBindingName: &c.TargetSecret,
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
@@ -187,8 +186,8 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
 			},
-			Networking: gardener_types.Networking{
-				Type:  "calico", // Default value - we may consider adding it to API (if Hydroform will support it)
+			Networking: &gardener_types.Networking{
+				Type:  util.StringPtr("calico"), // Default value - we may consider adding it to API (if Hydroform will support it)
 				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
 			},
 			Purpose:           purpose,
@@ -196,7 +195,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
-					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
+					MachineImageVersion: util.BoolPtr(c.EnableMachineImageVersionAutoUpdate),
 				},
 			},
 			DNS: gardenerDnsConfig(dnsInputConfig),
@@ -730,7 +729,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = util.BoolPtr(upgradeConfig.EnableMachineImageVersionAutoUpdate)
 
 	if len(shoot.Spec.Provider.Workers) == 0 {
 		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)

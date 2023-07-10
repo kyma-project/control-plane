@@ -213,12 +213,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  util.StringPtr("calico"),
 						Nodes: util.StringPtr("10.10.10.10/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: util.StringPtr("gardener-secret"),
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "gcp",
@@ -243,7 +243,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -292,12 +292,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  util.StringPtr("calico"),
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: util.StringPtr("gardener-secret"),
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -322,7 +322,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -371,12 +371,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  util.StringPtr("calico"),
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: util.StringPtr("gardener-secret"),
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -401,7 +401,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -450,12 +450,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  util.StringPtr("calico"),
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: util.StringPtr("gardener-secret"),
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -480,7 +480,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -529,12 +529,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  util.StringPtr("calico"),
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: util.StringPtr("gardener-secret"),
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "aws",
@@ -559,7 +559,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),

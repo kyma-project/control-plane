@@ -3,6 +3,7 @@ package testkit
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,7 +77,7 @@ func (ts *TestShoot) WithKubernetesVersion(v string) *TestShoot {
 // WithAutoUpdate sets values of shoot.Spec.Maintenance.AutoUpdate KubernetesVersion and MachineImageVersion fields
 func (ts *TestShoot) WithAutoUpdate(kubernetes, machine bool) *TestShoot {
 	ts.shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = kubernetes
-	ts.shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = machine
+	ts.shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = util.BoolPtr(machine)
 	return ts
 }
 

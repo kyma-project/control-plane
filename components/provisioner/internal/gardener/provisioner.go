@@ -4,19 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
-
-	"k8s.io/utils/clock"
-
-	retry "github.com/avast/retry-go"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
-	"github.com/sirupsen/logrus"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/clock"
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v12 "k8s.io/api/core/v1"
@@ -100,31 +97,32 @@ func (g *GardenerProvisioner) ProvisionCluster(cluster model.Cluster, operationI
 }
 
 func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		shoot, err := g.shootClient.Get(context.Background(), upgradeConfig.Name, v1.GetOptions{})
+		if err != nil {
+			appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
+			return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
+		}
 
-	shoot, err := g.shootClient.Get(context.Background(), upgradeConfig.Name, v1.GetOptions{})
-	if err != nil {
-		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
-		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, upgradeConfig.Name)
-	}
+		appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
 
-	appErr := upgradeConfig.GardenerProviderConfig.EditShootConfig(upgradeConfig, shoot)
+		if appErr != nil {
+			return appErr.Append("error while updating Gardener shoot configuration")
+		}
 
-	if appErr != nil {
-		return appErr.Append("error while updating Gardener shoot configuration")
-	}
+		fmt.Printf("apiVersion:%s, kind:%s, typemeta:%s", shoot.APIVersion, shoot.Kind, shoot.TypeMeta)
 
-	setObjectFields(shoot)
+		setObjectFields(shoot)
 
-	shootData, err := json.Marshal(shoot)
-	if err != nil {
-		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
-		return apperr.Append("error during marshaling Shoot data")
-	}
+		shootData, err := json.Marshal(shoot)
+		if err != nil {
+			apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
+			return apperr.Append("error during marshaling Shoot data")
+		}
 
-	err = retry.Do(func() error {
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
 		return err
-	}, retry.Attempts(5))
+	})
 	if err != nil {
 		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
 		return apperr.Append("error executing update shoot configuration")
@@ -134,38 +132,38 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 }
 
 func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig model.GardenerConfig) apperrors.AppError {
-	shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
-	if err != nil {
-		appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
-		return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
-	}
-
-	condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
-	if condition.Status == v1beta1.ConditionFalse {
-		return apperrors.BadRequest(fmt.Sprintf("cannot hibernate cluster: %s", condition.Message))
-	}
-
-	enabled := true
-	if shoot.Spec.Hibernation != nil {
-		shoot.Spec.Hibernation.Enabled = &enabled
-	} else {
-		shoot.Spec.Hibernation = &v1beta1.Hibernation{
-			Enabled: &enabled,
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		shoot, err := g.shootClient.Get(context.Background(), gardenerConfig.Name, v1.GetOptions{})
+		if err != nil {
+			appErr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
+			return appErr.Append("error getting Shoot for cluster ID %s and name %s", clusterID, gardenerConfig.Name)
 		}
-	}
 
-	setObjectFields(shoot)
+		condition := gardencorev1beta1helper.GetOrInitConditionWithClock(clock.RealClock{}, shoot.Status.Constraints, v1beta1.ShootHibernationPossible)
+		if condition.Status == v1beta1.ConditionFalse {
+			return k8sErrors.NewBadRequest(fmt.Sprintf("cannot hibernate cluster: %s", condition.Message))
+		}
 
-	shootData, err := json.Marshal(shoot)
-	if err != nil {
-		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
-		return apperr.Append("error during marshaling Shoot data")
-	}
+		enabled := true
+		if shoot.Spec.Hibernation != nil {
+			shoot.Spec.Hibernation.Enabled = &enabled
+		} else {
+			shoot.Spec.Hibernation = &v1beta1.Hibernation{
+				Enabled: &enabled,
+			}
+		}
 
-	err = retry.Do(func() error {
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
+		setObjectFields(shoot)
+
+		shootData, err := json.Marshal(shoot)
+		if err != nil {
+			apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
+			return apperr.Append("error during marshaling Shoot data")
+		}
+
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
 		return err
-	}, retry.Attempts(5))
+	})
 
 	if err != nil {
 		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
@@ -213,7 +211,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
 		return model.Operation{}, apperr.Append("error during marshaling Shoot data")
 	}
-	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
+	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
 
 	if err != nil {
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
@@ -306,6 +304,7 @@ func (g *GardenerProvisioner) setMaintenanceWindow(template *gardener_types.Shoo
 	return nil
 }
 
+// workaround
 func setObjectFields(shoot *v1beta1.Shoot) {
 	shoot.Kind = "Shoot"
 	shoot.APIVersion = "core.gardener.cloud/v1beta1"
