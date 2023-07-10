@@ -121,7 +121,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 			return apperr.Append("error during marshaling Shoot data")
 		}
 
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
 		return err
 	})
 	if err != nil {
@@ -162,7 +162,7 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 			return apperr.Append("error during marshaling Shoot data")
 		}
 
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
 		return err
 	})
 
@@ -212,7 +212,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 		apperr := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisioner)
 		return model.Operation{}, apperr.Append("error during marshaling Shoot data")
 	}
-	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
+	_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
 
 	if err != nil {
 		appError := util.K8SErrorToAppError(err).SetComponent(apperrors.ErrGardenerClient)
