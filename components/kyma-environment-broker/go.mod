@@ -25,7 +25,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230222093537-9361d5210c63
 	github.com/kyma-incubator/reconciler v0.0.0-20230203092534-fd85106be3cd
-	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230222072933-f72a783494d6
+	github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab
 	github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230222072933-f72a783494d6
 	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/kyma-project/runtime-watcher/listener v0.0.0-20230316093101-0a4bc4f5ef48
