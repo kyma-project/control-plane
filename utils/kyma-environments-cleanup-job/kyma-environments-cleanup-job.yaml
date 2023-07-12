@@ -1,4 +1,4 @@
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: "kcp-kyma-environments-cleanup"
@@ -79,21 +79,7 @@ spec:
                 - name: APP_DATABASE_SSLROOTCERT
                   value: /secrets/cloudsql-sslrootcert/server-ca.pem
                 - name: APP_BROKER_URL
-                  value: https://${SCRIPT_BROKER_URL} # set by script
-                - name: APP_BROKER_TOKEN_URL
-                  value: https://oauth2.${SCRIPT_DOMAIN}/oauth2/token # set by script
-                - name: APP_BROKER_CLIENT_ID
-                  valueFrom:
-                    secretKeyRef:
-                      key: client_id
-                      name: kcp-kyma-environment-broker-oauth
-                - name: APP_BROKER_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      key: client_secret
-                      name: kcp-kyma-environment-broker-oauth
-                - name: APP_BROKER_SCOPE
-                  value: broker:write cld:read
+                  value: http://kcp-kyma-environment-broker
               volumeMounts:
                 - name: gardener-kubeconfig
                   mountPath: /gardener/kubeconfig
