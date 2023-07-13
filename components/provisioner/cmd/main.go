@@ -50,7 +50,7 @@ type config struct {
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	DirectorOAuthPath            string `envconfig:"default=./dev/director.yaml"`
+	DirectorOAuthPath            string `envconfig:"APP_DIRECTOR_OAUTH_PATH,default=./dev/director.yaml"`
 
 	Database struct {
 		User        string `envconfig:"default=postgres"`
