@@ -50,8 +50,7 @@ type config struct {
 	PlaygroundAPIEndpoint        string `envconfig:"default=/graphql"`
 	DirectorURL                  string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	SkipDirectorCertVerification bool   `envconfig:"default=false"`
-	OauthCredentialsNamespace    string `envconfig:"default=kcp-system"`
-	OauthCredentialsSecretName   string `envconfig:"default=kcp-provisioner-credentials"`
+	DirectorOAuthPath            string `envconfig:"default=./dev/director.yaml"`
 
 	Database struct {
 		User        string `envconfig:"default=postgres"`
@@ -98,7 +97,7 @@ type config struct {
 
 func (c *config) String() string {
 	return fmt.Sprintf("Address: %s, APIEndpoint: %s, DirectorURL: %s, "+
-		"SkipDirectorCertVerification: %v, OauthCredentialsNamespace: %s, OauthCredentialsSecretName: %s, "+
+		"SkipDirectorCertVerification: %v, DirectorOAuthPath: %s, "+
 		"DatabaseUser: %s, DatabaseHost: %s, DatabasePort: %s, "+
 		"DatabaseName: %s, DatabaseSSLMode: %s, "+
 		"ProvisioningTimeoutClusterCreation: %s "+
@@ -108,14 +107,14 @@ func (c *config) String() string {
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
-		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t"+
+		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
 		"LogLevel: %s"+
 		"RunAwsConfigMigration: %v",
 		c.Address, c.APIEndpoint, c.DirectorURL,
-		c.SkipDirectorCertVerification, c.OauthCredentialsNamespace, c.OauthCredentialsSecretName,
+		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
 		c.Database.User, c.Database.Host, c.Database.Port,
 		c.Database.Name, c.Database.SSLMode,
 		c.ProvisioningTimeout.ClusterCreation.String(),
