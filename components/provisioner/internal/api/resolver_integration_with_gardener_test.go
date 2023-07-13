@@ -11,10 +11,8 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-	fake_client "sigs.k8s.io/controller-runtime/pkg/client/fake"
-
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 
@@ -159,7 +157,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	secretKey := "qbl92bqtl6zshtjb4bvbwwc2qk7vtw2d"
 	dbsFactory, _ := dbsession.NewFactory(connection, secretKey)
 
-	fakeGardenerClient := fake_client.NewFakeClient()
+	//fakeGardenerClient := fake_client.NewFakeClient()
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -172,7 +170,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		directorServiceMock,
 		shootInterface,
 		secretsInterface,
-		fakeGardenerClient,
+		nil,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider)
 	provisioningQueue.Run(queueCtx.Done())
@@ -183,7 +181,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		directorServiceMock,
 		shootInterface,
 		secretsInterface,
-		fakeGardenerClient,
+		nil,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
 		runtimeConfigurator)
@@ -203,7 +201,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
-		fakeGardenerClient,
+		nil,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
 		secretsInterface)
