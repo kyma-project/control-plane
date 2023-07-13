@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
@@ -190,6 +191,9 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
+	gardenerClient, err := client.New(gardenerClusterConfig, client.Options{})
+	exitOnError(err, "unable to create gardener client")
+
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
@@ -199,6 +203,7 @@ func main() {
 		directorClient,
 		shootClient,
 		secretsInterface,
+		gardenerClient,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider)
 
@@ -208,6 +213,7 @@ func main() {
 		directorClient,
 		shootClient,
 		secretsInterface,
+		gardenerClient,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
 		runtimeConfigurator)
@@ -218,7 +224,15 @@ func main() {
 
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
 
-	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
+	shootUpgradeQueue := queue.CreateShootUpgradeQueue(
+		cfg.ProvisioningTimeout,
+		dbsFactory,
+		directorClient,
+		shootClient,
+		gardenerClient,
+		cfg.OperatorRoleBinding,
+		k8sClientProvider,
+		secretsInterface)
 
 	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 

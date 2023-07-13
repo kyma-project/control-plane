@@ -103,11 +103,18 @@ func TestWaitForClusterInitialization_Run(t *testing.T) {
 			// given
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSession := &dbMocks.ReadWriteSession{}
+
 			kubeconfigProvider := &provisioning_mocks.KubeconfigProvider{}
 
 			testCase.mockFunc(gardenerClient, dbSession, kubeconfigProvider)
 
-			waitForClusterCreationStep := NewWaitForClusterCreationStep(gardenerClient, dbSession, kubeconfigProvider, nextStageName, 10*time.Minute)
+			waitForClusterCreationStep := NewWaitForClusterCreationStep(
+				gardenerClient,
+				dbSession,
+				kubeconfigProvider,
+				nextStageName,
+				10*time.Minute)
+
 			// when
 			result, err := waitForClusterCreationStep.Run(testCase.cluster, model.Operation{}, logrus.New())
 

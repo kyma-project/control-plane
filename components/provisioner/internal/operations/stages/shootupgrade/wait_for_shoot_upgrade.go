@@ -8,9 +8,8 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+	gardener_typeshelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
@@ -24,7 +23,7 @@ type GardenerClient interface {
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	FetchRaw(shootName string) ([]byte, error)
+	FetchRaw(context.Context, gardener_types.Shoot) ([]byte, error)
 }
 
 type WaitForShootUpgradeStep struct {
@@ -36,10 +35,12 @@ type WaitForShootUpgradeStep struct {
 	kubeconfigProvider KubeconfigProvider
 }
 
-func NewWaitForShootUpgradeStep(gardenerClient GardenerClient,
-	dbSession dbsession.ReadWriteSession, kubeconfigProvider KubeconfigProvider,
-	nextStep model.OperationStage, timeLimit time.Duration,
-) *WaitForShootUpgradeStep {
+func NewWaitForShootUpgradeStep(
+	gardenerClient GardenerClient,
+	dbSession dbsession.ReadWriteSession,
+	kubeconfigProvider KubeconfigProvider,
+	nextStep model.OperationStage,
+	timeLimit time.Duration) *WaitForShootUpgradeStep {
 
 	return &WaitForShootUpgradeStep{
 		gardenerClient: gardenerClient,
@@ -71,9 +72,9 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, _ model.Operation, 
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
-		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
+		if lastOperation.State == gardener_types.LastOperationStateSucceeded {
 
-			kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
+			kubeconfig, err := s.kubeconfigProvider.FetchRaw(context.TODO(), *shoot)
 			if err != nil {
 				return operations.StageResult{}, err
 			}
@@ -84,14 +85,13 @@ func (s *WaitForShootUpgradeStep) Run(cluster model.Cluster, _ model.Operation, 
 			return operations.StageResult{Stage: s.nextStep, Delay: 0}, nil
 		}
 
-		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
-			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
+		if lastOperation.State == gardener_types.LastOperationStateFailed {
+			if gardener_typeshelper.HasErrorCode(shoot.Status.LastErrors, gardener_types.ErrorInfraRateLimitsExceeded) {
 				return operations.StageResult{}, errors.New("error during shoot cluster upgrade: rate limits exceeded")
 			}
 			logger.Warningf("Gardener Shoot cluster upgrade operation failed! Last state: %s, Description: %s", lastOperation.State, lastOperation.Description)
 
-			err := errors.New(fmt.Sprintf("Gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description))
-
+			err := fmt.Errorf("gardener Shoot cluster upgrade failed. Last Shoot state: %s, Shoot description: %s", lastOperation.State, lastOperation.Description)
 			return operations.StageResult{}, operations.NewNonRecoverableError(err)
 		}
 	}
