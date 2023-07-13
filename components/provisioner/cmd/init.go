@@ -3,10 +3,11 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"net/http"
 	"os"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 
