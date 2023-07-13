@@ -60,8 +60,6 @@ spec:
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_API_ENDPOINT
               value: "/graphql"
-            - name: APP_OAUTH_CREDENTIALS_NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: APP_DATABASE_USER
               valueFrom:
                 secretKeyRef:
@@ -100,10 +98,10 @@ spec:
                   name: {{ .Values.deployment.databaseEncryptionSecret | quote }}
                   key: secretKey
                   optional: false
+            - name: DIRECTOR_OAUTH_PATH
+              value: /director-secret/director.yaml
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.compass.tls.secure.oauth.host }}.{{ .Values.global.compass.domain | default .Values.global.ingress.domainName }}/director/graphql"
-            - name: APP_OAUTH_CREDENTIALS_SECRET_NAME
-              value: {{ .Values.global.provisioner.secrets.integrationSystemCredentials.name | quote }}
             - name: APP_SKIP_DIRECTOR_CERT_VERIFICATION
               value: {{ or .Values.global.isLocalEnv .Values.security.skipTLSCertificateVeryfication | quote }}
             - name: APP_PROVISIONING_TIMEOUT_INSTALLATION
@@ -171,6 +169,9 @@ spec:
             - name: APP_RUN_AWS_CONFIG_MIGRATION
               value: {{ .Values.deployment.runAwsConfigMigration | quote }}
           volumeMounts:
+            - name: director-oauth
+              mountPath: /director-secret/
+              readOnly: true
         {{if .Values.gardener.auditLogExtensionConfigMapName }}
             - mountPath: /gardener/tenant
               name: gardener-audit-log-tenant-config
@@ -252,4 +253,7 @@ spec:
           name: {{ .Values.gardener.maintenanceWindowConfigMapName }}
           optional: true
       {{end}}
-
+      - name: director-oauth
+        secret:
+          secretName: {{ .Values.directorFileSecret }}
+          optional: false
