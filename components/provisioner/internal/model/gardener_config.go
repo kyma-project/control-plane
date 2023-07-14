@@ -474,6 +474,11 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		if err != nil {
 			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
 		}
+
+		fmt.Printf("%s", "\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+		fmt.Printf("%s\n", string(shoot.Spec.Provider.InfrastructureConfig.Raw))
+		fmt.Printf("%s", "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
+
 		if len(c.input.AzureZones) == 0 {
 			if *c.input.EnableNatGateway {
 				infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
@@ -485,7 +490,7 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 			for i := range infra.Networks.Zones {
 				zone := infra.Networks.Zones[i]
 				if *c.input.EnableNatGateway {
-					zone.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway, IPAddresses: infra.Networks.Zones[i].NatGateway.IPAddresses}
+					zone.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
 					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {
 					zone.NatGateway = nil
@@ -495,6 +500,9 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		}
 		infra.Networks.VNet.CIDR = util.StringPtr(c.input.VnetCidr)
 		jsonData, err := json.Marshal(infra)
+		fmt.Printf("%s", "\n*********************************************************\n")
+		fmt.Printf("%s\n", string(jsonData))
+		fmt.Printf("%s", "*********************************************************\n")
 		if err != nil {
 			return apperrors.Internal("error encoding infrastructure config: %s", err.Error())
 		}
