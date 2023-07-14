@@ -25,10 +25,13 @@ func NewKubeconfigProvider(secretsClient v12.SecretInterface, gardener client.Cl
 	return KubeconfigProvider{
 		secretsClient: secretsClient,
 		gardener:      gardener,
+		logger:        log.New(),
 	}
 }
 
 func (kp KubeconfigProvider) FetchRaw(ctx context.Context, shoot gardener_types.Shoot) ([]byte, error) {
+
+	kp.logger.Info("Trying to get admin kubeconfig")
 
 	if kp.gardener != nil {
 
@@ -45,7 +48,7 @@ func (kp KubeconfigProvider) FetchRaw(ctx context.Context, shoot gardener_types.
 			return adminKubeconfigRequest.Status.Kubeconfig, nil
 		}
 
-		kp.logger.Warnf("unable to create new admin kubeconfig: %s", err)
+		kp.logger.Info("unable to create new admin kubeconfig: %s", err)
 	}
 
 	secret, err := kp.secretsClient.Get(context.Background(), fmt.Sprintf("%s.kubeconfig", shoot.Name), v1.GetOptions{})
