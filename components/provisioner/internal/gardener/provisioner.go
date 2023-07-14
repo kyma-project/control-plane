@@ -119,7 +119,7 @@ func (g *GardenerProvisioner) UpgradeCluster(clusterID string, upgradeConfig mod
 			return apperr.Append("error during marshaling Shoot data")
 		}
 
-		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.MergePatchType, shootData, v1.PatchOptions{FieldManager: "provisioner"})
+		_, err = g.shootClient.Patch(context.Background(), shoot.Name, types.ApplyPatchType, shootData, v1.PatchOptions{FieldManager: "provisioner", Force: util.BoolPtr(true)})
 		return err
 	})
 	if err != nil {
