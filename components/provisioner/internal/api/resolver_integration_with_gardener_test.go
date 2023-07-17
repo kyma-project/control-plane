@@ -159,7 +159,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	dbsFactory, _ := dbsession.NewFactory(connection, secretKey)
 
 	testAdminKubeconfigRequest := func(context.Context, client.Object, client.Object, ...client.SubResourceCreateOption) error {
-		return nil
+		return fmt.Errorf("test error")
 	}
 
 	queueCtx, cancel := context.WithCancel(context.Background())
