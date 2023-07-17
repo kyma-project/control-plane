@@ -1,10 +1,7 @@
 package queue
 
 import (
-	"time"
-
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
-
+	"context"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -13,6 +10,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning"
+	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
@@ -21,6 +19,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 type ProvisioningTimeouts struct {
@@ -59,6 +58,8 @@ type HibernationTimeouts struct {
 	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
+type adminKubeconfig = func(context.Context, client.Object, client.Object, ...client.SubResourceCreateOption) error
+
 func CreateProvisioningQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
@@ -68,7 +69,7 @@ func CreateProvisioningQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 	secretsClient v1core.SecretInterface,
-	gardenerClient client.Client,
+	request adminKubeconfig,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
 
@@ -81,7 +82,7 @@ func CreateProvisioningQueue(
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(
 		shootClient,
 		factory.NewReadWriteSession(),
-		gardener.NewKubeconfigProvider(secretsClient, gardenerClient),
+		gardener.NewKubeconfigProvider(secretsClient, request),
 		createBindingsForOperatorsStep.Name(),
 		timeouts.ClusterCreation)
 
@@ -114,7 +115,7 @@ func CreateProvisioningNoInstallQueue(
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
 	secretsClient v1core.SecretInterface,
-	gardenerClient client.Client,
+	request adminKubeconfig,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
 	configurator runtime.Configurator) OperationQueue {
@@ -124,7 +125,7 @@ func CreateProvisioningNoInstallQueue(
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(
 		shootClient,
 		factory.NewReadWriteSession(),
-		gardener.NewKubeconfigProvider(secretsClient, gardenerClient),
+		gardener.NewKubeconfigProvider(secretsClient, request),
 		createBindingsForOperatorsStep.Name(),
 		timeouts.ClusterCreation)
 
@@ -236,7 +237,7 @@ func CreateShootUpgradeQueue(
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
-	gardenerClient client.Client,
+	request adminKubeconfig,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
 	secretsClient v1core.SecretInterface,
@@ -248,7 +249,7 @@ func CreateShootUpgradeQueue(
 		model.FinishedStage,
 		timeouts.BindingsCreation)
 
-	provider := gardener.NewKubeconfigProvider(secretsClient, gardenerClient)
+	provider := gardener.NewKubeconfigProvider(secretsClient, request)
 
 	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(
 		shootClient,

@@ -194,6 +194,8 @@ func main() {
 	gardenerClient, err := client.New(gardenerClusterConfig, client.Options{})
 	exitOnError(err, "unable to create gardener client")
 
+	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig").Create
+
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
@@ -203,7 +205,7 @@ func main() {
 		directorClient,
 		shootClient,
 		secretsInterface,
-		gardenerClient,
+		adminKubeconfigRequest,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider)
 
@@ -213,7 +215,7 @@ func main() {
 		directorClient,
 		shootClient,
 		secretsInterface,
-		gardenerClient,
+		adminKubeconfigRequest,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
 		runtimeConfigurator)
@@ -229,7 +231,7 @@ func main() {
 		dbsFactory,
 		directorClient,
 		shootClient,
-		gardenerClient,
+		adminKubeconfigRequest,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
 		secretsInterface)

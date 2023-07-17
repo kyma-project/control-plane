@@ -112,11 +112,11 @@ func (r *Reconciler) enableAuditLogs(logger logrus.FieldLogger, shoot *gardener_
 
 	annotated, err := r.auditLogConfigurator.ConfigureAuditLogs(logger, shoot, seed)
 	if err != nil {
-		//logger.Warnf("Cannot enable audit logs: %s", err.Error())
+		logger.Warnf("Cannot enable audit logs: %s", err.Error())
 		return nil
 	}
 	if !annotated {
-		//logger.Debug("Audit Log Tenant did not change, skipping update of cluster")
+		logger.Debug("Audit Log Tenant did not change, skipping update of cluster")
 		return nil
 	}
 

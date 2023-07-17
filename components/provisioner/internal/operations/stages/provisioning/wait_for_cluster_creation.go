@@ -106,6 +106,7 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 		}
 	}
 
+	// TODO handle context
 	kubeconfig, err := s.kubeconfigProvider.FetchRaw(context.TODO(), *shoot)
 	if err != nil {
 		return operations.StageResult{}, err

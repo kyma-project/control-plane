@@ -15,43 +15,42 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type adminKubeconfig = func(context.Context, client.Object, client.Object, ...client.SubResourceCreateOption) error
+
 type KubeconfigProvider struct {
 	secretsClient v12.SecretInterface
-	gardener      client.Client
+	request       adminKubeconfig
 	logger        log.FieldLogger
 }
 
-func NewKubeconfigProvider(secretsClient v12.SecretInterface, gardener client.Client) KubeconfigProvider {
+func NewKubeconfigProvider(secretsClient v12.SecretInterface, gardener adminKubeconfig) KubeconfigProvider {
 	return KubeconfigProvider{
 		secretsClient: secretsClient,
-		gardener:      gardener,
+		request:       gardener,
 		logger:        log.New(),
 	}
 }
 
 func (kp KubeconfigProvider) FetchRaw(ctx context.Context, shoot gardener_types.Shoot) ([]byte, error) {
 
-	kp.logger.Info("Trying to get admin kubeconfig")
-
-	if kp.gardener != nil {
-
-		expiration := 8 * time.Hour
-		expirationSeconds := int64(expiration.Seconds())
-		adminKubeconfigRequest := authenticationv1alpha1.AdminKubeconfigRequest{
-			Spec: authenticationv1alpha1.AdminKubeconfigRequestSpec{
-				ExpirationSeconds: &expirationSeconds,
-			},
-		}
-		err := kp.gardener.SubResource("adminkubeconfig").Create(ctx, &shoot, &adminKubeconfigRequest)
-		if err == nil {
-			kp.logger.Info("new admin kubeconfig created")
-			return adminKubeconfigRequest.Status.Kubeconfig, nil
-		}
-
-		kp.logger.Info("unable to create new admin kubeconfig: %s", err)
+	expiration := 8 * time.Hour
+	expirationSeconds := int64(expiration.Seconds())
+	adminKubeconfigRequest := authenticationv1alpha1.AdminKubeconfigRequest{
+		Spec: authenticationv1alpha1.AdminKubeconfigRequestSpec{
+			ExpirationSeconds: &expirationSeconds,
+		},
 	}
 
-	secret, err := kp.secretsClient.Get(context.Background(), fmt.Sprintf("%s.kubeconfig", shoot.Name), v1.GetOptions{})
+	err := kp.request(ctx, &shoot, &adminKubeconfigRequest)
+	if err == nil {
+		kp.logger.Debug("new admin kubeconfig created")
+		return adminKubeconfigRequest.Status.Kubeconfig, nil
+	}
+
+	kp.logger.Info("unable to create new admin kubeconfig: %s", err)
+
+	name := fmt.Sprintf("%s.kubeconfig", shoot.Name)
+	secret, err := kp.secretsClient.Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		return nil, util.K8SErrorToAppError(err).Append("error fetching kubeconfig").SetComponent(apperrors.ErrGardenerClient)
 	}
