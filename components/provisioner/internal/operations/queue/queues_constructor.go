@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"time"
+
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -19,7 +21,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 type ProvisioningTimeouts struct {
