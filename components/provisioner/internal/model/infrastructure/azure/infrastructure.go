@@ -53,9 +53,24 @@ type VNetStatus struct {
 }
 
 type NatGateway struct {
-	Enabled                      bool `json:"enabled"`
-	IdleConnectionTimeoutMinutes int  `json:"idleConnectionTimeoutMinutes"`
-	Zone                         int  `json:"zone,omitempty"`
+	// Enabled is an indicator if NAT gateway should be deployed.
+	Enabled bool `json:"enabled"`
+	// IdleConnectionTimeoutMinutes specifies the idle connection timeout limit for NAT gateway in minutes.
+	IdleConnectionTimeoutMinutes int `json:"idleConnectionTimeoutMinutes"`
+	// Zone specifies the zone in which the NAT gateway should be deployed to.
+	Zone int `json:"zone,omitempty"`
+	// IPAddresses is a list of ip addresses which should be assigned to the NAT gateway.
+	IPAddresses []PublicIPReference `json:"ipAddresses,omitempty"`
+}
+
+// PublicIPReference contains information about a public ip.
+type PublicIPReference struct {
+	// Name is the name of the public ip.
+	Name string `json:"name"`
+	// ResourceGroup is the name of the resource group where the public ip is assigned to.
+	ResourceGroup string `json:"resourceGroup"`
+	// Zone is the zone in which the public ip is deployed to.
+	Zone int32 `json:"zone,omitempty"`
 }
 
 type Zone struct {
