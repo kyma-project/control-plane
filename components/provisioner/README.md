@@ -14,7 +14,7 @@ Before you can run Runtime Provisioner, you have to configure access to the Post
 $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password postgres
 ```
 
-Afterwards the database has to be created and migrations have to be run.
+Afterwards, the database must be created, and migrations must be run.
 
 Runtime Provisioner also needs a kubeconfig for a garden and auth data for Director.
 
