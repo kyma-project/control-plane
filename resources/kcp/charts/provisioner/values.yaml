@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-2920"
+      version: "PR-2919"
       dir: "dev"
 
 deployment:
