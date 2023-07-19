@@ -91,7 +91,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 					testkit.NewTestShoot(clusterName).
 						WithOperationSucceeded().
 						ToShoot(), nil)
-				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
+				kubeconfigProvider.On("FetchRaw", mock.Anything, mock.Anything).Return([]byte("kubeconfig"), nil)
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(nil)
 			},
 			expectedStage: model.FinishedStage,
@@ -151,7 +151,7 @@ func TestWaitForClusterUpgrade(t *testing.T) {
 					testkit.NewTestShoot(clusterName).
 						WithOperationSucceeded().
 						ToShoot(), nil)
-				kubeconfigProvider.On("FetchRaw", clusterName).Return([]byte("kubeconfig"), nil)
+				kubeconfigProvider.On("FetchRaw", mock.Anything, mock.Anything).Return([]byte("kubeconfig"), nil)
 				dbSession.On("UpdateKubeconfig", cluster.ID, "kubeconfig").Return(dberrors.Internal("error"))
 			},
 			unrecoverableError: false,

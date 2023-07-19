@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
+	gardener_typeshelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
@@ -27,10 +26,16 @@ type WaitForClusterCreationStep struct {
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	FetchRaw(shootName string) ([]byte, error)
+	FetchRaw(context.Context, gardener_types.Shoot) ([]byte, error)
 }
 
-func NewWaitForClusterCreationStep(gardenerClient GardenerClient, dbSession dbsession.ReadWriteSession, kubeconfigProvider KubeconfigProvider, nextStep model.OperationStage, timeLimit time.Duration) *WaitForClusterCreationStep {
+func NewWaitForClusterCreationStep(
+	gardenerClient GardenerClient,
+	dbSession dbsession.ReadWriteSession,
+	kubeconfigProvider KubeconfigProvider,
+	nextStep model.OperationStage,
+	timeLimit time.Duration) *WaitForClusterCreationStep {
+
 	return &WaitForClusterCreationStep{
 		gardenerClient:     gardenerClient,
 		dbSession:          dbSession,
@@ -58,22 +63,22 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 	lastOperation := shoot.Status.LastOperation
 
 	if lastOperation != nil {
-		if lastOperation.State == gardencorev1beta1.LastOperationStateSucceeded {
-			return s.proceedToInstallation(cluster, shoot)
+		if lastOperation.State == gardener_types.LastOperationStateSucceeded {
+			return s.proceedToInstallation(cluster, shoot, logger)
 		}
 
-		if lastOperation.State == gardencorev1beta1.LastOperationStateFailed {
+		if lastOperation.State == gardener_types.LastOperationStateFailed {
 			var reason apperrors.ErrReason
 
 			if len(shoot.Status.LastErrors) > 0 {
 				reason = util.GardenerErrCodesToErrReason(shoot.Status.LastErrors...)
 			}
 
-			if gardencorev1beta1helper.HasErrorCode(shoot.Status.LastErrors, gardencorev1beta1.ErrorInfraRateLimitsExceeded) {
+			if gardener_typeshelper.HasErrorCode(shoot.Status.LastErrors, gardener_types.ErrorInfraRateLimitsExceeded) {
 				return operations.StageResult{}, apperrors.External("error during cluster provisioning: rate limits exceeded").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
-			if lastOperation.Type == gardencorev1beta1.LastOperationTypeReconcile {
+			if lastOperation.Type == gardener_types.LastOperationTypeReconcile {
 				return operations.StageResult{}, apperrors.External("error during cluster provisioning: reconcilation error").SetComponent(apperrors.ErrGardener).SetReason(reason)
 			}
 
@@ -88,7 +93,7 @@ func (s *WaitForClusterCreationStep) Run(cluster model.Cluster, _ model.Operatio
 	return operations.StageResult{Stage: s.Name(), Delay: 20 * time.Second}, nil
 }
 
-func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot) (operations.StageResult, error) {
+func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster, shoot *gardener_types.Shoot, logger log.FieldLogger) (operations.StageResult, error) {
 
 	if cluster.ClusterConfig.Seed == "" && shoot.Spec.SeedName != nil && *shoot.Spec.SeedName != "" {
 
@@ -101,7 +106,8 @@ func (s *WaitForClusterCreationStep) proceedToInstallation(cluster model.Cluster
 		}
 	}
 
-	kubeconfig, err := s.kubeconfigProvider.FetchRaw(shoot.Name)
+	// TODO handle context
+	kubeconfig, err := s.kubeconfigProvider.FetchRaw(context.TODO(), *shoot)
 	if err != nil {
 		return operations.StageResult{}, err
 	}
