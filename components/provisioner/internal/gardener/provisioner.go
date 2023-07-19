@@ -172,17 +172,13 @@ func (g *GardenerProvisioner) HibernateCluster(clusterID string, gardenerConfig 
 	return nil
 }
 
-func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutUninstall bool, operationId string) (model.Operation, apperrors.AppError) {
+func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError) {
 	shoot, err := g.shootClient.Get(context.Background(), cluster.ClusterConfig.Name, v1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			message := fmt.Sprintf("Cluster %s already deleted. Proceeding to DeprovisionCluster stage.", cluster.ID)
 
-			// Shoot was deleted. In order to make sure if all clean up actions were performed we need to proceed to WaitForClusterDeletion state
-			if withoutUninstall {
-				return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, time.Now()), nil
-			}
-			return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, time.Now()), nil
+			return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, time.Now()), nil
 		}
 	}
 
@@ -190,10 +186,8 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 		annotate(shoot, operationIDAnnotation, operationId)
 		annotate(shoot, legacyOperationIDAnnotation, operationId)
 		message := fmt.Sprintf("Cluster %s with id %s already scheduled for deletion.", cluster.ClusterConfig.Name, cluster.ID)
-		if withoutUninstall {
-			return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, shoot.DeletionTimestamp.Time), nil
-		}
-		return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.WaitForClusterDeletion, shoot.DeletionTimestamp.Time), nil
+
+		return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, shoot.DeletionTimestamp.Time), nil
 	}
 
 	deletionTime := time.Now()
@@ -219,10 +213,7 @@ func (g *GardenerProvisioner) DeprovisionCluster(cluster model.Cluster, withoutU
 
 	message := fmt.Sprintf("Deprovisioning started")
 
-	if withoutUninstall {
-		return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
-	}
-	return newDeprovisionOperation(operationId, cluster.ID, message, model.InProgress, model.CleanupCluster, deletionTime), nil
+	return newDeprovisionOperationNoInstall(operationId, cluster.ID, message, model.InProgress, model.DeleteCluster, deletionTime), nil
 }
 
 func (g *GardenerProvisioner) GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError) {

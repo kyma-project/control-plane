@@ -32,10 +32,8 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/hydroform/install/installation"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -106,22 +104,6 @@ users:
 
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
-	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("TriggerInstallation", mock.Anything,
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
-	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
-
-	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything,
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
-	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
-	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
-
-	// to separate from other tests
-	installationServiceMockForDeprovisiong := &installationMocks.Service{}
-	installationServiceMockForDeprovisiong.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
-
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	ctx = context.WithValue(ctx, middlewares.SubAccountID, subAccountId)
 
@@ -160,18 +142,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	provisioningQueue := queue.CreateProvisioningQueue(
-		testProvisioningTimeouts(),
-		dbsFactory,
-		installationServiceMock,
-		runtimeConfigurator,
-		fakeCompassConnectionClientConstructor,
-		directorServiceMock,
-		shootInterface,
-		secretsInterface,
-		testOperatorRoleBinding(),
-		mockK8sClientProvider)
-	provisioningQueue.Run(queueCtx.Done())
 
 	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
 		testProvisioningNoInstallTimeouts(),
@@ -184,14 +154,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		runtimeConfigurator)
 	provisioningNoInstallQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
-	deprovisioningQueue.Run(queueCtx.Done())
-
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningNoInstallQueue.Run(queueCtx.Done())
-
-	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
-	upgradeQueue.Run(queueCtx.Done())
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
@@ -247,7 +211,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), provisioningNoInstallQueue, deprovisioningNoInstallQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator()
 
@@ -267,45 +231,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		})
 	}
 
-	t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
-		// given
-		installationServiceMock.Calls = nil
-		installationServiceMock.ExpectedCalls = nil
-
-		_, err := shootInterface.Create(context.Background(), &gardener_types.Shoot{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "shoot-with-unknown-id",
-				Annotations: map[string]string{
-					"kcp.provisioner.kyma-project.io/runtime-id":     "fbed9b28-473c-4b3e-88a3-803d94d38785",
-					"compass.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
-				},
-			},
-			Spec: gardener_types.ShootSpec{},
-			Status: gardener_types.ShootStatus{
-				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-			},
-		}, metav1.CreateOptions{})
-		require.NoError(t, err)
-
-		_, err = shootInterface.Create(context.Background(), &gardener_types.Shoot{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "shoot-without-id",
-			},
-			Spec: gardener_types.ShootSpec{},
-			Status: gardener_types.ShootStatus{
-				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-			},
-		}, metav1.CreateOptions{})
-		require.NoError(t, err)
-
-		// when
-		time.Sleep(waitPeriod) // Wait few second to make sure shoots were reconciled
-
-		// then
-		installationServiceMock.AssertNotCalled(t, "InstallKyma", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
-	})
 }
 
 func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogConfig *gardener.AuditLogConfig) {
