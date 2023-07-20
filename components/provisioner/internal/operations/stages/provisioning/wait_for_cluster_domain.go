@@ -92,7 +92,7 @@ func (s *WaitForClusterDomainStep) prepareProvisioningUpdateRuntimeInput(runtime
 	if runtime.Labels == nil {
 		runtime.Labels = graphql.Labels{}
 	}
-	runtime.Labels["gardenerClusterName"] = shoot.Name
+	runtime.Labels["gardenerClusterName"] = shoot.ObjectMeta.Name
 	runtime.Labels["gardenerClusterDomain"] = *shoot.Spec.DNS.Domain
 	statusCondition := graphql.RuntimeStatusConditionProvisioning
 
