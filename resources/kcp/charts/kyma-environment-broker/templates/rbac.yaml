@@ -47,3 +47,7 @@ kind: ServiceAccount
 metadata:
   name: {{ .Values.global.kyma_environment_broker.serviceAccountName }}
   namespace: {{ .Release.Namespace }}
+{{- if .Values.serviceAccount.annotations }}
+  annotations:
+{{ tpl (toYaml .Values.serviceAccount.annotations) . | indent 4 }}
+{{- end }}

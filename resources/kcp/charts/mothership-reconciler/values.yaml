@@ -125,6 +125,9 @@ deployment:
     successThreshold: 1
     timeoutSeconds: 1
 
+serviceAccount:
+  annotations: {}
+
 service:
   type: ClusterIP
   scheme: http
