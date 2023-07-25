@@ -54,11 +54,11 @@ This table lists the environment variables, their descriptions, and default valu
 | APP_DATABSE_HOST                                              | Database host                                                                                             | `localhost`                                                             |
 | APP_DEPROVISIONING_NO_INSTALL_TIMEOUT                         |                                                                                                           |                                                                         |
 | APP_DEPROVISIONING_TIMEOUT                                    |                                                                                                           |                                                                         |
-| APP_DIRECTOR_OAUTH_PATH                                       |                                                                                                           | `./dev/director.yaml`                                                   |
+| APP_DIRECTOR_OAUTH_PATH                                       | Path to a YAML file with Director's OAUTH data. Format described below                                    | `./dev/director.yaml`                                                   |
 | APP_DIRECTOR_URL                                              | Director URL                                                                                              | `http://compass-director.compass-system.svc.cluster.local:3000/graphql` |
 | APP_DOWNLOAD_PRE_RELEASES                                     |                                                                                                           | `true`                                                                  |
 | APP_ENQUEUE_IN_PROGRESS_OPERATIONS                            | Specifies whether operations in the `InProgress` state should be enqueued on the application startup      | `true`                                                                  |
-| APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP                     | Name of the Config Map containing the audit logs policy                                                   | optional                                                                |
+| APP_GARDENER_AUDIT_LOGS_POLICY_CONFIG_MAP                     | Name of the ConfigMap containing the audit logs policy                                                    | optional                                                                |
 | APP_GARDENER_AUDIT_LOGS_TENANT_CONFIG_PATH                    |                                                                                                           | optional                                                                |
 | APP_GARDENER_CLUSTER_CLEANUP_RESOURCE_SELECTOR                |                                                                                                           | `https://service-manager.`                                              |
 | APP_GARDENER_DEFAULT_ENABLE_KUBERNETES_VERSION_AUTO_UPDATE    |                                                                                                           | `false`                                                                 |
@@ -76,3 +76,11 @@ This table lists the environment variables, their descriptions, and default valu
 | APP_PROVISIONING_TIMEOUT                                      |                                                                                                           |                                                                         |
 | APP_RUN_AWS_CONFIG_MIGRATION                                  | TODO: Remove after data migration                                                                         | `false`                                                                 |
 | APP_SKIP_DIRECTOR_CERT_VERIFICATION                           | Flag to skip certificate verification for Director                                                        | `false`                                                                 |
+
+Director OAUTH config should look like this:
+```yaml
+data:
+  client_id: <client id>
+  client_secret: <client secret>
+  tokens_endpoint: https://example.com/oauth2/token
+```
