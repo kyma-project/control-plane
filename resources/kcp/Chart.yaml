@@ -7,13 +7,19 @@ type: application
 dependencies:
 - name: postgresql
   condition: global.database.embedded.enabled
+  version: 5.3.11
 - name: provisioner
   condition: global.provisioning.enabled
+  version: 0.1.0
 - name: kyma-environment-broker
   condition: global.kyma_environment_broker.enabled
+  version: 0.1.0
 - name: kyma-metrics-collector
   condition: global.kyma_metrics_collector.enabled
+  version: 0.1.0
 - name: mothership-reconciler
   condition: global.mothership_reconciler.enabled
+  version: 0.1.0
 - name: component-reconcilers
   condition: global.component_reconcilers.enabled
+  version: 0.1.0

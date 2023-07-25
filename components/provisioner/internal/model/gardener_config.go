@@ -187,6 +187,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
+				EnableStaticTokenKubeconfig: util.BoolPtr(true),
 			},
 			Networking: &gardener_types.Networking{
 				Type:  &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
