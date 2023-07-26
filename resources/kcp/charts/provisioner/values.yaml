@@ -19,6 +19,9 @@ deployment:
   runAwsConfigMigration: false
   databaseEncryptionSecret: "kcp-provisioner-database-encryption"
 
+serviceAccount:
+  annotations: {}
+
 security:
   skipTLSCertificateVeryfication: false
 
