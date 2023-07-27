@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 LOG_DIR=${ARTIFACTS:-"/var/log"}
+set -e
 
 function ensure_exists {
     if [[ -z ${!1} ]]; then
@@ -87,7 +88,7 @@ go run ./pgsetup.go
 printf '\n########## BUILDING SCHEMA-MIGRATOR ##########\n\n'
 docker build -t schema-migrator ../../schema-migrator
 
-mkdir migrations
+mkdir -p migrations
 cp ../../schema-migrator/migrations/provisioner/* ./migrations/
 cp ../../../resources/kcp/charts/provisioner/migrations/* ./migrations/
 
