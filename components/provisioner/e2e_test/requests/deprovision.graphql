@@ -1,0 +1,3 @@
+mutation ($runtimeID: String!) {
+    deprovisionRuntime(id: $runtimeID)
+}
