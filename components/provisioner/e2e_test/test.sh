@@ -115,8 +115,6 @@ export PROVISIONER_PID=$!
 
 sleep 60
 
-date +"%H:%M:%S"
-
 printf '\n########## RUNNING TESTS ##########\n\n'
 go test -timeout 100m -v ./ | tee "${LOG_DIR}/test.log"
 export TEST_CODE=$?
