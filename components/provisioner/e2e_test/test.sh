@@ -3,6 +3,9 @@
 LOG_DIR=${ARTIFACTS:-"/var/log"}
 set -e
 
+export POSTGRES_CONTAINER="provisioner-psql"
+export POSTGRES_NETWORK="provisioner-psql-net"
+
 function ensure_exists {
     if [[ -z ${!1} ]]; then
         echo "$1 is undefined"
@@ -11,9 +14,9 @@ function ensure_exists {
 }
 
 function cleanup {
-    if docker ps | grep some-postgres; then
-        docker kill some-postgres
-        docker network rm psql
+    if docker ps | grep $POSTGRES_CONTAINER; then
+        docker kill $POSTGRES_CONTAINER
+        docker network rm $POSTGRES_NETWORK
     fi
     if ! [[ -z $PROVISIONER_PID ]]; then
         kill $PROVISIONER_PID
@@ -37,8 +40,8 @@ printf '\n########## SETTING UP PROVISIONER ##########\n\n'
 
 sleep 20
 
-docker network create psql
-docker run --name some-postgres --network psql -e POSTGRES_PASSWORD=somepass -p 5432:5432 --rm -d postgres
+docker network create $POSTGRES_NETWORK
+docker run --name $POSTGRES_CONTAINER --network $POSTGRES_NETWORK -e POSTGRES_PASSWORD=somepass -p 5432:5432 --rm -d postgres
 
 sleep 10
 
@@ -94,8 +97,8 @@ cp ../../../resources/kcp/charts/provisioner/migrations/* ./migrations/
 
 printf '\n########## MIGRATING THE DB ##########\n\n'
 docker run -v $PWD/migrations:/migrate/migrations/provisioner:ro \
-    --network psql \
-    -e DB_HOST="some-postgres" \
+    --network $POSTGRES_NETWORK \
+    -e DB_HOST=$POSTGRES_CONTAINER \
     -e DB_NAME=$APP_DATABASE_NAME \
     -e DB_PORT=$APP_DATABASE_PORT \
     -e DB_USER=$APP_DATABASE_USER \
