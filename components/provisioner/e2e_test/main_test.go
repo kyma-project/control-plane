@@ -144,7 +144,7 @@ func TestName(t *testing.T) {
 		client:         graphql.NewClient("http://localhost:3000/graphql"),
 	}
 
-	name := fmt.Sprintf("pts%d", time.Now().Unix() % 1000000)
+	name := fmt.Sprintf("pts%d", time.Now().Unix()%1000000)
 
 	t.Logf("Provisioning a %s cluster - %s", provider, name)
 	provisionResp, err := cli.provision(ctx, name, provider, providerSecret)
