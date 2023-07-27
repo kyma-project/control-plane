@@ -19,9 +19,9 @@ function cleanup {
         docker network rm $POSTGRES_NETWORK
     fi
     if ! [[ -z $PROVISIONER_PID ]]; then
-        kill $PROVISIONER_PID
-        wait $PROVISIONER_PID
-        export PROVISIONER_CODE=$?
+        kill $PROVISIONER_PID || true
+        wait $PROVISIONER_PID || true
+        export PROVISIONER_CODE=$? || true
         unset PROVISIONER_PID
     fi
 }
