@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 LOG_DIR=${ARTIFACTS:-"/var/log"}
-set -e
 
 export POSTGRES_CONTAINER="provisioner-psql"
 export POSTGRES_NETWORK="provisioner-psql-net"
@@ -19,10 +18,17 @@ function cleanup {
         docker network rm $POSTGRES_NETWORK
     fi
     if ! [[ -z $PROVISIONER_PID ]]; then
-        kill $PROVISIONER_PID || true
-        wait $PROVISIONER_PID || true
-        export PROVISIONER_CODE=$? || true
+        kill $PROVISIONER_PID
+        wait $PROVISIONER_PID
+        export PROVISIONER_CODE=$?
         unset PROVISIONER_PID
+    fi
+}
+
+function has_to_succeed {
+    local EXIT_CODE=$?
+    if [[ $? -ne 0 ]]; then
+	exit $?
     fi
 }
 
@@ -41,7 +47,10 @@ printf '\n########## SETTING UP PROVISIONER ##########\n\n'
 sleep 20
 
 docker network create $POSTGRES_NETWORK
+has_to_succeed
+
 docker run --name $POSTGRES_CONTAINER --network $POSTGRES_NETWORK -e POSTGRES_PASSWORD=somepass -p 5432:5432 --rm -d postgres
+has_to_succeed
 
 sleep 10
 
@@ -87,9 +96,11 @@ export APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING=90m
 
 printf '\n########## SETTING UP THE DB ##########\n\n'
 go run ./pgsetup.go
+has_to_succeed
 
 printf '\n########## BUILDING SCHEMA-MIGRATOR ##########\n\n'
 docker build -t schema-migrator ../../schema-migrator
+has_to_succeed
 
 mkdir -p migrations
 cp ../../schema-migrator/migrations/provisioner/* ./migrations/
@@ -97,16 +108,16 @@ cp ../../../resources/kcp/charts/provisioner/migrations/* ./migrations/
 
 printf '\n########## MIGRATING THE DB ##########\n\n'
 docker run -v $PWD/migrations:/migrate/migrations/provisioner:ro \
-    --network $POSTGRES_NETWORK \
-    -e DB_HOST=$POSTGRES_CONTAINER \
-    -e DB_NAME=$APP_DATABASE_NAME \
-    -e DB_PORT=$APP_DATABASE_PORT \
-    -e DB_USER=$APP_DATABASE_USER \
-    -e DB_PASSWORD=$APP_DATABASE_PASSWORD \
-    -e MIGRATION_PATH=provisioner \
-    -e DIRECTION=up \
-    -e DB_SSL=disable \
-    schema-migrator
+       --network $POSTGRES_NETWORK \
+       -e DB_HOST=$POSTGRES_CONTAINER \
+       -e DB_NAME=$APP_DATABASE_NAME \
+       -e DB_PORT=$APP_DATABASE_PORT \
+       -e DB_USER=$APP_DATABASE_USER \
+       -e DB_PASSWORD=$APP_DATABASE_PASSWORD \
+       -e MIGRATION_PATH=provisioner \
+       -e DIRECTION=up \
+       -e DB_SSL=disable \
+       schema-migrator
 
 printf '\n########## SETTING UP PROVISIONER ##########\n\n'
 go mod download
