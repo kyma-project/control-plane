@@ -127,8 +127,8 @@ export PROVISIONER_PID=$!
 sleep 60
 
 printf '\n########## RUNNING TESTS ##########\n\n'
-go test -timeout 100m -v ./ | tee "${LOG_DIR}/test.log"
-export TEST_CODE=$?
+go test -count=1 -timeout 100m -v ./ | tee "${LOG_DIR}/test.log"
+export TEST_CODE=${PIPESTATUS[0]}
 
 cleanup
 
