@@ -32,6 +32,17 @@ function has_to_succeed {
     fi
 }
 
+function wait_for {
+    echo "Waiting $1 to launch on $2"
+
+    while ! nc -z localhost $2; do
+	printf '.'
+	sleep 2
+    done
+
+    echo "\n$1 is listening on $2"
+}
+
 trap cleanup EXIT
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -52,8 +63,7 @@ has_to_succeed
 docker run --name $POSTGRES_CONTAINER --network $POSTGRES_NETWORK -e POSTGRES_PASSWORD=somepass -p 5432:5432 --rm -d postgres
 has_to_succeed
 
-sleep 10
-
+wait_for postgres 5432
 
 export APP_DIRECTOR_URL=https://compass-gateway-auth-oauth.mps.dev.kyma.cloud.sap/director/graphql
 if [[ -z "$APP_DIRECTOR_OAUTH_PATH" ]]; then
@@ -124,7 +134,7 @@ go mod download
 go run ../cmd/ | tee "${LOG_DIR}/provisioner.log" &
 export PROVISIONER_PID=$!
 
-sleep 60
+wait_for provisioner 3000
 
 printf '\n########## RUNNING TESTS ##########\n\n'
 go test -count=1 -timeout 100m -v ./ | tee "${LOG_DIR}/test.log"
