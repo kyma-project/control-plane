@@ -11,6 +11,7 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
+	"github.com/vrischmann/envconfig"
 )
 
 const tenant = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
@@ -61,7 +62,6 @@ func (gql GQLClient) gqlRequest(ctx context.Context, reqName string, vars map[st
 		return err
 	}
 
-	//$name: String!, $provider: String!, $provider_secret: String
 	req := graphql.NewRequest(string(payload))
 
 	for key, val := range vars {
@@ -76,11 +76,28 @@ func (gql GQLClient) gqlRequest(ctx context.Context, reqName string, vars map[st
 	return err
 }
 
-func (gql GQLClient) provision(ctx context.Context, name, provider, provider_secret string) (resp ProvisionResp, err error) {
+func (gql GQLClient) provision(
+	ctx context.Context,
+	name,
+	provider,
+	provider_secret,
+	kubernetes_version,
+	machine_type,
+	disk_type,
+	region string,
+) (resp ProvisionResp, err error) {
 	err = gql.gqlRequest(
 		ctx,
 		"provision.graphql",
-		map[string]string{"name": name, "provider": provider, "provider_secret": provider_secret},
+		map[string]string{
+			"name":              name,
+			"provider":          provider,
+			"providerSecret":    provider_secret,
+			"kubernetesVersion": kubernetes_version,
+			"machineType":       machine_type,
+			"diskType":          disk_type,
+			"region":            region,
+		},
 		&resp)
 	return
 }
@@ -128,26 +145,47 @@ func (gql GQLClient) waitForOp(ctx context.Context, runtimeID string) (resp Stat
 	}
 }
 
+type testConfig struct {
+	ProviderSecret    string `envconfig:"GARDENER_SECRET_NAME"`
+	Provider          string `envconfig:"GARDENER_PROVIDER,default=gcp"`
+	KubernetesVersion string `envconfig:"default=1.26.5"`
+	MachineType       string `envconfig:"default=e2-medium"`
+	DiskType          string `envconfig:"default=pd-balanced"`
+	Region            string `envconfig:"default=europe-west3"`
+}
+
 func TestName(t *testing.T) {
 	if os.Getenv("APP_GARDENER_KUBECONFIG_PATH") == "" {
 		t.SkipNow()
 	}
 
+	var conf testConfig
+	if err := envconfig.Init(&conf); err != nil {
+		panic(err)
+	}
+
 	ctx := context.Background()
 
-	providerSecret := os.Getenv("GARDENER_SECRET_NAME")
-	provider := os.Getenv("GARDENER_PROVIDER")
 	cli := GQLClient{
 		reqsPath:       "./requests/",
-		providerSecret: providerSecret,
-		provider:       provider,
+		providerSecret: conf.ProviderSecret,
+		provider:       conf.Provider,
 		client:         graphql.NewClient("http://localhost:3000/graphql"),
 	}
 
 	name := fmt.Sprintf("pts%d", time.Now().Unix()%1000000)
 
-	t.Logf("Provisioning a %s cluster - %s", provider, name)
-	provisionResp, err := cli.provision(ctx, name, provider, providerSecret)
+	t.Logf("Provisioning a %s cluster - %s", conf.Provider, name)
+	provisionResp, err := cli.provision(
+		ctx,
+		name,
+		conf.Provider,
+		conf.ProviderSecret,
+		conf.KubernetesVersion,
+		conf.MachineType,
+		conf.DiskType,
+		conf.Region,
+	)
 	assert.NoError(t, err)
 	t.Log(provisionResp)
 
