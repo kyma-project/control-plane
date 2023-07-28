@@ -19,8 +19,6 @@ function cleanup {
     fi
     if ! [[ -z $PROVISIONER_PID ]]; then
         kill $PROVISIONER_PID
-        wait $PROVISIONER_PID
-        export PROVISIONER_CODE=$?
         unset PROVISIONER_PID
     fi
 }
@@ -35,12 +33,13 @@ function has_to_succeed {
 function wait_for {
     echo "Waiting $1 to launch on $2"
 
-    while ! nc -z localhost $2; do
+    while ! timeout 1 bash -c "echo 2>>/dev/null > /dev/tcp/localhost/$2" ; do   
 	printf '.'
 	sleep 2
     done
 
-    echo "\n$1 is listening on $2"
+    printf "\n"
+    printf "$1 is listening on $2 \n"
 }
 
 trap cleanup EXIT
