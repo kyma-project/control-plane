@@ -1,0 +1,16 @@
+query checkStatus($runtimeID: String!) {
+    runtimeStatus(id: $runtimeID) {
+        runtimeConfiguration {
+            clusterConfig {
+                volumeSizeGB
+            }
+        }
+        lastOperationStatus {
+            operation
+            message
+            lastError {
+                errMessage
+            }
+        }
+    }
+}
