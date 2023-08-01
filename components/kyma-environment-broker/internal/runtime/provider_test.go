@@ -51,7 +51,7 @@ func TestRuntimeComponentProviderGetSuccess(t *testing.T) {
 				managedRuntimeComponentsYAMLPath:       path.Join("testdata", "managed-runtime-components.yaml"),
 				newAdditionalRuntimeComponentsYAMLPath: path.Join("testdata", "additional-runtime-components.yaml"),
 			},
-			expectedRequestURL: "https://storage.googleapis.com/kyma-prow-artifacts/2.0.0/kyma-components.yaml",
+			expectedRequestURL: "https://github.com/kyma-project/kyma/releases/download/2.0.0/kyma-components.yaml",
 		},
 		{
 			name: "Provide on-demand Kyma version based on 2.0",
