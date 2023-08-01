@@ -14,7 +14,7 @@ import (
 
 const (
 	kymaVersion                 = "2.2.0"
-	requiredComponentsURLFormat = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-components.yaml"
+	requiredComponentsURLFormat = "https://github.com/kyma-project/kyma/releases/download/%s/kyma-components.yaml"
 )
 
 func TestComponentsProviderSuccessFlow(t *testing.T) {
