@@ -48,6 +48,11 @@ func (s ReleaseSubscriptionStep) Run(operation internal.Operation, log logrus.Fi
 			return operation, 0, nil
 		}
 
+		if string(instance.Provider) == "" {
+			log.Info("Instance does not contain cloud provider info due to failed provisioning, skipping")
+			return operation, 0, nil
+		}
+
 		hypType, err := hyperscaler.FromCloudProvider(instance.Provider)
 		if err != nil {
 			msg := fmt.Sprintf("after successful deprovisioning failing to release hyperscaler subscription - determine the type of hyperscaler to use for planID [%s]: %s", planID, err.Error())
