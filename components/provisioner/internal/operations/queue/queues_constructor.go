@@ -58,47 +58,6 @@ type HibernationTimeouts struct {
 	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
-func CreateProvisioningQueue(
-	timeouts ProvisioningTimeouts,
-	factory dbsession.Factory,
-	installationClient installation.Service,
-	configurator runtime.Configurator,
-	ccClientConstructor provisioning.CompassConnectionClientConstructor,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface,
-	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
-	k8sClientProvider k8s.K8sClientProvider) OperationQueue {
-
-	waitForAgentToConnectStep := provisioning.NewWaitForAgentToConnectStep(ccClientConstructor, configurator, model.FinishedStage, timeouts.AgentConnection, directorClient)
-	configureAgentStep := provisioning.NewConnectAgentStep(configurator, waitForAgentToConnectStep.Name(), timeouts.AgentConfiguration)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, configureAgentStep.Name(), timeouts.Installation, factory.NewWriteSession())
-	installStep := provisioning.NewInstallKymaStep(installationClient, waitForInstallStep.Name(), timeouts.InstallationTriggering)
-	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, installStep.Name(), timeouts.BindingsCreation)
-	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
-	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
-
-	provisionSteps := map[model.OperationStage]operations.Step{
-		model.WaitForAgentToConnect:        waitForAgentToConnectStep,
-		model.ConnectRuntimeAgent:          configureAgentStep,
-		model.WaitingForInstallation:       waitForInstallStep,
-		model.StartingInstallation:         installStep,
-		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
-		model.WaitingForClusterDomain:      waitForClusterDomainStep,
-		model.WaitingForClusterCreation:    waitForClusterCreationStep,
-	}
-
-	provisioningExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Provision,
-		provisionSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(provisioningExecutor)
-}
-
 func CreateProvisioningNoInstallQueue(
 	timeouts ProvisioningNoInstallTimeouts,
 	factory dbsession.Factory,

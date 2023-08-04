@@ -41,9 +41,6 @@ import (
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 
-// TODO: Remove after data migration
-const migrationErrThreshold = 10
-
 type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
@@ -189,18 +186,6 @@ func main() {
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
 
-	provisioningQueue := queue.CreateProvisioningQueue(
-		cfg.ProvisioningTimeout,
-		dbsFactory,
-		installationService,
-		runtimeConfigurator,
-		provisioningStages.NewCompassConnectionClient,
-		directorClient,
-		shootClient,
-		secretsInterface,
-		cfg.OperatorRoleBinding,
-		k8sClientProvider)
-
 	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
 		cfg.ProvisioningNoInstallTimeout,
 		dbsFactory,
@@ -236,7 +221,6 @@ func main() {
 		directorClient,
 		installationService,
 		gardener.NewShootProvider(shootClient),
-		provisioningQueue,
 		provisioningNoInstallQueue,
 		deprovisioningQueue,
 		deprovisioningNoInstallQueue,
@@ -252,8 +236,6 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	provisioningQueue.Run(ctx.Done())
 
 	provisioningNoInstallQueue.Run(ctx.Done())
 
@@ -322,14 +304,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -351,8 +333,6 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 	for _, op := range inProgressOps {
 		switch op.Type {
-		case model.Provision:
-			provisioningQueue.Add(op.ID)
 		case model.ProvisionNoInstall:
 			provisioningNoInstallQueue.Add(op.ID)
 		case model.Deprovision:
