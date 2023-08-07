@@ -6,11 +6,6 @@ import (
 
 type OperationState string
 
-// TODO: Remove after schema migration
-//
-//	Is it ok to remove it now? Which schema migration exactly?
-const AWS = "aws"
-
 const (
 	InProgress OperationState = "IN_PROGRESS"
 	Succeeded  OperationState = "SUCCEEDED"
@@ -20,8 +15,7 @@ const (
 type OperationType string
 
 const (
-	Provision            OperationType = "PROVISION"
-	ProvisionNoInstall   OperationType = "PROVISION_NO_INSTALL"
+	Provision            OperationType = "PROVISION_NO_INSTALL"
 	Upgrade              OperationType = "UPGRADE"
 	UpgradeShoot         OperationType = "UPGRADE_SHOOT"
 	Deprovision          OperationType = "DEPROVISION"

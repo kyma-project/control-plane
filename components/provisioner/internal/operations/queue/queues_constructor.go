@@ -36,13 +36,6 @@ type ProvisioningTimeouts struct {
 	AgentConnection        time.Duration `envconfig:"default=15m"`
 }
 
-type ProvisioningNoInstallTimeouts struct {
-	ClusterCreation    time.Duration `envconfig:"default=60m"`
-	ClusterDomains     time.Duration `envconfig:"default=10m"`
-	BindingsCreation   time.Duration `envconfig:"default=5m"`
-	AgentConfiguration time.Duration `envconfig:"default=15m"`
-}
-
 type DeprovisioningNoInstallTimeouts struct {
 	ClusterDeletion           time.Duration `envconfig:"default=30m"`
 	WaitingForClusterDeletion time.Duration `envconfig:"default=60m"`
@@ -58,8 +51,8 @@ type HibernationTimeouts struct {
 	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
-func CreateProvisioningNoInstallQueue(
-	timeouts ProvisioningNoInstallTimeouts,
+func CreateProvisioningQueue(
+	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
@@ -73,7 +66,7 @@ func CreateProvisioningNoInstallQueue(
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
 
-	provisionNoInstallSteps := map[model.OperationStage]operations.Step{
+	provisionSteps := map[model.OperationStage]operations.Step{
 		model.ConnectRuntimeAgent:          configureAgentStep,
 		model.CreatingBindingsForOperators: createBindingsForOperatorsStep,
 		model.WaitingForClusterDomain:      waitForClusterDomainStep,
@@ -82,8 +75,8 @@ func CreateProvisioningNoInstallQueue(
 
 	provisioningExecutor := operations.NewExecutor(
 		factory.NewReadWriteSession(),
-		model.ProvisionNoInstall,
-		provisionNoInstallSteps,
+		model.Provision,
+		provisionSteps,
 		failure.NewNoopFailureHandler(),
 		directorClient,
 	)

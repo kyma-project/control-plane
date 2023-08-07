@@ -153,8 +153,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
-		testProvisioningNoInstallTimeouts(),
+	provisioningQueue := queue.CreateProvisioningQueue(
+		testProvisioningTimeouts(),
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
@@ -162,7 +162,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
 		runtimeConfigurator)
-	provisioningNoInstallQueue.Run(queueCtx.Done())
+	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
 	deprovisioningQueue.Run(queueCtx.Done())
@@ -227,7 +227,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator()
 
@@ -473,7 +473,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvisionNoInstall,
+		Operation: gqlschema.OperationTypeProvision,
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
@@ -494,15 +494,6 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 		ShootRefresh:           5 * time.Minute,
 		AgentConfiguration:     5 * time.Minute,
 		AgentConnection:        5 * time.Minute,
-	}
-}
-
-func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
-	return queue.ProvisioningNoInstallTimeouts{
-		ClusterCreation:    5 * time.Minute,
-		ClusterDomains:     5 * time.Minute,
-		BindingsCreation:   5 * time.Minute,
-		AgentConfiguration: 5 * time.Minute,
 	}
 }
 

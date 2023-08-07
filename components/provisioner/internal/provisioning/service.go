@@ -58,7 +58,7 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningNoInstallQueue   queue.OperationQueue
+	provisioningQueue            queue.OperationQueue
 	deprovisioningQueue          queue.OperationQueue
 	deprovisioningNoInstallQueue queue.OperationQueue
 	upgradeQueue                 queue.OperationQueue
@@ -75,7 +75,7 @@ func NewProvisioningService(
 	generator uuid.UUIDGenerator,
 	shootProvider ShootProvider,
 	installationClient installation.Service,
-	provisioningNoInstallQueue queue.OperationQueue,
+	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
@@ -90,7 +90,7 @@ func NewProvisioningService(
 		dbSessionFactory:             factory,
 		provisioner:                  provisioner,
 		uuidGenerator:                generator,
-		provisioningNoInstallQueue:   provisioningNoInstallQueue,
+		provisioningQueue:            provisioningQueue,
 		deprovisioningQueue:          deprovisioningQueue,
 		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
 		upgradeQueue:                 upgradeQueue,
@@ -147,7 +147,7 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	}
 
 	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
-	r.provisioningNoInstallQueue.Add(operation.ID)
+	r.provisioningQueue.Add(operation.ID)
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
@@ -528,7 +528,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	provisioningMode := model.ProvisionNoInstall
+	provisioningMode := model.Provision
 
 	operation, err := r.setOperationStarted(dbSession, runtimeID, provisioningMode, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {

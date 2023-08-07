@@ -80,7 +80,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 	expectedOperation := model.Operation{
 		ClusterID: runtimeID,
 		State:     model.InProgress,
-		Type:      model.ProvisionNoInstall,
+		Type:      model.Provision,
 		Stage:     model.WaitingForClusterDomain,
 	}
 
@@ -132,7 +132,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		// then
 		assert.Equal(t, runtimeID, *operationStatus.RuntimeID)
-		assert.Equal(t, gqlschema.OperationTypeProvisionNoInstall, operationStatus.Operation)
+		assert.Equal(t, gqlschema.OperationTypeProvision, operationStatus.Operation)
 		assert.NotEmpty(t, operationStatus.ID)
 		sessionFactoryMock.AssertExpectations(t)
 		writeSessionWithinTransactionMock.AssertExpectations(t)

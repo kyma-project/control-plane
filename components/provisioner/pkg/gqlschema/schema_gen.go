@@ -1165,7 +1165,6 @@ type OperationStatus {
 
 enum OperationType {
     Provision
-    ProvisionNoInstall
     Upgrade
     UpgradeShoot
     Deprovision
