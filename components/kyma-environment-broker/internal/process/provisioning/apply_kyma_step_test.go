@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
-
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage"
@@ -149,7 +147,11 @@ spec:
 			t.Fatal(err.Error())
 		}
 		// controller-runtime lib
-		scheme.Scheme.AddKnownTypeWithName(steps.KymaResourceGroupVersionKind(), &unstructured.Unstructured{})
+		scheme.Scheme.AddKnownTypeWithName(schema.GroupVersionKind{
+			Group:   "operator.kyma-project.io",
+			Version: "v1beta2",
+			Kind:    "kyma",
+		}, &unstructured.Unstructured{})
 
 		cli, err = client.New(config, client.Options{})
 		if err != nil {

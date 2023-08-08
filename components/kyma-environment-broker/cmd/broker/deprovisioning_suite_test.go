@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	kebConfig "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/config"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/reconciler"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/storage/dberr"
 	corev1 "k8s.io/api/core/v1"
@@ -90,9 +92,17 @@ func NewDeprovisioningSuite(t *testing.T) *DeprovisioningSuite {
 	corev1.AddToScheme(scheme)
 	fakeK8sSKRClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
+	sch := internal.NewSchemeForTests()
+	cli := fake.NewClientBuilder().WithScheme(sch).WithRuntimeObjects(fixK8sResources(defaultKymaVer, []string{})...).Build()
+
+	configProvider := kebConfig.NewConfigProvider(
+		kebConfig.NewConfigMapReader(ctx, cli, logrus.New(), defaultKymaVer),
+		kebConfig.NewConfigMapKeysValidator(),
+		kebConfig.NewConfigMapConverter())
+
 	deprovisioningQueue := NewDeprovisioningProcessingQueue(ctx, workersAmount, deprovisionManager, cfg, db, eventBroker,
 		provisionerClient, avsDel, internalEvalAssistant, externalEvalAssistant,
-		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), fakeK8sSKRClient, logs,
+		bundleBuilder, edpClient, accountProvider, reconcilerClient, fakeK8sClientProvider(fakeK8sSKRClient), fakeK8sSKRClient, configProvider, logs,
 	)
 
 	deprovisioningQueue.SpeedUp(10000)

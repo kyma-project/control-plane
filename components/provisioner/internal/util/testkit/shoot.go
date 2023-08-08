@@ -17,10 +17,15 @@ func NewTestShoot(name string) *TestShoot {
 	groupsClaim := "groups"
 	issuerURL := "https://kymatest.accounts400.ondemand.com"
 	usernameClaim := "sub"
+	kind := "Shoot"
+	apiVersion := "core.gardener.cloud/v1beta1"
 	usernamePrefix := "-"
 	return &TestShoot{
 		shoot: &v1beta1.Shoot{
-			TypeMeta: metav1.TypeMeta{},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       kind,
+				APIVersion: apiVersion,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
 			},
@@ -71,7 +76,7 @@ func (ts *TestShoot) WithKubernetesVersion(v string) *TestShoot {
 // WithAutoUpdate sets values of shoot.Spec.Maintenance.AutoUpdate KubernetesVersion and MachineImageVersion fields
 func (ts *TestShoot) WithAutoUpdate(kubernetes, machine bool) *TestShoot {
 	ts.shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = kubernetes
-	ts.shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = machine
+	ts.shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = &machine
 	return ts
 }
 

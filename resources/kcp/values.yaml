@@ -1,7 +1,7 @@
 global:
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   images:
-    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project/prod/control-plane
     schema_migrator:
@@ -12,7 +12,7 @@ global:
       version: "v20230522-605f31f1"
     kyma_metrics_collector:
       dir:
-      version: "v20230613-34a5f5cf"
+      version: "v20230629-a4c63495"
     tests:
       provisioner:
         dir:
@@ -78,6 +78,8 @@ global:
     manageSecrets: true
     cloudsqlproxy:
       enabled: false
+      workloadIdentity:
+        enabled: false
     embedded:
       enabled: true
       provisioner:
@@ -126,8 +128,8 @@ global:
       secretName: "kcp-auditlog-secret"
       # this will create the predefined configMap and secret with data for test purposes only. Should never be enabled on Production.
       useTestConfig: false
-      image: eu.gcr.io/kyma-project/tpi/fluent-bit
-      tag: 2.0.8-01ff7389
+      image: europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit
+      tag: 2.1.4-52bb9772
       persistence:
         enabled: true
         accessMode: ReadWriteOnce

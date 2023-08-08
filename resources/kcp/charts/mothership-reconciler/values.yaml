@@ -1,7 +1,7 @@
 global:
   images:
-    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.6-1bdccf0a"
-    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230622-b23e244c"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
+    mothership_reconciler: "europe-docker.pkg.dev/kyma-project/prod/incubator/reconciler/mothership:v20230804-cbf3faa2"
 
 # Default values for mothership-reconciler.
 nameOverride: ""
@@ -125,6 +125,9 @@ deployment:
     successThreshold: 1
     timeoutSeconds: 1
 
+serviceAccount:
+  annotations: {}
+
 service:
   type: ClusterIP
   scheme: http
@@ -167,3 +170,6 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha2
     kind: istios
+
+# these components will NEVER be reconciled
+skippedComponents: []

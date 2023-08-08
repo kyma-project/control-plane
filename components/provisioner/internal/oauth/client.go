@@ -1,9 +1,8 @@
 package oauth
 
 import (
-	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,8 +13,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 //go:generate mockery --name=Client
@@ -24,41 +21,23 @@ type Client interface {
 }
 
 type oauthClient struct {
-	httpClient    *http.Client
-	secretsClient v1.SecretInterface
-	secretName    string
+	httpClient *http.Client
+	creds      credentials
 }
 
-func NewOauthClient(client *http.Client, secrets v1.SecretInterface, secretName string) Client {
+func NewOauthClient(client *http.Client, clientID, clientSecret, tokensEndpoint string) Client {
 	return &oauthClient{
-		httpClient:    client,
-		secretsClient: secrets,
-		secretName:    secretName,
+		httpClient: client,
+		creds: credentials{
+			clientID:       clientID,
+			clientSecret:   clientSecret,
+			tokensEndpoint: tokensEndpoint,
+		},
 	}
 }
 
 func (c *oauthClient) GetAuthorizationToken() (Token, apperrors.AppError) {
-	credentials, err := c.getCredentials()
-
-	if err != nil {
-		return Token{}, err
-	}
-
-	return c.getAuthorizationToken(credentials)
-}
-
-func (c *oauthClient) getCredentials() (credentials, apperrors.AppError) {
-	secret, err := c.secretsClient.Get(context.Background(), c.secretName, metav1.GetOptions{})
-
-	if err != nil {
-		return credentials{}, util.K8SErrorToAppError(err).SetComponent(apperrors.ErrProvisionerK8SClient)
-	}
-
-	return credentials{
-		clientID:       string(secret.Data[clientIDKey]),
-		clientSecret:   string(secret.Data[clientSecretKey]),
-		tokensEndpoint: string(secret.Data[tokensEndpointKey]),
-	}, nil
+	return c.getAuthorizationToken(c.creds)
 }
 
 func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, apperrors.AppError) {
@@ -93,7 +72,7 @@ func (c *oauthClient) getAuthorizationToken(credentials credentials) (Token, app
 		return Token{}, apperrors.External("Get token call returned unexpected status: %s. Response dump: %s", response.Status, string(dump)).SetComponent(apperrors.ErrMpsOAuth2)
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return Token{}, apperrors.Internal("Failed to read token response body from '%s': %s", credentials.tokensEndpoint, err.Error())
 	}

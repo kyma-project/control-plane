@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	releaseComponentsURLFormat  = "https://storage.googleapis.com/kyma-prow-artifacts/%s/kyma-components.yaml"
+	releaseComponentsURLFormat  = "https://github.com/kyma-project/kyma/releases/download/%s/kyma-components.yaml"
 	onDemandComponentsURLFormat = "https://storage.googleapis.com/kyma-development-artifacts/%s/kyma-components.yaml"
 )
 

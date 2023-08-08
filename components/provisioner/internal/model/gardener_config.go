@@ -27,6 +27,8 @@ const (
 	ShootNetworkingFilterDisabledDefault = true
 )
 
+var networkingType = "calico"
+
 type OIDCConfig struct {
 	ClientID       string   `json:"clientID"`
 	GroupsClaim    string   `json:"groupsClaim"`
@@ -166,7 +168,6 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			},
 		}
 	}
-
 	shoot := &gardener_types.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      c.Name,
@@ -178,7 +179,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Annotations: annotations,
 		},
 		Spec: gardener_types.ShootSpec{
-			SecretBindingName: c.TargetSecret,
+			SecretBindingName: &c.TargetSecret,
 			SeedName:          seed,
 			Region:            c.Region,
 			Kubernetes: gardener_types.Kubernetes{
@@ -186,9 +187,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 					OIDCConfig: gardenerOidcConfig(oidcConfig),
 				},
+				EnableStaticTokenKubeconfig: util.BoolPtr(true),
 			},
-			Networking: gardener_types.Networking{
-				Type:  "calico", // Default value - we may consider adding it to API (if Hydroform will support it)
+			Networking: &gardener_types.Networking{
+				Type:  &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
 				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
 			},
 			Purpose:           purpose,
@@ -196,7 +198,7 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 			Maintenance: &gardener_types.Maintenance{
 				AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 					KubernetesVersion:   c.EnableKubernetesVersionAutoUpdate,
-					MachineImageVersion: c.EnableMachineImageVersionAutoUpdate,
+					MachineImageVersion: &c.EnableMachineImageVersionAutoUpdate,
 				},
 			},
 			DNS: gardenerDnsConfig(dnsInputConfig),
@@ -473,9 +475,10 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 		if err != nil {
 			return apperrors.Internal("error decoding infrastructure config: %s", err.Error())
 		}
+
 		if len(c.input.AzureZones) == 0 {
 			if *c.input.EnableNatGateway {
-				infra.Networks.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+				infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
 				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 			} else {
 				infra.Networks.NatGateway = nil
@@ -484,7 +487,7 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 			for i := range infra.Networks.Zones {
 				zone := infra.Networks.Zones[i]
 				if *c.input.EnableNatGateway {
-					zone.NatGateway = &azure.NatGateway{Enabled: *c.input.EnableNatGateway}
+					zone.NatGateway.Enabled = *c.input.EnableNatGateway
 					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {
 					zone.NatGateway = nil
@@ -730,7 +733,7 @@ func updateShootConfig(upgradeConfig GardenerConfig, shoot *gardener_types.Shoot
 	}
 
 	shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion = upgradeConfig.EnableKubernetesVersionAutoUpdate
-	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = upgradeConfig.EnableMachineImageVersionAutoUpdate
+	shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion = &upgradeConfig.EnableMachineImageVersionAutoUpdate
 
 	if len(shoot.Spec.Provider.Workers) == 0 {
 		return apperrors.Internal("no worker groups assigned to Gardener shoot '%s'", shoot.Name)

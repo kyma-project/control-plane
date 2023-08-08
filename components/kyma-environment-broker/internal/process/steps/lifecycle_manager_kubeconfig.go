@@ -60,9 +60,13 @@ func (s syncKubeconfig) Run(o internal.Operation, log logrus.FieldLogger) (inter
 }
 
 func (s deleteKubeconfig) Run(o internal.Operation, log logrus.FieldLogger) (internal.Operation, time.Duration, error) {
+	if o.KymaResourceNamespace == "" || o.KymaResourceName == "" {
+		log.Info("kubeconfig Secret should not exist, skipping")
+		return o, 0, nil
+	}
 	secret := initSecret(o)
 	if err := s.k8sClient.Delete(context.Background(), secret); err != nil && !errors.IsNotFound(err) {
-		msg := fmt.Sprintf("failed to delete kubeconfig secret %v/%v for lifecycle manager: %v", secret.Namespace, secret.Name, err)
+		msg := fmt.Sprintf("failed to delete kubeconfig Secret %v/%v for lifecycle manager: %v", secret.Namespace, secret.Name, err)
 		log.Error(msg)
 		return s.operationManager.RetryOperationWithoutFail(o, s.Name(), msg, time.Minute, time.Minute*5, log)
 	}

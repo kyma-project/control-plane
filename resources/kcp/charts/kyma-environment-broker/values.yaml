@@ -1,21 +1,21 @@
 global:
   images:
-    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.4-3cfeacc2"
+    cloudsql_proxy_image: "europe-docker.pkg.dev/kyma-project/prod/tpi/cloudsql-docker/gce-proxy:v1.33.8-afb993b8"
     kyma_environment_broker:
       dir:
-      version: "v20230621-89009079"
+      version: "v20230801-b6b0b483"
     kyma_environments_subaccount_cleanup_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230801-b6b0b483"
     kyma_environment_trial_cleanup_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230801-b6b0b483"
     kyma_environment_deprovision_retrigger_job:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230801-b6b0b483"
     kyma_environment_runtime_reconciler:
       dir:
-      version: "v20230614-bcb66b55"
+      version: "v20230801-b6b0b483"
 
 deployment:
   replicaCount: 1
@@ -63,6 +63,9 @@ resources:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
+serviceAccount:
+  annotations: {}
 
 reconciler:
   URL: "http://kcp-mothership-reconciler.kcp-system.svc.cluster.local"

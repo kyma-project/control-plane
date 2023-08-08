@@ -15,6 +15,7 @@ import (
 )
 
 var purpose = gardener_types.ShootPurposeTesting
+var gardenerSecret = "gardener-secret"
 
 func Test_NewGardenerConfigFromJSON(t *testing.T) {
 
@@ -213,12 +214,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  &networkingType,
 						Nodes: util.StringPtr("10.10.10.10/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: &gardenerSecret,
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "gcp",
@@ -239,11 +240,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
+						EnableStaticTokenKubeconfig: util.BoolPtr(true),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -292,12 +294,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  &networkingType,
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: &gardenerSecret,
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -318,11 +320,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
+						EnableStaticTokenKubeconfig: util.BoolPtr(true),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -371,12 +374,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  &networkingType,
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: &gardenerSecret,
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -397,11 +400,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
+						EnableStaticTokenKubeconfig: util.BoolPtr(true),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -450,12 +454,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  &networkingType,
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: &gardenerSecret,
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "azure",
@@ -476,11 +480,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
+						EnableStaticTokenKubeconfig: util.BoolPtr(true),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),
@@ -529,12 +534,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				},
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
-					Networking: gardener_types.Networking{
-						Type:  "calico",
+					Networking: &gardener_types.Networking{
+						Type:  &networkingType,
 						Nodes: util.StringPtr("10.10.11.11/255"),
 					},
 					SeedName:          util.StringPtr("eu"),
-					SecretBindingName: "gardener-secret",
+					SecretBindingName: &gardenerSecret,
 					Region:            "eu",
 					Provider: gardener_types.Provider{
 						Type: "aws",
@@ -555,11 +560,12 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 						KubeAPIServer: &gardener_types.KubeAPIServerConfig{
 							OIDCConfig: gardenerOidcConfig(oidcConfig()),
 						},
+						EnableStaticTokenKubeconfig: util.BoolPtr(true),
 					},
 					Maintenance: &gardener_types.Maintenance{
 						AutoUpdate: &gardener_types.MaintenanceAutoUpdate{
 							KubernetesVersion:   true,
-							MachineImageVersion: false,
+							MachineImageVersion: util.BoolPtr(false),
 						},
 					},
 					DNS: gardenerDnsConfig(dnsConfig()),

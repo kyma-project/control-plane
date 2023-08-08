@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/process/steps"
 
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/fixture"
@@ -21,6 +23,7 @@ func TestCheckKymaResourceDeleted_HappyFlow(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
 	operation.KymaResourceNamespace = "kyma-system"
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
@@ -47,6 +50,7 @@ func TestCheckKymaResourceDeleted_EmptyKymaResourceName(t *testing.T) {
 	operation.KymaResourceNamespace = "kyma-system"
 	operation.RuntimeID = ""
 	operation.KymaResourceName = ""
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
@@ -71,6 +75,7 @@ func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 	// Given
 	operation := fixture.FixDeprovisioningOperationAsOperation(fixOperationID, fixInstanceID)
 	operation.KymaResourceNamespace = "kyma-system"
+	operation.KymaTemplate = kymaTemplate
 
 	kcpClient := fake.NewClientBuilder().Build()
 
@@ -93,7 +98,11 @@ func TestCheckKymaResourceDeleted_RetryWhenStillExists(t *testing.T) {
 
 func assertNoKymaResourceWithGivenRuntimeID(t *testing.T, kcpClient client.Client, kymaResourceNamespace string, resourceName string) {
 	kymaUnstructured := &unstructured.Unstructured{}
-	kymaUnstructured.SetGroupVersionKind(steps.KymaResourceGroupVersionKind())
+	kymaUnstructured.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.kyma-project.io",
+		Version: "v1beta2",
+		Kind:    "kyma",
+	})
 	err := kcpClient.Get(context.Background(), client.ObjectKey{
 		Namespace: kymaResourceNamespace,
 		Name:      resourceName,

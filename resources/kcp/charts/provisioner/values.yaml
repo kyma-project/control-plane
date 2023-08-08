@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-2866"
+      version: "PR-2918"
       dir: "dev"
 
 deployment:
@@ -18,6 +18,9 @@ deployment:
   nodeSelector: {}
   runAwsConfigMigration: false
   databaseEncryptionSecret: "kcp-provisioner-database-encryption"
+
+serviceAccount:
+  annotations: {}
 
 security:
   skipTLSCertificateVeryfication: false
