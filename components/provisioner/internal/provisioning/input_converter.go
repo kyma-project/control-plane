@@ -101,6 +101,8 @@ func (c converter) gardenerConfigFromInput(runtimeID string, input *gqlschema.Ga
 		DiskType:                            input.DiskType,
 		VolumeSizeGB:                        input.VolumeSizeGb,
 		WorkerCidr:                          input.WorkerCidr,
+		PodsNetworkCidr:                     input.PodsNetworkCidr,
+		ServicesNetworkCidr:                 input.ServicesNetworkCidr,
 		AutoScalerMin:                       input.AutoScalerMin,
 		AutoScalerMax:                       input.AutoScalerMax,
 		MaxSurge:                            input.MaxSurge,

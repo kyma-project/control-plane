@@ -149,6 +149,8 @@ type GardenerConfig struct {
 	DiskType                            *string                `json:"diskType"`
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	WorkerCidr                          *string                `json:"workerCidr"`
+	PodsNetworkCidr                     *string                `json:"podsNetworkCidr"`
+	ServicesNetworkCidr                 *string                `json:"servicesNetworkCidr"`
 	AutoScalerMin                       *int                   `json:"autoScalerMin"`
 	AutoScalerMax                       *int                   `json:"autoScalerMax"`
 	MaxSurge                            *int                   `json:"maxSurge"`
@@ -178,6 +180,8 @@ type GardenerConfigInput struct {
 	DiskType                            *string                `json:"diskType"`
 	VolumeSizeGb                        *int                   `json:"volumeSizeGB"`
 	WorkerCidr                          string                 `json:"workerCidr"`
+	PodsNetworkCidr                     *string                `json:"podsNetworkCidr"`
+	ServicesNetworkCidr                 *string                `json:"servicesNetworkCidr"`
 	AutoScalerMin                       int                    `json:"autoScalerMin"`
 	AutoScalerMax                       int                    `json:"autoScalerMax"`
 	MaxSurge                            int                    `json:"maxSurge"`

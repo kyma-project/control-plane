@@ -215,8 +215,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "gcp",
 					Networking: &gardener_types.Networking{
-						Type:  &networkingType,
-						Nodes: util.StringPtr("10.10.10.10/255"),
+						Type:     &networkingType,
+						Nodes:    util.StringPtr("10.10.10.10/255"),
+						Pods:     util.StringPtr("10.10.11.10/24"),
+						Services: util.StringPtr("10.10.12.10/24"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: &gardenerSecret,
@@ -295,8 +297,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
 					Networking: &gardener_types.Networking{
-						Type:  &networkingType,
-						Nodes: util.StringPtr("10.10.11.11/255"),
+						Type:     &networkingType,
+						Nodes:    util.StringPtr("10.10.11.11/255"),
+						Pods:     util.StringPtr("10.10.11.10/24"),
+						Services: util.StringPtr("10.10.12.10/24"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: &gardenerSecret,
@@ -375,8 +379,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
 					Networking: &gardener_types.Networking{
-						Type:  &networkingType,
-						Nodes: util.StringPtr("10.10.11.11/255"),
+						Type:     &networkingType,
+						Nodes:    util.StringPtr("10.10.11.11/255"),
+						Pods:     util.StringPtr("10.10.11.10/24"),
+						Services: util.StringPtr("10.10.12.10/24"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: &gardenerSecret,
@@ -455,8 +461,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "az",
 					Networking: &gardener_types.Networking{
-						Type:  &networkingType,
-						Nodes: util.StringPtr("10.10.11.11/255"),
+						Type:     &networkingType,
+						Nodes:    util.StringPtr("10.10.11.11/255"),
+						Pods:     util.StringPtr("10.10.11.10/24"),
+						Services: util.StringPtr("10.10.12.10/24"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: &gardenerSecret,
@@ -535,8 +543,10 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 				Spec: gardener_types.ShootSpec{
 					CloudProfileName: "aws",
 					Networking: &gardener_types.Networking{
-						Type:  &networkingType,
-						Nodes: util.StringPtr("10.10.11.11/255"),
+						Type:     &networkingType,
+						Nodes:    util.StringPtr("10.10.11.11/255"),
+						Pods:     util.StringPtr("10.10.11.10/24"),
+						Services: util.StringPtr("10.10.12.10/24"),
 					},
 					SeedName:          util.StringPtr("eu"),
 					SecretBindingName: &gardenerSecret,
@@ -744,6 +754,8 @@ func fixGardenerConfig(provider string, providerCfg GardenerProviderConfig) Gard
 		TargetSecret:                        "gardener-secret",
 		Region:                              "eu",
 		WorkerCidr:                          "10.10.10.10/255",
+		PodsNetworkCidr:                     util.StringPtr("10.10.11.10/24"),
+		ServicesNetworkCidr:                 util.StringPtr("10.10.12.10/24"),
 		AutoScalerMin:                       1,
 		AutoScalerMax:                       3,
 		MaxSurge:                            30,
