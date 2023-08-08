@@ -60,7 +60,6 @@ fi
 
 printf '\n########## SETTING UP PROVISIONER ##########\n\n'
 
-
 sleep 20
 
 docker network create $POSTGRES_NETWORK
