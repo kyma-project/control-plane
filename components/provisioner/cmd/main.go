@@ -330,7 +330,7 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 	for _, op := range inProgressOps {
 		switch op.Type {
-		case model.Provision:
+		case model.ProvisionNoInstall:
 			provisioningQueue.Add(op.ID)
 		case model.Deprovision:
 			deprovisioningQueue.Add(op.ID)
