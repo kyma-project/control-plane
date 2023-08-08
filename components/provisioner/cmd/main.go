@@ -60,10 +60,9 @@ type config struct {
 		SecretKey   string `envconfig:"optional"`
 	}
 
-	ProvisioningTimeout            queue.ProvisioningTimeouts
-	DeprovisioningTimeout          queue.DeprovisioningTimeouts
-	DeprovisioningNoInstallTimeout queue.DeprovisioningNoInstallTimeouts
-	HibernationTimeout             queue.HibernationTimeouts
+	ProvisioningTimeout   queue.ProvisioningTimeouts
+	DeprovisioningTimeout queue.DeprovisioningTimeouts
+	HibernationTimeout    queue.HibernationTimeouts
 
 	OperatorRoleBinding provisioningStages.OperatorRoleBinding
 
@@ -99,7 +98,6 @@ func (c *config) String() string {
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
-		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
@@ -116,7 +114,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
-		c.DeprovisioningNoInstallTimeout.ClusterDeletion.String(), c.DeprovisioningNoInstallTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
@@ -195,7 +192,7 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
 
@@ -217,7 +214,7 @@ func main() {
 		installationService,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
-		deprovisioningNoInstallQueue,
+		deprovisioningQueue,
 		upgradeQueue,
 		shootUpgradeQueue,
 		hibernationQueue,
@@ -233,7 +230,7 @@ func main() {
 
 	provisioningQueue.Run(ctx.Done())
 
-	deprovisioningNoInstallQueue.Run(ctx.Done())
+	deprovisioningQueue.Run(ctx.Done())
 
 	upgradeQueue.Run(ctx.Done())
 
@@ -296,14 +293,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -328,7 +325,7 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 		case model.Provision:
 			provisioningQueue.Add(op.ID)
 		case model.DeprovisionNoInstall:
-			deprovisioningNoInstallQueue.Add(op.ID)
+			deprovisioningQueue.Add(op.ID)
 		case model.Upgrade:
 			upgradeQueue.Add(op.ID)
 		case model.Hibernate:

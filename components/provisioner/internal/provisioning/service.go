@@ -56,12 +56,11 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue            queue.OperationQueue
-	deprovisioningQueue          queue.OperationQueue
-	deprovisioningNoInstallQueue queue.OperationQueue
-	upgradeQueue                 queue.OperationQueue
-	shootUpgradeQueue            queue.OperationQueue
-	hibernationQueue             queue.OperationQueue
+	provisioningQueue   queue.OperationQueue
+	deprovisioningQueue queue.OperationQueue
+	upgradeQueue        queue.OperationQueue
+	shootUpgradeQueue   queue.OperationQueue
+	hibernationQueue    queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -74,26 +73,26 @@ func NewProvisioningService(
 	shootProvider ShootProvider,
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
-	deprovisioningNoInstallQueue queue.OperationQueue,
+	deprovisioningQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:               inputConverter,
-		graphQLConverter:             graphQLConverter,
-		directorService:              directorService,
-		dbSessionFactory:             factory,
-		provisioner:                  provisioner,
-		uuidGenerator:                generator,
-		provisioningQueue:            provisioningQueue,
-		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
-		upgradeQueue:                 upgradeQueue,
-		shootUpgradeQueue:            shootUpgradeQueue,
-		hibernationQueue:             hibernationQueue,
-		shootProvider:                shootProvider,
-		installationClient:           installationClient,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
+		dbSessionFactory:    factory,
+		provisioner:         provisioner,
+		uuidGenerator:       generator,
+		provisioningQueue:   provisioningQueue,
+		deprovisioningQueue: deprovisioningQueue,
+		upgradeQueue:        upgradeQueue,
+		shootUpgradeQueue:   shootUpgradeQueue,
+		hibernationQueue:    hibernationQueue,
+		shootProvider:       shootProvider,
+		installationClient:  installationClient,
 	}
 }
 
@@ -183,7 +182,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 	}
 
 	log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
-	r.deprovisioningNoInstallQueue.Add(operation.ID)
+	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil
 }
