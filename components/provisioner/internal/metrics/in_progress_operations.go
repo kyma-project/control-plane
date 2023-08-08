@@ -30,7 +30,7 @@ func NewInProgressOperationsCollector(statsGetter OperationsStatsGetter) *InProg
 		statsGetter: statsGetter,
 
 		provisioningDesc: prometheus.NewDesc(
-			buildFQName(model.Provision),
+			buildFQName(model.ProvisionNoInstall),
 			"The number of provisioning without installation operations in progress",
 			[]string{},
 			nil),

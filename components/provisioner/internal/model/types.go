@@ -15,7 +15,8 @@ const (
 type OperationType string
 
 const (
-	Provision            OperationType = "PROVISION_NO_INSTALL"
+	Provision            OperationType = "PROVISION"
+	ProvisionNoInstall   OperationType = "PROVISION_NO_INSTALL"
 	Upgrade              OperationType = "UPGRADE"
 	UpgradeShoot         OperationType = "UPGRADE_SHOOT"
 	Deprovision          OperationType = "DEPROVISION"
