@@ -35,7 +35,7 @@ config:
       issuer: https://kymatest.accounts400.ondemand.com
       client: 1234-5678-qwer
     client: compass-ui
-    issuer: https://dex.{{ .Values.global.ingress.domainName }}
+    issuer: ~
     # caFile: /etc/dex-tls-cert/tls.crt
 
 
