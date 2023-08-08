@@ -195,8 +195,6 @@ func main() {
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
-
 	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
@@ -219,7 +217,6 @@ func main() {
 		installationService,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
-		deprovisioningQueue,
 		deprovisioningNoInstallQueue,
 		upgradeQueue,
 		shootUpgradeQueue,
@@ -235,8 +232,6 @@ func main() {
 	defer cancel()
 
 	provisioningQueue.Run(ctx.Done())
-
-	deprovisioningQueue.Run(ctx.Done())
 
 	deprovisioningNoInstallQueue.Run(ctx.Done())
 
@@ -301,14 +296,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -332,8 +327,6 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 		switch op.Type {
 		case model.Provision:
 			provisioningQueue.Add(op.ID)
-		case model.Deprovision:
-			deprovisioningQueue.Add(op.ID)
 		case model.DeprovisionNoInstall:
 			deprovisioningNoInstallQueue.Add(op.ID)
 		case model.Upgrade:
