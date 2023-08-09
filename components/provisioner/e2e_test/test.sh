@@ -36,7 +36,7 @@ function wait_for {
 
     if ! which timeout ; then
         printf '\n Please install timeout; e.g. in MacOs you can use `brew install coreutils` \n\n'
-        exit 2
+        exit 1
     fi
 
     while ! timeout 1 bash -c "echo 2>>/dev/null > /dev/tcp/localhost/$2" ; do   
