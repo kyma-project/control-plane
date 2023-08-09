@@ -86,45 +86,15 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeRuntime(ctx context.Context, runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
-	log.Infof("Requested upgrade of Runtime %s.", runtimeId)
-
-	if err := r.tenantUpdater.GetAndUpdateTenant(runtimeId, ctx); err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return &gqlschema.OperationStatus{}, err
-	}
-
-	if err := r.validator.ValidateUpgradeInput(input); err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return nil, err
-	}
-
-	operationStatus, err := r.provisioning.UpgradeRuntime(runtimeId, input)
-	if err != nil {
-		log.Errorf("Failed to upgrade Runtime %s: %s", runtimeId, err)
-		return nil, err
-	}
-
-	return operationStatus, nil
+func (r *Resolver) UpgradeRuntime(context.Context, string, gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+	return nil, nil
 }
 
-func (r *Resolver) RollBackUpgradeOperation(ctx context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
-	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
-	if err != nil {
-		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
-		return nil, err
-	}
-
-	runtimeStatus, err := r.provisioning.RollBackLastUpgrade(runtimeID)
-	if err != nil {
-		log.Errorf("Failed to roll back last Runtime upgrade: %s, Runtime ID: %s", err, runtimeID)
-		return nil, err
-	}
-
-	return runtimeStatus, nil
+func (r *Resolver) RollBackUpgradeOperation(context.Context, string) (*gqlschema.RuntimeStatus, error) {
+	return nil, nil
 }
 
-func (r *Resolver) ReconnectRuntimeAgent(ctx context.Context, id string) (string, error) {
+func (r *Resolver) ReconnectRuntimeAgent(context.Context, string) (string, error) {
 	return "", nil
 }
 

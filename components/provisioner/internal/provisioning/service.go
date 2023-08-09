@@ -21,13 +21,11 @@ import (
 //go:generate mockery --name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
-	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	DeprovisionRuntime(id string) (string, apperrors.AppError)
 	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, apperrors.AppError)
-	RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError)
 	HibernateCluster(clusterID string) (*gqlschema.OperationStatus, apperrors.AppError)
 }
 
@@ -74,7 +72,6 @@ func NewProvisioningService(
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
@@ -88,7 +85,6 @@ func NewProvisioningService(
 		uuidGenerator:       generator,
 		provisioningQueue:   provisioningQueue,
 		deprovisioningQueue: deprovisioningQueue,
-		upgradeQueue:        upgradeQueue,
 		shootUpgradeQueue:   shootUpgradeQueue,
 		hibernationQueue:    hibernationQueue,
 		shootProvider:       shootProvider,
@@ -318,80 +314,7 @@ func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, run
 	return nil
 }
 
-func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError) {
-	if input.KymaConfig == nil {
-		return &gqlschema.OperationStatus{}, apperrors.BadRequest("error: Kyma config is nil")
-	}
-
-	session := r.dbSessionFactory.NewReadSession()
-
-	if err := r.verifyLastOperationFinished(session, runtimeId); err != nil {
-		return &gqlschema.OperationStatus{}, err
-	}
-
-	kymaConfig, err := r.inputConverter.KymaConfigFromInput(runtimeId, *input.KymaConfig)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("failed to convert KymaConfigInput")
-	}
-
-	cluster, dberr := session.GetCluster(runtimeId)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
-	}
-
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
-	}
-
-	shoot, err := r.shootProvider.Get(runtimeId, cluster.Tenant)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot")
-	}
-
-	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
-	}
-	defer txSession.RollbackUnlessCommitted()
-
-	operation, dberr := r.setUpgradeStarted(txSession, cluster, kymaConfig)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
-	}
-
-	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	shouldTakeShootKubernetesVersion, err := isVersionHigher(shoot.Spec.Kubernetes.Version, cluster.ClusterConfig.KubernetesVersion)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
-	}
-	if shouldTakeShootKubernetesVersion {
-		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shoot.Spec.Kubernetes.Version)
-		dberr = txSession.UpdateKubernetesVersion(runtimeId, shoot.Spec.Kubernetes.Version)
-		if dberr != nil {
-			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
-		}
-	}
-
-	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is changed manually, the actual version should be stored in the database.
-	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
-	if shouldTakeShootNetworkingFilterDisabled(shootNetworkingFilterDisabled, cluster.ClusterConfig.ShootNetworkingFilterDisabled) {
-		log.Warnf("ShootNetworkingFilter from the database is different than the one in the shoot. Value fetched from the shoot will be stored in the database: %t.", *shootNetworkingFilterDisabled)
-		if dberr = txSession.UpdateShootNetworkingFilterDisabled(runtimeId, shootNetworkingFilterDisabled); dberr != nil {
-			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot networking filter disabled: %s", dberr.Error())
-		}
-	}
-
-	dberr = txSession.Commit()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
-	}
-
-	r.upgradeQueue.Add(operation.ID)
-
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
-func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {
+func (r *service) ReconnectRuntimeAgent(string) (string, apperrors.AppError) {
 	return "", nil
 }
 
@@ -413,48 +336,6 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	}
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
-func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
-
-	readSession := r.dbSessionFactory.NewReadSession()
-
-	lastOp, err := readSession.GetLastOperation(runtimeID)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	if lastOp.Type != model.Upgrade || lastOp.State == model.InProgress {
-		return nil, apperrors.BadRequest("error: upgrade can be rolled back only if it is the last operation that is already finished")
-	}
-
-	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(lastOp.ID)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-	defer txSession.RollbackUnlessCommitted()
-
-	err = txSession.SetActiveKymaConfig(runtimeID, runtimeUpgrade.PreUpgradeKymaConfigId)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	err = txSession.UpdateUpgradeState(lastOp.ID, model.UpgradeRolledBack)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	err = txSession.Commit()
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	return r.RuntimeStatus(runtimeID)
 }
 
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
@@ -618,9 +499,4 @@ func getShootNetworkingFilterDisabled(extensions []gardener_Types.Extension) *bo
 		}
 	}
 	return nil
-}
-
-func shouldTakeShootNetworkingFilterDisabled(shootValue, databaseValue *bool) bool {
-	// It should when the shoot value is not nil and the values are not matching
-	return shootValue != nil && (databaseValue == nil || *shootValue != *databaseValue)
 }
