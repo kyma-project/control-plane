@@ -170,7 +170,7 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 				err = kebError.AsTemporaryError(closeErr, "while closing body")
 			}
 		}()
-		var responseObject avsNonSuccessResp
+		var responseObject avsApiErrorResp
 		err := json.NewDecoder(response.Body).Decode(&responseObject)
 		if err != nil {
 			msg, e := io.ReadAll(response.Body)
