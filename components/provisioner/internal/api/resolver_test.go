@@ -431,61 +431,6 @@ func TestResolver_UpgradeShoot(t *testing.T) {
 	})
 }
 
-func TestResolver_HibernateRuntime(t *testing.T) {
-	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
-	runtimeID := "1100bb59-9c40-4ebb-b846-7477c4dc5bbd"
-
-	t.Run("Should hibernate cluster", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		tenantUpdater := &validatorMocks.TenantUpdater{}
-
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
-
-		operationID := "acc5040c-3bb6-47b8-8651-07f6950bd0a7"
-		message := "some message"
-
-		operationStatus := &gqlschema.OperationStatus{
-			ID:        &operationID,
-			Operation: gqlschema.OperationTypeHibernate,
-			State:     gqlschema.OperationStateInProgress,
-			RuntimeID: &runtimeID,
-			Message:   &message,
-		}
-
-		provisioningService.On("HibernateCluster", runtimeID).Return(operationStatus, nil)
-		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
-
-		//when
-		status, err := provisioner.HibernateRuntime(ctx, runtimeID)
-
-		//then
-		require.NoError(t, err)
-		assert.Equal(t, operationStatus, status)
-	})
-
-	t.Run("Should return error when hibernation fails", func(t *testing.T) {
-		//given
-		provisioningService := &mocks.Service{}
-		validator := &validatorMocks.Validator{}
-		tenantUpdater := &validatorMocks.TenantUpdater{}
-
-		provisioner := api.NewResolver(provisioningService, validator, tenantUpdater)
-
-		provisioningService.On("HibernateCluster", runtimeID).Return(nil, apperrors.Internal("Some error"))
-		tenantUpdater.On("GetAndUpdateTenant", runtimeID, ctx).Return(nil)
-
-		//when
-		status, err := provisioner.HibernateRuntime(ctx, runtimeID)
-
-		//then
-		require.Error(t, err)
-		util.CheckErrorType(t, err, apperrors.CodeInternal)
-		require.Empty(t, status)
-	})
-}
-
 func oidcInput() *gqlschema.OIDCConfigInput {
 	return &gqlschema.OIDCConfigInput{
 		ClientID:       "9bd05ed7-a930-44e6-8c79-e6defeb2222",
