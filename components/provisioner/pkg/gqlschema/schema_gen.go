@@ -1194,7 +1194,7 @@ type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConfiguration: RuntimeConfig
-    hibernationStatus: HibernationStatus
+    hibernationStatus: HibernationStatus @deprecated(reason: "Operation not used by the Kyma Environment Broker")
 }
 
 enum OperationState {
@@ -1394,7 +1394,7 @@ type Mutation {
     upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus @deprecated(reason: "Kyma 1.x is no longer supported")
     deprovisionRuntime(id: String!): String!
     upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
-    hibernateRuntime(id: String!): OperationStatus
+    hibernateRuntime(id: String!): OperationStatus @deprecated(reason: "Operation not used by the Kyma Environment Broker")
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
