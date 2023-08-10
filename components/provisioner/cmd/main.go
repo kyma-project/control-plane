@@ -81,9 +81,6 @@ type config struct {
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
 
 	LogLevel string `envconfig:"default=info"`
-
-	// TODO: Remove after data migration
-	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
 func (c *config) String() string {
@@ -100,8 +97,7 @@ func (c *config) String() string {
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
-		"LogLevel: %s"+
-		"RunAwsConfigMigration: %v",
+		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.DirectorURL,
 		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
 		c.Database.User, c.Database.Host, c.Database.Port,
@@ -115,7 +111,7 @@ func (c *config) String() string {
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
-		c.LogLevel, c.RunAwsConfigMigration)
+		c.LogLevel)
 }
 
 func main() {

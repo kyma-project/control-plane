@@ -29,7 +29,6 @@ type ReadSession interface {
 	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
 	GetTenantForOperation(operationID string) (string, dberrors.Error)
 	InProgressOperationsCount() (model.OperationsCount, dberrors.Error)
-	GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error)
 }
 
 //go:generate mockery --name=WriteSession
