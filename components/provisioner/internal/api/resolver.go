@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/pkg/errors"
@@ -88,18 +89,15 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 }
 
 func (r *Resolver) UpgradeRuntime(_ context.Context, runtimeID string, _ gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
-	message := "Kyma 1.x upgrade operation is no longer supported"
+	message := fmt.Sprintf("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", runtimeID)
 
-	return &gqlschema.OperationStatus{
-		Operation: gqlschema.OperationTypeUpgrade,
-		State:     gqlschema.OperationStateFailed,
-		RuntimeID: &runtimeID,
-		Message:   &message,
-	}, nil
+	return nil, errors.New(message)
 }
 
-func (r *Resolver) RollBackUpgradeOperation(context.Context, string) (*gqlschema.RuntimeStatus, error) {
-	return nil, errors.New("Kyma 1.x upgrade operation is no longer supported")
+func (r *Resolver) RollBackUpgradeOperation(_ context.Context, runtimeID string) (*gqlschema.RuntimeStatus, error) {
+	message := fmt.Sprintf("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", runtimeID)
+
+	return nil, errors.New(message)
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(context.Context, string) (string, error) {
