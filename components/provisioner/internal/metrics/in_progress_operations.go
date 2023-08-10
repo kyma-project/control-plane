@@ -65,7 +65,7 @@ func (c *InProgressOperationsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	c.newMeasure(ch,
 		c.provisioningDesc,
-		inProgressOpsCounts.Count[model.Provision],
+		inProgressOpsCounts.Count[model.ProvisionNoInstall],
 	)
 	c.newMeasure(ch,
 		c.deprovisioningDesc,
