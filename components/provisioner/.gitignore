@@ -4,3 +4,4 @@ vendor
 /licenses
 /.hydroform
 /dev
+/e2e_test/migrations/
