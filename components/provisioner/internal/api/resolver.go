@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 
@@ -86,12 +86,19 @@ func (r *Resolver) DeprovisionRuntime(ctx context.Context, id string) (string, e
 	return operationID, nil
 }
 
-func (r *Resolver) UpgradeRuntime(context.Context, string, gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
-	return nil, nil
+func (r *Resolver) UpgradeRuntime(_ context.Context, runtimeID string, _ gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, error) {
+	message := "Kyma 1.x upgrade operation is no longer supported"
+
+	return &gqlschema.OperationStatus{
+		Operation: gqlschema.OperationTypeUpgrade,
+		State:     gqlschema.OperationStateFailed,
+		RuntimeID: &runtimeID,
+		Message:   &message,
+	}, nil
 }
 
 func (r *Resolver) RollBackUpgradeOperation(context.Context, string) (*gqlschema.RuntimeStatus, error) {
-	return nil, nil
+	return nil, errors.New("Kyma 1.x upgrade operation is no longer supported")
 }
 
 func (r *Resolver) ReconnectRuntimeAgent(context.Context, string) (string, error) {
