@@ -81,7 +81,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := "partner"
 		seed := "gcp-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -122,7 +124,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                seed,
 					TargetSecret:                        secret,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            &podsCIDR,
+					ServicesCIDR:                        &servicesCIDR,
 					AutoScalerMax:                       autoScMax,
 					AutoScalerMin:                       autoScMin,
 					MaxSurge:                            surge,
@@ -180,7 +184,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            &podsCIDR,
+					ServicesCidr:                        &servicesCIDR,
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,
@@ -248,7 +254,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := "partner"
 		seed := "gcp-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -289,7 +297,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                seed,
 					TargetSecret:                        secret,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            &podsCIDR,
+					ServicesCIDR:                        &servicesCIDR,
 					AutoScalerMax:                       autoScMax,
 					AutoScalerMin:                       autoScMin,
 					MaxSurge:                            surge,
@@ -345,7 +355,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            util.StringPtr(podsCIDR),
+					ServicesCidr:                        util.StringPtr(servicesCIDR),
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,
@@ -400,7 +412,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 		licenceType := ""
 		seed := "az-eu1"
 		secret := "secret"
-		cidr := "cidr"
+		workerCidr := "10.254.0.0/16"
+		podsCIDR := "10.64.0.0/11"
+		servicesCIDR := "10.243.0.0/16"
 		autoScMax := 2
 		autoScMin := 2
 		surge := 1
@@ -443,7 +457,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					Seed:                                seed,
 					TargetSecret:                        secret,
 					Region:                              region,
-					WorkerCidr:                          cidr,
+					WorkerCidr:                          workerCidr,
+					PodsCIDR:                            util.StringPtr(podsCIDR),
+					ServicesCIDR:                        util.StringPtr(servicesCIDR),
 					AutoScalerMin:                       autoScMin,
 					AutoScalerMax:                       autoScMax,
 					MaxSurge:                            surge,
@@ -497,7 +513,9 @@ func TestRuntimeStatusToGraphQLStatus(t *testing.T) {
 					LicenceType:                         &licenceType,
 					Seed:                                &seed,
 					TargetSecret:                        &secret,
-					WorkerCidr:                          &cidr,
+					WorkerCidr:                          &workerCidr,
+					PodsCidr:                            util.StringPtr(podsCIDR),
+					ServicesCidr:                        util.StringPtr(servicesCIDR),
 					AutoScalerMax:                       &autoScMax,
 					AutoScalerMin:                       &autoScMin,
 					MaxSurge:                            &surge,

@@ -92,6 +92,8 @@ func (c graphQLConverter) gardenerConfigToGraphQLConfig(config model.GardenerCon
 		Seed:                                &config.Seed,
 		TargetSecret:                        &config.TargetSecret,
 		WorkerCidr:                          &config.WorkerCidr,
+		PodsCidr:                            config.PodsCIDR,
+		ServicesCidr:                        config.ServicesCIDR,
 		Region:                              &config.Region,
 		AutoScalerMin:                       &config.AutoScalerMin,
 		AutoScalerMax:                       &config.AutoScalerMax,

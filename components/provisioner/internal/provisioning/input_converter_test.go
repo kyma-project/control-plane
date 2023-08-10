@@ -53,7 +53,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				Seed:                              util.StringPtr("gcp-eu1"),
 				TargetSecret:                      "secret",
 				DiskType:                          util.StringPtr("ssd"),
-				WorkerCidr:                        "cidr",
+				WorkerCidr:                        "10.254.0.0/16",
 				PodsCidr:                          util.StringPtr("10.64.0.0/11"),
 				ServicesCidr:                      util.StringPtr("10.243.0.0/16"),
 				AutoScalerMin:                     1,
@@ -96,7 +96,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "gcp-eu1",
 			TargetSecret:                        "secret",
-			WorkerCidr:                          "cidr",
+			WorkerCidr:                          "10.254.0.0/16",
 			PodsCIDR:                            util.StringPtr("10.64.0.0/11"),
 			ServicesCIDR:                        util.StringPtr("10.243.0.0/16"),
 			AutoScalerMin:                       1,
@@ -141,7 +141,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					Purpose:                           util.StringPtr("testing"),
 					TargetSecret:                      "secret",
 					DiskType:                          util.StringPtr("ssd"),
-					WorkerCidr:                        "cidr",
+					WorkerCidr:                        "10.254.0.0/16",
 					PodsCidr:                          util.StringPtr("10.64.0.0/11"),
 					ServicesCidr:                      util.StringPtr("10.243.0.0/16"),
 					AutoScalerMin:                     1,
@@ -151,7 +151,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 					EnableKubernetesVersionAutoUpdate: util.BoolPtr(true),
 					ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 						AzureConfig: &gqlschema.AzureProviderConfigInput{
-							VnetCidr: "cidr",
+							VnetCidr: "10.254.0.0/16",
 							Zones:    zones,
 						},
 					},
@@ -168,7 +168,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 	}
 
 	expectedGardenerAzureRuntimeConfig := func(zones []string) model.Cluster {
-		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "cidr", Zones: zones})
+		expectedAzureProviderCfg, err := model.NewAzureGardenerConfig(&gqlschema.AzureProviderConfigInput{VnetCidr: "10.254.0.0/16", Zones: zones})
 		require.NoError(t, err)
 
 		return model.Cluster{
@@ -188,7 +188,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				Purpose:                             util.StringPtr("testing"),
 				Seed:                                "",
 				TargetSecret:                        "secret",
-				WorkerCidr:                          "cidr",
+				WorkerCidr:                          "10.254.0.0/16",
 				PodsCIDR:                            util.StringPtr("10.64.0.0/11"),
 				ServicesCIDR:                        util.StringPtr("10.243.0.0/16"),
 				AutoScalerMin:                       1,
@@ -246,7 +246,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				Seed:                              util.StringPtr("aws-eu1"),
 				TargetSecret:                      "secret",
 				DiskType:                          util.StringPtr("ssd"),
-				WorkerCidr:                        "cidr",
+				WorkerCidr:                        "10.254.0.0/16",
 				PodsCidr:                          util.StringPtr("10.64.0.0/11"),
 				ServicesCidr:                      util.StringPtr("10.243.0.0/16"),
 				AutoScalerMin:                     1,
@@ -289,7 +289,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "aws-eu1",
 			TargetSecret:                        "secret",
-			WorkerCidr:                          "cidr",
+			WorkerCidr:                          "10.254.0.0/16",
 			PodsCIDR:                            util.StringPtr("10.64.0.0/11"),
 			ServicesCIDR:                        util.StringPtr("10.243.0.0/16"),
 			AutoScalerMin:                       1,
@@ -339,7 +339,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 				Purpose:                           util.StringPtr("testing"),
 				Seed:                              util.StringPtr("ops-1"),
 				TargetSecret:                      "secret",
-				WorkerCidr:                        "cidr",
+				WorkerCidr:                        "10.254.0.0/16",
 				PodsCidr:                          util.StringPtr("10.64.0.0/11"),
 				ServicesCidr:                      util.StringPtr("10.243.0.0/16"),
 				AutoScalerMin:                     1,
@@ -379,7 +379,7 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Purpose:                             util.StringPtr("testing"),
 			Seed:                                "ops-1",
 			TargetSecret:                        "secret",
-			WorkerCidr:                          "cidr",
+			WorkerCidr:                          "10.254.0.0/16",
 			PodsCIDR:                            util.StringPtr("10.64.0.0/11"),
 			ServicesCIDR:                        util.StringPtr("10.243.0.0/16"),
 			AutoScalerMin:                       1,
