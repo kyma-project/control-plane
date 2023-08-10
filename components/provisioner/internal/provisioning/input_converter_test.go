@@ -280,6 +280,8 @@ func Test_ProvisioningInputToCluster(t *testing.T) {
 			Seed:                                "aws-eu1",
 			TargetSecret:                        "secret",
 			WorkerCidr:                          "cidr",
+			PodsCIDR:                            util.StringPtr("10.64.0.0/11"),
+			ServicesCIDR:                        util.StringPtr("10.243.0.0/16"),
 			AutoScalerMin:                       1,
 			AutoScalerMax:                       5,
 			MaxSurge:                            1,

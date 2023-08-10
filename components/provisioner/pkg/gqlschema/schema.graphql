@@ -19,8 +19,8 @@ type GardenerConfig {
     diskType: String
     volumeSizeGB: Int
     workerCidr: String
-    podsNetworkCidr: String
-    servicesNetworkCidr: String
+    podsCidr: String
+    servicesCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
@@ -222,8 +222,8 @@ input GardenerConfigInput {
     diskType: String                                # Disk type, varies depending on the target provider
     volumeSizeGB: Int                               # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
-    podsNetworkCidr: String                         # Configures IP address ranges for pods
-    servicesNetworkCidr: String                     # Configures IP address ranges for services
+    podsCidr: String                                # Configures IP address ranges for pods
+    servicesCidr: String                            # Configures IP address ranges for services
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update

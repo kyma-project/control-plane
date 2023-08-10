@@ -19,8 +19,8 @@ mutation ($name: String!
 	    provider: $provider
 	    targetSecret: $providerSecret
 	    workerCidr: "10.250.0.0/19"
-        podsNetworkCidr: "10.64.0.0/11"
-        servicesNetworkCidr: "10.243.0.0/16"
+        podsCidr: "10.64.0.0/11"
+        servicesCidr: "10.243.0.0/16"
 	    autoScalerMin: 2
 	    autoScalerMax: 4
 	    maxSurge: 4
