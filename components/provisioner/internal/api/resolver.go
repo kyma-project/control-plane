@@ -124,7 +124,7 @@ func (r *Resolver) RuntimeStatus(ctx context.Context, runtimeID string) (*gqlsch
 }
 
 func (r *Resolver) RuntimeOperationStatus(ctx context.Context, operationID string) (*gqlschema.OperationStatus, error) {
-	log.Warningf("Requested to get Runtime operation status for Operation %s.", operationID)
+	log.Infof("Requested to get Runtime operation status for Operation %s.", operationID)
 
 	status, err := r.provisioning.RuntimeOperationStatus(operationID)
 	if err != nil {
