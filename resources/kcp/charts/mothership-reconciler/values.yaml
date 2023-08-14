@@ -166,10 +166,6 @@ componentCRDs:
     group: operator.kyma-project.io
     version: v1alpha1
     kind: serverlesses
-  istio:
-    group: operator.kyma-project.io
-    version: v1alpha2
-    kind: istios
 
 # these components will NEVER be reconciled
 skippedComponents: []
