@@ -41,9 +41,6 @@ import (
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
 
-// TODO: Remove after data migration
-const migrationErrThreshold = 10
-
 type config struct {
 	Address                      string `envconfig:"default=127.0.0.1:3000"`
 	APIEndpoint                  string `envconfig:"default=/graphql"`
@@ -65,7 +62,6 @@ type config struct {
 
 	ProvisioningTimeout            queue.ProvisioningTimeouts
 	DeprovisioningTimeout          queue.DeprovisioningTimeouts
-	ProvisioningNoInstallTimeout   queue.ProvisioningNoInstallTimeouts
 	DeprovisioningNoInstallTimeout queue.DeprovisioningNoInstallTimeouts
 	HibernationTimeout             queue.HibernationTimeouts
 
@@ -103,7 +99,6 @@ func (c *config) String() string {
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
-		"ProvisioningNoInstallTimeoutClusterCreation: %s, ProvisioningNoInstallTimeoutClusterDomains: %s, ProvisioningNoInstallTimeoutBindingsCreation: %s,"+
 		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
@@ -120,7 +115,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.ClusterCreation.String(),
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
-		c.ProvisioningNoInstallTimeout.ClusterCreation.String(), c.ProvisioningNoInstallTimeout.ClusterDomains.String(), c.ProvisioningNoInstallTimeout.BindingsCreation.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
 		c.DeprovisioningNoInstallTimeout.ClusterDeletion.String(), c.DeprovisioningNoInstallTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
@@ -192,18 +186,6 @@ func main() {
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
-		installationService,
-		runtimeConfigurator,
-		provisioningStages.NewCompassConnectionClient,
-		directorClient,
-		shootClient,
-		secretsInterface,
-		cfg.OperatorRoleBinding,
-		k8sClientProvider)
-
-	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
-		cfg.ProvisioningNoInstallTimeout,
-		dbsFactory,
 		directorClient,
 		shootClient,
 		secretsInterface,
@@ -237,7 +219,6 @@ func main() {
 		installationService,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
-		provisioningNoInstallQueue,
 		deprovisioningQueue,
 		deprovisioningNoInstallQueue,
 		upgradeQueue,
@@ -254,8 +235,6 @@ func main() {
 	defer cancel()
 
 	provisioningQueue.Run(ctx.Done())
-
-	provisioningNoInstallQueue.Run(ctx.Done())
 
 	deprovisioningQueue.Run(ctx.Done())
 
@@ -322,14 +301,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -351,10 +330,8 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 
 	for _, op := range inProgressOps {
 		switch op.Type {
-		case model.Provision:
-			provisioningQueue.Add(op.ID)
 		case model.ProvisionNoInstall:
-			provisioningNoInstallQueue.Add(op.ID)
+			provisioningQueue.Add(op.ID)
 		case model.Deprovision:
 			deprovisioningQueue.Add(op.ID)
 		case model.DeprovisionNoInstall:
