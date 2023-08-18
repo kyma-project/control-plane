@@ -34,6 +34,8 @@ CREATE TABLE gardener_config
     target_secret varchar(256) NOT NULL,
     disk_type varchar(256),
     worker_cidr varchar(256) NOT NULL,
+    pods_cidr varchar(256),
+    services_cidr varchar(256),
     auto_scaler_min integer NOT NULL,
     auto_scaler_max integer NOT NULL,
     max_surge integer NOT NULL,

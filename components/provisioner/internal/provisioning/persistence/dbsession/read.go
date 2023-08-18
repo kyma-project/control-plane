@@ -181,7 +181,7 @@ func (r readSession) GetGardenerClusterByName(name string) (model.Cluster, dberr
 			"cluster.creation_timestamp", "cluster.deleted", "cluster.active_kyma_config_id",
 			"name", "project_name", "kubernetes_version",
 			"volume_size_gb", "disk_type", "machine_type", "machine_image", "machine_image_version",
-			"provider", "purpose", "seed", "target_secret", "worker_cidr", "region", "auto_scaler_min",
+			"provider", "purpose", "seed", "target_secret", "worker_cidr", "pods_cidr", "services_cidr", "region", "auto_scaler_min",
 			"auto_scaler_max", "max_surge", "max_unavailable", "enable_kubernetes_version_auto_update",
 			"enable_machine_image_version_auto_update", "provider_specific_config",
 			"shoot_networking_filter_disabled", "control_plane_failure_tolerance").
@@ -359,7 +359,7 @@ func (r readSession) getGardenerConfig(runtimeID string) (model.GardenerConfig, 
 	err := r.session.
 		Select("gardener_config.id", "cluster_id", "gardener_config.name", "project_name",
 			"kubernetes_version", "volume_size_gb", "disk_type", "machine_type", "machine_image",
-			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "region",
+			"machine_image_version", "provider", "purpose", "seed", "target_secret", "worker_cidr", "pods_cidr", "services_cidr", "region",
 			"auto_scaler_min", "auto_scaler_max", "max_surge", "max_unavailable",
 			"enable_kubernetes_version_auto_update", "enable_machine_image_version_auto_update",
 			"exposure_class_name", "provider_specific_config",
