@@ -59,7 +59,6 @@ type service struct {
 	uuidGenerator    uuid.UUIDGenerator
 
 	provisioningQueue            queue.OperationQueue
-	provisioningNoInstallQueue   queue.OperationQueue
 	deprovisioningQueue          queue.OperationQueue
 	deprovisioningNoInstallQueue queue.OperationQueue
 	upgradeQueue                 queue.OperationQueue
@@ -77,7 +76,6 @@ func NewProvisioningService(
 	shootProvider ShootProvider,
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
-	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
@@ -93,7 +91,6 @@ func NewProvisioningService(
 		provisioner:                  provisioner,
 		uuidGenerator:                generator,
 		provisioningQueue:            provisioningQueue,
-		provisioningNoInstallQueue:   provisioningNoInstallQueue,
 		deprovisioningQueue:          deprovisioningQueue,
 		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
 		upgradeQueue:                 upgradeQueue,
@@ -130,10 +127,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
-	withKymaConfig := config.KymaConfig != nil
-
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
-	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
+	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, dberr
@@ -151,13 +146,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, dberr
 	}
 
-	if withKymaConfig {
-		log.Infof("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
-		r.provisioningQueue.Add(operation.ID)
-	} else {
-		log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
-		r.provisioningNoInstallQueue.Add(operation.ID)
-	}
+	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
+	r.provisioningQueue.Add(operation.ID)
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
@@ -526,7 +516,7 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apper
 	}, nil
 }
 
-func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster, withKymaConfig bool) (model.Operation, dberrors.Error) {
+func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster) (model.Operation, dberrors.Error) {
 	timestamp := time.Now()
 	cluster.CreationTimestamp = timestamp
 
@@ -538,13 +528,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	provisioningMode := model.ProvisionNoInstall
-	if withKymaConfig {
-		provisioningMode = model.Provision
-		if err := dbSession.InsertKymaConfig(*cluster.KymaConfig); err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
-	}
+	provisioningMode := model.Provision
 
 	operation, err := r.setOperationStarted(dbSession, runtimeID, provisioningMode, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {

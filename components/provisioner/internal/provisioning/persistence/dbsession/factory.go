@@ -29,8 +29,6 @@ type ReadSession interface {
 	GetRuntimeUpgrade(operationId string) (model.RuntimeUpgrade, dberrors.Error)
 	GetTenantForOperation(operationID string) (string, dberrors.Error)
 	InProgressOperationsCount() (model.OperationsCount, dberrors.Error)
-	//TODO:Remove after schema migration
-	GetProviderSpecificConfigsByProvider(provider string) ([]ProviderData, dberrors.Error)
 	GetUpdatedProviderSpecificConfigByID(id string) (string, dberrors.Error)
 }
 
@@ -51,10 +49,7 @@ type WriteSession interface {
 	DeleteCluster(runtimeID string) dberrors.Error
 	MarkClusterAsDeleted(runtimeID string) dberrors.Error
 	InsertRuntimeUpgrade(runtimeUpgrade model.RuntimeUpgrade) dberrors.Error
-	FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error
 	UpdateTenant(runtimeID string, tenant string) dberrors.Error
-	//TODO:Remove after schema migration
-	UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error
 	UpdateKubernetesVersion(runtimeID string, version string) dberrors.Error
 	UpdateShootNetworkingFilterDisabled(runtimeID string, shootNetworkingFilterDisabled *bool) dberrors.Error
 }

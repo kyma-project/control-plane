@@ -164,29 +164,26 @@ func (c *Client) RemoveReferenceFromParentEval(parentID, evaluationID int64) (er
 		return nil
 	}
 
-	if response != nil && response.StatusCode == http.StatusBadRequest && response.Body != nil {
+	if response != nil && response.StatusCode == http.StatusBadRequest {
 		defer func() {
 			if closeErr := c.closeResponseBody(response); closeErr != nil {
 				err = kebError.AsTemporaryError(closeErr, "while closing body")
 			}
 		}()
-		var responseObject avsNonSuccessResp
-		err := json.NewDecoder(response.Body).Decode(&responseObject)
+		buff, err := io.ReadAll(response.Body)
 		if err != nil {
-			msg, e := io.ReadAll(response.Body)
-			if e != nil {
-				msg = []byte("unable to read the response body")
-			} else {
-				if strings.Contains(strings.ToLower(string(msg)), "does not contain subevaluation") {
-					return nil
-				}
-			}
-			return fmt.Errorf("while decoding avs non success response body for ID: %d, URL: %s, message: %s: %w",
-				evaluationID, absoluteURL, string(msg), err)
+			return fmt.Errorf("unable to read the response body: %w", err)
+		}
+		var responseObject avsApiErrorResp
+		err = json.NewDecoder(bytes.NewReader(buff)).Decode(&responseObject)
+		if err != nil {
+			return fmt.Errorf("while decoding AvS non success response body for ID: %d, URL: %s, error: %w",
+				evaluationID, absoluteURL, err)
 		}
 		if strings.Contains(strings.ToLower(responseObject.Message), "does not contain subevaluation") {
 			return nil
 		}
+		return fmt.Errorf("unable to delete subevaluation %d reference from the parent evaluation: %s", evaluationID, responseObject.Message)
 	}
 	return fmt.Errorf("unexpected response for evaluationId: %d while deleting reference from parent evaluation, error: %w", evaluationID, err)
 }
@@ -258,8 +255,7 @@ func (c *Client) execute(request *http.Request, allowNotFound bool, allowResetTo
 		return response, NewAvsError("avs server returned %d status code twice for %s", http.StatusUnauthorized, request.URL.String())
 	}
 
-	message, _ := io.ReadAll(response.Body)
-	return response, NewAvsError("unsupported status code: %d for %s. Message: %s", response.StatusCode, request.URL.String(), string(message))
+	return response, NewAvsError("unsupported status code: %d for %s.", response.StatusCode, request.URL.String())
 }
 
 func (c *Client) closeResponseBody(response *http.Response) error {
@@ -270,7 +266,7 @@ func (c *Client) closeResponseBody(response *http.Response) error {
 		return nil
 	}
 	// drain the body to let the transport reuse the connection
-	io.Copy(ioutil.Discard, response.Body)
+	io.Copy(io.Discard, response.Body)
 
 	return response.Body.Close()
 }

@@ -18,9 +18,10 @@ type Delegator struct {
 	operationsStorage storage.Operations
 }
 
-type avsNonSuccessResp struct {
-	Status  int    `json:"status"`
-	Message string `json:"message"`
+type avsApiErrorResp struct {
+	StatusCode int    `json:"statusCode"`
+	Status     string `json:"status"`
+	Message    string `json:"message"`
 }
 
 func NewDelegator(client *Client, avsConfig Config, os storage.Operations) *Delegator {

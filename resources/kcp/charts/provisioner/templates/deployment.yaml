@@ -110,13 +110,9 @@ spec:
               value: {{ .Values.installation.timeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONFIGURATION
               value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_AGENT_CONFIGURATION
-              value: {{ .Values.runtimeAgent.configurationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_AGENT_CONNECTION
               value: {{ .Values.runtimeAgent.connectionTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_CLUSTER_CREATION
-              value: {{ .Values.gardener.clusterCreationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_CLUSTER_CREATION
               value: {{ .Values.gardener.clusterCreationTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_UPGRADE_TRIGGERING
               value: {{ .Values.upgrade.triggeringTimeout | quote }}
@@ -133,8 +129,6 @@ spec:
             - name: APP_DEPROVISIONING_TIMEOUT_CLUSTER_CLEANUP
               value: {{ .Values.gardener.clusterCleanupTimeout | quote }}
             - name: APP_PROVISIONING_TIMEOUT_BINDINGS_CREATION
-              value: {{ .Values.support.bindingsCreationTimeout | quote }}
-            - name: APP_PROVISIONING_NO_INSTALL_TIMEOUT_BINDINGS_CREATION
               value: {{ .Values.support.bindingsCreationTimeout | quote }}
             - name: APP_OPERATOR_ROLE_BINDING_L2SUBJECT_NAME
               value: {{ .Values.support.l2OperatorRoleBindingSubject | quote }}
@@ -212,20 +206,25 @@ spec:
         {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
         - name: cloudsql-proxy
           image: {{ .Values.global.images.cloudsql_proxy_image }}
+          {{- if .Values.global.database.cloudsqlproxy.workloadIdentity.enabled }}
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"]
+          {{- else }}
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
                     "-credential_file=/secrets/cloudsql-instance-credentials/credentials.json"]
-                {{- with .Values.deployment.securityContext }}
-          securityContext:
-{{ toYaml . | indent 12 }}
-                {{- end }}
           volumeMounts:
             - name: cloudsql-instance-credentials
               mountPath: /secrets/cloudsql-instance-credentials
               readOnly: true
+          {{- end }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
         {{- end}}
       volumes:
-      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true)}}
+      {{- if and (eq .Values.global.database.embedded.enabled false) (eq .Values.global.database.cloudsqlproxy.enabled true) (eq .Values.global.database.cloudsqlproxy.workloadIdentity.enabled false)}}
       - name: cloudsql-instance-credentials
         secret:
           secretName: cloudsql-instance-credentials

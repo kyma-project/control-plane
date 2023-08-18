@@ -78,6 +78,8 @@ global:
     manageSecrets: true
     cloudsqlproxy:
       enabled: false
+      workloadIdentity:
+        enabled: false
     embedded:
       enabled: true
       provisioner:
