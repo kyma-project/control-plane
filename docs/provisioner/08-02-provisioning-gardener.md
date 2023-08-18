@@ -111,21 +111,23 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           config: {
             runtimeInput: {
               name: "{RUNTIME_NAME}"
-              description: "{RUNTIME_DESCRIPTION}"
-              labels: {RUNTIME_LABELS}
+              description: "{RUNTIME_DESCRIPTION}" # optional
+              labels: {RUNTIME_LABELS} # optional
             }
             clusterConfig: {
               gardenerConfig: {
                 name: "c-85b56ba",
-                kubernetesVersion: "1.15.11"
+                kubernetesVersion: "1.25.6"
                 diskType: "pd-standard"
                 volumeSizeGB: 30
                 machineType: "n1-standard-4"
                 region: "europe-west4"
                 provider: "gcp"
-                purpose: "testing" # Possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                purpose: "testing" # optional, possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_GCP_SECRET_NAME}"
-                workerCidr: "10.250.0.0/19"
+                workerCidr: "10.254.0.0/16"
+                podsCidr: "100.128.0.0/12" # optional
+                servicesCidr: "100.112.0.0/13" # optional
                 autoScalerMin: 2
                 autoScalerMax: 4
                 maxSurge: 4
@@ -179,21 +181,23 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           config: {
             runtimeInput: {
               name: "{RUNTIME_NAME}"
-              description: "{RUNTIME_DESCRIPTION}"
-              labels: {RUNTIME_LABELS}
+              description: "{RUNTIME_DESCRIPTION}" # optional
+              labels: {RUNTIME_LABELS} # optional
             }
             clusterConfig: {
               gardenerConfig: {
                 name: "c-85b56ba",
-                kubernetesVersion: "1.15.11"
+                kubernetesVersion: "1.25.6"
                 diskType: "Standard_LRS"
                 volumeSizeGB: 35
                 machineType: "Standard_D2_v3"
                 region: "westeurope"
                 provider: "azure"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                purpose: "testing" # optional, possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_AZURE_SECRET_NAME}"
-                workerCidr: "10.250.0.0/19"
+                workerCidr: "10.254.0.0/16"
+                podsCidr: "100.128.0.0/12" # optional
+                servicesCidr: "100.112.0.0/13" # optional
                 autoScalerMin: 2
                 autoScalerMax: 4
                 maxSurge: 4
@@ -247,21 +251,23 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
           config: {
             runtimeInput: {
               name: "{RUNTIME_NAME}"
-              description: "{RUNTIME_DESCRIPTION}"
-              labels: {RUNTIME_LABELS}
+              description: "{RUNTIME_DESCRIPTION}" # optional
+              labels: {RUNTIME_LABELS} # optional
             }
             clusterConfig: {
               gardenerConfig: {
                 name: "c-85b56ba",
-                kubernetesVersion: "1.15.11"
+                kubernetesVersion: "1.25.6"
                 diskType: "gp2"
                 volumeSizeGB: 35
                 machineType: "m5.2xlarge"
                 region: "eu-west-1"
                 provider: "aws"
-                purpose: "testing" # possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                purpose: "testing" # optional, possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                 targetSecret: "{GARDENER_AWS_SECRET_NAME}"
-                workerCidr: "10.250.0.0/19"
+                workerCidr: "10.254.0.0/16"
+                podsCidr: "100.128.0.0/12" # optional
+                servicesCidr: "100.112.0.0/13" # optional
                 autoScalerMin: 2
                 autoScalerMax: 4
                 maxSurge: 4
@@ -334,13 +340,15 @@ This tutorial shows how to provision clusters with Kyma Runtimes on Google Cloud
               clusterConfig: {
                 gardenerConfig: {
                   name: "c-85b56ba",
-                  kubernetesVersion: "1.15.11"
+                  kubernetesVersion: "1.25.6"
                   machineType: "m1.large"
                   region: "eu-de-1"
                   provider: "openstack"
-                  purpose: "testing" # Possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
+                  purpose: "testing" # optional, Possible values: "development", "evaluation", "production", "testing"; default value: "evaluation"
                   targetSecret: "{GARDENER_OPENSTACK_SECRET_NAME}"
-                  workerCidr: "10.250.0.0/19"
+                  workerCidr: "10.254.0.0/16"
+                  podsCidr: "100.128.0.0/12" # optional
+                  servicesCidr: "100.112.0.0/13" # optional
                   autoScalerMin: 2
                   autoScalerMax: 4
                   maxSurge: 4
