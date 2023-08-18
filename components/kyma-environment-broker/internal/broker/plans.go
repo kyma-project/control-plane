@@ -123,6 +123,14 @@ func OpenStackSchema(machineTypesDisplay map[string]string, machineTypes []strin
 	return createSchemaWithProperties(properties, additionalParams, update)
 }
 
+func Preview(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool, euAccessRestricted bool) *map[string]interface{} {
+	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, AWSRegions(euAccessRestricted), update)
+	properties.AutoScalerMax.Minimum = 3
+	properties.AutoScalerMin.Minimum = 3
+	properties.Networking = NewNetworkingSchema()
+	return createSchemaWithProperties(properties, additionalParams, update)
+}
+
 func GCPSchema(machineTypesDisplay map[string]string, machineTypes []string, additionalParams, update bool) *map[string]interface{} {
 	properties := NewProvisioningProperties(machineTypesDisplay, machineTypes, GCPRegions(), update)
 	properties.AutoScalerMax.Minimum = 3

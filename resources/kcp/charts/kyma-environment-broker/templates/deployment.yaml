@@ -61,6 +61,8 @@ spec:
           image: "{{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.kyma_environment_broker.dir }}kyma-environment-broker:{{ .Values.global.images.kyma_environment_broker.version }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
+            - name: APP_BROKER_ALLOW_NETWORKING_PARAMETERS
+              value: "false"
             - name: APP_DISABLE_PROCESS_OPERATIONS_IN_PROGRESS
               value: "{{ .Values.disableProcessOperationsInProgress }}"
             - name: APP_BROKER_ENABLE_PLANS
@@ -302,6 +304,7 @@ spec:
               value: "{{ .Values.avs.gardenerSeedNameTagClassId }}"
             - name: APP_AVS_REGION_TAG_CLASS_ID
               value: "{{ .Values.avs.regionTagClassId }}"
+            - name: APP_KYMA_VERSION
             - name: APP_KYMA_VERSION
               value: "{{ .Values.kymaVersion }}"
             - name: APP_ENABLE_ON_DEMAND_VERSION

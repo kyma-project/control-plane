@@ -761,6 +761,8 @@ github.com/kyma-incubator/reconciler v0.0.0-20230804125401-cbf3faa2a51f h1:GLfQ3
 github.com/kyma-incubator/reconciler v0.0.0-20230804125401-cbf3faa2a51f/go.mod h1:hJnoGbxdqK4urAPkU8J1OxFXVqPc9pA7MlIL321xK3E=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab h1:JYsOfthXC8hCOuPbz8ZFV6gN2keyufvbcfPDyDEANUo=
 github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230418152422-ee68639cb3ab/go.mod h1:Qi9Ot6rXuI2HWoXg0iAUNSP+NiLbC/7s+AYmw6JqTA0=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d h1:4CXt3urEn22GxBRNSY6kxlGAIJwKHp6XDjwD2AJhf8Y=
+github.com/kyma-project/control-plane/components/provisioner v0.0.0-20230829053645-089304053b8d/go.mod h1:dskjODHoePep31rb2cpQnSsHXgM8/ES8v55BHmFjgwo=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230810075630-49303a9997f0 h1:6LFPl7QMugBwwZq6k8Uz7KUfurRvJb6rSi1QDzXkXM0=
 github.com/kyma-project/control-plane/components/schema-migrator v0.0.0-20230810075630-49303a9997f0/go.mod h1:vABrhytVuZpchbdlIVdUDlhB/Q/3GIZld2JmdS2rZ6I=
 github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6 h1:MQpl5BV3sF9I5DfLbJNosyZjSGmJKswS8TQ+POdwSg8=

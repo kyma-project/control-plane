@@ -41,6 +41,8 @@ type Config struct {
 	ShowTrialExpirationInfo                 bool   `envconfig:"default=false"`
 	SubaccountsIdsToShowTrialExpirationInfo string `envconfig:"default="`
 	TrialDocsURL                            string `envconfig:"default="`
+
+	AllowNetworkingParameters bool `envconfig:"default=false"`
 }
 
 type ServicesConfig map[string]Service

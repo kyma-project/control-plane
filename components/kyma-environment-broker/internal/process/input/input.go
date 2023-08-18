@@ -248,6 +248,10 @@ func (r *RuntimeInput) CreateProvisionRuntimeInput() (gqlschema.ProvisionRuntime
 			name:    "configure DNS",
 			execute: r.configureDNS,
 		},
+		{
+			name:    "configure networking",
+			execute: r.configureNetworking,
+		},
 	} {
 		if err := step.execute(); err != nil {
 			return gqlschema.ProvisionRuntimeInput{}, fmt.Errorf("while %s: %w", step.name, err)
@@ -665,6 +669,20 @@ func (r *RuntimeInput) configureOIDC() error {
 		oidcParamsToSet := r.setOIDCForUpgrade()
 		r.upgradeShootInput.GardenerConfig.OidcConfig = oidcParamsToSet
 	}
+	return nil
+}
+
+func (r *RuntimeInput) configureNetworking() error {
+	if r.provisioningParameters.Parameters.Networking == nil {
+		return nil
+	}
+	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.WorkerCidr,
+		r.provisioningParameters.Parameters.Networking.NodesCidr)
+
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr,
+		r.provisioningParameters.Parameters.Networking.PodsCidr)
+	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr,
+		r.provisioningParameters.Parameters.Networking.ServicesCidr)
 	return nil
 }
 

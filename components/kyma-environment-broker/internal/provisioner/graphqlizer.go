@@ -89,6 +89,12 @@ func (g *Graphqlizer) GardenerConfigInputToGraphQL(in gqlschema.GardenerConfigIn
 		{{- end }}
 		targetSecret: "{{ .TargetSecret }}",
 		workerCidr: "{{ .WorkerCidr }}",
+		{{- if .PodsCidr }}
+		podsCidr: "{{ .PodsCidr }}",
+		{{- end }}
+		{{- if .ServicesCidr }}
+		servicesCidr: "{{ .ServicesCidr }}"
+		{{- end }}
 		autoScalerMin: {{ .AutoScalerMin }},
 		autoScalerMax: {{ .AutoScalerMax }},
 		maxSurge: {{ .MaxSurge }},

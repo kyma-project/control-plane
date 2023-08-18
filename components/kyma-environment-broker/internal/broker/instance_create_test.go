@@ -1215,6 +1215,107 @@ func TestProvision_Provision(t *testing.T) {
 		assert.Equal(t, expectedErr.ValidatedStatusCode(nil), apierr.ValidatedStatusCode(nil))
 		assert.Equal(t, expectedErr.LoggerAction(), apierr.LoggerAction())
 	})
+}
+
+func TestNetworkingValidation(t *testing.T) {
+	for tn, tc := range map[string]struct {
+		givenNetworking string
+
+		expectedError bool
+	}{
+		"Invalid nodes CIDR": {
+			givenNetworking: `{"nodes": "abcd"}`,
+			expectedError:   true,
+		},
+		"Invalid nodes CIDR - wrong IP range": {
+			givenNetworking: `{"nodes": "10.250.0.1/19"}`,
+			expectedError:   true,
+		},
+		"Valid nodes CIDR": {
+			givenNetworking: `{"nodes": "10.250.0.0/16"}`,
+			expectedError:   false,
+		},
+		"Invalid pods CIDR": {
+			givenNetworking: `{"pods": "abcd"}`,
+			expectedError:   true,
+		},
+		"Invalid pods CIDR - wrong IP range": {
+			givenNetworking: `{"pods": "10.250.0.1/19"}`,
+			expectedError:   true,
+		},
+		"Invalid services CIDR": {
+			givenNetworking: `{"services": "abcd"}`,
+			expectedError:   true,
+		},
+		"Invalid services CIDR - wrong IP range": {
+			givenNetworking: `{"services": "10.250.0.1/19"}`,
+			expectedError:   true,
+		},
+		"Valid pods CIDR": {
+			givenNetworking: `{"pods": "10.250.0.0/16"}`,
+			expectedError:   false,
+		},
+		"Valid all CIDRs": {
+			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
+			expectedError:   false,
+		},
+		"Pods and Services overlaps": {
+			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.64.0.0/16"}`,
+			expectedError:   true,
+		},
+		"Pods and Nodes overlaps": {
+			givenNetworking: `{"nodes": "10.250.2.0/22", "pods": "10.250.0.0/19", "services": "10.64.0.0/16"}`,
+			expectedError:   true,
+		},
+		"Services and Nodes overlaps": {
+			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.250.2.0/24"}`,
+			expectedError:   true,
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			// #setup memory storage
+			memoryStorage := storage.NewMemoryStorage()
+
+			queue := &automock.Queue{}
+			queue.On("Add", mock.AnythingOfType("string"))
+
+			factoryBuilder := &automock.PlanValidator{}
+			factoryBuilder.On("IsPlanSupport", mock.AnythingOfType("string")).Return(true)
+
+			planDefaults := func(planID string, platformProvider internal.CloudProvider, provider *internal.CloudProvider) (*gqlschema.ClusterConfigInput, error) {
+				return &gqlschema.ClusterConfigInput{}, nil
+			}
+			// #create provisioner endpoint
+			provisionEndpoint := broker.NewProvision(
+				broker.Config{EnablePlans: []string{"gcp", "azure", "free"}, AllowNetworkingParameters: true},
+				gardener.Config{Project: "test", ShootDomain: "example.com", DNSProviders: fixDNSProviders()},
+				memoryStorage.Operations(),
+				memoryStorage.Instances(),
+				queue,
+				factoryBuilder,
+				broker.PlansConfig{},
+				false,
+				planDefaults,
+				euaccess.WhitelistSet{},
+				"request rejected, your globalAccountId is not whitelisted",
+				logrus.StandardLogger(),
+				dashboardConfig,
+			)
+
+			// when
+			_, err := provisionEndpoint.Provision(fixRequestContextWithProvider(t, "cf-eu10", "azure"), instanceID,
+				domain.ProvisionDetails{
+					ServiceID:     serviceID,
+					PlanID:        broker.AzurePlanID,
+					RawParameters: json.RawMessage(fmt.Sprintf(`{"name": "cluster-name", "networking": %s}`, tc.givenNetworking)),
+					RawContext:    json.RawMessage(fmt.Sprintf(`{"globalaccount_id": "%s", "subaccount_id": "%s", "user_id": "%s"}`, globalAccountID, subAccountID, userID)),
+				}, true)
+
+			// then
+			assert.Equal(t, tc.expectedError, err != nil)
+		})
+	}
 
 }
 
