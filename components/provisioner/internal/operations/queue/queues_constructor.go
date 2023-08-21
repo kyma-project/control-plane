@@ -20,7 +20,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ProvisioningTimeouts struct {
@@ -52,19 +51,21 @@ type HibernationTimeouts struct {
 	WaitingForClusterHibernation time.Duration `envconfig:"default=60m"`
 }
 
+//go:generate mockery --name=KubeconfigProvider
+type KubeconfigProvider interface {
+	FetchFromShoot(shootName string) ([]byte, error)
+	FetchFromRequest(shootName string) ([]byte, error)
+}
+
 func CreateProvisioningQueue(
 	timeouts ProvisioningTimeouts,
 	factory dbsession.Factory,
 	directorClient director.DirectorClient,
 	shootClient gardener_apis.ShootInterface,
-	secretsClient v1core.SecretInterface,
 	operatorRoleBindingConfig provisioning.OperatorRoleBinding,
 	k8sClientProvider k8s.K8sClientProvider,
 	configurator runtime.Configurator,
-	gardenerClient client.Client) OperationQueue {
-
-	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
-	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsClient)
+	kubeconfigProvider KubeconfigProvider) OperationQueue {
 
 	configureAgentStep := provisioning.NewConnectAgentStep(configurator, kubeconfigProvider, model.FinishedStage, timeouts.AgentConfiguration)
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, configureAgentStep.Name(), timeouts.BindingsCreation)

@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
@@ -34,6 +33,7 @@ import (
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
+	kubeconfigprovidermock "github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning"
@@ -154,19 +154,19 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	gardenerClient, err := client.New(cfg, client.Options{})
-	require.NoError(t, err)
+	kubeconfigProviderMock := &kubeconfigprovidermock.KubeconfigProvider{}
+	kubeconfigProviderMock.On("FetchFromRequest", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
+	kubeconfigProviderMock.On("FetchFromShoot", mock.AnythingOfType("string")).Return([]byte(mockedKubeconfig), nil)
 
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
-		secretsInterface,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
 		runtimeConfigurator,
-		gardenerClient)
+		kubeconfigProviderMock)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)

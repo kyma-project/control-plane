@@ -187,17 +187,18 @@ func main() {
 	k8sClientProvider := k8s.NewK8sClientProvider()
 
 	runtimeConfigurator := runtime.NewRuntimeConfigurator(k8sClientProvider, directorClient)
+	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
+	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsInterface)
 
 	provisioningQueue := queue.CreateProvisioningQueue(
 		cfg.ProvisioningTimeout,
 		dbsFactory,
 		directorClient,
 		shootClient,
-		secretsInterface,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
 		runtimeConfigurator,
-		gardenerClient)
+		kubeconfigProvider)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
