@@ -1,9 +1,10 @@
 package provisioning
 
 import (
-	"github.com/pkg/errors"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	provisioning_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
 
