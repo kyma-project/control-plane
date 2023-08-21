@@ -40,7 +40,6 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 	}
 
 	dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
-
 	dynamicKubeconfigProvider.On("FetchFromGardener", "shoot").Return([]byte("dynamic_kubeconfig"), nil)
 
 	t.Run("should return next step when finished", func(t *testing.T) {
