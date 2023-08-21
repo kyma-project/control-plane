@@ -16,7 +16,8 @@ type ConnectAgentStep struct {
 	timeLimit                 time.Duration
 }
 
-func NewConnectAgentStep(configurator runtime.Configurator,
+func NewConnectAgentStep(
+	configurator runtime.Configurator,
 	dynamicKubeconfigProvider DynamicKubeconfigProvider,
 	nextStage model.OperationStage,
 	timeLimit time.Duration) *ConnectAgentStep {

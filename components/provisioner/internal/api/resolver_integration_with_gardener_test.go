@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/seeds"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/fake/shoots"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	provisioning2 "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 
@@ -153,6 +154,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	gardenerClient, err := client.New(cfg, client.Options{})
+	require.NoError(t, err)
+
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
 		dbsFactory,
@@ -161,7 +165,8 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		secretsInterface,
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
-		runtimeConfigurator)
+		runtimeConfigurator,
+		gardenerClient)
 	provisioningQueue.Run(queueCtx.Done())
 
 	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)

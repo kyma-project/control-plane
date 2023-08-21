@@ -63,9 +63,10 @@ func CreateProvisioningQueue(
 	configurator runtime.Configurator,
 	gardenerClient client.Client) OperationQueue {
 
-	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, gardenerClient.SubResource("adminkubeconfig"), secretsClient)
+	adminKubeconfigRequest := gardenerClient.SubResource("adminkubeconfig")
+	kubeconfigProvider := gardener.NewKubeconfigProvider(shootClient, adminKubeconfigRequest, secretsClient)
 
-	configureAgentStep := provisioning.NewConnectAgentStep(configurator, model.FinishedStage, timeouts.AgentConfiguration)
+	configureAgentStep := provisioning.NewConnectAgentStep(configurator, kubeconfigProvider, model.FinishedStage, timeouts.AgentConfiguration)
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, kubeconfigProvider, configureAgentStep.Name(), timeouts.BindingsCreation)
 	waitForClusterCreationStep := provisioning.NewWaitForClusterCreationStep(shootClient, factory.NewReadWriteSession(), kubeconfigProvider, createBindingsForOperatorsStep.Name(), timeouts.ClusterCreation)
 	waitForClusterDomainStep := provisioning.NewWaitForClusterDomainStep(shootClient, directorClient, waitForClusterCreationStep.Name(), timeouts.ClusterDomains)
@@ -181,8 +182,9 @@ func CreateShootUpgradeQueue(
 	secretsClient v1core.SecretInterface,
 ) OperationQueue {
 
+	kubeconfigProvider := gardener.NewKubeconfigProvider(nil, nil, secretsClient)
 	createBindingsForOperatorsStep := provisioning.NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorRoleBindingConfig, nil, model.FinishedStage, timeouts.BindingsCreation)
-	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, factory.NewReadWriteSession(), gardener.NewKubeconfigProvider(nil, nil, secretsClient), createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
+	waitForShootUpgrade := shootupgrade.NewWaitForShootUpgradeStep(shootClient, factory.NewReadWriteSession(), kubeconfigProvider, createBindingsForOperatorsStep.Name(), timeouts.ShootUpgrade)
 	waitForShootNewVersion := shootupgrade.NewWaitForShootNewVersionStep(shootClient, waitForShootUpgrade.Name(), timeouts.ShootRefresh)
 
 	upgradeSteps := map[model.OperationStage]operations.Step{
