@@ -41,7 +41,7 @@ func (s *ConnectAgentStep) Run(cluster model.Cluster, _ model.Operation, _ logru
 	var kubeconfig []byte
 	{
 		var err error
-		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromGardener(cluster.ClusterConfig.Name)
+		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
 		if err != nil {
 			return operations.StageResult{}, err
 		}

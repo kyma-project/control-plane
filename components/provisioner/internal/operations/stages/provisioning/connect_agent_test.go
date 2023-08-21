@@ -31,7 +31,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 		},
 	}
 	dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
-	dynamicKubeconfigProvider.On("FetchFromGardener", "shoot").Return([]byte("dynamic_kubeconfig"), nil)
+	dynamicKubeconfigProvider.On("FetchFromRequest", "shoot").Return([]byte("dynamic_kubeconfig"), nil)
 
 	t.Run("should return next step when finished", func(t *testing.T) {
 		// given
@@ -52,7 +52,7 @@ func TestConnectAgentStep_Run(t *testing.T) {
 	t.Run("should return error when failed to get dynamic kubeconfig", func(t *testing.T) {
 		// given
 		dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
-		dynamicKubeconfigProvider.On("FetchFromGardener", "shoot").Return(nil, errors.New("some error"))
+		dynamicKubeconfigProvider.On("FetchFromRequest", "shoot").Return(nil, errors.New("some error"))
 
 		configurator := &mocks.Configurator{}
 

@@ -35,7 +35,7 @@ type AdminKubeconfigRequester interface {
 	Create(ctx context.Context, obj gardenerClient.Object, subResource gardenerClient.Object, opts ...gardenerClient.SubResourceCreateOption) error
 }
 
-func (kp KubeconfigProvider) FetchRaw(shootName string) ([]byte, error) {
+func (kp KubeconfigProvider) FetchFromShoot(shootName string) ([]byte, error) {
 	secret, err := kp.secretsClient.Get(context.Background(), fmt.Sprintf("%s.kubeconfig", shootName), v1.GetOptions{})
 	if err != nil {
 		return nil, util.K8SErrorToAppError(err).Append("error fetching kubeconfig").SetComponent(apperrors.ErrGardenerClient)
@@ -49,7 +49,7 @@ func (kp KubeconfigProvider) FetchRaw(shootName string) ([]byte, error) {
 	return kubeconfig, nil
 }
 
-func (kp KubeconfigProvider) FetchFromGardener(shootName string) ([]byte, error) {
+func (kp KubeconfigProvider) FetchFromRequest(shootName string) ([]byte, error) {
 	shoot, err := kp.gardenerShootClient.Get(context.Background(), shootName, v1.GetOptions{})
 	if err != nil {
 		return nil, err

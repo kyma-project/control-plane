@@ -38,7 +38,7 @@ const (
 
 //go:generate mockery --name=DynamicKubeconfigProvider
 type DynamicKubeconfigProvider interface {
-	FetchFromGardener(shootName string) ([]byte, error)
+	FetchFromRequest(shootName string) ([]byte, error)
 }
 
 type OperatorRoleBinding struct {
@@ -84,7 +84,7 @@ func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Oper
 	var kubeconfig []byte
 	{
 		var err error
-		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromGardener(cluster.ClusterConfig.Name)
+		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromRequest(cluster.ClusterConfig.Name)
 		if err != nil {
 			return operations.StageResult{}, err
 		}

@@ -9,8 +9,8 @@ type DynamicKubeconfigProvider struct {
 	mock.Mock
 }
 
-// FetchFromGardener provides a mock function with given fields: shootName
-func (_m *DynamicKubeconfigProvider) FetchFromGardener(shootName string) ([]byte, error) {
+// FetchFromRequest provides a mock function with given fields: shootName
+func (_m *DynamicKubeconfigProvider) FetchFromRequest(shootName string) ([]byte, error) {
 	ret := _m.Called(shootName)
 
 	var r0 []byte
