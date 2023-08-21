@@ -6,11 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
+	provisioning_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s/mocks"
 	"github.com/sirupsen/logrus"
@@ -20,24 +23,33 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-const kubeconfigRaw = "kubeconfig"
+const dynamicKubeconfig = "dynamic_kubeconfig"
 
 func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 
-	cluster := model.Cluster{Kubeconfig: util.StringPtr("kubeconfig")}
+	cluster := model.Cluster{
+		Kubeconfig: util.StringPtr("kubeconfig"),
+		ClusterConfig: model.GardenerConfig{
+			Name: "shoot",
+		},
+	}
 
 	operatorBindingConfig := OperatorRoleBinding{
 		L2SubjectName: "l2name",
 		L3SubjectName: "l3name",
 	}
 
+	dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
+
+	dynamicKubeconfigProvider.On("FetchFromGardener", "shoot").Return([]byte("dynamic_kubeconfig"), nil)
+
 	t.Run("should return next step when finished", func(t *testing.T) {
 		// given
 		k8sClient := fake.NewSimpleClientset()
 		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(k8sClient, nil)
 
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
 		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
@@ -59,9 +71,9 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(k8sClient, nil)
 
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
 		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
@@ -80,9 +92,9 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		require.NoError(t, err)
 
 		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(k8sClient, nil)
 
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
 		result, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
@@ -93,18 +105,15 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 		assert.Equal(t, time.Duration(0), result.Delay)
 	})
 
-	t.Run("should return error when cluster has nil kubeconfig", func(t *testing.T) {
+	t.Run("should return error when failed to get dynamic kubeconfig", func(t *testing.T) {
 		// given
-		clusterWithNilKubeconfig := model.Cluster{Kubeconfig: nil}
+		dynamicKubeconfigProvider := &provisioning_mocks.DynamicKubeconfigProvider{}
+		dynamicKubeconfigProvider.On("FetchFromGardener", "shoot").Return(nil, errors.New("some error"))
 
-		k8sClient := fake.NewSimpleClientset()
-		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
-
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(nil, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
-		_, err := step.Run(clusterWithNilKubeconfig, model.Operation{}, &logrus.Entry{})
+		_, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
 
 		// then
 		require.Error(t, err)
@@ -113,9 +122,9 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 	t.Run("should return error when failed to provide k8s client", func(t *testing.T) {
 		// given
 		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(nil, apperrors.Internal("error"))
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(nil, apperrors.Internal("error"))
 
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
 		_, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})
@@ -135,9 +144,9 @@ func TestCreateBindingsForOperatorsStep_Run(t *testing.T) {
 			})
 
 		k8sClientProvider := &mocks.K8sClientProvider{}
-		k8sClientProvider.On("CreateK8SClient", kubeconfigRaw).Return(k8sClient, nil)
+		k8sClientProvider.On("CreateK8SClient", dynamicKubeconfig).Return(k8sClient, nil)
 
-		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, nextStageName, time.Minute)
+		step := NewCreateBindingsForOperatorsStep(k8sClientProvider, operatorBindingConfig, dynamicKubeconfigProvider, nextStageName, time.Minute)
 
 		// when
 		_, err := step.Run(cluster, model.Operation{}, &logrus.Entry{})

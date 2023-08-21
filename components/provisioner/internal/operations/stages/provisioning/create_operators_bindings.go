@@ -36,6 +36,11 @@ const (
 	userKindSubject  = "User"
 )
 
+//go:generate mockery --name=DynamicKubeconfigProvider
+type DynamicKubeconfigProvider interface {
+	FetchFromGardener(shootName string) ([]byte, error)
+}
+
 type OperatorRoleBinding struct {
 	L2SubjectName    string `envconfig:"default=runtimeOperator"`
 	L3SubjectName    string `envconfig:"default=runtimeAdmin"`
@@ -45,6 +50,7 @@ type OperatorRoleBinding struct {
 type CreateBindingsForOperatorsStep struct {
 	k8sClientProvider         k8s.K8sClientProvider
 	operatorRoleBindingConfig OperatorRoleBinding
+	dynamicKubeconfigProvider DynamicKubeconfigProvider
 	nextStep                  model.OperationStage
 	timeLimit                 time.Duration
 }
@@ -52,12 +58,14 @@ type CreateBindingsForOperatorsStep struct {
 func NewCreateBindingsForOperatorsStep(
 	k8sClientProvider k8s.K8sClientProvider,
 	operatorRoleBindingConfig OperatorRoleBinding,
+	dynamicKubeconfigProvider DynamicKubeconfigProvider,
 	nextStep model.OperationStage,
 	timeLimit time.Duration) *CreateBindingsForOperatorsStep {
 
 	return &CreateBindingsForOperatorsStep{
 		k8sClientProvider:         k8sClientProvider,
 		operatorRoleBindingConfig: operatorRoleBindingConfig,
+		dynamicKubeconfigProvider: dynamicKubeconfigProvider,
 		nextStep:                  nextStep,
 		timeLimit:                 timeLimit,
 	}
@@ -72,11 +80,17 @@ func (s *CreateBindingsForOperatorsStep) TimeLimit() time.Duration {
 }
 
 func (s *CreateBindingsForOperatorsStep) Run(cluster model.Cluster, _ model.Operation, log logrus.FieldLogger) (operations.StageResult, error) {
-	if cluster.Kubeconfig == nil {
-		return operations.StageResult{}, operations.ErrKubeconfigNil
+
+	var kubeconfig []byte
+	{
+		var err error
+		kubeconfig, err = s.dynamicKubeconfigProvider.FetchFromGardener(cluster.ClusterConfig.Name)
+		if err != nil {
+			return operations.StageResult{}, err
+		}
 	}
 
-	k8sClient, err := s.k8sClientProvider.CreateK8SClient(*cluster.Kubeconfig)
+	k8sClient, err := s.k8sClientProvider.CreateK8SClient(string(kubeconfig))
 	if err != nil {
 		return operations.StageResult{}, err.Append("failed to create k8s client").SetComponent(apperrors.ErrClusterK8SClient)
 	}

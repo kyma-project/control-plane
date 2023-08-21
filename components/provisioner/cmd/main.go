@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -163,6 +165,9 @@ func main() {
 	gardenerClientSet, err := gardener.NewClient(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Gardener cluster clientset")
 
+	gardenerClient, err := client.New(gardenerClusterConfig, client.Options{})
+	exitOnError(err, "unable to create gardener client")
+
 	k8sCoreClientSet, err := kubernetes.NewForConfig(gardenerClusterConfig)
 	exitOnError(err, "Failed to create Kubernetes clientset")
 
@@ -191,7 +196,8 @@ func main() {
 		secretsInterface,
 		cfg.OperatorRoleBinding,
 		k8sClientProvider,
-		runtimeConfigurator)
+		runtimeConfigurator,
+		gardenerClient)
 
 	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
 
