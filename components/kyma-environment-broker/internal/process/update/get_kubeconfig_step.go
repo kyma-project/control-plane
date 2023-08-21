@@ -43,7 +43,7 @@ func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLo
 		cli, err := s.k8sClientProvider(operation.Kubeconfig)
 		if err != nil {
 			log.Errorf("Unable to create k8s client from the kubeconfig")
-			return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
+			return s.operationManager.RetryOperation(operation, "unable to create k8s client from the kubeconfig", err, 5*time.Second, 1*time.Minute, log)
 		}
 		operation.K8sClient = cli
 		return operation, 0, nil
@@ -72,7 +72,8 @@ func (s *GetKubeconfigStep) Run(operation internal.Operation, log logrus.FieldLo
 	cli, err := s.k8sClientProvider(*status.RuntimeConfiguration.Kubeconfig)
 	if err != nil {
 		log.Errorf("Unable to create k8s client from the kubeconfig")
-		return s.operationManager.OperationFailed(operation, "could not create a k8s client", err, log)
+		return s.operationManager.RetryOperation(operation, "unable to create k8s client from the kubeconfig", err, 5*time.Second, 1*time.Minute, log)
+
 	}
 	operation.Kubeconfig = *status.RuntimeConfiguration.Kubeconfig
 	operation.K8sClient = cli

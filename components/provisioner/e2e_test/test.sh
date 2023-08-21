@@ -33,6 +33,12 @@ function has_to_succeed {
 function wait_for {
     echo "Waiting $1 to launch on $2"
 
+
+    if ! which timeout ; then
+        printf '\n Please install timeout; e.g. in MacOs you can use `brew install coreutils` \n\n'
+        exit 1
+    fi
+
     while ! timeout 1 bash -c "echo 2>>/dev/null > /dev/tcp/localhost/$2" ; do   
 	printf '.'
 	sleep 2
