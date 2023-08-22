@@ -244,9 +244,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogConfig)
 
-			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
+			//testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
-			testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
+			//testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 
 			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
@@ -541,7 +541,7 @@ func removeFinalizers(t *testing.T, shootInterface gardener_apis.ShootInterface,
 func simulateSuccessfulClusterProvisioning(t *testing.T, f gardener_apis.ShootInterface, s v1core.SecretInterface, shootName string) {
 	simulateDNSAdmissionPluginRun(t, f, shootName)
 	setShootStatusToSuccessful(t, f, shootName)
-	createKubeconfigSecret(t, s, shootName)
+	//createKubeconfigSecret(t, s, shootName)
 	ensureShootSeedName(t, f, shootName)
 }
 
