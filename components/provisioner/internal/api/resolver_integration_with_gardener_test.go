@@ -19,9 +19,6 @@ import (
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s/mocks"
 
-	v1alpha12 "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/apis/compass/v1alpha1"
-	"github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/typed/compass/v1alpha1"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
@@ -43,7 +40,6 @@ import (
 	runtimeConfig "github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
-	compass_connection_fake "github.com/kyma-project/kyma/components/compass-runtime-agent/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -107,10 +103,6 @@ users:
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
 	installationServiceMock := &installationMocks.Service{}
-	installationServiceMock.On("TriggerInstallation", mock.Anything,
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
-	installationServiceMock.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 
 	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything,
 		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
@@ -160,21 +152,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 	queueCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	provisioningQueue := queue.CreateProvisioningQueue(
 		testProvisioningTimeouts(),
-		dbsFactory,
-		installationServiceMock,
-		runtimeConfigurator,
-		fakeCompassConnectionClientConstructor,
-		directorServiceMock,
-		shootInterface,
-		secretsInterface,
-		testOperatorRoleBinding(),
-		mockK8sClientProvider)
-	provisioningQueue.Run(queueCtx.Done())
-
-	provisioningNoInstallQueue := queue.CreateProvisioningNoInstallQueue(
-		testProvisioningNoInstallTimeouts(),
 		dbsFactory,
 		directorServiceMock,
 		shootInterface,
@@ -182,13 +162,10 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		testOperatorRoleBinding(),
 		mockK8sClientProvider,
 		runtimeConfigurator)
-	provisioningNoInstallQueue.Run(queueCtx.Done())
+	provisioningQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
-
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	deprovisioningNoInstallQueue.Run(queueCtx.Done())
 
 	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
 	upgradeQueue.Run(queueCtx.Done())
@@ -247,7 +224,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, provisioningNoInstallQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
 
 			validator := api.NewValidator()
 
@@ -493,7 +470,7 @@ func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resol
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
-		Operation: gqlschema.OperationTypeProvisionNoInstall,
+		Operation: gqlschema.OperationTypeProvision,
 		State:     gqlschema.OperationStateSucceeded,
 		RuntimeID: runtimeId,
 		Message:   util.StringPtr("Operation succeeded"),
@@ -517,25 +494,8 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 	}
 }
 
-func testProvisioningNoInstallTimeouts() queue.ProvisioningNoInstallTimeouts {
-	return queue.ProvisioningNoInstallTimeouts{
-		ClusterCreation:    5 * time.Minute,
-		ClusterDomains:     5 * time.Minute,
-		BindingsCreation:   5 * time.Minute,
-		AgentConfiguration: 5 * time.Minute,
-	}
-}
-
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
-		ClusterCleanup:            5 * time.Minute,
-		ClusterDeletion:           5 * time.Minute,
-		WaitingForClusterDeletion: 5 * time.Minute,
-	}
-}
-
-func testDeprovisioningNoInstallTimeouts() queue.DeprovisioningNoInstallTimeouts {
-	return queue.DeprovisioningNoInstallTimeouts{
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
@@ -639,15 +599,4 @@ func setupSecretsClient(t *testing.T, config *rest.Config) v1core.SecretInterfac
 	require.NoError(t, err)
 
 	return coreClient.Secrets(namespace)
-}
-
-func fakeCompassConnectionClientConstructor(_ *rest.Config) (v1alpha1.CompassConnectionInterface, error) {
-	fakeClient := compass_connection_fake.NewSimpleClientset(&v1alpha12.CompassConnection{
-		ObjectMeta: metav1.ObjectMeta{Name: "compass-connection"},
-		Status: v1alpha12.CompassConnectionStatus{
-			State: v1alpha12.Synchronized,
-		},
-	})
-
-	return fakeClient.CompassV1alpha1().CompassConnections(), nil
 }

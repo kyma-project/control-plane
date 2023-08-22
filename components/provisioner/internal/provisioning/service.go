@@ -5,7 +5,6 @@ import (
 
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-version"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
@@ -14,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	log "github.com/sirupsen/logrus"
@@ -36,7 +34,7 @@ type Service interface {
 //go:generate mockery --name=Provisioner
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
-	DeprovisionCluster(cluster model.Cluster, withoutInstallation bool, operationId string) (model.Operation, apperrors.AppError)
+	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
 	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	HibernateCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
 	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
@@ -58,13 +56,11 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue            queue.OperationQueue
-	provisioningNoInstallQueue   queue.OperationQueue
-	deprovisioningQueue          queue.OperationQueue
-	deprovisioningNoInstallQueue queue.OperationQueue
-	upgradeQueue                 queue.OperationQueue
-	shootUpgradeQueue            queue.OperationQueue
-	hibernationQueue             queue.OperationQueue
+	provisioningQueue   queue.OperationQueue
+	deprovisioningQueue queue.OperationQueue
+	upgradeQueue        queue.OperationQueue
+	shootUpgradeQueue   queue.OperationQueue
+	hibernationQueue    queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -77,30 +73,26 @@ func NewProvisioningService(
 	shootProvider ShootProvider,
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
-	provisioningNoInstallQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	deprovisioningNoInstallQueue queue.OperationQueue,
 	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
 	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:               inputConverter,
-		graphQLConverter:             graphQLConverter,
-		directorService:              directorService,
-		dbSessionFactory:             factory,
-		provisioner:                  provisioner,
-		uuidGenerator:                generator,
-		provisioningQueue:            provisioningQueue,
-		provisioningNoInstallQueue:   provisioningNoInstallQueue,
-		deprovisioningQueue:          deprovisioningQueue,
-		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
-		upgradeQueue:                 upgradeQueue,
-		shootUpgradeQueue:            shootUpgradeQueue,
-		hibernationQueue:             hibernationQueue,
-		shootProvider:                shootProvider,
-		installationClient:           installationClient,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
+		dbSessionFactory:    factory,
+		provisioner:         provisioner,
+		uuidGenerator:       generator,
+		provisioningQueue:   provisioningQueue,
+		deprovisioningQueue: deprovisioningQueue,
+		upgradeQueue:        upgradeQueue,
+		shootUpgradeQueue:   shootUpgradeQueue,
+		hibernationQueue:    hibernationQueue,
+		shootProvider:       shootProvider,
+		installationClient:  installationClient,
 	}
 }
 
@@ -130,10 +122,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 	}
 	defer dbSession.RollbackUnlessCommitted()
 
-	withKymaConfig := config.KymaConfig != nil
-
 	// Try to set provisioning started before triggering it (which is hard to interrupt) to verify all unique constraints
-	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster, withKymaConfig)
+	operation, dberr := r.setProvisioningStarted(dbSession, runtimeID, cluster)
 	if dberr != nil {
 		r.unregisterFailedRuntime(runtimeID, tenant)
 		return nil, dberr
@@ -151,13 +141,8 @@ func (r *service) ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenan
 		return nil, dberr
 	}
 
-	if withKymaConfig {
-		log.Infof("KymaConfig provided. Starting provisioning steps for runtime %s with installation", cluster.ID)
-		r.provisioningQueue.Add(operation.ID)
-	} else {
-		log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
-		r.provisioningNoInstallQueue.Add(operation.ID)
-	}
+	log.Infof("KymaConfig not provided. Starting provisioning steps for runtime %s without installation", cluster.ID)
+	r.provisioningQueue.Add(operation.ID)
 
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
@@ -186,9 +171,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", dberr
 	}
 
-	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
-
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
 	if appErr != nil {
 		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error()).SetComponent(appErr.Component()).SetReason(appErr.Reason())
 	}
@@ -198,13 +181,8 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", dberr
 	}
 
-	if withoutUninstall {
-		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
-		r.deprovisioningNoInstallQueue.Add(operation.ID)
-	} else {
-		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
-		r.deprovisioningQueue.Add(operation.ID)
-	}
+	log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
+	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil
 }
@@ -479,28 +457,6 @@ func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatu
 	return r.RuntimeStatus(runtimeID)
 }
 
-func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool {
-
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		return true
-	}
-
-	if cluster.Kubeconfig == nil {
-		log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
-		return false
-	}
-
-	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-	if err != nil {
-		log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
-		return false
-	}
-
-	//  When missing installation CR this is Kyma 2 upgraded from Kyma 1
-	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
-	return installationState.State == installationSDK.NoInstallationState
-}
-
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
@@ -526,7 +482,7 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apper
 	}, nil
 }
 
-func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster, withKymaConfig bool) (model.Operation, dberrors.Error) {
+func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runtimeID string, cluster model.Cluster) (model.Operation, dberrors.Error) {
 	timestamp := time.Now()
 	cluster.CreationTimestamp = timestamp
 
@@ -538,13 +494,7 @@ func (r *service) setProvisioningStarted(dbSession dbsession.WriteSession, runti
 		return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
 	}
 
-	provisioningMode := model.ProvisionNoInstall
-	if withKymaConfig {
-		provisioningMode = model.Provision
-		if err := dbSession.InsertKymaConfig(*cluster.KymaConfig); err != nil {
-			return model.Operation{}, dberrors.Internal("Failed to set provisioning started: %s", err)
-		}
-	}
+	provisioningMode := model.Provision
 
 	operation, err := r.setOperationStarted(dbSession, runtimeID, provisioningMode, model.WaitingForClusterDomain, timestamp, "Provisioning started")
 	if err != nil {

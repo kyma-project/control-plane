@@ -20,20 +20,6 @@ type writeSession struct {
 	encrypt     encryptFunc
 }
 
-// TODO: Remove after schema migration
-func (ws writeSession) UpdateProviderSpecificConfig(id string, providerSpecificConfig string) dberrors.Error {
-	res, err := ws.update("gardener_config").
-		Where(dbr.Eq("id", id)).
-		Set("provider_specific_config", providerSpecificConfig).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to update provider_specific_config for gardener shoot cluster '%s': %s", id, err)
-	}
-
-	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update provider_specific_config for gardener shoot cluster '%s' state: %s", id, err))
-}
-
 func (ws writeSession) InsertCluster(cluster model.Cluster) dberrors.Error {
 	var kymaConfigId *string
 	if cluster.KymaConfig != nil {
@@ -414,26 +400,6 @@ func (ws writeSession) TransitionOperation(operationID string, message string, s
 	}
 
 	return ws.updateSucceeded(res, fmt.Sprintf("Failed to update operation %s state: %s", operationID, err))
-}
-
-// Clean up this code when not needed (https://github.com/kyma-project/control-plane/issues/1371)
-func (ws writeSession) FixShootProvisioningStage(message string, newStage model.OperationStage, transitionTime time.Time) dberrors.Error {
-	legacyStageCondition := dbr.Eq("stage", "ShootProvisioning")
-	provisioningOperation := dbr.Eq("type", model.Provision)
-	inProgressOperation := dbr.Eq("state", model.InProgress)
-
-	_, err := ws.update("operation").
-		Where(dbr.And(legacyStageCondition, provisioningOperation, inProgressOperation)).
-		Set("stage", newStage).
-		Set("message", message).
-		Set("last_transition", transitionTime).
-		Exec()
-
-	if err != nil {
-		return dberrors.Internal("Failed to set stage: %v for operations", err)
-	}
-
-	return nil
 }
 
 func (ws writeSession) UpdateKubeconfig(runtimeID string, kubeconfig string) dberrors.Error {
