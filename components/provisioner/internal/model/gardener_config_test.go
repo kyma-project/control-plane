@@ -644,8 +644,21 @@ func TestEditShootConfig(t *testing.T) {
 	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones, nil))
 	require.NoError(t, err)
 
+	azureProviderConfigEnableNAT, err := NewAzureGardenerConfig(fixAzureGardenerInput([]string{}, util.BoolPtr(true)))
+	require.NoError(t, err)
+
 	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
+
+	initialShootWithInfrastructureConfig := initialShoot.DeepCopy()
+	initialShootWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(azureProviderConfig.RawJSON()),
+	}
+
+	expectedShootWithInfrastructureConfig := expectedShoot.DeepCopy()
+	expectedShootWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(`{"networks":{"vnet":{"cidr":"10.10.11.11/255"},"natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},"zoned":false}`),
+	}
 
 	for _, testCase := range []struct {
 		description   string
@@ -665,6 +678,12 @@ func TestEditShootConfig(t *testing.T) {
 			upgradeConfig: fixGardenerConfig("az", azureProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
 			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should edit Azure shoot template with NAT enabled",
+			provider:      "az",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfigEnableNAT),
+			initialShoot:  initialShootWithInfrastructureConfig.DeepCopy(),
+			expectedShoot: expectedShootWithInfrastructureConfig.DeepCopy(),
 		},
 		{description: "should edit GCP shoot template",
 			provider:      "gcp",
