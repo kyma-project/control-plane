@@ -31,5 +31,9 @@ data:
 {{- with .Values.skrDNSProvidersValues }}
 {{ tpl . $ | indent 4 }}
 {{- end }}
+  avsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountIDs.yaml: |-
+{{- with .Values.avs.maintenanceModeDuringUpgrade.alwaysDisabledGlobalAccountIDs }}
+{{ tpl . $ | indent 4 }}
+{{- end }}
   catalog.yaml: |-
 {{ .Files.Get "files/catalog.yaml" | indent 4 }}
