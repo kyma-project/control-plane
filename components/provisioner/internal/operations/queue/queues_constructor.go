@@ -3,8 +3,6 @@ package queue
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
-
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
@@ -131,27 +129,4 @@ func CreateShootUpgradeQueue(
 	)
 
 	return NewQueue(upgradeClusterExecutor)
-}
-
-func CreateHibernationQueue(
-	timeouts HibernationTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
-
-	waitForHibernation := hibernation.NewWaitForHibernationStep(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
-
-	hibernationSteps := map[model.OperationStage]operations.Step{
-		model.WaitForHibernation: waitForHibernation,
-	}
-
-	hibernateClusterExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Hibernate,
-		hibernationSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(hibernateClusterExecutor)
 }

@@ -163,22 +163,8 @@ func (r *Resolver) UpgradeShoot(ctx context.Context, runtimeID string, input gql
 	return status, nil
 }
 
-func (r *Resolver) HibernateRuntime(ctx context.Context, runtimeID string) (*gqlschema.OperationStatus, error) {
-	log.Infof("Requested to hibernate runtime : %s.", runtimeID)
-
-	err := r.tenantUpdater.GetAndUpdateTenant(runtimeID, ctx)
-	if err != nil {
-		log.Errorf("Failed to hibernate Runtime  %s: %s", runtimeID, err)
-		return nil, err
-	}
-
-	status, err := r.provisioning.HibernateCluster(runtimeID)
-	if err != nil {
-		log.Errorf("Failed to hibernate Runtime %s: %s", runtimeID, err)
-		return nil, err
-	}
-
-	return status, nil
+func (r *Resolver) HibernateRuntime(context.Context, string) (*gqlschema.OperationStatus, error) {
+	return nil, nil
 }
 
 func getSubAccount(ctx context.Context) string {

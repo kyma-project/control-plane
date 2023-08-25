@@ -194,8 +194,6 @@ func main() {
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
 
-	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
-
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
 	exitOnError(err, "Failed to create Shoot controller.")
@@ -214,7 +212,6 @@ func main() {
 		provisioningQueue,
 		deprovisioningQueue,
 		shootUpgradeQueue,
-		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 
@@ -230,8 +227,6 @@ func main() {
 	deprovisioningQueue.Run(ctx.Done())
 
 	shootUpgradeQueue.Run(ctx.Done())
-
-	hibernationQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -288,14 +283,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -321,8 +316,6 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 			provisioningQueue.Add(op.ID)
 		case model.DeprovisionNoInstall:
 			deprovisioningQueue.Add(op.ID)
-		case model.Hibernate:
-			hibernationQueue.Add(op.ID)
 		case model.UpgradeShoot:
 			shootUpgradeQueue.Add(op.ID)
 		}
