@@ -41,9 +41,7 @@ func newProvisioningService(
 	shootProvider gardener.ShootProvider,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
-	hibernationQueue queue.OperationQueue,
 	defaultEnableKubernetesVersionAutoUpdate,
 	defaultEnableMachineImageVersionAutoUpdate bool) provisioning.Service {
 
@@ -52,7 +50,7 @@ func newProvisioningService(
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, installationClient, provisioningQueue, deprovisioningQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, installationClient, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

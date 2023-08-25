@@ -3,19 +3,15 @@ package queue
 import (
 	"time"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/hibernation"
-
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/failure"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/provisioning"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/shootupgrade"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/upgrade"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
@@ -78,32 +74,6 @@ func CreateProvisioningQueue(
 	return NewQueue(provisioningExecutor)
 }
 
-func CreateUpgradeQueue(
-	provisioningTimeouts ProvisioningTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	installationClient installation.Service) OperationQueue {
-
-	updatingUpgradeStep := upgrade.NewUpdateUpgradeStateStep(factory.NewWriteSession(), model.FinishedStage, 5*time.Minute)
-	waitForInstallStep := provisioning.NewWaitForInstallationStep(installationClient, updatingUpgradeStep.Name(), provisioningTimeouts.Installation, factory.NewWriteSession())
-	upgradeStep := upgrade.NewUpgradeKymaStep(installationClient, waitForInstallStep.Name(), provisioningTimeouts.UpgradeTriggering)
-
-	upgradeSteps := map[model.OperationStage]operations.Step{
-		model.UpdatingUpgradeState:   updatingUpgradeStep,
-		model.WaitingForInstallation: waitForInstallStep,
-		model.StartingUpgrade:        upgradeStep,
-	}
-
-	upgradeExecutor := operations.NewExecutor(factory.NewReadWriteSession(),
-		model.Upgrade,
-		upgradeSteps,
-		failure.NewUpgradeFailureHandler(factory.NewWriteSession()),
-		directorClient,
-	)
-
-	return NewQueue(upgradeExecutor)
-}
-
 func CreateDeprovisioningQueue(
 	timeouts DeprovisioningTimeouts,
 	factory dbsession.Factory,
@@ -159,27 +129,4 @@ func CreateShootUpgradeQueue(
 	)
 
 	return NewQueue(upgradeClusterExecutor)
-}
-
-func CreateHibernationQueue(
-	timeouts HibernationTimeouts,
-	factory dbsession.Factory,
-	directorClient director.DirectorClient,
-	shootClient gardener_apis.ShootInterface) OperationQueue {
-
-	waitForHibernation := hibernation.NewWaitForHibernationStep(shootClient, model.FinishedStage, timeouts.WaitingForClusterHibernation)
-
-	hibernationSteps := map[model.OperationStage]operations.Step{
-		model.WaitForHibernation: waitForHibernation,
-	}
-
-	hibernateClusterExecutor := operations.NewExecutor(
-		factory.NewReadWriteSession(),
-		model.Hibernate,
-		hibernationSteps,
-		failure.NewNoopFailureHandler(),
-		directorClient,
-	)
-
-	return NewQueue(hibernateClusterExecutor)
 }
