@@ -26,6 +26,7 @@ func ApplyLabelsAndAnnotationsForLM(object client.Object, operation internal.Ope
 	l["kyma-project.io/region"] = operation.Region
 	l["operator.kyma-project.io/kyma-name"] = KymaName(operation)
 	l["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	l["operator.kyma-project.io/internal"] = "true"
 	object.SetLabels(l)
 
 	a := object.GetAnnotations()
