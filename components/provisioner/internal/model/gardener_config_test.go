@@ -185,7 +185,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil, util.BoolPtr(false)))
 	require.NoError(t, err)
 
-	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(util.BoolPtr(true)))
+	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(true))
 	require.NoError(t, err)
 
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -646,7 +646,7 @@ func TestEditShootConfig(t *testing.T) {
 	azureProviderConfigEnableNAT, err := NewAzureGardenerConfig(fixAzureGardenerInput([]string{}, util.BoolPtr(true)))
 	require.NoError(t, err)
 
-	azureProviderConfigWithZonesAndNATEnabled, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(util.BoolPtr(true)))
+	azureProviderConfigWithZonesAndNATEnabled, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(true))
 	require.NoError(t, err)
 
 	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
@@ -818,10 +818,10 @@ func fixAzureGardenerInput(zones []string, enableNAT *bool) *gqlschema.AzureProv
 	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones, EnableNatGateway: enableNAT, IdleConnectionTimeoutMinutes: util.IntPtr(4)}
 }
 
-func fixAzureZoneSubnetsInput(enableNAT *bool) *gqlschema.AzureProviderConfigInput {
+func fixAzureZoneSubnetsInput(enableNAT bool) *gqlschema.AzureProviderConfigInput {
 	return &gqlschema.AzureProviderConfigInput{
 		VnetCidr:                     "10.10.11.11/255",
-		EnableNatGateway:             enableNAT,
+		EnableNatGateway:             util.BoolPtr(enableNAT),
 		IdleConnectionTimeoutMinutes: util.IntPtr(4),
 		AzureZones: []*gqlschema.AzureZoneInput{
 			{
