@@ -86,7 +86,7 @@ func (s *GetKubeconfigStep) setK8sClientInOperation(operation internal.Operation
 	k8sClient, err := s.k8sClientProvider(operation.Kubeconfig)
 	if err != nil {
 		log.Errorf("unable to create k8s client from the kubeconfig")
-		return s.operationManager.OperationFailed(operation, "unable to create k8s client from the kubeconfig", err, log)
+		return s.operationManager.RetryOperation(operation, "unable to create k8s client from the kubeconfig", err, 5*time.Second, 1*time.Minute, log)
 	}
 	operation.K8sClient = k8sClient
 	return operation, 0, nil
