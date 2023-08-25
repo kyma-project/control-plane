@@ -185,7 +185,7 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 	azureNoZonesGardenerProvider, err := NewAzureGardenerConfig(fixAzureGardenerInput(nil, util.BoolPtr(false)))
 	require.NoError(t, err)
 
-	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput())
+	azureZoneSubnetsGardenerProvider, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(true))
 	require.NoError(t, err)
 
 	awsGardenerProvider, err := NewAWSGardenerConfig(fixAWSGardenerInput())
@@ -610,7 +610,6 @@ func TestGardenerConfig_ToShootTemplate(t *testing.T) {
 			assert.Equal(t, testCase.expectedShootTemplate, template)
 		})
 	}
-
 }
 
 func TestEditShootConfig(t *testing.T) {
@@ -644,8 +643,34 @@ func TestEditShootConfig(t *testing.T) {
 	azureProviderConfig, err := NewAzureGardenerConfig(fixAzureGardenerInput(zones, nil))
 	require.NoError(t, err)
 
+	azureProviderConfigEnableNAT, err := NewAzureGardenerConfig(fixAzureGardenerInput([]string{}, util.BoolPtr(true)))
+	require.NoError(t, err)
+
+	azureProviderConfigWithZonesAndNATEnabled, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(true))
+	require.NoError(t, err)
+
 	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
 	require.NoError(t, err)
+
+	initialShootWithInfrastructureConfig := initialShoot.DeepCopy()
+	initialShootWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(azureProviderConfig.RawJSON()),
+	}
+
+	expectedShootWithNATEnabled := expectedShoot.DeepCopy()
+	expectedShootWithNATEnabled.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(`{"networks":{"vnet":{"cidr":"10.10.11.11/255"},"natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},"zoned":false}`),
+	}
+
+	initialShootWithZones := initialShoot.DeepCopy()
+	initialShootWithZones.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"zones":[{"name": 0}, {"name": 1}]}}`),
+	}
+
+	expectedShootWithZonesAndNATEnabled := expectedShoot.DeepCopy()
+	expectedShootWithZonesAndNATEnabled.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+		Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"zones":[{"name":0,"cidr":"","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},{"name":1,"cidr":"","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}}]},"zoned":false}`),
+	}
 
 	for _, testCase := range []struct {
 		description   string
@@ -665,6 +690,18 @@ func TestEditShootConfig(t *testing.T) {
 			upgradeConfig: fixGardenerConfig("az", azureProviderConfig),
 			initialShoot:  initialShoot.DeepCopy(),
 			expectedShoot: expectedShoot.DeepCopy(),
+		},
+		{description: "should edit Azure shoot template with NAT enabled",
+			provider:      "az",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfigEnableNAT),
+			initialShoot:  initialShootWithInfrastructureConfig.DeepCopy(),
+			expectedShoot: expectedShootWithNATEnabled.DeepCopy(),
+		},
+		{description: "should edit Azure shoot template with Azure Zones and NAT enabled",
+			provider:      "az",
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfigWithZonesAndNATEnabled),
+			initialShoot:  initialShootWithZones.DeepCopy(),
+			expectedShoot: expectedShootWithZonesAndNATEnabled.DeepCopy(),
 		},
 		{description: "should edit GCP shoot template",
 			provider:      "gcp",
@@ -781,10 +818,10 @@ func fixAzureGardenerInput(zones []string, enableNAT *bool) *gqlschema.AzureProv
 	return &gqlschema.AzureProviderConfigInput{VnetCidr: "10.10.11.11/255", Zones: zones, EnableNatGateway: enableNAT, IdleConnectionTimeoutMinutes: util.IntPtr(4)}
 }
 
-func fixAzureZoneSubnetsInput() *gqlschema.AzureProviderConfigInput {
+func fixAzureZoneSubnetsInput(enableNAT bool) *gqlschema.AzureProviderConfigInput {
 	return &gqlschema.AzureProviderConfigInput{
 		VnetCidr:                     "10.10.11.11/255",
-		EnableNatGateway:             util.BoolPtr(true),
+		EnableNatGateway:             util.BoolPtr(enableNAT),
 		IdleConnectionTimeoutMinutes: util.IntPtr(4),
 		AzureZones: []*gqlschema.AzureZoneInput{
 			{
