@@ -490,6 +490,9 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 			for i := range infra.Networks.Zones {
 				zone := infra.Networks.Zones[i]
 				if *c.input.EnableNatGateway {
+					if zone.NatGateway == nil {
+						zone.NatGateway = &azure.NatGateway{}
+					}
 					zone.NatGateway.Enabled = *c.input.EnableNatGateway
 					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {
