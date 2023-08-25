@@ -646,7 +646,7 @@ func TestEditShootConfig(t *testing.T) {
 	azureProviderConfigEnableNAT, err := NewAzureGardenerConfig(fixAzureGardenerInput([]string{}, util.BoolPtr(true)))
 	require.NoError(t, err)
 
-	azureProviderConfigEnableNATWithZones, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(util.BoolPtr(true)))
+	azureProviderConfigWithZonesAndNATEnabled, err := NewAzureGardenerConfig(fixAzureZoneSubnetsInput(util.BoolPtr(true)))
 	require.NoError(t, err)
 
 	gcpProviderConfig, err := NewGCPGardenerConfig(fixGCPGardenerInput(zones))
@@ -657,18 +657,18 @@ func TestEditShootConfig(t *testing.T) {
 		Raw: []byte(azureProviderConfig.RawJSON()),
 	}
 
-	expectedShootWithInfrastructureConfig := expectedShoot.DeepCopy()
-	expectedShootWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+	expectedShootWithNATEnabled := expectedShoot.DeepCopy()
+	expectedShootWithNATEnabled.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
 		Raw: []byte(`{"networks":{"vnet":{"cidr":"10.10.11.11/255"},"natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},"zoned":false}`),
 	}
 
-	initialShootWithZonesInInfrastructureConfig := initialShoot.DeepCopy()
-	initialShootWithZonesInInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+	initialShootWithZones := initialShoot.DeepCopy()
+	initialShootWithZones.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
 		Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"zones":[{"name": 0}, {"name": 1}]}}`),
 	}
 
-	expectedShootZonesInWithInfrastructureConfig := expectedShoot.DeepCopy()
-	expectedShootZonesInWithInfrastructureConfig.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
+	expectedShootWithZonesAndNATEnabled := expectedShoot.DeepCopy()
+	expectedShootWithZonesAndNATEnabled.Spec.Provider.InfrastructureConfig = &apimachineryRuntime.RawExtension{
 		Raw: []byte(`{"kind":"InfrastructureConfig","apiVersion":"gcp.provider.extensions.gardener.cloud/v1alpha1","networks":{"vnet":{"cidr":"10.10.11.11/255"},"zones":[{"name":0,"cidr":"","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}},{"name":1,"cidr":"","natGateway":{"enabled":true,"idleConnectionTimeoutMinutes":4}}]},"zoned":false}`),
 	}
 
@@ -695,13 +695,13 @@ func TestEditShootConfig(t *testing.T) {
 			provider:      "az",
 			upgradeConfig: fixGardenerConfig("az", azureProviderConfigEnableNAT),
 			initialShoot:  initialShootWithInfrastructureConfig.DeepCopy(),
-			expectedShoot: expectedShootWithInfrastructureConfig.DeepCopy(),
+			expectedShoot: expectedShootWithNATEnabled.DeepCopy(),
 		},
 		{description: "should edit Azure shoot template with Azure Zones and NAT enabled",
 			provider:      "az",
-			upgradeConfig: fixGardenerConfig("az", azureProviderConfigEnableNATWithZones),
-			initialShoot:  initialShootWithZonesInInfrastructureConfig.DeepCopy(),
-			expectedShoot: expectedShootZonesInWithInfrastructureConfig.DeepCopy(),
+			upgradeConfig: fixGardenerConfig("az", azureProviderConfigWithZonesAndNATEnabled),
+			initialShoot:  initialShootWithZones.DeepCopy(),
+			expectedShoot: expectedShootWithZonesAndNATEnabled.DeepCopy(),
 		},
 		{description: "should edit GCP shoot template",
 			provider:      "gcp",
