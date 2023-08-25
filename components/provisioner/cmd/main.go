@@ -60,10 +60,9 @@ type config struct {
 		SecretKey   string `envconfig:"optional"`
 	}
 
-	ProvisioningTimeout            queue.ProvisioningTimeouts
-	DeprovisioningTimeout          queue.DeprovisioningTimeouts
-	DeprovisioningNoInstallTimeout queue.DeprovisioningNoInstallTimeouts
-	HibernationTimeout             queue.HibernationTimeouts
+	ProvisioningTimeout   queue.ProvisioningTimeouts
+	DeprovisioningTimeout queue.DeprovisioningTimeouts
+	HibernationTimeout    queue.HibernationTimeouts
 
 	OperatorRoleBinding provisioningStages.OperatorRoleBinding
 
@@ -99,7 +98,6 @@ func (c *config) String() string {
 		"ProvisioningTimeoutClusterCreation: %s "+
 		"ProvisioningTimeoutInstallation: %s, ProvisioningTimeoutUpgrade: %s, "+
 		"ProvisioningTimeoutAgentConfiguration: %s, ProvisioningTimeoutAgentConnection: %s, "+
-		"DeprovisioningTimeoutClusterDeletion: %s, DeprovisioningTimeoutWaitingForClusterDeletion: %s "+
 		"DeprovisioningNoInstallTimeoutClusterDeletion: %s, DeprovisioningNoInstallTimeoutWaitingForClusterDeletion: %s "+
 		"ShootUpgradeTimeout: %s, "+
 		"OperatorRoleBindingL2SubjectName: %s, OperatorRoleBindingL3SubjectName: %s, OperatorRoleBindingCreatingForAdmin: %t "+
@@ -116,7 +114,6 @@ func (c *config) String() string {
 		c.ProvisioningTimeout.Installation.String(), c.ProvisioningTimeout.Upgrade.String(),
 		c.ProvisioningTimeout.AgentConfiguration.String(), c.ProvisioningTimeout.AgentConnection.String(),
 		c.DeprovisioningTimeout.ClusterDeletion.String(), c.DeprovisioningTimeout.WaitingForClusterDeletion.String(),
-		c.DeprovisioningNoInstallTimeout.ClusterDeletion.String(), c.DeprovisioningNoInstallTimeout.WaitingForClusterDeletion.String(),
 		c.ProvisioningTimeout.ShootUpgrade.String(),
 		c.OperatorRoleBinding.L2SubjectName, c.OperatorRoleBinding.L3SubjectName, c.OperatorRoleBinding.CreatingForAdmin,
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
@@ -193,15 +190,9 @@ func main() {
 		k8sClientProvider,
 		runtimeConfigurator)
 
-	upgradeQueue := queue.CreateUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, installationService)
-
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, installationService, directorClient, shootClient, 5*time.Minute)
-
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(cfg.DeprovisioningNoInstallTimeout, dbsFactory, directorClient, shootClient)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(cfg.DeprovisioningTimeout, dbsFactory, directorClient, shootClient)
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(cfg.ProvisioningTimeout, dbsFactory, directorClient, shootClient, cfg.OperatorRoleBinding, k8sClientProvider, secretsInterface)
-
-	hibernationQueue := queue.CreateHibernationQueue(cfg.HibernationTimeout, dbsFactory, directorClient, shootClient)
 
 	provisioner := gardener.NewProvisioner(gardenerNamespace, shootClient, dbsFactory, cfg.Gardener.AuditLogsPolicyConfigMap, cfg.Gardener.MaintenanceWindowConfigPath)
 	shootController, err := newShootController(gardenerNamespace, gardenerClusterConfig, dbsFactory, cfg.Gardener.AuditLogsTenantConfigPath)
@@ -220,10 +211,7 @@ func main() {
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
 		deprovisioningQueue,
-		deprovisioningNoInstallQueue,
-		upgradeQueue,
 		shootUpgradeQueue,
-		hibernationQueue,
 		cfg.Gardener.DefaultEnableKubernetesVersionAutoUpdate,
 		cfg.Gardener.DefaultEnableMachineImageVersionAutoUpdate)
 
@@ -238,13 +226,7 @@ func main() {
 
 	deprovisioningQueue.Run(ctx.Done())
 
-	deprovisioningNoInstallQueue.Run(ctx.Done())
-
-	upgradeQueue.Run(ctx.Done())
-
 	shootUpgradeQueue.Run(ctx.Done())
-
-	hibernationQueue.Run(ctx.Done())
 
 	gqlCfg := gqlschema.Config{
 		Resolvers: resolver,
@@ -301,14 +283,14 @@ func main() {
 	}()
 
 	if cfg.EnqueueInProgressOperations {
-		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue)
+		err = enqueueOperationsInProgress(dbsFactory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 		exitOnError(err, "Failed to enqueue in progress operations")
 	}
 
 	wg.Wait()
 }
 
-func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, hibernationQueue queue.OperationQueue) error {
+func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue, deprovisioningQueue, shootUpgradeQueue queue.OperationQueue) error {
 	readSession := dbFactory.NewReadSession()
 
 	var inProgressOps []model.Operation
@@ -332,14 +314,8 @@ func enqueueOperationsInProgress(dbFactory dbsession.Factory, provisioningQueue,
 		switch op.Type {
 		case model.ProvisionNoInstall:
 			provisioningQueue.Add(op.ID)
-		case model.Deprovision:
-			deprovisioningQueue.Add(op.ID)
 		case model.DeprovisionNoInstall:
-			deprovisioningNoInstallQueue.Add(op.ID)
-		case model.Upgrade:
-			upgradeQueue.Add(op.ID)
-		case model.Hibernate:
-			hibernationQueue.Add(op.ID)
+			deprovisioningQueue.Add(op.ID)
 		case model.UpgradeShoot:
 			shootUpgradeQueue.Add(op.ID)
 		}

@@ -1051,7 +1051,7 @@ var sources = []*ast.Source{
 # Configuration of Runtime. We can consider returning kubeconfig as a part of this type.
 type RuntimeConfig {
     clusterConfig: GardenerConfig
-    kymaConfig: KymaConfig
+    kymaConfig: KymaConfig @deprecated(reason: "Kyma 1.x not supported")
     kubeconfig: String
 }
 
@@ -1212,7 +1212,7 @@ type RuntimeStatus {
     lastOperationStatus: OperationStatus
     runtimeConnectionStatus: RuntimeConnectionStatus
     runtimeConfiguration: RuntimeConfig
-    hibernationStatus: HibernationStatus
+    hibernationStatus: HibernationStatus @deprecated(reason: "Operation not used by the Kyma Environment Broker")
 }
 
 enum OperationState {
@@ -1411,15 +1411,15 @@ input GardenerUpgradeInput {
 type Mutation {
     # Runtime Management; only one asynchronous operation per RuntimeID can run at any given point in time
     provisionRuntime(config: ProvisionRuntimeInput!): OperationStatus
-    upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus
+    upgradeRuntime(id: String!, config: UpgradeRuntimeInput!): OperationStatus @deprecated(reason: "Kyma 1.x is no longer supported")
     deprovisionRuntime(id: String!): String!
     upgradeShoot(id: String!, config: UpgradeShootInput!): OperationStatus
-    hibernateRuntime(id: String!): OperationStatus
+    hibernateRuntime(id: String!): OperationStatus @deprecated(reason: "Operation not used by the Kyma Environment Broker")
 
     # rollbackUpgradeOperation rolls back last upgrade operation for the Runtime but does not affect cluster in any way
     # can be used in case upgrade failed and the cluster was restored from the backup to align data stored in Provisioner database
     # with actual state of the cluster
-    rollBackUpgradeOperation(id: String!): RuntimeStatus
+    rollBackUpgradeOperation(id: String!): RuntimeStatus @deprecated(reason: "Kyma 1.x is no longer supported")
 
     # Compass Runtime Agent Connection Management
     reconnectRuntimeAgent(id: String!): String!

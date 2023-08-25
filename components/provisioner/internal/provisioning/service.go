@@ -5,7 +5,6 @@ import (
 
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/hashicorp/go-version"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
@@ -14,7 +13,6 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	uuid "github.com/kyma-project/control-plane/components/provisioner/internal/uuid"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
 	log "github.com/sirupsen/logrus"
@@ -23,23 +21,18 @@ import (
 //go:generate mockery --name=Service
 type Service interface {
 	ProvisionRuntime(config gqlschema.ProvisionRuntimeInput, tenant, subAccount string) (*gqlschema.OperationStatus, apperrors.AppError)
-	UpgradeRuntime(id string, config gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	DeprovisionRuntime(id string) (string, apperrors.AppError)
 	UpgradeGardenerShoot(id string, input gqlschema.UpgradeShootInput) (*gqlschema.OperationStatus, apperrors.AppError)
 	ReconnectRuntimeAgent(id string) (string, apperrors.AppError)
 	RuntimeStatus(id string) (*gqlschema.RuntimeStatus, apperrors.AppError)
 	RuntimeOperationStatus(id string) (*gqlschema.OperationStatus, apperrors.AppError)
-	RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError)
-	HibernateCluster(clusterID string) (*gqlschema.OperationStatus, apperrors.AppError)
 }
 
 //go:generate mockery --name=Provisioner
 type Provisioner interface {
 	ProvisionCluster(cluster model.Cluster, operationId string) apperrors.AppError
-	DeprovisionCluster(cluster model.Cluster, withoutInstallation bool, operationId string) (model.Operation, apperrors.AppError)
+	DeprovisionCluster(cluster model.Cluster, operationId string) (model.Operation, apperrors.AppError)
 	UpgradeCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
-	HibernateCluster(clusterID string, upgradeConfig model.GardenerConfig) apperrors.AppError
-	GetHibernationStatus(clusterID string, gardenerConfig model.GardenerConfig) (model.HibernationStatus, apperrors.AppError)
 }
 
 //go:generate mockery --name=ShootProvider
@@ -58,12 +51,11 @@ type service struct {
 	provisioner      Provisioner
 	uuidGenerator    uuid.UUIDGenerator
 
-	provisioningQueue            queue.OperationQueue
-	deprovisioningQueue          queue.OperationQueue
-	deprovisioningNoInstallQueue queue.OperationQueue
-	upgradeQueue                 queue.OperationQueue
-	shootUpgradeQueue            queue.OperationQueue
-	hibernationQueue             queue.OperationQueue
+	provisioningQueue   queue.OperationQueue
+	deprovisioningQueue queue.OperationQueue
+	upgradeQueue        queue.OperationQueue
+	shootUpgradeQueue   queue.OperationQueue
+	hibernationQueue    queue.OperationQueue
 }
 
 func NewProvisioningService(
@@ -77,27 +69,21 @@ func NewProvisioningService(
 	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
-	deprovisioningNoInstallQueue queue.OperationQueue,
-	upgradeQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
-	hibernationQueue queue.OperationQueue,
 
 ) Service {
 	return &service{
-		inputConverter:               inputConverter,
-		graphQLConverter:             graphQLConverter,
-		directorService:              directorService,
-		dbSessionFactory:             factory,
-		provisioner:                  provisioner,
-		uuidGenerator:                generator,
-		provisioningQueue:            provisioningQueue,
-		deprovisioningQueue:          deprovisioningQueue,
-		deprovisioningNoInstallQueue: deprovisioningNoInstallQueue,
-		upgradeQueue:                 upgradeQueue,
-		shootUpgradeQueue:            shootUpgradeQueue,
-		hibernationQueue:             hibernationQueue,
-		shootProvider:                shootProvider,
-		installationClient:           installationClient,
+		inputConverter:      inputConverter,
+		graphQLConverter:    graphQLConverter,
+		directorService:     directorService,
+		dbSessionFactory:    factory,
+		provisioner:         provisioner,
+		uuidGenerator:       generator,
+		provisioningQueue:   provisioningQueue,
+		deprovisioningQueue: deprovisioningQueue,
+		shootUpgradeQueue:   shootUpgradeQueue,
+		shootProvider:       shootProvider,
+		installationClient:  installationClient,
 	}
 }
 
@@ -176,9 +162,7 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", dberr
 	}
 
-	withoutUninstall := r.shouldDeprovisionWithoutUninstall(cluster)
-
-	operation, appErr := r.provisioner.DeprovisionCluster(cluster, withoutUninstall, r.uuidGenerator.New())
+	operation, appErr := r.provisioner.DeprovisionCluster(cluster, r.uuidGenerator.New())
 	if appErr != nil {
 		return "", apperrors.Internal("Failed to start deprovisioning: %s", appErr.Error()).SetComponent(appErr.Component()).SetReason(appErr.Reason())
 	}
@@ -188,13 +172,8 @@ func (r *service) DeprovisionRuntime(id string) (string, apperrors.AppError) {
 		return "", dberr
 	}
 
-	if withoutUninstall {
-		log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
-		r.deprovisioningNoInstallQueue.Add(operation.ID)
-	} else {
-		log.Infof("Starting deprovisioning steps for runtime %s with installation", cluster.ID)
-		r.deprovisioningQueue.Add(operation.ID)
-	}
+	log.Infof("Starting deprovisioning steps for runtime %s without installation", cluster.ID)
+	r.deprovisioningQueue.Add(operation.ID)
 
 	return operation.ID, nil
 }
@@ -276,47 +255,6 @@ func (r *service) UpgradeGardenerShoot(runtimeID string, input gqlschema.Upgrade
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) HibernateCluster(runtimeID string) (*gqlschema.OperationStatus, apperrors.AppError) {
-	log.Infof("Starting hibernation for Runtime '%s'...", runtimeID)
-
-	session := r.dbSessionFactory.NewReadSession()
-
-	err := r.verifyLastOperationFinished(session, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster, dberr := session.GetCluster(runtimeID)
-	if dberr != nil {
-		return nil, apperrors.Internal("Failed to find shoot cluster to hibernate in database: %s", dberr.Error())
-	}
-
-	txSession, dbErr := r.dbSessionFactory.NewSessionWithinTransaction()
-	if dbErr != nil {
-		return nil, apperrors.Internal("Failed to start database transaction: %s", dbErr.Error())
-	}
-	defer txSession.RollbackUnlessCommitted()
-
-	operation, gardError := r.setHibernationStarted(txSession, cluster, cluster.ClusterConfig)
-	if gardError != nil {
-		return nil, apperrors.Internal("Failed to set hibernation started: %s", gardError.Error())
-	}
-
-	err = r.provisioner.HibernateCluster(cluster.ID, cluster.ClusterConfig)
-	if err != nil {
-		return nil, apperrors.Internal("Failed to hibernate Cluster: %s", err.Error())
-	}
-
-	dbErr = txSession.Commit()
-	if dbErr != nil {
-		return nil, apperrors.Internal("Failed to commit hibernation transaction: %s", dbErr.Error())
-	}
-
-	r.hibernationQueue.Add(operation.ID)
-
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
 func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, runtimeId string) apperrors.AppError {
 	lastOperation, dberr := session.GetLastOperation(runtimeId)
 	if dberr != nil {
@@ -330,80 +268,7 @@ func (r *service) verifyLastOperationFinished(session dbsession.ReadSession, run
 	return nil
 }
 
-func (r *service) UpgradeRuntime(runtimeId string, input gqlschema.UpgradeRuntimeInput) (*gqlschema.OperationStatus, apperrors.AppError) {
-	if input.KymaConfig == nil {
-		return &gqlschema.OperationStatus{}, apperrors.BadRequest("error: Kyma config is nil")
-	}
-
-	session := r.dbSessionFactory.NewReadSession()
-
-	if err := r.verifyLastOperationFinished(session, runtimeId); err != nil {
-		return &gqlschema.OperationStatus{}, err
-	}
-
-	kymaConfig, err := r.inputConverter.KymaConfigFromInput(runtimeId, *input.KymaConfig)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("failed to convert KymaConfigInput")
-	}
-
-	cluster, dberr := session.GetCluster(runtimeId)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to read cluster from database: %s", dberr.Error())
-	}
-
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to upgrade cluster: %s Kyma configuration of the cluster is managed by Reconciler", cluster.ID)
-	}
-
-	shoot, err := r.shootProvider.Get(runtimeId, cluster.Tenant)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to get shoot")
-	}
-
-	txSession, dberr := r.dbSessionFactory.NewSessionWithinTransaction()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to start database transaction: %s", dberr.Error())
-	}
-	defer txSession.RollbackUnlessCommitted()
-
-	operation, dberr := r.setUpgradeStarted(txSession, cluster, kymaConfig)
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set upgrade started: %s", dberr.Error())
-	}
-
-	// This is a workaround for a problem with Kubernetes auto upgrade. If Kubernetes gets updated the current Kubernetes version is obtained for the shoot and stored in the database.
-	shouldTakeShootKubernetesVersion, err := isVersionHigher(shoot.Spec.Kubernetes.Version, cluster.ClusterConfig.KubernetesVersion)
-	if err != nil {
-		return &gqlschema.OperationStatus{}, err.Append("Failed to check if the shoot kubernetes version is higher than the config one")
-	}
-	if shouldTakeShootKubernetesVersion {
-		log.Infof("Kubernetes version in shoot was higher than the version stored in database. Version fetched from the shoot will be stored in database :%s.", shoot.Spec.Kubernetes.Version)
-		dberr = txSession.UpdateKubernetesVersion(runtimeId, shoot.Spec.Kubernetes.Version)
-		if dberr != nil {
-			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set Kubernetes version: %s", dberr.Error())
-		}
-	}
-
-	// This is a workaround for the possible manual modification of the Shoot Spec Extensions. If ShootNetworkingFilterDisabled is changed manually, the actual version should be stored in the database.
-	shootNetworkingFilterDisabled := getShootNetworkingFilterDisabled(shoot.Spec.Extensions)
-	if shouldTakeShootNetworkingFilterDisabled(shootNetworkingFilterDisabled, cluster.ClusterConfig.ShootNetworkingFilterDisabled) {
-		log.Warnf("ShootNetworkingFilter from the database is different than the one in the shoot. Value fetched from the shoot will be stored in the database: %t.", *shootNetworkingFilterDisabled)
-		if dberr = txSession.UpdateShootNetworkingFilterDisabled(runtimeId, shootNetworkingFilterDisabled); dberr != nil {
-			return &gqlschema.OperationStatus{}, apperrors.Internal("failed to set shoot networking filter disabled: %s", dberr.Error())
-		}
-	}
-
-	dberr = txSession.Commit()
-	if dberr != nil {
-		return &gqlschema.OperationStatus{}, apperrors.Internal("failed to commit upgrade transaction: %s", dberr.Error())
-	}
-
-	r.upgradeQueue.Add(operation.ID)
-
-	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
-}
-
-func (r *service) ReconnectRuntimeAgent(id string) (string, apperrors.AppError) {
+func (r *service) ReconnectRuntimeAgent(string) (string, apperrors.AppError) {
 	return "", nil
 }
 
@@ -427,70 +292,6 @@ func (r *service) RuntimeOperationStatus(operationID string) (*gqlschema.Operati
 	return r.graphQLConverter.OperationStatusToGQLOperationStatus(operation), nil
 }
 
-func (r *service) RollBackLastUpgrade(runtimeID string) (*gqlschema.RuntimeStatus, apperrors.AppError) {
-
-	readSession := r.dbSessionFactory.NewReadSession()
-
-	lastOp, err := readSession.GetLastOperation(runtimeID)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	if lastOp.Type != model.Upgrade || lastOp.State == model.InProgress {
-		return nil, apperrors.BadRequest("error: upgrade can be rolled back only if it is the last operation that is already finished")
-	}
-
-	runtimeUpgrade, err := readSession.GetRuntimeUpgrade(lastOp.ID)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	txSession, err := r.dbSessionFactory.NewSessionWithinTransaction()
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-	defer txSession.RollbackUnlessCommitted()
-
-	err = txSession.SetActiveKymaConfig(runtimeID, runtimeUpgrade.PreUpgradeKymaConfigId)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	err = txSession.UpdateUpgradeState(lastOp.ID, model.UpgradeRolledBack)
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	err = txSession.Commit()
-	if err != nil {
-		return nil, apperrors.Internal("error rolling back last upgrade: %s", err.Error())
-	}
-
-	return r.RuntimeStatus(runtimeID)
-}
-
-func (r *service) shouldDeprovisionWithoutUninstall(cluster model.Cluster) bool {
-
-	if util.IsNilOrEmpty(cluster.ActiveKymaConfigId) {
-		return true
-	}
-
-	if cluster.Kubeconfig == nil {
-		log.Warnf("Kubeconfig for cluster %s is missing", cluster.ID)
-		return false
-	}
-
-	k8sConfig, err := k8s.ParseToK8sConfig([]byte(*cluster.Kubeconfig))
-	if err != nil {
-		log.Warnf("Failed to create kubernetes config from raw: %s", err.Error())
-		return false
-	}
-
-	//  When missing installation CR this is Kyma 2 upgraded from Kyma 1
-	installationState, _ := r.installationClient.CheckInstallationState(k8sConfig)
-	return installationState.State == installationSDK.NoInstallationState
-}
-
 func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apperrors.AppError) {
 	session := r.dbSessionFactory.NewReadSession()
 
@@ -504,15 +305,9 @@ func (r *service) getRuntimeStatus(runtimeID string) (model.RuntimeStatus, apper
 		return model.RuntimeStatus{}, err
 	}
 
-	hibernationStatus, apperr := r.provisioner.GetHibernationStatus(runtimeID, cluster.ClusterConfig)
-	if apperr != nil {
-		return model.RuntimeStatus{}, apperr
-	}
-
 	return model.RuntimeStatus{
 		LastOperationStatus:  operation,
 		RuntimeConfiguration: cluster,
-		HibernationStatus:    hibernationStatus,
 	}, nil
 }
 
@@ -555,51 +350,6 @@ func (r *service) setGardenerShootUpgradeStarted(txSession dbsession.WriteSessio
 
 	if dbError != nil {
 		return model.Operation{}, dbError.Append("Failed to start operation of Gardener Shoot upgrade %s", dbError.Error())
-	}
-
-	return operation, nil
-}
-
-func (r *service) setUpgradeStarted(txSession dbsession.WriteSession, cluster model.Cluster, kymaConfig model.KymaConfig) (model.Operation, dberrors.Error) {
-
-	err := txSession.InsertKymaConfig(kymaConfig)
-	if err != nil {
-		return model.Operation{}, err.Append("Failed to insert Kyma Config")
-	}
-
-	operation, err := r.setOperationStarted(txSession, cluster.ID, model.Upgrade, model.StartingUpgrade, time.Now(), "Starting Kyma upgrade")
-	if err != nil {
-		return model.Operation{}, err.Append("Failed to set operation started")
-	}
-
-	runtimeUpgrade := model.RuntimeUpgrade{
-		Id:                      r.uuidGenerator.New(),
-		State:                   model.UpgradeInProgress,
-		OperationId:             operation.ID,
-		PreUpgradeKymaConfigId:  cluster.KymaConfig.ID,
-		PostUpgradeKymaConfigId: kymaConfig.ID,
-	}
-
-	err = txSession.InsertRuntimeUpgrade(runtimeUpgrade)
-	if err != nil {
-		return model.Operation{}, err.Append("Failed to insert Runtime Upgrade")
-	}
-
-	err = txSession.SetActiveKymaConfig(cluster.ID, kymaConfig.ID)
-	if err != nil {
-		return model.Operation{}, err.Append("Failed to update Kyma config in cluster")
-	}
-
-	return operation, nil
-}
-
-func (r *service) setHibernationStarted(txSession dbsession.WriteSession, currentCluster model.Cluster, gardenerConfig model.GardenerConfig) (model.Operation, error) {
-	log.Infof("Starting hibernation operation")
-
-	operation, dbError := r.setOperationStarted(txSession, currentCluster.ID, model.Hibernate, model.WaitForHibernation, time.Now(), "Starting ")
-
-	if dbError != nil {
-		return model.Operation{}, dbError.Append("Failed to start hibernation operation:  %s", dbError.Error())
 	}
 
 	return operation, nil
@@ -652,9 +402,4 @@ func getShootNetworkingFilterDisabled(extensions []gardener_Types.Extension) *bo
 		}
 	}
 	return nil
-}
-
-func shouldTakeShootNetworkingFilterDisabled(shootValue, databaseValue *bool) bool {
-	// It should when the shoot value is not nil and the values are not matching
-	return shootValue != nil && (databaseValue == nil || *shootValue != *databaseValue)
 }

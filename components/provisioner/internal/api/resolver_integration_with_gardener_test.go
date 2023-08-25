@@ -164,20 +164,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		runtimeConfigurator)
 	provisioningQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
-
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	deprovisioningNoInstallQueue.Run(queueCtx.Done())
-
-	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
-	upgradeQueue.Run(queueCtx.Done())
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
-
-	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	shootHibernationQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
@@ -227,7 +218,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 
 			validator := api.NewValidator()
 
@@ -240,8 +231,6 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			testProvisionRuntime(t, ctx, resolver, fullConfig, config.runtimeID, shootInterface, secretsInterface, config.auditLogConfig)
 
 			testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
-
-			testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 
 			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
@@ -444,32 +433,6 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
 }
 
-func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, shootInterface gardener_apis.ShootInterface) {
-
-	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
-	require.NoError(t, err)
-	shoot := &list.Items[0]
-
-	readSession := dbsFactory.NewReadSession()
-
-	// when
-	hibernationOperation, err := resolver.HibernateRuntime(ctx, runtimeID)
-	require.NoError(t, err)
-	require.NotEmpty(t, hibernationOperation.ID)
-
-	// when
-	simulateHibernation(t, shootInterface, shoot.Name)
-
-	// when
-	// wait for Shoot to update
-	time.Sleep(8 * waitPeriod)
-
-	// assert database content
-	operation, err := readSession.GetOperation(*hibernationOperation.ID)
-	require.NoError(t, err)
-	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
-}
-
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
@@ -499,14 +462,6 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
-		ClusterCleanup:            5 * time.Minute,
-		ClusterDeletion:           5 * time.Minute,
-		WaitingForClusterDeletion: 5 * time.Minute,
-	}
-}
-
-func testDeprovisioningNoInstallTimeouts() queue.DeprovisioningNoInstallTimeouts {
-	return queue.DeprovisioningNoInstallTimeouts{
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
@@ -516,12 +471,6 @@ func testOperatorRoleBinding() provisioning2.OperatorRoleBinding {
 	return provisioning2.OperatorRoleBinding{
 		L2SubjectName: "runtimeOperator",
 		L3SubjectName: "runtimeAdmin",
-	}
-}
-
-func testHibernationTimeouts() queue.HibernationTimeouts {
-	return queue.HibernationTimeouts{
-		WaitingForClusterHibernation: 5 * time.Minute,
 	}
 }
 
@@ -577,16 +526,6 @@ func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, sh
 	require.NoError(t, err)
 
 	s.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
-
-	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
-	require.NoError(t, err)
-}
-
-func simulateHibernation(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
-	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
-	require.NoError(t, err)
-
-	s.Status.IsHibernated = true
 
 	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)
