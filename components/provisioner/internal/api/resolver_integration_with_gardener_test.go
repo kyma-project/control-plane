@@ -29,10 +29,8 @@ import (
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/hydroform/install/installation"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	kubeconfigprovidermock "github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/database"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/testutils"
@@ -103,18 +101,6 @@ users:
 
 func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	//given
-	installationServiceMock := &installationMocks.Service{}
-
-	installationServiceMock.On("TriggerUpgrade", mock.Anything, mock.Anything,
-		mock.AnythingOfType("model.Configuration"), mock.AnythingOfType("[]model.KymaComponentConfig")).Return(nil)
-
-	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
-	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
-
-	// to separate from other tests
-	installationServiceMockForDeprovisiong := &installationMocks.Service{}
-	installationServiceMockForDeprovisiong.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
-
 	ctx := context.WithValue(context.Background(), middlewares.Tenant, tenant)
 	ctx = context.WithValue(ctx, middlewares.SubAccountID, subAccountId)
 
@@ -169,20 +155,11 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		kubeconfigProviderMock)
 	provisioningQueue.Run(queueCtx.Done())
 
-	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, installationServiceMock, directorServiceMock, shootInterface, 1*time.Second)
+	deprovisioningQueue := queue.CreateDeprovisioningQueue(testDeprovisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface)
 	deprovisioningQueue.Run(queueCtx.Done())
-
-	deprovisioningNoInstallQueue := queue.CreateDeprovisioningNoInstallQueue(testDeprovisioningNoInstallTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	deprovisioningNoInstallQueue.Run(queueCtx.Done())
-
-	upgradeQueue := queue.CreateUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, installationServiceMock)
-	upgradeQueue.Run(queueCtx.Done())
 
 	shootUpgradeQueue := queue.CreateShootUpgradeQueue(testProvisioningTimeouts(), dbsFactory, directorServiceMock, shootInterface, testOperatorRoleBinding(), mockK8sClientProvider, secretsInterface)
 	shootUpgradeQueue.Run(queueCtx.Done())
-
-	shootHibernationQueue := queue.CreateHibernationQueue(testHibernationTimeouts(), dbsFactory, directorServiceMock, shootInterface)
-	shootHibernationQueue.Run(queueCtx.Done())
 
 	controler, err := gardener.NewShootController(mgr, dbsFactory, auditLogsConfigPath)
 	require.NoError(t, err)
@@ -232,7 +209,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 			inputConverter := provisioning.NewInputConverter(uuidGenerator, "Project", defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 			graphQLConverter := provisioning.NewGraphQLConverter()
 
-			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), installationServiceMockForDeprovisiong, provisioningQueue, deprovisioningQueue, deprovisioningNoInstallQueue, upgradeQueue, shootUpgradeQueue, shootHibernationQueue)
+			provisioningService := provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, dbsFactory, provisioner, uuidGenerator, gardener.NewShootProvider(shootInterface), provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 
 			validator := api.NewValidator()
 
@@ -246,51 +223,9 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 
 			//testUpgradeGardenerShoot(t, ctx, resolver, dbsFactory, config.runtimeID, config.upgradeShootInput, shootInterface, inputConverter)
 
-			//testHibernateRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
-
 			testDeprovisionRuntime(t, ctx, resolver, dbsFactory, config.runtimeID, shootInterface)
 		})
 	}
-
-	t.Run("should ignore Shoot with unknown runtime id", func(t *testing.T) {
-		// given
-		installationServiceMock.Calls = nil
-		installationServiceMock.ExpectedCalls = nil
-
-		_, err := shootInterface.Create(context.Background(), &gardener_types.Shoot{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "shoot-with-unknown-id",
-				Annotations: map[string]string{
-					"kcp.provisioner.kyma-project.io/runtime-id":     "fbed9b28-473c-4b3e-88a3-803d94d38785",
-					"compass.provisioner.kyma-project.io/runtime-id": "fbed9b28-473c-4b3e-88a3-803d94d38785",
-				},
-			},
-			Spec: gardener_types.ShootSpec{},
-			Status: gardener_types.ShootStatus{
-				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-			},
-		}, metav1.CreateOptions{})
-		require.NoError(t, err)
-
-		_, err = shootInterface.Create(context.Background(), &gardener_types.Shoot{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "shoot-without-id",
-			},
-			Spec: gardener_types.ShootSpec{},
-			Status: gardener_types.ShootStatus{
-				LastOperation: &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded},
-			},
-		}, metav1.CreateOptions{})
-		require.NoError(t, err)
-
-		// when
-		time.Sleep(waitPeriod) // Wait few second to make sure shoots were reconciled
-
-		// then
-		installationServiceMock.AssertNotCalled(t, "InstallKyma", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-		installationServiceMock.AssertNotCalled(t, "TriggerInstallation", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-		installationServiceMock.AssertNotCalled(t, "CheckInstallationState", mock.Anything)
-	})
 }
 
 func testProvisionRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, fullConfig gqlschema.ProvisionRuntimeInput, runtimeID string, shootInterface gardener_apis.ShootInterface, secretsInterface v1core.SecretInterface, auditLogConfig *gardener.AuditLogConfig) {
@@ -449,32 +384,6 @@ func testDeprovisionRuntime(t *testing.T, ctx context.Context, resolver *api.Res
 	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
 }
 
-func testHibernateRuntime(t *testing.T, ctx context.Context, resolver *api.Resolver, dbsFactory dbsession.Factory, runtimeID string, shootInterface gardener_apis.ShootInterface) {
-
-	list, err := shootInterface.List(context.Background(), metav1.ListOptions{})
-	require.NoError(t, err)
-	shoot := &list.Items[0]
-
-	readSession := dbsFactory.NewReadSession()
-
-	// when
-	hibernationOperation, err := resolver.HibernateRuntime(ctx, runtimeID)
-	require.NoError(t, err)
-	require.NotEmpty(t, hibernationOperation.ID)
-
-	// when
-	simulateHibernation(t, shootInterface, shoot.Name)
-
-	// when
-	// wait for Shoot to update
-	time.Sleep(8 * waitPeriod)
-
-	// assert database content
-	operation, err := readSession.GetOperation(*hibernationOperation.ID)
-	require.NoError(t, err)
-	assert.Equal(t, strings.ToUpper(gqlschema.OperationStateSucceeded.String()), string(operation.State))
-}
-
 func fixOperationStatusProvisioned(runtimeId, operationId *string) *gqlschema.OperationStatus {
 	return &gqlschema.OperationStatus{
 		ID:        operationId,
@@ -504,14 +413,6 @@ func testProvisioningTimeouts() queue.ProvisioningTimeouts {
 
 func testDeprovisioningTimeouts() queue.DeprovisioningTimeouts {
 	return queue.DeprovisioningTimeouts{
-		ClusterCleanup:            5 * time.Minute,
-		ClusterDeletion:           5 * time.Minute,
-		WaitingForClusterDeletion: 5 * time.Minute,
-	}
-}
-
-func testDeprovisioningNoInstallTimeouts() queue.DeprovisioningNoInstallTimeouts {
-	return queue.DeprovisioningNoInstallTimeouts{
 		ClusterDeletion:           5 * time.Minute,
 		WaitingForClusterDeletion: 5 * time.Minute,
 	}
@@ -521,12 +422,6 @@ func testOperatorRoleBinding() provisioning2.OperatorRoleBinding {
 	return provisioning2.OperatorRoleBinding{
 		L2SubjectName: "runtimeOperator",
 		L3SubjectName: "runtimeAdmin",
-	}
-}
-
-func testHibernationTimeouts() queue.HibernationTimeouts {
-	return queue.HibernationTimeouts{
-		WaitingForClusterHibernation: 5 * time.Minute,
 	}
 }
 
@@ -582,16 +477,6 @@ func setShootStatusToSuccessful(t *testing.T, f gardener_apis.ShootInterface, sh
 	require.NoError(t, err)
 
 	s.Status.LastOperation = &gardener_types.LastOperation{State: gardener_types.LastOperationStateSucceeded}
-
-	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
-	require.NoError(t, err)
-}
-
-func simulateHibernation(t *testing.T, f gardener_apis.ShootInterface, shootName string) {
-	s, err := f.Get(context.Background(), shootName, metav1.GetOptions{})
-	require.NoError(t, err)
-
-	s.Status.IsHibernated = true
 
 	_, err = f.Update(context.Background(), s, metav1.UpdateOptions{})
 	require.NoError(t, err)

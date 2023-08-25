@@ -197,32 +197,6 @@ func (_m *ReadSession) GetTenantForOperation(operationID string) (string, apperr
 	return r0, r1
 }
 
-// GetUpdatedProviderSpecificConfigByID provides a mock function with given fields: id
-func (_m *ReadSession) GetUpdatedProviderSpecificConfigByID(id string) (string, apperrors.AppError) {
-	ret := _m.Called(id)
-
-	var r0 string
-	var r1 apperrors.AppError
-	if rf, ok := ret.Get(0).(func(string) (string, apperrors.AppError)); ok {
-		return rf(id)
-	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(id)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) apperrors.AppError); ok {
-		r1 = rf(id)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(apperrors.AppError)
-		}
-	}
-
-	return r0, r1
-}
-
 // InProgressOperationsCount provides a mock function with given fields:
 func (_m *ReadSession) InProgressOperationsCount() (model.OperationsCount, apperrors.AppError) {
 	ret := _m.Called()
