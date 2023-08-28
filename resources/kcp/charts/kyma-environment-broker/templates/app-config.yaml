@@ -32,8 +32,9 @@ data:
 {{ tpl . $ | indent 4 }}
 {{- end }}
   avsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountIDs.yaml: |-
+    maintenanceModeDuringUpgradeAlwaysDisabledGAIDs:
 {{- with .Values.avs.maintenanceModeDuringUpgrade.alwaysDisabledGlobalAccountIDs }}
-{{ tpl . $ | indent 4 }}
+{{ tpl . $ | indent 6 }}
 {{- end }}
   catalog.yaml: |-
 {{ .Files.Get "files/catalog.yaml" | indent 4 }}
