@@ -118,17 +118,18 @@ type Config struct {
 	Gardener    gardener.Config
 	Kubeconfig  kubeconfig.Config
 
-	KymaVersion                                string
-	EnableOnDemandVersion                      bool `envconfig:"default=false"`
-	ManagedRuntimeComponentsYAMLFilePath       string
-	NewAdditionalRuntimeComponentsYAMLFilePath string
-	SkrOidcDefaultValuesYAMLFilePath           string
-	SkrDnsProvidersValuesYAMLFilePath          string
-	DefaultRequestRegion                       string `envconfig:"default=cf-eu10"`
-	UpdateProcessingEnabled                    bool   `envconfig:"default=false"`
-	UpdateSubAccountMovementEnabled            bool   `envconfig:"default=false"`
-	LifecycleManagerIntegrationDisabled        bool   `envconfig:"default=true"`
-	ReconcilerIntegrationDisabled              bool   `envconfig:"default=false"`
+	KymaVersion                                                         string
+	EnableOnDemandVersion                                               bool `envconfig:"default=false"`
+	ManagedRuntimeComponentsYAMLFilePath                                string
+	NewAdditionalRuntimeComponentsYAMLFilePath                          string
+	SkrOidcDefaultValuesYAMLFilePath                                    string
+	SkrDnsProvidersValuesYAMLFilePath                                   string
+	DefaultRequestRegion                                                string `envconfig:"default=cf-eu10"`
+	UpdateProcessingEnabled                                             bool   `envconfig:"default=false"`
+	UpdateSubAccountMovementEnabled                                     bool   `envconfig:"default=false"`
+	LifecycleManagerIntegrationDisabled                                 bool   `envconfig:"default=true"`
+	ReconcilerIntegrationDisabled                                       bool   `envconfig:"default=false"`
+	AvsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountsFilePath string
 
 	Broker          broker.Config
 	CatalogFilePath string
