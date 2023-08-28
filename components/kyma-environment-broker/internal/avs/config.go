@@ -2,8 +2,10 @@ package avs
 
 import (
 	"fmt"
+	"os"
 
 	kebError "github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/error"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -33,8 +35,21 @@ type Config struct {
 	MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs []string `envconfig:"-"`
 }
 
-func (c Config) IsTrialConfigured() bool {
+func (c *Config) IsTrialConfigured() bool {
 	return c.TrialInternalTesterAccessId != 0 && c.TrialParentId != 0 && c.TrialGroupId != 0
+}
+
+func (c *Config) ReadMaintenanceModeDuringUpgradeAlwaysDisabledGAIDsFromYaml(yamlFilePath string) error {
+	yamlData, err := os.ReadFile(yamlFilePath)
+	if err != nil {
+		return fmt.Errorf("while reading YAML file with GA IDs: %w", err)
+	}
+	err = yaml.Unmarshal(yamlData, c.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs)
+	if err != nil {
+		return fmt.Errorf("while unmarshalling YAML file with GA IDs: %w", err)
+	}
+
+	return nil
 }
 
 type avsError struct {

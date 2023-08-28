@@ -311,6 +311,8 @@ func main() {
 
 	edpClient := edp.NewClient(cfg.EDP, logs.WithField("service", "edpClient"))
 
+	panicOnError(cfg.Avs.ReadMaintenanceModeDuringUpgradeAlwaysDisabledGAIDsFromYaml(
+		cfg.AvsMaintenanceModeDuringUpgradeAlwaysDisabledGlobalAccountsFilePath))
 	avsClient, err := avs.NewClient(ctx, cfg.Avs, logs)
 	fatalOnError(err)
 	avsDel := avs.NewDelegator(avsClient, cfg.Avs, db.Operations())
