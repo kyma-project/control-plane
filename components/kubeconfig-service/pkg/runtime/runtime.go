@@ -36,7 +36,7 @@ type SAInfo struct {
 const SA = "SA"
 const ClusterRole = "ClusterRole"
 const ClusterRoleBinding = "ClusterRoleBinding"
-const Namespace = "kyma-system"
+const Namespace = "kube-system"
 const RUNTIME_ADMIN = "runtimeAdmin"
 const RUNTIME_OPERATOR = "runtimeOperator"
 const ServiceAccount = "ServiceAccount"
