@@ -42,6 +42,7 @@ kubectl get kymas -o yaml -n kyma-system
 func TestCreatingKymaResource(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
+	*operation.ProvisioningParameters.ErsContext.LicenseType = "CUSTOMER"
 	storage := storage.NewMemoryStorage()
 	storage.Operations().InsertOperation(operation)
 	svc := NewApplyKymaStep(storage.Operations(), cli)
@@ -65,7 +66,6 @@ func TestCreatingKymaResource(t *testing.T) {
 func TestCreatingInternalKymaResource(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
-	*operation.ProvisioningParameters.ErsContext.LicenseType = "SOME_INTERNAL_LICENSE"
 	storage := storage.NewMemoryStorage()
 	storage.Operations().InsertOperation(operation)
 	svc := NewApplyKymaStep(storage.Operations(), cli)

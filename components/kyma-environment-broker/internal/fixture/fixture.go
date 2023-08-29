@@ -61,7 +61,7 @@ func FixERSContext(id string) internal.ERSContext {
 		tenantID     = fmt.Sprintf("Tenant-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 		userID       = fmt.Sprintf("User-%s", id)
-		licenseType  = "CUSTOMER"
+		licenseType  = ""
 	)
 
 	return internal.ERSContext{
