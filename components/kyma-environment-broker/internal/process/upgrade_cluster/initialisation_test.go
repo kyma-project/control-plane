@@ -978,6 +978,146 @@ func TestInitialisationStep_Run(t *testing.T) {
 		assert.Equal(t, upgradeOperation, *storedOp)
 		assert.NoError(t, err)
 	})
+
+	t.Run("should keep active AvS evaluations statuses for given GlobalAccount ID", func(t *testing.T) {
+		// given
+		maintenanceModeDisabled := false
+		maintenanceModeAlwaysDisabledGAIDs := []string{fixGlobalAccountID}
+
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManagerWithMaintenanceModeConfig(t, memoryStorage, maintenanceModeDisabled, maintenanceModeAlwaysDisabledGAIDs)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		provisioningOperation := fixProvisioningOperation()
+		err := memoryStorage.Operations().InsertOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		err = memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
+		require.NoError(t, err)
+
+		avsData := createMonitors(t, client, avs.StatusActive, avs.StatusActive)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateInProgress,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParams := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParams).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient,
+			inputBuilder, evalManager, nil, notificationBuilder)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, 1*time.Minute, repeat) // 1 min for StatusCheck
+		assert.Equal(t, domain.InProgress, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: ""})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: ""})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should keep active AvS evaluations statuses for all GA IDs", func(t *testing.T) {
+		// given
+		maintenanceModeDisabled := true
+		maintenanceModeAlwaysDisabledGAIDs := []string{fixMaintenanceModeAlwaysDisabledGlobalAccountID}
+
+		log := logrus.New()
+		memoryStorage := storage.NewMemoryStorage()
+		evalManager, client := createEvalManagerWithMaintenanceModeConfig(t, memoryStorage, maintenanceModeDisabled, maintenanceModeAlwaysDisabledGAIDs)
+		inputBuilder := &automock.CreatorForPlan{}
+
+		provisioningOperation := fixProvisioningOperation()
+		err := memoryStorage.Operations().InsertOperation(provisioningOperation)
+		require.NoError(t, err)
+
+		err = memoryStorage.Orchestrations().Insert(fixOrchestrationWithKymaVer())
+		require.NoError(t, err)
+
+		avsData := createMonitors(t, client, avs.StatusActive, avs.StatusActive)
+		upgradeOperation := fixUpgradeClusterOperationWithAvs(avsData)
+
+		err = memoryStorage.Operations().InsertUpgradeClusterOperation(upgradeOperation)
+		require.NoError(t, err)
+
+		instance := fixInstanceRuntimeStatus()
+		err = memoryStorage.Instances().Insert(instance)
+		require.NoError(t, err)
+
+		provisionerClient := &provisionerAutomock.Client{}
+		provisionerClient.On("RuntimeOperationStatus", fixGlobalAccountID, fixProvisionerOperationID).Return(gqlschema.OperationStatus{
+			ID:        ptr.String(fixProvisionerOperationID),
+			Operation: "",
+			State:     gqlschema.OperationStateInProgress,
+			Message:   nil,
+			RuntimeID: StringPtr(fixRuntimeID),
+		}, nil)
+
+		notificationTenants := []notification.NotificationTenant{
+			{
+				InstanceID: fixInstanceID,
+				State:      notification.FinishedMaintenanceState,
+				EndDate:    time.Now().Format("2006-01-02 15:04:05"),
+			},
+		}
+		notificationParams := notification.NotificationParams{
+			OrchestrationID: fixOrchestrationID,
+			Tenants:         notificationTenants,
+		}
+		notificationBuilder := &notificationAutomock.BundleBuilder{}
+		bundle := &notificationAutomock.Bundle{}
+		notificationBuilder.On("NewBundle", fixOrchestrationID, notificationParams).Return(bundle, nil).Once()
+		bundle.On("UpdateNotificationEvent").Return(nil).Once()
+
+		step := NewInitialisationStep(memoryStorage.Operations(), memoryStorage.Orchestrations(), provisionerClient,
+			inputBuilder, evalManager, nil, notificationBuilder)
+
+		// when
+		upgradeOperation, repeat, err := step.Run(upgradeOperation, log)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, 1*time.Minute, repeat) // 1 min for StatusCheck
+		assert.Equal(t, domain.InProgress, upgradeOperation.State)
+		assert.Equal(t, upgradeOperation.Avs.AvsInternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: ""})
+		assert.Equal(t, upgradeOperation.Avs.AvsExternalEvaluationStatus, internal.AvsEvaluationStatus{Current: avs.StatusActive, Original: ""})
+
+		storedOp, err := memoryStorage.Operations().GetUpgradeClusterOperationByID(upgradeOperation.Operation.ID)
+		assert.Equal(t, upgradeOperation, *storedOp)
+		assert.NoError(t, err)
+	})
 }
 
 func fixUpgradeClusterOperation() internal.UpgradeClusterOperation {
