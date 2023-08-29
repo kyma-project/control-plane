@@ -58,7 +58,7 @@ func TestCreatingKymaResource(t *testing.T) {
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
-	assertLabelsExists(t, aList.Items[0])
+	assertLabelsExistsForExternalKymaResource(t, aList.Items[0])
 
 	svc.Run(operation, logrus.New())
 }
@@ -86,7 +86,7 @@ func TestCreatingInternalKymaResource(t *testing.T) {
 	svc.Run(operation, logrus.New())
 }
 
-func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
+func TestCreatingInternalKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
 	operation.KymaResourceNamespace = "namespace-in-time-of-creation"
@@ -105,13 +105,13 @@ func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testi
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
-	assertLabelsExists(t, aList.Items[0])
+	assertLabelsExistsForInternalKymaResource(t, aList.Items[0])
 
 	svc.Run(operation, logrus.New())
 	assert.Equal(t, "namespace-in-time-of-creation", operation.KymaResourceNamespace)
 }
 
-func TestUpdatingKymaResourceIfExists(t *testing.T) {
+func TestUpdatinInternalKymaResourceIfExists(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
 	storage := storage.NewMemoryStorage()
@@ -141,7 +141,7 @@ func TestUpdatingKymaResourceIfExists(t *testing.T) {
 
 	cli.List(context.Background(), &aList)
 	assert.Equal(t, 1, len(aList.Items))
-	assertLabelsExists(t, aList.Items[0])
+	assertLabelsExistsForInternalKymaResource(t, aList.Items[0])
 }
 
 func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
@@ -152,6 +152,11 @@ func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
 
 func assertLabelsExistsForInternalKymaResource(t *testing.T, obj unstructured.Unstructured) {
 	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/internal")
+	assertLabelsExists(t, obj)
+}
+
+func assertLabelsExistsForExternalKymaResource(t *testing.T, obj unstructured.Unstructured) {
+	assert.NotContains(t, obj.GetLabels(), "operator.kyma-project.io/internal")
 	assertLabelsExists(t, obj)
 }
 
