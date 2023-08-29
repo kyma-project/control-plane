@@ -33,6 +33,19 @@ type ClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+type Client interface {
+	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
+	Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
+	List(ctx context.Context, obj client.ObjectList, opts ...client.ListOption) error
+}
+
+func NewClusterInventoryController(mgr ctrl.Manager) *ClusterReconciler {
+	return &ClusterReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}
+}
+
 //+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters/finalizers,verbs=update

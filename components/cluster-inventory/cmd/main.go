@@ -89,6 +89,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	mgr.GetClient()
+
 	if err = (&controller.ClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
