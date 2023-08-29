@@ -254,7 +254,7 @@ func awsLiteDefaults(region string) *gqlschema.ClusterConfigInput {
 			ProviderSpecificConfig: &gqlschema.ProviderSpecificInput{
 				AwsConfig: &gqlschema.AWSProviderConfigInput{
 					VpcCidr:  DefaultNodesCIDR,
-					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(DefaultAWSRegion, 1)),
+					AwsZones: generateAWSZones(DefaultNodesCIDR, MultipleZonesForAWSRegion(region, 1)),
 				},
 			},
 		},
