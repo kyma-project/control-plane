@@ -62,6 +62,30 @@ func TestCreatingKymaResource(t *testing.T) {
 	svc.Run(operation, logrus.New())
 }
 
+func TestCreatingInternalKymaResource(t *testing.T) {
+	// given
+	operation, cli := fixOperationForApplyKymaResource(t)
+	*operation.ProvisioningParameters.ErsContext.LicenseType = "SOME_INTERNAL_LICENSE"
+	storage := storage.NewMemoryStorage()
+	storage.Operations().InsertOperation(operation)
+	svc := NewApplyKymaStep(storage.Operations(), cli)
+
+	// when
+	_, backoff, err := svc.Run(operation, logrus.New())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, backoff)
+	aList := unstructured.UnstructuredList{}
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
+
+	cli.List(context.Background(), &aList)
+	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExistsForInternalKymaResource(t, aList.Items[0])
+
+	svc.Run(operation, logrus.New())
+}
+
 func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
@@ -124,6 +148,11 @@ func assertLabelsExists(t *testing.T, obj unstructured.Unstructured) {
 	assert.Contains(t, obj.GetLabels(), "kyma-project.io/instance-id")
 	assert.Contains(t, obj.GetLabels(), "kyma-project.io/runtime-id")
 	assert.Contains(t, obj.GetLabels(), "kyma-project.io/global-account-id")
+}
+
+func assertLabelsExistsForInternalKymaResource(t *testing.T, obj unstructured.Unstructured) {
+	assert.Contains(t, obj.GetLabels(), "operator.kyma-project.io/internal")
+	assertLabelsExists(t, obj)
 }
 
 func fixOperationForApplyKymaResource(t *testing.T) (internal.Operation, client.Client) {
