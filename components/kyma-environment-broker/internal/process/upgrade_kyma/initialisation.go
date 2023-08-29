@@ -207,9 +207,10 @@ func (s *InitialisationStep) checkRuntimeStatus(operation internal.UpgradeKymaOp
 		return s.operationManager.OperationFailed(operation, fmt.Sprintf("operation has reached the time limit: %s", CheckStatusTimeout), nil, log)
 	}
 
+	var err error
 	// Ensure AVS evaluations are set to maintenance
 	if !s.evaluationManager.IsMaintenanceModeDisabled() {
-		operation, err := SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
+		operation, err = SetAvsStatusMaintenance(s.evaluationManager, s.operationManager, operation, log)
 		if err != nil {
 			if kebError.IsTemporaryError(err) {
 				return s.operationManager.RetryOperation(operation, "error while setting avs to maintenance", err, 10*time.Second, 10*time.Minute, log)
