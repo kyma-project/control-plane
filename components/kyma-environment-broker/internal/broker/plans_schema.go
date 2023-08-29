@@ -39,9 +39,9 @@ func (up *UpdateProperties) IncludeAdditional() {
 }
 
 type NetworkingProperties struct {
-	NodesCidr    Type `json:"nodes"`
-	PodsCidr     Type `json:"pods"`
-	ServicesCidr Type `json:"services"`
+	Nodes    Type `json:"nodes"`
+	Pods     Type `json:"pods"`
+	Services Type `json:"services"`
 }
 
 type NetworkingType struct {
@@ -180,9 +180,9 @@ func NewNetworkingSchema() *NetworkingType {
 	return &NetworkingType{
 		Type: Type{Type: "object", Description: "Networking configuration"},
 		Properties: NetworkingProperties{
-			NodesCidr:    Type{Type: "string", Description: "Nodes CIDR"},
-			PodsCidr:     Type{Type: "string", Description: "Pods CIDR"},
-			ServicesCidr: Type{Type: "string", Description: "Services CIDR"},
+			Nodes:    Type{Type: "string", Description: "Nodes CIDR"},
+			Pods:     Type{Type: "string", Description: "Pods CIDR"},
+			Services: Type{Type: "string", Description: "Services CIDR"},
 		},
 		Required: []string{},
 	}
