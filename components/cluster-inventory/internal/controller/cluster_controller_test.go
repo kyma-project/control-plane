@@ -35,7 +35,9 @@ var _ = Describe("Cluster Inventory controller", func() {
 
 			err := k8sClient.Get(context.Background(), key, &obj)
 			Expect(err).To(BeNil())
-			Expect(obj).To(BeIdenticalTo(fixSecret(kymaName, kymaName, namespace)))
+			expectedSecret := fixSecret(kymaName, kymaName, namespace)
+			Expect(obj.Labels).To(Equal(expectedSecret.Labels))
+			Expect(obj.Data).To(Equal(expectedSecret.Data))
 		})
 	})
 
@@ -101,5 +103,6 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 			Namespace: namespace,
 			Labels:    labels,
 		},
+		Data: map[string][]byte{"kubeconfig": []byte("kubeconfig")},
 	}
 }

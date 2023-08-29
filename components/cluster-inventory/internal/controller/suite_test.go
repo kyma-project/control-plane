@@ -84,6 +84,9 @@ var _ = BeforeSuite(func() {
 	controller := NewClusterInventoryController(mgr, log)
 	Expect(controller).NotTo(BeNil())
 
+	err = controller.SetupWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
 	k8sClient = mgr.GetClient()
 	Expect(k8sClient).NotTo(BeNil())
 	go func() {
