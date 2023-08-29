@@ -68,6 +68,8 @@ type GardenerConfig struct {
 	TargetSecret                        string
 	Region                              string
 	WorkerCidr                          string
+	PodsCIDR                            *string
+	ServicesCIDR                        *string
 	AutoScalerMin                       int
 	AutoScalerMax                       int
 	MaxSurge                            int
@@ -190,8 +192,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				EnableStaticTokenKubeconfig: util.BoolPtr(true),
 			},
 			Networking: &gardener_types.Networking{
-				Type:  &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Type:     &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes:    util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Pods:     c.PodsCIDR,
+				Services: c.ServicesCIDR,
 			},
 			Purpose:           purpose,
 			ExposureClassName: exposureClassName,

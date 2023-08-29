@@ -119,11 +119,13 @@ type ComplexityRoot struct {
 		MaxUnavailable                      func(childComplexity int) int
 		Name                                func(childComplexity int) int
 		OidcConfig                          func(childComplexity int) int
+		PodsCidr                            func(childComplexity int) int
 		Provider                            func(childComplexity int) int
 		ProviderSpecificConfig              func(childComplexity int) int
 		Purpose                             func(childComplexity int) int
 		Region                              func(childComplexity int) int
 		Seed                                func(childComplexity int) int
+		ServicesCidr                        func(childComplexity int) int
 		ShootNetworkingFilterDisabled       func(childComplexity int) int
 		TargetSecret                        func(childComplexity int) int
 		VolumeSizeGb                        func(childComplexity int) int
@@ -558,6 +560,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GardenerConfig.OidcConfig(childComplexity), true
 
+	case "GardenerConfig.podsCidr":
+		if e.complexity.GardenerConfig.PodsCidr == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.PodsCidr(childComplexity), true
+
 	case "GardenerConfig.provider":
 		if e.complexity.GardenerConfig.Provider == nil {
 			break
@@ -592,6 +601,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GardenerConfig.Seed(childComplexity), true
+
+	case "GardenerConfig.servicesCidr":
+		if e.complexity.GardenerConfig.ServicesCidr == nil {
+			break
+		}
+
+		return e.complexity.GardenerConfig.ServicesCidr(childComplexity), true
 
 	case "GardenerConfig.shootNetworkingFilterDisabled":
 		if e.complexity.GardenerConfig.ShootNetworkingFilterDisabled == nil {
@@ -1052,6 +1068,8 @@ type GardenerConfig {
     diskType: String
     volumeSizeGB: Int
     workerCidr: String
+    podsCidr: String
+    servicesCidr: String
     autoScalerMin: Int
     autoScalerMax: Int
     maxSurge: Int
@@ -1253,6 +1271,8 @@ input GardenerConfigInput {
     diskType: String                                # Disk type, varies depending on the target provider
     volumeSizeGB: Int                               # Size of the available disk, provided in GB
     workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
+    podsCidr: String                                # Configures IP address ranges for pods
+    servicesCidr: String                            # Configures IP address ranges for services
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update
@@ -2878,6 +2898,68 @@ func (ec *executionContext) _GardenerConfig_workerCidr(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.WorkerCidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_podsCidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsCidr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GardenerConfig_servicesCidr(ctx context.Context, field graphql.CollectedField, obj *GardenerConfig) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "GardenerConfig",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServicesCidr, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6302,6 +6384,18 @@ func (ec *executionContext) unmarshalInputGardenerConfigInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "podsCidr":
+			var err error
+			it.PodsCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "servicesCidr":
+			var err error
+			it.ServicesCidr, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "autoScalerMin":
 			var err error
 			it.AutoScalerMin, err = ec.unmarshalNInt2int(ctx, v)
@@ -7177,6 +7271,10 @@ func (ec *executionContext) _GardenerConfig(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._GardenerConfig_volumeSizeGB(ctx, field, obj)
 		case "workerCidr":
 			out.Values[i] = ec._GardenerConfig_workerCidr(ctx, field, obj)
+		case "podsCidr":
+			out.Values[i] = ec._GardenerConfig_podsCidr(ctx, field, obj)
+		case "servicesCidr":
+			out.Values[i] = ec._GardenerConfig_servicesCidr(ctx, field, obj)
 		case "autoScalerMin":
 			out.Values[i] = ec._GardenerConfig_autoScalerMin(ctx, field, obj)
 		case "autoScalerMax":
