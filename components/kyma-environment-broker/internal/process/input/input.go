@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal/ptr"
+
 	reconcilerApi "github.com/kyma-incubator/reconciler/pkg/keb"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/common/gardener"
 	"github.com/kyma-project/control-plane/components/kyma-environment-broker/internal"
@@ -678,6 +680,9 @@ func (r *RuntimeInput) configureNetworking() error {
 	}
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.WorkerCidr,
 		r.provisioningParameters.Parameters.Networking.NodesCidr)
+
+	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr = ptr.String("")
+	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr = ptr.String("")
 
 	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr,
 		r.provisioningParameters.Parameters.Networking.PodsCidr)
