@@ -15,12 +15,13 @@ const namespace = "test"
 
 var _ = Describe("Cluster Inventory controller", func() {
 	Context("Secret with kubeconfig doesn't exist", func() {
-		kymaName := "kymaName"
-		namespace := "test"
+		kymaName := "kymaname"
+		namespace := "default"
 
 		It("Create secret", func() {
 			By("Create Cluster CR")
-			clusterCR := fixClusterInventoryCR(kymaName, kymaName)
+			// TODO: Cluster Inventory CR should have Cluster scope
+			clusterCR := fixClusterInventoryCR(kymaName, kymaName, namespace)
 
 			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
 
@@ -29,10 +30,11 @@ var _ = Describe("Cluster Inventory controller", func() {
 			key := types.NamespacedName{Name: kymaName, Namespace: namespace}
 
 			Eventually(func() bool {
-				return k8sClient.Get(context.Background(), key, &obj) != nil
-			}, time.Second*30, time.Second*3).Should(BeTrue())
+				return k8sClient.Get(context.Background(), key, &obj) == nil
+			}, time.Second*60, time.Second*3).Should(BeTrue())
 
-			_ = k8sClient.Get(context.Background(), key, &obj)
+			err := k8sClient.Get(context.Background(), key, &obj)
+			Expect(err).To(BeNil())
 			Expect(obj).To(BeIdenticalTo(fixSecret(kymaName, kymaName, namespace)))
 		})
 	})
@@ -56,7 +58,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 	})
 })
 
-func fixClusterInventoryCR(name, kymaName string) v1beta1.Cluster {
+func fixClusterInventoryCR(name, kymaName, namespace string) v1beta1.Cluster {
 
 	labels := map[string]string{}
 
@@ -72,8 +74,9 @@ func fixClusterInventoryCR(name, kymaName string) v1beta1.Cluster {
 
 	return v1beta1.Cluster{
 		ObjectMeta: v12.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
 		},
 	}
 }
@@ -99,39 +102,4 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 			Labels:    labels,
 		},
 	}
-}
-
-func prepareClusterInventory(instanceID string,
-	runtimeID string,
-	planID string,
-	planName string,
-	globalAccountID string,
-	subAccountID string,
-	shootName string,
-	region string,
-	kymaName string,
-) v1beta1.Cluster {
-
-	labels := map[string]string{}
-
-	labels["kyma-project.io/instance-id"] = instanceID
-	labels["kyma-project.io/runtime-id"] = runtimeID
-	labels["kyma-project.io/broker-plan-id"] = planID
-	labels["kyma-project.io/broker-plan-name"] = planName
-	labels["kyma-project.io/global-account-id"] = globalAccountID
-	labels["kyma-project.io/subaccount-id"] = subAccountID
-	labels["kyma-project.io/shoot-name"] = shootName
-	labels["kyma-project.io/region"] = region
-	labels["operator.kyma-project.io/kyma-name"] = kymaName
-	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
-
-	cluster := v1beta1.Cluster{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      kymaName,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-	}
-
-	return cluster
 }

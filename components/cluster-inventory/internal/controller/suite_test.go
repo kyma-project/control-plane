@@ -54,7 +54,8 @@ func TestControllers(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	log := zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true))
+	logf.SetLogger(log)
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -73,16 +74,18 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
+	//k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	//Expect(err).NotTo(HaveOccurred())
+	//Expect(k8sClient).NotTo(BeNil())
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
-	controller := NewClusterInventoryController(mgr)
+	controller := NewClusterInventoryController(mgr, log)
 	Expect(controller).NotTo(BeNil())
 
+	k8sClient = mgr.GetClient()
+	Expect(k8sClient).NotTo(BeNil())
 	go func() {
 		defer GinkgoRecover()
 		suiteCtx, cancelSuiteCtx = context.WithCancel(context.Background())
@@ -93,9 +96,8 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	cancelSuiteCtx()
-
 	By("tearing down the test environment")
+	cancelSuiteCtx()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

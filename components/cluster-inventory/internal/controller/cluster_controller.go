@@ -18,7 +18,9 @@ package controller
 
 import (
 	"context"
-
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +33,7 @@ import (
 type ClusterReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 type Client interface {
@@ -39,10 +42,11 @@ type Client interface {
 	List(ctx context.Context, obj client.ObjectList, opts ...client.ListOption) error
 }
 
-func NewClusterInventoryController(mgr ctrl.Manager) *ClusterReconciler {
+func NewClusterInventoryController(mgr ctrl.Manager, log logr.Logger) *ClusterReconciler {
 	return &ClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		log:    log,
 	}
 }
 
@@ -62,9 +66,69 @@ func NewClusterInventoryController(mgr ctrl.Manager) *ClusterReconciler {
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var cluster clusterinventoryv1beta1.Cluster
+
+	err := r.Client.Get(ctx, req.NamespacedName, &cluster)
+	if err != nil {
+		r.log.Error(err, "failed to get Cluster CR")
+		return ctrl.Result{
+			Requeue: true,
+		}, nil
+	}
+
+	err = r.rotateOrCreateSecret(cluster)
+	if err != nil {
+		r.log.Error(err, "failed to rotate or create secret")
+		return ctrl.Result{
+			Requeue: true,
+		}, nil
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *ClusterReconciler) rotateOrCreateSecret(cluster clusterinventoryv1beta1.Cluster) error {
+	secret := createSecretFromClusterInventory(cluster)
+
+	return r.Client.Create(context.Background(), &secret)
+}
+
+const (
+	instanceIDLabel      = "kyma-project.io/instance-id"
+	runtimeIDLabel       = "kyma-project.io/runtime-id"
+	planIDLabel          = "kyma-project.io/broker-plan-id"
+	planNameLabel        = "kyma-project.io/broker-plan-name"
+	globalAccountIDLabel = "kyma-project.io/global-account-id"
+	subaccountIDLabel    = "kyma-project.io/subaccount-id"
+	shootNameLabel       = "kyma-project.io/shoot-name"
+	regionLabel          = "kyma-project.io/region"
+	kymaNameLabel        = "operator.kyma-project.io/kyma-name"
+)
+
+func createSecretFromClusterInventory(cluster clusterinventoryv1beta1.Cluster) corev1.Secret {
+	clusterInventoryLabels := cluster.Labels
+
+	labels := map[string]string{}
+
+	labels[instanceIDLabel] = clusterInventoryLabels[instanceIDLabel]
+	labels[runtimeIDLabel] = clusterInventoryLabels[runtimeIDLabel]
+	labels[planIDLabel] = clusterInventoryLabels[planIDLabel]
+	labels[planNameLabel] = clusterInventoryLabels[planNameLabel]
+	labels[globalAccountIDLabel] = clusterInventoryLabels[globalAccountIDLabel]
+	labels[subaccountIDLabel] = clusterInventoryLabels[subaccountIDLabel]
+	labels[shootNameLabel] = clusterInventoryLabels[shootNameLabel]
+	labels[regionLabel] = clusterInventoryLabels[regionLabel]
+	labels[kymaNameLabel] = clusterInventoryLabels[kymaNameLabel]
+	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+
+	return corev1.Secret{
+		ObjectMeta: v12.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+			Labels:    labels,
+		},
+		Data: map[string][]byte{"kubeconfig": []byte("kubeconfig")},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
