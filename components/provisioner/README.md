@@ -20,6 +20,9 @@ Runtime Provisioner also needs a kubeconfig for a garden and auth data for Direc
 
 ## Development
 
+### Testing
+Run `make verify` in `/components/provisioner/` directory to run the unit and integration tests, or `/components/provisioner/e2e_test/test.sh` to run the e2e test. For the e2e you will need to set up few environmental variables and the test output will guide you on what's missing. 
+
 ### GraphQL schema
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
