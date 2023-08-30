@@ -67,6 +67,8 @@ type GardenerConfig struct {
 	TargetSecret                        string
 	Region                              string
 	WorkerCidr                          string
+	PodsCIDR                            *string
+	ServicesCIDR                        *string
 	AutoScalerMin                       int
 	AutoScalerMax                       int
 	MaxSurge                            int
@@ -189,8 +191,10 @@ func (c GardenerConfig) ToShootTemplate(namespace string, accountId string, subA
 				EnableStaticTokenKubeconfig: util.BoolPtr(true),
 			},
 			Networking: &gardener_types.Networking{
-				Type:  &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
-				Nodes: util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Type:     &networkingType, // Default value - we may consider adding it to API (if Hydroform will support it)
+				Nodes:    util.StringPtr(c.GardenerProviderConfig.NodeCIDR(c)),
+				Pods:     c.PodsCIDR,
+				Services: c.ServicesCIDR,
 			},
 			Purpose:           purpose,
 			ExposureClassName: exposureClassName,
@@ -453,6 +457,9 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 
 		if len(c.input.AzureZones) == 0 {
 			if *c.input.EnableNatGateway {
+				if infra.Networks.NatGateway == nil {
+					infra.Networks.NatGateway = &azure.NatGateway{}
+				}
 				infra.Networks.NatGateway.Enabled = *c.input.EnableNatGateway
 				infra.Networks.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 			} else {
@@ -462,6 +469,9 @@ func (c AzureGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoo
 			for i := range infra.Networks.Zones {
 				zone := infra.Networks.Zones[i]
 				if *c.input.EnableNatGateway {
+					if zone.NatGateway == nil {
+						zone.NatGateway = &azure.NatGateway{}
+					}
 					zone.NatGateway.Enabled = *c.input.EnableNatGateway
 					zone.NatGateway.IdleConnectionTimeoutMinutes = util.UnwrapIntOrDefault(c.input.IdleConnectionTimeoutMinutes, defaultConnectionTimeOutMinutes)
 				} else {

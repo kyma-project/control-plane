@@ -96,6 +96,8 @@ func (ws writeSession) InsertGardenerConfig(config model.GardenerConfig) dberror
 		Pair("target_secret", config.TargetSecret).
 		Pair("disk_type", config.DiskType).
 		Pair("worker_cidr", config.WorkerCidr).
+		Pair("pods_cidr", config.PodsCIDR).
+		Pair("services_cidr", config.ServicesCIDR).
 		Pair("auto_scaler_min", config.AutoScalerMin).
 		Pair("auto_scaler_max", config.AutoScalerMax).
 		Pair("max_surge", config.MaxSurge).

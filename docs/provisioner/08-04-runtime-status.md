@@ -26,6 +26,8 @@ query { runtimeStatus(id: "{RUNTIME_ID}") {
       clusterConfig {
         name 
         workerCidr
+        podsCidr
+        servicesCidr 
         region 
         diskType 
         maxSurge 
