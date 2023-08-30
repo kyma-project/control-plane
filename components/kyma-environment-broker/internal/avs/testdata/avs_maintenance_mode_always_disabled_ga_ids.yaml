@@ -1,0 +1,3 @@
+maintenanceModeDuringUpgradeAlwaysDisabledGAIDs:
+  - test-ga-id-1
+  - test-ga-id-2

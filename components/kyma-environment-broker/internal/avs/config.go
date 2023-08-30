@@ -44,10 +44,17 @@ func (c *Config) ReadMaintenanceModeDuringUpgradeAlwaysDisabledGAIDsFromYaml(yam
 	if err != nil {
 		return fmt.Errorf("while reading YAML file with GA IDs: %w", err)
 	}
-	err = yaml.Unmarshal(yamlData, c.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs)
+	var gaIDs struct {
+		MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs []string `yaml:"maintenanceModeDuringUpgradeAlwaysDisabledGAIDs"`
+	}
+	err = yaml.Unmarshal(yamlData, &gaIDs)
 	if err != nil {
 		return fmt.Errorf("while unmarshalling YAML file with GA IDs: %w", err)
 	}
+
+	c.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs = append(
+		c.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs,
+		gaIDs.MaintenanceModeDuringUpgradeAlwaysDisabledGAIDs...)
 
 	return nil
 }
