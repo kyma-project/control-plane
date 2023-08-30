@@ -3,7 +3,7 @@ global:
     path: europe-docker.pkg.dev/kyma-project
   images:
     provisioner:
-      version: "PR-2968"
+      version: "PR-2979"
       dir: "dev"
 
 deployment:
@@ -16,7 +16,6 @@ deployment:
     allowPrivilegeEscalation: false
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
-  runAwsConfigMigration: false
   databaseEncryptionSecret: "kcp-provisioner-database-encryption"
 
 serviceAccount:

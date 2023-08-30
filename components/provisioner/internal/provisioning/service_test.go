@@ -6,15 +6,12 @@ import (
 
 	gardener_Types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-	"github.com/kyma-project/kyma/components/kyma-operator/pkg/apis/installer/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	directormock "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -123,7 +120,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, provisioningQueue, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningQueue, nil, nil)
 
 		// when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInputNoKymaConfig, tenant, subAccountId)
@@ -157,7 +154,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(nil)
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -188,7 +185,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 		provisioner.On("ProvisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(apperrors.Internal("error"))
 		directorServiceMock.On("DeleteRuntime", runtimeID, tenant).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -209,7 +206,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		directorServiceMock.On("CreateRuntime", mock.Anything, tenant).Return("", apperrors.Internal("registering error"))
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, nil, nil, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -243,7 +240,7 @@ func TestService_ProvisionRuntime(t *testing.T) {
 
 		provisioningQueue.On("Add", mock.AnythingOfType("string")).Return(nil)
 
-		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, provisioningQueue, nil, nil)
+		service := NewProvisioningService(inputConverter, graphQLConverter, directorServiceMock, sessionFactoryMock, provisioner, uuidGenerator, nil, provisioningQueue, nil, nil)
 
 		// when
 		operationStatus, err := service.ProvisionRuntime(provisionRuntimeInput, tenant, subAccountId)
@@ -274,11 +271,6 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		Kubeconfig:         &mockedKubeconfig,
 	}
 
-	installedState := installationSDK.InstallationState{
-		State:       string(v1alpha1.StateInstalled),
-		Description: "Kyma 1.x is installed on the cluster",
-	}
-
 	clusterMatcher := getClusterMatcher(cluster)
 
 	t.Run("Should start Runtime deprovisioning without installation and return operation ID when activeKymaConfigID exists after upgrade from 1.x to 2.x BUT Kyma cluster is not reported as installed", func(t *testing.T) {
@@ -307,7 +299,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningQueue, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, deprovisioningQueue, nil)
 
 		// when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
@@ -353,7 +345,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(operation, nil)
 		readWriteSession.On("InsertOperation", mock.MatchedBy(operationMatcher)).Return(nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, deprovisioningQueue, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, deprovisioningQueue, nil)
 
 		// when
 		opID, err := resolver.DeprovisionRuntime(runtimeID)
@@ -372,15 +364,13 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock := &sessionMocks.Factory{}
 		readWriteSession := &sessionMocks.ReadWriteSession{}
 		provisioner := &mocks2.Provisioner{}
-		installationClient := &installationMocks.Service{}
 
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(cluster, nil)
 		provisioner.On("DeprovisionCluster", mock.MatchedBy(clusterMatcher), mock.MatchedBy(notEmptyUUIDMatcher)).Return(model.Operation{}, apperrors.Internal("some error"))
-		installationClient.On("CheckInstallationState", mock.Anything).Return(installedState, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, installationClient, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -405,7 +395,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		readWriteSession.On("GetLastOperation", runtimeID).Return(lastOperation, nil)
 		readWriteSession.On("GetCluster", runtimeID).Return(model.Cluster{}, dberrors.Internal("some error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -429,7 +419,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(operation, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -452,7 +442,7 @@ func TestService_DeprovisionRuntime(t *testing.T) {
 		sessionFactoryMock.On("NewReadWriteSession").Return(readWriteSession)
 		readWriteSession.On("GetLastOperation", runtimeID).Return(model.Operation{}, dberrors.Internal("some error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuid.NewUUIDGenerator(), nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.DeprovisionRuntime(runtimeID)
@@ -488,7 +478,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetOperation", operationID).Return(operation, nil)
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		status, err := resolver.RuntimeOperationStatus(operationID)
@@ -511,7 +501,7 @@ func TestService_RuntimeOperationStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.RuntimeOperationStatus(operationID)
@@ -552,7 +542,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 
 		provisioner := &mocks2.Provisioner{}
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, provisioner, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		status, err := resolver.RuntimeStatus(operationID)
@@ -574,7 +564,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		readSession.On("GetLastOperation", operationID).Return(operation, nil)
 		readSession.On("GetCluster", operationID).Return(model.Cluster{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -593,7 +583,7 @@ func TestService_RuntimeStatus(t *testing.T) {
 		sessionFactoryMock.On("NewReadSession").Return(readSession)
 		readSession.On("GetLastOperation", operationID).Return(model.Operation{}, dberrors.Internal("error"))
 
-		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil, nil)
+		resolver := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactoryMock, nil, uuidGenerator, nil, nil, nil, nil)
 
 		// when
 		_, err := resolver.RuntimeStatus(operationID)
@@ -704,7 +694,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider, upgradeShootQueue)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, nil, upgradeShootQueue)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue)
 
 			// when
 			operationStatus, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)
@@ -824,7 +814,7 @@ func TestService_UpgradeGardenerShoot(t *testing.T) {
 
 			testCase.mockFunc(sessionFactory, readSession, writeSessionWithinTransaction, provisioner, shootProvider)
 
-			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, nil, upgradeShootQueue)
+			service := NewProvisioningService(inputConverter, graphQLConverter, nil, sessionFactory, provisioner, uuidGenerator, shootProvider, nil, nil, upgradeShootQueue)
 
 			// when
 			_, err := service.UpgradeGardenerShoot(runtimeID, upgradeShootInput)

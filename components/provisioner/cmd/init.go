@@ -9,8 +9,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/yaml"
 
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 
 	"github.com/kyma-project/control-plane/components/provisioner/internal/provisioning/persistence/dbsession"
@@ -37,7 +35,6 @@ func newProvisioningService(
 	provisioner provisioning.Provisioner,
 	dbsFactory dbsession.Factory,
 	directorService director.DirectorClient,
-	installationClient installation.Service,
 	shootProvider gardener.ShootProvider,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
@@ -50,7 +47,7 @@ func newProvisioningService(
 	inputConverter := provisioning.NewInputConverter(uuidGenerator, gardenerProject, defaultEnableKubernetesVersionAutoUpdate, defaultEnableMachineImageVersionAutoUpdate)
 	graphQLConverter := provisioning.NewGraphQLConverter()
 
-	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, installationClient, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
+	return provisioning.NewProvisioningService(inputConverter, graphQLConverter, directorService, dbsFactory, provisioner, uuidGenerator, shootProvider, provisioningQueue, deprovisioningQueue, shootUpgradeQueue)
 }
 
 func newDirectorClient(config config) (director.DirectorClient, error) {

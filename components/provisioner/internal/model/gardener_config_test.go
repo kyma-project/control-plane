@@ -25,7 +25,6 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 	azureZoneSubnetsConfigJSON := `{"vnetCidr":"10.10.11.11/255", "azureZones":[{"name":1,"cidr":"10.10.11.12/255"}, {"name":2,"cidr":"10.10.11.13/255"}], "enableNatGateway":true, "idleConnectionTimeoutMinutes":4}`
 	awsConfigJSON := `{"vpcCidr":"10.10.11.11/255","awsZones":[{"name":"zone","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255","workerCidr":"10.10.11.11/255"}]}
 `
-	singleZoneAwsConfigJSON := `{"zone":"zone","vpcCidr":"10.10.11.11/255","publicCidr":"10.10.11.12/255","internalCidr":"10.10.11.13/255"}`
 
 	for _, testCase := range []struct {
 		description                    string
@@ -99,35 +98,6 @@ func Test_NewGardenerConfigFromJSON(t *testing.T) {
 		{
 			description: "should create AWS Gardener config",
 			jsonData:    awsConfigJSON,
-			expectedConfig: &AWSGardenerConfig{
-				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
-				input: &gqlschema.AWSProviderConfigInput{
-					AwsZones: []*gqlschema.AWSZoneInput{
-						{
-							Name:         "zone",
-							PublicCidr:   "10.10.11.12/255",
-							InternalCidr: "10.10.11.13/255",
-							WorkerCidr:   "10.10.11.11/255",
-						},
-					},
-					VpcCidr: "10.10.11.11/255",
-				},
-			},
-			expectedProviderSpecificConfig: gqlschema.AWSProviderConfig{
-				AwsZones: []*gqlschema.AWSZone{
-					{
-						Name:         util.StringPtr("zone"),
-						PublicCidr:   util.StringPtr("10.10.11.12/255"),
-						InternalCidr: util.StringPtr("10.10.11.13/255"),
-						WorkerCidr:   util.StringPtr("10.10.11.11/255"),
-					},
-				},
-				VpcCidr: util.StringPtr("10.10.11.11/255"),
-			},
-		},
-		{
-			description: "should create AWS Gardener config with single zone from old schema format",
-			jsonData:    singleZoneAwsConfigJSON,
 			expectedConfig: &AWSGardenerConfig{
 				ProviderSpecificConfig: ProviderSpecificConfig(awsConfigJSON),
 				input: &gqlschema.AWSProviderConfigInput{

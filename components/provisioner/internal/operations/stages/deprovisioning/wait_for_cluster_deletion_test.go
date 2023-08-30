@@ -12,7 +12,6 @@ import (
 
 	gardener_types "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	directorMocks "github.com/kyma-project/control-plane/components/provisioner/internal/director/mocks"
-	installationMocks "github.com/kyma-project/control-plane/components/provisioner/internal/installation/mocks"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations"
 	gardener_mocks "github.com/kyma-project/control-plane/components/provisioner/internal/operations/stages/deprovisioning/mocks"
@@ -236,7 +235,6 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
 			// given
-			installationSvc := &installationMocks.Service{}
 			gardenerClient := &gardener_mocks.GardenerClient{}
 			dbSessionFactory := &dbMocks.Factory{}
 			directorClient := &directorMocks.DirectorClient{}
@@ -256,7 +254,6 @@ func TestWaitForClusterDeletion_Run(t *testing.T) {
 			assert.Equal(t, testCase.errComponent, appErr.Component())
 			assert.Equal(t, testCase.errReason, appErr.Reason())
 			assert.Equal(t, testCase.errMsg, err.Error())
-			installationSvc.AssertExpectations(t)
 			gardenerClient.AssertExpectations(t)
 			dbSessionFactory.AssertExpectations(t)
 			directorClient.AssertExpectations(t)

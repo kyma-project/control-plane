@@ -13,21 +13,11 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/avast/retry-go"
 	"github.com/gorilla/mux"
-	installationSDK "github.com/kyma-incubator/hydroform/install/installation"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
-	"github.com/vrischmann/envconfig"
-	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
-
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/api/middlewares"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/gardener"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/healthz"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/metrics"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
@@ -37,6 +27,12 @@ import (
 	"github.com/kyma-project/control-plane/components/provisioner/internal/runtime"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/util/k8s"
 	"github.com/kyma-project/control-plane/components/provisioner/pkg/gqlschema"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
+	"github.com/vrischmann/envconfig"
+	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 const connStringFormat string = "host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s"
@@ -85,9 +81,6 @@ type config struct {
 	MetricsAddress string `envconfig:"default=127.0.0.1:9000"`
 
 	LogLevel string `envconfig:"default=info"`
-
-	// TODO: Remove after data migration
-	RunAwsConfigMigration bool `envconfig:"default=false"`
 }
 
 func (c *config) String() string {
@@ -104,8 +97,7 @@ func (c *config) String() string {
 		"GardenerProject: %s, GardenerKubeconfigPath: %s, GardenerAuditLogsPolicyConfigMap: %s, AuditLogsTenantConfigPath: %s, "+
 		"LatestDownloadedReleases: %d, DownloadPreReleases: %v, "+
 		"EnqueueInProgressOperations: %v"+
-		"LogLevel: %s"+
-		"RunAwsConfigMigration: %v",
+		"LogLevel: %s",
 		c.Address, c.APIEndpoint, c.DirectorURL,
 		c.SkipDirectorCertVerification, c.DirectorOAuthPath,
 		c.Database.User, c.Database.Host, c.Database.Port,
@@ -119,7 +111,7 @@ func (c *config) String() string {
 		c.Gardener.Project, c.Gardener.KubeconfigPath, c.Gardener.AuditLogsPolicyConfigMap, c.Gardener.AuditLogsTenantConfigPath,
 		c.LatestDownloadedReleases, c.DownloadPreReleases,
 		c.EnqueueInProgressOperations,
-		c.LogLevel, c.RunAwsConfigMigration)
+		c.LogLevel)
 }
 
 func main() {
@@ -167,12 +159,6 @@ func main() {
 
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
-	installationHandlerConstructor := func(c *rest.Config, o ...installationSDK.InstallationOption) (installationSDK.Installer, error) {
-		return installationSDK.NewKymaInstaller(c, o...)
-	}
-
-	installationService := installation.NewInstallationService(cfg.ProvisioningTimeout.Installation, installationHandlerConstructor, cfg.Gardener.ClusterCleanupResourceSelector)
-
 	directorClient, err := newDirectorClient(cfg)
 	exitOnError(err, "Failed to initialize Director client")
 
@@ -207,7 +193,6 @@ func main() {
 		provisioner,
 		dbsFactory,
 		directorClient,
-		installationService,
 		gardener.NewShootProvider(shootClient),
 		provisioningQueue,
 		deprovisioningQueue,

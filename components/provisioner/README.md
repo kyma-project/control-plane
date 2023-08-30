@@ -74,7 +74,6 @@ This table lists the environment variables, their descriptions, and default valu
 | APP_PLAYGROUND_API_ENDPOINT                                   | Endpoint for the API playground                                                                           | `/graphql`                                                              |
 | APP_PROVISIONING_NO_INSTALL_TIMEOUT                           |                                                                                                           |                                                                         |
 | APP_PROVISIONING_TIMEOUT                                      |                                                                                                           |                                                                         |
-| APP_RUN_AWS_CONFIG_MIGRATION                                  | TODO: Remove after data migration                                                                         | `false`                                                                 |
 | APP_SKIP_DIRECTOR_CERT_VERIFICATION                           | Flag to skip certificate verification for Director                                                        | `false`                                                                 |
 
 Director OAUTH config should look like this:

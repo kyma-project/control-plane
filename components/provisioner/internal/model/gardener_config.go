@@ -1,7 +1,6 @@
 package model
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -292,30 +291,6 @@ func NewGardenerProviderConfigFromJSON(jsonData string) (GardenerProviderConfig,
 		return &AzureGardenerConfig{input: &azureProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData)}, nil
 	}
 
-	// needed for backward compatibility - originally, AWS clusters were created only with single AZ based on SingleZoneAWSProviderConfigInput schema
-	// TODO: Remove after data migration
-	var singleZoneAwsProviderConfig SingleZoneAWSProviderConfigInput
-	err = util.DecodeJson(jsonData, &singleZoneAwsProviderConfig)
-	if err == nil {
-		awsProviderConfig := gqlschema.AWSProviderConfigInput{
-			VpcCidr: singleZoneAwsProviderConfig.VpcCidr,
-			AwsZones: []*gqlschema.AWSZoneInput{
-				{
-					Name:         singleZoneAwsProviderConfig.Zone,
-					PublicCidr:   singleZoneAwsProviderConfig.PublicCidr,
-					InternalCidr: singleZoneAwsProviderConfig.InternalCidr,
-					WorkerCidr:   singleZoneAwsProviderConfig.VpcCidr,
-				},
-			},
-		}
-
-		var jsonData bytes.Buffer
-		err = util.Encode(awsProviderConfig, &jsonData)
-		if err == nil {
-			return &AWSGardenerConfig{input: &awsProviderConfig, ProviderSpecificConfig: ProviderSpecificConfig(jsonData.String())}, nil
-		}
-	}
-
 	var awsProviderConfig gqlschema.AWSProviderConfigInput
 	err = util.DecodeJson(jsonData, &awsProviderConfig)
 	if err == nil {
@@ -360,7 +335,7 @@ func (c GCPGardenerConfig) EditShootConfig(gardenerConfig GardenerConfig, shoot 
 	return updateShootConfig(gardenerConfig, shoot)
 }
 
-func (c GCPGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+func (c GCPGardenerConfig) ValidateShootConfigChange(*gardener_types.Shoot) apperrors.AppError {
 	return nil
 }
 
@@ -409,7 +384,7 @@ func NewAzureGardenerConfig(input *gqlschema.AzureProviderConfigInput) (*AzureGa
 	}, nil
 }
 
-func (c AzureGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+func (c AzureGardenerConfig) NodeCIDR(GardenerConfig) string {
 	return c.input.VnetCidr
 }
 
@@ -558,7 +533,7 @@ func NewAWSGardenerConfig(input *gqlschema.AWSProviderConfigInput) (*AWSGardener
 	}, nil
 }
 
-func (c AWSGardenerConfig) NodeCIDR(gardenerConfig GardenerConfig) string {
+func (c AWSGardenerConfig) NodeCIDR(GardenerConfig) string {
 	return c.input.VpcCidr
 }
 
@@ -675,7 +650,7 @@ func (c OpenStackGardenerConfig) AsProviderSpecificConfig() gqlschema.ProviderSp
 	}
 }
 
-func (c OpenStackGardenerConfig) ValidateShootConfigChange(shoot *gardener_types.Shoot) apperrors.AppError {
+func (c OpenStackGardenerConfig) ValidateShootConfigChange(*gardener_types.Shoot) apperrors.AppError {
 	return nil
 }
 
@@ -846,13 +821,4 @@ func getAzureZonesNames(zones []*gqlschema.AzureZoneInput) []string {
 		zoneNames = append(zoneNames, fmt.Sprint(zone.Name))
 	}
 	return zoneNames
-}
-
-// SingleZoneAWSProviderConfigInput describes old schema with only single AZ available for AWS clusters
-// TODO: remove after data migration
-type SingleZoneAWSProviderConfigInput struct {
-	Zone         string `json:"zone"`
-	VpcCidr      string `json:"vpcCidr"`
-	PublicCidr   string `json:"publicCidr"`
-	InternalCidr string `json:"internalCidr"`
 }

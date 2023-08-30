@@ -10,11 +10,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.4.0
-	github.com/kubernetes-sigs/service-catalog v0.3.0
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221021121045-dec2d997352a
-	github.com/kyma-incubator/hydroform/install v0.0.0-20210525111154-8fe3a378654f
 	github.com/kyma-project/kyma/components/compass-runtime-agent v0.0.0-20221014105541-fb0caf22fdd0
-	github.com/kyma-project/kyma/components/kyma-operator v0.0.0-20220112092842-4cb8388cc0c6
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/matryer/is v1.4.0
@@ -29,10 +26,8 @@ require (
 	github.com/vrischmann/envconfig v1.3.0
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.26.3
-	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	sigs.k8s.io/controller-runtime v0.14.6
 )
 
@@ -126,10 +121,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/apiextensions-apiserver v0.26.3 // indirect
 	k8s.io/component-base v0.26.3 // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
+	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect

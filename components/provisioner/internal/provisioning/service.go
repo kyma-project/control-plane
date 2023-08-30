@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/apperrors"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/director"
-	"github.com/kyma-project/control-plane/components/provisioner/internal/installation"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/model"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/operations/queue"
 	"github.com/kyma-project/control-plane/components/provisioner/internal/persistence/dberrors"
@@ -41,11 +40,10 @@ type ShootProvider interface {
 }
 
 type service struct {
-	inputConverter     InputConverter
-	graphQLConverter   GraphQLConverter
-	directorService    director.DirectorClient
-	shootProvider      ShootProvider
-	installationClient installation.Service
+	inputConverter   InputConverter
+	graphQLConverter GraphQLConverter
+	directorService  director.DirectorClient
+	shootProvider    ShootProvider
 
 	dbSessionFactory dbsession.Factory
 	provisioner      Provisioner
@@ -66,7 +64,6 @@ func NewProvisioningService(
 	provisioner Provisioner,
 	generator uuid.UUIDGenerator,
 	shootProvider ShootProvider,
-	installationClient installation.Service,
 	provisioningQueue queue.OperationQueue,
 	deprovisioningQueue queue.OperationQueue,
 	shootUpgradeQueue queue.OperationQueue,
@@ -83,7 +80,6 @@ func NewProvisioningService(
 		deprovisioningQueue: deprovisioningQueue,
 		shootUpgradeQueue:   shootUpgradeQueue,
 		shootProvider:       shootProvider,
-		installationClient:  installationClient,
 	}
 }
 
