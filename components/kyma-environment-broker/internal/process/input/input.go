@@ -681,13 +681,16 @@ func (r *RuntimeInput) configureNetworking() error {
 	updateString(&r.provisionRuntimeInput.ClusterConfig.GardenerConfig.WorkerCidr,
 		r.provisioningParameters.Parameters.Networking.NodesCidr)
 
-	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr = ptr.String("")
-	r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr = ptr.String("")
-
-	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr,
-		r.provisioningParameters.Parameters.Networking.PodsCidr)
-	updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr,
-		r.provisioningParameters.Parameters.Networking.ServicesCidr)
+	if r.provisioningParameters.Parameters.Networking.PodsCidr != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr = ptr.String("")
+		updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.PodsCidr,
+			r.provisioningParameters.Parameters.Networking.PodsCidr)
+	}
+	if r.provisioningParameters.Parameters.Networking.ServicesCidr != nil {
+		r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr = ptr.String("")
+		updateString(r.provisionRuntimeInput.ClusterConfig.GardenerConfig.ServicesCidr,
+			r.provisioningParameters.Parameters.Networking.ServicesCidr)
+	}
 	return nil
 }
 
