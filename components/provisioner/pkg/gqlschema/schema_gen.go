@@ -1270,9 +1270,9 @@ input GardenerConfigInput {
     machineImageVersion: String                     # Machine OS image version
     diskType: String                                # Disk type, varies depending on the target provider
     volumeSizeGB: Int                               # Size of the available disk, provided in GB
-    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes
-    podsCidr: String                                # Configures IP address ranges for pods
-    servicesCidr: String                            # Configures IP address ranges for services
+    workerCidr: String!                             # Classless Inter-Domain Routing range for the nodes. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/.
+    podsCidr: String                                # Configures IP address ranges for pods. This field is immutable. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/. You can read more on https://github.com/gardener/gardener/blob/master/docs/usage/shoot_networking.md
+    servicesCidr: String                            # Configures IP address ranges for services. This field is immutable. This field cannot overlap with CIDR ranges of Gardener seed cluster - https://pages.github.tools.sap/kubernetes/gardener/docs/faq/sap-internal/seed-cidr-ranges/. You can read more on https://github.com/gardener/gardener/blob/master/docs/usage/shoot_networking.md
     autoScalerMin: Int!                             # Minimum number of VMs to create
     autoScalerMax: Int!                             # Maximum number of VMs to create
     maxSurge: Int!                                  # Maximum number of VMs created during an update

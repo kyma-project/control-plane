@@ -63,7 +63,7 @@ testing-with-database-network:
 		--env PIPELINE_BUILD=1 --env GO111MODULE=on \
 		--env TC_HOST=host.docker.internal \
 		--add-host host.docker.internal:host-gateway \
-		$(DOCKER_CREATE_OPTS) go test ./... -timeout 15m
+		$(DOCKER_CREATE_OPTS) `go get github.com/go-delve/delve/cmd/dlv && dlv test ./... -l`
 	@docker network rm $(TESTING_DB_NETWORK)
 
 clean-up:

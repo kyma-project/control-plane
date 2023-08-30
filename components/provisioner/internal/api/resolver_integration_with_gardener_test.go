@@ -110,7 +110,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 	installationServiceMock.On("PerformCleanup", mock.Anything).Return(nil)
 	installationServiceMock.On("TriggerUninstall", mock.Anything).Return(nil)
 
-	// to separate from other tests
+	//to separate from other tests
 	installationServiceMockForDeprovisiong := &installationMocks.Service{}
 	installationServiceMockForDeprovisiong.On("CheckInstallationState", mock.Anything).Return(installation.InstallationState{State: "Installed"}, nil)
 

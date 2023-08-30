@@ -38,17 +38,12 @@ const (
 )
 
 var (
-	SchemaFilePath = os.Getenv("GOPATH") + "/src/github.com/kyma-project/control-plane/components/provisioner/assets/database/provisioner.sql"
+	SchemaFilePath = "/Users/i316752/SAPDevelop/control-plane/components/provisioner/assets/database/provisioner.sql"
 )
 
 func makeConnectionString(hostname string, port string) string {
 
 	host := "localhost"
-
-	if os.Getenv(EnvPipelineBuild) != "" {
-		host = hostname
-		port = DbPort
-	}
 
 	return fmt.Sprintf(connStringFormat, host, port, DbUser,
 		DbPass, DbName, "disable")
