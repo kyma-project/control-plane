@@ -58,22 +58,14 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 		return s.operationManager.OperationFailed(operation, "invalid operation data - cannot create provisioning input", err, log)
 	}
 
-	pods := "nil"
-	//if requestInput.ClusterConfig.GardenerConfig.PodsCidr != nil {
-	//    pods = *requestInput.ClusterConfig.GardenerConfig.PodsCidr
-	//}
-	services := "nil"
-	//if requestInput.ClusterConfig.GardenerConfig.ServicesCidr != nil {
-	//    services = *requestInput.ClusterConfig.GardenerConfig.ServicesCidr
-	//}
 	log.Infof("call ProvisionRuntime: kubernetesVersion=%s, region=%s, provider=%s, name=%s, workers=%s, pods=%s, services=%s",
 		requestInput.ClusterConfig.GardenerConfig.KubernetesVersion,
 		requestInput.ClusterConfig.GardenerConfig.Region,
 		requestInput.ClusterConfig.GardenerConfig.Provider,
 		requestInput.ClusterConfig.GardenerConfig.Name,
 		requestInput.ClusterConfig.GardenerConfig.WorkerCidr,
-		pods,
-		services)
+		valueOfString(requestInput.ClusterConfig.GardenerConfig.PodsCidr),
+		valueOfString(requestInput.ClusterConfig.GardenerConfig.ServicesCidr))
 
 	provisionerResponse, err := s.provisionerClient.ProvisionRuntime(operation.ProvisioningParameters.ErsContext.GlobalAccountID, operation.ProvisioningParameters.ErsContext.SubAccountID, requestInput)
 	switch {
@@ -123,6 +115,13 @@ func (s *CreateRuntimeWithoutKymaStep) Run(operation internal.Operation, log log
 
 	log.Info("runtime creation process initiated successfully")
 	return operation, 0, nil
+}
+
+func valueOfString(val *string) string {
+	if val == nil {
+		return "<nil>"
+	}
+	return *val
 }
 
 func (s *CreateRuntimeWithoutKymaStep) updateInstance(id, runtimeID, region string) error {
