@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"github.com/kyma-project/control-plane/components/cluster-inventory/api/v1beta1"
+	"github.com/kyma-project/control-plane/components/cluster-inventory/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -70,7 +71,7 @@ func fixClusterInventoryCR(name, kymaName, namespace string) v1beta1.Cluster {
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"
 	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shootName"
+	labels["kyma-project.io/shoot-name"] = "shoot1"
 	labels["kyma-project.io/region"] = "region"
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 
@@ -92,7 +93,7 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"
 	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shootName"
+	labels["kyma-project.io/shoot-name"] = "shoot1"
 	labels["kyma-project.io/region"] = "region"
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
@@ -105,4 +106,8 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 		},
 		Data: map[string][]byte{"kubeconfig": []byte("kubeconfig")},
 	}
+}
+
+func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
+	kpMock.On("Fetch", "shoot1").Return(nil)
 }

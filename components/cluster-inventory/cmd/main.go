@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/kyma-project/control-plane/components/cluster-inventory/internal/kubeconfig"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -92,8 +93,9 @@ func main() {
 	mgr.GetClient()
 
 	if err = (&controller.ClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		KubeconfigProvider: kubeconfig.NewProvider(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 		os.Exit(1)

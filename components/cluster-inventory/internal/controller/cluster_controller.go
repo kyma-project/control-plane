@@ -32,8 +32,9 @@ import (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	log    logr.Logger
+	Scheme             *runtime.Scheme
+	KubeconfigProvider KubeconfigProvider
+	log                logr.Logger
 }
 
 type Client interface {
@@ -42,11 +43,17 @@ type Client interface {
 	List(ctx context.Context, obj client.ObjectList, opts ...client.ListOption) error
 }
 
-func NewClusterInventoryController(mgr ctrl.Manager, log logr.Logger) *ClusterReconciler {
+//go:generate mockery --name=KubeconfigProvider
+type KubeconfigProvider interface {
+	Fetch(shootName string) error
+}
+
+func NewClusterInventoryController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, log logr.Logger) *ClusterReconciler {
 	return &ClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		log:    log,
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		KubeconfigProvider: kubeconfigProvider,
+		log:                log,
 	}
 }
 
@@ -88,7 +95,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *ClusterReconciler) rotateOrCreateSecret(cluster clusterinventoryv1beta1.Cluster) error {
-	secret := createSecretFromClusterInventory(cluster)
+	secret, err := r.createSecret(cluster)
+
+	if err != nil {
+		return err
+	}
 
 	return r.Client.Create(context.Background(), &secret)
 }
@@ -105,7 +116,7 @@ const (
 	kymaNameLabel        = "operator.kyma-project.io/kyma-name"
 )
 
-func createSecretFromClusterInventory(cluster clusterinventoryv1beta1.Cluster) corev1.Secret {
+func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster) (corev1.Secret, error) {
 	clusterInventoryLabels := cluster.Labels
 
 	labels := map[string]string{}
@@ -121,6 +132,11 @@ func createSecretFromClusterInventory(cluster clusterinventoryv1beta1.Cluster) c
 	labels[kymaNameLabel] = clusterInventoryLabels[kymaNameLabel]
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 
+	err := r.KubeconfigProvider.Fetch(labels[shootNameLabel])
+	if err != nil {
+		return corev1.Secret{}, err
+	}
+
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      cluster.Name,
@@ -128,7 +144,7 @@ func createSecretFromClusterInventory(cluster clusterinventoryv1beta1.Cluster) c
 			Labels:    labels,
 		},
 		Data: map[string][]byte{"kubeconfig": []byte("kubeconfig")},
-	}
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

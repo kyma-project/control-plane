@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"github.com/kyma-project/control-plane/components/cluster-inventory/internal/controller/mocks"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
@@ -81,7 +82,10 @@ var _ = BeforeSuite(func() {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
-	controller := NewClusterInventoryController(mgr, log)
+	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
+	setupKubeconfigProviderMock(kubeconfigProviderMock)
+
+	controller := NewClusterInventoryController(mgr, kubeconfigProviderMock, log)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)
