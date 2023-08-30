@@ -11,12 +11,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 
 	clusterinventoryv1beta1 "github.com/kyma-project/control-plane/components/cluster-inventory/api/v1beta1"
 )
 
 const (
-	forceRotationAnnotation = "operator.kyma-project.io/force-kubeconfig-rotation"
+	forceRotationAnnotation      = "operator.kyma-project.io/force-kubeconfig-rotation"
+	lastKubeconfigSyncAnnotation = "operator.kyma-project.io/last-sync"
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -141,9 +143,10 @@ func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster
 
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
-			Name:      cluster.Name,
-			Namespace: r.SecretNamespace,
-			Labels:    labels,
+			Name:        cluster.Name,
+			Namespace:   r.SecretNamespace,
+			Labels:      labels,
+			Annotations: map[string]string{lastKubeconfigSyncAnnotation: time.Now().UTC().String()},
 		},
 		StringData: map[string]string{"config": kubeconfig},
 	}, nil
@@ -158,7 +161,7 @@ func (r *ClusterReconciler) rotateSecret(secret *corev1.Secret) error {
 			return err
 		}
 		delete(secret.Annotations, forceRotationAnnotation)
-
+		secret.Annotations[lastKubeconfigSyncAnnotation] = time.Now().UTC().String()
 		secret.StringData = map[string]string{"config": kubeconfig}
 
 		return r.Client.Update(context.Background(), secret)

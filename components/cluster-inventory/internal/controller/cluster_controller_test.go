@@ -42,6 +42,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 			expectedSecret := fixSecret(kymaName, kymaName, "shootName1", namespace)
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
+			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
 		})
 	})
 
@@ -78,6 +79,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 			expectedSecret := fixSecret(kymaName, kymaName, "shootName2", namespace)
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
+			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
 		})
 
 		Describe("Rotate dynamic kubeconfig", func() {
