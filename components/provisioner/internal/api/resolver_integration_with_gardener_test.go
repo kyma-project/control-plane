@@ -267,7 +267,7 @@ func TestProvisioning_ProvisionRuntimeWithDatabase(t *testing.T) {
 		}, metav1.CreateOptions{})
 		require.NoError(t, err)
 
-		//when 
+		// when. 
 		time.Sleep(waitPeriod) // Wait few second to make sure shoots were reconciled
 
 		// then
