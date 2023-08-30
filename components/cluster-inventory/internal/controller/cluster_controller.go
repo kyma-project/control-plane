@@ -1,19 +1,3 @@
-/*
-Copyright 2023.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
@@ -29,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	clusterinventoryv1beta1 "github.com/kyma-project/control-plane/components/cluster-inventory/api/v1beta1"
+)
+
+const (
+	forceRotationAnnotation = "operator.kyma-project.io/force-kubeconfig-rotation"
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -162,14 +150,14 @@ func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster
 }
 
 func (r *ClusterReconciler) rotateSecret(secret *corev1.Secret) error {
-	_, forceKubeconfigRotation := secret.Annotations["operator.kyma-project.io/force-kubeconfig-rotation"]
+	_, forceKubeconfigRotation := secret.Annotations[forceRotationAnnotation]
 
 	if forceKubeconfigRotation {
 		kubeconfig, err := r.KubeconfigProvider.Fetch(secret.Labels[shootNameLabel])
 		if err != nil {
 			return err
 		}
-		delete(secret.Annotations, "operator.kyma-project.io/force-kubeconfig-rotation")
+		delete(secret.Annotations, forceRotationAnnotation)
 
 		secret.StringData = map[string]string{"config": kubeconfig}
 

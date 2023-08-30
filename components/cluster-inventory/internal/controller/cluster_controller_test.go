@@ -25,7 +25,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 		It("Create secret", func() {
 			By("Create Cluster CR")
 			// TODO: Cluster Inventory CR should have Cluster scope
-			clusterCR := fixClusterInventoryCR(kymaName, kymaName, namespace)
+			clusterCR := fixClusterInventoryCR(kymaName, kymaName, "shootName1", namespace)
 
 			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
 
@@ -39,7 +39,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 
 			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
 			Expect(err).To(BeNil())
-			expectedSecret := fixSecret(kymaName, kymaName, namespace)
+			expectedSecret := fixSecret(kymaName, kymaName, "shootName1", namespace)
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 		})
@@ -51,11 +51,11 @@ var _ = Describe("Cluster Inventory controller", func() {
 
 		It("Rotate static kubeconfig", func() {
 			By("Create kubeconfig secret")
-			secret := fixSecretWithForceRotation(kymaName, kymaName, namespace)
+			secret := fixSecretWithForceRotation(kymaName, kymaName, "shootName2", namespace)
 			Expect(k8sClient.Create(context.Background(), &secret)).To(Succeed())
 
 			By("Create Cluster CR")
-			clusterCR := fixClusterInventoryCRForceRotation(kymaName, kymaName, namespace)
+			clusterCR := fixClusterInventoryCR(kymaName, kymaName, "shootName2", namespace)
 
 			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
 
@@ -68,14 +68,14 @@ var _ = Describe("Cluster Inventory controller", func() {
 					return false
 				}
 
-				_, found := kubeconfigSecret.Annotations["operator.kyma-project.io/force-kubeconfig-rotation"]
+				_, found := kubeconfigSecret.Annotations[forceRotationAnnotation]
 
 				return !found
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
 			Expect(err).To(BeNil())
-			expectedSecret := fixSecret(kymaName, kymaName, namespace)
+			expectedSecret := fixSecret(kymaName, kymaName, "shootName2", namespace)
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 		})
@@ -94,7 +94,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 	})
 })
 
-func fixClusterInventoryCR(name, kymaName, namespace string) v1beta1.Cluster {
+func fixClusterInventoryCR(name, kymaName, shootName, namespace string) v1beta1.Cluster {
 
 	labels := map[string]string{}
 
@@ -104,7 +104,7 @@ func fixClusterInventoryCR(name, kymaName, namespace string) v1beta1.Cluster {
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"
 	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shoot1"
+	labels["kyma-project.io/shoot-name"] = shootName
 	labels["kyma-project.io/region"] = "region"
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 
@@ -117,7 +117,7 @@ func fixClusterInventoryCR(name, kymaName, namespace string) v1beta1.Cluster {
 	}
 }
 
-func fixSecret(name, kymaName, namespace string) corev1.Secret {
+func fixSecret(name, kymaName, shootName, namespace string) corev1.Secret {
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"
@@ -126,7 +126,7 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"
 	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shoot1"
+	labels["kyma-project.io/shoot-name"] = shootName
 	labels["kyma-project.io/region"] = "region"
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
@@ -141,8 +141,7 @@ func fixSecret(name, kymaName, namespace string) corev1.Secret {
 	}
 }
 
-func fixClusterInventoryCRForceRotation(name, kymaName, namespace string) v1beta1.Cluster {
-
+func fixSecretWithForceRotation(name, kymaName, shootName, namespace string) corev1.Secret {
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"
@@ -151,34 +150,13 @@ func fixClusterInventoryCRForceRotation(name, kymaName, namespace string) v1beta
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"
 	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shoot1"
-	labels["kyma-project.io/region"] = "region"
-	labels["operator.kyma-project.io/kyma-name"] = kymaName
-
-	return v1beta1.Cluster{
-		ObjectMeta: v12.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-	}
-}
-func fixSecretWithForceRotation(name, kymaName, namespace string) corev1.Secret {
-	labels := map[string]string{}
-
-	labels["kyma-project.io/instance-id"] = "instanceID"
-	labels["kyma-project.io/runtime-id"] = "runtimeID"
-	labels["kyma-project.io/broker-plan-id"] = "planID"
-	labels["kyma-project.io/broker-plan-name"] = "planName"
-	labels["kyma-project.io/global-account-id"] = "globalAccountID"
-	labels["kyma-project.io/subaccount-id"] = "subAccountID"
-	labels["kyma-project.io/shoot-name"] = "shoot2"
+	labels["kyma-project.io/shoot-name"] = shootName
 	labels["kyma-project.io/region"] = "region"
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 
 	annotations := map[string]string{}
-	annotations["operator.kyma-project.io/force-kubeconfig-rotation"] = "true"
+	annotations[forceRotationAnnotation] = "true"
 
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
@@ -192,6 +170,6 @@ func fixSecretWithForceRotation(name, kymaName, namespace string) corev1.Secret 
 }
 
 func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
-	kpMock.On("Fetch", "shoot1").Return(kubeconfig, nil)
-	kpMock.On("Fetch", "shoot2").Return(kubeconfig, nil)
+	kpMock.On("Fetch", "shootName1").Return(kubeconfig, nil)
+	kpMock.On("Fetch", "shootName2").Return(kubeconfig, nil)
 }
