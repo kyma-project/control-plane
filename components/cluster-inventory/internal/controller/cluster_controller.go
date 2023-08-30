@@ -20,8 +20,10 @@ import (
 	"context"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,6 +36,7 @@ type ClusterReconciler struct {
 	client.Client
 	Scheme             *runtime.Scheme
 	KubeconfigProvider KubeconfigProvider
+	SecretNamespace    string
 	log                logr.Logger
 }
 
@@ -45,14 +48,15 @@ type Client interface {
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	Fetch(shootName string) error
+	Fetch(shootName string) (string, error)
 }
 
-func NewClusterInventoryController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, log logr.Logger) *ClusterReconciler {
+func NewClusterInventoryController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, secretNamespace string, log logr.Logger) *ClusterReconciler {
 	return &ClusterReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
+		SecretNamespace:    secretNamespace,
 		log:                log,
 	}
 }
@@ -95,13 +99,23 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *ClusterReconciler) rotateOrCreateSecret(cluster clusterinventoryv1beta1.Cluster) error {
-	secret, err := r.createSecret(cluster)
+	var secret corev1.Secret
+	key := types.NamespacedName{Name: cluster.Name, Namespace: r.SecretNamespace}
 
-	if err != nil {
+	if err := r.Client.Get(context.Background(), key, &secret); err != nil {
+		if k8serrors.IsNotFound(err) {
+			secret, err := r.createSecret(cluster)
+			if err != nil {
+				return err
+			}
+
+			return r.Client.Create(context.Background(), &secret)
+		}
+
 		return err
 	}
 
-	return r.Client.Create(context.Background(), &secret)
+	return r.rotateSecret(&secret)
 }
 
 const (
@@ -132,7 +146,7 @@ func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster
 	labels[kymaNameLabel] = clusterInventoryLabels[kymaNameLabel]
 	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 
-	err := r.KubeconfigProvider.Fetch(labels[shootNameLabel])
+	kubeconfig, err := r.KubeconfigProvider.Fetch(labels[shootNameLabel])
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -140,11 +154,29 @@ func (r *ClusterReconciler) createSecret(cluster clusterinventoryv1beta1.Cluster
 	return corev1.Secret{
 		ObjectMeta: v12.ObjectMeta{
 			Name:      cluster.Name,
-			Namespace: cluster.Namespace,
+			Namespace: r.SecretNamespace,
 			Labels:    labels,
 		},
-		Data: map[string][]byte{"kubeconfig": []byte("kubeconfig")},
+		StringData: map[string]string{"config": kubeconfig},
 	}, nil
+}
+
+func (r *ClusterReconciler) rotateSecret(secret *corev1.Secret) error {
+	_, forceKubeconfigRotation := secret.Annotations["operator.kyma-project.io/force-kubeconfig-rotation"]
+
+	if forceKubeconfigRotation {
+		kubeconfig, err := r.KubeconfigProvider.Fetch(secret.Labels[shootNameLabel])
+		if err != nil {
+			return err
+		}
+		delete(secret.Annotations, "operator.kyma-project.io/force-kubeconfig-rotation")
+
+		secret.StringData = map[string]string{"config": kubeconfig}
+
+		return r.Client.Update(context.Background(), secret)
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

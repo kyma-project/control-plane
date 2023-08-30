@@ -85,7 +85,7 @@ var _ = BeforeSuite(func() {
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
-	controller := NewClusterInventoryController(mgr, kubeconfigProviderMock, log)
+	controller := NewClusterInventoryController(mgr, kubeconfigProviderMock, "default", log)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)
