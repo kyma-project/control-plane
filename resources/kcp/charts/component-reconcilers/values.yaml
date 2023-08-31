@@ -31,6 +31,3 @@ serviceMonitor:
   enabled: false
   scrapeTimeout: 30s
   interval: 60s
-
-# these components will NEVER be reconciled
-skippedComponents: []
