@@ -106,7 +106,7 @@ spec:
         {{- if ($.Values.global.mothership_reconciler.features) }}
         {{- ($.Values.global.mothership_reconciler.features) | nindent 8 }}
         {{- end }}
-        {{- range .Values.skippedComponents}}
+        {{- range .Values.global.mothership_reconciler.skippedComponents}}
         - name: "SKIP_COMPONENT_{{ regexReplaceAll "-" . "_"  | upper }}"
           value: "true"
         {{- end}}
