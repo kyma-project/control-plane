@@ -61,6 +61,7 @@ func FixERSContext(id string) internal.ERSContext {
 		tenantID     = fmt.Sprintf("Tenant-%s", id)
 		subAccountId = fmt.Sprintf("SA-%s", id)
 		userID       = fmt.Sprintf("User-%s", id)
+		licenseType  = ""
 	)
 
 	return internal.ERSContext{
@@ -69,6 +70,7 @@ func FixERSContext(id string) internal.ERSContext {
 		GlobalAccountID: GlobalAccountId,
 		Active:          ptr.Bool(true),
 		UserID:          userID,
+		LicenseType:     &licenseType,
 	}
 }
 

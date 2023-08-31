@@ -26,6 +26,10 @@ func ApplyLabelsAndAnnotationsForLM(object client.Object, operation internal.Ope
 	l["kyma-project.io/region"] = operation.Region
 	l["operator.kyma-project.io/kyma-name"] = KymaName(operation)
 	l["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	if isKymaResourceInternal(operation) {
+		l["operator.kyma-project.io/internal"] = "true"
+	}
+
 	object.SetLabels(l)
 
 	a := object.GetAnnotations()
@@ -45,4 +49,8 @@ func KymaName(operation internal.Operation) string {
 		return operation.KymaResourceName
 	}
 	return strings.ToLower(operation.RuntimeID)
+}
+
+func isKymaResourceInternal(operation internal.Operation) bool {
+	return !*operation.ProvisioningParameters.ErsContext.DisableEnterprisePolicyFilter()
 }
