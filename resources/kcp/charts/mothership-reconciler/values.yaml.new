@@ -1,0 +1,157 @@
+global:
+  images:
+    cloudsql_proxy_image: "eu.gcr.io/kyma-project/tpi/cloudsql-docker/gce-proxy:v1.33.0-d587c1be"
+    mothership_reconciler: "eu.gcr.io/kyma-project/incubator/reconciler/mothership:v20230405-147bea8d"
+
+# Default values for mothership-reconciler.
+nameOverride: ""
+fullnameOverride: ""
+
+encryptionKeySecret: "kcp-reconciler-key"
+configurationSecret: "kcp-mothership-reconciler"
+componentsConfigMap: "kcp-component-reconcilers"
+
+host: "mothership-reconciler"
+oidc:
+  issuer: "https://dex.{{ .Values.global.ingress.domainName }}"
+  keysURL: "http://dex-service.kyma-system.svc.cluster.local:5556/keys"
+  groups:
+    operator: runtimeOperator
+
+db:
+  encryptionKey: ""
+  reconcilerDbName: "reconciler"
+  reconcilerPassword: ""
+  reconcilerUsername: ""
+  serviceHost: "localhost"
+  servicePort: "5432"
+  sslMode: "disable"
+  sslRootCert: ""
+  file: "reconciler.db"
+  deploySchema: true
+  resetDatabase: false
+  maxOpenConns: 50 # if n <= 0, then there is no limit on the number of open connections. The default is 0 (unlimited).
+  maxIdleConns: 20 # If n <= 0, no idle connections are retained. The default max idle connections is currently 2. This may change in a future release.
+  connMaxLifetime: 10m # If d <= 0, connections are not closed due to a connection's age.
+  connMaxIdleTime: 10m # If d <= 0, connections are not closed due to a connection's idle time.
+
+preComponents:
+  - [cluster-essentials, istio, certificates]
+
+options:
+  verbose: false
+  workerCount: 50
+  reconcileInterval: 5m
+
+deployment:
+  imagePullPolicy: "IfNotPresent"
+
+  replicasCount: 1
+  podDisruptionBudget: |
+    maxUnavailable: 1
+
+  # Don't use surge pods during rolling update by default as mothership_reconciler.auditlog.persistence.enabled=true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+
+  imagePullSecrets: []
+
+  serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+  podAnnotations: {}
+
+  podSecurityContext:
+    runAsUser: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+
+  startupProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    failureThreshold: 180
+    periodSeconds: 10
+
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+
+service:
+  type: ClusterIP
+  scheme: http
+  port: 80
+  istioPort: 15020
+
+fluentbit:
+  port: 2020
+
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# disable here to bypass deploy AuthorizationPolicy and ServiceMonitor in Pipeline Cluster
+serviceMonitor:
+  enabled: false
+  scrapeTimeout: 30s
+  interval: 60s
+
+# needs to be enabled in https://github.tools.sap/kyma/management-plane-config/blob/master/resources/control-plane/config/base/kcp.yaml
+# by default purgeOlderThan (old cleaner script) is activated
+cleanerScript:
+  enabled: false
+  reconMaxAge: 4
+  reconKeepCount: 100
+  inventoryMaxAge: 4
+  purgeOlderThan: 96h
+
+#componentCRDs:
+#  btp-operator:
+#    group: operator.kyma-project.io
+#    version: v1alpha1
+#    kind: btpoperators
