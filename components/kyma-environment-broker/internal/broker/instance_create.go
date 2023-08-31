@@ -441,7 +441,6 @@ func (b *ProvisionEndpoint) createDashboardURL(planID, instanceID string) string
 }
 
 func validateCidr(cidr string) (*net.IPNet, error) {
-
 	ip, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil, err
@@ -474,26 +473,21 @@ func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningP
 		return err
 	}
 
-	if e := validateOverlappingIfExists(nodes, pods); e != nil {
+	if e := validateOverlapping(*nodes, *pods); e != nil {
 		err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap pods CIDR"))
 	}
-	if e := validateOverlappingIfExists(nodes, services); e != nil {
+	if e := validateOverlapping(*nodes, *services); e != nil {
 		err = multierror.Append(err, fmt.Errorf("nodes CIDR must not overlap services CIDR"))
 	}
-	if e := validateOverlappingIfExists(services, pods); e != nil {
+	if e := validateOverlapping(*services, *pods); e != nil {
 		err = multierror.Append(err, fmt.Errorf("services CIDR must not overlap pods CIDR"))
 	}
 
 	return err
 }
 
-func validateOverlappingIfExists(n1 *net.IPNet, n2 *net.IPNet) error {
-	if n1 == nil {
-		return nil
-	}
-	if n2 == nil {
-		return nil
-	}
+func validateOverlapping(n1 net.IPNet, n2 net.IPNet) error {
+
 	if n1.Contains(n2.IP) || n2.Contains(n1.IP) {
 		return fmt.Errorf("%s overlaps %s", n1.String(), n2.String())
 	}
