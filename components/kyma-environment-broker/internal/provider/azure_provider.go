@@ -81,8 +81,8 @@ func (p *AzureInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp int
 		return
 	}
 	workerCidr := DefaultNodesCIDR
-	if pp.Parameters.Networking != nil && pp.Parameters.Networking.NodesCidr != nil {
-		workerCidr = *pp.Parameters.Networking.NodesCidr
+	if pp.Parameters.Networking != nil {
+		workerCidr = pp.Parameters.Networking.NodesCidr
 	}
 	input.GardenerConfig.WorkerCidr = workerCidr
 	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.VnetCidr = workerCidr
@@ -154,8 +154,8 @@ func (p *AzureLiteInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp
 
 func updateAzureSingleNodeWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
 	workerCIDR := DefaultNodesCIDR
-	if pp.Parameters.Networking != nil && pp.Parameters.Networking.NodesCidr != nil {
-		workerCIDR = *pp.Parameters.Networking.NodesCidr
+	if pp.Parameters.Networking != nil {
+		workerCIDR = pp.Parameters.Networking.NodesCidr
 	}
 	input.GardenerConfig.WorkerCidr = workerCIDR
 	input.GardenerConfig.ProviderSpecificConfig.AzureConfig.VnetCidr = workerCIDR

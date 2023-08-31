@@ -440,11 +440,9 @@ func (b *ProvisionEndpoint) createDashboardURL(planID, instanceID string) string
 	}
 }
 
-func validateCidrIfExists(cidr *string) (*net.IPNet, error) {
-	if cidr == nil {
-		return nil, nil
-	}
-	ip, ipNet, err := net.ParseCIDR(*cidr)
+func validateCidr(cidr string) (*net.IPNet, error) {
+
+	ip, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil, err
 	}
@@ -463,13 +461,13 @@ func (b *ProvisionEndpoint) validateNetworking(parameters internal.ProvisioningP
 	}
 	var err, e error
 	var nodes, services, pods *net.IPNet
-	if nodes, e = validateCidrIfExists(parameters.Networking.NodesCidr); e != nil {
+	if nodes, e = validateCidr(parameters.Networking.NodesCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing nodes CIDR: %w", e))
 	}
-	if pods, e = validateCidrIfExists(parameters.Networking.PodsCidr); e != nil {
+	if pods, e = validateCidr(parameters.Networking.PodsCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing pods CIDR: %w", e))
 	}
-	if services, e = validateCidrIfExists(parameters.Networking.ServicesCidr); e != nil {
+	if services, e = validateCidr(parameters.Networking.ServicesCidr); e != nil {
 		err = multierror.Append(err, fmt.Errorf("while parsing services CIDR: %w", e))
 	}
 	if err != nil {

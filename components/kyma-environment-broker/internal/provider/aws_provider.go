@@ -217,8 +217,8 @@ func (p *AWSInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp inter
 
 func updateAWSWithWorkerCidr(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) string {
 	workerCidr := DefaultNodesCIDR
-	if pp.Parameters.Networking != nil && pp.Parameters.Networking.NodesCidr != nil {
-		workerCidr = *pp.Parameters.Networking.NodesCidr
+	if pp.Parameters.Networking != nil {
+		workerCidr = pp.Parameters.Networking.NodesCidr
 	}
 	input.GardenerConfig.WorkerCidr = workerCidr
 	input.GardenerConfig.ProviderSpecificConfig.AwsConfig.VpcCidr = workerCidr

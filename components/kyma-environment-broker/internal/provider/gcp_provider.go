@@ -70,8 +70,8 @@ func (p *GcpInput) Defaults() *gqlschema.ClusterConfigInput {
 }
 
 func (p *GcpInput) ApplyParameters(input *gqlschema.ClusterConfigInput, pp internal.ProvisioningParameters) {
-	if pp.Parameters.Networking != nil && pp.Parameters.Networking.NodesCidr != nil {
-		input.GardenerConfig.WorkerCidr = *pp.Parameters.Networking.NodesCidr
+	if pp.Parameters.Networking != nil {
+		input.GardenerConfig.WorkerCidr = pp.Parameters.Networking.NodesCidr
 	}
 	switch {
 	// explicit zones list is provided

@@ -1224,40 +1224,32 @@ func TestNetworkingValidation(t *testing.T) {
 		expectedError bool
 	}{
 		"Invalid nodes CIDR": {
-			givenNetworking: `{"nodes": "abcd"}`,
+			givenNetworking: `{"nodes": 1abcd", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
 			expectedError:   true,
 		},
 		"Invalid nodes CIDR - wrong IP range": {
-			givenNetworking: `{"nodes": "10.250.0.1/19"}`,
+			givenNetworking: `{"nodes": "10.250.0.1/19": 1abcd", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
 			expectedError:   true,
 		},
-		"Valid nodes CIDR": {
-			givenNetworking: `{"nodes": "10.250.0.0/16"}`,
+		"Valid CIDRs": {
+			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
 			expectedError:   false,
 		},
 		"Invalid pods CIDR": {
-			givenNetworking: `{"pods": "abcd"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10abcd/16", "services": "100.104.0.0/13"}`,
 			expectedError:   true,
 		},
 		"Invalid pods CIDR - wrong IP range": {
-			givenNetworking: `{"pods": "10.250.0.1/19"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "100.104.0.0/13"}`,
 			expectedError:   true,
 		},
 		"Invalid services CIDR": {
-			givenNetworking: `{"services": "abcd"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "abcd"}`,
 			expectedError:   true,
 		},
 		"Invalid services CIDR - wrong IP range": {
-			givenNetworking: `{"services": "10.250.0.1/19"}`,
+			givenNetworking: `{"nodes": "10.250.0.0/16", "pods": "10.250.0.1/19", "services": "10.250.0.1/19"}`,
 			expectedError:   true,
-		},
-		"Valid pods CIDR": {
-			givenNetworking: `{"pods": "10.250.0.0/16"}`,
-			expectedError:   false,
-		},
-		"Valid all CIDRs": {
-			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/16", "services": "100.104.0.0/13"}`,
-			expectedError:   false,
 		},
 		"Pods and Services overlaps": {
 			givenNetworking: `{"nodes": "10.250.0.0/22", "pods": "10.64.0.0/19", "services": "10.64.0.0/16"}`,
