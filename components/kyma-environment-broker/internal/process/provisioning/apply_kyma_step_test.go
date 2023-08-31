@@ -86,6 +86,32 @@ func TestCreatingInternalKymaResource(t *testing.T) {
 	svc.Run(operation, logrus.New())
 }
 
+func TestCreatingKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
+	// given
+	operation, cli := fixOperationForApplyKymaResource(t)
+	operation.KymaResourceNamespace = "namespace-in-time-of-creation"
+	*operation.ProvisioningParameters.ErsContext.LicenseType = "CUSTOMER"
+	storage := storage.NewMemoryStorage()
+	storage.Operations().InsertOperation(operation)
+	svc := NewApplyKymaStep(storage.Operations(), cli)
+
+	// when
+	_, backoff, err := svc.Run(operation, logrus.New())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, backoff)
+	aList := unstructured.UnstructuredList{}
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
+
+	cli.List(context.Background(), &aList)
+	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExistsForExternalKymaResource(t, aList.Items[0])
+
+	svc.Run(operation, logrus.New())
+	assert.Equal(t, "namespace-in-time-of-creation", operation.KymaResourceNamespace)
+}
+
 func TestCreatingInternalKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(t *testing.T) {
 	// given
 	operation, cli := fixOperationForApplyKymaResource(t)
@@ -109,6 +135,40 @@ func TestCreatingInternalKymaResource_UseNamespaceFromTimeOfCreationNotTemplate(
 
 	svc.Run(operation, logrus.New())
 	assert.Equal(t, "namespace-in-time-of-creation", operation.KymaResourceNamespace)
+}
+
+func TestUpdatinglKymaResourceIfExists(t *testing.T) {
+	// given
+	operation, cli := fixOperationForApplyKymaResource(t)
+	*operation.ProvisioningParameters.ErsContext.LicenseType = "CUSTOMER"
+	storage := storage.NewMemoryStorage()
+	storage.Operations().InsertOperation(operation)
+	svc := NewApplyKymaStep(storage.Operations(), cli)
+	err := cli.Create(context.Background(), &unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "operator.kyma-project.io/v1beta2",
+		"kind":       "Kyma",
+		"metadata": map[string]interface{}{
+			"name":      operation.KymaResourceName,
+			"namespace": "kyma-system",
+		},
+		"spec": map[string]interface{}{
+			"channel": "stable",
+		},
+	}})
+	require.NoError(t, err)
+
+	// when
+	_, backoff, err := svc.Run(operation, logrus.New())
+
+	// then
+	require.NoError(t, err)
+	require.Zero(t, backoff)
+	aList := unstructured.UnstructuredList{}
+	aList.SetGroupVersionKind(schema.GroupVersionKind{Group: "operator.kyma-project.io", Version: "v1beta2", Kind: "KymaList"})
+
+	cli.List(context.Background(), &aList)
+	assert.Equal(t, 1, len(aList.Items))
+	assertLabelsExistsForExternalKymaResource(t, aList.Items[0])
 }
 
 func TestUpdatinInternalKymaResourceIfExists(t *testing.T) {
