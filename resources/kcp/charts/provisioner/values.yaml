@@ -6,6 +6,11 @@ global:
       version: "PR-2979"
       dir: "dev"
 
+vmscrapes:
+  enabled: false
+  scrapeTimeout: 10s
+  interval: 30s
+
 deployment:
   replicaCount: 1
   image:

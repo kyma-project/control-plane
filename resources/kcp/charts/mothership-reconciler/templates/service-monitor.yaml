@@ -1,4 +1,5 @@
 {{ if .Values.serviceMonitor.enabled }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -14,6 +15,39 @@ spec:
   - port: fluentbit
     interval: {{ .Values.serviceMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+    path: /api/v1/metrics/prometheus
+    metricRelabelings:
+      - action: keep
+        regex: ^(fluentbit_.*|go_.*|process_.*)$
+        sourceLabels:
+          - __name__
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+{{ include "mothership-reconciler.labels" . | indent 6 }}
+{{- end }}
+
+{{- if and (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMServiceScrape") .Values.vmscrapes.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  labels:
+{{ include "mothership-reconciler.labels" . | indent 4 }}
+  name: {{ include "mothership-reconciler.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - attach_metadata: {}
+    port: http
+    interval: {{ .Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
+  - attach_metadata: {}
+    port: fluentbit
+    interval: {{ .Values.vmscrapes.interval }}
+    scrapeTimeout: {{ .Values.vmscrapes.scrapeTimeout }}
     path: /api/v1/metrics/prometheus
     metricRelabelings:
       - action: keep
